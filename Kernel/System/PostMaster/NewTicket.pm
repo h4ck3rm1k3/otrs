@@ -1,468 +1,308 @@
 # --
 # Kernel/System/PostMaster/NewTicket.pm - sub part of PostMaster.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: NewTicket.pm,v 1.84 2011/11/11 02:30:54 cr Exp $
+# $Id: NewTicket.pm,v 1.38.2.1 2003/05/18 20:20:50 martin Exp $
 # --
-# This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see 
+# the enclosed file COPYING for license information (GPL). If you 
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::PostMaster::NewTicket;
 
 use strict;
-use warnings;
-
 use Kernel::System::AutoResponse;
 use Kernel::System::CustomerUser;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.84 $) [1];
+$VERSION = '$Revision: 1.38.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
+# --
 sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
+    my $Type = shift;
+    my %Param = @_;
+   
+    # allocate new hash for object 
+    my $Self = {}; 
+    bless ($Self, $Type);
+   
     $Self->{Debug} = $Param{Debug} || 0;
-
+ 
     # get all objects
-    for (
-        qw(
-DBObject ConfigObject TicketObject LogObject ParserObject TimeObject QueueObject StateObject PriorityObject
-
-)
-        )
-    {
-	#DynamicFieldBackendObject removed
-        $Self->{$_} = $Param{$_} || die "Got no $_";
+    foreach (qw(DBObject ConfigObject TicketObject LogObject ParseObject QueueObject)) {
+        $Self->{$_} = $Param{$_} || die 'Got no $_';
     }
 
     $Self->{CustomerUserObject} = Kernel::System::CustomerUser->new(%Param);
 
     return $Self;
 }
-
+# --
 sub Run {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    # --
     # check needed stuff
-    for (qw(InmailUserID GetParam )) {
-#	DynamicFieldBackendObject
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-    my %GetParam         = %{ $Param{GetParam} };
-    my $Comment          = $Param{Comment} || '';
-    my $AutoResponseType = $Param{AutoResponseType} || '';
-
-    # get queue id and name
-    my $QueueID = $Param{QueueID} || die "need QueueID!";
-    my $Queue = $Self->{QueueObject}->QueueLookup( QueueID => $QueueID );
-
-    # get state
-    my $State = $Self->{ConfigObject}->Get('PostmasterDefaultState') || 'new';
-    if ( $GetParam{'X-OTRS-State'} ) {
-        my $StateID = $Self->{StateObject}->StateLookup( State => $GetParam{'X-OTRS-State'} );
-        if ($StateID) {
-            $State = $GetParam{'X-OTRS-State'};
-        }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message => "State $GetParam{'X-OTRS-State'} does not exist, falling back to $State!"
-            );
-        }
-    }
-
-    # get priority
-    my $Priority = $Self->{ConfigObject}->Get('PostmasterDefaultPriority') || '3 normal';
-    if ( $GetParam{'X-OTRS-Priority'} ) {
-        my $PriorityID
-            = $Self->{PriorityObject}->PriorityLookup( Priority => $GetParam{'X-OTRS-Priority'} );
-        if ($PriorityID) {
-            $Priority = $GetParam{'X-OTRS-Priority'};
-        }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message =>
-                    "Priority $GetParam{'X-OTRS-Priority'} does not exist, falling back to $Priority!"
-            );
-        }
-    }
-
-    # get sender email
-    my @EmailAddresses = $Self->{ParserObject}->SplitAddressLine( Line => $GetParam{From}, );
-    for (@EmailAddresses) {
-        $GetParam{SenderEmailAddress} = $Self->{ParserObject}->GetEmailAddress( Email => $_, );
-    }
-
-    # get customer id (sender email) if there is no customer id given
-    if ( !$GetParam{'X-OTRS-CustomerNo'} && $GetParam{'X-OTRS-CustomerUser'} ) {
-
-        # get customer user data form X-OTRS-CustomerUser
-        my %CustomerData = $Self->{CustomerUserObject}->CustomerUserDataGet(
-            User => $GetParam{'X-OTRS-CustomerUser'},
-        );
-        if (%CustomerData) {
-            $GetParam{'X-OTRS-CustomerNo'} = $CustomerData{UserCustomerID};
-        }
-    }
-
-    # get customer user data form From: (sender address)
-    if ( !$GetParam{'X-OTRS-CustomerUser'} ) {
-        my %CustomerData;
-        if ( $GetParam{From} ) {
-            my @EmailAddresses = $Self->{ParserObject}->SplitAddressLine(
-                Line => $GetParam{From},
-            );
-            for (@EmailAddresses) {
-                $GetParam{EmailForm} = $Self->{ParserObject}->GetEmailAddress(
-                    Email => $_,
-                );
-            }
-            my %List = $Self->{CustomerUserObject}->CustomerSearch(
-                PostMasterSearch => lc( $GetParam{EmailForm} ),
-            );
-            for ( keys %List ) {
-                %CustomerData = $Self->{CustomerUserObject}->CustomerUserDataGet(
-                    User => $_,
-                );
-            }
-        }
-
-        # take CustomerID from customer backend lookup or from from field
-        if ( $CustomerData{UserLogin} && !$GetParam{'X-OTRS-CustomerUser'} ) {
-            $GetParam{'X-OTRS-CustomerUser'} = $CustomerData{UserLogin};
-
-            # notice that UserLogin is form customer source backend
-            $Self->{LogObject}->Log(
-                Priority => 'notice',
-                Message  => "Take UserLogin ($CustomerData{UserLogin}) from "
-                    . "customer source backend based on ($GetParam{'EmailForm'}).",
-            );
-        }
-        if ( $CustomerData{UserCustomerID} && !$GetParam{'X-OTRS-CustomerNo'} ) {
-            $GetParam{'X-OTRS-CustomerNo'} = $CustomerData{UserCustomerID};
-
-            # notice that UserCustomerID is form customer source backend
-            $Self->{LogObject}->Log(
-                Priority => 'notice',
-                Message  => "Take UserCustomerID ($CustomerData{UserCustomerID})"
-                    . " from customer source backend based on ($GetParam{'EmailForm'}).",
-            );
-        }
-    }
-
-    # if there is no customer id found!
-    if ( !$GetParam{'X-OTRS-CustomerNo'} ) {
-        $GetParam{'X-OTRS-CustomerNo'} = $GetParam{SenderEmailAddress};
-    }
-
-    # if there is no customer user found!
-    if ( !$GetParam{'X-OTRS-CustomerUser'} ) {
-        $GetParam{'X-OTRS-CustomerUser'} = $GetParam{SenderEmailAddress};
-    }
-
-    # create new ticket
-    my $NewTn    = $Self->{TicketObject}->TicketCreateNumber();
-    my $TicketID = $Self->{TicketObject}->TicketCreate(
-        TN           => $NewTn,
-        Title        => $GetParam{Subject},
-        QueueID      => $QueueID,
-        Lock         => $GetParam{'X-OTRS-Lock'} || 'unlock',
-        Priority     => $Priority,
-        State        => $State,
-        Type         => $GetParam{'X-OTRS-Type'} || '',
-        Service      => $GetParam{'X-OTRS-Service'} || '',
-        SLA          => $GetParam{'X-OTRS-SLA'} || '',
-        CustomerID   => $GetParam{'X-OTRS-CustomerNo'},
-        CustomerUser => $GetParam{'X-OTRS-CustomerUser'},
-        OwnerID      => $Param{InmailUserID},
-        UserID       => $Param{InmailUserID},
-    );
-
-    if ( !$TicketID ) {
+    # --
+    foreach (qw(InmailUserID GetParam)) {
+      if (!$Param{$_}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
         return;
+      }
     }
-
+    my %GetParam = %{$Param{GetParam}};
+    my $Comment = $Param{Comment} || '';
+    my $AutoResponseType = $Param{AutoResponseType} || '';
+    # -- 
+    # get queue id and name
+    # --
+    my $QueueID = $Param{QueueID} || die "need QueueID!"; 
+    my $Queue = $Self->{QueueObject}->QueueLookup(QueueID => $QueueID);    
+    # --
+    # get state
+    # --
+    my $State = $Self->{ConfigObject}->Get('PostmasterDefaultState') || 'new';
+    if ($GetParam{'X-OTRS-State'}) {
+        $State = $GetParam{'X-OTRS-State'};
+    }
+    # --
+    # get priority
+    # --
+    my $Priority = $Self->{ConfigObject}->Get('PostmasterDefaultPriority') || '3 normal';
+    if ($GetParam{'X-OTRS-Priority'}) {
+        $Priority = $GetParam{'X-OTRS-Priority'}; 
+    }
+    # -- 
+    # create new ticket
+    # --
+    my $NewTn = $Self->{TicketObject}->CreateTicketNr();
+    # -- 
+    # do db insert
+    # --
+    my $TicketID = $Self->{TicketObject}->CreateTicketDB(
+        TN => $NewTn,
+        QueueID => $QueueID,
+        Lock => 'unlock',
+        GroupID => 1,
+        Priority => $Priority,
+        State => $State,
+        UserID => $Param{InmailUserID},
+        CreateUserID => $Param{InmailUserID},
+    );
+    # --
     # debug
-    if ( $Self->{Debug} > 0 ) {
+    # --
+    if ($Self->{Debug} > 0) {
         print "New Ticket created!\n";
         print "TicketNumber: $NewTn\n";
         print "TicketID: $TicketID\n";
         print "Priority: $Priority\n";
         print "State: $State\n";
-        print "CustomerID: $GetParam{'X-OTRS-CustomerNo'}\n";
-        print "CustomerUser: $GetParam{'X-OTRS-CustomerUser'}\n";
-        for (qw(Type Service SLA Lock)) {
-
-            if ( $GetParam{ 'X-OTRS-' . $_ } ) {
-                print "Type: " . $GetParam{ 'X-OTRS-' . $_ } . "\n";
-            }
-        }
     }
-
-    # set pending time
-    if ( $GetParam{'X-OTRS-State-PendingTime'} ) {
-        my $Set = $Self->{TicketObject}->TicketPendingTimeSet(
-            String   => $GetParam{'X-OTRS-State-PendingTime'},
-            TicketID => $TicketID,
-            UserID   => $Param{InmailUserID},
-        );
-
-        # debug
-        if ( $Set && $Self->{Debug} > 0 ) {
-            print "State-PendingTime: $GetParam{'X-OTRS-State-PendingTime'}\n";
-        }
-    }
-
-    # dynamic fields
-    my $DynamicFieldList =
-        $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldList(
-        Valid      => 0,
-        ResultType => 'HASH',
-        ObjectType => 'Ticket'
-        );
-
-    # set dynamic fields for Ticket object type
-    DYNAMICFILEDID:
-    for my $DynamicFieldID ( sort keys %{$DynamicFieldList} ) {
-        next DYNAMICFIELDID if !$DynamicFieldID;
-        next DYNAMICFIELDID if !$DynamicFieldList->{$DynamicFieldID};
-        my $Key = 'X-OTRS-DynamicField-' . $DynamicFieldList->{$DynamicFieldID};
-
-        if ( $GetParam{$Key} ) {
-
-            # get dynamic field config
-            my $DynamicFieldGet
-                = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
-                ID => $DynamicFieldID,
-                );
-
-            $Self->{TicketObject}->{DynamicFieldBackendObject}->ValueSet(
-                DynamicFieldConfig => $DynamicFieldGet,
-                ObjectID           => $TicketID,
-                Value              => $GetParam{$Key},
-                UserID             => $Param{InmailUserID},
-            );
-
-            if ( $Self->{Debug} > 0 ) {
-                print "$Key: " . $GetParam{$Key} . "\n";
-            }
-        }
-    }
-
-    # reverse dynamic field list
-    my %DynamicFieldListReversed = reverse %{$DynamicFieldList};
-
-    # set ticket free text
-    my %Values =
-        (
-        'X-OTRS-TicketKey'   => 'TicketFreeKey',
-        'X-OTRS-TicketValue' => 'TicketFreeText',
-        );
-    for my $Item ( sort keys %Values ) {
-        for my $Count ( 1 .. 16 ) {
-            my $Key = $Item . $Count;
-            if ( $GetParam{$Key} && $DynamicFieldListReversed{ $Values{$Item} . $Count } ) {
-
-                # get dynamic field config
-                my $DynamicFieldGet = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
-                    ID => $DynamicFieldListReversed{ $Values{$Item} . $Count },
-                );
-                if ($DynamicFieldGet) {
-                    my $Success = $Self->{TicketObject}->{DynamicFieldBackendObject}->ValueSet(
-                        DynamicFieldConfig => $DynamicFieldGet,
-                        ObjectID           => $TicketID,
-                        Value              => $GetParam{$Key},
-                        UserID             => $Param{InmailUserID},
-                    );
-                }
-
-                if ( $Self->{Debug} > 0 ) {
-                    print "TicketKey$Count: " . $GetParam{$Key} . "\n";
-                }
-            }
-        }
-    }
-
-    # set ticket free time
-    for my $Count ( 1 .. 6 ) {
-        my $Key = 'X-OTRS-TicketTime' . $Count;
-        if ( $GetParam{$Key} ) {
-            my $SystemTime = $Self->{TimeObject}->TimeStamp2SystemTime(
-                String => $GetParam{$Key},
-            );
-            if ( $SystemTime && $DynamicFieldListReversed{ 'TicketFreeTime' . $Count } ) {
-
-                # get dynamic field config
-                my $DynamicFieldGet = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
-                    ID => $DynamicFieldListReversed{ 'TicketFreeTime' . $Count },
-                );
-                if ($DynamicFieldGet) {
-                    my $Success = $Self->{TicketObject}->{DynamicFieldBackendObject}->ValueSet(
-                        DynamicFieldConfig => $DynamicFieldGet,
-                        ObjectID           => $TicketID,
-                        Value              => $GetParam{$Key},
-                        UserID             => $Param{InmailUserID},
-                    );
-                }
-
-                if ( $Self->{Debug} > 0 ) {
-                    print "TicketTime$Count: " . $GetParam{$Key} . "\n";
-                }
-            }
-        }
-    }
-
+    # -- 
     # do article db insert
-    my $ArticleID = $Self->{TicketObject}->ArticleCreate(
-        TicketID         => $TicketID,
-        ArticleType      => $GetParam{'X-OTRS-ArticleType'},
-        SenderType       => $GetParam{'X-OTRS-SenderType'},
-        From             => $GetParam{From},
-        ReplyTo          => $GetParam{ReplyTo},
-        To               => $GetParam{To},
-        Cc               => $GetParam{Cc},
-        Subject          => $GetParam{Subject},
-        MessageID        => $GetParam{'Message-ID'},
-        InReplyTo        => $GetParam{'In-Reply-To'},
-        References       => $GetParam{'References'},
-        ContentType      => $GetParam{'Content-Type'},
-        Body             => $GetParam{Body},
-        UserID           => $Param{InmailUserID},
-        HistoryType      => 'EmailCustomer',
-        HistoryComment   => "\%\%$Comment",
-        OrigHeader       => \%GetParam,
+    # --
+    my $ArticleID = $Self->{TicketObject}->CreateArticle(
+        TicketID => $TicketID,
+        ArticleType => 'email-external',
+        SenderType => 'customer',
+        From => $GetParam{From},
+        ReplyTo => $GetParam{ReplyTo},
+        To => $GetParam{To},
+        Cc => $GetParam{Cc},
+        Subject => $GetParam{Subject},
+        MessageID => $GetParam{'Message-ID'},
+        ContentType => $GetParam{'Content-Type'},
+        Body => $GetParam{Body},
+        UserID => $Param{InmailUserID},
+        HistoryType => 'NewTicket',
+        HistoryComment => "New Ticket [$NewTn] created (Q=$Queue;P=$Priority;S=$State). $Comment",
+        OrigHeader => \%GetParam,
         AutoResponseType => $AutoResponseType,
-        Queue            => $Queue,
+        Queue => $Queue,
     );
-
-    # close ticket if article create failed!
-    if ( !$ArticleID ) {
-        $Self->{TicketObject}->TicketDelete(
+    # --    
+    # get customer user and no if not given
+    # --
+    if (!$GetParam{'X-OTRS-CustomerUser'}) {
+        my @EmailAddresses = $Self->{ParseObject}->SplitAddressLine(
+            Line => $GetParam{From},
+        );
+        foreach (@EmailAddresses) {
+            $GetParam{'X-OTRS-CustomerUser'} = $Self->{ParseObject}->GetEmailAddress(
+                Email => $_,
+            );
+        }
+    }
+    # --    
+    # get customer id (sender email) if there is no customer id given
+    # --
+    if (!$GetParam{'X-OTRS-CustomerNo'}) {
+        # --
+        # get customer user data form X-OTRS-CustomerUser
+        # --
+        my %CustomerData = ();
+        if ($GetParam{'X-OTRS-CustomerUser'}) {
+            %CustomerData = $Self->{CustomerUserObject}->CustomerUserDataGet(
+                User => $GetParam{'X-OTRS-CustomerUser'}, 
+            );
+        }
+        # --
+        # get customer user data form From:
+        # --
+        elsif ($GetParam{'From'}) {
+            my @EmailAddresses = $Self->{ParseObject}->SplitAddressLine(
+                Line => $GetParam{From},
+            );
+            foreach (@EmailAddresses) {
+                $GetParam{'EmailForm'} = $Self->{ParseObject}->GetEmailAddress(
+                    Email => $_,
+                );
+            }
+            my %List = $Self->{CustomerUserObject}->CustomerSearch(
+                PostMasterSearch => lc($GetParam{'EmailForm'}),
+            ); 
+            foreach (keys %List) {
+                %CustomerData = $Self->{CustomerUserObject}->CustomerUserDataGet(
+                  User => $_,
+                );
+            }
+        }
+        # --
+        # take CustomerID from customer backend lookup or from from field
+        # --
+        if ($CustomerData{UserLogin}) {
+            $GetParam{'X-OTRS-CustomerUser'} = $CustomerData{UserLogin};
+        }
+        if ($CustomerData{UserCustomerID}) {
+            $GetParam{'X-OTRS-CustomerNo'} = $CustomerData{UserCustomerID};
+        }
+        else {
+            my @EmailAddresses = $Self->{ParseObject}->SplitAddressLine(
+                Line => $GetParam{From},
+            );
+            foreach (@EmailAddresses) {
+                $GetParam{'X-OTRS-CustomerNo'} = $Self->{ParseObject}->GetEmailAddress(
+                    Email => $_,
+                );
+            }
+        }
+    }
+    # --    
+    # set customer no
+    # --
+    if ($GetParam{'X-OTRS-CustomerNo'} || $GetParam{'X-OTRS-CustomerUser'}) {
+        $Self->{TicketObject}->SetCustomerData(
             TicketID => $TicketID,
-            UserID   => $Param{InmailUserID},
+            No => $GetParam{'X-OTRS-CustomerNo'},
+            User => $GetParam{'X-OTRS-CustomerUser'},
+            UserID => $Param{InmailUserID},
+        );
+    # --
+    # debug
+    # --
+    if ($Self->{Debug} > 0) {
+            print "CustomerID: $GetParam{'X-OTRS-CustomerNo'}\n";
+            print "CustomerUser: $GetParam{'X-OTRS-CustomerUser'}\n";
+        }
+    }
+    # --
+    # set free ticket text
+    # --
+    my @Values = ('X-OTRS-TicketKey', 'X-OTRS-TicketValue');
+    my $CounterTmp = 0;
+    while ($CounterTmp <= 2) {
+        $CounterTmp++;
+        if ($GetParam{"$Values[0]$CounterTmp"}) {
+            $Self->{TicketObject}->SetTicketFreeText(
+                TicketID => $TicketID,
+                Key => $GetParam{"$Values[0]$CounterTmp"},
+                Value => $GetParam{"$Values[1]$CounterTmp"},
+                Counter => $CounterTmp,
+                UserID => $Param{InmailUserID},
+            );
+        }
+    }
+    # --
+    # close ticket if article create failed!
+    # --
+    if (!$ArticleID) {
+        $Self->{TicketObject}->SetState(
+            TicketID => $TicketID,
+            UserID => $Param{InmailUserID},
+            State => 'removed',
         );
         $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't process email with MessageID <$GetParam{'Message-ID'}>! "
-                . "Please create a bug report with this email (From: $GetParam{From}, Located "
-                . "under var/spool/problem-email*) on http://bugs.otrs.org/!",
+            Priority => 'error', 
+            Message => "Can't process email with MessageID <$GetParam{'Message-ID'}>! ".
+              "Please create a bug report with this email (var/spool/) on http://bugs.otrs.org/!",
         );
         return;
     }
-
+    # --
     # debug
-    if ( $Self->{Debug} > 0 ) {
+    # --
+    if ($Self->{Debug} > 0) {
         print "From: $GetParam{From}\n";
-        print "ReplyTo: $GetParam{ReplyTo}\n" if ( $GetParam{ReplyTo} );
+        print "ReplyTo: $GetParam{ReplyTo}\n" if ($GetParam{ReplyTo});
         print "To: $GetParam{To}\n";
-        print "Cc: $GetParam{Cc}\n" if ( $GetParam{Cc} );
+        print "Cc: $GetParam{Cc}\n" if ($GetParam{Cc});
         print "Subject: $GetParam{Subject}\n";
         print "MessageID: $GetParam{'Message-ID'}\n";
         print "Queue: $Queue\n";
-        print "SenderType: $GetParam{'X-OTRS-SenderType'}\n";
-        print "ArticleType: $GetParam{'X-OTRS-ArticleType'}\n";
     }
-
-    # dynamic fields
-    $DynamicFieldList =
-        $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldList(
-        Valid      => 0,
-        ResultType => 'HASH',
-        ObjectType => 'Article'
-        );
-
-    # set dynamic fields for Article object type
-    DYNAMICFIELDID:
-    for my $DynamicFieldID ( sort keys %{$DynamicFieldList} ) {
-        next DYNAMICFIELDID if !$DynamicFieldID;
-        next DYNAMICFIELDID if !$DynamicFieldList->{$DynamicFieldID};
-        my $Key = 'X-OTRS-DynamicField-' . $DynamicFieldList->{$DynamicFieldID};
-        if ( $GetParam{$Key} ) {
-
-            # get dynamic field config
-            my $DynamicFieldGet
-                = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
-                ID => $DynamicFieldID,
-                );
-
-            $Self->{TicketObject}->{DynamicFieldBackendObject}->ValueSet(
-                DynamicFieldConfig => $DynamicFieldGet,
-                ObjectID           => $ArticleID,
-                Value              => $GetParam{$Key},
-                UserID             => $Param{InmailUserID},
-            );
-
-            if ( $Self->{Debug} > 0 ) {
-                print "$Key: " . $GetParam{$Key} . "\n";
-            }
-        }
-    }
-
-    # reverse dynamic field list
-    %DynamicFieldListReversed = reverse %{$DynamicFieldList};
-
+    # --
     # set free article text
-    %Values =
-        (
-        'X-OTRS-ArticleKey'   => 'ArticleFreeKey',
-        'X-OTRS-ArticleValue' => 'ArticleFreeText',
-        );
-    for my $Item ( sort keys %Values ) {
-        for my $Count ( 1 .. 16 ) {
-            my $Key = $Item . $Count;
-            if ( $GetParam{$Key} && $DynamicFieldListReversed{ $Values{$Item} . $Count } ) {
-
-                # get dynamic field config
-                my $DynamicFieldGet = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
-                    ID => $DynamicFieldListReversed{ $Values{$Item} . $Count },
-                );
-                if ($DynamicFieldGet) {
-                    my $Success = $Self->{TicketObject}->{DynamicFieldBackendObject}->ValueSet(
-                        DynamicFieldConfig => $DynamicFieldGet,
-                        ObjectID           => $ArticleID,
-                        Value              => $GetParam{$Key},
-                        UserID             => $Param{InmailUserID},
-                    );
-                }
-
-                if ( $Self->{Debug} > 0 ) {
-                    print "TicketKey$Count: " . $GetParam{$Key} . "\n";
-                }
+    # --
+    @Values = ('X-OTRS-ArticleKey', 'X-OTRS-ArticleValue');
+    $CounterTmp = 0;
+    while ($CounterTmp <= 3) {
+        $CounterTmp++;
+        if ($GetParam{"$Values[0]$CounterTmp"}) {
+            $Self->{TicketObject}->SetArticleFreeText(
+                ArticleID => $ArticleID,
+                Key => $GetParam{"$Values[0]$CounterTmp"},
+                Value => $GetParam{"$Values[1]$CounterTmp"},
+                Counter => $CounterTmp,
+                UserID => $Param{InmailUserID},
+            );
+            if ($Self->{Debug} > 0) {
+                print "ArticleKey$CounterTmp: ".$GetParam{"$Values[0]$CounterTmp"}."\n";
+                print "ArticleValue$CounterTmp: ".$GetParam{"$Values[1]$CounterTmp"}."\n";
             }
         }
     }
-
+    # --    
     # write plain email to the storage
-    $Self->{TicketObject}->ArticleWritePlain(
-        ArticleID => $ArticleID,
-        Email     => $Self->{ParserObject}->GetPlainEmail(),
-        UserID    => $Param{InmailUserID},
+    # --
+    $Self->{TicketObject}->WriteArticlePlain(
+        ArticleID => $ArticleID, 
+        Email => $Self->{ParseObject}->GetPlainEmail(),
+        UserID => $Param{InmailUserID},
     );
-
+    # --    
     # write attachments to the storage
-    for my $Attachment ( $Self->{ParserObject}->GetAttachments() ) {
-        $Self->{TicketObject}->ArticleWriteAttachment(
-            Filename           => $Attachment->{Filename},
-            Content            => $Attachment->{Content},
-            ContentType        => $Attachment->{ContentType},
-            ContentID          => $Attachment->{ContentID},
-            ContentAlternative => $Attachment->{ContentAlternative},
-            ArticleID          => $ArticleID,
-            UserID             => $Param{InmailUserID},
+    # --
+    foreach my $Attachment ($Self->{ParseObject}->GetAttachments()) {
+        $Self->{TicketObject}->WriteArticlePart(
+            Content => $Attachment->{Content}, 
+            Filename => $Attachment->{Filename},
+            ContentType => $Attachment->{ContentType},
+            ArticleID => $ArticleID,
+            UserID => $Param{InmailUserID},
         );
     }
-
-    return $TicketID;
+    # do log
+    $Self->{LogObject}->Log(
+	Priority => 'notice',
+        Message => "New Ticket [$NewTn] created (TicketID=$TicketID, " .
+        "ArticleID=$ArticleID). $Comment"
+    );
+    
+    return 1;
 }
+# --
 
 1;

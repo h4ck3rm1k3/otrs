@@ -1,460 +1,181 @@
 # --
-# Kernel/System/PostMaster/FollowUp.pm - the sub part of PostMaster.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Kernel/System/PostMaster/FollowUp.pm - the sub part of PostMaster.pm 
+# Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: FollowUp.pm,v 1.76 2011/11/25 10:23:24 mg Exp $
+# $Id: FollowUp.pm,v 1.27.2.1 2003/05/18 20:20:50 martin Exp $
 # --
-# This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see 
+# the enclosed file COPYING for license information (GPL). If you 
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::PostMaster::FollowUp;
 
 use strict;
-use warnings;
-
-use Kernel::System::User;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.76 $) [1];
+$VERSION = '$Revision: 1.27.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
+# --
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {}; 
+    bless ($Self, $Type);
+
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
 
     $Self->{Debug} = $Param{Debug} || 0;
 
     # check needed Objects
-    for (qw(DBObject ConfigObject TicketObject LogObject TimeObject ParserObject)) {
+    foreach (qw(DBObject ConfigObject TicketObject LogObject ParseObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
-    $Self->{UserObject} = Kernel::System::User->new(%Param);
-
     return $Self;
 }
-
+# --
 sub Run {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    # --
     # check needed stuff
-    for (qw(TicketID InmailUserID GetParam Tn AutoResponseType)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
+    # --
+    foreach (qw(TicketID InmailUserID GetParam StateType Tn AutoResponseType)) {
+      if (!$Param{$_}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+        return;
+      }
     }
-    my %GetParam = %{ $Param{GetParam} };
-
-    # get ticket data
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    my $Comment          = $Param{Comment}          || '';
-    my $Lock             = $Param{Lock}             || '';
+    my %GetParam = %{$Param{GetParam}};
+    my $State = $Param{State} || '';
+	my $Comment = $Param{Comment} || '';
+    my $Lock = $Param{Lock} || '';
     my $AutoResponseType = $Param{AutoResponseType} || '';
 
-    # Check if owner of ticket is still valid
-    my %UserInfo = $Self->{UserObject}->GetUserData(
-        UserID => $Ticket{OwnerID},
-    );
+    # do db insert
+    my $ArticleID = $Self->{TicketObject}->CreateArticle(
+        TicketID => $Param{TicketID},
+        ArticleType => 'email-external',
+        SenderType => 'customer',
+        From => $GetParam{From},
+        ReplyTo => $GetParam{ReplyTo},
+        To => $GetParam{To},
+        Cc => $GetParam{Cc},
+        Subject => $GetParam{Subject},
+        MessageID => $GetParam{'Message-ID'},
+        ContentType => $GetParam{'Content-Type'},
+        Body => $GetParam{Body},
+        UserID => $Param{InmailUserID},
+        HistoryType => 'FollowUp',
+        HistoryComment => "FollowUp for [$Param{Tn}]. $Comment",
 
-    # 1) check user, out of office, unlock ticket
-    if ( $UserInfo{OutOfOfficeMessage} ) {
-        $Self->{TicketObject}->TicketLockSet(
-            TicketID => $Param{TicketID},
-            Lock     => 'unlock',
-            UserID   => $Param{InmailUserID},
-        );
-        $Self->{LogObject}->Log(
-            Priority => 'notice',
-            Message  => "Ticket [$Param{Tn}] unlocked, current owner is out of office!",
+        AutoResponseType => $AutoResponseType,
+        OrigHeader => \%GetParam,
+    ); 
+    # --
+    # debug
+    # --
+    if ($Self->{Debug} > 0) {
+        print "Follow up Ticket\n";
+        print "TicketNumber: $Param{Tn}\n";
+        print "From: $GetParam{From}\n";
+        print "ReplyTo: $GetParam{ReplyTo}\n" if ($GetParam{ReplyTo});
+        print "To: $GetParam{To}\n";
+        print "Cc: $GetParam{Cc}\n" if ($GetParam{Cc});
+        print "Subject: $GetParam{Subject}\n";
+        print "MessageID: $GetParam{'Message-ID'}\n";
+    }
+    # --    
+    # write plain email to the storage
+    # --
+    $Self->{TicketObject}->WriteArticlePlain(
+        ArticleID => $ArticleID,
+        Email => $Self->{ParseObject}->GetPlainEmail(),
+        UserID => $Param{InmailUserID},
+    );
+    # --    
+    # write attachments to the storage
+    # --
+    foreach my $Attachment ($Self->{ParseObject}->GetAttachments()) {
+        $Self->{TicketObject}->WriteArticlePart(
+            Content => $Attachment->{Content}, 
+            Filename => $Attachment->{Filename},
+            ContentType => $Attachment->{ContentType},
+            ArticleID => $ArticleID,
+            UserID => $Param{InmailUserID},
         );
     }
-
-    # 2) check user, just lock it if user is valid and ticket was closed
-    elsif ( $UserInfo{ValidID} eq 1 ) {
-
-        # set lock (if ticket should be locked on follow up)
-        if ( $Lock && $Ticket{StateType} =~ /^close/i ) {
-            $Self->{TicketObject}->TicketLockSet(
-                TicketID => $Param{TicketID},
-                Lock     => 'lock',
-                UserID   => $Param{InmailUserID},
+    # --
+    # set free article text
+    # --
+    my @Values = ('X-OTRS-ArticleKey', 'X-OTRS-ArticleValue');
+    my $CounterTmp = 0;
+    while ($CounterTmp <= 3) {
+        $CounterTmp++;
+        if ($GetParam{"$Values[0]$CounterTmp"}) {
+            $Self->{TicketObject}->SetArticleFreeText(
+                ArticleID => $ArticleID,
+                Key => $GetParam{"$Values[0]$CounterTmp"},
+                Value => $GetParam{"$Values[1]$CounterTmp"},
+                Counter => $CounterTmp,
+                UserID => $Param{InmailUserID},
             );
-            if ( $Self->{Debug} > 0 ) {
-                print "Lock: lock\n";
-                $Self->{LogObject}->Log(
-                    Priority => 'notice',
-                    Message  => "Ticket [$Param{Tn}] still locked",
-                );
+            if ($Self->{Debug} > 0) {
+                print "ArticleKey$CounterTmp: ".$GetParam{"$Values[0]$CounterTmp"}."\n";
+                print "ArticleValue$CounterTmp: ".$GetParam{"$Values[1]$CounterTmp"}."\n";
             }
+
         }
     }
-
-    # 3) Unlock ticket, because current user is set to invalid
-    else {
-        $Self->{TicketObject}->TicketLockSet(
-            TicketID => $Param{TicketID},
-            Lock     => 'unlock',
-            UserID   => $Param{InmailUserID},
-        );
-        $Self->{LogObject}->Log(
-            Priority => 'notice',
-            Message  => "Ticket [$Param{Tn}] unlocked, current owner is invalid!",
-        );
-    }
-
-    # set state
-    my $State = $Self->{ConfigObject}->Get('PostmasterFollowUpState') || 'open';
-    if (
-        $Ticket{StateType} =~ /^close/
-        && $Self->{ConfigObject}->Get('PostmasterFollowUpStateClosed')
-        )
-    {
-        $State = $Self->{ConfigObject}->Get('PostmasterFollowUpStateClosed');
-    }
-    if ( $GetParam{'X-OTRS-FollowUp-State'} ) {
-        $State = $GetParam{'X-OTRS-FollowUp-State'};
-    }
-
-    if ( $Ticket{StateType} !~ /^new/ || $GetParam{'X-OTRS-FollowUp-State'} ) {
-        $Self->{TicketObject}->TicketStateSet(
-            State => $GetParam{'X-OTRS-FollowUp-State'} || $State,
-            TicketID => $Param{TicketID},
-            UserID   => $Param{InmailUserID},
-        );
-        if ( $Self->{Debug} > 0 ) {
+    # --
+    # set state 
+    # --
+    if ($State) {
+	    $Self->{TicketObject}->SetState(
+    	    State => $State,
+        	TicketID => $Param{TicketID},
+	        UserID => $Param{InmailUserID},
+    	);
+        if ($Self->{Debug} > 0) {
             print "State: $State\n";
         }
     }
-
-    # set pending time
-    if ( $GetParam{'X-OTRS-FollowUp-State-PendingTime'} ) {
-        my $Updated = $Self->{TicketObject}->TicketPendingTimeSet(
-            String   => $GetParam{'X-OTRS-FollowUp-State-PendingTime'},
-            TicketID => $Param{TicketID},
-            UserID   => $Param{InmailUserID},
-        );
-
-        # debug
-        if ($Updated) {
-            if ( $Self->{Debug} > 0 ) {
-                print "State-PendingTime: $GetParam{'X-OTRS-FollowUp-State-PendingTime'}\n";
-            }
-        }
-    }
-
-    # set priority
-    if ( $GetParam{'X-OTRS-FollowUp-Priority'} ) {
-        $Self->{TicketObject}->TicketPrioritySet(
-            TicketID => $Param{TicketID},
-            Priority => $GetParam{'X-OTRS-FollowUp-Priority'},
-            UserID   => $Param{InmailUserID},
-        );
-        if ( $Self->{Debug} > 0 ) {
-            print "PriorityUpdate: $GetParam{'X-OTRS-FollowUp-Priority'}\n";
-        }
-    }
-
-    # set queue
-    if ( $GetParam{'X-OTRS-FollowUp-Queue'} ) {
-        $Self->{TicketObject}->TicketQueueSet(
-            Queue    => $GetParam{'X-OTRS-FollowUp-Queue'},
-            TicketID => $Param{TicketID},
-            UserID   => $Param{InmailUserID},
-        );
-        if ( $Self->{Debug} > 0 ) {
-            print "QueueUpdate: $GetParam{'X-OTRS-FollowUp-Queue'}\n";
-        }
-    }
-
+    # --
     # set lock
-    if ( $GetParam{'X-OTRS-FollowUp-Lock'} ) {
-        $Self->{TicketObject}->TicketLockSet(
-            Lock     => $GetParam{'X-OTRS-FollowUp-Lock'},
-            TicketID => $Param{TicketID},
-            UserID   => $Param{InmailUserID},
+    # --
+    if ($Lock && $Param{StateType} =~ /^close/i) {
+        $Self->{TicketObject}->SetLock( 
+           TicketID => $Param{TicketID},
+           Lock => 'lock',
+           UserID => => $Param{InmailUserID},
         );
-        if ( $Self->{Debug} > 0 ) {
-            print "Lock: $GetParam{'X-OTRS-FollowUp-Lock'}\n";
+        if ($Self->{Debug} > 0) {
+            print "Lock: lock\n";
         }
     }
-
-    # set ticket type
-    if ( $GetParam{'X-OTRS-FollowUp-Type'} ) {
-        $Self->{TicketObject}->TicketTypeSet(
-            Type     => $GetParam{'X-OTRS-FollowUp-Type'},
-            TicketID => $Param{TicketID},
-            UserID   => $Param{InmailUserID},
-        );
-        if ( $Self->{Debug} > 0 ) {
-            print "Type: $GetParam{'X-OTRS-FollowUp-Type'}\n";
-        }
-    }
-
-    # set ticket service
-    if ( $GetParam{'X-OTRS-FollowUp-Service'} ) {
-        $Self->{TicketObject}->TicketServiceSet(
-            Service  => $GetParam{'X-OTRS-FollowUp-Service'},
-            TicketID => $Param{TicketID},
-            UserID   => $Param{InmailUserID},
-        );
-        if ( $Self->{Debug} > 0 ) {
-            print "Service: $GetParam{'X-OTRS-FollowUp-Service'}\n";
-        }
-    }
-
-    # set ticket sla
-    if ( $GetParam{'X-OTRS-FollowUp-SLA'} ) {
-        $Self->{TicketObject}->TicketSLASet(
-            SLA      => $GetParam{'X-OTRS-FollowUp-SLA'},
-            TicketID => $Param{TicketID},
-            UserID   => $Param{InmailUserID},
-        );
-        if ( $Self->{Debug} > 0 ) {
-            print "SLA: $GetParam{'X-OTRS-FollowUp-SLA'}\n";
-        }
-    }
-
-    # dynamic fields
-    my $DynamicFieldList =
-        $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldList(
-        Valid      => 0,
-        ResultType => 'HASH',
-        ObjectType => 'Ticket'
-        );
-
-    # set dynamic fields for Ticket object type
-    DYNAMICFIELDID:
-    for my $DynamicFieldID ( sort keys %{$DynamicFieldList} ) {
-        next DYNAMICFIELDID if !$DynamicFieldID;
-        next DYNAMICFIELDID if !$DynamicFieldList->{$DynamicFieldID};
-        my $Key = 'X-OTRS-FollowUp-DynamicField-' . $DynamicFieldList->{$DynamicFieldID};
-        if ( $GetParam{$Key} ) {
-
-            # get dynamic field config
-            my $DynamicFieldGet
-                = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
-                ID => $DynamicFieldID,
-                );
-
-            $Self->{TicketObject}->{DynamicFieldBackendObject}->ValueSet(
-                DynamicFieldConfig => $DynamicFieldGet,
-                ObjectID           => $Param{TicketID},
-                Value              => $GetParam{$Key},
-                UserID             => $Param{InmailUserID},
-            );
-
-            if ( $Self->{Debug} > 0 ) {
-                print "$Key: " . $GetParam{$Key} . "\n";
-            }
-        }
-    }
-
-    # reverse dynamic field list
-    my %DynamicFieldListReversed = reverse %{$DynamicFieldList};
-
-    # set ticket free text
-    my %Values =
-        (
-        'X-OTRS-FollowUp-TicketKey'   => 'TicketFreeKey',
-        'X-OTRS-FollowUp-TicketValue' => 'TicketFreeText',
-        );
-    for my $Item ( sort keys %Values ) {
-        for my $Count ( 1 .. 16 ) {
-            my $Key = $Item . $Count;
-            if ( $GetParam{$Key} && $DynamicFieldListReversed{ $Values{$Item} . $Count } ) {
-
-                # get dynamic field config
-                my $DynamicFieldGet = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
-                    ID => $DynamicFieldListReversed{ $Values{$Item} . $Count },
-                );
-                if ($DynamicFieldGet) {
-                    my $Success = $Self->{TicketObject}->{DynamicFieldBackendObject}->ValueSet(
-                        DynamicFieldConfig => $DynamicFieldGet,
-                        ObjectID           => $Param{TicketID},
-                        Value              => $GetParam{$Key},
-                        UserID             => $Param{InmailUserID},
-                    );
-                }
-
-                if ( $Self->{Debug} > 0 ) {
-                    print "TicketKey$Count: " . $GetParam{$Key} . "\n";
-                }
-            }
-        }
-    }
-
-    # set ticket free time
-    for my $Count ( 1 .. 6 ) {
-        my $Key = 'X-OTRS-FollowUp-TicketTime' . $Count;
-        if ( $GetParam{$Key} ) {
-            my $SystemTime = $Self->{TimeObject}->TimeStamp2SystemTime(
-                String => $GetParam{$Key},
-            );
-            if ( $SystemTime && $DynamicFieldListReversed{ 'TicketFreeTime' . $Count } ) {
-
-                # get dynamic field config
-                my $DynamicFieldGet = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
-                    ID => $DynamicFieldListReversed{ 'TicketFreeTime' . $Count },
-                );
-                if ($DynamicFieldGet) {
-                    my $Success = $Self->{TicketObject}->{DynamicFieldBackendObject}->ValueSet(
-                        DynamicFieldConfig => $DynamicFieldGet,
-                        ObjectID           => $Param{TicketID},
-                        Value              => $GetParam{$Key},
-                        UserID             => $Param{InmailUserID},
-                    );
-                }
-
-                if ( $Self->{Debug} > 0 ) {
-                    print "TicketTime$Count: " . $GetParam{$Key} . "\n";
-                }
-            }
-        }
-    }
-
-    # do db insert
-    my $ArticleID = $Self->{TicketObject}->ArticleCreate(
-        TicketID         => $Param{TicketID},
-        ArticleType      => $GetParam{'X-OTRS-FollowUp-ArticleType'},
-        SenderType       => $GetParam{'X-OTRS-FollowUp-SenderType'},
-        From             => $GetParam{From},
-        ReplyTo          => $GetParam{ReplyTo},
-        To               => $GetParam{To},
-        Cc               => $GetParam{Cc},
-        Subject          => $GetParam{Subject},
-        MessageID        => $GetParam{'Message-ID'},
-        InReplyTo        => $GetParam{'In-Reply-To'},
-        References       => $GetParam{'References'},
-        ContentType      => $GetParam{'Content-Type'},
-        Body             => $GetParam{Body},
-        UserID           => $Param{InmailUserID},
-        HistoryType      => 'FollowUp',
-        HistoryComment   => "\%\%$Param{Tn}\%\%$Comment",
-        AutoResponseType => $AutoResponseType,
-        OrigHeader       => \%GetParam,
+    # --
+    # set ticket to unanswered
+    # --
+    $Self->{TicketObject}->SetAnswered(
+        TicketID => $Param{TicketID},
+        UserID => $Param{InmailUserID},
+        Answered => 0,
     );
-    return if !$ArticleID;
-
-    # debug
-    if ( $Self->{Debug} > 0 ) {
-        print "Follow up Ticket\n";
-        print "TicketNumber: $Param{Tn}\n";
-        print "From: $GetParam{From}\n"       if ( $GetParam{From} );
-        print "ReplyTo: $GetParam{ReplyTo}\n" if ( $GetParam{ReplyTo} );
-        print "To: $GetParam{To}\n"           if ( $GetParam{To} );
-        print "Cc: $GetParam{Cc}\n"           if ( $GetParam{Cc} );
-        print "Subject: $GetParam{Subject}\n";
-        print "MessageID: $GetParam{'Message-ID'}\n";
-        print "ArticleType: $GetParam{'X-OTRS-FollowUp-ArticleType'}\n";
-        print "SenderType: $GetParam{'X-OTRS-FollowUp-SenderType'}\n";
-    }
-
-    # write plain email to the storage
-    $Self->{TicketObject}->ArticleWritePlain(
-        ArticleID => $ArticleID,
-        Email     => $Self->{ParserObject}->GetPlainEmail(),
-        UserID    => $Param{InmailUserID},
-    );
-
-    # write attachments to the storage
-    for my $Attachment ( $Self->{ParserObject}->GetAttachments() ) {
-        $Self->{TicketObject}->ArticleWriteAttachment(
-            Filename           => $Attachment->{Filename},
-            Content            => $Attachment->{Content},
-            ContentType        => $Attachment->{ContentType},
-            ContentID          => $Attachment->{ContentID},
-            ContentAlternative => $Attachment->{ContentAlternative},
-            ArticleID          => $ArticleID,
-            UserID             => $Param{InmailUserID},
-        );
-    }
-
-    # dynamic fields
-    $DynamicFieldList =
-        $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldList(
-        Valid      => 0,
-        ResultType => 'HASH',
-        ObjectType => 'Article'
-        );
-
-    # set dynamic fields for Article object type
-    DYNAMICFIELDID:
-    for my $DynamicFieldID ( sort keys %{$DynamicFieldList} ) {
-        next DYNAMICFIELDID if !$DynamicFieldID;
-        next DYNAMICFIELDID if !$DynamicFieldList->{$DynamicFieldID};
-        my $Key = 'X-OTRS-FollowUp-DynamicField-' . $DynamicFieldList->{$DynamicFieldID};
-        if ( $GetParam{$Key} ) {
-
-            # get dynamic field config
-            my $DynamicFieldGet
-                = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
-                ID => $DynamicFieldID,
-                );
-
-            $Self->{TicketObject}->{DynamicFieldBackendObject}->ValueSet(
-                DynamicFieldConfig => $DynamicFieldGet,
-                ObjectID           => $ArticleID,
-                Value              => $GetParam{$Key},
-                UserID             => $Param{InmailUserID},
-            );
-
-            if ( $Self->{Debug} > 0 ) {
-                print "$Key: " . $GetParam{$Key} . "\n";
-            }
-        }
-    }
-
-    # reverse dynamic field list
-    %DynamicFieldListReversed = reverse %{$DynamicFieldList};
-
-    # set free article text
-    %Values =
-        (
-        'X-OTRS-FollowUp-ArticleKey'   => 'ArticleFreeKey',
-        'X-OTRS-FollowUp-ArticleValue' => 'ArticleFreeText',
-        );
-    for my $Item ( sort keys %Values ) {
-        for my $Count ( 1 .. 16 ) {
-            my $Key = $Item . $Count;
-            if ( $GetParam{$Key} && $DynamicFieldListReversed{ $Values{$Item} . $Count } ) {
-
-                # get dynamic field config
-                my $DynamicFieldGet = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
-                    ID => $DynamicFieldListReversed{ $Values{$Item} . $Count },
-                );
-                if ($DynamicFieldGet) {
-                    my $Success = $Self->{TicketObject}->{DynamicFieldBackendObject}->ValueSet(
-                        DynamicFieldConfig => $DynamicFieldGet,
-                        ObjectID           => $ArticleID,
-                        Value              => $GetParam{$Key},
-                        UserID             => $Param{InmailUserID},
-                    );
-                }
-
-                if ( $Self->{Debug} > 0 ) {
-                    print "TicketKey$Count: " . $GetParam{$Key} . "\n";
-                }
-            }
-        }
-    }
 
     # write log
     $Self->{LogObject}->Log(
         Priority => 'notice',
-        Message  => "FollowUp Article to Ticket [$Param{Tn}] created "
-            . "(TicketID=$Param{TicketID}, ArticleID=$ArticleID). $Comment,"
+        Message => "FollowUp Article to Ticket [$Param{Tn}] created ".
+          "(TicketID=$Param{TicketID}, ArticleID=$ArticleID). $Comment"
     );
 
     return 1;
 }
-
+# --
 1;
