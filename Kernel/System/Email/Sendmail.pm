@@ -1,124 +1,116 @@
 # --
 # Kernel/System/Email/Sendmail.pm - the global email send module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: Sendmail.pm,v 1.33 2011/08/12 09:06:15 mg Exp $
+# $Id: Sendmail.pm,v 1.7.2.1 2003/06/01 19:20:51 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::Email::Sendmail;
 
 use strict;
-use warnings;
+use MIME::Words qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.33 $) [1];
+$VERSION = '$Revision: 1.7.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
+# --
 sub new {
-    my ( $Type, %Param ) = @_;
-
+    my $Type = shift;
+    my %Param = @_;
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
-
-    # debug
-    $Self->{Debug} = $Param{Debug} || 0;
-
-    # check all needed objects
-    for (qw(ConfigObject LogObject)) {
-        die "Got no $_" if ( !$Self->{$_} );
+    my $Self = {}; 
+    bless ($Self, $Type);
+    # get common opjects
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
     }
+    # check all needed objects
+    foreach (qw(ConfigObject LogObject)) {
+        die "Got no $_" if (!$Self->{$_});
+    }
+    # get config data
+    $Self->{Sendmail} = $Self->{ConfigObject}->Get('SendmailModule::CMD');
+    $Self->{SendmailBcc} = $Self->{ConfigObject}->Get('SendmailBcc');
+    $Self->{FQDN} = $Self->{ConfigObject}->Get('FQDN');
+    $Self->{Organization} = $Self->{ConfigObject}->Get('Organization');
 
     return $Self;
 }
-
+# --
 sub Send {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    # --
     # check needed stuff
-    for (qw(Header Body ToArray)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    # --
+    foreach (qw(Body)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
-    # from for arg
-    my $Arg = quotemeta( $Param{From} );
-    if ( !$Param{From} ) {
-        $Arg = "''";
+    if (!$Param{To} && !$Param{Cc} && !$Param{Bcc}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need To, Cc or Bcc!");
+        return;
     }
-
-    # get recipients
-    my $ToString = '';
-    for my $To ( @{ $Param{ToArray} } ) {
-        if ($ToString) {
-            $ToString .= ', ';
+    if (!$Param{From}) {
+        $Param{From} = $Self->{ConfigObject}->Get('AdminEmail') || 'otrs@localhost';
+    }
+    if (!$Param{Header}) {
+        $Param{Header} = "From: $Param{From}\n";
+        foreach (qw(To Cc Bcc)) {
+            $Param{Header} .= "$_: $Param{$_}\n" if ($Param{$_});
         }
-        $ToString .= $To;
-        $Arg .= ' ' . quotemeta($To);
+        $Param{Header} .= "Subject: $Param{Subject}\n";
+        $Param{Header} .= "X-Mailer: OTRS Mail Service ($VERSION)\n";
+        $Param{Header} .= "Organization: $Self->{Organization}\n" if ($Self->{Organization});
+        $Param{Header} .= "X-Powered-By: OTRS - Open Ticket Request System (http://otrs.org/)\n";
+        $Param{Header} .= "Message-ID: <".time().".".rand(999999)."\@$Self->{FQDN}>\n";
+
     }
-
-    # check availability
-    my %Result = $Self->Check();
-    if ( !$Result{Successful} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => $Result{Message},
-        );
-        return;
+    my $To = '';
+    foreach (qw(To Cc Bcc)) {
+        if (!$To) {
+            $To .= "$Param{$_}" if ($Param{$_});
+        }
+        else {
+            $To .= ", $Param{$_}" if ($Param{$_});
+        }
     }
-
-    # set sendmail binary
-    my $Sendmail = $Result{Sendmail};
-
-    # invoke sendmail in order to send off mail, catching errors in a temporary file
-    my $FH;
-    if ( !open( $FH, '|-', "$Sendmail $Arg " ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't send message: $!!",
-        );
-        return;
-    }
-
-    # switch filehandle to utf8 mode if utf-8 is used
-    binmode $FH, ':utf8';
-
-    print $FH ${ $Param{Header} };
-    print $FH "\n";
-    print $FH ${ $Param{Body} };
-    close($FH);
-
-    # debug
-    if ( $Self->{Debug} > 2 ) {
-        $Self->{LogObject}->Log(
-            Priority => 'notice',
-            Message  => "Sent email to '$ToString' from '$Param{From}'.",
-        );
-    }
-
-    return 1;
-}
-
-sub Check {
-    my ( $Self, %Param ) = @_;
-
-    # get config data
-    my $Sendmail = $Self->{ConfigObject}->Get('SendmailModule::CMD');
-
-    # check if sendmail binary is there (strip all args and check if file exists)
-    my $SendmailBinary = $Sendmail;
-    $SendmailBinary =~ s/^(.+?)\s.+?$/$1/;
-    if ( !-f $SendmailBinary ) {
-        return ( Successful => 0, Message => "No such binary: $SendmailBinary!" );
+    # get sender 
+    # - SOLO_adress patch by Robert Kehl (2003-03-11) -
+    my @SOLO_address = Mail::Address->parse($Param{From});
+    my $RealFrom = $SOLO_address[0]->address();
+    # send mail
+    if (open( MAIL, "|".$Self->{Sendmail}." '$RealFrom' " )) {
+        print MAIL $Param{Header};
+        print MAIL "\n";
+        print MAIL $Param{Body};
+        close(MAIL);
+        # debug 
+        if ($Self->{Debug}) {
+            $Self->{LogObject}->Log(
+                Priority => 'notice',
+                Message => "Sent email to '$To' from '$Param{From}'. ".
+                  "Subject => $Param{Subject};",
+            );
+        }
+        return 1;
     }
     else {
-        return ( Successful => 1, Sendmail => $Sendmail );
+        # log error
+        $Self->{LogObject}->Log(
+            Priority => 'error', 
+            Message => "Can't use ".$Self->{Sendmail}.": $!!",
+        );
+        return;
     }
 }
+# --
 
 1;

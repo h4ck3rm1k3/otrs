@@ -1,182 +1,155 @@
 # --
 # Kernel/System/Email/SMTP.pm - the global email send module
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: SMTP.pm,v 1.29 2010/01/12 15:55:38 martin Exp $
+# $Id: SMTP.pm,v 1.3.2.1 2003/06/01 19:20:51 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::Email::SMTP;
 
 use strict;
-use warnings;
-
+use MIME::Words qw(:all);
+use Mail::Address;
 use Net::SMTP;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.29 $) [1];
+$VERSION = '$Revision: 1.3.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
+# --
 sub new {
-    my ( $Type, %Param ) = @_;
-
+    my $Type = shift;
+    my %Param = @_;
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
-
+    my $Self = {}; 
+    bless ($Self, $Type);
+    # get common opjects
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
     # check all needed objects
-    for (qw(ConfigObject LogObject EncodeObject)) {
-        die "Got no $_" if ( !$Self->{$_} );
+    foreach (qw(ConfigObject LogObject)) {
+        die "Got no $_" if (!$Self->{$_});
     }
-
-    # debug
-    $Self->{Debug} = $Param{Debug} || 0;
-    if ( $Self->{Debug} > 2 ) {
-
-        # shown on STDERR
-        $Self->{SMTPDebug} = 1;
-    }
-
-    # smtp timeout in sec
-    $Self->{SMTPTimeout} = 30;
-
+    $Self->{SMTPDebug} = 0; # shown on STDERR
+    $Self->{SMTPTimeout} = 30; # sec
     # get config data
-    $Self->{FQDN}     = $Self->{ConfigObject}->Get('FQDN');
-    $Self->{MailHost} = $Self->{ConfigObject}->Get('SendmailModule::Host')
-        || die "No SendmailModule::Host found in Kernel/Config.pm";
-    $Self->{SMTPPort} = $Self->{ConfigObject}->Get('SendmailModule::Port') || 'smtp(25)';
-    $Self->{User}     = $Self->{ConfigObject}->Get('SendmailModule::AuthUser');
+    $Self->{Sendmail} = $Self->{ConfigObject}->Get('Sendmail');
+    $Self->{SendmailBcc} = $Self->{ConfigObject}->Get('SendmailBcc');
+    $Self->{FQDN} = $Self->{ConfigObject}->Get('FQDN');
+    $Self->{Organization} = $Self->{ConfigObject}->Get('Organization');
+    $Self->{MailHost} = $Self->{ConfigObject}->Get('SendmailModule::Host') || 
+      die "No SendmailModule::Host found in Kernel/Config.pm";
+    $Self->{User} = $Self->{ConfigObject}->Get('SendmailModule::AuthUser');
     $Self->{Password} = $Self->{ConfigObject}->Get('SendmailModule::AuthPassword');
     return $Self;
 }
-
-sub Check {
-    my ( $Self, %Param ) = @_;
-
-    # try it 3 times to connect with the SMTP server
-    # (M$ Exchange Server 2007 have sometimes problems on port 25)
-    my $SMTP;
-    TRY:
-    for my $Try ( 1 .. 3 ) {
-
-        # connect to mail server
-        $SMTP = Net::SMTP->new(
-            $Self->{MailHost},
-            Hello   => $Self->{FQDN},
-            Port    => $Self->{SMTPPort},
-            Timeout => $Self->{SMTPTimeout},
-            Debug   => $Self->{SMTPDebug},
-        );
-
-        last TRY if $SMTP;
-
-        # sleep 0,3 seconds;
-        select( undef, undef, undef, 0.3 );
-    }
-
-    # return if no connect was possible
-    if ( !$SMTP ) {
-        return ( Successful => 0, Message => "Can't connect to $Self->{MailHost}: $!!" );
-    }
-
-    # use smtp auth if configured
-    if ( $Self->{User} && $Self->{Password} ) {
-        if ( !$SMTP->auth( $Self->{User}, $Self->{Password} ) ) {
-            my $Error = $SMTP->code() . $SMTP->message();
-            $SMTP->quit();
-            return (
-                Successful => 0,
-                Message =>
-                    "SMTP authentication failed: $Error! Enable Net::SMTP debug for more info!"
-            );
-        }
-    }
-
-    return ( Successful => 1, SMTP => $SMTP );
-}
-
+# --
 sub Send {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    # --
     # check needed stuff
-    for (qw(Header Body ToArray)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    # --
+    foreach (qw(Body)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-    if ( !$Param{From} ) {
-        $Param{From} = '';
-    }
-
-    # check mail configuration - is there a working smtp host?
-    my %Result = $Self->Check();
-    if ( !$Result{Successful} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => $Result{Message},
-        );
+    if (!$Param{To} && !$Param{Cc} && !$Param{Bcc}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need To, Cc or Bcc!");
         return;
     }
-
-    # set/get SMTP handle
-    my $SMTP = $Result{SMTP};
-
-    # set from, return it from was not accepted
-    if ( !$SMTP->mail( $Param{From} ) ) {
-        my $Error = $SMTP->code() . $SMTP->message();
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message =>
-                "Can't use from '$Param{From}': $Error! Enable Net::SMTP debug for more info!",
-        );
-        $SMTP->quit;
-        return;
+    if (!$Param{From}) {
+        $Param{From} = $Self->{ConfigObject}->Get('AdminEmail') || 'otrs@localhost';
     }
-
-    # get recipients
-    my $ToString = '';
-    for my $To ( @{ $Param{ToArray} } ) {
-        $ToString .= $To . ',';
-        if ( !$SMTP->to($To) ) {
-            my $Error = $SMTP->code() . $SMTP->message();
+    if (!$Param{Header}) {
+        $Param{Header} = "From: $Param{From}\n";
+        foreach (qw(To Cc)) {
+            $Param{Header} .= "$_: $Param{$_}\n" if ($Param{$_});
+        }
+        $Param{Header} .= "Subject: $Param{Subject}\n";
+        $Param{Header} .= "X-Mailer: OTRS Mail Service ($VERSION)\n";
+        $Param{Header} .= "Organization: $Self->{Organization}\n" if ($Self->{Organization});
+        $Param{Header} .= "X-Powered-By: OTRS - Open Ticket Request System (http://otrs.org/)\n";
+        $Param{Header} .= "Message-ID: <".time().".".rand(999999)."\@$Self->{FQDN}>\n";
+    }
+    my @To = ();
+    my $ToString = ();
+    foreach (qw(To Cc Bcc)) {
+        if ($Param{$_}) {
+            foreach my $Email (Mail::Address->parse($Param{$_})) {
+                push (@To, $Email->address());
+                if ($ToString) {
+                    $ToString .= ', ';
+                }
+                $ToString .= $Email->address();
+            }
+        }
+    }
+    # send mail
+    if ($Self->{SMTPObject} = Net::SMTP->new($Self->{MailHost}, Timeout => $Self->{SMTPTimeout}, Debug => $Self->{SMTPDebug})) {
+        if ($Self->{User} && $Self->{Password}) {
+            if (!$Self->{SMTPObject}->auth($Self->{User}, $Self->{Password})) {
+                $Self->{LogObject}->Log(
+                    Priority => 'error', 
+                    Message => "SMTP authentication failed! Enable debug for more info!",
+                );
+                $Self->{SMTPObject}->quit;
+                return;
+            }
+        }
+        # - SOLO_adress patch by Robert Kehl (2003-03-11) -
+        my @SOLO_address = Mail::Address->parse($Param{From});
+        my $RealFrom = $SOLO_address[0]->address();
+        if (!$Self->{SMTPObject}->mail($RealFrom)) {
+            # log error
             $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Can't send to '$To': $Error! Enable Net::SMTP debug for more info!",
+                Priority => 'error', 
+                Message => "Can't use from: $RealFrom! Enable debug for more info!",
             );
-            $SMTP->quit;
+            $Self->{SMTPObject}->quit;
             return;
         }
+        foreach (@To) {
+            if (!$Self->{SMTPObject}->to($_)) {
+                # log error
+                $Self->{LogObject}->Log(
+                    Priority => 'error', 
+                    Message => "Can't send to: $_! Enable debug for more info!",
+                );
+                $Self->{SMTPObject}->quit;
+                return;
+            }
+        }
+        $Self->{SMTPObject}->data();
+        $Self->{SMTPObject}->datasend($Param{Header});
+        $Self->{SMTPObject}->datasend("\n");
+        $Self->{SMTPObject}->datasend($Param{Body});
+        $Self->{SMTPObject}->dataend();
+        $Self->{SMTPObject}->quit;
+        # debug 
+        if ($Self->{Debug}) {
+            $Self->{LogObject}->Log(
+                Message => "Sent email to '$ToString' from '$Param{From}'.",
+            );
+        }
+        return 1;
     }
-
-    # encode utf8 header strings (of course, there should only be 7 bit in there!)
-    $Self->{EncodeObject}->EncodeOutput( $Param{Header} );
-
-    # encode utf8 body strings
-    $Self->{EncodeObject}->EncodeOutput( $Param{Body} );
-
-    # send data
-    if ( !$SMTP->data( ${ $Param{Header} }, "\n", ${ $Param{Body} } ) ) {
-        my $Error = $SMTP->code() . $SMTP->message();
+    else {
+        # log error
         $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't send message: $Error! Enable Net::SMTP debug for more info!"
+            Priority => 'error', 
+            Message => "Can't connect to $Self->{MailHost}: $!!",
         );
-        $SMTP->quit;
         return;
     }
-    $SMTP->quit;
-
-    # debug
-    if ( $Self->{Debug} > 2 ) {
-        $Self->{LogObject}->Log(
-            Priority => 'notice',
-            Message  => "Sent email to '$ToString' from '$Param{From}'.",
-        );
-    }
-    return 1;
 }
+# --
 
 1;
