@@ -6,9 +6,12 @@
   XML File for the OTRS database description
   Copyright (C) 2001-2003 Martin Edenhofer
 
-  $Id: otrs-schema.xml,v 1.7 2003/03/06 22:12:00 martin Exp $
+  $Id: otrs-schema.xml,v 1.8 2003/03/08 17:58:00 martin Exp $
 
   $Log: otrs-schema.xml,v $
+  Revision 1.8  2003/03/08 17:58:00  martin
+  changed reserved SQL words (read, write) to (permission_read, permission_write)
+
   Revision 1.7  2003/03/06 22:12:00  martin
   new implementation of groups permissions (added ro/rw options)
 
@@ -205,8 +208,8 @@
 <table name="group_user">
   <column name="user_id" required="true" type="INTEGER"/>
   <column name="group_id" required="true" type="INTEGER"/>
-  <column name="read" required="false" type="SMALLINT"/>
-  <column name="write" required="false" type="SMALLINT"/>
+  <column name="permission_read" required="false" type="SMALLINT"/>
+  <column name="permission_write" required="false" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
   <column name="change_time" required="true" type="DATE"/>
