@@ -1,142 +1,106 @@
 # --
 # Kernel/Modules/AgentSpelling.pm - spelling module
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2002-2003 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: AgentSpelling.pm,v 1.28 2010/07/01 14:08:53 mn Exp $
+# $Id: AgentSpelling.pm,v 1.2.2.1 2003/02/15 13:25:05 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::Modules::AgentSpelling;
 
 use strict;
-use warnings;
-
 use Kernel::System::Spelling;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.28 $) [1];
+$VERSION = '$Revision: 1.2.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
+# --
 sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Type = shift;
+    my %Param = @_;
+   
+    # allocate new hash for object 
+    my $Self = {}; 
+    bless ($Self, $Type);
+    
+    # get common opjects
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
 
     # check all needed objects
-    for (qw(TicketObject ParamObject DBObject QueueObject LayoutObject ConfigObject LogObject)) {
-        if ( !$Self->{$_} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
-        }
+    foreach (
+      'TicketObject',
+      'ParamObject', 
+      'DBObject', 
+      'QueueObject', 
+      'LayoutObject', 
+      'ConfigObject', 
+      'LogObject',
+    ) {
+        die "Got no $_" if (!$Self->{$_});
     }
 
+    $Self->{SpellingObject} = Kernel::System::Spelling->new(%Param);
+    # --
+    # get params
+    # --
+    foreach (qw(Body)) {
+        my $Value = $Self->{ParamObject}->GetParam(Param => $_);
+        $Self->{$_} = defined $Value ? $Value : '';
+    }
     return $Self;
 }
-
+# --
 sub Run {
-    my ( $Self, %Param ) = @_;
-
-    # get params
-    my $SpellLanguage = $Self->{ParamObject}->GetParam( Param => 'SpellLanguage' )
-        || $Self->{UserSpellDict}
-        || $Self->{ConfigObject}->Get('SpellCheckerDictDefault');
-
-    # get params
-    $Param{Body} = $Self->{ParamObject}->GetParam( Param => 'Body' );
-    $Param{Field} = $Self->{ParamObject}->GetParam( Param => 'Field' ) || 'Body';
-
-    # get and replace all wrong words
+    my $Self = shift;
+    my %Param = @_;
+    my $Output;
+    
+    $Param{Body} = $Self->{ParamObject}->GetParam(Param => 'Body');
+    $Param{SpellLanguage} = $Self->{ParamObject}->GetParam(Param => 'SpellLanguage') ||
+        $Self->{UserSpellDict} || $Self->{ConfigObject}->Get('SpellCheckerDictDefault');
+    # --
+    # get all wrong words
+    # --
     my %Words = ();
-    for ( 0 .. 300 ) {
-        my $Replace = $Self->{ParamObject}->GetParam( Param => "SpellCheck::Replace::$_" );
-        next if !$Replace;
-        my $Old = $Self->{ParamObject}->GetParam( Param => "SpellCheckOld::$_" );
-        my $New = $Self->{ParamObject}->GetParam( Param => "SpellCheckOrReplace::$_" )
-            || $Self->{ParamObject}->GetParam( Param => "SpellCheckOption::$_" );
-        if ( $Old && $New ) {
-            $Param{Body} =~ s/^$Old$/$New/g;
-            $Param{Body} =~ s/^$Old( |\n|\r|\s)/$New$1/g;
-            $Param{Body} =~ s/ $Old$/ $New/g;
-            $Param{Body} =~ s/(\s)$Old(\n|\r)/$1$New$2/g;
-            $Param{Body} =~ s/(\s)$Old(\s|:|;|<|>|\/|\\|\.|\!|%|&|\?)/$1$New$2/gs;
-            $Param{Body} =~ s/(\W)$Old(\W)/$1$New$2/g;
+    foreach ($Self->{ParamObject}->GetArray(Param => 'SpellCheckReplace')) { 
+        my ($Word, $Value) = split(/::/, $_);
+        my $OrWord = $Self->{ParamObject}->GetParam(Param => "SpellCheckOrReplace::$Word") || '';
+        if ($OrWord) { 
+            $Value = $OrWord;
+        }
+        $Words{$Word} = $Value;
+    }
+    # --
+    # replace all wrong words
+    # --
+    foreach (keys %Words) {
+        if ($Words{$_} && $Self->{ParamObject}->GetParam(Param => "SpellCheck::$_") eq "Replace") {
+            $Param{Body} =~ s/^$_ /$Words{$_} /g;
+            $Param{Body} =~ s/ $_$/ $Words{$_}/g;
+            $Param{Body} =~ s/(\s)$_(\s|:|;|<|>|\/|\|\.|\!|%|&|\?)/$1$Words{$_}$2/gs;
         }
     }
-
-    # do spell check
-    my $SpellingObject = Kernel::System::Spelling->new( %{$Self} );
-    my %SpellCheck     = $SpellingObject->Check(
-        Text          => $Param{Body},
-        SpellLanguage => $SpellLanguage,
+    my %SpellCheck = $Self->{SpellingObject}->Ckeck(
+        Text => $Param{Body},
+        SpellLanguage => $Param{SpellLanguage},
     );
-
-    # check error
-    if ( $SpellingObject->Error() ) {
-        return $Self->{LayoutObject}->ErrorScreen();
-    }
-
+    # -- 
     # start with page ...
-    my $Output = $Self->{LayoutObject}->Header( Type => 'Small' );
-    $Output .= $Self->_Mask(
-        SpellCheck    => \%SpellCheck,
-        SpellLanguage => $SpellLanguage,
+    # --
+    $Output .= $Self->{LayoutObject}->Header(Title => 'Spell Checker');
+    $Output .= $Self->{LayoutObject}->AgentSpelling(
+        SpellCheck => \%SpellCheck,
         %Param,
     );
-    $Output .= $Self->{LayoutObject}->Footer( Type => 'Small' );
+    $Output .= $Self->{LayoutObject}->Footer();
     return $Output;
 }
-
-sub _Mask {
-    my ( $Self, %Param ) = @_;
-
-    # dict language selection
-    $Param{SpellLanguageString} .= $Self->{LayoutObject}->BuildSelection(
-        Data       => $Self->{ConfigObject}->Get('PreferencesGroups')->{SpellDict}->{Data},
-        Name       => 'SpellLanguage',
-        SelectedID => $Param{SpellLanguage},
-    );
-
-    $Self->{LayoutObject}->Block(
-        Name => 'SpellCheckerExtern',
-        Data => \%Param,
-    );
-
-    # spellcheck
-    if ( $Param{SpellCheck} ) {
-        $Param{SpellCounter} = 0;
-        for ( sort { $a <=> $b } keys %{ $Param{SpellCheck} } ) {
-            if ( $Param{SpellCheck}->{$_}->{Word} && $Param{SpellCounter} <= 300 ) {
-                $Param{SpellCounter}++;
-                my %ReplaceWords = ();
-                if ( $Param{SpellCheck}->{$_}->{Replace} ) {
-                    for my $ReplaceWord ( @{ $Param{SpellCheck}->{$_}->{Replace} } ) {
-                        $ReplaceWords{$ReplaceWord} = $ReplaceWord;
-                    }
-                }
-                else {
-                    $ReplaceWords{''} = 'No suggestions';
-                }
-                $Param{SpellCheckString} = $Self->{LayoutObject}->BuildSelection(
-                    Data => \%ReplaceWords,
-                    Name => "SpellCheckOption::$Param{SpellCounter}",
-                );
-                $Self->{LayoutObject}->Block(
-                    Name => 'Row',
-                    Data => {
-                        %{ $Param{SpellCheck}->{$_} },
-                        OptionList => $Param{SpellCheckString},
-                        Count      => $Param{SpellCounter},
-                    },
-                );
-            }
-        }
-    }
-
-    # create & return output
-    return $Self->{LayoutObject}->Output( TemplateFile => 'AgentSpelling', Data => \%Param );
-}
+# --
 
 1;
