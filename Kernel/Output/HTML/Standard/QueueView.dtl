@@ -1,0 +1,35 @@
+# --
+# QueueView.dtl - provides HTML QueueView for AgentQueueView.pm
+# Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
+# --
+# $Id: QueueView.dtl,v 1.7.2.1 2003/09/30 17:05:41 martin Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# --
+<!-- start QueueView -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+<tr>
+  <td align="center" class="table0">
+  <b>$Env{"Box0"}$Text{"Queue"}: $Data{"SelectedQueue"}$Env{"Box1"}</b>
+  </font>
+  </td>
+</tr>
+<tr>
+  <td class="table2">
+  $Text{"Tickets shown"}: $Data{"Result"} -
+  $Text{"Page"}: $Data{"PageNavBar"} -
+  $Text{"Tickets available"}: $Data{"TicketsAvail"} -
+  $Text{"All tickets"}: $Data{"AllTickets"} 
+#  $Text{"Sub Tickets available"}: $Data{"AllSubTickets"} -
+#  $Text{"All tickets"}: $Data{"AllSubTickets"}
+  </td>
+</tr>
+<tr>
+  <td class="table1">
+  $Text{"Queues"}: $Data{"QueueStrg"}
+  </td>
+</tr>
+</table>
+<!-- end QueueView -->
