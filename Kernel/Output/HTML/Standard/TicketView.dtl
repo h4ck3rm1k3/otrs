@@ -1,0 +1,155 @@
+# --
+# TicketView.dtl - provides HTML TicketView for AgentQueueView.pm
+# Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
+#               2002 Stefan Wintermeyer <stefan@otrs.org>
+# --
+# $Id: TicketView.dtl,v 1.36.2.1 2003/05/19 15:07:45 martin Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# --
+<!-- start ticket -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3" cols="2">
+<tr>
+  <td align="left" width="50%" class="table0">
+    <b>$Env{"Box0"}$Config{"TicketHook"}: $Data{"TicketNumber"}$Env{"Box1"}</b>
+  </td>
+  <td align="right" width="50%" class="table0">
+    <b>$Env{"Box0"}$Text{"Age"}: $Data{"Age"}$Env{"Box1"}</b>
+  </font>
+  </td>
+</tr>
+</table>
+<table border="0" width="100%" cellspacing="0" cellpadding="3" cols="2">
+<tr>
+  <td align="left" width="60%" class="table2">
+  <a href="$Env{"Baselink"}Action=AgentLock&TicketID=$Data{"TicketID"}&QueueID=$Data{"QueueID"}" onmouseover="window.status='$Text{"Lock"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Lock"}</a> -
+  <a href="$Env{"Baselink"}Action=AgentZoom&TicketID=$Data{"TicketID"}" onmouseover="window.status='$Text{"Zoom"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Zoom"}</a> -
+# 
+# incase you want to add an delete link, replace DestQueueID with "delete" queue id 
+#  <a href="$Env{"Baselink"}Action=AgentMove&TicketID=$Data{"TicketID"}&DestQueueID=1" onmouseover="window.status='$Text{"Zoom"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Delete"}</a> -
+# 
+  <a href="$Env{"Baselink"}Action=AgentPriority&TicketID=$Data{"TicketID"}" onmouseover="window.status='$Text{"Priority"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Priority"}</a> -
+  <a href="$Env{"Baselink"}Action=AgentHistory&TicketID=$Data{"TicketID"}" onmouseover="window.status='$Text{"History"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"History"}</a> -
+  <a href="$Env{"Baselink"}Action=AgentNote&TicketID=$Data{"TicketID"}" onmouseover="window.status='$Text{"Note"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Note"}</a> -
+  <a href="$Env{"Baselink"}Action=AgentClose&TicketID=$Data{"TicketID"}" onmouseover="window.status='$Text{"Close"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Close"}</a>
+  </td>
+  <td align="right" width="40%" class="table2">
+  <b>$Text{"Created"}:</b> $Data{"Created"}
+  </td>
+</tr>
+</table>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="3" cols="2">
+<tr>
+  <td valign="top" width="75%" class="table1">
+  <table border="0" width="100%" cellspacing="0" cellpadding="1">
+    <tr>
+      <td valign="top" width="15%"><b>$Text{"From"}:</b></td>
+      <td width="85%"> $Data{"From"}</td>
+    </tr>
+    <tr>
+      <td valign="top"><b>$Text{"To"}:</b></td>
+      <td> $Data{"To"}</td>
+    </tr>
+# --
+# show cc?
+# --
+    <dtl if ($Data{"Cc"} ne "") { $Data{"ArticleCcString"} = "<tr><td valign="top"><b>$Text{"Cc"}:</b></td><td> $Data{"Cc"}</td></tr>"; }>
+    $Data{"ArticleCcString"}
+
+    <tr>
+      <td valign="top"><b>$Text{"Subject"}:</b></td>
+      <td> $Data{"Subject"}</td>
+    </tr>
+# --
+# show ArticleFreeKey1-3 and ArticleFreeValue1-3
+# --
+<dtl if ($Data{"ArticleFreeKey1"} ne "") { $Data{"ArticleFreeString1"} = "<tr><td valign="top"><b>$Data{"ArticleFreeKey1"}:</b></td><td> $Data{"ArticleFreeValue1"}</td></tr>"; }>
+<dtl if ($Data{"ArticleFreeKey2"} ne "") { $Data{"ArticleFreeString2"} = "<tr><td valign="top"><b>$Data{"ArticleFreeKey2"}:</b></td><td> $Data{"ArticleFreeValue2"}</td></tr>"; }>
+<dtl if ($Data{"ArticleFreeKey3"} ne "") { $Data{"ArticleFreeString3"} = "<tr><td valign="top"><b>$Data{"ArticleFreeKey3"}:</b></td><td> $Data{"ArticleFreeValue3"}</td></tr>"; }>
+     $Data{"ArticleFreeString1"}
+     $Data{"ArticleFreeString2"}
+     $Data{"ArticleFreeString3"}
+# --
+  </table>
+$Data{"TextNote"}
+<div class="message">
+$Data{"Body"}
+</div>
+  </td> 
+  <td width="25%" align="left" valign="top" class="PriorityID-$Data{"PriorityID"}">
+   <p align="left">
+    <table border="0">
+    <tr>
+      <td><b>$Text{"State"}:</b></td>
+      <td><font color="red">$Data{"State"}</font></td>
+    </tr>
+    <tr>
+      <td><b>$Text{"Priority"}:</b></td>
+      <td><font color="red">$Data{"Priority"}</font></td>
+    </tr>
+    <tr>
+      <td><b>$Text{"Queue"}:</b></td>
+      <td><font color="red">$Data{"Queue"}</font></td>
+    </tr>
+    <tr>
+      <td><b>$Text{"CustomerID"}:</b></td>
+      <td><a href="$Config{"CustomerDBLink"}" $Config{"CustomerDBLinkTarget"}>$Data{"CustomerIDHTML"}</a></td>
+    </tr>
+    <tr>
+      <td><b>$Text{"Escalation in"}:</b></td>
+      <td>$Data{"TicketOverTime"}</td>
+    </tr>
+# --
+# show TicketFreeKey1-2 and TicketFreeValue1-2
+# --
+<dtl if ($Data{"TicketFreeKey1"} ne "") { $Data{"TicketFreeString1"} = "<tr><td><b>$Data{"TicketFreeKey1"}:</b></td><td>$Data{"TicketFreeValue1"}</td></tr>"; }>
+<dtl if ($Data{"TicketFreeKey2"} ne "") { $Data{"TicketFreeString2"} = "<tr><td><b>$Data{"TicketFreeKey2"}:</b></td><td>$Data{"TicketFreeValue2"}</td></tr>"; }>
+    $Data{"TicketFreeString1"}
+    $Data{"TicketFreeString2"}
+# --
+   </table>
+
+# --
+# show customer info table 
+# --
+<dtl if ($Config{"ShowCustomerInfoQueue"} eq "1") { $Data{"CustomerInfo"} = "<p align="left"><hr><b>$Text{"Customer Info"}:</b> $Data{"CustomerTable"}<hr></p>"; }>
+    $Data{"CustomerInfo"}
+
+   <br>
+
+    <table border="0" cellspacing="0" cellpadding="1" width="95%">
+    <tr> 
+      <td>
+# --
+# show compose links
+$Data{"TicketAnswer"}
+# --
+      </td>
+    </tr>
+    </table>
+  </p>
+  <p>
+    <table border="0" cellspacing="0" cellpadding="1" width="95%">
+    <tr> 
+      <td>
+       <b>$Text{"Change queue"}:</b><br>
+       <form action="$Env{"CGIHandle"}" method="get">
+       <input type="hidden" name="Action" value="AgentMove">
+       <input type="hidden" name="Subaction" value="InRage">
+       <input type="hidden" name="QueueID" value="$Data{"QueueID"}">
+       <input type="hidden" name="TicketID" value="$Data{"TicketID"}">
+       $Data{"MoveQueuesStrg"}
+       <input class="button" type="submit" value="$Text{"Move"}">
+       </form>
+      </td>
+    </tr>
+    </table>
+
+   </p>  
+  </td>
+</tr>
+</table>
+<!-- end ticket -->

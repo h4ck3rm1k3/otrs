@@ -1,85 +1,110 @@
 # --
 # Header.dtl - provides global HTML header
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: Header.dtl,v 1.111 2011/12/23 10:56:02 mg Exp $
+# $Id: Header.dtl,v 1.32.2.1 2003/05/19 15:07:45 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
-#
 # http headers
-Content-Type: text/html; charset=$Env{"UserCharset"};
-Content-Disposition: $Data{"ContentDisposition"}
-X-Powered-By: $Config{"Product"} $Config{"Version"} - Open Ticket Request System (http://otrs.org/)
+# --
+Content-Type: text/html; charset=$Env{"UserCharset"}; 
+X-Powered-By: $Env{"Product"} $Env{"Version"} - Open Ticket Request System (http://otrs.org)
+X-Wanted: I think you are smart. I'm looking for smart people!
 Expires: Tue, 1 Jan 1980 12:00:00 GMT
 Cache-Control: no-cache
 Pragma: no-cache
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-$Include{"Copyright"}
-$Include{"HTMLHead"}
-<body class="$QData{"BodyClass"}">
-    <a name="Top"></a>
-    <div id="Header" class="ARIARoleBanner">
-        <div id="Logo"></div>
-<!-- dtl:block:ToolBar -->
-        <ul id="ToolBar">
-<!-- dtl:block:ToolBarItem -->
-            <li class="$QData{"Class"}"><a href="$Data{"Link"}" accesskey="$QData{"AccessKey"}" title="$Text{"$Data{"Description"}"}: $QData{"Count"}$QData{"AccessKeyReference"}"><span class="Counter">$QData{"Count"}</span> $Text{"Description"}<span class="Gloss"></span></a></li>
-<!-- dtl:block:ToolBarItem -->
-<!-- dtl:block:ToolBarSearchProfile -->
-            <li class="Extended SearchProfile">
-                <form action="$Env{"CGIHandle"}" method="post" name="SearchProfile">
-                    <input type="hidden" name="Action" value="AgentTicketSearch"/>
-                    <input type="hidden" name="Subaction" value="LoadProfile"/>
-                    <input type="hidden" name="SearchTemplate" value="$Text{"Search"}"/>
-                    $Data{"Link"}
-#                    <a href="#" id="ToolbarProfileSearch" title="$Text{"$Data{"Description"}"}  ($QData{"AccessKey"})" accesskey="$QData{"AccessKey"}" $Data{"LinkOption"}>$Text{"$Data{"Name"}"}<span class="Gloss"></span></a>
-                </form>
-            </li>
-<!-- dtl:js_on_document_complete -->
-            <script type="text/javascript">//<![CDATA[
-                $('#ToolBarSearchProfile').bind('change', function (Event) {
-                    $(Event.target).closest('form').submit();
-                    Event.preventDefault();
-                    Event.stopPropagation();
-                    return false;
-                });
-            //]]></script>
-<!-- dtl:js_on_document_complete -->
-<!-- dtl:block:ToolBarSearchProfile -->
-<!-- dtl:block:ToolBarSearchFulltext -->
-            <li class="Extended SearchFulltext">
-                <form action="$Env{"CGIHandle"}" method="post" name="SearchFulltext">
-                    <input type="hidden" name="Action" value="AgentTicketSearch"/>
-                    <input type="hidden" name="Subaction" value="Search"/>
-                    <input type="hidden" name="SearchTemplate" value="$Text{"Search"}"/>
-                    <input type="hidden" name="CheckTicketNumberAndRedirect" value="1"/>
-                    <input type="text" size="$QData{"Size"}" name="Fulltext" id="Fulltext" value="$QData{"Fulltext"}" title="$Text{"Fulltext Search"}"/>
-#                    <a href="#" id="ToolbarFulltextSearch" title="$Text{"$Data{"Description"}"} ($QData{"AccessKey"})" accesskey="$QData{"AccessKey"}" $Data{"LinkOption"}>$Text{"$Data{"Name"}"}<span class="Gloss"></span></a>
-                </form>
-            </li>
-<!-- dtl:block:ToolBarSearchFulltext -->
-        </ul>
-<!-- dtl:block:ToolBar -->
 
-        <div id="UserInfo">
-<!-- dtl:block:DebugRTLButton -->
-            <button type="button" onclick="Core.Debug.SimulateRTLPage();">Simulate RTL</button>
-<!-- dtl:block:DebugRTLButton -->
-<!-- dtl:block:Login -->
-            $Text{"You are logged in as"}
-            <a href="$Env{"Baselink"}Action=AgentPreferences" title="$Text{"Edit personal preferences"}">$QEnv{"UserFirstname"} $QEnv{"UserLastname"}</a>
-<!-- dtl:block:Login -->
-<!-- dtl:block:LoginWithoutLink -->
-            $Text{"You are logged in as"} $QEnv{"UserFirstname"} $QEnv{"UserLastname"}
-<!-- dtl:block:LoginWithoutLink -->
-<!-- dtl:block:Logout -->
-            <a class="LogoutButton" id="LogoutButton" href="$Env{"Baselink"}Action=Logout;$QEnv{"ChallengeTokenParam"}" title="$Text{"Logout"}"></a>
-<!-- dtl:block:Logout -->
-        </div>
-    </div>
+# --
+# html comment
+# --
+
+<!-- OTRS: Copyright 2001-2003, OTRS Project. This Software is under the GPL. -->
+<!--          Web: http://otrs.org/ - Lists: http://lists.otrs.org/           -->
+<!--         GNU Public License: http://www.gnu.org/licenses/gpl.txt          -->
+# --
+# set some html variables
+# --
+<dtl set $Env{"Box0"} = "[ ">
+<dtl set $Env{"Box1"} = " ]">
+<dtl set $Env{"Images"} = "/otrs-web/images/Standard/">
+# --
+# check refresh
+# --
+<dtl if ($Data{"Refresh"} ne "") { $Data{"MetaHttpEquiv"} = "<meta http-equiv="refresh" content="$Data{"Refresh"}">"; }>
+# --
+# create $Data{"UserLoginTop"} if user is loged in
+# --
+<dtl if ($Env{"UserLogin"} ne "") { $Data{"UserLoginTop"} = "($Env{"UserEmail"})"; }>
+# --
+<html>
+<head>
+    $Data{"MetaHttpEquiv"}
+    <title>OTRS :: $Text{"$Data{"Title"}"}</title>
+<style type="text/css">
+<!--
+# body
+  body { font-family:Geneva,Helvetica,Arial,sans-serif;font-size:11pt;background-color:#bbddff;color:black; }
+  a { color:#557799;} 
+  a:hover { color:#002244;text-decoration:none; }
+  pre { font-family:Courier,monospace,fixed;font-size:12px; }
+  td,th { font-size:12px;font-family:Geneva,Helvetica,Arial,sans-serif; }
+# header
+  .header { color:#ffffff;background-color:#000000;font-size:12px; } 
+  a.headeritem { color:#ffffff;text-decoration:none; }
+  a.headeritem:hover { color:#dedede;text-decoration:underline; }
+# nav bar
+  .nav { color:#000000;background-color:#ffffff;font-size:10px; } 
+  a.navitem { color:#557799;font-size:11px; }
+  a.navitem:hover { color:#002244;font-size:11px; }
+# menu bar
+  .menu { color:#000000;background-color:#ffffff;font-size:10px; } 
+  a.menuitem { color:#557799;font-size:12px; }
+  a.menuitem:hover { color:#002244;font-size:12px; }
+# footer
+  .footer { color:#ffffff;background-color:#000000;font-size:10px; } 
+  a.footeritem { color:#ffffff;text-decoration:none; }
+  a.footeritem:hover { color:#dddddd;text-decoration:underline; }
+# small
+  .small { color:#000000;font-family:Geneva,Helvetica,Arial,sans-serif;font-size:10px; }
+  a.small { color:#000000;text-decoration:none; }
+  a.small:hover { color:#222222;text-decoration:underline; }
+# form
+  form {margin:0px;}
+  input {font-family:Geneva,Helvetica,Arial,Helvetica,sans-serif;font-size:12px;}
+  .button {color:black;background-color:#dddddd;border-bottom:thin solid #222244;border-right:thin solid #222244;border-top:thin solid #bbbbbb;border-left:thin solid #bbbbbb;font-size:12px;font-family:Verdana,Geneva,Helvetica,Arial,sans-serif;font-weight:normal;}
+# table color
+  .table0 { color:#ffffff;background-color:#000000;font-size:13px;font-family:Geneva,Helvetica,Arial,sans-serif;}
+  .table1 { color:#000000;background-color:#ffffff;font-size:12px;font-family:Geneva,Helvetica,Arial,sans-serif;}
+  .table2 { color:#000000;background-color:#eeeeee;font-size:12px;font-family:Geneva,Helvetica,Arial,sans-serif;}
+# message 
+  .message { color:#000000;font-size:12px;font-family:monospace, fixed; } 
+# article type color 
+  .agent-email-external { background-color:#ccffcc; }
+  .agent-note-internal { background-color:#ffcccc; }
+  .agent-note-external { background-color:#eeeeee; }
+# priority id color
+  .PriorityID-1 { background-color:#eeeeee;font-size:12px;font-family:Geneva,Helvetica,Arial,sans-serif; }
+  .PriorityID-2 { background-color:#eeeeee;font-size:12px;font-family:Geneva,Helvetica,Arial,sans-serif; }
+  .PriorityID-3 { background-color:#eeeeee;font-size:12px;font-family:Geneva,Helvetica,Arial,sans-serif; }
+  .PriorityID-4 { background-color:#ffcccc;font-size:12px;font-family:Geneva,Helvetica,Arial,sans-serif; }
+  .PriorityID-5 { background-color:#ffaaaa;font-size:12px;font-family:Geneva,Helvetica,Arial,sans-serif; }
+//-->
+</style>
+</head>
+<a name="top"></a>
+<body>
+<table border="0" width="100%" cellspacing="0" cellpadding="3" cols="2">
+<tr>
+  <td align="left" width="20%" class="header">
+  <b>$Env{"Box0"}<a href="$Env{"Baselink"}" onmouseover="window.status='$Text{"Home"}'; return true;" onmouseout="window.status='';" class="headeritem">OTRS</a>$Env{"Box1"}</b>
+  </td>
+  <td align="right" width="80%" class="header">
+   $Env{"UserFirstname"} $Env{"UserLastname"} $Data{"UserLoginTop"} $Env{"TimeLong"}
+  </td>
+</tr>
+</table>
+<!-- end header -->
