@@ -1,0 +1,120 @@
+# --
+# AdminSignatureForm.dtl - provides HTML form for AdminSignature
+# Copyright (C) 2001-2004 Martin Edenhofer <martin+code@otrs.org>
+# --
+# $Id: AdminSignatureForm.dtl,v 1.11.2.1 2004/03/29 13:12:18 martin Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# --
+<!-- start form -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3" cols="2">
+<tr>
+  <td align="left" colspan="2" class="table0">
+    <b>$Env{"Box0"}$Text{"Signature Management"}$Env{"Box1"}</b>
+  </td>
+</tr>
+<tr align="center" valign="top">
+  <td width="30%" class="table1">
+    $Text{"Change"}:
+    <br>
+    <form action="$Env{"CGIHandle"}" method="post">
+    <input type="hidden" name="Action" value="$Env{"Action"}">
+    <input type="hidden" name="Subaction" value="Change">
+    $Data{"SignatureOption"}
+    <br>
+    <input class="button" type="submit" value="$Text{"change"}">
+    </form>
+  </td> 
+  <td width="70%" class="table1">
+# --
+# check subaction
+# --
+<dtl set $Data{"Headline"} = "Add">
+<dtl if ($Env{"Subaction"} eq "Change") { $Data{"Headline"} = "Update"; }>
+# set subaction!
+<dtl if ($Env{"Subaction"} eq "") { $Env{"Subaction"} = "Add"; }>
+# check add link
+<dtl if ($Env{"Subaction"} eq "Change") { $Data{"AddLink"} = "(Click here to add)"; }>
+# --
+    $Text{"$Data{"Headline"}"} <a href="$Env{"Baselink"}Action=AdminSignature">$Text{"$Data{"AddLink"}"}</a>: 
+    <br>
+    <form action="$Env{"CGIHandle"}" method="post">
+    <input type="hidden" name="Action" value="$Env{"Action"}">
+    <input type="hidden" name="Subaction" value="$Env{"Subaction"}Action">
+    <input type="hidden" name="ID" value="$QData{"ID"}">
+    <table border="0" cellspacing="0" cellpadding="3">
+    <tr>
+      <td>$Text{"Name"}: </td>
+      <td> <input type="text" name="Name" value="$QData{"Name"}" size="35" maxlength="50"></td>
+    </tr>
+    <tr>
+      <td>$Text{"Signature"}: </td>
+      <td> <textarea rows="10" cols="60" name="Signature">$QData{"Signature"}</textarea></td>
+    </tr>
+    <tr>
+      <td>$Text{"Valid"}: </td>
+      <td> $Data{"ValidOption"}</td>
+    </tr>
+    <tr>
+      <td>$Text{"Comment"}: </td>
+      <td> <input type="text" name="Comment" value="$QData{"Comment"}" size="50" maxlength="50"></td>
+    </tr>
+    </table>
+    <input class="button" type="submit" value="$Text{"$Data{"Headline"}"}"> 
+    </form>
+  </td>
+</tr>
+</table>
+<!-- end form -->
+<!-- start note -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+<tr valign="top">
+  <td class="table2">
+    <b>$Env{"Box0"}$Text{"Note"}$Env{"Box1"}</b> 
+  </td>
+</tr>
+<tr valign="top">
+  <td class="table1">
+  <p>
+  $Text{"Useable options"}:
+    <table>
+     <tr>
+      <td><b>&lt;OTRS_FIRST_NAME&gt;</b></td>
+      <td>$Text{"for agent firstname"}</td>
+     </tr>
+     <tr>
+      <td><b>&lt;OTRS_LAST_NAME&gt;</b></td>
+      <td>$Text{"for agent lastname"}</td>
+     </tr>
+     <tr>
+      <td><b>&lt;OTRS_USER_ID&gt;</b></td>
+      <td>$Text{"for agent user id"}</td>
+     </tr>
+     <tr>
+      <td><b>&lt;OTRS_USER_LOGIN&gt;</b></td>
+      <td>$Text{"for agent login"}</td>
+     </tr>
+    </table>
+   </p>
+    <p>
+    $Text{"Example"}:
+    <hr>
+    <pre>
+ Your OTRS-Team
+
+  &lt;OTRS_FIRST_NAME&gt; &lt;OTRS_LAST_NAME&gt;
+
+--
+ Super Support Company Inc. - Waterford Business Park
+ 5201 Blue Lagoon Drive - 8th Floor & 9th Floor - Miami, 33126 USA
+ Email: hot@florida.com - Web: http://hot.florida.com/
+--
+    </pre>
+    <hr>
+    </p>
+  </td>
+</tr>
+</table>
+<!-- end note -->

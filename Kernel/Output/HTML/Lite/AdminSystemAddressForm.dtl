@@ -1,0 +1,116 @@
+# --
+# AdminSystemAddressForm.dtl - provides HTML form for AdminSystemAddess
+# Copyright (C) 2001-2004 Martin Edenhofer <martin+code@otrs.org>
+# --
+# $Id: AdminSystemAddressForm.dtl,v 1.12.2.1 2004/03/29 13:12:18 martin Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# --
+<!-- start form -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3" cols="2">
+<tr> 
+  <td align="left" colspan="2" class="table0">
+  <b>$Env{"Box0"}$Text{"System Email Addresses Management"}$Env{"Box1"}</b>
+  </td>
+</tr>
+<tr align="center" valign="top">
+  <td width="40%" class="table1">
+    $Text{"Change"}:
+    <br>
+    <form action="$Env{"CGIHandle"}" method="post">
+    <input type="hidden" name="Action" value="$Env{"Action"}">
+    <input type="hidden" name="Subaction" value="Change">
+    $Data{"SystemAddressOption"}
+    <br>
+    <input class="button" type="submit" value="$Text{"change"}">
+    </form>
+  </td> 
+  <td width="60%" class="table1">
+# --
+# check subaction
+# --
+<dtl set $Data{"Headline"} = "Add">
+<dtl if ($Env{"Subaction"} eq "Change") { $Data{"Headline"} = "Update"; }>
+# set subaction!
+<dtl if ($Env{"Subaction"} eq "") { $Env{"Subaction"} = "Add"; }>
+# check add link
+<dtl if ($Env{"Subaction"} eq "Change") { $Data{"AddLink"} = "(Click here to add)"; }>
+# --
+    $Text{"$Data{"Headline"}"} <a href="$Env{"Baselink"}Action=$Env{"Action"}">$Text{"$Data{"AddLink"}"}</a>: 
+    <br>
+    <form action="$Env{"CGIHandle"}" method="post">
+    <input type="hidden" name="Action" value="$Env{"Action"}">
+    <input type="hidden" name="Subaction" value="$Env{"Subaction"}Action">
+    <input type="hidden" name="ID" value="$QData{"ID"}">
+    <table border="0" cellspacing="0" cellpadding="3">
+    <tr>
+      <td class="table1">$Text{"Email"}: </td>
+      <td class="table1"> <input type="text" name="Name" value="$QData{"Name"}" size="35" maxlength="50"></td>
+    </tr>
+    <tr>
+      <td class="table1">$Text{"Realname"}: </td>
+      <td class="table1"> <input type="text" name="Realname" value="$QData{"Realname"}" size="35" maxlength="50"></td>
+    </tr>
+    <tr>
+      <td class="table1">$Text{"Queue"}: </td>
+      <td class="table1"> $Data{"QueueOption"}</td>
+    </tr>
+    <tr>
+      <td class="table1">$Text{"Valid"}: </td>
+      <td class="table1"> $Data{"ValidOption"}</td>
+    </tr>
+    <tr>
+      <td class="table1">$Text{"Comment"}: </td>
+      <td class="table1"> <input type="text" name="Comment" value="$QData{"Comment"}" size="50" maxlength="50"></td>
+    </tr>
+    </table>
+    <input class="button" type="submit" value="$Text{"$Data{"Headline"}"}"> 
+    </form>
+  </td>
+</tr>
+</table>
+<!-- end form -->
+<!-- start note -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+<tr valign="top">
+  <td class="table2">
+    <b>$Env{"Box0"}$Text{"Note"}$Env{"Box1"}</b>
+  </td>
+</tr>
+<tr valign="top">
+  <td class="table1">
+  <p>
+  $Text{"All incoming emails with this "Email" (To:) will be dispatched in the selected queue!"}
+  </p>
+  <p>
+    $Text{"Example"}:
+    <hr>
+    <form action="/">
+      <table>
+       <tr>
+        <td class="table1">$Text{"Email"}:</td>
+        <td class="table1"><input type="text" name="Email" value="support@company.com" size="50" maxlength="50"></td>
+       </tr>
+       <tr>
+        <td class="table1">$Text{"Realname"}:</td>
+        <td class="table1"><input type="text" name="Realname" value="Support Team" size="50" maxlength="50"></td>
+       </tr>
+       <tr>
+        <td class="table1">$Text{"Queue"}:</td>
+        <td class="table1"><select name="QueueID"  >
+<option VALUE="3">Tech (1)</option>
+<option VALUE="4">Misc (2)</option>
+<option VALUE="2">Raw (3)</option>
+</select>
+       </td>
+       </tr>
+      </table>
+    </form>
+    <hr>
+    </p>
+  </td>
+</tr>
+</table>
+<!-- end note -->

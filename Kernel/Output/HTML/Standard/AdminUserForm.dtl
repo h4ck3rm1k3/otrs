@@ -1,0 +1,103 @@
+# --
+# AdminUserForm.dtl - provides HTML form for AdminUser
+# Copyright (C) 2001-2004 Martin Edenhofer <martin+code@otrs.org>
+# --
+# $Id: AdminUserForm.dtl,v 1.19.2.1 2004/03/29 13:12:19 martin Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# --
+<!-- start form -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3" cols="2">
+<tr>
+  <td align="left" colspan="2" class="table0">
+    <b>$Env{"Box0"}$Text{"User Management"}$Env{"Box1"}</b>
+  </td>
+</tr>
+<tr align="center" valign="top">
+  <td width="30%" class="table1">
+    $Text{"Change"}:
+    <br>
+    <form action="$Env{"CGIHandle"}" method="post">
+    <input type="hidden" name="Action" value="$Env{"Action"}">
+    <input type="hidden" name="Subaction" value="Change">
+    $Data{"UserOption"}
+    <br>
+    <input class="button" type="submit" value="$Text{"change"}">
+    </form>
+  </td> 
+  <td width="70%" class="table1">
+# --
+# check subaction
+# --
+<dtl set $Data{"Headline"} = "Add">
+<dtl if ($Env{"Subaction"} eq "Change") { $Data{"Headline"} = "Update"; }>
+# set subaction!
+<dtl if ($Env{"Subaction"} eq "") { $Env{"Subaction"} = "Add"; }>
+# check add link
+<dtl if ($Env{"Subaction"} eq "Change") { $Data{"AddLink"} = "(Click here to add)"; }>
+# --
+    $Text{"$Data{"Headline"}"} <a href="$Env{"Baselink"}Action=AdminUser">$Text{"$Data{"AddLink"}"}</a>: 
+    <br>
+    <form action="$Env{"CGIHandle"}" method="post">
+    <input type="hidden" name="Action" value="$Env{"Action"}">
+    <input type="hidden" name="Subaction" value="$Env{"Subaction"}Action">
+    <input type="hidden" name="ID" value="$QData{"UserID"}">
+    <table border="0" cellspacing="0" cellpadding="3">
+    <tr>
+      <td width="40%">$Text{"Login"}: </td>
+      <td width="60%"> <input type="text" name="Login" value="$QData{"UserLogin"}" size="35" maxlength="50"></td>
+    </tr>
+    <tr>
+      <td>$Text{"Salutation"}: </td>
+      <td> <input type="text" name="Salutation" value="$QData{"UserSalutation"}" size="35" maxlength="50"></td>
+    </tr>
+    <tr>
+      <td>$Text{"Firstname"}: </td>
+      <td> <input type="text" name="Firstname" value="$QData{"UserFirstname"}" size="35" maxlength="50"></td>
+    </tr>
+    <tr>
+      <td>$Text{"Lastname"}: </td>
+      <td> <input type="text" name="Lastname" value="$QData{"UserLastname"}" size="35" maxlength="50"></td>
+    </tr>
+    <tr>
+      <td>$Text{"Password"}: </td>
+      <td> <input type="password" name="Pw" value="$QData{"UserPw"}" size="35" maxlength="50"></td>
+    </tr>
+    <tr>
+      <td>$Text{"Email"}: </td>
+      <td> <input type="text" name="Email" value="$QData{"UserEmail"}" size="35" maxlength="50"></td>
+    </tr>
+    <tr>
+      <td>$Text{"Valid"}: </td>
+      <td> $Data{"ValidOption"}</td>
+    </tr>
+    $Data{"Preferences"}
+    </table>
+    <input class="button" type="submit" value="$Text{"$Data{"Headline"}"}">
+    </form>
+  </td>
+</tr>
+</table>
+<!-- end form -->
+
+<!-- start note -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+<tr valign="top">
+  <td class="table2">
+    <b>$Env{"Box0"}$Text{"Note"}$Env{"Box1"}</b>
+  </td>
+</tr>
+<tr valign="top">
+  <td class="table1">
+  <p>
+  $Text{"User will be needed to handle tickets."}
+  </p>
+  <p>
+  $Text{"Attention"}: <a href="$Env{"Baselink"}Action=AdminUserGroup">$Text{"Don't forget to add a new user to groups!"}</a>
+  </p>
+  </td>
+</tr>
+</table>
+<!-- end note -->

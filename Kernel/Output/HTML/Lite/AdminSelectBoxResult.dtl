@@ -1,0 +1,32 @@
+# --
+# AdminSelectBoxResult.dtl - provides HTML result for SelectBox
+# Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
+# --
+# $Id: AdminSelectBoxResult.dtl,v 1.9.4.1 2004/03/29 13:12:18 martin Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# --
+<!-- start form -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+<tr> 
+  <td align="left" class="table0"> 
+    <b>$Env{"Box0"}$Text{"Select Box Result"}$Env{"Box1"}</b>
+  </td>
+</tr>
+
+<tr> 
+  <td align="left" valign="top" class="table1">
+
+  <b>$Text{"SQL"}:</b> '$QData{"SQL"}' - <b>$Text{"Limit"}:</b> $QData{"Limit"}
+
+<hr>
+
+$Data{"Result"}
+
+  </td> 
+</tr>
+</table>
+<!-- end form -->
+

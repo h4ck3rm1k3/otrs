@@ -1,0 +1,94 @@
+# --
+# AgentZoomStatus.dtl - provides HTML AgentZoom for AgentZoom.pm
+# Copyright (C) 2001-2004 Martin Edenhofer <martin+code@otrs.org>
+#               2002 Stefan Wintermeyer <stefan@otrs.org>
+# --
+# $Id: AgentZoomStatus.dtl,v 1.6.2.1 2004/03/29 13:12:18 martin Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# --
+<!-- start ticket status -->
+    <table border="0" cellspacing="1" cellpadding="0" width="95%">
+    <tr valign="top">
+      <td><b>$Text{"State"}:</b></td>
+      <td><font color="red"><div title="$Quote{"$Text{"$Data{"State"}"}"}">$Quote{"$Text{"$Data{"State"}"}","18"}</div></font></td>
+    </tr>
+    <tr valign="top">
+      <td><b>$Text{"Priority"}:</b></td>
+      <td><font color="red"><div title="$Quote{"$Text{"$Data{"Priority"}"}"}">$Quote{"$Text{"$Data{"Priority"}"}","18"}</div></font></td>
+    </tr>
+    <tr valign="top">
+      <td><b>$Text{"Queue"}:</b></td>
+      <td><font color="red"><div title="$Quote{"$Data{"Queue"}"}">$Quote{"$Data{"Queue"}","18"}</div></font></td>
+    </tr>
+    <tr valign="top">
+      <td><b>$Text{"Lock"}:</b></td>
+      <td><font color="red"><div title="$Quote{"$Text{"$Data{"Lock"}"}"}">$Quote{"$Text{"$Data{"Lock"}"}","18"}</div></font></td>
+    </tr>
+    <tr valign="top">
+      <td><b>$Text{"CustomerID"}:</b></td>
+      <td><a href="$Config{"CustomerDBLink"}" $Config{"CustomerDBLinkTarget"}>$Quote{"$Data{"CustomerID"}","18"}</a></td>
+    </tr>
+    <tr valign="top">
+      <td><b>$Text{"Accounted time"}:</b></td>
+      <td>$Data{"TicketTimeUnits"}</td>
+    </tr>
+    <tr valign="top">
+      <td><b>$Text{"Escalation in"}:</b></td>
+      <td>$Data{"TicketOverTime"}</td>
+    </tr>
+# --
+# use ticket is pending 
+# --
+<dtl if ($Data{"PendingUntil"} ne "") { $Data{"PendingUntilString"} = "<tr valign="top"><td><b>$Text{"Pending till"}:</b></td><td>$Data{"PendingUntil"}</td></tr>"; }>
+    $Data{"PendingUntilString"}
+    <tr  valign="top">
+      <td><b>$Text{"Owner"}:</b></td>
+      <td><div title="$Data{"Owner"} ($Data{"UserFirstname"}$Data{"UserLastname"})">$Quote{"$Data{"Owner"}","18"} ($Quote{"$Data{"UserFirstname"} $Data{"UserLastname"}","18"})</div></td>
+    </tr>
+# --
+# ticket links
+# --
+<dtl if ($Data{"TicketLink1"} ne "") { $Data{"TicketLinkString1"} = "<a href="$Env{"Baselink"}Action=AgentZoom&TicketID=$Data{"TicketLinkID1"}">$Data{"TicketLink1"}</a> "; }>
+<dtl if ($Data{"TicketLink2"} ne "") { $Data{"TicketLinkString2"} = "<a href="$Env{"Baselink"}Action=AgentZoom&TicketID=$Data{"TicketLinkID2"}">$Data{"TicketLink2"}</a> "; }>
+<dtl if ($Data{"TicketLink3"} ne "") { $Data{"TicketLinkString3"} = "<a href="$Env{"Baselink"}Action=AgentZoom&TicketID=$Data{"TicketLinkID3"}">$Data{"TicketLink3"}</a> "; }>
+<dtl if ($Data{"TicketLink4"} ne "") { $Data{"TicketLinkString4"} = "<a href="$Env{"Baselink"}Action=AgentZoom&TicketID=$Data{"TicketLinkID4"}">$Data{"TicketLink4"}</a> "; }>
+<dtl if ($Data{"TicketLink5"} ne "") { $Data{"TicketLinkString5"} = "<a href="$Env{"Baselink"}Action=AgentZoom&TicketID=$Data{"TicketLinkID5"}">$Data{"TicketLink5"}</a> "; }>
+<dtl if ($Data{"TicketLink6"} ne "") { $Data{"TicketLinkString6"} = "<a href="$Env{"Baselink"}Action=AgentZoom&TicketID=$Data{"TicketLinkID6"}">$Data{"TicketLink6"}</a> "; }>
+<dtl if ($Data{"TicketLink7"} ne "") { $Data{"TicketLinkString7"} = "<a href="$Env{"Baselink"}Action=AgentZoom&TicketID=$Data{"TicketLinkID7"}">$Data{"TicketLink7"}</a> "; }>
+# build one link string
+<dtl set $Data{"TicketLinkString"} = "$Data{"TicketLinkString1"}$Data{"TicketLinkString2"}$Data{"TicketLinkString3"}$Data{"TicketLinkString4"}$Data{"TicketLinkString5"}$Data{"TicketLinkString6"}$Data{"TicketLinkString7"}">
+$Data{"Test1"}
+# show link row if needed
+<dtl if ($Data{"TicketLinkString"} ne "") { $Data{"TicketLinkStringTable"} = "<tr valign="top"><td><b>$Text{"Link"}:</b></td><td>$Data{"TicketLinkString"}</td></tr>"; }>
+    $Data{"TicketLinkStringTable"}
+
+# --
+# use this if you want to show TicketFreeKey1-2 and TicketFreeText1-2
+# --
+<dtl if ($Data{"TicketFreeKey1"} ne "") { $Data{"TicketFreeString1"} = "<tr valign="top"><td><b>$QData{"TicketFreeKey1"}:</b></td><td>$QData{"TicketFreeText1","20"}</td></tr>"; }>
+<dtl if ($Data{"TicketFreeKey2"} ne "") { $Data{"TicketFreeString2"} = "<tr valign="top"><td><b>$QData{"TicketFreeKey2"}:</b></td><td>$QData{"TicketFreeText2","20"}</td></tr>"; }>
+<dtl if ($Data{"TicketFreeKey3"} ne "") { $Data{"TicketFreeString3"} = "<tr valign="top"><td><b>$QData{"TicketFreeKey3"}:</b></td><td>$QData{"TicketFreeText3","20"}</td></tr>"; }>
+<dtl if ($Data{"TicketFreeKey4"} ne "") { $Data{"TicketFreeString4"} = "<tr valign="top"><td><b>$QData{"TicketFreeKey4"}:</b></td><td>$QData{"TicketFreeText4","20"}</td></tr>"; }>
+<dtl if ($Data{"TicketFreeKey5"} ne "") { $Data{"TicketFreeString5"} = "<tr valign="top"><td><b>$QData{"TicketFreeKey5"}:</b></td><td>$QData{"TicketFreeText5","20"}</td></tr>"; }>
+<dtl if ($Data{"TicketFreeKey6"} ne "") { $Data{"TicketFreeString6"} = "<tr valign="top"><td><b>$QData{"TicketFreeKey6"}:</b></td><td>$QData{"TicketFreeText6","20"}</td></tr>"; }>
+<dtl if ($Data{"TicketFreeKey7"} ne "") { $Data{"TicketFreeString7"} = "<tr valign="top"><td><b>$QData{"TicketFreeKey7"}:</b></td><td>$QData{"TicketFreeText7","20"}</td></tr>"; }>
+<dtl if ($Data{"TicketFreeKey8"} ne "") { $Data{"TicketFreeString8"} = "<tr valign="top"><td><b>$QData{"TicketFreeKey8"}:</b></td><td>$QData{"TicketFreeText8","20"}</td></tr>"; }>
+    $Data{"TicketFreeString1"}
+    $Data{"TicketFreeString2"}
+    $Data{"TicketFreeString3"}
+    $Data{"TicketFreeString4"}
+    $Data{"TicketFreeString5"}
+    $Data{"TicketFreeString6"}
+    $Data{"TicketFreeString7"}
+    $Data{"TicketFreeString8"}
+    </table>
+# --
+# show customer info table 
+# --
+<dtl if ($Config{"ShowCustomerInfoZoom"} eq "1") { $Data{"CustomerInfo"} = "<p align="left"><hr><b>$Text{"Customer Info"}:</b> $Data{"CustomerTable"}<hr></p>"; }>
+    $Data{"CustomerInfo"}
+
+<!-- end ticket status -->
