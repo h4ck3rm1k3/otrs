@@ -36,9 +36,6 @@ B<Note:> just like MIME::QuotedPrint, we currently use the
 native C<"\n"> for line breaks, and not C<CRLF>.  This may
 need to change in future versions.
 
-=head1 SEE ALSO
-
-L<MIME::Decoder>
 
 =head1 AUTHOR
 
@@ -46,6 +43,12 @@ Eryq (F<eryq@zeegee.com>), ZeeGee Software Inc (F<http://www.zeegee.com>).
 
 All rights reserved.  This program is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
+
+
+=head1 VERSION
+
+$Revision: 1.17 $ $Date: 2005/01/13 19:23:15 $
+
 
 =cut
 
@@ -56,7 +59,7 @@ use MIME::QuotedPrint;
 @ISA = qw(MIME::Decoder);
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = "5.428";
+$VERSION = "5.417";
 
 #------------------------------
 # If we have MIME::QuotedPrint 3.03 or later, use the three-argument
@@ -106,7 +109,6 @@ sub decode_it {
     my $init = 0;
     my $badpdf = 0;
 
-    local $_;
     while (defined($_ = $in->getline)) {
 	#
 	# Dirty hack to fix QP-Encoded PDFs from MS-Outlook.
@@ -146,7 +148,6 @@ sub decode_it {
 sub encode_it {
     my ($self, $in, $out, $textual_type) = @_;
 
-    local $_;
     while (defined($_ = $in->getline)) {
 	$out->print(encode_qp_really($_, $textual_type));
     }

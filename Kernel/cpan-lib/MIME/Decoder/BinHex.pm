@@ -22,9 +22,6 @@ data are binhex-encoded.  Common non-standard MIME encodings for this:
     x-uu
     x-uuencode
 
-=head1 SEE ALSO
-
-L<MIME::Decoder>
 
 =head1 AUTHOR
 
@@ -32,6 +29,10 @@ Julian Field (F<mailscanner@ecs.soton.ac.uk>).
 
 All rights reserved.  This program is free software; you can redistribute 
 it and/or modify it under the same terms as Perl itself.
+
+=head1 VERSION
+
+$Revision: 1.13 $ $Date: 2005/01/13 19:23:15 $
 
 =cut
 
@@ -45,7 +46,7 @@ use Convert::BinHex;
 @ISA = qw(MIME::Decoder);
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = "5.428";
+$VERSION = "5.417";
 
 
 #------------------------------
@@ -56,6 +57,7 @@ sub decode_it {
     my ($self, $in, $out) = @_;
     my ($mode, $file);
     my (@preamble, @data);
+    local $_;
     my $H2B = Convert::BinHex->hex2bin;
     my $line;
 
@@ -64,7 +66,6 @@ sub decode_it {
     $self->{MDU_File} = undef;
 
     ### Find beginning...
-    local $_;
     while (defined($_ = $in->getline)) {
         if (/^\(This file must be converted/) {
 	    $_ = $in->getline;

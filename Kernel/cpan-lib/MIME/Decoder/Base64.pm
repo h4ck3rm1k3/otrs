@@ -30,16 +30,11 @@ of course).
 
 When B<encoding>, the input is read 45 bytes at a time: this ensures
 that the output lines are not too long.   We chose 45 since it is
-a multiple of 3 and produces lines under 76 characters, as RFC 2045
-specifies:
-    The encoded output stream must be represented in lines of no more
-    than 76 characters each.
+a multiple of 3 and produces lines under 76 characters, as RFC-1521 
+specifies.
 
 =back
 
-=head1 SEE ALSO
-
-L<MIME::Decoder>
 
 =head1 AUTHOR
 
@@ -47,6 +42,11 @@ Eryq (F<eryq@zeegee.com>), ZeeGee Software Inc (F<http://www.zeegee.com>).
 
 All rights reserved.  This program is free software; you can redistribute 
 it and/or modify it under the same terms as Perl itself.
+
+
+=head1 VERSION
+
+$Revision: 1.7 $ $Date: 2005/01/13 19:23:15 $
 
 =cut
 
@@ -58,7 +58,7 @@ use MIME::Tools qw(debug);
 @ISA = qw(MIME::Decoder);
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = "5.428";
+$VERSION = "5.417";
 
 ### How many bytes to encode at a time (must be a multiple of 3, and
 ### less than (76 * 0.75)!
