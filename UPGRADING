@@ -1,274 +1,48 @@
 # --
-# UPGRADING - Upgrading Instructions for OTRS
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# UPGRADING - upgrading OTRS
+# Copyright (C) 2002-2003 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: UPGRADING,v 1.65 2011/12/08 11:09:33 mg Exp $
+# $Id: UPGRADING,v 1.11.2.1 2003/05/02 19:15:11 martin Exp $
 # --
-# This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see 
+# the enclosed file COPYING for license information (GPL). If you 
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
-These instructions are for people upgrading OTRS from "3.0" to "3.1",
-and applies both for RPM and source code (tarball) upgrades.
+These instructions are for people upgrading OTRS from "1.0" to "1.1".
 
-If you are running a lower version of OTRS you have to follow the upgrade path
-to 3.0 first (1.1->1.2->1.3->2.0->2.1->2.2->2.3->2.4->3.0->3.1 ...)!
+*) Stop all your services (e. g. rcotrs stop-force)
 
-Please note that if you upgrade from OTRS 2.2 or earlier, you have to
-take an extra step; please read http://bugs.otrs.org/show_bug.cgi?id=6798
+*) Backup everything (database, Kernel/Config.pm, Kernel/Config/GenericAgent.pm, var/*)
 
-If you need to do a "patch level upgrade", which is an upgrade for instance
-from OTRS version 3.1.1 to 3.1.3, you should skip steps 8, 10 and 12-19.
+*) Make sure that you have backed up everything ,-)
 
-Please note that for upgrades from 3.1.beta1 or 3.1.beta2, an additional step 20
-is needed!
+*) If possible try this install on a separate machine, althoug
+   I had always only production machines to upgrade
 
-If you are using Microsoft SQL Server as the DBMS for OTRS, please refer
-to the manual, chapter "Upgrading Microsoft SQL Server Data Types" for instructions
-how to upgrade the data types used by OTRS
-(http://doc.otrs.org/3.1/en/html/upgrading-mssql-datatypes.html).
+*) Install the new release (tar or RPM)
 
+*) If you use the tar:
 
-1) Stop all relevant services
-   --------------------------
+    a) updated your webserver setup e.g. httpd.conf with
+       [...]
+       Alias /otrs-web/ "/opt/otrs/var/httpd/htdocs/"
+       [...]
+       for the OTRS images.
 
-    e. g. (depends on used services):
+    b) the otrs themes between 1.0 and 1.1 are not compatible! 
+       don't us the old theme
 
-    shell> /etc/init.d/cron stop
-    shell> /etc/init.d/postfix stop
-    shell> /etc/init.d/apache stop
+*) Update the database changes with:
+    MySQL: 
+      cat $OTRS_HOME/scripts/DBUpdate-to-1.1.mysql.sql | mysql -p -f -u root otrs
+    PostgreSQL:
+      cat $OTRS_HOME/scripts/DBUpdate-to-1.1.postgresql.sql | psql otrs
 
+   (Don't worry about the error messages, you can update all previous version
+   with this script and in the most cases your database has already the most changes!)
 
-2) Backup everything below $OTRS_HOME (default: OTRS_HOME=/opt/otrs)
-   -----------------------------------------------------------------
+*) Execute $OTRS_HOME/bin/SetPermissions.sh !
 
-    o Kernel/Config.pm
-    o Kernel/Config/GenericAgent.pm
-    o Kernel/Config/Files/ZZZAuto.pm
-    o var/*
-    o as well as the database
-
-
-3) Make sure that you have backed up everything ;-)
-   ------------------------------------------------
-
-4) Setup new system (optional)
-   ---------------------------
-
-   If possible try this install on a separate machine for testing first.
-
-
-5) Install the new release (tar or RPM)
-   ------------------------------------
-
-   With the tarball:
-
-    shell> cd /opt
-    shell> tar -xzf otrs-x.x.x.tar.gz
-    shell> ln -s otrs-x.x.x otrs
-
-    Restore old configuration files.
-    o Kernel/Config.pm
-    o Kernel/Config/GenericAgent.pm
-    o Kernel/Config/Files/ZZZAuto.pm
-
-
-   With the RPM:
-
-    shell> rpm -Uvh otrs-x.x.x.-01.rpm
-
-    In this case the RPM update automatically restores the old configuration files.
-
-6) Own themes
-   ----------
-
-   Note: The OTRS themes between 3.0 and 3.1 are NOT compatible, so don't use your old themes!
-
-   Themes are located under $OTRS_HOME/Kernel/Output/HTML/*/*.dtl (default: OTRS_HOME=/opt/otrs)
-
-
-7) Set file permissions
-   --------------------
-
-   If the tarball is used, execute:
-
-     shell> cd /opt/otrs/
-     shell> bin/otrs.SetPermissions.pl
-
-   with the permissions needed for your system setup.
-
-
-8) Apply the database changes
-   --------------------------
-
-     shell> cd /opt/otrs/
-
-
-    SCHEMA UPDATE PART 1:
-    =====================
-
-    MySQL:
-     shell> cat scripts/DBUpdate-to-3.1.mysql.sql | mysql -p -f -u root otrs
-
-    PostgreSQL 8.2+:
-     shell> cat scripts/DBUpdate-to-3.1.postgresql.sql | psql otrs
-
-    PostgreSQL, older versions:
-     shell> cat scripts/DBUpdate-to-3.1.postgresql_before_8_2.sql | psql otrs
-
-
-    NOTE: If you use PostgreSQL 8.1 or earlier, you need to activate the new legacy driver
-    for these older versions. Do this by adding a new line to your Kernel/Config.pm like this:
-
-    $Self->{DatabasePostgresqlBefore82} = 1;
-
-
-    DATABASE MIGRATION SCRIPT
-    =========================
-
-    shell> scripts/DBUpdate-to-3.1.pl
-
-    Do not continue the upgrading process if this script did not work properly for you.
-    Otherwise data loss may occur.
-
-
-    SCHEMA UPDATE PART 2:
-    =====================
-
-    MySQL:
-     shell> cat scripts/DBUpdate-to-3.1-post.mysql.sql | mysql -p -f -u root otrs
-
-    PostgreSQL 8.2+:
-     shell> cat scripts/DBUpdate-to-3.1-post.postgresql.sql | psql otrs
-
-    PostgreSQL, older versions:
-     shell> cat scripts/DBUpdate-to-3.1-post.postgresql_before_8_2.sql | psql otrs
-
-
-9) Refresh the configuration cache and delete caches
-    -------------------------------------------------
-
-    Please run:
-
-    shell> bin/otrs.RebuildConfig.pl
-    shell> bin/otrs.DeleteCache.pl
-
-
-10) Update your web server configuration
-    ------------------------------------
-
-    Note: this applies only if you use the Apache web server together with mod_perl2,
-    and do not use the configuration file directly from the OTRS installation directory
-    (e. g. with a symlink from the Apache configuration directory).
-
-    Please add a new setting to the Apache configuration file for OTRS:
-
-      # set mod_perl2 option for generic interface
-      <Location /otrs/nph-genericinterface.pl>
-          PerlOptions -ParseHeaders
-      </Location>
-
-    Please see the file /opt/otrs/scripts/apache2-httpd.include.conf for an example of
-    where this new option needs to be added (inside the <IfModule mod_perl.c> block).
-
-
-11) Restart your services
-    ---------------------
-
-    e. g. (depends on used services):
-
-    shell> /etc/init.d/apache start
-    shell> /etc/init.d/postfix start
-    shell> /etc/init.d/cron start
-
-    Now you can log into your system.
-
-
-12) Check installed packages
-    ------------------------
-    In the package manager, check if all packages are still marked as
-    correctly installed or if any require reinstallation or even a package upgrade.
-
-
-13) Check for encoding issues
-    -------------------------
-
-    OTRS 3.1 only allows UTF-8 as internal charset.
-    Non-UTF-8 installations of OTRS must switch to UTF-8.
-
-
-14) Escalation events
-    -----------------
-
-    If you want to use the new escalation events in your system, you need to activate the
-    corresponding GenericAgent job in Kernel/Config/GenericAcent.pm. Please look into
-    Kernel/Config/GenericAgent.pm.dist for an example of how to do this.
-
-
-15) TicketHistory
-    -------------
-
-    The TicketHistory type TicketFreeTextUpdate was renamed to
-    TicketDynamicFieldUpdate. If you have any custom reporting using this,
-    please adjust it.
-
-
-16) Ticket event handlers
-    ---------------------
-
-    The Event name TicketFreeTextUpdate_$Counter was renamed to TicketDynamicFieldUpdate_$FieldName.
-    If you have any custom event handlers for these events, please adapt them.
-
-
-17) DynamicField user preferences module
-    ------------------------------------
-
-    If you had one or more active custom settings for "PreferencesGroups###Freetext",
-    you need to adapt them to work with the new DynamicFields engine. The PrefKey
-    setting must be changed to "UserDynamicField_DynamicField", where the part after
-    the _ is the name of the dynamic field. Existing values would need to be renamed
-    in the database as well.
-
-
-18) Custom free field default value event handler
-    ---------------------------------------------
-
-    If you used the event handler Ticket::EventModulePost###TicketFreeFieldDefault (not active by default),
-    you'll need to migrate its configuration to the new setting Ticket::EventModulePost###TicketDynamicFieldDefault.
-
-    The configuration of this is slightly different; where you had to specify a Counter indicating the TicketFreeText
-    number previously, now you need to specify the name of the DynamicField (for migrated fields, this will be
-    DynamicField_TicketFreeKey$Counter and DynamicField_TicketFreeText$Counter. You need two separate entries now
-    if you want to set both the key and the text field.
-
-
-19) FreeText/Time based ACLs
-    ------------------------
-
-    If you have any ACLs defined which involve freetext or freetime fields, you need to adjust these
-    ACL definitions.
-    Please have a look at http://doc.otrs.org/3.1/en/html/acl.html. There you can find a list of all possible ACL
-    settings. In general, you need to add the prefix "DynamicField_" to existing free field definitions, and you
-    can add a new "DynamicField" section to the "Properties" list for situations when a ticket does not exist yet.
-
-
-20) Database Upgrade During Beta Phase
-    ----------------------------------
-
-    This step is ONLY needed if you upgrade from 3.1.beta1 or 3.1.beta2!
-
-    Please apply the required database changes as follows:
-
-    MySQL:
-     shell> cat scripts/DBUpdate-3.1.beta.mysql.sql | mysql -p -f -u root otrs
-
-    PostgreSQL 8.2+:
-     shell> cat scripts/DBUpdate-3.1.beta.postgresql.sql | psql otrs
-
-    PostgreSQL, older versions:
-     shell> cat scripts/DBUpdate-3.1.beta.postgresql_before_8_2.sql | psql otrs
-
-
-21) Well done!
-    ----------
+*) Restart your services (e. g. rcotrs restart-force or each service manually)
+ 
