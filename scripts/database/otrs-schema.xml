@@ -6,9 +6,12 @@
   XML File for the OTRS database description
   Copyright (C) 2001-2003 Martin Edenhofer
 
-  $Id: otrs-schema.xml,v 1.22 2004/05/04 15:15:24 martin Exp $
+  $Id: otrs-schema.xml,v 1.23 2004/05/10 12:57:02 martin Exp $
 
   $Log: otrs-schema.xml,v $
+  Revision 1.23  2004/05/10 12:57:02  martin
+  added postmaster_filter table
+
   Revision 1.22  2004/05/04 15:15:24  martin
   changed user_id size from 40 to 100
 
@@ -830,6 +833,14 @@
   <column name="create_by" required="true" type="INTEGER"/>
   <column name="change_time" required="true" type="DATE"/>
   <column name="change_by" required="true" type="INTEGER"/>
+</table>
+
+<!-- postmaster_filter -->
+<table name="postmaster_filter">
+  <column name="f_name" required="true" size="200" type="VARCHAR"/>
+  <column name="f_type" required="true" size="20" type="VARCHAR"/>
+  <column name="f_key" required="true" size="200" type="VARCHAR"/>
+  <column name="f_value" required="true" size="200" type="VARCHAR"/>
 </table>
 
 <!-- search_profile -->
