@@ -150,7 +150,7 @@ use vars qw($VERSION @ISA);
 use IO::Handle;
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.103 $, 10;
+$VERSION = substr q$R vision: 2.103 $, 10;
 
 # Inheritance:
 @ISA = qw(IO::Handle);

@@ -158,7 +158,7 @@ use overload '""'   => sub { ${*{$_[0]}->{SR}} };
 use overload 'bool' => sub { 1 };      ### have to do this, so object is true! 
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.104 $, 10;
+$VERSION = substr q$R vision: 2.104 $, 10;
 
 ### Inheritance:
 @ISA = qw(IO::Handle);

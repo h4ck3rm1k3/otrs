@@ -1,7 +1,7 @@
 package IO::Stringy;
 
 use vars qw($VERSION);
-$VERSION = substr q$Revision: 2.108 $, 10;
+$VERSION = substr q$R vision: 2.108 $, 10;
 
 1;
 __END__

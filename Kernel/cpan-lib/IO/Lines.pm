@@ -40,7 +40,7 @@ use IO::ScalarArray;
 use vars qw($VERSION @ISA);
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.103 $, 10;
+$VERSION = substr q$R vision: 2.103 $, 10;
 
 # Inheritance:
 @ISA = qw(IO::ScalarArray);     ### also gets us new_tie  :-)

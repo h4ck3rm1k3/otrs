@@ -13,7 +13,7 @@ use FileHandle;
 use Carp;
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 2.102 $, 10;
+$VERSION = substr q$R vision: 2.102 $, 10;
 
 
 #------------------------------
