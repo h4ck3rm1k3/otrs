@@ -6,9 +6,12 @@
   XML File for the OTRS database description
   Copyright (C) 2001-2003 Martin Edenhofer
 
-  $Id: otrs-schema.xml,v 1.1 2003/02/08 11:54:29 martin Exp $
+  $Id: otrs-schema.xml,v 1.2 2003/02/08 22:03:41 martin Exp $
 
   $Log: otrs-schema.xml,v $
+  Revision 1.2  2003/02/08 22:03:41  martin
+  changed ticket.user_id and ticket.group_id from smalin (max 32767) to integer (2147483647)
+
   Revision 1.1  2003/02/08 11:54:29  martin
   moved from install/database to scripts/database
 
@@ -341,8 +344,8 @@
   <column name="queue_id" required="true" type="SMALLINT"/>
   <column name="ticket_lock_id" required="true" type="SMALLINT"/>
   <column name="ticket_answered" required="true" type="SMALLINT"/>
-  <column name="user_id" required="true" type="SMALLINT"/>
-  <column name="group_id" required="true" type="SMALLINT"/>
+  <column name="user_id" required="true" type="INTEGER"/>
+  <column name="group_id" required="true" type="INTEGER"/>
   <column name="ticket_priority_id" required="true" type="SMALLINT"/>
   <column name="ticket_state_id" required="true" type="SMALLINT"/>
   <column name="group_read" required="false" type="SMALLINT"/>
