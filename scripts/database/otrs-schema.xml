@@ -6,9 +6,12 @@
   XML File for the OTRS database description
   Copyright (C) 2001-2003 Martin Edenhofer
 
-  $Id: otrs-schema.xml,v 1.9 2003/03/10 21:25:50 martin Exp $
+  $Id: otrs-schema.xml,v 1.10 2003/06/26 19:17:23 martin Exp $
 
   $Log: otrs-schema.xml,v $
+  Revision 1.10  2003/06/26 19:17:23  martin
+  added search preferences table
+
   Revision 1.9  2003/03/10 21:25:50  martin
   added customer email notification on move, state update
       or owner update (config option for each queue).
@@ -777,6 +780,14 @@
   <column name="create_by" required="true" type="INTEGER"/>
   <column name="change_time" required="true" type="DATE"/>
   <column name="change_by" required="true" type="INTEGER"/>
+</table>
+
+<!-- search_profile -->
+<table name="search_profile">
+    <column name="login" required="true" size="200" type="VARCHAR"/>
+    <column name="profile_name" required="true" size="200" type="VARCHAR"/>
+    <column name="profile_key" required="true" size="200" type="VARCHAR"/>
+    <column name="profile_value" required="true" size="200" type="VARCHAR"/>
 </table>
 
 </database>
