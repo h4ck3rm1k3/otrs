@@ -2,9 +2,12 @@
 -- initial_insert.sql - provides initial system data
 -- Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
 -- --
--- $Id: initial_insert.sql,v 1.36 2004/11/27 01:51:21 martin Exp $
+-- $Id: initial_insert.sql,v 1.37 2005/02/23 12:15:50 martin Exp $
 --
 -- $Log: initial_insert.sql,v $
+-- Revision 1.37  2005/02/23 12:15:50  martin
+-- added ticket_history_type SystemRequest for system creaetd tickets
+--
 -- Revision 1.36  2004/11/27 01:51:21  martin
 -- changed default lines of shown message
 --
@@ -535,6 +538,10 @@ INSERT INTO ticket_history_type
         (name, valid_id, create_by, create_time, change_by, change_time)
         VALUES
         ('TicketLinkDelete', 1, 1, current_timestamp, 1, current_timestamp);
+INSERT INTO ticket_history_type
+        (name, valid_id, create_by, create_time, change_by, change_time)
+        VALUES
+        ('SystemRequest', 1, 1, current_timestamp, 1, current_timestamp);
 
 -- article_type
 INSERT INTO article_type
