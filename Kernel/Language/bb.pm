@@ -1,19 +1,19 @@
 # --
-# Kernel/Language/German.pm - provides German language translation
-# Copyright (C) 2002 ??? <???>
+# Kernel/Language/bb.pm - provides bb language translation
+# Copyright (C) 2002 Martin Edenhofer <martin at otrs.org>
 # --
-# $Id: German.pm,v 1.29 2002/11/21 22:17:27 martin Exp $
+# $Id: bb.pm,v 1.1 2002/11/24 23:54:47 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
-package Kernel::Language::German;
+package Kernel::Language::bb;
 
 use strict;
 
 use vars qw($VERSION);
-$VERSION = '$Revision: 1.29 $';
+$VERSION = '$Revision: 1.1 $';
 $VERSION =~ s/^.*:\s(\d+\.\d+)\s.*\$/\$1/;
 # --
 sub Data {
@@ -25,155 +25,138 @@ sub Data {
     $Self->{Charset} = ['iso-8859-1', 'iso-8859-15', ];
 
     # Template: AAABasics
-    $Hash{' 2 minutes'} = ' 2 Minuten';
-    $Hash{' 5 minutes'} = ' 5 Minuten';
-    $Hash{' 7 minutes'} = ' 7 Minuten';
-    $Hash{'10 minutes'} = '10 Minuten';
-    $Hash{'15 minutes'} = '15 Minuten';
+    $Hash{' 2 minutes'} = ' 2 Minutn';
+    $Hash{' 5 minutes'} = ' 5 Minutn';
+    $Hash{' 7 minutes'} = ' 7 Minutn';
+    $Hash{'10 minutes'} = '10 Minutn';
+    $Hash{'15 minutes'} = '15 Minutn';
     $Hash{'AddLink'} = 'Link hinzufügen';
     $Hash{'AdminArea'} = 'AdminBereich';
-    $Hash{'All'} = 'All';
     $Hash{'all'} = 'alle';
+    $Hash{'All'} = 'All';
     $Hash{'Attention'} = 'Achtung';
     $Hash{'Bug Report'} = 'Fehler berichten';
-    $Hash{'Cancel'} = 'Abbrechen';
+    $Hash{'Cancel'} = 'Zruck';
     $Hash{'change'} = 'ändern';
     $Hash{'Change'} = 'Ändern';
     $Hash{'change!'} = 'ändern!';
     $Hash{'click here'} = 'klick hier';
     $Hash{'Comment'} = 'Kommentar';
     $Hash{'Customer'} = 'Kunde';
-    $Hash{'Customer info'} = 'Kunden Info';
+    $Hash{'Customer info'} = 'Kundn Info';
     $Hash{'day'} = 'Tag';
     $Hash{'days'} = 'Tage';
-    $Hash{'description'} = 'Beschreibung';
     $Hash{'Description'} = 'Beschreibung';
-    $Hash{'Done'} = 'Fertig';
+    $Hash{'description'} = 'Beschreibung';
+    $Hash{'Done'} = 'Weider';
     $Hash{'end'} = 'runter';
     $Hash{'Error'} = 'Fehler';
     $Hash{'Example'} = 'Beispiel';
     $Hash{'Examples'} = 'Beispiele';
-    $Hash{'go'} = 'start';
-    $Hash{'go!'} = 'start!';
+    $Hash{'go'} = 'weider';
+    $Hash{'go!'} = 'weider!';
     $Hash{'Group'} = 'Gruppe';
-    $Hash{'Hit'} = 'Treffer';
-    $Hash{'Hits'} = 'Treffer';
+    $Hash{'Hit'} = 'Troffer';
+    $Hash{'Hits'} = 'Troffer';
     $Hash{'hour'} = 'Stunde';
     $Hash{'hours'} = 'Stunden';
-    $Hash{'Ignore'} = 'Ignorieren';
+    $Hash{'Ignore'} = 'Nix do';
     $Hash{'Language'} = 'Sprache';
     $Hash{'Languages'} = 'Sprachen';
     $Hash{'Line'} = 'Zeile';
-    $Hash{'Logout successful. Thank you for using OTRS!'} = 'Abmelden erfolgreich! Danke für die Benutzung von OTRS!';
+    $Hash{'Logout successful. Thank you for using OTRS!'} = 'Servus. Dei OTRS!';
     $Hash{'Message'} = 'Nachricht';
     $Hash{'minute'} = 'Minute';
-    $Hash{'minutes'} = 'Minuten';
+    $Hash{'minutes'} = 'Minutn';
     $Hash{'Module'} = 'Modul';
     $Hash{'Modulefile'} = 'Moduldatei';
     $Hash{'Name'} = 'Name';
     $Hash{'New message'} = 'Neue Nachricht';
     $Hash{'New message!'} = 'Neue Nachricht!';
     $Hash{'no'} = 'kein';
-    $Hash{'No'} = 'Nein';
-    $Hash{'No suggestions'} = 'Keine Vorschläge';
-    $Hash{'none'} = 'keine';
-    $Hash{'none - answered'} = 'keine - beantwortet';
-    $Hash{'none!'} = 'keine Angabe!';
-    $Hash{'Off'} = 'Aus';
+    $Hash{'No'} = 'Na';
+    $Hash{'No suggestions'} = 'Nix do';
+    $Hash{'none'} = 'koane';
+    $Hash{'none - answered'} = 'koane - beantwortet';
+    $Hash{'none!'} = 'koane Angabe!';
     $Hash{'off'} = 'aus';
-    $Hash{'on'} = 'ein';
+    $Hash{'Off'} = 'Aus';
     $Hash{'On'} = 'Ein';
+    $Hash{'on'} = 'ein';
     $Hash{'Password'} = 'Passwort';
-    $Hash{'Please answer this ticket(s) to get back to the normal queue view!'} = 'Bitte beantworten Sie dieses Ticket um in die normale queue view zurück zu kommen!';
+    $Hash{'Please answer this ticket(s) to get back to the normal queue view!'} = 'Bitte eskalierte Tickets beantworten um in die normale Queue-Ansicht zurück zu kommen!';
     $Hash{'please do not edit!'} = 'Bitte nicht verändern!';
     $Hash{'QueueView'} = 'Queue-Ansicht';
-    $Hash{'replace with'} = 'ersetzen mit';
-    $Hash{'Reset'} = 'Rücksetzen';
+    $Hash{'replace with'} = 'tauchn mit';
+    $Hash{'Reset'} = 'Nix do';
     $Hash{'Salutation'} = 'Anrede';
     $Hash{'Signature'} = 'Signatur';
     $Hash{'Sorry'} = 'Bedauere';
     $Hash{'Stats'} = 'Statistik';
     $Hash{'Subfunction'} = 'Unterfunktion';
-    $Hash{'submit'} = 'übermitteln';
+    $Hash{'submit'} = 'weider';
     $Hash{'submit!'} = 'übermitteln!';
     $Hash{'Text'} = '';
-    $Hash{'top'} = 'hoch';
-    $Hash{'update'} = 'aktualisieren';
-    $Hash{'update!'} = 'aktualisieren!';
+    $Hash{'The recommended charset for your language is %s!'} = 'Dei charset für die Sprach sollte %s sei!';
+    $Hash{'top'} = 'hou';
+    $Hash{'update'} = 'basst scho';
+    $Hash{'update!'} = 'basst scho!';
     $Hash{'User'} = 'Benutzer';
     $Hash{'Username'} = 'Benutzername';
     $Hash{'Valid'} = 'Gültig';
-    $Hash{'Warning'} = 'Warnung';
-    $Hash{'Welcome to OTRS'} = 'Willkommen zu OTRS';
+    $Hash{'Warning'} = 'Forsicht';
+    $Hash{'Welcome to OTRS'} = 'Dei OTRS';
     $Hash{'Word'} = 'Wort';
-    $Hash{'wrote'} = 'schrieb';
+    $Hash{'wrote'} = 'hod gschrim';
     $Hash{'yes'} = 'ja';
     $Hash{'Yes'} = 'Ja';
-    $Hash{'You got new message!'} = 'Neue Nachricht bekommen!';
-    $Hash{'The recommended charset for your language is %s!'} = 'Der empfohlene Charset für Ihre Sprache ist %s!';
-
-    # Template: AAALanguage
-    $Hash{'Brazilian'} = 'Brasilianisch';
-    $Hash{'Chinese'} = 'Chinesisch';
-    $Hash{'Czech'} = 'Tschechisch';
-    $Hash{'Danish'} = 'Dänisch';
-    $Hash{'Dutch'} = 'Niederländisch';
-    $Hash{'English'} = 'Englisch';
-    $Hash{'French'} = 'Französisch';
-    $Hash{'German'} = 'Deutsch';
-    $Hash{'Greek'} = 'Griechisch';
-    $Hash{'Italian'} = 'Italienisch';
-    $Hash{'Korean'} = 'Koreanisch';
-    $Hash{'Polish'} = 'Polnisch';
-    $Hash{'Russian'} = 'Russisch';
-    $Hash{'Spanish'} = 'Spanisch';
-    $Hash{'Swedish'} = 'Schwedisch';
+    $Hash{'You got new message!'} = 'Neie Nachtricht grikt';
 
     # Template: AAAPreferences
     $Hash{'Custom Queue'} = '';
-    $Hash{'Follow up notification'} = 'Mitteilung bei Nachfragen';
+    $Hash{'Follow up notification'} = 'Follow up Nachricht';
     $Hash{'Frontend'} = '';
     $Hash{'Mail Management'} = '';
-    $Hash{'Move notification'} = 'Move Mitteilung';
-    $Hash{'New ticket notification'} = 'Mitteilung bei neuem Ticket';
-    $Hash{'Other Options'} = 'Andere Optionen';
-    $Hash{'Preferences updated successfully!'} = 'Update der Benutzereinstellungen erfolgreich!';
+    $Hash{'Move notification'} = 'Move Nachricht';
+    $Hash{'New ticket notification'} = 'Neis Ticket Nachricht';
+    $Hash{'Other Options'} = 'Andre Sachan';
+    $Hash{'Preferences updated successfully!'} = 'Einstellungen bassan jetztat';
     $Hash{'QueueView refresh time'} = 'Queue-Ansicht refresh Zeit';
-    $Hash{'Select your frontend Charset.'} = 'Zeichensatz für Darstellung auswählen.';
-    $Hash{'Select your frontend language.'} = 'Oberflächen-Sprache auswählen.';
-    $Hash{'Select your frontend QueueView.'} = 'Queue-Ansicht auswählen.';
-    $Hash{'Select your frontend Theme.'} = 'Anzeigeschema auswählen.';
-    $Hash{'Select your QueueView refresh time.'} = 'Queue-Ansicht Aktualisierungszeit auswählen';
-    $Hash{'Send me a notification if a customer sends a follow up and I\'m the owner of this ticket.'} = 'Zusenden einer Mitteilung wenn ein Kunden eine Nachfrage stellt uns ich der Eigner bin.';
-    $Hash{'Send me a notification if a ticket is moved into a custom queue.'} = ' Zusenden einer Mitteilung beim verschieben eines Ticket in meine individuellen Queue(s).';
-    $Hash{'Send me a notification if a ticket is unlocked by the system.'} = 'Zusenden einer Mitteilung wenn ein Ticket vom System freigegeben (unlocked) wird.';
+    $Hash{'Select your frontend Charset.'} = 'Suach Dei Fronten-Charset aus';
+    $Hash{'Select your frontend language.'} = 'Suach da Dei Sprach aus';
+    $Hash{'Select your frontend QueueView.'} = 'Suach da Dei Queue-Ansicht aus';
+    $Hash{'Select your frontend Theme.'} = 'Suach da Dei Theme aus';
+    $Hash{'Select your QueueView refresh time.'} = 'Suach da Dei Queue-Ansicht refresh Zeit aus';
+    $Hash{'Send me a notification if a customer sends a follow up and I\'m the owner of this ticket.'} = 'Zusenden einer Mitteilung wenn ein Kundn eine Nachfrage stellt uns ich der Eigner bin.';
+    $Hash{'Send me a notification if a ticket is moved into a custom queue.'} = 'Schik ma a Nachricht wenn a ticket is verschobm in mei Custom-Queue';
+    $Hash{'Send me a notification if a ticket is unlocked by the system.'} = 'Schik ma a Nachricht wenn a ticket is unlocked';
     $Hash{'Send me a notification if there is a new ticket in my custom queues.'} = 'Zusenden einer Mitteilung bei neuem Ticket in der/den individuellen Queue(s).';
-    $Hash{'Ticket lock timeout notification'} = 'Mitteilung bei lock Zeitüberschreitung';
+    $Hash{'Ticket lock timeout notification'} = ' Ticker lock Zeitaus Nachricht';
 
     # Template: AAATicket
     $Hash{'Action'} = 'Aktion';
     $Hash{'Age'} = 'Alter';
     $Hash{'Article'} = 'Artikel';
     $Hash{'Attachment'} = 'Anlage';
-    $Hash{'Attachments'} = 'Anlagen';
+    $Hash{'Attachments'} = 'Anhangsl';
     $Hash{'Bcc'} = '';
-    $Hash{'Bounce'} = '';
-    $Hash{'Cc'} = '';
+    $Hash{'Bounce'} = 'Bounce';
+    $Hash{'Cc'} = 'Cc';
     $Hash{'Close'} = 'Schließen';
     $Hash{'closed succsessful'} = 'erfolgreich geschlossen';
     $Hash{'closed unsuccsessful'} = 'erfolglos geschlossen';
-    $Hash{'Compose'} = 'Verfassen';
-    $Hash{'Created'} = 'Erstellt';
-    $Hash{'Createtime'} = 'Erstellt am';
+    $Hash{'Compose'} = 'schreim';
+    $Hash{'Created'} = 'gschrim';
+    $Hash{'Createtime'} = 'gschrim am';
     $Hash{'eMail'} = '';
     $Hash{'email'} = 'eMail';
     $Hash{'email-external'} = 'Email an extern';
     $Hash{'email-internal'} = 'Email an intern';
-    $Hash{'Forward'} = 'Weiterleiten';
-    $Hash{'From'} = 'Von';
-    $Hash{'high'} = 'hoch';
-    $Hash{'History'} = '';
-    $Hash{'If it is not displayed correctly,'} = 'Wenn sie nicht korrekt angezeigt wird,';
+    $Hash{'Forward'} = 'Weidaleiten';
+    $Hash{'From'} = 'Vom';
+    $Hash{'high'} = 'hou';
+    $Hash{'History'} = 'History';
+    $Hash{'If it is not displayed correctly,'} = 'Wenn sie nicht korrekt angoagt wird,';
     $Hash{'Lock'} = 'Ziehen';
     $Hash{'low'} = 'niedrig';
     $Hash{'Move'} = 'Verschieben';
@@ -196,27 +179,27 @@ sub Data {
     $Hash{'Subject'} = 'Betreff';
     $Hash{'This is a'} = 'Dies ist eine';
     $Hash{'This is a HTML email. Click here to show it.'} = 'Dies ist eine HTML eMail. Hier klicken um sie anzusehen.';
-    $Hash{'This message was written in a character set other than your own.'} = 'Diese Nachricht wurde in einem Zeichensatz erstellt, der nicht Ihrem eigenen entspricht.';
+    $Hash{'This message was written in a character set other than your own.'} = 'Dei Nachricht wurde in einem Zeichensatz gschrim, der nicht Deim eigenen entspricht.';
     $Hash{'Ticket'} = 'Ticket';
     $Hash{'To'} = 'An';
-    $Hash{'to open it in a new window.'} = 'um sie in einem neuen Fenster angezeigt zu bekommen';
+    $Hash{'to open it in a new window.'} = 'um sie in einem neuen Fenster angoagt zu bekommen';
     $Hash{'Unlock'} = 'Freigeben';
-    $Hash{'very high'} = 'sehr hoch';
-    $Hash{'very low'} = 'sehr niedrig';
+    $Hash{'very high'} = 'gscheid hou';
+    $Hash{'very low'} = 'gscheid niedrig';
     $Hash{'View'} = 'Ansicht';
-    $Hash{'webrequest'} = 'Webanfrage';
+    $Hash{'webrequest'} = '';
     $Hash{'Zoom'} = 'Inhalt';
 
     # Template: AdminAutoResponseForm
     $Hash{'Add auto response'} = 'Auto-Antwort hinzufügen';
-    $Hash{'Auto Response From'} = 'Auto-Antwort Form';
+    $Hash{'Auto Response From'} = 'Auto-Antworten Form';
     $Hash{'Auto Response Management'} = 'Auto-Antworten Verwaltung';
     $Hash{'Change auto response settings'} = 'Ändern einer Auto-Antworten';
     $Hash{'Charset'} = '';
     $Hash{'Note'} = 'Notiz';
     $Hash{'Response'} = 'Antwort';
-    $Hash{'to get the first 20 character of the subject'} = 'Um die ersten 20 Zeichen des Betreffs zu bekommen';
-    $Hash{'to get the first 5 lines of the email'} = 'Um die ersten 5 Zeilen der eMail zu bekommen';
+    $Hash{'to get the first 20 character of the subject'} = '';
+    $Hash{'to get the first 5 lines of the email'} = '';
     $Hash{'Type'} = '';
     $Hash{'Useable options'} = 'Benutzbare Optionen';
 
@@ -226,11 +209,11 @@ sub Data {
     $Hash{'System Charset Management'} = 'System-Charset Verwaltung';
 
     # Template: AdminCustomerUserForm
-    $Hash{'Add customer user'} = 'Hinzufügen eines Kunden-Benutzers';
-    $Hash{'Change customer user settings'} = 'Ämdern der Kunden-Benutzers einstellungen';
-    $Hash{'Customer User Management'} = 'Kunden-Benutzer Management';
-    $Hash{'Customer user will be needed to to login via customer panels.'} = 'Kunden-Benutzer werden für das Kunden-Webfrontend benötigt';
-    $Hash{'CustomerID'} = 'Kunden#';
+    $Hash{'Add customer user'} = 'Kundn User hinzufügen';
+    $Hash{'Change customer user settings'} = 'Kundn User ändern';
+    $Hash{'Customer User Management'} = 'Kundn User Management';
+    $Hash{'Customer user will be needed to to login via customer panels.'} = '';
+    $Hash{'CustomerID'} = 'Kundn#';
     $Hash{'Email'} = 'eMail';
     $Hash{'Firstname'} = 'Vorname';
     $Hash{'Lastname'} = 'Nachname';
@@ -245,14 +228,14 @@ sub Data {
     $Hash{'Recipents'} = 'Empfänger';
 
     # Template: AdminEmailSent
-    $Hash{'Message sent to'} = 'Nachricht gesendet an';
+    $Hash{'Message sent to'} = 'Verschikt zu';
 
     # Template: AdminGroupForm
     $Hash{'Add group'} = 'Gruppe hinzufügen';
     $Hash{'Change group settings'} = 'Ändern einer Gruppe';
     $Hash{'Create new groups to handle access permissions for different groups of agent (e. g. purchasing department, support department, sales department, ...).'} = 'Erstelle neue Gruppen um die Zugriffe für verschieden Agent-Gruppen zu definieren (z. B. Einkaufs-Abteilung, Support-Abteilung, Verkaufs-Abteilung, ...).';
     $Hash{'Group Management'} = 'Gruppen Verwaltung';
-    $Hash{'It\'s useful for ASP solutions.'} = 'Sehr nützlich für ASP-Lösungen.';
+    $Hash{'It\'s useful for ASP solutions.'} = 'gscheid nützlich für ASP-Lösungen.';
     $Hash{'The admin group is to get in the admin area and the stats group to get stats area.'} = 'Die admin Gruppe wird für den Admin-Bereich benötigt, die stats Gruppe für den Statistik-Bereich.';
 
     # Template: AdminLanguageForm
@@ -263,10 +246,10 @@ sub Data {
     # Template: AdminNavigationBar
     $Hash{'AdminEmail'} = '';
     $Hash{'AgentFrontend'} = 'AgentOberfläche';
-    $Hash{'Auto Response <-> Queue'} = 'Auto-Antworten <-> Queues';
+    $Hash{'Auto Response <-> Queue'} = '';
     $Hash{'Auto Responses'} = 'Auto-Antworten';
     $Hash{'Charsets'} = '';
-    $Hash{'CustomerUser'} = 'Kunden-Benutzer';
+    $Hash{'CustomerUser'} = 'Kundn User';
     $Hash{'Email Addresses'} = 'Email-Adressen';
     $Hash{'Groups'} = 'Gruppen';
     $Hash{'Logout'} = 'Abmelden';
@@ -283,30 +266,30 @@ sub Data {
     # Template: AdminQueueAutoResponseTable
 
     # Template: AdminQueueForm
-    $Hash{'0 = no escalation'} = '0 = keine Eskalation';
-    $Hash{'0 = no unlock'} = '0 = kein Unlock';
+    $Hash{'0 = no escalation'} = '0 = nix Eskalation';
+    $Hash{'0 = no unlock'} = '0 = nix unlock';
     $Hash{'Add queue'} = 'Queue hinzufügen';
     $Hash{'Change queue settings'} = 'Ändern einer Queue';
     $Hash{'Escalation time'} = 'Eskalationszeit';
     $Hash{'Follow up Option'} = '';
-    $Hash{'If a ticket is closed and the customer sends a follow up the ticket will be locked for the old owner.'} = 'Wenn ein Ticket geschlossen ist und der Kunde jedoch ein follow up sendet, wird das ticket für den alten Eigner gelocked.';
-    $Hash{'If a ticket will not be answered in thos time, just only this ticket will be shown.'} = 'Wird ein Ticket nicht in jener Zeit beantortet, wird nur noch dieses Ticket gezeigt.';
-    $Hash{'If an agent locks a ticket and he/she will not send an answer within this time, the ticket will be unlock automatically. So the ticket is viewable for all other agents.'} = 'Wird ein Ticket durch einen Agent gelocked jedoch nicht in dieser Zeit beantwortet, wird das Ticket automatisch unlocked.';
+    $Hash{'If a ticket is closed and the customer sends a follow up the ticket will be locked for the old owner.'} = '';
+    $Hash{'If a ticket will not be answered in thos time, just only this ticket will be shown.'} = '';
+    $Hash{'If an agent locks a ticket and he/she will not send an answer within this time, the ticket will be unlock automatically. So the ticket is viewable for all other agents.'} = '';
     $Hash{'Key'} = 'Schlüssel';
     $Hash{'Queue Management'} = 'Queue Verwaltung';
-    $Hash{'Systemaddress'} = 'System-Adresse';
-    $Hash{'The salutation for email answers.'} = 'Die Anrede für eMail Antworten.';
-    $Hash{'The signature for email answers.'} = 'Die Signatur für eMail Antworten.';
-    $Hash{'Ticket lock after a follow up'} = 'Ticket locken nache einem follow up';
+    $Hash{'Systemaddress'} = '';
+    $Hash{'The salutation for email answers.'} = '';
+    $Hash{'The signature for email answers.'} = '';
+    $Hash{'Ticket lock after a follow up'} = '';
     $Hash{'Unlock timeout'} = 'Freigabe Zeitüberschreitung';
-    $Hash{'Will be the sender address of this queue for email answers.'} = 'Absende Adresse für eMails aus dieser Queue.';
+    $Hash{'Will be the sender address of this queue for email answers.'} = '';
 
     # Template: AdminQueueResponsesChangeForm
-    $Hash{'Change %s settings'} = 'Ändern der %s Einstellungen';
+    $Hash{'Change %s settings'} = 'Ändern von %s Einstellungen';
     $Hash{'Std. Responses <-> Queue Management'} = 'Std. Antworten <-> Queue Verwaltung';
 
     # Template: AdminQueueResponsesForm
-    $Hash{'Answer'} = 'Antwort';
+    $Hash{'Answer'} = 'Antwortn';
     $Hash{'Change answer <-> queue settings'} = 'Ändern der Antworten <-> Queue Beziehung';
 
     # Template: AdminResponseForm
@@ -319,7 +302,7 @@ sub Data {
     # Template: AdminSalutationForm
     $Hash{'Add salutation'} = 'Anrede hinzufügen';
     $Hash{'Change salutation settings'} = 'Ändern einer Anrede';
-    $Hash{'customer realname'} = 'echter Kundenname';
+    $Hash{'customer realname'} = 'echter Kundnname';
     $Hash{'Salutation Management'} = 'Anreden Verwaltung';
 
     # Template: AdminSelectBoxForm
@@ -327,7 +310,7 @@ sub Data {
 
     # Template: AdminSelectBoxResult
     $Hash{'Limit'} = '';
-    $Hash{'Select Box Result'} = 'Select Box Ergebnis';
+    $Hash{'Select Box Result'} = '';
     $Hash{'SQL'} = '';
 
     # Template: AdminSession
@@ -375,8 +358,8 @@ sub Data {
     # Template: AgentBounce
     $Hash{'A message should have a To: recipient!'} = 'Eine Nachricht sollte einen Empfänger im An: haben!';
     $Hash{'Bounce ticket'} = '';
-    $Hash{'Bounce to'} = 'Bounce an';
-    $Hash{'Inform sender'} = 'Sender informieren';
+    $Hash{'Bounce to'} = 'Bounce zu';
+    $Hash{'Inform sender'} = '';
     $Hash{'Next ticket state'} = 'Nächster Status des Tickets';
     $Hash{'Send mail!'} = 'Mail senden!';
     $Hash{'You need a email address (e. g. customer@example.com) in To:!'} = 'Im An-Feld wird eine eMail-Adresse (z. B. kunde@beispiel.de) benötigt!';
@@ -384,29 +367,25 @@ sub Data {
 
     # Template: AgentClose
     $Hash{' (work units)'} = '';
-    $Hash{'Close ticket'} = 'Ticket schließen';
-    $Hash{'Close type'} = 'Schließen Type';
-    $Hash{'Close!'} = 'Schließen!';
-    $Hash{'Note Text'} = 'Notiz Text';
+    $Hash{'Close ticket'} = '';
+    $Hash{'Close type'} = '';
+    $Hash{'Close!'} = '';
+    $Hash{'Note Text'} = '';
     $Hash{'Note type'} = 'Notiz-Typ';
     $Hash{'store'} = 'speichern';
-    $Hash{'Time units'} = 'Zeit-Einheiten';
+    $Hash{'Time units'} = '';
 
     # Template: AgentCompose
     $Hash{'A message should have a subject!'} = 'Eine Nachricht sollte ein Betreff haben!';
-    $Hash{'Attach'} = 'Anhängen';
-    $Hash{'Compose answer for ticket'} = 'Antwort erstellen für';
-    $Hash{'Is the ticket answered'} = 'Ist das Ticket beantwortet';
-    $Hash{'Options'} = 'Optionen';
-    $Hash{'Spell Check'} = 'Rechtschreibkontrolle';
+    $Hash{'Attach'} = 'Ohenga';
+    $Hash{'Compose answer for ticket'} = 'Antwort schreim für';
+    $Hash{'Is the ticket answered'} = 'Ticket beantwortet';
+    $Hash{'Options'} = 'Optionn';
+    $Hash{'Spell Check'} = 'Rechtschreib-Checker';
 
     # Template: AgentCustomer
     $Hash{'Back'} = 'zurück';
-    $Hash{'Change customer of ticket'} = 'Ändern des Kunden von Ticket';
-    $Hash{'Set customer id of a ticket'} = 'Setze eine Kunden# zu einem Ticket';
-
-    # Template: AgentCustomerHistory
-    $Hash{'Customer history'} = 'Kunden History';
+    $Hash{'Change customer of ticket'} = 'Änder Kundn vom Ticket';
 
     # Template: AgentCustomerHistoryTable
 
@@ -414,12 +393,12 @@ sub Data {
     $Hash{'Article type'} = 'Artikel-Typ';
     $Hash{'Date'} = 'Datum';
     $Hash{'End forwarded message'} = '';
-    $Hash{'Forward article of ticket'} = 'Weiterleitung des Artikels vom Ticket';
+    $Hash{'Forward article of ticket'} = 'Weidaleitung des Artikels vom Ticket';
     $Hash{'Forwarded message from'} = '';
     $Hash{'Reply-To'} = '';
 
     # Template: AgentHistoryForm
-    $Hash{'History of'} = 'History von';
+    $Hash{'History of'} = 'Gschichtn';
 
     # Template: AgentMailboxTicket
     $Hash{'Add Note'} = 'Notiz anheften';
@@ -430,35 +409,35 @@ sub Data {
     $Hash{'new message'} = 'neue Nachricht';
     $Hash{'PhoneView'} = 'Telefon-Ansicht';
     $Hash{'Preferences'} = 'Einstellungen';
-    $Hash{'Utilities'} = 'Werkzeuge';
+    $Hash{'Utilities'} = 'Werkzeige';
 
     # Template: AgentNote
     $Hash{'Add note to ticket'} = 'Anheften einer Notiz an Ticket';
     $Hash{'Note!'} = 'Notiz!';
 
     # Template: AgentOwner
-    $Hash{'Change owner of ticket'} = 'Ändern Eigners von Ticket';
-    $Hash{'Message for new Owner'} = 'Nachricht an neuen Eigner';
-    $Hash{'New user'} = 'Neuer Eigner';
+    $Hash{'Change owner of ticket'} = 'Ändern des Eigners vom Ticket';
+    $Hash{'Message for new Owner'} = 'Nachricht um neia Eigner';
+    $Hash{'New user'} = 'Neier Benutzer';
 
     # Template: AgentPhone
-    $Hash{'Customer called'} = 'Kunden angerufen';
+    $Hash{'Customer called'} = 'Kundn angrufa';
     $Hash{'Phone call'} = 'Anruf';
-    $Hash{'Phone call at %s'} = 'Anruf um %s';
+    $Hash{'Phone call at %s'} = 'Angrufa um %s';
 
     # Template: AgentPhoneNew
-    $Hash{'A message should have a From: recipient!'} = 'Eine Nachricht sollte einen Absender im Von: haben!';
-    $Hash{'new ticket'} = 'neues Ticket';
-    $Hash{'New ticket via call.'} = 'Neues Ticket durch Anruf.';
-    $Hash{'You need a email address (e. g. customer@example.com) in From:!'} = 'Im From-Feld wird eine eMail-Adresse (z. B. kunde@beispiel.de) benötigt!';
+    $Hash{'A message should have a From: recipient!'} = '';
+    $Hash{'new ticket'} = 'Neis Ticket';
+    $Hash{'New ticket via call.'} = 'Neis Ticket am Telefon.';
+    $Hash{'You need a email address (e. g. customer@example.com) in From:!'} = '';
 
     # Template: AgentPlain
     $Hash{'ArticleID'} = '';
-    $Hash{'Plain'} = '';
+    $Hash{'Plain'} = 'Ungemustert';
     $Hash{'TicketID'} = '';
 
     # Template: AgentPreferencesCustomQueue
-    $Hash{'Select your custom queues'} = 'Bevorzugte Queues auswählen';
+    $Hash{'Select your custom queues'} = 'Bevorzugte Queues wähln';
 
     # Template: AgentPreferencesForm
 
@@ -466,26 +445,26 @@ sub Data {
 
     # Template: AgentPreferencesPassword
     $Hash{'Change Password'} = 'Passwort ändern';
-    $Hash{'New password'} = 'Neues Passwort';
-    $Hash{'New password again'} = 'Neues Passwort wiederholen';
+    $Hash{'New password'} = 'Neis Passwort';
+    $Hash{'New password again'} = 'Neis Passwort wiederholen';
 
     # Template: AgentPriority
     $Hash{'Change priority of ticket'} = 'Priorität ändern für Ticket';
-    $Hash{'New state'} = 'Neue Priorität';
+    $Hash{'New state'} = 'Neia Status';
 
     # Template: AgentSpelling
-    $Hash{'Apply these changes'} = 'Änderungen übernehmen';
-    $Hash{'Discard all changes and return to the compose screen'} = 'Verwerfen aller Änderungen und zurück zum Verfassen-Fenster';
-    $Hash{'Return to the compose screen'} = 'Zurück zum Verfassen-Fenster';
-    $Hash{'Spell Checker'} = 'Rechtschreibkontrolle';
-    $Hash{'spelling error(s)'} = 'Rechtschreibfehler';
-    $Hash{'The message being composed has been closed.  Exiting.'} = 'Die erstellte Nachricht wurde geschlossen.';
-    $Hash{'This window must be called from compose window'} = 'Dieses Fenster muss über das Verfassen-Fenster aufgerufen werden';
+    $Hash{'Apply these changes'} = 'Duas endan';
+    $Hash{'Discard all changes and return to the compose screen'} = 'Dua nix und zruck';
+    $Hash{'Return to the compose screen'} = 'zruck';
+    $Hash{'Spell Checker'} = 'Rechtschreib-Checker';
+    $Hash{'spelling error(s)'} = 'Rechtschreib-Fella';
+    $Hash{'The message being composed has been closed.  Exiting.'} = '';
+    $Hash{'This window must be called from compose window'} = '';
 
     # Template: AgentStatusView
     $Hash{'D'} = '';
     $Hash{'sort downward'} = 'Sortierung abwärts';
-    $Hash{'sort upward'} = 'Sortierung aufwärts';
+    $Hash{'sort upward'} = 'Sortierung aufärts';
     $Hash{'Ticket limit:'} = '';
     $Hash{'Ticket Status'} = '';
     $Hash{'U'} = '';
@@ -499,37 +478,37 @@ sub Data {
     $Hash{'unlock'} = 'freigeben';
 
     # Template: AgentUtilSearchByCustomerID
-    $Hash{'Customer history search'} = 'Kunden-History-Suche';
-    $Hash{'Customer history search (e. g. "ID342425").'} = 'Kunden History Suche (z. B. "ID342425").';
+    $Hash{'Customer history search'} = 'Kundn-History-suacha';
+    $Hash{'Customer history search (e. g. "ID342425").'} = 'Kundn History suacha (z. B. "ID342425").';
     $Hash{'No * possible!'} = 'Kein * möglich!';
 
     # Template: AgentUtilSearchByText
     $Hash{'Article free text'} = '';
-    $Hash{'Fulltext search'} = 'Volltext-Suche';
-    $Hash{'Fulltext search (e. g. "Mar*in" or "Baue*" or "martin+hallo")'} = 'Volltextsuche (z. B. "Mar*in" oder "Baue*" oder "martin+hallo")';
-    $Hash{'Search in'} = 'Suche in';
+    $Hash{'Fulltext search'} = 'Volltext-suacha';
+    $Hash{'Fulltext search (e. g. "Mar*in" or "Baue*" or "martin+hallo")'} = 'Volltextsuacha (z. B. "Mar*in" oder "Baue*" oder "martin+hallo")';
+    $Hash{'Search in'} = 'Sucha in';
     $Hash{'Ticket free text'} = '';
 
     # Template: AgentUtilSearchByTicketNumber
-    $Hash{'search'} = 'Suchen';
-    $Hash{'search (e. g. 10*5155 or 105658*)'} = 'Suche (z. B. 10*5155 or 105658*)';
+    $Hash{'search'} = 'suachan';
+    $Hash{'search (e. g. 10*5155 or 105658*)'} = 'suacha (z. B. 10*5155 or 105658*)';
 
     # Template: AgentUtilSearchNavBar
-    $Hash{'Results'} = 'Ergebnis';
-    $Hash{'Site'} = 'Seite';
-    $Hash{'Total hits'} = 'Treffer gesamt';
+    $Hash{'Results'} = 'Gfuntn';
+    $Hash{'Site'} = 'Seitn';
+    $Hash{'Total hits'} = 'Treffer gsamt';
 
     # Template: AgentUtilSearchResult
 
     # Template: AgentUtilTicketStatus
-    $Hash{'All open tickets'} = 'Alle offenen Tickets';
-    $Hash{'open tickets'} = 'offene Tickets';
-    $Hash{'Provides an overview of all'} = 'Bietet eine Übersicht von allen';
-    $Hash{'So you see what is going on in your system.'} = 'Somit können Sie sehen, was in Ihrem System vorgeht.';
+    $Hash{'All open tickets'} = 'Alle offna Tickets';
+    $Hash{'open tickets'} = 'offne Tickets';
+    $Hash{'Provides an overview of all'} = 'Gibt an Übersicht von allen';
+    $Hash{'So you see what is going on in your system.'} = 'Damit Du sigst was Sache ist.';
 
     # Template: CustomerCreateAccount
-    $Hash{'Create'} = 'Erstellen';
-    $Hash{'Create Account'} = 'Account erstellen';
+    $Hash{'Create'} = 'Erstelln';
+    $Hash{'Create Account'} = 'Account erstelln';
 
     # Template: CustomerError
     $Hash{'Backend'} = '';
@@ -545,8 +524,8 @@ sub Data {
     # Template: CustomerLogin
 
     # Template: CustomerLostPassword
-    $Hash{'Lost your password?'} = 'Passwort verloren?';
-    $Hash{'Request new password'} = 'Neues Passwort beantragen';
+    $Hash{'Lost your password?'} = 'Passwort verschmissn?';
+    $Hash{'Request new password'} = 'Neis Passwort wolln';
 
     # Template: CustomerMessage
     $Hash{'Follow up'} = '';
@@ -554,11 +533,11 @@ sub Data {
     # Template: CustomerMessageNew
 
     # Template: CustomerNavigationBar
-    $Hash{'Create new Ticket'} = 'Neues Ticket erstellen';
-    $Hash{'My Tickets'} = 'Meine Tickets';
-    $Hash{'New Ticket'} = 'neues Ticket';
-    $Hash{'Ticket-Overview'} = 'Ticket-Übersicht';
-    $Hash{'Welcome %s'} = 'Willkommen %s';
+    $Hash{'Create new Ticket'} = 'Erstll neis Ticket';
+    $Hash{'My Tickets'} = '';
+    $Hash{'New Ticket'} = 'Neis Ticket';
+    $Hash{'Ticket-Overview'} = 'Alle Tickets';
+    $Hash{'Welcome %s'} = 'Griaste %s';
 
     # Template: CustomerPreferencesForm
 
@@ -571,7 +550,7 @@ sub Data {
     # Template: CustomerStatusViewTable
 
     # Template: CustomerTicketZoom
-    $Hash{'Accounted time'} = 'Zugewiesene Zeit';
+    $Hash{'Accounted time'} = 'Aufgschrime Zeit';
 
     # Template: CustomerWarning
 
@@ -583,7 +562,7 @@ sub Data {
     $Hash{'Home'} = '';
 
     # Template: InstallerStart
-    $Hash{'next step'} = 'Nächster Schritt';
+    $Hash{'next step'} = 'Nexter Schritt';
 
     # Template: InstallerSystem
 
@@ -592,7 +571,7 @@ sub Data {
     # Template: LostPassword
 
     # Template: NoPermission
-    $Hash{'No Permission'} = 'Keine Erlaubnis';
+    $Hash{'No Permission'} = 'koane Erlaubnis';
 
     # Template: Notify
     $Hash{'Info'} = '';
@@ -600,25 +579,25 @@ sub Data {
     # Template: QueueView
     $Hash{'All tickets'} = 'Alle Tickets';
     $Hash{'Queues'} = 'Queues';
-    $Hash{'Show all'} = 'Alle gezeigt';
+    $Hash{'Show all'} = 'Alle goagt';
     $Hash{'Ticket available'} = 'Ticket verfügbar';
     $Hash{'tickets'} = 'Tickets';
-    $Hash{'Tickets shown'} = 'Tickets gezeigt';
+    $Hash{'Tickets shown'} = 'Tickets goagt';
 
     # Template: SystemStats
     $Hash{'Graphs'} = 'Diagramme';
     $Hash{'Tickets'} = '';
 
     # Template: Test
-    $Hash{'OTRS Test Page'} = 'OTRS Test Seite';
+    $Hash{'OTRS Test Page'} = '';
 
     # Template: TicketEscalation
     $Hash{'Ticket escalation!'} = 'Ticket Eskalation!';
 
     # Template: TicketView
     $Hash{'Change queue'} = 'Wechsle Queue';
-    $Hash{'Compose Answer'} = 'Antwort erstellen';
-    $Hash{'Contact customer'} = 'Kunden kontaktieren';
+    $Hash{'Compose Answer'} = 'Antwort schreim';
+    $Hash{'Contact customer'} = 'Kundn kontaktieren';
     $Hash{'phone call'} = 'Anrufen';
     $Hash{'Time till escalation'} = 'Zeit bis zur Escalation';
 
@@ -644,17 +623,17 @@ sub Data {
     $Hash{'(Click here to add charset)'} = '(Hier klicken - Charset hinzufügen';
     $Hash{'(Click here to add language)'} = '(Hier klicken - Sprache hinzufügen)';
     $Hash{'(Click here to add state)'} = '(Hier klicken - state hinzufügen)';
-    $Hash{'Update auto response'} = 'Auto-Antwort aktualisieren';
-    $Hash{'Update charset'} = 'Charset aktualisieren';
-    $Hash{'Update group'} = 'Gruppe aktualisieren';
-    $Hash{'Update language'} = 'Sprache aktualisieren';
-    $Hash{'Update queue'} = 'Queue aktualisieren';
-    $Hash{'Update response'} = 'Antworten aktualisieren';
-    $Hash{'Update salutation'} = 'Anrede aktualisieren';
-    $Hash{'Update signature'} = 'Signatur aktualisieren';
-    $Hash{'Update state'} = 'State aktualisieren';
-    $Hash{'Update system address'} = 'System-Email-Adresse aktualisieren';
-    $Hash{'Update user'} = 'Benutzer aktualisieren';
+    $Hash{'Update auto response'} = 'Auto-Antwort basst scho';
+    $Hash{'Update charset'} = 'Charset basst scho';
+    $Hash{'Update group'} = 'Gruppe basst scho';
+    $Hash{'Update language'} = 'Sprache basst scho';
+    $Hash{'Update queue'} = 'Queue basst scho';
+    $Hash{'Update response'} = 'Antworten basst scho';
+    $Hash{'Update salutation'} = 'Anrede basst scho';
+    $Hash{'Update signature'} = 'Signatur basst scho';
+    $Hash{'Update state'} = 'State basst scho';
+    $Hash{'Update system address'} = 'System-Email-Adresse basst scho';
+    $Hash{'Update user'} = 'Benutzer basst scho';
     $Hash{'You have to be in the admin group!'} = 'Sie müssen hierfür in der Admin-Gruppe sein!';
     $Hash{'You have to be in the stats group!'} = 'Sie müssen hierfür in der Statistik-Gruppe sein!';
     $Hash{'auto responses set'} = 'Auto-Antworten gesetzt';
