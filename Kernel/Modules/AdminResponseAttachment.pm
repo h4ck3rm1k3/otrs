@@ -1,323 +1,227 @@
 # --
-# Kernel/Modules/AdminResponseAttachment.pm - to add/update/delete groups <-> users
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Kernel/Modules/AdminResponseAttachment.pm - queue <-> responses
+# Copyright (C) 2001-2004 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: AdminResponseAttachment.pm,v 1.40 2011/12/23 13:49:08 mg Exp $
+# $Id: AdminResponseAttachment.pm,v 1.6.2.1 2004/04/01 13:25:34 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::Modules::AdminResponseAttachment;
 
 use strict;
-use warnings;
-
 use Kernel::System::StdAttachment;
-use Kernel::System::StandardResponse;
+use Kernel::System::StdResponse;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.40 $) [1];
+$VERSION = '$Revision: 1.6.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
+# --
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
+
+    # get common opjects
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
 
     # check all needed objects
-    for (qw(ParamObject DBObject QueueObject LayoutObject ConfigObject LogObject)) {
-        if ( !$Self->{$_} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
-        }
+    foreach (qw(ParamObject DBObject LayoutObject ConfigObject LogObject)) {
+        die "Got no $_" if (!$Self->{$_});
     }
 
     # lib object
-    $Self->{StandardResponseObject} = Kernel::System::StandardResponse->new(%Param);
-    $Self->{StdAttachmentObject}    = Kernel::System::StdAttachment->new(%Param);
+    $Self->{StdResponseObject} = Kernel::System::StdResponse->new(%Param);
+    $Self->{StdAttachmentObject} = Kernel::System::StdAttachment->new(%Param);
 
     return $Self;
 }
-
+# --
 sub Run {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
+    my $Output = '';
+    my $ID = $Self->{ParamObject}->GetParam(Param => 'ID') || '';
+    $ID = $Self->{DBObject}->Quote($ID);
 
-    # ------------------------------------------------------------ #
-    # response <-> attachment 1:n
-    # ------------------------------------------------------------ #
-    if ( $Self->{Subaction} eq 'Response' ) {
+    my $NextScreen = 'AdminResponseAttachment';
 
-        # get response data
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
-        my %StandardResponseData = $Self->{StandardResponseObject}->StandardResponseGet(
-            ID => $ID,
+    # get StdResponses data 
+    my %StdResponses = $Self->{StdResponseObject}->GetAllStdResponses(Valid => 1);
+    # get queue data
+    my %StdAttachments = $Self->{StdAttachmentObject}->GetAllStdAttachments(Valid => 1);
+
+    # user <-> group 1:n
+    if ($Self->{Subaction} eq 'Response') {
+        $Output .= $Self->{LayoutObject}->Header(Area => 'Admin', Title => 'Response <-> Queue');
+        $Output .= $Self->{LayoutObject}->AdminNavigationBar();
+        # get StdResponses data 
+        my %StdResponsesData = $Self->{DBObject}->GetTableData(
+            Table => 'standard_response',
+            What => 'id, name',
+            Where => "id = $ID",
         );
-
-        # get attachment data
-        my %StdAttachmentData = $Self->{StdAttachmentObject}->StdAttachmentList( Valid => 1 );
-
-        # get role member
-        my %Member = $Self->{DBObject}->GetTableData(
+        my %Data = $Self->{DBObject}->GetTableData(
             Table => 'standard_response_attachment',
-            What  => 'standard_attachment_id, standard_response_id',
+            What => 'standard_attachment_id, standard_response_id',
             Where => "standard_response_id = $ID",
         );
-
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->_Change(
-            Selected => \%Member,
-            Data     => \%StdAttachmentData,
-            ID       => $StandardResponseData{ID},
-            Name     => $StandardResponseData{Name},
-            Type     => 'Response',
+        $Output .= $Self->_MaskChange(
+            FirstData => \%StdResponsesData,
+            SecondData => \%StdAttachments,
+            Data => \%Data,	 
+            Type => 'Response',
         );
+
         $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
     }
+    # group <-> user n:1
+    elsif ($Self->{Subaction} eq 'Attachment') {
+        $Output .= $Self->{LayoutObject}->Header(Area => 'Admin', Title => 'Response <-> Queue');
+        $Output .= $Self->{LayoutObject}->AdminNavigationBar();
+        # get queue data
+        my %AttachmentData = $Self->{DBObject}->GetTableData(
+                Table => 'standard_attachment',
+                What => 'id, name, filename',
+                Clamp => 1,
+                Where => "id = $ID",);
 
-    # ------------------------------------------------------------ #
-    # attachment <-> response n:1
-    # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'Attachment' ) {
-
-        # get group data
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
-        my %StdAttachmentData = $Self->{StdAttachmentObject}->StdAttachmentGet( ID => $ID );
-
-        # get user list
-        my %StandardResponseData
-            = $Self->{StandardResponseObject}->StandardResponseList( Valid => 1 );
-
-        # get role member
-        my %Member = $Self->{DBObject}->GetTableData(
-            Table => 'standard_response_attachment',
-            What  => 'standard_response_id, standard_attachment_id',
-            Where => "standard_attachment_id = $ID"
-        );
-
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->_Change(
-            Selected => \%Member,
-            Data     => \%StandardResponseData,
-            ID       => $StdAttachmentData{ID},
-            Name     => $StdAttachmentData{Name},
-            Type     => 'Attachment',
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
-    }
-
-    # ------------------------------------------------------------ #
-    # add user to groups
-    # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'ChangeAttachment' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        # get new role member
-        my @IDs = $Self->{ParamObject}->GetArray( Param => 'Attachment' );
-
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
-
-        # get user list
-        my %StandardResponseData
-            = $Self->{StandardResponseObject}->StandardResponseList( Valid => 1 );
-        for my $StandardResponseID ( keys %StandardResponseData ) {
-            my $Active = 0;
-            for my $StdAttachmentID (@IDs) {
-                next if $StdAttachmentID ne $StandardResponseID;
-                $Active = 1;
-                last;
-            }
-
-            $Self->{DBObject}->Do(
-                SQL  => 'DELETE FROM standard_response_attachment WHERE standard_attachment_id = ?',
-                Bind => [ \$ID ],
+        my %Data = $Self->{DBObject}->GetTableData(
+                Table => 'standard_response_attachment',
+                What => 'standard_response_id, standard_attachment_id',
+                Where => "standard_attachment_id = $ID");
+        $Output .= $Self->_MaskChange(
+                FirstData => \%AttachmentData,
+                SecondData => \%StdResponses,
+                Data => \%Data,
+                Type => 'Attachment',
             );
-            for my $NewID (@IDs) {
-                $Self->{DBObject}->Do(
-                    SQL => 'INSERT INTO standard_response_attachment (standard_attachment_id, '
-                        . 'standard_response_id, create_time, create_by, change_time, change_by)'
-                        . ' VALUES (?, ?, current_timestamp, ?, current_timestamp, ?)',
-                    Bind => [ \$ID, \$NewID, \$Self->{UserID}, \$Self->{UserID} ],
-                );
-            }
-        }
-
-        return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
+        $Output .= $Self->{LayoutObject}->Footer();
     }
-
-    # ------------------------------------------------------------ #
-    # groups to user
-    # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'ChangeResponse' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        # get new role member
-        my @IDs = $Self->{ParamObject}->GetArray( Param => 'Response' );
-
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
-
-        $Self->{StdAttachmentObject}->StdAttachmentSetResponses(
-            AttachmentIDsRef => \@IDs,
-            ID               => $ID,
-            UserID           => $Self->{UserID},
+    # --
+    # update responses of attachment
+    # --
+    elsif ($Self->{Subaction} eq 'ChangeAttachment') {
+        my @NewIDs = $Self->{ParamObject}->GetArray(Param => 'IDs');
+        $Self->{DBObject}->Do(
+          SQL => "DELETE FROM standard_response_attachment WHERE standard_attachment_id = $ID",
         );
-
-        return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
+        foreach my $NewID (@NewIDs) {
+            # db quote
+            $NewID = $Self->{DBObject}->Quote($NewID);
+            my $SQL = "INSERT INTO standard_response_attachment (standard_attachment_id, ".
+              "standard_response_id, create_time, create_by, " .
+	          " change_time, change_by)" .
+              " VALUES " .
+              " ($ID, $NewID, current_timestamp, $Self->{UserID}, current_timestamp, $Self->{UserID})";
+            $Self->{DBObject}->Do(SQL => $SQL);
+        }
+        $Output .= $Self->{LayoutObject}->Redirect(OP => "Action=$NextScreen");
     }
+    # --
+    # update attachments of response
+    # --
+    elsif ($Self->{Subaction} eq 'ChangeResponse') {
+        my @NewIDs = $Self->{ParamObject}->GetArray(Param => 'IDs');
+        $Self->{StdAttachmentObject}->SetStdAttachmentsOfResponseID(
+            AttachmentIDsRef => \@NewIDs,
+            ID => $ID,
+            UserID => $Self->{UserID},
+        );
+        $Output .= $Self->{LayoutObject}->Redirect(OP => "Action=$NextScreen");
 
-    # ------------------------------------------------------------ #
-    # overview
-    # ------------------------------------------------------------ #
-    my $Output = $Self->{LayoutObject}->Header();
-    $Output .= $Self->{LayoutObject}->NavigationBar();
-    $Output .= $Self->_Overview();
-    $Output .= $Self->{LayoutObject}->Footer();
+    }
+    # else ! print form 
+    else {
+        $Output .= $Self->{LayoutObject}->Header(Area => 'Admin', Title => 'Response <-> Attachment');
+        $Output .= $Self->{LayoutObject}->AdminNavigationBar();
+        $Output .= $Self->_Mask(
+            FirstData => \%StdResponses, 
+            SecondData => \%StdAttachments,
+        );
+        $Output .= $Self->{LayoutObject}->Footer();
+    }
     return $Output;
 }
-
-sub _Change {
-    my ( $Self, %Param ) = @_;
-
-    my %Data   = %{ $Param{Data} };
-    my $Type   = $Param{Type} || 'Response';
-    my $NeType = $Type eq 'Attachment' ? 'Response' : 'Attachment';
-
-    my %VisibleType = ( Response => 'Response', Attachment => 'Attachment', );
-
-    $Self->{LayoutObject}->Block( Name => 'Overview' );
-    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-    $Self->{LayoutObject}->Block( Name => 'ActionOverview' );
-
-    $Self->{LayoutObject}->Block(
-        Name => 'Change',
-        Data => {
-            %Param,
-            ActionHome    => 'Admin' . $Type,
-            NeType        => $NeType,
-            VisibleType   => $VisibleType{$Type},
-            VisibleNeType => $VisibleType{$NeType},
-        },
-    );
-
-    $Self->{LayoutObject}->Block( Name => "ChangeHeader$VisibleType{$NeType}" );
-
-    $Self->{LayoutObject}->Block(
-        Name => 'ChangeHeader',
-        Data => {
-            %Param,
-            Type => $Type,
-        },
-    );
-
-    for my $ID ( sort { uc( $Data{$a} ) cmp uc( $Data{$b} ) } keys %Data ) {
-
-        my $Selected = $Param{Selected}->{$ID} ? ' checked="checked"' : '';
-
-        $Self->{LayoutObject}->Block(
-            Name => 'ChangeRow',
-            Data => {
-                %Param,
-                Name     => $Param{Data}->{$ID},
-                NeType   => $NeType,
-                Type     => $Type,
-                ID       => $ID,
-                Selected => $Selected,
-            },
-        );
+# --
+sub _Mask {
+    my $Self = shift;
+    my %Param = @_;
+    my $UserData = $Param{FirstData};
+    my %UserDataTmp = %$UserData;
+    my $GroupData = $Param{SecondData};
+    my %GroupDataTmp = %$GroupData;
+    my $BaseLink = $Self->{LayoutObject}->{Baselink} . "Action=AdminResponseAttachment&";
+    
+    foreach (sort {$UserDataTmp{$a} cmp $UserDataTmp{$b}} keys %UserDataTmp){
+        $UserDataTmp{$_} = $Self->{LayoutObject}->Ascii2Html(
+            Text => $UserDataTmp{$_},
+            HTMLQuote => 1,
+            LanguageTranslation => 0,
+        ) || '';
+        $Param{AnswerQueueStrg} .= "<a href=\"$BaseLink"."Subaction=Response&ID=$_\">$UserDataTmp{$_}</a><br>";
+    }
+    foreach (sort {$GroupDataTmp{$a} cmp $GroupDataTmp{$b}} keys %GroupDataTmp){
+        $GroupDataTmp{$_} = $Self->{LayoutObject}->Ascii2Html(
+            Text => $GroupDataTmp{$_},
+            HTMLQuote => 1,
+            LanguageTranslation => 0,
+        ) || '';
+        $Param{QueueAnswerStrg}.= "<a href=\"$BaseLink"."Subaction=Attachment&ID=$_\">$GroupDataTmp{$_}</a><br>";
     }
 
-    return $Self->{LayoutObject}->Output(
-        TemplateFile => 'AdminResponseAttachment',
-        Data         => \%Param,
-    );
+    return $Self->{LayoutObject}->Output(TemplateFile => 'AdminResponseAttachmentForm', Data => \%Param);
 }
+# --
+sub _MaskChange {
+    my $Self = shift;
+    my %Param = @_;
+    my $FirstData = $Param{FirstData};
+    my %FirstDataTmp = %$FirstData;
+    my $SecondData = $Param{SecondData};
+    my %SecondDataTmp = %$SecondData;
+    my $Data = $Param{Data};
+    my %DataTmp = %$Data;
+    $Param{Type} = $Param{Type} || 'Response';
+    my $NeType = 'Response';
+    $NeType = 'Attachment' if ($Param{Type} eq 'Response');
 
-sub _Overview {
-    my ( $Self, %Param ) = @_;
-
-    $Self->{LayoutObject}->Block(
-        Name => 'Overview',
-        Data => {},
-    );
-
-    $Self->{LayoutObject}->Block( Name => 'Filters' );
-
-    # no actions in action list
-    #    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-    $Self->{LayoutObject}->Block( Name => 'OverviewResult' );
-
-    # get StandardResponse data
-    my %StandardResponseData = $Self->{StandardResponseObject}->StandardResponseList( Valid => 1 );
-
-    # if there are any responses, they are shown
-    if (%StandardResponseData) {
-        for my $StandardResponseID (
-            sort { uc( $StandardResponseData{$a} ) cmp uc( $StandardResponseData{$b} ) }
-            keys %StandardResponseData
-            )
-        {
-            $Self->{LayoutObject}->Block(
-                Name => 'List1n',
-                Data => {
-                    Name      => $StandardResponseData{$StandardResponseID},
-                    Subaction => 'Response',
-                    ID        => $StandardResponseID,
-                },
-            );
-        }
+    foreach (sort keys %FirstDataTmp){
+        $FirstDataTmp{$_} = $Self->{LayoutObject}->Ascii2Html(
+            Text => $FirstDataTmp{$_},
+            HTMLQuote => 1,
+            LanguageTranslation => 0,
+        ) || '';
+        $Param{OptionStrg0} .= "<B>$Param{Type}:</B> <A HREF=\"$Self->{LayoutObject}->{Baselink}Action=Admin$Param{Type}&Subaction=Change&ID=$_\">" .
+        "$FirstDataTmp{$_}</A> (id=$_)<BR>";
+        $Param{OptionStrg0} .= "<INPUT TYPE=\"hidden\" NAME=\"ID\" VALUE=\"$_\"><BR>\n";
     }
-
-    # otherwise a no data message is displayed
-    else {
-        $Self->{LayoutObject}->Block(
-            Name => 'NoResponsesFoundMsg',
-            Data => {},
-        );
+    $Param{OptionStrg0} .= "<B>$NeType:</B><BR> <SELECT NAME=\"IDs\" SIZE=10 multiple>\n";
+    foreach my $ID (sort keys %SecondDataTmp){
+        $SecondDataTmp{$ID} = $Self->{LayoutObject}->Ascii2Html(
+            Text => $SecondDataTmp{$ID},
+            HTMLQuote => 1,
+            LanguageTranslation => 0,
+        ) || '';
+       $Param{OptionStrg0} .= "<OPTION ";
+       foreach (sort keys %DataTmp){
+         if ($_ eq $ID) {
+               $Param{OptionStrg0} .= 'selected';
+         }
+       }
+      $Param{OptionStrg0} .= " VALUE=\"$ID\">$SecondDataTmp{$ID} (id=$ID)</OPTION>\n";
     }
+    $Param{OptionStrg0} .= "</SELECT>\n";
 
-    # get queue data
-    my %StdAttachmentData = $Self->{StdAttachmentObject}->StdAttachmentList( Valid => 1 );
-
-    # if there are any attachments, they are shown
-    if (%StdAttachmentData) {
-        for my $StdAttachmentID (
-            sort { uc( $StdAttachmentData{$a} ) cmp uc( $StdAttachmentData{$b} ) }
-            keys %StdAttachmentData
-            )
-        {
-            $Self->{LayoutObject}->Block(
-                Name => 'Listn1',
-                Data => {
-                    Name      => $StdAttachmentData{$StdAttachmentID},
-                    Subaction => 'Attachment',
-                    ID        => $StdAttachmentID,
-                },
-            );
-        }
-    }
-
-    # otherwise a no data message is displayed
-    else {
-        $Self->{LayoutObject}->Block(
-            Name => 'NoAttachmentsFoundMsg',
-            Data => {},
-        );
-    }
-
-    # return output
-    return $Self->{LayoutObject}->Output(
-        TemplateFile => 'AdminResponseAttachment',
-        Data         => \%Param,
-    );
+    return $Self->{LayoutObject}->Output(TemplateFile => 'AdminResponseAttachmentChangeForm', Data => \%Param);
 }
-
+# --
 1;
