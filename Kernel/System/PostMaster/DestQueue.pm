@@ -1,123 +1,107 @@
 # --
 # Kernel/System/PostMaster/DestQueue.pm - sub part of PostMaster.pm
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: DestQueue.pm,v 1.27 2010/03/22 15:56:22 martin Exp $
+# $Id: DestQueue.pm,v 1.9.2.1 2003/05/08 02:03:27 martin Exp $
 # --
-# This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see 
+# the enclosed file COPYING for license information (GPL). If you 
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::PostMaster::DestQueue;
 
 use strict;
-use warnings;
-
-use Kernel::System::SystemAddress;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.27 $) [1];
+$VERSION = '$Revision: 1.9.2.1 $';
+$VERSION =~ s/^.*:\s(\d+\.\d+)\s.*$/$1/;
 
+# --
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
+    my $Self = {}; 
+    bless ($Self, $Type);
 
-    $Self->{Debug} = $Param{Debug} || 0;
+    $Self->{Debug} = 0;
 
-    # get needed objects
-    for (qw(ConfigObject LogObject DBObject ParserObject QueueObject EncodeObject MainObject)) {
+    # --
+    # get needed opbjects
+    # --
+    foreach (qw(ConfigObject LogObject DBObject ParseObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
-    $Self->{SystemAddressObject} = Kernel::System::SystemAddress->new(%Param);
-
     return $Self;
 }
-
+# --
 # GetQueueID
 sub GetQueueID {
-    my ( $Self, %Param ) = @_;
-
-    # get email headers
-    my %GetParam = %{ $Param{Params} };
-
-    # check possible to, cc and resent-to emailaddresses
-    my $Recipient = '';
-    for my $Key (qw(Resent-To Envelope-To To Cc Delivered-To X-Original-To)) {
-        next if !$GetParam{$Key};
-        if ($Recipient) {
-            $Recipient .= ', ';
-        }
-        $Recipient .= $GetParam{$Key};
-    }
-
-    # get addresses
-    my @EmailAddresses = $Self->{ParserObject}->SplitAddressLine( Line => $Recipient );
-
-    # check addresses
+    my $Self = shift;
+    my %Param = @_;
+    my $ParseObject = $Self->{ParseObject};
+    my $DBObject = $Self->{DBObject};
+    my $Queue = $Self->{ConfigObject}->Get('PostmasterDefaultQueue');
+    my %GetParam = %{$Param{Params}};
     my $QueueID;
-    for my $Email (@EmailAddresses) {
-        next if !$Email;
-        my $Address = $Self->{ParserObject}->GetEmailAddress( Email => $Email );
-        next if !$Address;
-
-        # lookup queue id if recipiend address
-        $QueueID = $Self->{SystemAddressObject}->SystemAddressQueueID(
-            Address => $Address,
-        );
-
-        # debug
-        if ( $Self->{Debug} > 1 ) {
-            if ($QueueID) {
-                $Self->{LogObject}->Log(
-                    Priority => 'debug',
-                    Message =>
-                        "Match email: $Email to QueueID $QueueID (MessageID:$GetParam{'Message-ID'})!",
-                );
+    # --
+    # get all system addresses
+    # --
+    my %SystemAddresses = $DBObject->GetTableData(
+        Table => 'system_address',
+        What => 'value0, queue_id',
+        Valid => 1
+    );
+    # --
+    # check possible to and cc emailaddresses 
+    # --
+    my @EmailAddresses = $ParseObject->SplitAddressLine(Line => $GetParam{To} .",". $GetParam{Cc});
+    foreach (@EmailAddresses) {
+        my $Address = $ParseObject->GetEmailAddress(Email => $_);
+        foreach (keys %SystemAddresses) {
+            if ($_ =~ /\Q$Address/i) {
+                if ($Self->{Debug} > 0) {
+                    print STDERR "* matched email: $_ (QueueID=$SystemAddresses{$_})\n";
+                }
+                $QueueID = $SystemAddresses{$_};
             }
             else {
-                $Self->{LogObject}->Log(
-                    Priority => 'debug',
-                    Message  => "Does not match email: $Email (MessageID:$GetParam{'Message-ID'})!",
-                );
+                if ($Self->{Debug} > 0) {
+                    print STDERR "doesn't matched: '$_' != '$Address'\n";
+                }
             }
         }
-        last if $QueueID;
     }
-
-    # if no queue id got found, lookup postmaster queue id
-    if ( !$QueueID ) {
-        my $Queue = $Self->{ConfigObject}->Get('PostmasterDefaultQueue');
-        return $Self->{QueueObject}->QueueLookup( Queue => $Queue ) || 1;
+    # --
+    # if there exists a X-OTRS-Queue header
+    # --
+    if ($GetParam{'X-OTRS-Queue'}) {
+        if ($Self->{Debug} > 0) {
+            print STDERR "* there exists a X-OTRS-Queue header: $GetParam{'X-OTRS-Queue'} " .
+            "(QueueID $QueueID now undef)\n";
+        }
+        $Queue = $GetParam{'X-OTRS-Queue'};
+        $QueueID = undef;
+    }
+    # --
+    # get dest queue
+    # --
+    if (!$QueueID && $Queue) {
+        my $QueueObject = Kernel::System::Queue->new(
+            DBObject => $Self->{DBObject},
+            ConfigObject => $Self->{ConfigObject},
+            LogObject => $Self->{LogObject},
+        );
+        $QueueID = $QueueObject->QueueLookup(Queue => $Queue) || 1;
+        if ($Self->{Debug} > 0) {
+            print STDERR "* make QueueLookup (Queue=$Queue, QueueID=$QueueID)\n";
+        }
     }
     return $QueueID;
 }
-
-# GetTrustedQueueID
-sub GetTrustedQueueID {
-    my ( $Self, %Param ) = @_;
-
-    # get email headers
-    my %GetParam = %{ $Param{Params} };
-
-    # if there exists a X-OTRS-Queue header
-    if ( $GetParam{'X-OTRS-Queue'} ) {
-        if ( $Self->{Debug} > 0 ) {
-            $Self->{LogObject}->Log(
-                Priority => 'debug',
-                Message =>
-                    "There exists a X-OTRS-Queue header: $GetParam{'X-OTRS-Queue'} (MessageID:$GetParam{'Message-ID'})!",
-            );
-        }
-
-        # get dest queue
-        return $Self->{QueueObject}->QueueLookup( Queue => $GetParam{'X-OTRS-Queue'} );
-    }
-    return;
-}
+# --
 
 1;
