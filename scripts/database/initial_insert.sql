@@ -2,9 +2,12 @@
 -- initial_insert.sql - provides initial system data
 -- Copyright (C) 2001,2002 Martin Edenhofer <martin+code@otrs.org>
 -- --
--- $Id: initial_insert.sql,v 1.9 2003/04/22 21:23:23 martin Exp $
+-- $Id: initial_insert.sql,v 1.10 2003/04/30 12:47:42 martin Exp $
 -- 
 -- $Log: initial_insert.sql,v $
+-- Revision 1.10  2003/04/30 12:47:42  martin
+-- removed not needed stuff
+--
 -- Revision 1.9  2003/04/22 21:23:23  martin
 -- added missing StateUpdate to ticket_history_type table
 --
@@ -195,11 +198,6 @@ INSERT INTO system_user
     (first_name, last_name, login, pw, valid_id, create_by, create_time, change_by, change_time)
     VALUES
     ('Admin', 'OTRS', 'root@localhost', 'roK20XGbWEsSM', 1, 1, current_timestamp, 1, current_timestamp);
--- only temp. FIXME!
-----INSERT INTO system_user
-----    (first_name, last_name, login, pw, valid_id, create_by, create_time, change_by, change_time)
-----    VALUES
-----    ('Martin', 'Edenhofer', 'martin@edenhofer.de', 'maVqIYkzcYC2.', 1, 1, current_timestamp, 1, current_timestamp);
 
 -- groups
 INSERT INTO groups
@@ -346,10 +344,6 @@ INSERT INTO system_address
     (value0, value1, comment, valid_id, queue_id, create_by, create_time, change_by, change_time)
     VALUES
     ('otrs@localhost', 'OTRS System', 'Std. Address', 1, 1, 1, current_timestamp, 1, current_timestamp);
-----INSERT INTO system_address
-----    (value0, value1, comment, valid_id, queue_id, create_by, create_time, change_by, change_time)
-----    VALUES
-----    ('martin@linuxatwork.de', 'Martin Edenhofer', 'Std. Address', 1, 1, 1, current_timestamp, 1, current_timestamp);
 
 -- follow_up_possible
 INSERT INTO follow_up_possible
@@ -542,11 +536,6 @@ INSERT INTO article_type
         (name, valid_id, create_by, create_time, change_by, change_time)
         VALUES
         ('webrequest', 1, 1, current_timestamp, 1, current_timestamp);
--- note-normal!
-----INSERT INTO article_type
-----        (name, valid_id, create_by, create_time, change_by, change_time)
-----        VALUES
-----        ('note-normal', 1, 1, current_timestamp, 1, current_timestamp);
 INSERT INTO article_type
         (name, valid_id, create_by, create_time, change_by, change_time)
         VALUES
