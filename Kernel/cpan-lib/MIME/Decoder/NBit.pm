@@ -85,7 +85,7 @@ it and/or modify it under the same terms as Perl itself.
 
 =head1 VERSION
 
-$Revision: 5.403 $ $Date: 2000/11/04 19:54:48 $
+$Revision: 1.7 $ $Date: 2005/01/13 19:23:15 $
 
 
 =cut
@@ -98,7 +98,7 @@ use MIME::Tools qw(:msgs);
 @ISA = qw(MIME::Decoder);
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 5.403 $, 10;
+$VERSION = "5.417";
 
 ### How many bytes to decode at a time?
 my $DecodeChunkLength = 8 * 1024;

@@ -111,6 +111,10 @@ use Carp;
     'quoted-printable' => 'MIME::Decoder::QuotedPrint',
 
   ### Non-standard...
+    'binhex'     => 'MIME::Decoder::BinHex',
+    'binhex40'   => 'MIME::Decoder::BinHex',
+    'mac-binhex40' => 'MIME::Decoder::BinHex',
+    'mac-binhex' => 'MIME::Decoder::BinHex',
     'x-uu'       => 'MIME::Decoder::UU',
     'x-uuencode' => 'MIME::Decoder::UU',
 
@@ -122,7 +126,7 @@ use Carp;
 );
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 5.403 $, 10;
+$VERSION = "5.417";
 
 ### Me:
 my $ME = 'MIME::Decoder';
@@ -168,7 +172,9 @@ sub new {
 
     ### Create the new object (if we can):
     my $self = { MD_Encoding => lc($encoding) };
-    require $concrete_path;
+    unless (eval "require '$concrete_path';") {
+	return undef;
+    }
     bless $self, $concrete_name;
     $self->init(@args);
 }
@@ -247,14 +253,14 @@ Returns true on success, throws exception on failure.
 =cut
 
 sub encode {
-    my ($self, $in, $out) = @_;
-    
+    my ($self, $in, $out, $textual_type) = @_;
+
     ### Coerce old-style filehandles to legit objects, and do it!
     $in  = wraphandle($in);
     $out = wraphandle($out);
 
     ### Invoke back-end method to do the work:
-    $self->encode_it($in, $out) || 
+    $self->encode_it($in, $out, $self->encoding eq 'quoted-printable' ? ($textual_type) : ()) ||
 	die "$ME: ".$self->encoding." encoding failed\n";
 }
 
@@ -633,7 +639,7 @@ it and/or modify it under the same terms as Perl itself.
 
 =head1 VERSION
 
-$Revision: 5.403 $ $Date: 2000/11/04 19:54:46 $
+$Revision: 1.12 $ $Date: 2005/01/13 19:23:15 $
 
 =cut
 

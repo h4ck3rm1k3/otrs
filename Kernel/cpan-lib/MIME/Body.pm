@@ -142,7 +142,7 @@ use IO::Scalar;
 use Carp;
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$Revision: 5.403 $, 10;
+$VERSION = "5.417";
 
 
 #------------------------------
@@ -660,6 +660,7 @@ if the user application is processing more than one MIME entity at a time.
 =head1 AUTHOR
 
 Eryq (F<eryq@zeegee.com>), ZeeGee Software Inc (F<http://www.zeegee.com>).
+David F. Skoll (dfs@roaringpenguin.com) http://www.roaringpenguin.com
 
 All rights reserved.  This program is free software; you can redistribute 
 it and/or modify it under the same terms as Perl itself.
@@ -671,7 +672,7 @@ to the use of FileHandles.
 
 =head1 VERSION
 
-$Revision: 5.403 $ $Date: 2000/11/04 19:54:46 $
+$Revision: 1.8 $ $Date: 2005/01/13 19:23:15 $
 
 =cut
 
