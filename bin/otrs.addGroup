@@ -1,0 +1,75 @@
+#!/usr/bin/perl -w
+# --
+# bin/otrs.addGroup - add new system groups
+# Copyright (C) 2002 Atif Ghaffar <aghaffar@developer.ch>
+# Copyright (C) 2001-2005 Martin Edenhofer <martin+code@otrs.org>
+# --
+# $Id: otrs.addGroup,v 1.8.10.1 2005/03/18 13:41:04 martin Exp $
+# --
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# --
+
+use File::Basename;
+use FindBin qw($RealBin);
+use lib dirname($RealBin);
+use lib dirname($RealBin)."/Kernel/cpan-lib";
+
+use strict;
+
+use Kernel::Config;
+use Kernel::System::Log;
+use Kernel::System::DB;
+use Kernel::System::Group;
+
+my %Param = ();
+my %CommonObject = ();
+my %opts = ();
+
+use Getopt::Std;
+getopt('cnh',  \%opts);
+
+if ($opts{h}) {
+    print STDERR "Usage: bin/otrs.addGroup [-c comment] -n groupname\n";
+    exit;
+}
+
+if (!$opts{n}) {
+    print STDERR "ERROR: Need -n groupname\n";
+    exit 1;
+}
+
+# --
+# create common objects
+# --
+$CommonObject{ConfigObject} = Kernel::Config->new();
+$CommonObject{LogObject}    = Kernel::System::Log->new(%CommonObject, LogPrefix => 'otrs.addGroup');
+$CommonObject{DBObject}     = Kernel::System::DB->new(%CommonObject);
+$CommonObject{GroupObject}  = Kernel::System::Group->new(%CommonObject);
+
+#user id of the person adding the record
+$Param{UserID}='1';
+#Validrecord
+$Param{ValidID}='1';
+$Param{Comment}=$opts{'c'} || '';
+$Param{Name}=$opts{'n'} || '';
+
+if (my $GID = $CommonObject{GroupObject}->GroupAdd(%Param)) {
+    print "Group added. Group id is '$GID'\n";
+}
+else {
+    print STDERR "ERROR: Can't add group\n";
+}
+
+exit (0);
