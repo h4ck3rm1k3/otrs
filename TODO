@@ -1,0 +1,58 @@
+# --
+# TODO - todo list of OTRS
+# Copyright (C) 2001-2004 Martin Edenhofer <martin+todo@otrs.org>
+# --
+# $Id: TODO,v 1.53.2.1 2004/02/23 10:36:22 martin Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see 
+# the enclosed file COPYING for license information (GPL). If you 
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# --
+
+1.3
+- support of time zones
+- prevent unauthorized person submit ticket via email via PostMaster*.pl
+- remove header/footer of spelling window
+- change time column format of time_accounting table from int to
+   float(6,2) - http://lists.otrs.org/pipermail/otrs/2003-April/001480.html
+- Add TicketHookSpace -> e. g. ": " or ""
+- send bulk answer -
+   http://lists.otrs.org/pipermail/otrs/2002-June/000066.html (martin)
+- delete option for records (martin)
+- add info that a ticket is already closed!
+- add attachment option to phone view
+
+2.0
+- master ticket feature
+- Multiple Attachements on http://localhost/otrs/index.pl?Action=AgentCompose
+- user info backend (LDAP and DB)
+- allow users to add or change stored replies for their queue without giving them full admin rights
+
+misc (not scheduled yet - nobody is working on it yet)
+- AdminQueueList with all config options on one screen
+- add foreign-key to the XML db scheme
+- Ticket print option for customer interface
+- interfaceing with bugzilla (martin)
+- interfaceing with Nagios (http://www.nagios.org/)
+- interfaceing with ISPMan (http://www.ispman.org/)
+- agent email interface (control via email - answer, ...)
+- add save draft in compose window
+- add count of user/customer user to admin area (LDAP-performance!?)
+   "You currently have 467 customers on the OTRS system"
+- enhance AdminEmail with customer user
+- add indicator of ticket/article size (maybe attachment size also)
+
+ideas (just ideas - nobody is working on it)
+- copy std response botton
+- add 'Mark as Read' feature for QueueView like other 'web based email system'
+- imap service (queue view as imap service)
+- add icon in QueueView to show if there is a note on it or it's a new ticket
+- module feature on set state, owner, lock and queue
+- QueueView: Additional drop-down to set ticket owner 
+   http://bugs.otrs.org/show_bug.cgi?id=129
+- web editor for Kernel/Config.pm (Kernel/Config/Defaults.pm)
+- read/unread highlighting of articles
+- show agent name in CustomerTicketOverView 
+- GenericAgent with forward full message tree to other email address
+- improve fulltext search with 'article-type'
+- drop html Content-Type: multipart/alternative parts if text/plain extists
