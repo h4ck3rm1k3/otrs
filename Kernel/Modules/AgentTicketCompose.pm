@@ -1,15 +1,15 @@
 # --
-# Kernel/Modules/AgentCompose.pm - to compose and send a message
+# Kernel/Modules/AgentTicketCompose.pm - to compose and send a message
 # Copyright (C) 2001-2005 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: AgentCompose.pm,v 1.82 2005/02/15 11:58:12 martin Exp $
+# $Id: AgentTicketCompose.pm,v 1.1 2005/02/17 07:05:56 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
-package Kernel::Modules::AgentCompose;
+package Kernel::Modules::AgentTicketCompose;
 
 use strict;
 use Kernel::System::CheckItem;
@@ -20,7 +20,7 @@ use Kernel::System::Web::UploadCache;
 use Mail::Address;
 
 use vars qw($VERSION);
-$VERSION = '$Revision: 1.82 $';
+$VERSION = '$Revision: 1.1 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 # --
@@ -116,7 +116,7 @@ sub Form {
     if ($Self->{ConfigObject}->Get('Ticket::AgentCanBeCustomer') && $Ticket{CustomerUserID} && $Ticket{CustomerUserID} eq $Self->{UserLogin}) {
         # redirect
         return $Self->{LayoutObject}->Redirect(
-            OP => "Action=AgentCustomerFollowUp&TicketID=$Self->{TicketID}",
+            OP => "Action=AgentTicketCustomerFollowUp&TicketID=$Self->{TicketID}",
         );
     }
     # check permissions
@@ -696,7 +696,7 @@ sub _Mask {
         );
     }
     # create & return output
-    return $Self->{LayoutObject}->Output(TemplateFile => 'AgentCompose', Data => \%Param);
+    return $Self->{LayoutObject}->Output(TemplateFile => 'AgentTicketCompose', Data => \%Param);
 }
 # --
 1;

@@ -1,15 +1,15 @@
 # --
-# Kernel/Modules/AgentForward.pm - to forward a message
+# Kernel/Modules/AgentTicketForward.pm - to forward a message
 # Copyright (C) 2001-2005 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: AgentForward.pm,v 1.49 2005/02/15 11:58:12 martin Exp $
+# $Id: AgentTicketForward.pm,v 1.1 2005/02/17 07:05:56 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
-package Kernel::Modules::AgentForward;
+package Kernel::Modules::AgentTicketForward;
 
 use strict;
 use Kernel::System::CheckItem;
@@ -21,7 +21,7 @@ use Kernel::System::Web::UploadCache;
 use Mail::Address;
 
 use vars qw($VERSION);
-$VERSION = '$Revision: 1.49 $';
+$VERSION = '$Revision: 1.1 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 # --
@@ -680,7 +680,7 @@ sub _Mask {
         );
     }
     # create & return output
-    return $Self->{LayoutObject}->Output(TemplateFile => 'AgentForward', Data => \%Param);
+    return $Self->{LayoutObject}->Output(TemplateFile => 'AgentTicketForward', Data => \%Param);
 }
 # --
 1;
