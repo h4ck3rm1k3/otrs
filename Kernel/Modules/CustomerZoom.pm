@@ -1,0 +1,301 @@
+# --
+# Kernel/Modules/CustomerZoom.pm - to get a closer view
+# Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
+# --
+# $Id: CustomerZoom.pm,v 1.15.2.1 2004/04/11 16:54:17 martin Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# --
+
+package Kernel::Modules::CustomerZoom;
+
+use strict;
+use Kernel::System::State;
+
+use vars qw($VERSION);
+$VERSION = '$Revision: 1.15.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
+
+# --
+sub new {
+    my $Type = shift;
+    my %Param = @_;
+    # allocate new hash for object 
+    my $Self = {}; 
+    bless ($Self, $Type);
+    # get common objects 
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
+    # check needed Opjects
+    foreach (qw(ParamObject DBObject TicketObject LayoutObject LogObject QueueObject 
+        ConfigObject UserObject SessionObject)) {
+        die "Got no $_!" if (!$Self->{$_});
+    }
+    # needed objects
+    $Self->{StateObject} = Kernel::System::State->new(%Param);
+    # get ArticleID
+    $Self->{ArticleID} = $Self->{ParamObject}->GetParam(Param => 'ArticleID');
+    
+    return $Self;
+}
+# --
+sub Run {
+    my $Self = shift;
+    my %Param = @_;
+    my $Output;
+    my $QueueID = $Self->{TicketObject}->GetQueueIDOfTicketID(TicketID => $Self->{TicketID});
+    # check needed stuff
+    if (!$Self->{TicketID} || !$QueueID) {
+      $Output = $Self->{LayoutObject}->CustomerHeader(Title => 'Error');
+      $Output .= $Self->{LayoutObject}->CustomerError();
+      $Output .= $Self->{LayoutObject}->CustomerFooter();
+      return $Output;
+    }
+    # check permissions
+    if (!$Self->{TicketObject}->CustomerPermission(
+        Type => 'ro',
+        TicketID => $Self->{TicketID},
+        UserID => $Self->{UserID})) {
+        # error screen, don't show ticket
+        return $Self->{LayoutObject}->CustomerNoPermission(WithHeader => 'yes');
+    }  
+    # store last screen
+    if ($Self->{Subaction} ne 'ShowHTMLeMail') {
+      if (!$Self->{SessionObject}->UpdateSessionID(
+        SessionID => $Self->{SessionID},
+        Key => 'LastScreen',
+        Value => $Self->{RequestedURL},
+      )) {
+        $Output = $Self->{LayoutObject}->CustomerHeader(Title => 'Error');
+        $Output .= $Self->{LayoutObject}->CustomerError();
+        $Output .= $Self->{LayoutObject}->CustomerFooter();
+        return $Output;
+      }  
+    }
+    # --
+    # fetch all std. responses
+    # --
+    my %Ticket = $Self->{TicketObject}->GetTicket(TicketID => $Self->{TicketID});
+    $Ticket{TmpCounter} = 0;
+    $Ticket{TicketTimeUnits} = $Self->{TicketObject}->GetAccountedTime(
+        TicketID => $Ticket{TicketID},
+    );
+    # get all atricle of this ticket
+    my @ArticleBox = $Self->{TicketObject}->GetArticleContentIndex(TicketID => $Self->{TicketID});
+    # get article attachments
+    foreach my $Article (@ArticleBox) {
+        my %AtmIndex = $Self->{TicketObject}->GetArticleAtmIndex(
+            ContentPath => $Article->{ContentPath},
+            ArticleID => $Article->{ArticleID},
+        );
+        $Article->{Atms} = \%AtmIndex;
+    }
+    # --
+    # genterate output
+    # --
+    $Output .= $Self->{LayoutObject}->CustomerHeader(Title => "Zoom Ticket $Ticket{TicketNumber}");
+    $Output .= $Self->{LayoutObject}->CustomerNavigationBar();
+    # --
+    # show ticket
+    # --
+    if ($Self->{Subaction} eq 'ShowHTMLeMail') {
+        # if it is a html email, drop normal header
+        $Ticket{ShowHTMLeMail} = 1;
+        $Output = '';
+    }
+    $Output .= $Self->_Mask(
+        NextStates => $Self->_GetNextStates(),
+        TicketID => $Self->{TicketID},
+        QueueID => $QueueID,
+        ArticleBox => \@ArticleBox,
+        ArticleID => $Self->{ArticleID},
+        %Ticket
+    );
+    # --
+    # return if HTML email
+    # --
+    if ($Self->{Subaction} eq 'ShowHTMLeMail') {
+        # if it is a html email, return here
+        $Ticket{ShowHTMLeMail} = 1;
+        return $Output;
+    }
+    # add footer 
+    $Output .= $Self->{LayoutObject}->CustomerFooter();
+
+    # return output
+    return $Output;
+}
+# --
+sub _GetNextStates {
+    my $Self = shift;
+    my %Param = @_;
+    # --
+    # get next states
+    # --
+    my %NextStates = $Self->{StateObject}->StateGetStatesByType(
+        Type => 'CustomerPanelDefaultNextCompose',
+        Result => 'HASH',
+    );
+    return \%NextStates;
+}
+# --
+sub _Mask {
+    my $Self = shift;
+    my %Param = @_;
+    # build next states string
+    $Param{'NextStatesStrg'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data => $Param{NextStates},
+        Name => 'ComposeStateID',
+        Selected => $Self->{ConfigObject}->Get('CustomerPanelDefaultNextComposeType')
+    );
+    # do some html quoting
+    $Param{Age} = $Self->{LayoutObject}->CustomerAge(Age => $Param{Age}, Space => ' ');
+    # build article stuff
+    my $SelectedArticleID = $Param{ArticleID} || '';
+    my $BaseLink = $Self->{LayoutObject}->{Baselink} . "TicketID=$Self->{TicketID}&QueueID=$Self->{QueueID}&";
+    my @ArticleBox = @{$Param{ArticleBox}};
+    # get last customer article
+    my $CounterArray = 0;
+    my $LastCustomerArticleID;
+    my $LastCustomerArticle = $#ArticleBox;
+    my $ArticleID = '';
+    foreach my $ArticleTmp (@ArticleBox) {
+        my %Article = %$ArticleTmp;
+        # if it is a customer article
+        if ($Article{SenderType} eq 'customer') {
+            $LastCustomerArticleID = $Article{'ArticleID'};
+            $LastCustomerArticle = $CounterArray;
+        }
+        $CounterArray++;
+        if ($SelectedArticleID eq $Article{ArticleID}) {
+            $ArticleID = $Article{ArticleID};
+        }
+    }
+    if (!$ArticleID) {
+        $ArticleID = $LastCustomerArticleID;
+    }
+    # build thread string
+    my $ThreadStrg = '';
+    my $Counter = '';
+    my $Space = '';
+    my $LastSenderType = '';
+    $Param{ArticleStrg} = '';
+    foreach my $ArticleTmp (@ArticleBox) {
+      my %Article = %$ArticleTmp;
+      if ($Article{ArticleType} ne 'email-notification-int' &&
+          $Article{ArticleType} ne 'email-internal' &&
+          $Article{ArticleType} ne 'note-internal') {
+        if ($LastSenderType ne $Article{SenderType}) {
+            $Counter .= "&nbsp;&nbsp;&nbsp;&nbsp;";
+            $Space = "$Counter |-->";
+        }
+        $LastSenderType = $Article{SenderType};
+        $ThreadStrg .= "$Space";
+        # if this is the shown article -=> add <b>
+        if ($ArticleID eq $Article{ArticleID} ||
+                 (!$ArticleID && $LastCustomerArticleID eq $Article{ArticleID})) {
+            $ThreadStrg .= ">><b><i><u>";
+        }
+        # the full part thread string
+        $ThreadStrg .= "<A HREF=\"$BaseLink"."Action=CustomerZoom&ArticleID=$Article{ArticleID}\" ";
+        $ThreadStrg .= 'onmouseover="window.status=\'$Text{"Zoom"}\'; return true;" onmouseout="window.status=\'\';">';
+        $ThreadStrg .= "\$Text{\"$Article{SenderType}\"} (\$Text{\"$Article{ArticleType}\"})</A> ";
+        $ThreadStrg .= " $Article{Created}";
+        $ThreadStrg .= "<BR>";
+        # if this is the shown article -=> add </b>
+        if ($ArticleID eq $Article{ArticleID} ||
+                 (!$ArticleID && $LastCustomerArticleID eq $Article{ArticleID})) {
+            $ThreadStrg .= "</u></i></b>";
+        }
+      }
+    }
+    $ThreadStrg .= '';
+    $Param{ArticleStrg} .= $ThreadStrg;
+
+    my $ArticleOB = $ArticleBox[$LastCustomerArticle];
+    my %Article = %$ArticleOB;
+
+    my $ArticleArray = 0;
+    foreach my $ArticleTmp (@ArticleBox) {
+        my %ArticleTmp1 = %$ArticleTmp;
+        if ($ArticleID eq $ArticleTmp1{ArticleID}) {
+            %Article = %ArticleTmp1;
+        }
+    }
+    # check show article type
+    if ($Article{ArticleType} eq 'email-notification-int' ||
+          $Article{ArticleType} eq 'email-internal' ||
+          $Article{ArticleType} eq 'note-internal') {
+        my $Output .= $Self->{LayoutObject}->CustomerError(Message => 'No permission!');
+        return $Output;
+    }
+    # get attacment string
+    my %AtmIndex = ();
+    if ($Article{Atms}) {
+        %AtmIndex = %{$Article{Atms}};
+    }
+    my $ATMStrg = '';
+    foreach (keys %AtmIndex) {
+        $AtmIndex{$_} = $Self->{LayoutObject}->Ascii2Html(Text => $AtmIndex{$_});
+        $Param{"Article::ATM"} .= '<a href="$Env{"Baselink"}Action=CustomerAttachment&'.
+          'ArticleID='.$Article{ArticleID}.'&FileID='.$_.'" target="attachment" '.
+          "onmouseover=\"window.status='\$Text{\"Download\"}: $AtmIndex{$_}';".
+          ' return true;" onmouseout="window.status=\'\';">'.
+          $AtmIndex{$_}.'</a><br> ';
+    }
+    # just body if html email
+    if ($Param{"ShowHTMLeMail"}) {
+        # generate output
+        my $Output = "Content-Disposition: inline; filename=";
+        $Output .= $Self->{ConfigObject}->Get('TicketHook')."-$Param{TicketNumber}-";
+        $Output .= "$Param{TicketID}-$Article{ArticleID}\n";
+        $Output .= "Content-Type: $Article{MimeType}; charset=$Article{ContentCharset}\n";
+        $Output .= "\n";
+        $Output .= $Article{"Body"};
+        return $Output;
+    }
+    # do some strips && quoting
+    foreach (qw(To Cc From Subject FreeKey1 FreeKey2 FreeKey3 FreeValue1 FreeValue2 FreeValue3)) {
+        # charset encode
+        $Param{"Article::$_"} = $Self->{LayoutObject}->{LanguageObject}->CharsetConvert(
+            Text => $Article{$_},
+            From => $Article{ContentCharset},
+        );
+    }
+    # check if just a only html email
+    if (my $MimeTypeText = $Self->{LayoutObject}->CheckMimeType(%Param, %Article)) {
+        $Param{"Article::TextNote"} = $MimeTypeText;
+        $Param{"Article::Text"} = '';
+    }
+    else {
+        # charset encode
+        $Article{Body} = $Self->{LayoutObject}->{LanguageObject}->CharsetConvert(
+            Text => $Article{Body},
+            From => $Article{ContentCharset},
+        );
+        # html quoting
+        $Param{"Article::Text"} = $Self->{LayoutObject}->Ascii2Html(
+            NewLine => $Self->{ConfigObject}->Get('ViewableTicketNewLine') || 85,
+            Text => $Article{Body},
+            VMax => $Self->{ConfigObject}->Get('ViewableTicketLinesZoom') || 5000,
+        );
+        # link quoting
+        $Param{"Article::Text"} = $Self->{LayoutObject}->LinkQuote(Text => $Param{"Article::Text"});
+        # do charset check
+        if (my $CharsetText = $Self->{LayoutObject}->CheckCharset(
+            ContentCharset => $Article{ContentCharset},
+            TicketID => $Param{TicketID},
+            ArticleID => $Article{ArticleID} )) {
+            $Param{"Article::TextNote"} = $CharsetText;
+        }
+    }
+    # get article id
+    $Param{"Article::ArticleID"} = $Article{ArticleID};
+    # select the output template
+    return $Self->{LayoutObject}->Output(TemplateFile => 'CustomerTicketZoom', Data => \%Param);
+}
+# --
+1;
