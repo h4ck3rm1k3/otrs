@@ -1,12 +1,12 @@
 -- --
 -- initial_insert.sql - provides initial system data
--- Copyright (C) 2001-2004 Martin Edenhofer <martin+code@otrs.org>
+-- Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
 -- --
--- $Id: initial_insert.sql,v 1.13 2004/01/10 15:47:43 martin Exp $
+-- $Id: initial_insert.sql,v 1.14 2004/01/22 19:26:42 martin Exp $
 -- 
 -- $Log: initial_insert.sql,v $
--- Revision 1.13  2004/01/10 15:47:43  martin
--- change auto_response table, added faq group, added EmailAgent and EmailCustomer ticket history types
+-- Revision 1.14  2004/01/22 19:26:42  martin
+-- added faq inital inserts
 --
 -- Revision 1.12  2003/12/02 21:52:56  martin
 -- fixed inital load of new user_group table
@@ -719,3 +719,30 @@ INSERT INTO ticket_history
   VALUES 
   ('New Ticket [1010001] created.',1,1,1,1, current_timestamp,1,current_timestamp,1);
 
+INSERT INTO faq_item 
+  (f_name, f_language_id, f_subject, state_id, category_id, f_field1, f_field2, f_field3, create_time, create_by, change_time, change_by)
+  VALUES
+  ('welcome', 1, 'Welcome!', 1, 1, 'sympthom...', 'problem...', 'solution...', current_timestamp, 1, current_timestamp, 1);
+
+INSERT INTO faq_history 
+  (name, item_id, create_time, create_by, change_time, change_by) 
+  VALUES
+  ('Created', 1, current_timestamp, 1, current_timestamp, 1);
+
+INSERT INTO faq_language (name) VALUES ('en'); 
+INSERT INTO faq_language (name) VALUES ('de'); 
+INSERT INTO faq_language (name) VALUES ('es'); 
+INSERT INTO faq_language (name) VALUES ('fr'); 
+
+INSERT INTO faq_category 
+  (name, comments, create_time, create_by, change_time, change_by)
+  VALUES 
+  ('all', 'default category', current_timestamp, 1, current_timestamp, 1);
+
+INSERT INTO faq_state (name, type_id) VALUES ('internal (agent)', 1);
+INSERT INTO faq_state (name, type_id) VALUES ('external (customer)', 2);
+INSERT INTO faq_state (name, type_id) VALUES ('public (all)', 3);
+
+INSERT INTO faq_state_type (name) VALUES ('internal');
+INSERT INTO faq_state_type (name) VALUES ('external');
+INSERT INTO faq_state_type (name) VALUES ('public');
