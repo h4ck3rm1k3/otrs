@@ -2,9 +2,12 @@
 -- initial_insert.sql - provides initial system data
 -- Copyright (C) 2001-2003 Martin Edenhofer <martin+code@otrs.org>
 -- --
--- $Id: initial_insert.sql,v 1.20.2.2 2004/04/02 12:41:10 martin Exp $
+-- $Id: initial_insert.sql,v 1.20.2.3 2004/06/29 11:08:45 martin Exp $
 -- 
 -- $Log: initial_insert.sql,v $
+-- Revision 1.20.2.3  2004/06/29 11:08:45  martin
+-- fixed not existing queue_auto_response references
+--
 -- Revision 1.20.2.2  2004/04/02 12:41:10  martin
 -- added missing WebRequestCustomer ticket_history_type entry
 --
@@ -703,16 +706,6 @@ INSERT INTO auto_response
     (type_id, system_address_id, name, text0, text1, charset, comments, valid_id, create_time, create_by, change_time, change_by)
     VALUES
     (5, 1, 'default remove', 'Ticket removed.', 'thank you for your remove e-mail. The ticket is closed.', 'iso-8859-1', 'default', 1, current_timestamp, 1, current_timestamp, 1);
-
--- queue_auto_response
-INSERT INTO queue_auto_response
-    (queue_id, auto_response_id, create_by, create_time, change_by, change_time)
-    VALUES
-    (11, 1, 1, current_timestamp, 1, current_timestamp);
-INSERT INTO queue_auto_response
-    (queue_id, auto_response_id, create_by, create_time, change_by, change_time)
-    VALUES
-    (11, 2, 1, current_timestamp, 1, current_timestamp);
 
 -- --
 -- welcome ticket
