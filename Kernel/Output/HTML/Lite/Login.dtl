@@ -2,7 +2,7 @@
 # Login.dtl - provides HTML login screen
 # Copyright (C) 2001-2004 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: Login.dtl,v 1.16.2.1 2004/10/22 11:31:23 martin Exp $
+# $Id: Login.dtl,v 1.11.2.1 2004/10/22 11:31:23 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -22,14 +22,13 @@ $Include{"Copyright"}
 <html>
 <head>
     <title>OTRS :: $Text{"$Data{"Title"}"}</title>
-# include css.dtl file 
+# include css.dtl  file
 $Include{"css"}
 </head>
 <!-- end header -->
 <body>
 
 <center>
-
 <p>
 <font color="red">$Quote{"$Text{"$Data{"Message"}"}"}</font>
 </p>
@@ -56,7 +55,7 @@ $Include{"css"}
       <td class="table1"><input type="password" name="Password" size="18"></td>
     </tr>
     </table>
-  <input class="button" type="submit" value="$Text{"Login"}">
+  <input type="submit" value="$Text{"Login"}">
   </td>
 </tr>
 </table>
@@ -68,7 +67,7 @@ $Include{"css"}
 <p>
 <form action="$Env{"CGIHandle"}" method="post" enctype="application/x-www-form-urlencoded">
 <input type="hidden" name="Action" value="">
-<input type="hidden" name="RequestedURL" value="$QData{"RequestedURL"}">
+<input type="hidden" name="RequestedURL" value="$Data{"RequestedURL"}">
 
 <table border="0" cellspacing="0" cellpadding="3" width="250">
 <tr>
@@ -82,7 +81,7 @@ $Include{"css"}
       <td class="table1">$Data{"Language"}</td>
     </tr>
     </table>
-  <input class="button" type="submit" value="$Text{"submit"}">
+  <input type="submit" value="$Text{"submit"}">
   </td>
 </tr>
 </table>
