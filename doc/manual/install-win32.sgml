@@ -1,0 +1,323 @@
+<section>
+<title>Install OTRS on Win32</title>
+<para>This How-To installs the <ulink url="http://otrs.org">Open Ticket Request System OTRS</ulink> on systems running <emphasis>Win32</emphasis>. I tested it on Windows 2000, it should run on Windows 98, 98SE, ME, NT4 and XP, too.</para>
+<note><title>Command Boxes</title>
+<para>Throughout this document, we will need to enter commands directly into the system quite often. We do this in a so called <emphasis>command box</emphasis>. Other names are <emphasis>command line</emphasis>, <emphasis>(DOS) prompt</emphasis> or <emphasis>shell</emphasis>. Here is how to invoke a command box on Windows:</para>
+<para>Click <emphasis>Start</emphasis>, then <emphasis>Execute</emphasis> and enter <userinput>cmd</userinput> in the dialogue box popping up. Hit <userinput>Return</userinput> on your keyboard or click <emphasis>OK</emphasis>. A (usually black) box appears, showing something similar to this:</para>
+<para><screen>
+Microsoft Windows 2000 [Version 5.00.2195]
+(C) Copyright 1985-2000 Microsoft Corp.
+
+C:\>
+</screen></para>
+<para>You may now enter commands such as</para>
+<para><screen>
+Microsoft Windows 2000 [Version 5.00.2195]
+(C) Copyright 1985-2000 Microsoft Corp.
+
+C:\><userinput>cd /d d:\otrs\bin\cgi-bin</userinput>
+
+D:\otrs\bin\cgi-bin><userinput>dir</userinput>
+<computeroutput> Datentr&auml;ger in Laufwerk D: ist Aurelia
+ Datentr&auml;gernummer: C8F1-F408
+
+ Verzeichnis von D:\otrs\bin\cgi-bin
+
+20.01.03  00:20         &lt;DIR&gt;          .
+20.01.03  00:20         &lt;DIR&gt;          ..
+08.06.02  23:37                     10 .cvsignore
+18.01.03  02:14                     20 .htaccess
+09.01.03  16:06                 20.734 customer.pl
+09.01.03  16:06                 19.014 index.pl
+03.01.03  17:17                  4.203 installer.pl
+03.01.03  17:17                  5.450 pic.pl
+               6 Datei(en)         49.431 Bytes
+               2 Verzeichnis(se),   9.825.726.464 Bytes frei
+</computeroutput>
+D:\otrs\bin\cgi-bin>
+</screen></para>
+<para>This will bring you to your OTRS executable directory and show it's contents. The <emphasis>/d</emphasis> switch tells Windows to also change the drive letter, if necessary, i.e. to directly switch to the given directory.</para>
+<para>Please note that this is a <emphasis>sample output only</emphasis>, and it's from my box, a german Windows 2000 installation, as you see. It will probably look different on your box.</para>
+<para>You can customize the appearance of command boxes by clicking in the upper left corner of the window and choose <userinput>Properties</userinput>.</para>
+<para>It will help if you get a little bit comfortable with command boxes and working from the command line in general. <ulink url="http://www.google.com/search?num=100&amp;newwindow=1&amp;q=%22command+line%22+%22learning+resources%22+windows">Search with Google for help with command lines</ulink>.</para>
+</note>
+
+<section>
+<title>Installations</title>
+<para>You will need three main components on your system, a webserver (<ulink url="http://apache.org/">Apache</ulink>), a database (<ulink url="http://www.mysql.com/">MySQL</ulink>) and the programming language <ulink url="http://www.perl.org/">Perl</ulink>.</para>
+<para>The whole installation will assumingly take place on drive D:, but you may install wherever you like, for sure. All you have to do is replace every occurence of <emphasis>D:</emphasis> or <emphasis>d:</emphasis> with your choice, f.e. <emphasis>c:\Programs</emphasis>. It is *no* good idea to have spaces in the installation path, so <emphasis>c:\program Files\otrs</emphasis> won't be a lucky choice.</para>
+
+<section>
+<title>Install PERL</title>
+<para>Download <emphasis>Perl</emphasis>, <emphasis>Version 5.6.1 build 633</emphasis> from <ulink url="http://www.activestate.com/Products/Download/Download.plex?id=ActivePerl">http://www.activestate.com/Products/Download/Download.plex?id=ActivePerl</ulink>. I recommend chosing the MSI version.</para>
+<para>Install Perl using the default values to <emphasis>D:\Perl</emphasis>.</para>
+<section>
+<title>Install Additional PERL Packages</title>
+<para>Download the OTRS-Win32-Perl-Packages <ulink url="ftp://ftp.otrs.org/pub/otrs/misc/win32/OTRS-Win32-Perl-Packages.zip">in one file</ulink> (coming via FTP from <emphasis>ftp.otrs.org</emphasis>) and unpack it into <computeroutput>D:\Perl</computeroutput>, preserving directory structure.</para>
+</section>
+</section>
+
+<section>
+<title>Installing The Webserver</title>
+<para>OTRS requires a webserver to run. You may choose the one of your choice, it will probably run on every perl-enabled webserver. I tested it on <ulink url="http://www.sambar.org">Sambar</ulink> <ulink url="http://sambar.robertkehl.de">5.2 &amp; above</ulink> and on <ulink url="http://httpd.apache.org/">Apache</ulink>, both <ulink url="http://httpd.apache.org/docs/">1.3</ulink> and <ulink url="http://httpd.apache.org/docs-2.0/">2.0</ulink>. <computeroutput>mod_perl</computeroutput> is only availabe for Apache. Currently, only mod_perl-1.0 on Apache 1.3.27 is working ok for OTRS, mod_perl-2.0 regrettably not.</para>
+
+<section>
+<title>Installing Apache</title>
+
+<para>Download the <ulink url="http://www.apache.org">Apache</ulink> of your choice (<ulink url="http://www.apache.org/dist/httpd/binaries/win32/apache_1.3.27-win32-x86-no_src.msi">1.3.27</ulink> and/or <ulink url="http://www.apache.org/dist/httpd/binaries/win32/apache_2.0.43-win32-x86-no_ssl.msi">2.0.43</ulink>) and install it/them. I recommend you choose <userinput>D:\Apache</userinput> as root for *both* versions. The resulting directory structure will be:</para>
+<para><screen>
+<computeroutput>D:\Apache\</computeroutput>           --- home of both
+<computeroutput>D:\Apache\Apache\</computeroutput>    --- home of Apache 1.3
+<computeroutput>D:\Apache\Apache2\</computeroutput>   --- home of Apache 2.0
+</screen></para><tip>
+<para>You may install both 1.3 and 2.0 on the very same machine, they can both be running and may both be used at the same time, if you like to. All you have to do is to ensure they are not configured to run on the same port. The second installation willing to start on port 80 won't succeed in doing so. So configure Apache 1.3 to run on port 80, Apache 2.0 to run on port 81. You could even configure the Sambar webserver (see different section in this manual) to run on port 82, if you'd like to, or choose your own port configuration. Surely one webserver running one version would be enough - the rest is for geeks ;)</para>
+</tip>
+
+</section>
+
+</section>
+
+<section>
+<title>Install MySQL</title>
+<para>Download MySQL from <ulink url="http://www.mysql.com/downloads/mysql-3.23.html">http://www.mysql.com/downloads/mysql-3.23.html</ulink> and install it in <emphasis>D:\mysql</emphasis>, under Win 2000/XP as a service, too. Start it.</para>
+<para>For a more comfortable configuration interface I recommend installing phpMyAdmin from <ulink url="http://www.phpmyadmin.net">http://www.phpmyadmin.net</ulink>, too, location: <emphasis>D:\mysql\phpMyAdmin</emphasis>. This will require <ulink url="http://www.php.net">PHP</ulink> to be installed, which always is a very good idea.</para>
+<para>We change the passwort for root later.</para>
+</section>
+
+<section>
+<title>Install OTRS</title>
+<para>Last but least - the beast!</para>
+<para>Download OTRS as a tarball (.tar.gz): <ulink url="http://otrs.org/download">http://otrs.org/download</ulink> and unzip it to <emphasis>d:\</emphasis>, preserving the directory structure. A directory called 'otrs' will be created on D:\</para>
+</section>
+
+</section>
+
+<section>
+<title>Configuration</title>
+
+<section>
+<title>Configuring Perl</title>
+<para>We now patch our Perl because it doesn't suit our needs in the default installation, there are some so called &quot;packages&quot; missing.</para>
+<para>Open a command box and enter this:</para>
+<para><screen>
+C:\><userinput>cd /d D:\Perl\packages</userinput>
+
+D:\Perl\packages><userinput>install.bat</userinput>
+  [...returned ouput snipped...]</screen></para>
+<para>The install routine places the file <computeroutput>mod_perl.so</computeroutput> in <userinput>\Apache\Apache\modules</userinput>. By the time of this writing, you will have to manually adjust the path in <computeroutput>install.bat</computeroutput>, if you installed Apache in another place or copy <computeroutput>mod_perl.so</computeroutput> manually to your Apache's <computeroutput>modules</computeroutput> directory.</para>
+<para>Your Perl should now look like this or even better:</para>
+<para><screen>D:\Perl\packages><userinput>ppm query</userinput>
+  [...returned ouput shortened...]
+  Archive-Tar      [0.072      ]
+	Authen-SASL      [2.03       ]
+	Compress-Zlib    [1.16       ]
+	Convert-ASN1     [0.16       ]
+	DBD-Mysql        [1.2200     ]
+	DBI              [1.27       ]
+	Digest           [1          ]
+	Digest-HMAC      [1.01       ]
+	Digest-MD2       [2          ]
+	Digest-MD4       [1.1        ]
+	Digest-MD5       [2.20       ]
+	Digest-SHA1      [2.01       ]
+	File-CounterFile [0.12       ]
+	Font-AFM         [1.18       ]
+	GD               [1.27.2     ]
+	GDGraph          [1.32       ]
+	GDTextUtil       [0.80       ]
+	HTML-Parser      [3.26       ]
+	HTML-Tagset      [3.03       ]
+	HTML-Tree        [3.11       ]
+	IO-Socket-SSL    [0.92       ]
+	IO-stringy       [2.108      ]
+	MD5              [2.02       ]
+	MIME-Base64      [2.12       ]
+	MIME-tools       [5.411a     ]
+	MailTools        [1.58       ]
+	Net-DNS          [0.33       ]
+	Net_SSLeay.pm    [1.22       ]
+	PPM              [2.1.6      ]
+	SOAP-Lite        [0.55       ]
+	Storable         [1.0.12     ]
+	Test-Simple      [0.47       ]
+	Tk               [800.023    ]
+	URI              [1.19       ]
+	XML-Parser       [2.27       ]
+	XML-Simple       [1.06       ]
+	libnet           [1.12       ]
+	libwin32         [0.19.1     ]
+	libwww-perl      [5.64       ]
+	mod_perl         [1.27_01-dev]
+	perl-ldap        [0.26       ]
+</screen></para>
+<para>You may now delete the files in D:\Perl\packages, if you want to, but you don't have to.</para>
+<para>That's it for Perl.</para>
+</section>
+
+<section>
+<title>Configuring Apache</title>
+
+<para>In the following, I will refer to 'Apache' only, the process is the same for both versions 1.3 and 2.0.</para>
+<para>Open Apache's configuration file <userinput>httpd.conf</userinput>, it is located in <userinput>d:\Apache\Apache\conf\</userinput>. Append these lines to the end of the file, adjust them to your needs:</para>
+<para><screen>
+# uncomment the following two for Apache2!
+LoadModule perl_module modules/mod_perl.so
+AddModule mod_perl.c
+
+### added for OTRS (http://otrs.org/)
+
+&lt;IfModule mod_alias.c&gt;
+	Alias /otrs/ "d:/otrs/bin/cgi-bin/"
+	Alias /otrs-web/ "d:/otrs/var/httpd/htdocs/"
+	PerlModule Apache::Registry
+&lt;/IfModule&gt;
+
+&lt;Location /otrs&gt;
+	Options ExecCGI
+	Order deny,allow
+	Deny from all
+	allow from 127.0.0.1
+
+	SetHandler cgi-script
+	ScriptInterpreterSource registry
+
+	&lt;IfModule mod_perl.c&gt;
+		SetHandler  perl-script
+		PerlHandler Apache::Registry
+		PerlSendHeader On
+	&lt;/IfModule&gt;
+
+&lt;/Location&gt;
+
+# load all otrs modules
+Perlrequire d:/otrs/scripts/apache-perl-startup.pl
+
+# MaxRequestsPerChild (so no apache child will be to big!)
+#MaxRequestsPerChild 400
+# depends on your RAM
+</screen></para>
+<para>Take a little time to configure the rest of <computeroutput>httpd.conf</computeroutput>, too. Open <computeroutput>d:\otrs\scripts\apache-perl-startup.pl</computeroutput> and change these lines:</para>
+<para><screen>
+1:
+#! D:/Perl/bin/perl
+10,11:
+use lib "d:/otrs/";
+use lib "d:/otrs/Kernel/cpan-lib";
+38,39:
+#use Kernel::System::AuthSession::IPC;
+use Kernel::System::AuthSession::DB;
+46,47:
+#use Kernel::System::Log::SysLog;
+use Kernel::System::Log::File;
+</screen></para>
+
+<note>
+<title>About mod_perl_2.0 on Apache2</title>
+<para>At this moment, OTRS under mod_perl_2.0 isn't running smoothly on Win32, so perl is used as a CGI process on Apache2 only. We are fully aware that mod_perl_2.0 should be used to efficiently speed things up, and we're in the process of getting it to work. Please be patient or try mod_perl yourself. <ulink url="mailto:otrs-win32@robertkehl.de?subject?mod_perl">Let us know</ulink> if you succeed :)</para>
+</note>
+
+<para>That's it for Apapche. (Re-)Start your installation(s) using the Apache monitor, proabably located in your task bar. Sometimes it's a good idea to restart the whole box.</para>
+</section>
+
+<section>
+<title>Configuring MySQL</title>
+<para>Secure your MySQL by providing good passwords for the users <emphasis>@%</emphasis>, <emphasis>root@%</emphasis> und <emphasis>root@localhost</emphasis>. This can easily be done via <emphasis>phpMyAdmin</emphasis>.</para>
+<para>Let's fill the database. You can do this via the command line, as show here (output not shown):</para>
+<para><screen>
+C:\><userinput>cd /d d:\mysql</userinput>
+D:\mysql><userinput>mysql -u root -p password -e 'create database otrs'</userinput>
+D:\mysql><userinput>mysql -u root -p password otrs &lt; d:\otrs\scripts\database\otrs-schema.mysql.sql</userinput>
+D:\mysql><userinput>mysql -u root -p password otrs &lt; d:\otrs\scripts\database\initial_insert.sql</userinput>
+D:\mysql><userinput>mysql -u root -p -e 'GRANT ALL PRIVILEGES ON otrs.* TO otrs@localhost IDENTIFIED BY &quot;some-pass&quot; WITH GRANT OPTION;'</userinput>
+D:\mysql><userinput>mysqladmin -u root -p password reload</userinput>
+</screen></para>
+<para>I recommend using phpMyAdmin under <ulink url="http://localhost/phpMyAdmin">http://localhost/phpMyAdmin</ulink> instead of working on the command line. You create the database right on the start screen. Now you click the tab &quot;SQL&quot;, and enter <emphasis>d:\otrs\scripts\database\otrs-schema.mysql.sql</emphasis> in the textfield labeled &quot;or File:&quot;. Click OK. If all went ok, enter <emphasis>d:\otrs\scripts\database\initial_insert.sql</emphasis> and click OK.</para>
+<para>Now commit this command:</para>
+<para><screen>GRANT ALL PRIVILEGES ON otrs.* TO otrs@localhost IDENTIFIED BY &quot;irgendeinpasswort&quot; WITH GRANT OPTION;</screen></para>
+<para>That's it for MySQL, which we provided with the database otrs, its corresponding tables and the user otrs@localhost.</para>
+</section>
+
+<section>
+<title>Configuring OTRS</title>
+
+<section><title>CONFIG.PM</title>
+<para>Now you teach OTRS s.th. about you. First create your configuration file:</para>
+<para><screen>
+C:\><userinput>cd /d d:\otrs\Kernel</userinput>
+D:\otrs\bin><userinput>copy Config.pm.dist Config.pm</userinput>
+</screen></para>
+<para>Despite your settings concerning FQDN etc., you set the following in <emphasis>d:\otrs\Kernel\Config.pm</emphasis>:</para>
+<para><screen>    # -----------------------------------------------------#
+    # Sendmail
+    # -----------------------------------------------------#
+    $Self->{'SendmailModule'} = 'Kernel::System::Email::SMTP';
+    $Self->{'SendmailModule::Host'} = 'smtp-server.of.your.provider';
+    $Self->{'SendmailModule::AuthUser'} = 'smtp-username';
+    $Self->{'SendmailModule::AuthPassword'} = 'smtp-password';
+    # -----------------------------------------------------#
+    # directories
+    # -----------------------------------------------------#
+    $Self->{Home} = 'd:/otrs';
+    $Self->{CounterLog} = '&lt;OTRS_CONFIG_Home&gt;/var/log/TicketCounter.log';
+    $Self->{ArticleDir} = '&lt;OTRS_CONFIG_Home&gt;/var/article';
+    $Self->{StatsPicDir} = '&lt;OTRS_CONFIG_Home&gt;/var/pics/stats';
+    $Self->{TemplateDir} = '&lt;OTRS_CONFIG_Home&gt;/Kernel/Output';
+    $Self->{TempDir} = '&lt;OTRS_CONFIG_Home&gt;/var/tmp';
+    # ----------------------------------------------------#
+    # LogModule                                           #
+    # ----------------------------------------------------#
+    $Self->{LogModule} = 'Kernel::System::Log::File';
+    # -----------------------------------------------------#
+    # own config settings                                  #
+    # config settings taken from Kernel/Config/Defaults.pm #
+    # -----------------------------------------------------#
+    # $Self-&gt;{SessionUseCookie} = 0;
+    $Self-&gt;{SessionModule} = 'Kernel::System::AuthSession::DB';
+</screen></para>
+<note>
+<title>A note about your FQDN</title>
+<para>This is the called <emphasis>Full Qulified Domain Name</emphasis> of your PC, just like your IP adress it's unique across the universe ...ah... internet, I mean. If you're using a dial-up line to connect to the internet, your FQDN will always be a different one each time you dial anew. This is indeed ok for OTRS, but it's not nice if exim announces itself with a wrong name. It can lead to difficulties in mail delivery.</para>
+<para> To solve this problem you can use so called <emphasis>Dynamic DNS services</emphasis> like <ulink url="http://www.dyndns.org">http://www.dyndns.org</ulink>. By using a client such as <emphasis>DirectUpdate </emphasis>(<ulink url="http://www.directupdate.net">http://www.directupdate.net</ulink>) you submit your IP adress to <emphasis>dyndns.org</emphasis> each times it changes and can thereby obtain a FQDN, for example <emphasis>gogos-pc.home-ip.net</emphasis>. You can even forward your domain <emphasis>http://www.thisismydomain.com</emphasis> to your home PC. If you got further questions concerning Dynamic DNS services, <ulink url="mailto:otrs-win32@robertkehl.de?subject=Dynamic%20DNS">don't hesitate to ask</ulink> - but now back to OTRS :)</para>
+</note>
+</section>
+
+</section>
+
+</section>
+
+<section>
+<title>The First Start</title>
+<para>Now startup OTRS for the first time. A good idea is to reboot your machine before, remember: You're on Windows ;) Then call <ulink url="http://localhost/otrs/index.pl">http://localhost/otrs/index.pl</ulink> in your favourite browser.</para>
+<para>The user name is &quot;root@localhost&quot;, the password is &quot;root&quot;, both without the quotes.</para>
+<important>
+<para>It's a *very good* idea to *now* change your password on <ulink url="http://localhost/otrs/index.pl?Action=AdminUser">http://localhost/otrs/index.pl?Action=AdminUser</ulink></para>
+</important>
+
+<section>
+<title>System Email Addresses &amp; POP3</title>
+<para>You set your system email addresses here: <ulink url="http://localhost/otrs/index.pl?Action=AdminSystemAddress">http://localhost/otrs/index.pl?Action=AdminSystemAddress</ulink>. These are the addresses your customers lateron use to reach your OTRS.</para>
+<para>You create POP3 accounts for each system email here: <ulink url="http://localhost/otrs/index.pl?Action=AdminPOP3">http://localhost/otrs/index.pl?Action=AdminPOP3</ulink></para>
+<para><emphasis>Your OTRS is now ready, you can start!</emphasis> Have a look around the interface and work on the test ticket provided.</para>
+<para>Now write an email to one of the system email addresses. Enter this in your browser, it provides the email to OTRS. <ulink url="http://localhost/obin/PostMasterPOP3.pl">http://localhost/obin/PostMasterPOP3.pl</ulink>. We will later automate this.</para>
+<para>Your email will be visible in the queue <emphasis>Raw</emphasis> - that's here: <ulink url="http://localhost/otrs/index.pl?Action=AgentQueueView">http://localhost/otrs/index.pl?Action=AgentQueueView</ulink>. Answer this first inquiry.</para>
+<tip>
+<para>It is <emphasis>NO</emphasis> good idea to use one of the System Email Addresses to address the system, this will produce loops.</para>
+</tip>
+</section>
+
+<section>
+<title>No CRON Jobs on Apache</title>
+<para>Please note that Apache cannot CRON. You may therefore want to visit <ulink url="http://cronw.sourceforge.net/">http://cronw.sourceforge.net/</ulink> for a Perl-based CRON solution for 32-Bit Windows that runs as a system service.</para>
+</section>
+
+</section>
+
+<section>
+<title>Done!</title>
+<para>Congratulations, you hopefully were successful in installing OTRS on Win32!</para>
+<para>If s.th. still is not as clear as it should be or if you are getting nothing more than error messages instead of the interface of OTRS, don't hesitate to mail <ulink url="mailto:otrs-win32@robertkehl.de">otrs-win32 at robertkehl.de</ulink>. Hopefully you get a ticket back ;-)</para>
+<para>I would be more enlighted if you'd send some success stories!</para>
+<para>Surely this chapter will follow the development of <ulink url="http://otrs.org">OTRS</ulink>. OTRS on Win32 can be done with Apache, too, and I will soon include a part on it.</para>
+<para>Have fun using your OTRS on Sambar!</para>
+</section>
+</section>
