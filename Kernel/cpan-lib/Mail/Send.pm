@@ -8,7 +8,7 @@ use Carp;
 use vars qw($VERSION);
 require Mail::Mailer;
 
-$VERSION = "1.51";
+$VERSION = "1.60";
 
 sub Version { $VERSION }
 
@@ -104,6 +104,10 @@ Maintained by Mark Overmeer <mailtools@overmeer.net>
 Original code written by Tim Bunce E<lt>F<Tim.Bunce@ig.co.uk>E<gt>,
 with a kick start from Graham Barr E<lt>F<gbarr@pobox.com>E<gt>. With
 contributions by Gerard Hickey E<lt>F<hickey@ctron.com>E<gt>
+
+Copyright (c) 2002-2003 Mark Overmeer. All rights
+reserved. This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
 
 =cut
 
