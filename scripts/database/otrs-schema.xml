@@ -6,9 +6,12 @@
   XML File for the OTRS database description
   Copyright (C) 2001-2003 Martin Edenhofer
 
-  $Id: otrs-schema.xml,v 1.19 2004/02/02 22:10:24 martin Exp $
+  $Id: otrs-schema.xml,v 1.20 2004/02/02 23:02:00 martin Exp $
 
   $Log: otrs-schema.xml,v $
+  Revision 1.20  2004/02/02 23:02:00  martin
+  removed not needed faq table, renamed comment to comments
+
   Revision 1.19  2004/02/02 22:10:24  martin
   added ticket_link table
 
@@ -228,7 +231,7 @@
 <table name="groups">
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="INTEGER"/>
   <column name="name" required="true" size="100" type="VARCHAR"/>
-  <column name="comment" required="false" size="250" type="VARCHAR"/>
+  <column name="comments" required="false" size="250" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -288,7 +291,7 @@
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="SMALLINT"/>
   <column name="name" required="true" size="30" type="VARCHAR"/>
   <column name="charset" required="true" size="30" type="VARCHAR"/>
-  <column name="comment" required="false" size="80" type="VARCHAR"/>
+  <column name="comments" required="false" size="80" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -303,7 +306,7 @@
 <table name="ticket_state">
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="SMALLINT"/>
   <column name="name" required="true" size="100" type="VARCHAR"/>
-  <column name="comment" required="false" size="250" type="VARCHAR"/>
+  <column name="comments" required="false" size="250" type="VARCHAR"/>
   <column name="type_id" required="true" type="SMALLINT"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
@@ -319,7 +322,7 @@
 <table name="ticket_state_type">
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="SMALLINT"/>
   <column name="name" required="true" size="120" type="VARCHAR"/>
-  <column name="comment" required="false" size="250" type="VARCHAR"/>
+  <column name="comments" required="false" size="250" type="VARCHAR"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
   <column name="change_time" required="true" type="DATE"/>
@@ -334,7 +337,7 @@
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="SMALLINT"/>
   <column name="name" required="true" size="100" type="VARCHAR"/>
   <column name="text" required="true" type="LONGVARCHAR"/>
-  <column name="comment" required="false" size="250" type="VARCHAR"/>
+  <column name="comments" required="false" size="250" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -350,7 +353,7 @@
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="SMALLINT"/>
   <column name="name" required="true" size="100" type="VARCHAR"/>
   <column name="text" required="true" type="LONGVARCHAR"/>
-  <column name="comment" required="false" size="250" type="VARCHAR"/>
+  <column name="comments" required="false" size="250" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -371,7 +374,7 @@
   <column name="value2" required="false" size="200" type="VARCHAR"/>
   <column name="value3" required="false" size="200" type="VARCHAR"/>
   <column name="queue_id" required="true" type="INTEGER"/>
-  <column name="comment" required="false" size="200" type="VARCHAR"/>
+  <column name="comments" required="false" size="200" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -383,7 +386,7 @@
 <table name="follow_up_possible">
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="SMALLINT"/>
   <column name="name" required="true" size="100" type="VARCHAR"/>
-  <column name="comment" required="false" size="250" type="VARCHAR"/>
+  <column name="comments" required="false" size="250" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -410,7 +413,7 @@
   <column name="state_notify" required="true" type="SMALLINT"/>
   <column name="lock_notify" required="true" type="SMALLINT"/>
   <column name="owner_notify" required="true" type="SMALLINT"/>
-  <column name="comment" required="false" size="200" type="VARCHAR"/>
+  <column name="comments" required="false" size="200" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -509,7 +512,7 @@
 <table name="ticket_history_type">
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="SMALLINT"/>
   <column name="name" required="true" size="100" type="VARCHAR"/>
-  <column name="comment" required="false" size="250" type="VARCHAR"/>
+  <column name="comments" required="false" size="250" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -524,7 +527,7 @@
 <table name="article_type">
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="SMALLINT"/>
   <column name="name" required="true" size="100" type="VARCHAR"/>
-  <column name="comment" required="false" size="250" type="VARCHAR"/>
+  <column name="comments" required="false" size="250" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -539,7 +542,7 @@
 <table name="article_sender_type">
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="SMALLINT"/>
   <column name="name" required="true" size="100" type="VARCHAR"/>
-  <column name="comment" required="false" size="250" type="VARCHAR"/>
+  <column name="comments" required="false" size="250" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -617,7 +620,7 @@
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="INTEGER"/>
   <column name="name" required="true" size="80" type="VARCHAR"/>
   <column name="text" required="true" type="LONGVARCHAR"/>
-  <column name="comment" required="false" size="80" type="VARCHAR"/>
+  <column name="comments" required="false" size="80" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -645,7 +648,7 @@
   <column name="content_type" required="true" size="150" type="VARCHAR"/>
   <column name="content" required="true" type="LONGVARCHAR"/>
   <column name="filename" required="true" size="250" type="VARCHAR"/>
-  <column name="comment" required="false" size="200" type="VARCHAR"/>
+  <column name="comments" required="false" size="200" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -671,7 +674,7 @@
 <table name="auto_response_type">
   <column name="id" required="true" primaryKey="true" autoIncrement="true" type="SMALLINT"/>
   <column name="name" required="true" size="50" type="VARCHAR"/>
-  <column name="comment" required="false" size="80" type="VARCHAR"/>
+  <column name="comments" required="false" size="80" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -692,7 +695,7 @@
   <column name="type_id" required="true" type="SMALLINT"/>
   <column name="system_address_id" required="true" type="SMALLINT"/>
   <column name="charset" required="true" size="80" type="VARCHAR"/>
-  <column name="comment" required="false" size="100" type="VARCHAR"/>
+  <column name="comments" required="false" size="100" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -773,7 +776,7 @@
   <column name="salutation" required="false" size="50" type="VARCHAR"/>
   <column name="first_name" required="true" size="100" type="VARCHAR"/>
   <column name="last_name" required="true" size="100" type="VARCHAR"/>
-  <column name="comment" required="true" size="250" type="VARCHAR"/>
+  <column name="comments" required="true" size="250" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/> 
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
@@ -814,7 +817,7 @@
   <column name="host" required="true" size="200" type="VARCHAR"/>
   <column name="queue_id" required="true" type="INTEGER"/>
   <column name="trusted" required="true" type="SMALLINT"/>
-  <column name="comment" required="false" size="250" type="VARCHAR"/>
+  <column name="comments" required="false" size="250" type="VARCHAR"/>
   <column name="valid_id" required="true" type="SMALLINT"/>
   <column name="create_time" required="true" type="DATE"/>
   <column name="create_by" required="true" type="INTEGER"/>
