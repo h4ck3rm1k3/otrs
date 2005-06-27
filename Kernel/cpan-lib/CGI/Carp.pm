@@ -70,8 +70,6 @@ compiler errors will be caught.  Example:
    }
 
 carpout() does not handle file locking on the log for you at this point.
-Also, note that carpout() does not work with in-memory file handles, although
-a patch would be welcome to address that.
 
 The real STDERR is not closed -- it is moved to CGI::Carp::SAVEERR.  Some
 servers, when dealing with CGI scripts, close their connection to the
@@ -79,7 +77,7 @@ browser when the script closes STDOUT and STDERR.  CGI::Carp::SAVEERR is there t
 prevent this from happening prematurely.
 
 You can pass filehandles to carpout() in a variety of ways.  The "correct"
-way according to Tom Christiansen is to pass a reference to a filehandle
+way according to Tom Christiansen is to pass a reference to a filehandle 
 GLOB:
 
     carpout(\*LOG);
@@ -104,7 +102,7 @@ CGI::Carp methods is called to prevent the performance hit.
 
 =head1 MAKING PERL ERRORS APPEAR IN THE BROWSER WINDOW
 
-If you want to send fatal (die, confess) errors to the browser, ask to
+If you want to send fatal (die, confess) errors to the browser, ask to 
 import the special "fatalsToBrowser" subroutine:
 
     use CGI::Carp qw(fatalsToBrowser);
@@ -115,9 +113,6 @@ arranges to send a minimal HTTP header to the browser so that even errors that
 occur in the early compile phase will be seen.
 Nonfatal errors will still be directed to the log file only (unless redirected
 with carpout).
-
-Note that fatalsToBrowser may B<not> work well with mod_perl version 2.0
-and higher.
 
 =head2 Changing the default message
 
@@ -146,64 +141,6 @@ of the error message that caused the script to die.  Example:
 
 In order to correctly intercept compile-time errors, you should call
 set_message() from within a BEGIN{} block.
-
-=head1 DOING MORE THAN PRINTING A MESSAGE IN THE EVENT OF PERL ERRORS
-
-If fatalsToBrowser in conjunction with set_message does not provide 
-you with all of the functionality you need, you can go one step 
-further by specifying a function to be executed any time a script
-calls "die", has a syntax error, or dies unexpectedly at runtime
-with a line like "undef->explode();". 
-
-    use CGI::Carp qw(set_die_handler);
-    BEGIN {
-       sub handle_errors {
-          my $msg = shift;
-          print "content-type: text/html\n\n";
-          print "<h1>Oh gosh</h1>";
-          print "<p>Got an error: $msg</p>";
-
-          #proceed to send an email to a system administrator,
-          #write a detailed message to the browser and/or a log,
-          #etc....
-      }
-      set_die_handler(\&handle_errors);
-    }
-
-Notice that if you use set_die_handler(), you must handle sending
-HTML headers to the browser yourself if you are printing a message.
-
-If you use set_die_handler(), you will most likely interfere with 
-the behavior of fatalsToBrowser, so you must use this or that, not 
-both. 
-
-Using set_die_handler() sets SIG{__DIE__} (as does fatalsToBrowser),
-and there is only one SIG{__DIE__}. This means that if you are 
-attempting to set SIG{__DIE__} yourself, you may interfere with 
-this module's functionality, or this module may interfere with 
-your module's functionality.
-
-=head2 SUPPRESSING PERL ERRORS APPEARING IN THE BROWSER WINDOW
-
-A problem sometimes encountered when using fatalsToBrowser is
-when a C<die()> is done inside an C<eval> body or expression.
-Even though the
-fatalsToBrower support takes precautions to avoid this,
-you still may get the error message printed to STDOUT.
-This may have some undesireable effects when the purpose of doing the
-eval is to determine which of several algorithms is to be used.
-
-By setting C<$CGI::Carp::TO_BROWSER> to 0 you can suppress printing the C<die> messages
-but without all of the complexity of using C<set_die_handler>.
-You can localize this effect to inside C<eval> bodies if this is desireable:
-For example:
-
- eval {
-   local $CGI::Carp::TO_BROWSER = 0;
-   die "Fatal error messages not sent browser"
- }
- # $@ will contain error message
-
 
 =head1 MAKING WARNINGS APPEAR AS HTML COMMENTS
 
@@ -267,11 +204,6 @@ non-overridden program name
   
 =head1 CHANGE LOG
 
-3.51 Added $CGI::Carp::TO_BROWSER
-
-1.29 Patch from Peter Whaite to fix the unfixable problem of CGI::Carp
-     not behaving correctly in an eval() context.
-
 1.05 carpout() added and minor corrections by Marc Hedlund
      <hedlund@best.com> on 11/26/95.
 
@@ -301,7 +233,7 @@ non-overridden program name
      fatalsToBrowser() output.
 
 1.23 ineval() now checks both $^S and inspects the message for the "eval" pattern
-     (hack alert!) in order to accommodate various combinations of Perl and
+     (hack alert!) in order to accomodate various combinations of Perl and
      mod_perl.
 
 1.24 Patch from Scott Gifford (sgifford@suspectclass.com): Add support
@@ -326,6 +258,10 @@ Address bug reports and comments to: lstein@cshl.org
 
 Carp, CGI::Base, CGI::BasePlus, CGI::Request, CGI::MiniSvr, CGI::Form,
 CGI::Response
+    if (defined($CGI::Carp::PROGNAME)) 
+    {
+      $file = $CGI::Carp::PROGNAME;
+    }
 
 =cut
 
@@ -341,14 +277,12 @@ use File::Spec;
 
 @ISA = qw(Exporter);
 @EXPORT = qw(confess croak carp);
-@EXPORT_OK = qw(carpout fatalsToBrowser warningsToBrowser wrap set_message set_die_handler set_progname cluck ^name= die);
+@EXPORT_OK = qw(carpout fatalsToBrowser warningsToBrowser wrap set_message set_progname cluck ^name= die);
 
 $main::SIG{__WARN__}=\&CGI::Carp::warn;
 
-$CGI::Carp::VERSION     = '3.51';
-$CGI::Carp::CUSTOM_MSG  = undef;
-$CGI::Carp::DIE_HANDLER = undef;
-$CGI::Carp::TO_BROWSER  = 1;
+$CGI::Carp::VERSION    = '1.29';
+$CGI::Carp::CUSTOM_MSG = undef;
 
 
 # fancy import routine detects and handles 'errorWrap' specially.
@@ -356,6 +290,7 @@ sub import {
     my $pkg = shift;
     my(%routines);
     my(@name);
+  
     if (@name=grep(/^name=/,@_))
       {
         my($n) = (split(/=/,$name[0]))[1];
@@ -446,57 +381,28 @@ sub ineval {
 }
 
 sub die {
-    # if no argument is passed, propagate $@ like
-    # the real die
-  my ($arg,@rest) = @_ ? @_ 
-                  : $@ ? "$@\t...propagated" 
-                  :      "Died"
-                  ;
+  my ($arg,@rest) = @_;
+  realdie ($arg,@rest) if ineval();
 
-  &$DIE_HANDLER($arg,@rest) if $DIE_HANDLER;
-
-  # the "$arg" is done on purpose!
-  # if called as die( $object, 'string' ),
-  # all is stringified, just like with
-  # the real 'die'
-  $arg = join '' => "$arg", @rest if @rest;
-
-  my($file,$line,$id) = id(1);
-
-  $arg .= " at $file line $line.\n" unless ref $arg or $arg=~/\n$/;
-
-  realdie $arg           if ineval();
-  &fatalsToBrowser($arg) if ($WRAP and $CGI::Carp::TO_BROWSER);
-
-  $arg=~s/^/ stamp() /gme if $arg =~ /\n$/ or not exists $ENV{MOD_PERL};
-
-  $arg .= "\n" unless $arg =~ /\n$/;
-
+  if (!ref($arg)) {
+    $arg = join("", ($arg,@rest));
+    my($file,$line,$id) = id(1);
+    $arg .= " at $file line $line." unless $arg=~/\n$/;
+    &fatalsToBrowser($arg) if $WRAP;
+    if (($arg =~ /\n$/) || !exists($ENV{MOD_PERL})) {
+      my $stamp = stamp;
+      $arg=~s/^/$stamp/gm;
+    }
+    if ($arg !~ /\n$/) {
+      $arg .= "\n";
+    }
+  }
   realdie $arg;
 }
 
 sub set_message {
     $CGI::Carp::CUSTOM_MSG = shift;
     return $CGI::Carp::CUSTOM_MSG;
-}
-
-sub set_die_handler {
-
-    my ($handler) = shift;
-    
-    #setting SIG{__DIE__} here is necessary to catch runtime
-    #errors which are not called by literally saying "die",
-    #such as the line "undef->explode();". however, doing this
-    #will interfere with fatalsToBrowser, which also sets 
-    #SIG{__DIE__} in the import() function above (or the 
-    #import() function above may interfere with this). for
-    #this reason, you should choose to either set the die
-    #handler here, or use fatalsToBrowser, not both. 
-    $main::SIG{__DIE__} = $handler;
-    
-    $CGI::Carp::DIE_HANDLER = $handler; 
-    
-    return $CGI::Carp::DIE_HANDLER;
 }
 
 sub confess { CGI::Carp::die Carp::longmess @_; }
@@ -523,15 +429,11 @@ sub warningsToBrowser {
 
 # headers
 sub fatalsToBrowser {
-  my $msg = shift;
-
-  $msg = "$msg" if ref $msg;
-
+  my($msg) = @_;
   $msg=~s/&/&amp;/g;
   $msg=~s/>/&gt;/g;
   $msg=~s/</&lt;/g;
-  $msg=~s/"/&quot;/g;
-
+  $msg=~s/\"/&quot;/g;
   my($wm) = $ENV{SERVER_ADMIN} ? 
     qq[the webmaster (<a href="mailto:$ENV{SERVER_ADMIN}">$ENV{SERVER_ADMIN}</a>)] :
       "this site's webmaster";
@@ -546,11 +448,7 @@ END
     if (ref($CUSTOM_MSG) eq 'CODE') {
       print STDOUT "Content-type: text/html\n\n" 
         unless $mod_perl;
-        eval { 
-            &$CUSTOM_MSG($msg); # nicer to perl 5.003 users
-        };
-        if ($@) { print STDERR q(error while executing the error handler: $@); }
-
+      &$CUSTOM_MSG($msg); # nicer to perl 5.003 users
       return;
     } else {
       $outer_message = $CUSTOM_MSG;
@@ -568,7 +466,7 @@ END
 
   if ($mod_perl) {
     my $r;
-    if ($ENV{MOD_PERL_API_VERSION} && $ENV{MOD_PERL_API_VERSION} == 2) {
+    if ($ENV{MOD_PERL_API_VERSION}) {
       $mod_perl = 2;
       require Apache2::RequestRec;
       require Apache2::RequestIO;
@@ -601,7 +499,6 @@ END
         print STDOUT $mess;
     }
     else {
-        print STDOUT "Status: 500\n";
         print STDOUT "Content-type: text/html\n\n";
         print STDOUT $mess;
     }
