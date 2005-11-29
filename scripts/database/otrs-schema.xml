@@ -5,9 +5,12 @@
   XML File for the OTRS database description
   Copyright (C) 2001-2003 Martin Edenhofer
 
-  $Id: otrs-schema.xml,v 1.46 2005/09/24 16:46:35 martin Exp $
+  $Id: otrs-schema.xml,v 1.47 2005/11/29 20:55:03 martin Exp $
 
   $Log: otrs-schema.xml,v $
+  Revision 1.47  2005/11/29 20:55:03  martin
+  fixed bug #1011 - ORA-01408: such column list already indexed
+
   Revision 1.46  2005/09/24 16:46:35  martin
   fixed small oracle database driver bugs
 
@@ -1181,9 +1184,6 @@
 <Table Name="sessions">
   <Column Name="session_id" Required="true" Size="150" Type="VARCHAR"/>
   <Column Name="session_value" Required="true" Size="10000" Type="VARCHAR"/>
-  <Unique>
-    <UniqueColumn Name="session_id"/>
-  </Unique>
   <Index Name="index_session_id">
     <IndexColumn Name="session_id"/>
   </Index>
