@@ -1,77 +1,106 @@
 # --
-# AgentTicketCustomer.dtl - provides HTML for AgentTicketCustomer.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# AgentTicketCustomer.dtl - provides HTML for AgentCustomer.pm
+# Copyright (C) 2001-2005 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: AgentTicketCustomer.dtl,v 1.37 2011/01/27 10:35:37 bes Exp $
+# $Id: AgentTicketCustomer.dtl,v 1.4.2.1 2005/12/29 02:09:23 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
-
-$Include{"AgentCustomerSearch"}
-
 <!-- dtl:block:Customer -->
-<div class="LayoutPopup ARIARoleMain">
-    <div class="Header">
-        <h1>$Text{"Change customer of ticket"}: $QData{"TicketNumber"} - $QData{"Title","60"}</h1>
-        <p>
-            <a class="CancelClosePopup" href="#">$Text{"Cancel & close window"}</a>
-        </p>
-    </div>
+<table border="0" width="100%" cellspacing="0" cellpadding="3" cols="1">
+<tr>
+  <td class="mainhead">
+    $Env{"Box0"}$Text{"Change customer of ticket"}: $Data{"TicketNumber"}$Env{"Box1"}
+  </td>
+</tr>
+<tr>
+  <td class="menu">
+    <a href="$Env{"Baselink"}$Env{"LastScreenView"}" onmouseover="window.status='$Text{"Back"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Back"}</a>
+  </td>
+</tr>
+</table>
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+<tr>
+  <td class="mainbody">
 
-    <div class="Content">
-        <div class="LayoutFixedSidebar SidebarLast">
-            <div id="CustomerInfo" class="SidebarColumn WidgetSimple">
-                <div class="Header">
-                    <h2>$Text{"Customer Data"}: $QData{"CustomerID"}</h2>
-                </div>
-                <div class="Content">
-                    $Data{"Table"}
-                </div>
-            </div>
+  <br>
 
+  <form action="$Env{"CGIHandle"}" method="post" name="compose">
+    <input type="hidden" name="Action" value="$Env{"Action"}">
+    <input type="hidden" name="Subaction" value="Update">
+    <input type="hidden" name="TicketID" value="$QData{"TicketID"}">
+    <table border="0" width="500" align="center" cellspacing="0" cellpadding="4">
+      <tr>
+        <td class="contenthead">$Text{"Options"}</td>
+      </tr>
+      <tr>
+        <td class="contentbody">
+          $Text{"Set customer user and customer id of a ticket"}:
+          <br>
+          <table>
+            <tr>
+              <td class="contentkey">$Text{"Customer User"}:</td>
+              <td class="contentvalue"><input type="text" name="CustomerUserID" value="$QData{"CustomerUserID"}" size="40">
+<!-- dtl:block:CustomerTakeOver -->
+              <br> $Data{"CustomerUserStrg"}
+              <input class="button" type="submit" name="ExpandCustomerName2" value="$Text{"Take this Customer"}">
+<!-- dtl:block:CustomerTakeOver -->
+              <input class="button" type="submit" name="ExpandCustomerName1" value="$Text{"Search Customer"}">
+              </td>
+            </tr>
+            <tr>
+              <td class="contentkey">$Text{"CustomerID"}:</td>
+              <td class="contentvalue"> <input type="text" name="CustomerID" value="$QData{"CustomerID"}" size="40"></td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td class="contentfooter">
+          <input accesskey="g" class="button" type="submit" value="$Text{"update"}">
+        </td>
+      </tr>
+    </table>
 
-            <div class="ContentColumn">
-                <div class="Header">
-                    <h2>$Text{"Options"}</h2>
-                </div>
-                <div class="Content">
-                    <form action="$Env{"CGIHandle"}" id="MainForm" method="post" name="compose" class="Validate">
-                        <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                        <input type="hidden" name="Subaction" value="Update"/>
-                        <input type="hidden" name="TicketID" value="$QData{"TicketID"}"/>
-                        <input type="hidden" name="SelectedCustomerUser" id="SelectedCustomerUser" value=""/>
-                        <fieldset class="TableLike FixedLabel">
-                            <label for="CustomerAutoComplete">$Text{"Customer user"}:</label>
-                            <div class="Field">
-                                <input id="CustomerAutoComplete" type="text" name="CustomerUserID" value="$QData{"CustomerUserID"}" class="W75pc AutocompleteOff Validate_Required $QData{"CustomerUserIDInvalid"}"/>
-                                <div id="CustomerAutoCompleteError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
-                                <div id="CustomerAutoCompleteServerError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
-                            </div>
-                            <div class="Clear"></div>
+    <br>
 
-                            <label for="CustomerID">$Text{"CustomerID"}:</label>
-                            <div class="Field">
-                                <input type="text" id="CustomerID" name="CustomerID" value="$QData{"CustomerID"}" class="W50pc Validate_Required $QData{"CustomerIDInvalid"}"/>
-                                <div id="CustomerIDError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
-                                <div id="CustomerIDServerError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
-                            </div>
-                            <div class="Clear"></div>
-                            <div class="Field SpacingTop">
-<!-- put the button here and not into the footer, because the CustomerTickets table can be very long -->
-                                <button class="Primary" id="Submit" accesskey="g" title="$Text{"Submit"} (g)" type="submit" value="$Text{"Submit"}">$Text{"Submit"}</button>
-                            </div>
-                        </fieldset>
-                    </form>
-                </div>
-            </div>
-            <div class="Clear"></div>
-        </div>
+    <table border="0" width="500" align="center" cellspacing="0" cellpadding="4">
+      <tr>
+        <td class="contenthead">$Text{"Customer Data"}: $Data{"CustomerID"}</td>
+      </tr>
+      <tr>
+        <td class="contentbody">
 
-        <div id="CustomerTickets"></div>
+$Data{"Table"}
 
-    </div>
-    <div class="Footer"></div>
-</div>
+        </td>
+      </tr>
+      <tr>
+        <td class="contentfooter">
+          &nbsp;
+        </td>
+      </tr>
+    </table>
+
+    <br>
+
+  </td>
+</tr>
+</table>
 <!-- dtl:block:Customer -->
+<!-- dtl:block:CustomerHistory -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3" cols="1">
+<tr>
+  <td class="mainhead">
+    $Env{"Box0"}$Text{"Customer history"}$Env{"Box1"}
+  </td>
+</tr>
+<tr>
+  <td class="mainbody">
+     $Text{"All customer tickets."}
+  </td>
+</tr>
+</table>
+<!-- dtl:block:CustomerHistory -->

@@ -1,8 +1,8 @@
 # --
-# AgentTicketEmail.dtl - provides HTML form for agent email
+# AgentPhoneNew.dtl - provides HTML form for phone
 # Copyright (C) 2001-2005 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: AgentTicketEmail.dtl,v 1.12.2.1 2005/12/29 02:09:23 martin Exp $
+# $Id: AgentTicketPhoneNew.dtl,v 1.14.2.1 2005/12/29 02:09:23 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -66,20 +66,6 @@ function SpellCheckSubmit()
 
 <script language="JavaScript" type="text/javascript">
 <!--
-function BookCheckSubmit()
-{
-    document.book.To.value = document.compose.To.value;
-    document.book.Cc.value = document.compose.Cc.value;
-    document.book.Bcc.value = document.compose.Bcc.value;
-    window.open('', 'book', 'toolbar=no,location=no,status=yes,scrollbars=yes,resizable=yes,width=700,height=550,left=100,top=100');
-    document.book.submit()
-    document.book.was_spell_checked=true;
-}
-// -->
-</script>
-
-<script language="JavaScript" type="text/javascript">
-<!--
 function FAQSubmit()
 {
     window.open('', 'faq', 'toolbar=no,location=no,status=yes,scrollbars=yes,resizable=yes,width=700,height=550,left=100,top=100');
@@ -102,22 +88,33 @@ function CustomerSubmit()
 <!--
 function clear_field()
 {
-    document.compose.To.value = "";
-    document.compose.To.focus();
+    document.compose.From.value = "";
+    document.compose.From.focus();
 }
 //-->
 </script>
 
 <table border="0" width="100%" cellspacing="0" cellpadding="3">
 <tr>
-  <td align="left" class="mainhead">
-    $Env{"Box0"}$Text{"Compose Email"} / $Text{"new ticket"}$Env{"Box1"}
+  <td class="mainhead">
+    $Env{"Box0"}$Text{"Phone call"} / $Text{"new ticket"}$Env{"Box1"}
   </td>
 </tr>
 <tr>
   <td class="mainbody">
 
-<p>
+#<form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
+#<input type="hidden" name="Action" value="$Env{"Action"}">
+#<input type="hidden" name="Subaction" value="StoreNew">
+#<input type="hidden" name="FormID" value="$QData{"FormID"}">
+#<input type="hidden" name="ExpandCustomerName" value="2">
+#<input type="hidden" name="Subject" value="Example Subject">
+#<input type="hidden" name="Body" value="Name:
+#Product:
+#Comment:">
+#<input class="button" type="submit" name="" value="Example Template">
+#</form>
+#<hr>
 
 <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data" name="compose">
 <input type="hidden" name="Action" value="$Env{"Action"}">
@@ -131,36 +128,28 @@ function clear_field()
   <table border="0" width="100%">
   <tr>
     <td width="20%" class="contentkey">$Text{"From"}:</td>
-    <td width="60%" class="contentvalue">$Data{"FromStrg"} <font color="red" size="-2">$Text{"$Data{"Destination invalid"}"}</font>
-    </td>
-    <td width="20%" rowspan="10" class="contentvalue">
-# show customer info table
-<!-- dtl:block:CustomerTable -->
-    <p align="left"><b>$Text{"Customer Info"}</b>:<br>$Data{"CustomerTable"}</p>
-<!-- dtl:block:CustomerTable -->
-  </td>
-  </tr>
- <tr>
-    <td class="contentkey">$Text{"To"}:</td>
-    <td class="contentvalue"><input type="text" name="To" value="$Data{"To"}" size="70"> <font color="red" size="-2">$Text{"$Data{"To invalid"}"}</font><br>
+    <td width="60%" class="contentvalue"><input type="text" name="From" value="$Data{"From"}" size="70"> <font color="red" size="-2">$Text{"$Data{"From invalid"}"}</font><br>
     $Data{"CustomerUserStrg"}
 <dtl if ($Data{"CustomerUserStrg"} ne "") { $Data{"TakeThisCustomer"} = "<br><input class="button" type="submit" name="ExpandCustomerName2" value="$Text{"Take this Customer"}">"; }>
     $Data{"TakeThisCustomer"}
     <input class="button" type="submit" name="ExpandCustomerName1" value="$Text{"Search Customer"}">
-    <input class="button" type="submit" name="" value="$Text{"Clear To"}" onclick="javascript:clear_field(); return false;">
+    <input class="button" type="submit" name="" value="$Text{"Clear From"}" onclick="javascript:clear_field(); return false;">
+    </td>
+    <td width="20%" rowspan="10" class="contentkey">
+# show customer info table
+<!-- dtl:block:CustomerTable -->
+    <p align="left"><b>$Text{"Customer Info"}</b>:<br>$Data{"CustomerTable"}</p>
+<!-- dtl:block:CustomerTable -->
+# --
+#$Text{"FAQ-Search"}: $Env{"Box0"}<a href="" onclick="FAQSubmit(); return false;" onmouseout="window.status='';" onmouseover="window.status='$Text{"Insert"}'; return true;">$Text{"Insert"}</a>$Env{"Box1"}
+#<input type="text" name="FAQ" value="" onSubmit="document.compose.ExpandCustomerName.value='4';">
+
   </td>
   </tr>
   <tr>
-    <td class="contentkey">$Text{"Cc"}:</td>
-    <td class="contentvalue"><input type="text" name="Cc" value="$Data{"Cc"}" size="70"> <font color="red" size="-2">$Text{"$Data{"Cc invalid"}"}</font></td>
-  </tr>
-  <tr>
-    <td class="contentkey">$Text{"Bcc"}:</td>
-    <td class="contentvalue"><input type="text" name="Bcc" value="$Data{"Bcc"}" size="70"> <font color="red" size="-2">$Text{"$Data{"Bcc invalid"}"}</font></td>
-  </tr>
-  <tr>
-    <td class="contentkey">$Text{"Subject"}:</td>
-    <td class="contentvalue"><input type="text" name="Subject" value="$Data{"Subject"}" size="70"> <font color="red" size="-2">$Text{"$Data{"Subject invalid"}"}</font></td>
+    <td class="contentkey">$Text{"To"}:</td>
+    <td class="contentvalue">$Data{"ToStrg"} <font color="red" size="-2">$Text{"$Data{"Destination invalid"}"}</font></td>
+  </td>
   </tr>
 <!-- dtl:block:OwnerSelection -->
   <tr>
@@ -168,19 +157,16 @@ function clear_field()
     <td class="contentvalue">$Data{"OptionStrg"} $Env{"Box0"}<a href="" onclick="document.compose.ExpandCustomerName.value='3'; document.compose.AllUsers.value='1'; document.compose.submit(); return false;" onmouseout="window.status='';" onmouseover="window.status='$Text{"All Agents"}'; return true;">$Text{"All"}</a>$Env{"Box1"}</td>
   </tr>
 <!-- dtl:block:OwnerSelection -->
-<!-- dtl:block:Option -->
   <tr>
-    <td class="contentkey">$Text{"$QData{"Key"}"}:</td>
-    <td class="contentvalue">$Data{"Value"} <font color="red" size="-2">$Data{"Invalid"}</font></td>
+    <td class="contentkey">$Text{"Subject"}:</td>
+    <td class="contentvalue"><input type="text" name="Subject" value="$Data{"Subject"}" size="70"> <font color="red" size="-2">$Text{"$Data{"Subject invalid"}"}</font></td>
   </tr>
-<!-- dtl:block:Option -->
   <tr>
     <td class="contentkey">$Text{"Options"}:</td>
     <td class="contentvalue">
 <!-- dtl:block:SpellCheck -->
        $Env{"Box0"}<a href="" onclick="SpellCheckSubmit(); return false;" onmouseover="window.status='$Text{"Spell Check"}'; return true;" onmouseout="window.status='';"><img border="0" src="$Env{"Images"}spell.png">$Text{"Spell Check"}</a>$Env{"Box1"}
 <!-- dtl:block:SpellCheck -->
-       $Env{"Box0"}<a href="" onclick="BookCheckSubmit(); return false;" onmouseover="window.status='$Text{"Address Book"}'; return true;" onmouseout="window.status='';"><img border="0" src="$Env{"Images"}contents.png">$Text{"Address Book"}</a>$Env{"Box1"}
        $Env{"Box0"}<a href="#attachment" onmouseover="window.status='$Text{"Attachments"}'; return true;" onmouseout="window.status='';"><img border="0" src="$Env{"Images"}attach.png">$Text{"Attachments"}</a>$Env{"Box1"}
 # --
 # check if the faq link should be shown
@@ -192,27 +178,21 @@ function clear_field()
   </tr>
   <tr>
     <td class="contentkey">$Text{"Text"}:</td>
-    <td class="contentvalue"><textarea name="Body" rows="15" cols="$Config{"Ticket::Frontend::TextAreaEmail"}" wrap="$Env{"BrowserWrap"}">$Data{"Body"}</textarea></td>
-  <tr>
-    <td class="contentkey">$Text{"Signature"}:</td>
-    <td class="contentvalue"><textarea name="Signature" rows="4" cols="72" wrap="$Env{"BrowserWrap"}" readonly>$Data{"Signature"}</textarea></td>
+    <td class="contentvalue">
+    <textarea name="Body" rows="15" cols="$Config{"Ticket::Frontend::TextAreaNote"}">$Data{"Body"}</textarea>
+    </td>
   </tr>
   <tr>
     <td class="contentkey">$Text{"Attachment"}:</td>
     <td class="contentvalue">
      <table cellspacing="0" cellpadding="0" width="400">
 <!-- dtl:block:Attachment -->
-       <tr>
-        <td>$QData{"Filename"}</td>
-        <td>$QData{"Filesize"}</td>
-        <td align="right"><input class="button" type="submit" name="AttachmentDelete$QData{"FileID"}" value="$Text{"Delete"}"></td>
-      </tr>
+       <tr><td>$QData{"Filename"}</td><td>$QData{"Filesize"}</td><td align="right"><input class="button" type="submit" name="AttachmentDelete$QData{"FileID"}" value="$Text{"Delete"}"></td></tr>
 <!-- dtl:block:Attachment -->
-      <tr>
-        <td colspan="2"><input name="file_upload" type="file" size="40" class="fixed"></td>
-        <td align="right"><input class="button" type="submit" name="AttachmentUpload" value="$Text{"Attach"}"><a name="attachment"></td>
-      </tr>
-      </table>
+      <tr><td colspan="2">
+       <input name="file_upload" type="file" size="40" class="fixed"></td><td align="right"><input class="button" type="submit" name="AttachmentUpload" value="$Text{"Attach"}"><a name="attachment">
+       </td></tr>
+       </table>
     </td>
   </tr>
   <tr>
@@ -248,6 +228,22 @@ function clear_field()
 #    <td class="contentvalue">$Data{"TicketFreeTextField4"}</td>
 #  </tr>
 #  <tr>
+#    <td class="contentkey">$Data{"TicketFreeKeyField5"}:</td>
+#    <td class="contentvalue">$Data{"TicketFreeTextField5"}</td>
+#  </tr>
+#  <tr>
+#    <td class="contentkey">$Data{"TicketFreeKeyField6"}:</td>
+#    <td class="contentvalue">$Data{"TicketFreeTextField6"}</td>
+#  </tr>
+#  <tr>
+#    <td class="contentkey">$Data{"TicketFreeKeyField7"}:</td>
+#    <td class="contentvalue">$Data{"TicketFreeTextField7"}</td>
+#  </tr>
+#  <tr>
+#    <td class="contentkey">$Data{"TicketFreeKeyField8"}:</td>
+#    <td class="contentvalue">$Data{"TicketFreeTextField8"}</td>
+#  </tr>
+#  <tr>
 #    <td class="contentkey">$Text{"$Config{"TicketFreeTimeKey1"}"}:</td>
 #    <td class="contentvalue">$Data{"TicketFreeTime1"}</td>
 #  </tr>
@@ -263,20 +259,13 @@ function clear_field()
 <!-- dtl:block:TimeUnits -->
   </table>
 <br>
-<input class="button" accesskey="g" type="submit" value="$Text{"Send mail!"}" onclick="return submit_compose();">
+<input class="button" accesskey="g" type="submit" name="Create" value="$Text{"create"}" onclick="return submit_compose();">
 </form>
 
 <form action="$Env{"CGIHandle"}" method="post" name="spelling" target="spelling">
   <input type="hidden" name="Action" value="AgentSpelling">
   <input type="hidden" name="Body" value="">
   <input type="hidden" name="spell_lang" value="">
-</form>
-
-<form action="$Env{"CGIHandle"}" method="post" name="book" target="book">
-  <input type="hidden" name="Action" value="AgentBook">
-  <input type="hidden" name="To" value="">
-  <input type="hidden" name="Cc" value="">
-  <input type="hidden" name="Bcc" value="">
 </form>
 
 <form action="$Env{"CGIHandle"}" method="post" name="faq" target="faq">
@@ -293,8 +282,6 @@ function clear_field()
   <input type="hidden" name="Subject" value="">
   <input type="hidden" name="What" value="">
 </form>
-
-</p>
 
   </td>
 </tr>
