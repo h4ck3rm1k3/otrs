@@ -1,23 +1,21 @@
 # --
 # Kernel/System/CustomerUser.pm - some customer user functions
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2006 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: CustomerUser.pm,v 1.63 2011/03/24 17:47:48 en Exp $
+# $Id: CustomerUser.pm,v 1.22.2.1 2006/01/30 13:53:36 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::CustomerUser;
 
 use strict;
-use warnings;
-
-use Kernel::System::CustomerCompany;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.63 $) [1];
+$VERSION = '$Revision: 1.22.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
@@ -25,7 +23,7 @@ Kernel::System::CustomerUser - customer user lib
 
 =head1 SYNOPSIS
 
-All customer user functions. E. g. to add and update customer users.
+All customer user functions. E. g. to add and updated user and other functions.
 
 =head1 PUBLIC INTERFACE
 
@@ -35,82 +33,68 @@ All customer user functions. E. g. to add and update customer users.
 
 =item new()
 
-create an object
+create a object
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::CustomerUser;
+  use Kernel::Config;
+  use Kernel::System::Log;
+  use Kernel::System::DB;
+  use Kernel::System::CustomerUser;
 
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $CustomerUserObject = Kernel::System::CustomerUser->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
-    );
+  my $ConfigObject = Kernel::Config->new();
+  my $LogObject    = Kernel::System::Log->new(
+      ConfigObject => $ConfigObject,
+  );
+  my $DBObject = Kernel::System::DB->new(
+      ConfigObject => $ConfigObject,
+      LogObject => $LogObject,
+  );
+  my $CustomerUserObject = Kernel::System::CustomerUser->new(
+      ConfigObject => $ConfigObject,
+      LogObject => $LogObject,
+      DBObject => $DBObject,
+  );
 
 =cut
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
-
+    bless ($Self, $Type);
     # check needed objects
-    for (qw(DBObject ConfigObject LogObject MainObject EncodeObject)) {
+    foreach (qw(DBObject ConfigObject LogObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
-
     # load generator customer preferences module
     my $GeneratorModule = $Self->{ConfigObject}->Get('CustomerPreferences')->{Module}
-        || 'Kernel::System::CustomerUser::Preferences::DB';
-    if ( $Self->{MainObject}->Require($GeneratorModule) ) {
-        $Self->{PreferencesObject} = $GeneratorModule->new(%Param);
-    }
+      || 'Kernel::System::CustomerUser::Preferences::DB';
+    eval "require $GeneratorModule";
+    $Self->{PreferencesObject} = $GeneratorModule->new(%Param);
 
-    # load customer user backend module
-    for my $Count ( '', 1 .. 10 ) {
+    # load master backend customer user module
+    $GeneratorModule = $Self->{ConfigObject}->Get('CustomerUser')->{Module}
+      || 'Kernel::System::CustomerUser::DB';
+    eval "require $GeneratorModule";
+    $Self->{CustomerUser} = $GeneratorModule->new(
+        %Param,
+        PreferencesObject => $Self->{PreferencesObject},
+        CustomerUserMap => $Self->{ConfigObject}->Get("CustomerUser"),
+    );
 
-        # next if customer backend is not used
-        next if !$Self->{ConfigObject}->Get("CustomerUser$Count");
-
-        my $GenericModule = $Self->{ConfigObject}->Get("CustomerUser$Count")->{Module};
-        if ( !$Self->{MainObject}->Require($GenericModule) ) {
-            $Self->{MainObject}->Die("Can't load backend module $GenericModule! $@");
+    # load slave backend customer user module
+    foreach (1..10) {
+        if ($Self->{ConfigObject}->Get("CustomerUser$_")) {
+            $GeneratorModule = $Self->{ConfigObject}->Get("CustomerUser$_")->{Module};
+            eval "require $GeneratorModule";
+            $Self->{"CustomerUser$_"} = $GeneratorModule->new(
+                %Param,
+                PreferencesObject => $Self->{PreferencesObject},
+                CustomerUserMap => $Self->{ConfigObject}->Get("CustomerUser$_"),
+            );
         }
-        $Self->{"CustomerUser$Count"} = $GenericModule->new(
-            Count => $Count,
-            %Param,
-            PreferencesObject => $Self->{PreferencesObject},
-            CustomerUserMap   => $Self->{ConfigObject}->Get("CustomerUser$Count"),
-        );
     }
-
-    $Self->{CustomerCompanyObject} = Kernel::System::CustomerCompany->new(%Param);
 
     return $Self;
 }
@@ -119,32 +103,18 @@ sub new {
 
 return customer source list
 
-    my %List = $CustomerUserObject->CustomerSourceList(
-        ReadOnly => 0 # optional, 1 returns only RO backends, 0 returns writable, if not passed returns all backends
-    );
+  my %List = $CustomerUserObject->CustomerSourceList();
 
 =cut
 
 sub CustomerSourceList {
-    my ( $Self, %Param ) = @_;
-
-    my %Data;
-    SOURCE:
-    for my $Count ( '', 1 .. 10 ) {
-
-        # next if customer backend is not used
-        next SOURCE if !$Self->{ConfigObject}->Get("CustomerUser$Count");
-        if ( defined $Param{ReadOnly} ) {
-            my $CustomerBackendConfig = $Self->{ConfigObject}->Get("CustomerUser$Count");
-            if ( $Param{ReadOnly} ) {
-                next SOURCE if !$CustomerBackendConfig->{ReadOnly};
-            }
-            else {
-                next SOURCE if $CustomerBackendConfig->{ReadOnly};
-            }
+    my $Self = shift;
+    my %Param = @_;
+    my %Data = ();
+    foreach ('', 1..10) {
+        if ($Self->{ConfigObject}->Get("CustomerUser$_")) {
+            $Data{"CustomerUser$_"} = $Self->{ConfigObject}->Get("CustomerUser$_")->{Name} || "No Name $_";
         }
-        $Data{"CustomerUser$Count"} = $Self->{ConfigObject}->Get("CustomerUser$Count")->{Name}
-            || "No Name $Count";
     }
     return %Data;
 }
@@ -153,67 +123,60 @@ sub CustomerSourceList {
 
 to search users
 
-    my %List = $CustomerUserObject->CustomerSearch(
-        Search => '*some*', # also 'hans+huber' possible
-        Valid  => 1, # not required, default 1
-    );
+  my %List = $CustomerUserObject->CustomerSearch(
+      Search => '*some*', # also 'hans+huber' possible
+      ValidID => 1, # not required
+  );
 
-    my %List = $CustomerUserObject->CustomerSearch(
-        UserLogin => '*some*',
-        Valid     => 1, # not required, default 1
-    );
+  my %List = $CustomerUserObject->CustomerSearch(
+      UserLogin => '*some*',
+      ValidID => 1, # not required
+  );
 
-    my %List = $CustomerUserObject->CustomerSearch(
-        PostMasterSearch => 'email@example.com',
-        Valid            => 1, # not required, default 1
-    );
+  my %List = $CustomerUserObject->CustomerSearch(
+      PostMasterSearch => 'email@example.com',
+      ValidID => 1, # not required
+  );
 
 =cut
 
 sub CustomerSearch {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    my %Data = ();
     # remove leading and ending spaces
-    if ( $Param{Search} ) {
+    if ($Param{Search}) {
         $Param{Search} =~ s/^\s+//;
         $Param{Search} =~ s/\s+$//;
     }
-
-    my %Data;
-    for my $Count ( '', 1 .. 10 ) {
-
-        # next if customer backend is not used
-        next if !$Self->{"CustomerUser$Count"};
-
-        # get customer search result of backend and merge it
-        my %SubData = $Self->{"CustomerUser$Count"}->CustomerSearch(%Param);
-        %Data = ( %SubData, %Data );
+    foreach ('', 1..10) {
+        if ($Self->{"CustomerUser$_"}) {
+            my %SubData = $Self->{"CustomerUser$_"}->CustomerSearch(%Param);
+            %Data = (%SubData, %Data);
+        }
     }
     return %Data;
 }
 
 =item CustomerUserList()
 
-return a hash with all users (depreciated)
+return a hash with all users
 
-    my %List = $CustomerUserObject->CustomerUserList(
-        Valid => 1, # not required
-    );
+  my %List = $CustomerUserObject->CustomerUserList(
+      Valid => 1, # not required
+  );
 
 =cut
 
 sub CustomerUserList {
-    my ( $Self, %Param ) = @_;
-
-    my %Data;
-    for my $Count ( '', 1 .. 10 ) {
-
-        # next if customer backend is not used
-        next if !$Self->{"CustomerUser$Count"};
-
-        # get customer list result of backend and merge it
-        my %SubData = $Self->{"CustomerUser$Count"}->CustomerUserList(%Param);
-        %Data = ( %Data, %SubData );
+    my $Self = shift;
+    my %Param = @_;
+    my %Data = $Self->{CustomerUser}->CustomerUserList(%Param);
+    foreach (1..10) {
+        if ($Self->{"CustomerUser$_"}) {
+            my %SubData = $Self->{"CustomerUser$_"}->CustomerUserList(%Param);
+            %Data = (%Data, %SubData);
+        }
     }
     return %Data;
 }
@@ -222,24 +185,21 @@ sub CustomerUserList {
 
 get customer user name
 
-    my $Name = $CustomerUserObject->CustomerName(
-        UserLogin => 'some-login',
-    );
+  my $Name = $CustomerUserObject->GetPreferences(
+      UserLogin => 'some-login',
+  );
 
 =cut
 
 sub CustomerName {
-    my ( $Self, %Param ) = @_;
-
-    for my $Count ( '', 1 .. 10 ) {
-
-        # next if customer backend is not used
-        next if !$Self->{"CustomerUser$Count"};
-
-        # get customer name and return it
-        my $Name = $Self->{"CustomerUser$Count"}->CustomerName(%Param);
-        if ($Name) {
-            return $Name;
+    my $Self = shift;
+    my %Param = @_;
+    foreach ('', 1..10) {
+        if ($Self->{"CustomerUser$_"}) {
+            my $Name = $Self->{"CustomerUser$_"}->CustomerName(%Param);
+            if ($Name) {
+                return $Name;
+            }
         }
     }
     return;
@@ -249,24 +209,21 @@ sub CustomerName {
 
 get customer user customer ids
 
-    my @CustomerIDs = $CustomerUserObject->CustomerIDs(
-        User => 'some-login',
-    );
+  my @CustomerIDs = $CustomerUserObject->CustomerIDs(
+      User => 'some-login',
+  );
 
 =cut
 
 sub CustomerIDs {
-    my ( $Self, %Param ) = @_;
-
-    for my $Count ( '', 1 .. 10 ) {
-
-        # next if customer backend is not used
-        next if !$Self->{"CustomerUser$Count"};
-
-        # get customer id's and return it
-        my @CustomerIDs = $Self->{"CustomerUser$Count"}->CustomerIDs(%Param);
-        if (@CustomerIDs) {
-            return @CustomerIDs;
+    my $Self = shift;
+    my %Param = @_;
+    foreach ('', 1..10) {
+        if ($Self->{"CustomerUser$_"}) {
+            my @CustomerIDs = $Self->{"CustomerUser$_"}->CustomerIDs(%Param);
+            if (@CustomerIDs) {
+                return @CustomerIDs;
+            }
         }
     }
     return;
@@ -283,53 +240,21 @@ get user data (UserLogin, UserFirstname, UserLastname, UserEmail, ...)
 =cut
 
 sub CustomerUserDataGet {
-    my ( $Self, %Param ) = @_;
-
-    for my $Count ( '', 1 .. 10 ) {
-
-        # next if customer backend is not used
-        next if !$Self->{"CustomerUser$Count"};
-
-        # next if no customer got found
-        my %Customer = $Self->{"CustomerUser$Count"}->CustomerUserDataGet( %Param, );
-        next if !%Customer;
-
-        # add preferences defaults
-        my $Config = $Self->{ConfigObject}->Get('CustomerPreferencesGroups');
-        if ($Config) {
-            for my $Key ( keys %{$Config} ) {
-
-                # next if no default data exists
-                next if !defined $Config->{$Key}->{DataSelected};
-
-                # check if data is defined
-                next if defined $Customer{ $Config->{$Key}->{PrefKey} };
-
-                # set default data
-                $Customer{ $Config->{$Key}->{PrefKey} } = $Config->{$Key}->{DataSelected};
+    my $Self = shift;
+    my %Param = @_;
+    foreach ('', 1..10) {
+        if ($Self->{"CustomerUser$_"}) {
+            my %GetData = $Self->{"CustomerUser$_"}->CustomerUserDataGet(
+                %Param,
+            );
+            if (%GetData) {
+                return (
+                    %GetData,
+                    Source => "CustomerUser$_",
+                    Config => $Self->{ConfigObject}->Get("CustomerUser$_"),
+                );
             }
         }
-
-        # check if customer company support is enabled and get company data
-        my %Company;
-        if (
-            $Self->{ConfigObject}->Get("CustomerCompany")
-            && $Self->{ConfigObject}->Get("CustomerUser$Count")->{CustomerCompanySupport}
-            )
-        {
-            %Company = $Self->{CustomerCompanyObject}->CustomerCompanyGet(
-                CustomerID => $Customer{UserCustomerID},
-            );
-        }
-
-        # return customer data
-        return (
-            %Company,
-            %Customer,
-            Source        => "CustomerUser$Count",
-            Config        => $Self->{ConfigObject}->Get("CustomerUser$Count"),
-            CompanyConfig => $Self->{ConfigObject}->Get("CustomerCompany"),
-        );
     }
     return;
 }
@@ -338,360 +263,165 @@ sub CustomerUserDataGet {
 
 to add new customer users
 
-    my $UserLogin = $CustomerUserObject->CustomerUserAdd(
-        Source         => 'CustomerUser', # CustomerUser source config
-        UserFirstname  => 'Huber',
-        UserLastname   => 'Manfred',
-        UserCustomerID => 'A124',
-        UserLogin      => 'mhuber',
-        UserPassword   => 'some-pass', # not required
-        UserEmail      => 'email@example.com',
-        ValidID        => 1,
-        UserID         => 123,
-    );
+  my $UserID = $CustomerUserObject->CustomerUserAdd(
+      Source => 'CustomerUser', # CustomerUser source config
+      UserFirstname => 'Huber',
+      UserLastname => 'Manfred',
+      UserLogin => 'mhuber',
+      UserPassword => 'some-pass', # not required
+      UserEmail => 'email@example.com',
+      ValidID => 1,
+      UserID => 123,
+  );
 
 =cut
 
 sub CustomerUserAdd {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check data source
-    if ( !$Param{Source} ) {
+    if (!$Param{Source}) {
         $Param{Source} = 'CustomerUser';
     }
-
     # check if user exists
-    if ( $Param{UserLogin} ) {
-        my %User = $Self->CustomerUserDataGet( User => $Param{UserLogin} );
-        if (%User) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "User already exists '$Param{UserLogin}'!",
-            );
-            return;
-        }
+    my %User = $Self->CustomerUserDataGet(User => $Param{UserLogin});
+    if (%User) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "User already exists '$Param{UserLogin}'!");
+        return;
     }
-    return $Self->{ $Param{Source} }->CustomerUserAdd(%Param);
+    else {
+        return $Self->{$Param{Source}}->CustomerUserAdd(@_);
+    }
 }
 
 =item CustomerUserUpdate()
 
 to update customer users
 
-    $CustomerUserObject->CustomerUserUpdate(
-        Source        => 'CustomerUser', # CustomerUser source config
-        ID            => 'mh'            # current user login
-        UserLogin     => 'mhuber',       # new user login
-        UserFirstname => 'Huber',
-        UserLastname  => 'Manfred',
-        UserPassword  => 'some-pass',    # not required
-        UserEmail     => 'email@example.com',
-        ValidID       => 1,
-        UserID        => 123,
-    );
+  $CustomerUserObject->CustomerUserUpdate(
+      Source => 'CustomerUser', # CustomerUser source config
+      UserLogin => 'mhuber',
+      UserFirstname => 'Huber',
+      UserLastname => 'Manfred',
+      UserPassword => 'some-pass', # not required
+      UserEmail => 'email@example.com',
+      ValidID => 1,
+      UserID => 123,
+  );
 
 =cut
 
 sub CustomerUserUpdate {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !$Param{UserLogin} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "User UserLogin!" );
+    if (!$Param{UserLogin}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "User UserLogin!");
         return;
     }
-
-    # check for UserLogin-renaming and if new UserLogin already exists...
-    if ( $Param{ID} && ( lc $Param{UserLogin} ne lc $Param{ID} ) ) {
-        my %User = $Self->CustomerUserDataGet( User => $Param{UserLogin} );
-        if (%User) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "User already exists '$Param{UserLogin}'!",
-            );
-            return;
-        }
-    }
-
     # check if user exists
-    my %User = $Self->CustomerUserDataGet( User => $Param{ID} || $Param{UserLogin} );
-    if ( !%User ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "No such user '$Param{UserLogin}'!",
-        );
+    my %User = $Self->CustomerUserDataGet(User => $Param{ID} || $Param{UserLogin});
+    if (!%User) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "No such user!");
         return;
     }
-    return $Self->{ $User{Source} }->CustomerUserUpdate(%Param);
+    return $Self->{$User{Source}}->CustomerUserUpdate(%Param);
 }
 
 =item SetPassword()
 
 to set customer users passwords
 
-    $CustomerUserObject->SetPassword(
-        UserLogin => 'some-login',
-        PW        => 'some-new-password'
-    );
+  $CustomerUserObject->SetPassword(
+      UserLogin => 'some-login',
+      PW => 'some-new-password'
+  );
 
 =cut
 
 sub SetPassword {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !$Param{UserLogin} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'User UserLogin!' );
+    if (!$Param{UserLogin}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "User UserLogin!");
         return;
     }
-
     # check if user exists
-    my %User = $Self->CustomerUserDataGet( User => $Param{UserLogin} );
-    if ( !%User ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "No such user '$Param{UserLogin}'!",
-        );
+    my %User = $Self->CustomerUserDataGet(User => $Param{UserLogin});
+    if (!%User) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "No such user!");
         return;
     }
-    return $Self->{ $User{Source} }->SetPassword(%Param);
+    return $Self->{$User{Source}}->SetPassword(%Param);
 }
 
 =item GenerateRandomPassword()
 
 generate a random password
 
-    my $Password = $CustomerUserObject->GenerateRandomPassword();
+  my $Password = $CustomerUserObject->GenerateRandomPassword();
 
-    or
+  or
 
-    my $Password = $CustomerUserObject->GenerateRandomPassword(
-        Size => 16,
-    );
+  my $Password = $CustomerUserObject->GenerateRandomPassword(
+      Size => 16,
+  );
 
 =cut
 
 sub GenerateRandomPassword {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{CustomerUser}->GenerateRandomPassword(%Param);
+    my $Self = shift;
+    my %Param = @_;
+    return $Self->{CustomerUser}->GenerateRandomPassword(@_);
 }
 
 =item SetPreferences()
 
 set customer user preferences
 
-    $CustomerUserObject->SetPreferences(
-        Key    => 'UserComment',
-        Value  => 'some comment',
-        UserID => 'some-login',
-    );
+  $CustomerUserObject->SetPreferences(
+      Key => 'UserComment',
+      Value => 'some comment',
+      UserID => 'some-login',
+  );
 
 =cut
 
 sub SetPreferences {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{UserID} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'User UserID!' );
-        return;
-    }
-
-    # check if user exists
-    my %User = $Self->CustomerUserDataGet( User => $Param{UserID} );
-    if ( !%User ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "No such user '$Param{UserID}'!",
-        );
-        return;
-    }
-
-    # call new api (2.4.8 and higher)
-    if ( $Self->{ $User{Source} }->can('SetPreferences') ) {
-        return $Self->{ $User{Source} }->SetPreferences(%Param);
-    }
-
-    # call old api
-    return $Self->{PreferencesObject}->SetPreferences(%Param);
+    my $Self = shift;
+    return $Self->{PreferencesObject}->SetPreferences(@_);
 }
 
 =item GetPreferences()
 
 get customer user preferences
 
-    my %Preferences = $CustomerUserObject->GetPreferences(
-        UserID => 'some-login',
-    );
+  my %Preferences = $CustomerUserObject->GetPreferences(
+      UserID => 'some-login',
+  );
 
 =cut
 
 sub GetPreferences {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{UserID} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'User UserID!' );
-        return;
-    }
-
-    # check if user exists
-    my %User = $Self->CustomerUserDataGet( User => $Param{UserID} );
-    if ( !%User ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "No such user '$Param{UserID}'!",
-        );
-        return;
-    }
-
-    # call new api (2.4.8 and higher)
-    if ( $Self->{ $User{Source} }->can('GetPreferences') ) {
-        return $Self->{ $User{Source} }->GetPreferences(%Param);
-    }
-
-    # call old api
-    return $Self->{PreferencesObject}->GetPreferences(%Param);
-}
-
-=item SearchPreferences()
-
-search in user preferences
-
-    my %UserList = $CustomerUserObject->SearchPreferences(
-        Key   => 'UserSomeKey',
-        Value => 'SomeValue',
-    );
-
-=cut
-
-sub SearchPreferences {
-    my ( $Self, %Param ) = @_;
-
-    my %Data;
-    for my $Count ( '', 1 .. 10 ) {
-
-        # next if customer backend is not used
-        next if !$Self->{"CustomerUser$Count"};
-
-        # get customer search result of backend and merge it
-        # call new api (2.4.8 and higher)
-        my %SubData;
-        if ( $Self->{"CustomerUser$Count"}->can('SearchPreferences') ) {
-            %SubData = $Self->{"CustomerUser$Count"}->SearchPreferences(%Param);
-        }
-
-        # call old api
-        else {
-            %SubData = $Self->{PreferencesObject}->SearchPreferences(%Param);
-        }
-        %Data = ( %SubData, %Data );
-    }
-    return %Data;
-}
-
-=item TokenGenerate()
-
-generate a random token
-
-    my $Token = $UserObject->TokenGenerate(
-        UserID => 123,
-    );
-
-=cut
-
-sub TokenGenerate {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{UserID} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need UserID!" );
-        return;
-    }
-
-    # The list of characters that can appear in a randomly generated token.
-    my @Chars = ( 0 .. 9, 'A' .. 'Z', 'a' .. 'z' );
-
-    # The number of characters in the list.
-    my $CharsLen = scalar @Chars;
-
-    # Generate the token.
-    my $Token = 'C';
-    for ( my $i = 0; $i < 14; $i++ ) {
-        $Token .= $Chars[ rand($CharsLen) ];
-    }
-
-    # save token in preferences
-    $Self->SetPreferences(
-        Key    => 'UserToken',
-        Value  => $Token,
-        UserID => $Param{UserID},
-    );
-
-    # Return the Token.
-    return $Token;
-}
-
-=item TokenCheck()
-
-check password token
-
-    my $Valid = $UserObject->TokenCheck(
-        Token  => $Token,
-        UserID => 123,
-    );
-
-=cut
-
-sub TokenCheck {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{Token} || !$Param{UserID} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need Token and UserID!" );
-        return;
-    }
-
-    # get preferences token
-    my %Preferences = $Self->GetPreferences(
-        UserID => $Param{UserID},
-    );
-
-    # check requested vs. stored token
-    if ( $Preferences{UserToken} && $Preferences{UserToken} eq $Param{Token} ) {
-
-        # reset password token
-        $Self->SetPreferences(
-            Key    => 'UserToken',
-            Value  => '',
-            UserID => $Param{UserID},
-        );
-
-        # return true if token is valid
-        return 1;
-    }
-
-    # return false if token is invalid
-    return;
+    my $Self = shift;
+    return $Self->{PreferencesObject}->GetPreferences(@_);
 }
 
 1;
 
-=back
-
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.63 $ $Date: 2011/03/24 17:47:48 $
+$Revision: 1.22.2.1 $ $Date: 2006/01/30 13:53:36 $
 
 =cut
