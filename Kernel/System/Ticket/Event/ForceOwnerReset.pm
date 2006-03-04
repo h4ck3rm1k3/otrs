@@ -1,15 +1,15 @@
 # --
-# Kernel/System/Ticket/Event/ResetOwnerOnMove.pm - reset owner on move
+# Kernel/System/Ticket/Event/ForceOwnerReset.pm - reset owner on move
 # Copyright (C) 2001-2006 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: ResetOwnerOnMove.pm,v 1.1 2006/02/16 01:25:37 martin Exp $
+# $Id: ForceOwnerReset.pm,v 1.1 2006/03/04 11:39:51 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
-package Kernel::System::Ticket::Event::ResetOwnerOnMove;
+package Kernel::System::Ticket::Event::ForceOwnerReset;
 
 use strict;
 
@@ -44,15 +44,13 @@ sub Run {
         return;
       }
     }
-    if ($Param{Event} eq 'MoveTicket') {
-        $Self->{TicketObject}->OwnerSet(
-            TicketID => $Param{TicketID},
-            NewUserID => 1,
-            SendNoNotification => 1, # optional 1|0
-            UserID => 1,
-        );
-
-    }
+    $Self->{TicketObject}->OwnerSet(
+        TicketID => $Param{TicketID},
+        NewUserID => 1,
+        SendNoNotification => 1, # optional 1|0
+        UserID => 1,
+    );
+    return 1;
 }
 # --
 1;
