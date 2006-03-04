@@ -5,9 +5,12 @@
   XML File for the OTRS database description
   Copyright (C) 2001-2003 Martin Edenhofer
 
-  $Id: otrs-schema.xml,v 1.49 2006/02/05 20:17:49 martin Exp $
+  $Id: otrs-schema.xml,v 1.50 2006/03/04 11:46:44 martin Exp $
 
   $Log: otrs-schema.xml,v $
+  Revision 1.50  2006/03/04 11:46:44  martin
+  added new ticket responsible feature
+
   Revision 1.49  2006/02/05 20:17:49  martin
   added 8 more ticket free texts, removed faq
 
@@ -643,6 +646,7 @@
   <Column Name="state_notify" Required="true" Type="SMALLINT"/>
   <Column Name="lock_notify" Required="true" Type="SMALLINT"/>
   <Column Name="owner_notify" Required="true" Type="SMALLINT"/>
+  <Column Name="responsible_notify" Required="true" Type="SMALLINT"/>
   <Column Name="comments" Required="false" Size="200" Type="VARCHAR"/>
   <Column Name="valid_id" Required="true" Type="SMALLINT"/>
   <Column Name="create_time" Required="true" Type="DATE"/>
@@ -685,6 +689,7 @@
   <Column Name="ticket_lock_id" Required="true" Type="SMALLINT"/>
   <Column Name="ticket_answered" Required="true" Type="SMALLINT"/>
   <Column Name="user_id" Required="true" Type="INTEGER"/>
+  <Column Name="responsible_user_id" Required="true" Type="INTEGER"/>
   <Column Name="group_id" Required="true" Type="INTEGER"/>
   <Column Name="ticket_priority_id" Required="true" Type="SMALLINT"/>
   <Column Name="ticket_state_id" Required="true" Type="SMALLINT"/>
@@ -770,6 +775,7 @@
     <Reference Local="create_by" Foreign="id"/>
     <Reference Local="change_by" Foreign="id"/>
     <Reference Local="user_id" Foreign="id"/>
+    <Reference Local="responsible_user_id" Foreign="id"/>
   </ForeignKey>
 </Table>
 
@@ -1104,7 +1110,7 @@
 <Table Name="auto_response_type">
   <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="SMALLINT"/>
   <Column Name="name" Required="true" Size="50" Type="VARCHAR"/>
-  <Column Name="comments" Required="false" Size="80" Type="VARCHAR"/>
+  <Column Name="comments" Required="false" Size="200" Type="VARCHAR"/>
   <Column Name="valid_id" Required="true" Type="SMALLINT"/>
   <Column Name="create_time" Required="true" Type="DATE"/>
   <Column Name="create_by" Required="true" Type="INTEGER"/>
