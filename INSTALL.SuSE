@@ -1,12 +1,12 @@
 # --
 # INSTALL.SuSE description of OTRS installation for SuSE Linux with RPM
-# Copyright (C) 2003-2009 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2005 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: INSTALL.SuSE,v 1.10 2009/02/16 12:54:21 tr Exp $
+# $Id: INSTALL.SuSE,v 1.5.2.1 2006/03/07 06:47:16 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 Installation:
@@ -36,7 +36,7 @@ Installation:
 
 Remark: For installation questions ask otrs@otrs.org (http://lists.otrs.org/).
 
-((enjoy))
+Have a lot of fun.
 
  Your OTRS Team
 
