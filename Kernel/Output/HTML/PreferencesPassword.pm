@@ -1,220 +1,163 @@
 # --
 # Kernel/Output/HTML/PreferencesPassword.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2006 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: PreferencesPassword.pm,v 1.28 2011/11/29 13:27:14 mb Exp $
+# $Id: PreferencesPassword.pm,v 1.6.2.1 2006/03/08 19:10:59 cs Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::Output::HTML::PreferencesPassword;
 
 use strict;
-use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.28 $) [1];
+$VERSION = '$Revision: 1.6.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
+# --
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
+
+    # get env
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
 
     # get needed objects
-    for (qw(ConfigObject LogObject DBObject LayoutObject UserID ParamObject ConfigItem MainObject))
-    {
-        die "Got no $_!" if !$Self->{$_};
+    foreach (qw(ConfigObject LogObject DBObject LayoutObject UserID ParamObject ConfigItem)) {
+        die "Got no $_!" if (!$Self->{$_});
     }
 
     return $Self;
 }
-
+# --
 sub Param {
-    my ( $Self, %Param ) = @_;
-
-    # check if we need to show password change option
-
-    # define AuthModule for frontend
-    my $AuthModule
-        = $Self->{ConfigItem}->{Area} eq 'Agent'
-        ? 'AuthModule'
-        : 'Customer::AuthModule';
-
-    # get auth module
-    my $Module      = $Self->{ConfigObject}->Get($AuthModule);
-    my $AuthBackend = $Param{UserData}->{UserAuthBackend};
-    if ($AuthBackend) {
-        $Module = $Self->{ConfigObject}->Get( $AuthModule . $AuthBackend );
+    my $Self = shift;
+    my %Param = @_;
+    my @Params = ();
+    if ($Self->{ConfigItem}->{Area} eq 'Agent') {
+        if ($Self->{ConfigObject}->Get('AuthModule') =~ /(LDAP|HTTPBasicAuth|Radius)/i) {
+            return ();
+        }
     }
-
-    # return on no pw reset backends
-    return if $Module =~ /(LDAP|HTTPBasicAuth|Radius)/i;
-
-    my @Params;
-    push(
-        @Params,
-        {
+    elsif ($Self->{ConfigItem}->{Area} eq 'Customer') {
+        if ($Self->{ConfigObject}->Get('Customer::AuthModule') =~ /(LDAP|HTTPBasicAuth|Radius)/i) {
+            return ();
+        }
+    }
+    push (@Params, {
             %Param,
-            Key   => 'Current password',
-            Name  => 'CurPw',
+            Key => 'New password',
+            Name => 'NewPw',
             Block => 'Password'
         },
         {
             %Param,
-            Key   => 'New password',
-            Name  => 'NewPw',
-            Block => 'Password'
-        },
-        {
-            %Param,
-            Key   => 'Verify password',
-            Name  => 'NewPw1',
+            Key => 'New password again',
+            Name => 'NewPw1',
             Block => 'Password'
         },
     );
     return @Params;
 }
-
+# --
 sub Run {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
 
     # pref update db
-    return 1 if $Self->{ConfigObject}->Get('DemoSystem');
-
-    # get password from form
-    my $CurPw;
-    if ( $Param{GetParam}->{CurPw} && $Param{GetParam}->{CurPw}->[0] ) {
-        $CurPw = $Param{GetParam}->{CurPw}->[0];
+    if ($Self->{ConfigObject}->Get('DemoSystem')) {
+#        $Self->{Error} = "Can't change password, it's a demo system!";
+        return 1;
     }
-    my $Pw;
-    if ( $Param{GetParam}->{NewPw} && $Param{GetParam}->{NewPw}->[0] ) {
+
+    my $Pw = '';
+    my $Pw1 = '';
+
+    if ($Param{GetParam}->{NewPw} && $Param{GetParam}->{NewPw}->[0]) {
         $Pw = $Param{GetParam}->{NewPw}->[0];
     }
-    my $Pw1;
-    if ( $Param{GetParam}->{NewPw1} && $Param{GetParam}->{NewPw1}->[0] ) {
+    if ($Param{GetParam}->{NewPw1} && $Param{GetParam}->{NewPw1}->[0]) {
         $Pw1 = $Param{GetParam}->{NewPw1}->[0];
     }
-
-    # define AuthModule for frontend
-    my $AuthModule
-        = $Self->{ConfigItem}->{Area} eq 'Agent'
-        ? 'Kernel::System::Auth'
-        : 'Kernel::System::CustomerAuth';
-
-    # create authentication object
-    my $AuthObject = $AuthModule->new(
-        ConfigObject => $Self->{ConfigObject},
-        EncodeObject => $Self->{EncodeObject},
-        LogObject    => $Self->{LogObject},
-        UserObject   => $Self->{UserObject},
-        GroupObject  => $Self->{GroupObject},
-        DBObject     => $Self->{DBObject},
-        MainObject   => $Self->{MainObject},
-        TimeObject   => $Self->{TimeObject},
-    );
-    return 1 if !$AuthObject;
-
-    # validate current password
-    if ( !$AuthObject->Auth( User => $Param{UserData}->{UserLogin}, Pw => $CurPw ) ) {
-        $Self->{Error}
-            = 'The current password is not correct. Please try again!';
-        return;
-    }
-
     # compare pws
-    if ( $Pw ne $Pw1 ) {
-        $Self->{Error}
-            = 'Can\'t update password, your new passwords do not match. Please try again!';
+    if ($Pw ne $Pw1) {
+        $Self->{Error} = "Can\'t update password, passwords doesn\'t match! Please try it again!";
         return;
     }
-
     # check if pw is true
-    if ( !$Pw || !$Pw1 ) {
-        $Self->{Error} = 'Please supply your new password!';
+    if (!$Pw || !$Pw1) {
+        $Self->{Error} = "Password is needed!";
         return;
     }
-
     # check pw
-    my $Config = $Self->{ConfigItem};
-
-    # check if password is not matching PasswordRegExp
-    if ( $Config->{PasswordRegExp} && $Pw !~ /$Config->{PasswordRegExp}/ ) {
-        $Self->{Error} = 'Can\'t update password, it contains invalid characters!';
+    if ($Self->{ConfigItem}->{PasswordRegExp} && $Pw !~ /$Self->{ConfigItem}->{PasswordRegExp}/) {
+        $Self->{Error} = 'Can\'t update password, invalid characters!';
         return;
     }
-
-    # check min size of password
-    if ( $Config->{PasswordMinSize} && length $Pw < $Config->{PasswordMinSize} ) {
-        $Self->{Error} = (
-            'Can\'t update password, it must be at least %s characters long!", "'
-                . $Config->{PasswordMinSize}
-        );
+    if ($Self->{ConfigItem}->{PasswordMinSize} && $Pw !~ /^.{$Self->{ConfigItem}->{PasswordMinSize}}/) {
+        $Self->{Error} = 'Can\'t update password, need min. 8 characters!';
+       return;
+    }
+    if ($Self->{ConfigItem}->{PasswordMin2Lower2UpperCharacters} && ($Pw !~ /[A-Z]/ || $Pw !~ /[a-z]/)) {
+        $Self->{Error} = 'Can\'t update password, need 2 lower and 2 upper characters!';
+       return;
+    }
+    if ($Self->{ConfigItem}->{PasswordNeedDigit} && $Pw !~ /\d/) {
+        $Self->{Error} = 'Can\'t update password, need min. 1 digit!';
+       return;
+    }
+    if ($Self->{ConfigItem}->{PasswordMin2Characters} && $Pw !~ /[A-z][A-z]/) {
+        $Self->{Error} = 'Can\'t update password, need min. 2 characters!';
         return;
     }
-
-    # check min 1 lower and 1 upper char
-    if ( $Config->{PasswordMin2Lower2UpperCharacters} && ( $Pw !~ /[A-Z]/ || $Pw !~ /[a-z]/ ) ) {
-        $Self->{Error}
-            = 'Can\'t update password, it must contain at least 2 lowercase  and 2 uppercase characters!';
+    # check current pw
+    if ($Param{UserData}->{UserPw} && (crypt($Pw, $Param{UserData}->{UserLogin}) eq $Param{UserData}->{UserPw})) {
+        $Self->{Error} = 'Password is already in use! Please use an other password!';
         return;
     }
-
-    # check min 1 digit password
-    if ( $Config->{PasswordNeedDigit} && $Pw !~ /\d/ ) {
-        $Self->{Error} = 'Can\'t update password, it must contain at least 1 digit!';
-        return;
+    # check last pw
+    if ($Self->{ConfigItem}->{PasswordHistory} && $Param{UserData}->{UserLastPw} && (crypt($Pw, $Param{UserData}->{UserLogin}) eq $Param{UserData}->{UserLastPw})) {
+        $Self->{Error} = "Password is already used! Please use an other password!";
+       return;
     }
 
-    # check min 2 char password
-    if ( $Config->{PasswordMin2Characters} && $Pw !~ /[A-z][A-z]/ ) {
-        $Self->{Error} = 'Can\'t update password, it must contain at least 2 characters!';
-        return;
+    if ($Self->{UserObject}->SetPassword(UserLogin => $Param{UserData}->{UserLogin}, PW => $Pw)) {
+       if ($Param{UserData}->{UserID} eq $Self->{UserID}) {
+           # update SessionID
+           $Self->{SessionObject}->UpdateSessionID(
+                SessionID => $Self->{SessionID},
+                Key => 'UserLastPw',
+                Value => $Param{UserData}->{UserPw},
+           );
+           # update SessionID
+           $Self->{SessionObject}->UpdateSessionID(
+                SessionID => $Self->{SessionID},
+                Key => 'UserPw',
+                Value => crypt($Pw, $Param{UserData}->{UserLogin}),
+           );
+        }
+        $Self->{Message} = "Preferences updated successfully!";
+        return 1;
     }
-
-    # md5 sum for new pw, needed for password history
-    my $MD5Pw = $Self->{MainObject}->MD5sum(
-        String => $Pw,
-    );
-    if ( $Param{UserData}->{UserLastPw} && ( $MD5Pw eq $Param{UserData}->{UserLastPw} ) ) {
-        $Self->{Error}
-            = "Can\'t update password, this password has already been used. Please choose a new one!";
-        return;
-    }
-
-    # set new password
-    my $Success = $Self->{UserObject}->SetPassword(
-        UserLogin => $Param{UserData}->{UserLogin},
-        PW        => $Pw,
-    );
-    return if !$Success;
-
-    # set current session data for UserLastPw
-    if ( $Param{UserData}->{UserID} eq $Self->{UserID} ) {
-
-        # update SessionID
-        $Self->{SessionObject}->UpdateSessionID(
-            SessionID => $Self->{SessionID},
-            Key       => 'UserLastPw',
-            Value     => $MD5Pw,
-        );
-    }
-    $Self->{Message} = 'Preferences updated successfully!';
-    return 1;
+    return;
 }
-
 sub Error {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     return $Self->{Error} || '';
 }
-
 sub Message {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     return $Self->{Message} || '';
 }
 
