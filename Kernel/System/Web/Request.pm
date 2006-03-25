@@ -1,23 +1,23 @@
 # --
 # Kernel/System/Web/Request.pm - a wrapper for CGI.pm or Apache::Request.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2006 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: Request.pm,v 1.41 2011/11/21 10:20:47 mg Exp $
+# $Id: Request.pm,v 1.2.2.1 2006/03/25 23:06:38 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::Web::Request;
 
 use strict;
-use warnings;
-
-use Kernel::System::CheckItem;
+use Kernel::System::Encode;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.41 $) [1];
+
+$VERSION = '$Revision: 1.2.2.1 $ ';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
@@ -37,66 +37,40 @@ All cgi param functions.
 
 create param object
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::Web::Request;
+  use Kernel::Config;
+  use Kernel::System::Web::Request;
 
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $ParamObject = Kernel::System::Web::Request->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        EncodeObject => $EncodeObject,
-        MainObject   => $MainObject,
-        WebRequest   => CGI::Fast->new(), # optional, e. g. if fast cgi is used
-    );
-
-If Kernel::System::Web::Request is instantiated several times, they will share the
-same CGI data (this can be helpful in filters which do not have access to the
-ParamObject, for example.
-
-If you need to reset the CGI data before creating a new instance, use
-
-    CGI::initialize_globals();
-
-before calling Kernel::System::Web::Request->new();
+  my $ConfigObject = Kernel::Config->new();
+  my $ParamObject = Kernel::System::Web::Request->new(
+      ConfigObject => $ConfigObject,
+  );
 
 =cut
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
-
-    for my $Object (qw(ConfigObject LogObject EncodeObject MainObject)) {
-        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
+    bless ($Self, $Type);
+    # check needed objects
+    foreach (qw(ConfigObject LogObject)) {
+        if ($Param{$_}) {
+            $Self->{$_} = $Param{$_};
+        }
+        else {
+            die "Gor no $_";
+        }
     }
-    $Self->{CheckItemObject} = Kernel::System::CheckItem->new( %{$Self} );
-
+    # encode object
+    $Self->{EncodeObject} = Kernel::System::Encode->new(%Param);
     # Simple Common Gateway Interface Class
     use CGI qw(:cgi);
-
-    # send errors to web server error log
-    use CGI::Carp;
-
+    # to get the errors on screen
+    use CGI::Carp qw(fatalsToBrowser);
     # max 5 MB posts
     $CGI::POST_MAX = $Self->{ConfigObject}->Get('WebMaxFileUpload') || 1024 * 1024 * 5;
-
     # query object (in case use already existing WebRequest, e. g. fast cgi)
     $Self->{Query} = $Param{WebRequest} || new CGI;
 
@@ -107,246 +81,168 @@ sub new {
 
 to get the error back
 
-    if ( $ParamObject->Error() ) {
-        print STDERR $ParamObject->Error() . "\n";
-    }
+  if ($ParamObject->Error()) {
+      print STDERR $Self->{ParamObject}->Error()."\n";
+  }
 
 =cut
 
 sub Error {
-    my ( $Self, %Param ) = @_;
-
-    # Workaround, do not check cgi_error() with perlex, CGI module is not
-    # working with perlex.
-    if ( $ENV{'GATEWAY_INTERFACE'} && $ENV{'GATEWAY_INTERFACE'} =~ /^CGI-PerlEx/ ) {
+    my $Self = shift;
+    if (cgi_error()) {
+        return cgi_error()." - POST_MAX=".($CGI::POST_MAX/1024)."KB";
+    }
+    else {
         return;
     }
-
-    return if !cgi_error();
-    return cgi_error() . ' - POST_MAX=' . ( $CGI::POST_MAX / 1024 ) . 'KB';
 }
 
 =item GetParam()
 
 to get params
 
-    my $Param = $ParamObject->GetParam(
-        Param => 'ID',
-    );
+  my $Param = $ParamObject->GetParam(Param => 'ID');
 
 =cut
 
 sub GetParam {
-    my ( $Self, %Param ) = @_;
-
-    my $Value = $Self->{Query}->param( $Param{Param} );
-    $Self->{EncodeObject}->EncodeInput( \$Value );
-
-    if (
-        $Param{TrimLeft}
-        || $Param{TrimRight}
-        || $Param{RemoveAllNewlines}
-        || $Param{RemoveAllTabs}
-        || $Param{RemoveAllSpaces}
-        )
-    {
-        $Self->{CheckItemObject}->StringClean(
-            StringRef => \$Value,
-            %Param,
-        );
-    }
-
-    return $Value;
-}
-
-=item GetParamNames()
-
-to get names of all parameters passed to the script.
-
-    my @ParamNames = $ParamObject->GetParamNames();
-
-Example:
-
-Called URL: index.pl?Action=AdminSysConfig;Subaction=Save;Name=Config::Option::Valid
-
-    my @ParamNames = $ParamObject->GetParamNames();
-    print join " :: ", @ParamNames;
-    #prints Action :: Subaction :: Name
-
-=cut
-
-sub GetParamNames {
     my $Self = shift;
-
-    # fetch all names
-    my @ParamNames = $Self->{Query}->param();
-
-    # is encode needed?
-    for my $Name (@ParamNames) {
-        $Self->{EncodeObject}->EncodeInput( \$Name );
-    }
-
-    return @ParamNames;
+    my %Param = @_;
+#return $Self->{P}->{$Param{Param}};
+    my $Value = $Self->{Query}->param($Param{Param});
+    $Self->{EncodeObject}->Encode(\$Value);
+    return $Value;
 }
 
 =item GetArray()
 
 to get array params
 
-    my @Param = $ParamObject->GetArray( Param => 'ID' );
+  my @Param = $ParamObject->GetArray(Param => 'ID');
 
 =cut
 
 sub GetArray {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
+    my @Value = $Self->{Query}->param($Param{Param});
+    $Self->{EncodeObject}->Encode(\@Value);
+    return @Value;
+}
 
-    my @Values = $Self->{Query}->param( $Param{Param} );
-    $Self->{EncodeObject}->EncodeInput( \@Values );
+=item GetUpload()
 
-    if (
-        $Param{TrimLeft}
-        || $Param{TrimRight}
-        || $Param{RemoveAllNewlines}
-        || $Param{RemoveAllTabs}
-        || $Param{RemoveAllSpaces}
-        )
-    {
-        for my $Value (@Values) {
-            $Self->{CheckItemObject}->StringClean(
-                StringRef => \$Value,
-                %Param,
-            );
-        }
-    }
+internal function for GetUploadAll()
 
-    return @Values;
+=cut
+
+sub GetUpload {
+    my $Self = shift;
+    my %Param = @_;
+    my $File = $Self->{Query}->upload($Param{Filename});
+    return $File;
+}
+
+=item GetUploadInfo()
+
+internal function for GetUploadAll()
+
+=cut
+
+sub GetUploadInfo {
+    my $Self = shift;
+    my %Param = @_;
+    my $Info = $Self->{Query}->uploadInfo($Param{Filename})->{$Param{Header}};
+    return $Info;
 }
 
 =item GetUploadAll()
 
 to get file upload
 
-    my %File = $ParamObject->GetUploadAll(
-        Param  => 'FileParam',
-        Source => 'string',
-    );
+  my %File = $ParamObject->GetUploadAll(Param => '123.jpg');
 
-    to get file upload without uft-8 encoding
-
-    my %File = $ParamObject->GetUploadAll(
-        Param  => 'FileParam',
-        Source => 'string',
-    );
-
-    print "Filename: $File{Filename}\n";
-    print "ContentType: $File{ContentType}\n";
-    print "Content: $File{Content}\n";
-
-    If param Source is file, the the content contains the file location
-    in your local file system.
+  print "Filename: $File{Filename}\n";
+  print "ContentType: $File{ContentType}\n";
+  print "Content: $File{Content}\n";
 
 =cut
 
 sub GetUploadAll {
-    my ( $Self, %Param ) = @_;
-
-    # get upload
-    my $Upload = $Self->{Query}->upload( $Param{Param} );
-    return if !$Upload;
-
-    # get real file name
-    my $UploadFilenameOrig = $Self->GetParam( Param => $Param{Param} ) || 'unkown';
-    my $NewFileName = "$UploadFilenameOrig";    # use "" to get filename of anony. object
-    $Self->{EncodeObject}->EncodeInput( \$NewFileName );
-
-    # replace all devices like c: or d: and dirs for IE!
-    $NewFileName =~ s/.:\\(.*)/$1/g;
-    $NewFileName =~ s/.*\\(.+?)/$1/g;
-
-    # return a string
-    my $Content;
-    if ( $Param{Source} && lc $Param{Source} eq 'string' ) {
-
-        while (<$Upload>) {
-            $Content .= $_;
+    my $Self = shift;
+    my %Param = @_;
+    my $Upload = $Self->GetUpload(Filename => $Param{Param});
+    if ($Upload) {
+        $Param{UploadFilenameOrig} = $Self->GetParam(Param => $Param{Param}) || 'unkown';
+        # replace all devices like c: or d: and dirs for IE!
+        my $NewFileName = $Param{UploadFilenameOrig};
+        $NewFileName =~ s/.:\\(.*)/$1/g;
+        $NewFileName =~ s/.*\\(.+?)/$1/g;
+        # return a string
+        if ($Param{Source} && $Param{Source} =~ /^string$/i) {
+            $Param{UploadFilename} = '';
+            while (<$Upload>) {
+                $Param{UploadFilename} .= $_;
+            }
+            $Self->{EncodeObject}->Encode(\$Param{UploadFilename});
         }
-        close $Upload;
-    }
+        # return file location in FS
+        else {
+            # delete upload dir if exists
+            my $Path = "/tmp/$$";
+            if (-d $Path) {
+                File::Path::rmtree([$Path]);
+            }
+            # create upload dir
+            File::Path::mkpath([$Path], 0, 0700);
 
-    # return file location in file system
+            $Param{UploadFilename} = "$Path/$NewFileName";
+            open (OUTFILE,"> $Param{UploadFilename}") || die $!;
+            while (<$Upload>) {
+                print OUTFILE $_;
+            }
+            close (OUTFILE);
+        }
+        # check if content is there, IE is always sending file uploades
+        # without content
+        if (!$Param{UploadFilename}) {
+            return;
+        }
+        if ($Param{UploadFilename}) {
+          $Param{UploadContentType} = $Self->GetUploadInfo(
+            Filename => $Param{UploadFilenameOrig},
+            Header => 'Content-Type',
+          ) || '';
+        }
+        return (
+            Filename => $NewFileName,
+            Content => $Param{UploadFilename},
+            ContentType => $Param{UploadContentType},
+        );
+    }
     else {
-
-        # delete upload dir if exists
-        my $Path = "/tmp/$$";
-        if ( -d $Path ) {
-            File::Path::rmtree( [$Path] );
-        }
-
-        # create upload dir
-        File::Path::mkpath( [$Path], 0, 0700 );
-
-        $Content = "$Path/$NewFileName";
-
-        open my $Out, '>', $Content or die $!;
-        while (<$Upload>) {
-            print $Out $_;
-        }
-        close $Out;
+        return;
     }
-
-    # check if content is there, IE is always sending file uploades
-    # without content
-    return if !$Content;
-
-    my $ContentType = $Self->_GetUploadInfo(
-        Filename => $UploadFilenameOrig,
-        Header   => 'Content-Type',
-    );
-
-    return (
-        Filename    => $NewFileName,
-        Content     => $Content,
-        ContentType => $ContentType,
-    );
-}
-
-sub _GetUploadInfo {
-    my ( $Self, %Param ) = @_;
-
-    # get file upload info
-    my $FileInfo = $Self->{Query}->uploadInfo( $Param{Filename} );
-
-    # return if no upload info exists
-    return 'application/octet-stream' if !$FileInfo;
-
-    # return if no content type of upload info exists
-    return 'application/octet-stream' if !$FileInfo->{ $Param{Header} };
-
-    # return content type of upload info
-    return $FileInfo->{ $Param{Header} };
 }
 
 =item SetCookie()
 
 set a cookie
 
-    $ParamObject->SetCookie(
-        Key     => ID,
-        Value   => 123456,
-        Expires => '+3660s',
-        Secure  => 1,           # optional, set secure attribute to disable cookie on HTTP (HTTPS only)
-    );
+  $ParamObject->SetCookie(
+      Key => ID,
+      Value => 123456,
+  );
 
 =cut
 
 sub SetCookie {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     return $Self->{Query}->cookie(
-        -name    => $Param{Key},
-        -value   => $Param{Value},
-        -expires => $Param{Expires},
-        -secure  => $Param{Secure},
+        -name=> $Param{Key},
+        -value=> $Param{Value},
+        -expires=> $Param{Expires},
     );
 }
 
@@ -354,34 +250,32 @@ sub SetCookie {
 
 get a cookie
 
-    my $String = $ParamObject->GetCookie(
-        Key => ID,
-    );
+  my $String = $ParamObject->GetCookie(
+      Key => ID,
+  );
 
 =cut
 
 sub GetCookie {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{Query}->cookie( $Param{Key} );
+    my $Self = shift;
+    my %Param = @_;
+    return $Self->{Query}->cookie($Param{Key}) || '';
 }
 
 1;
 
-=back
-
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.41 $ $Date: 2011/11/21 10:20:47 $
+$Revision: 1.2.2.1 $ $Date: 2006/03/25 23:06:38 $
 
 =cut
