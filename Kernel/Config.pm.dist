@@ -1,12 +1,12 @@
 # --
 # Kernel/Config.pm - Config file for OTRS kernel
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2005 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: Config.pm.dist,v 1.25 2011/09/16 10:58:28 mg Exp $
+# $Id: Config.pm.dist,v 1.16.2.1 2006/06/08 06:56:12 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 #  Note:
 #
@@ -17,11 +17,8 @@
 #       config file. This file will not be changed on update!
 #
 # --
-
 package Kernel::Config;
-
-use utf8;
-
+# --
 sub Load {
     my $Self = shift;
     # ---------------------------------------------------- #
@@ -45,7 +42,7 @@ sub Load {
     # (The database user.)
     $Self->{DatabaseUser} = 'otrs';
     # DatabasePw
-    # (The password of database user. You also can use bin/otrs.CryptPassword.pl
+    # (The password of database user. You also can use bin/CryptPassword.pl
     # for crypted passwords.)
     $Self->{DatabasePw} = 'some-pass';
     # DatabaseDSN
@@ -57,22 +54,20 @@ sub Load {
 #    $Self->{DatabaseDSN} = "DBI:Pg:dbname=$Self->{Database};";
     # if you want to use a tcpip connection
 #    $Self->{DatabaseDSN} = "DBI:Pg:dbname=$Self->{Database};host=$Self->{DatabaseHost};";
-    # if you have PostgresSQL 8.1 or earlier, activate the legacy driver with this line:
-#    $Self->{DatabasePostgresqlBefore82} = 1;
 
     # ---------------------------------------------------- #
     # fs root directory
     # ---------------------------------------------------- #
     $Self->{Home} = '/opt/otrs';
 
-    # ---------------------------------------------------- #
+    # **************************************************** #
     # insert your own config settings "here"               #
     # config settings taken from Kernel/Config/Defaults.pm #
-    # ---------------------------------------------------- #
+    # **************************************************** #
     # $Self->{SessionUseCookie} = 0;
     # $Self->{CheckMXRecord} = 0;
 
-    # ---------------------------------------------------- #
+    # **************************************************** #
 
     # ---------------------------------------------------- #
     # data inserted by installer                           #
@@ -92,14 +87,11 @@ sub Load {
 # needed system stuff (don't edit this)                #
 # ---------------------------------------------------- #
 use strict;
-use warnings;
-
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.25 $)[1];
-
 use Kernel::Config::Defaults;
 push (@ISA, 'Kernel::Config::Defaults');
-
+$VERSION = '$Revision: 1.16.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 # -----------------------------------------------------#
 
 1;
