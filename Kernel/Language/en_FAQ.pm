@@ -2,7 +2,7 @@
 # Kernel/Language/xx_Custom.pm - provides xx custom language translation
 # Copyright (C) 2001-2004 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: en_FAQ.pm,v 1.1 2006/06/29 09:29:51 ct Exp $
+# $Id: en_FAQ.pm,v 1.1.1.1 2006/06/29 09:29:51 ct Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -13,7 +13,7 @@ package Kernel::Language::en_FAQ;
 use strict;
 
 use vars qw($VERSION);
-$VERSION = '$Revision: 1.1 $';
+$VERSION = '$Revision: 1.1.1.1 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 # --

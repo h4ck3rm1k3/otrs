@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-  <CVS>$Id: FAQ.sopm,v 1.1 2006/06/29 09:29:51 ct Exp $</CVS>
+  <CVS>$Id: FAQ.sopm,v 1.1.1.1 2006/06/29 09:29:51 ct Exp $</CVS>
   <Name>FAQ</Name>
   <Version>0.3.1</Version>
   <Framework>2.1.x</Framework>

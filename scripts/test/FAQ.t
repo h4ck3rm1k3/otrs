@@ -2,7 +2,7 @@
 # FileTemp.t - FileTemp tests
 # Copyright (C) 2001-2005 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: FAQ.t,v 1.1 2006/06/29 09:29:51 ct Exp $
+# $Id: FAQ.t,v 1.1.1.1 2006/06/29 09:29:51 ct Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you

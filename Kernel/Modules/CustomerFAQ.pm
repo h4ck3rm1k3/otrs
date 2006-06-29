@@ -2,7 +2,7 @@
 # Kernel/Modules/CustomerFAQ.pm - faq module
 # Copyright (C) 2001-2005 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: CustomerFAQ.pm,v 1.1 2006/06/29 09:29:51 ct Exp $
+# $Id: CustomerFAQ.pm,v 1.1.1.1 2006/06/29 09:29:51 ct Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -16,7 +16,7 @@ use Kernel::System::FAQ;
 use Kernel::Modules::FAQ;
 
 use vars qw($VERSION);
-$VERSION = '$Revision: 1.1 $';
+$VERSION = '$Revision: 1.1.1.1 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 our @ISA = qw(Kernel::Modules::FAQ);

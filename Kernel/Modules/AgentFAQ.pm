@@ -2,7 +2,7 @@
 # Kernel/Modules/AgentFAQ.pm - faq module
 # Copyright (C) 2001-2005 Martin Edenhofer <martin+code@otrs.org>
 # --
-# $Id: AgentFAQ.pm,v 1.1 2006/06/29 09:29:51 ct Exp $
+# $Id: AgentFAQ.pm,v 1.1.1.1 2006/06/29 09:29:51 ct Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use Kernel::System::LinkObject;
 use Kernel::Modules::FAQ;
 
 use vars qw($VERSION @ISA);
-$VERSION = '$Revision: 1.1 $';
+$VERSION = '$Revision: 1.1.1.1 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 @ISA = qw(Kernel::Modules::FAQ);
