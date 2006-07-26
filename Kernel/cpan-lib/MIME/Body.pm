@@ -142,7 +142,7 @@ use IO::Scalar;
 use Carp;
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = "5.417";
+$VERSION = "5.420";
 
 
 #------------------------------
@@ -191,6 +191,7 @@ sub as_lines {
     my $self = shift;
     my @lines;
     my $io = $self->open("r") || return ();
+    local $_;
     push @lines, $_ while (defined($_ = $io->getline()));
     $io->close;
     @lines;
@@ -235,6 +236,23 @@ sub binmode {
     my ($self, $onoff) = @_;
     $self->{MB_Binmode} = $onoff if (@_ > 1);
     $self->{MB_Binmode};
+}
+
+#------------------------------
+
+=item is_encoded [ONOFF]
+
+I<Instance method.>
+If set to yes, no decoding is applied on output. This flag is set
+by MIME::Parser, if the parser runs in decode_bodies(0) mode, so the
+content is handled unmodified.
+
+=cut
+
+sub is_encoded {
+    my ($self, $yesno) = @_;
+    $self->{MB_IsEncoded} = $yesno if (@_ > 1);
+    $self->{MB_IsEncoded};
 }
 
 #------------------------------
@@ -672,7 +690,7 @@ to the use of FileHandles.
 
 =head1 VERSION
 
-$Revision: 1.8 $ $Date: 2005/01/13 19:23:15 $
+$Revision: 1.13 $ $Date: 2006/03/17 21:03:23 $
 
 =cut
 
