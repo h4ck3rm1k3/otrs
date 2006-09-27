@@ -5,9 +5,12 @@
   XML File for the OTRS database description
   Copyright (C) 2001-2003 Martin Edenhofer
 
-  $Id: otrs-schema.xml,v 1.53 2006/08/27 22:31:44 martin Exp $
+  $Id: otrs-schema.xml,v 1.54 2006/09/27 12:20:49 martin Exp $
 
   $Log: otrs-schema.xml,v $
+  Revision 1.54  2006/09/27 12:20:49  martin
+  removed NOT NULL from xml_content_value of xml_storage table
+
   Revision 1.53  2006/08/27 22:31:44  martin
   added calendar support
 
@@ -1399,7 +1402,7 @@
   <Column Name="xml_type" Required="true" Size="200" Type="VARCHAR"/>
   <Column Name="xml_key" Required="true" Size="250" Type="VARCHAR"/>
   <Column Name="xml_content_key" Required="true" Size="250" Type="VARCHAR"/>
-  <Column Name="xml_content_value" Required="true" Type="LONGBLOB"/>
+  <Column Name="xml_content_value" Required="false" Type="LONGBLOB"/>
   <Index Name="xml_type">
     <IndexColumn Name="xml_type"/>
   </Index>
