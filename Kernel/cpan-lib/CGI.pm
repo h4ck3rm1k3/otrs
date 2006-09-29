@@ -4,7 +4,7 @@ use Carp 'croak';
 
 # See the bottom of this file for the POD documentation.  Search for the
 # string '=head'.
- 
+
 # You can run this file through either pod2man or pod2html to produce pretty
 # documentation in manual or html file format (these utilities are part of the
 # Perl 5 distribution).
