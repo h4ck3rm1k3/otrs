@@ -13,7 +13,7 @@
 # can do whatever you want with this stuff. If we meet some day, and you think
 # this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
 # ----------------------------------------------------------------------------
-#
+# 
 # $Id: PasswdMD5.pm,v 1.3 2004/02/17 11:21:38 lem Exp $
 #
 ################
