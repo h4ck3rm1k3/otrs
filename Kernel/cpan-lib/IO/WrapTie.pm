@@ -12,7 +12,7 @@ use Exporter;
 # Inheritance, exporting, and package version:
 @ISA     = qw(Exporter);
 @EXPORT  = qw(wraptie);
-$VERSION = substr q$R vision: 2.102 $, 10;
+$VERSION = "2.110";
 
 # Function, exported.
 sub wraptie {
@@ -473,10 +473,16 @@ I<Here there be dragons>.
 
 =head1 VERSION
 
-$Id: WrapTie.pm,v 2.102 2001/08/17 02:06:33 eryq Exp $
+$Id: WrapTie.pm,v 1.2 2005/02/10 21:21:53 dfs Exp $
 
 
 =head1 AUTHOR
+
+=item Primary Maintainer
+
+David F. Skoll (F<dfs@roaringpenguin.com>).
+
+=item Original Author
 
 Eryq (F<eryq@zeegee.com>).
 President, ZeeGee Software Inc (F<http://www.zeegee.com>).

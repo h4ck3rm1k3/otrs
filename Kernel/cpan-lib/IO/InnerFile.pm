@@ -30,7 +30,7 @@ can open an IO::InnerFile on a range of the underlying file.
 use Symbol;
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = substr q$R vision: 2.102 $, 10;
+$VERSION = "2.110";
 
 #------------------------------
 
@@ -145,7 +145,7 @@ Standard filehandle methods.
 sub write    { shift->WRITE(@_) }
 sub print    { shift->PRINT(@_) }
 sub printf   { shift->PRINTF(@_) }
-sub flush    { 1; }
+sub flush    { "0 but true"; }
 sub binmode  { 1; }
 sub getc     { return GETC(tied(${$_[0]}) ); }
 sub read     { return READ(     tied(${$_[0]}), @_[1,2,3] ); }
@@ -163,6 +163,7 @@ sub seek {
 
    $self->{CRPOS} = 0 if ($self->{CRPOS} < 0);
    $self->{CRPOS} = $self->{LG} if ($self->{CRPOS} > $self->{LG});
+   return 1;
 }
 
 sub tell { 
@@ -265,14 +266,16 @@ __END__
 
 =head1 VERSION
 
-$Id: InnerFile.pm,v 2.102 2001/08/17 02:06:33 eryq Exp $
+$Id: InnerFile.pm,v 1.4 2005/02/10 21:21:53 dfs Exp $
 
 
 =head1 AUTHOR
 
 Original version by Doru Petrescu (pdoru@kappa.ro).
 
-Documentation and current maintenance by Eryq (eryq@zeegee.com).
+Documentation and by Eryq (eryq@zeegee.com).
+
+Currently maintained by David F. Skoll (dfs@roaringpenguin.com).
 
 =cut
 
