@@ -1,31 +1,32 @@
 # --
 # Kernel/Output/HTML/TicketMenuLock.pm
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: TicketMenuLock.pm,v 1.20 2012/01/06 14:54:46 mg Exp $
+# $Id: TicketMenuLock.pm,v 1.6.2.1 2007/01/15 13:08:35 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::Output::HTML::TicketMenuLock;
 
 use strict;
-use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.20 $) [1];
+$VERSION = '$Revision: 1.6.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
+    bless ($Self, $Type);
 
     # get needed objects
-    for (qw(ConfigObject LogObject DBObject LayoutObject UserID TicketObject)) {
+    foreach (qw(ConfigObject LogObject DBObject LayoutObject UserID TicketObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -33,71 +34,75 @@ sub new {
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !$Param{Ticket} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Ticket!' );
+    if (!$Param{Ticket}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need Ticket!");
         return;
     }
-
-    # check if frontend module registered, if not, do not show action
-    if ( $Param{Config}->{Action} ) {
-        my $Module = $Self->{ConfigObject}->Get('Frontend::Module')->{ $Param{Config}->{Action} };
-        return if !$Module;
+    # check permission
+    if (!$Self->{TicketObject}->Permission(
+        Type => 'rw',
+        TicketID => $Param{TicketID},
+        UserID => $Self->{UserID},
+        LogNo => 1,
+        )) {
+        return $Param{Counter};
     }
-
     # check permission
-    my $AccessOk = $Self->{TicketObject}->TicketPermission(
-        Type     => 'rw',
-        TicketID => $Param{Ticket}->{TicketID},
-        UserID   => $Self->{UserID},
-        LogNo    => 1,
-    );
-    return if !$AccessOk;
-
-    # check permission
-    if ( $Self->{TicketObject}->TicketLockGet( TicketID => $Param{Ticket}->{TicketID} ) ) {
+    if ($Self->{TicketObject}->LockIsTicketLocked(TicketID => $Param{TicketID})) {
         my $AccessOk = $Self->{TicketObject}->OwnerCheck(
-            TicketID => $Param{Ticket}->{TicketID},
-            OwnerID  => $Self->{UserID},
+            TicketID => $Param{TicketID},
+            OwnerID => $Self->{UserID},
         );
-        return if !$AccessOk;
+        if (!$AccessOk) {
+            return $Param{Counter};
+        }
     }
 
     # check acl
-    return
-        if defined $Param{ACL}->{ $Param{Config}->{Action} }
-            && !$Param{ACL}->{ $Param{Config}->{Action} };
-
-    # if ticket is locked
-    if ( $Param{Ticket}->{Lock} eq 'lock' ) {
-
-        # if it is locked for somebody else
-        return if $Param{Ticket}->{OwnerID} ne $Self->{UserID};
-
-        # show unlock action
-        return {
-            %{ $Param{Config} },
-            %{ $Param{Ticket} },
-            %Param,
-            Name        => 'Unlock',
-            Description => 'Unlock to give it back to the queue',
-            Link =>
-                'Action=AgentTicketLock;Subaction=Unlock;TicketID=$QData{"TicketID"};$QEnv{"ChallengeTokenParam"}',
-        };
+    if (!defined($Param{ACL}->{$Param{Config}->{Action}}) || $Param{ACL}->{$Param{Config}->{Action}}) {
+        $Self->{LayoutObject}->Block(
+            Name => 'Menu',
+            Data => { },
+        );
+        if ($Param{Counter}) {
+            $Self->{LayoutObject}->Block(
+                Name => 'MenuItemSplit',
+                Data => { },
+            );
+        }
+        if ($Param{Ticket}->{Lock} eq 'lock') {
+            if ($Param{Ticket}->{OwnerID} eq $Self->{UserID}) {
+                $Self->{LayoutObject}->Block(
+                    Name => 'MenuItem',
+                    Data => {
+                        %{$Param{Config}},
+                        %{$Param{Ticket}},
+                        %Param,
+                        Name => 'Unlock',
+                        Description => 'Unlock to give it back to the queue!',
+                        Link => 'Action=AgentTicketLock&Subaction=Unlock&TicketID=$QData{"TicketID"}',
+                    },
+                );
+            }
+        }
+        else {
+            $Self->{LayoutObject}->Block(
+                Name => 'MenuItem',
+                Data => {
+                    %{$Param{Config}},
+                    %Param,
+                    Name => 'Lock',
+                    Description => 'Lock it to work on it!',
+                    Link => 'Action=AgentTicketLock&Subaction=Lock&TicketID=$QData{"TicketID"}',
+                },
+            );
+        }
+        $Param{Counter}++;
     }
-
-    # if ticket is unlocked
-    return {
-        %{ $Param{Config} },
-        %{ $Param{Ticket} },
-        %Param,
-        Name        => 'Lock',
-        Description => 'Lock it to work on it',
-        Link =>
-            'Action=AgentTicketLock;Subaction=Lock;TicketID=$QData{"TicketID"};$QEnv{"ChallengeTokenParam"}',
-    };
+    return $Param{Counter};
 }
 
 1;
