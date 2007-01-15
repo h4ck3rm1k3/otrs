@@ -1,32 +1,33 @@
 # --
 # Kernel/System/Ticket/Permission/ResponsibleCheck.pm - the sub
 # module of the global ticket handle
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: ResponsibleCheck.pm,v 1.9 2011/11/25 09:58:11 mg Exp $
+# $Id: ResponsibleCheck.pm,v 1.1.2.1 2007/01/15 12:58:38 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::Ticket::Permission::ResponsibleCheck;
 
 use strict;
-use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.9 $) [1];
+$VERSION = '$Revision: 1.1.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
+    bless ($Self, $Type);
 
     # get needed objects
-    for (qw(ConfigObject LogObject DBObject TicketObject UserObject GroupObject)) {
+    foreach (qw(ConfigObject LogObject DBObject TicketObject UserObject GroupObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -34,30 +35,24 @@ sub new {
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(TicketID UserID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
+    foreach (qw(TicketID UserID)) {
+      if (!$Param{$_}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+        return;
+      }
     }
-
-    # return if no responible feature is active
-    return if !$Self->{ConfigObject}->Get('Ticket::Responsible');
-
     # get ticket data
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    # check ticket owner, return access if current user is ticket owner
-    return 1 if $Ticket{ResponsibleID} eq $Param{UserID};
-
-    # return no access
-    return;
+    my %Ticket = $Self->{TicketObject}->TicketGet(TicketID => $Param{TicketID});
+    # check ticket owner with requested owner
+    if ($Ticket{ResponsibleID} eq $Param{UserID}) {
+        return 1;
+    }
+    else {
+        return;
+    }
 }
 
 1;
