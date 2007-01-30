@@ -5,9 +5,12 @@
   XML File for the OTRS database description
   Copyright (C) 2001-2006 OTRS GmbH, http://otrs.org/
 
-  $Id: otrs-schema.xml,v 1.56 2007/01/30 10:07:38 mh Exp $
+  $Id: otrs-schema.xml,v 1.57 2007/01/30 15:27:02 martin Exp $
 
   $Log: otrs-schema.xml,v $
+  Revision 1.57  2007/01/30 15:27:02  martin
+  fixed ticket_watcher.user_id datatype, moved from BIGINT to INTEGER
+
   Revision 1.56  2007/01/30 10:07:38  mh
   add valid_id to ticket_priority table
 
@@ -1230,7 +1233,7 @@
 <!-- ticket_watcher -->
 <Table Name="ticket_watcher">
   <Column Name="ticket_id" Required="true" Type="BIGINT"/>
-  <Column Name="user_id" Required="true" Type="BIGINT"/>
+  <Column Name="user_id" Required="true" Type="INTEGER"/>
   <Column Name="create_time" Required="true" Type="DATE"/>
   <Column Name="create_by" Required="true" Type="INTEGER"/>
   <Column Name="change_time" Required="true" Type="DATE"/>
