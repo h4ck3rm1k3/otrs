@@ -1,174 +1,163 @@
 # --
 # AdminSysConfig.dtl - provides HTML form for AdminSysConfig html
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: AdminSysConfig.dtl,v 1.42 2010/12/16 11:33:25 mg Exp $
+# $Id: AdminSysConfig.dtl,v 1.12.2.1 2007/02/26 14:24:02 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
+<!-- start form -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3" cols="2">
+  <tr>
+    <td colspan="2" class="mainhead">
+      $Env{"Box0"}$Text{"SysConfig"}$Env{"Box1"}
+    </td>
+  </tr>
+  <tr>
+    <td width="30%" class="mainbody">
+      <form action="$Env{"CGIHandle"}" method="get">
+        <input type="hidden" name="Action" value="$Env{"Action"}">
+        <input type="hidden" name="Subaction" value="Search">
+        <table width="100%" cellspacing="0" cellpadding="4">
+          <tr>
+            <td class="contenthead">$Text{"Search"} ($QData{"ConfigCounter"}):</td>
+          </tr>
+          <tr>
+            <td class="contentbody">
+              <table>
+                <tr>
+                  <td class="contentkey">$Text{"Search for"}:</td>
+                  <td class="contentvalue"><input type="text" name="Search" value="$QData{"Search"}" size="25"></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="contentfooter">
+              <input class="button" type="submit" value="$Text{"Search"}">
+            </td>
+          </tr>
+        </table>
+      </form>
 
-<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
-    <h1>$Text{"SysConfig"}</h1>
+      <br>
 
-    <div class="SidebarColumn">
+      <form action="$Env{"CGIHandle"}" method="post">
+        <input type="hidden" name="Action" value="$Env{"Action"}">
+        <input type="hidden" name="Subaction" value="SelectGroup">
+        <input type="hidden" name="DontWriteDefault" value="1">
+        <table width="100%" cellspacing="0" cellpadding="4">
+          <tr>
+            <td class="contenthead">$Text{"Group selection"}:</td>
+          </tr>
+          <tr>
+            <td class="contentbody">
+              <table>
+                <tr>
+                  <td class="contentkey">$Text{"Group"}:</td>
+                  <td class="contentvalue">$Data{"Liste"}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="contentfooter">
+              <input class="button" type="submit" name="" value="$Text{"Show"}">
+            </td>
+          </tr>
+        </table>
+      </form>
 
-<!-- dtl:block:ActionList -->
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"Actions"}</h2>
-            </div>
-            <div class="Content">
-                <ul class="ActionList">
-<!-- dtl:block:ActionOverview -->
-                    <li>
-                        <a href="$Env{"Baselink"}Action=$Env{"Action"}" class="CallForAction"><span>$Text{"Go to overview"}</span></a>
-                    </li>
-<!-- dtl:block:ActionOverview -->
-
-<!-- dtl:block:SearchBox -->
-                    <li>
-                        <form action="$Env{"CGIHandle"}" method="post" class="SearchBox">
-                            <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                            <input type="hidden" name="Subaction" value="Search"/>
-                            <input type="hidden" name="DontWriteDefault" value="1"/>
-                            <input type="text" name="Search" id="SysConfigSearch" value="$QData{"Search"}" title="$Text{"Search"}" />
-                            <button title="$Text{"Navigate by searching in %s settings", "$QData{"ConfigCounter"}"}" type="submit" value="$Text{"Search"}">
-                                <span>$Text{"Search"}</span>
-                            </button>
-                            <p class="FieldExplanation">
-                                <label for="SysConfigSearch">
-                                    $Text{"Navigate by searching in %s settings", "$QData{"ConfigCounter"}"}
-                                </label>
-                            </p>
-                        </form>
-                    </li>
-<!-- dtl:block:SearchBox -->
-
-<!-- dtl:block:ConfigGroups -->
-                    <li>
-                        <form action="$Env{"CGIHandle"}" method="post" id="SysConfigGroupForm">
-                            <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                            <input type="hidden" name="Subaction" value="SelectGroup"/>
-                            <input type="hidden" name="DontWriteDefault" value="1"/>
-                            <div>
-                                $Data{"List"}
-                            </div>
-<!--dtl:js_on_document_complete-->
-<script type="text/javascript">//<![CDATA[
-$('#SysConfigGroup').bind('change', function(){
-    $('#SysConfigGroupForm').submit();
-});
-//]]></script>
-<!--dtl:js_on_document_complete-->
-                            <p class="FieldExplanation">
-                                <label for="SysConfigGroup">
-                                    $Text{"Navigate by selecting config groups"}
-                                </label>
-                            </p>
-                        </form>
-                    </li>
-<!-- dtl:block:ConfigGroups -->
+      <br>
 
 <!-- dtl:block:Download -->
-                    <li>
-                        <a title="$Text{"Download all system config changes"}" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Download;DontWriteDefault=1" class="CallForAction Download">
-                            <span>$Text{"Export settings"}</span>
-                        </a>
-                    </li>
+      <form action="$Env{"CGIHandle"}" method="get">
+        <input type="hidden" name="Action" value="$Env{"Action"}">
+        <input type="hidden" name="Subaction" value="Download">
+        <table width="100%" cellspacing="0" cellpadding="4">
+          <tr>
+            <td class="contenthead">$Text{"Download Settings"}:</td>
+          </tr>
+          <tr>
+            <td class="contentbody">
+              <table>
+                <tr>
+                  <td class="contentvalue">$Text{"Download all system config changes."}</td>
+                  <td class="contentvalue"></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="contentfooter">
+              <input class="button" type="submit" value="$Text{"Download"}">
+            </td>
+          </tr>
+        </table>
+      </form>
+
+      <br>
 <!-- dtl:block:Download -->
 
-<!-- dtl:block:ActionImport -->
-                    <li>
-                        <a title="$Text{"Load SysConfig settings from file"}" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Import" class="CallForAction Upload">
-                            <span>$Text{"Import settings"}</span>
-                        </a>
-                    </li>
-<!-- dtl:block:ActionImport -->
+      <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="Action" value="$Env{"Action"}">
+        <input type="hidden" name="Subaction" value="Upload">
+        <table width="100%" cellspacing="0" cellpadding="4">
+          <tr>
+            <td class="contenthead">$Text{"Load Settings"}:</td>
+          </tr>
+          <tr>
+            <td class="contentbody">
+              <table border="0" cellspacing="0" cellpadding="3">
+                <tr>
+                  <td class="contentkey">$Text{"File"}: </td>
+                  <td class="contentvalue"> <input name="file_upload" type="file" size="18" class="fixed"></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="contentfooter">
+              <input class="button" type="submit" value="$Text{"Upload"}">
+            </td>
+          </tr>
+        </table>
+      </form>
 
-                </ul>
-            </div>
-        </div>
-<!-- dtl:block:ActionList -->
-
-    </div>
-
-    <div class="ContentColumn">
-
-<!-- dtl:block:Import -->
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"Import Settings"}</h2>
-            </div>
-            <div class="Content">
-                <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                    <input type="hidden" name="Subaction" value="Upload"/>
-                    <fieldset class="TableLike">
-                        <div class="Field">
-                            <input name="file_upload" type="file" />
-                        </div>
-                        <div class="Field">
-                            <button title="$Text{"Load SysConfig settings from file"}" class="Primary" type="submit" value="$Text{"Import"}">
-                                $Text{"Submit"}
-                            </button>
-                            $Text{"or"}
-                            <a href="$Env{"Baselink"}Action=$Env{"Action"}">$Text{"Cancel"}</a>
-
-                        </div>
-                    </fieldset>
-                </form>
-            </div>
-        </div>
-<!-- dtl:block:Import -->
-
-<!-- dtl:block:ContentOverview -->
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"Result"}</h2>
-            </div>
-            <div class="Content">
-<!-- dtl:block:NoSearchTerms -->
-                <div class="Content">
-                    <p>$Text{"Please enter a search term to look for settings."}</p>
-                </div>
-<!-- dtl:block:NoSearchTerms -->
-<!-- dtl:block:OverviewResult -->
-                <table class="DataTable">
-                    <thead>
-                        <tr>
-                            <th>$Text{"Subgroup"}</th>
-                            <th>$Text{"Elements"}</th>
-                            <th>$Text{"Group"}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-<!-- dtl:block:NoDataFoundMsg -->
-                        <tr>
-                            <td colspan="3">
-                                $Text{"No data found."}
-                            </td>
-                        </tr>
-<!-- dtl:block:NoDataFoundMsg -->
+    </td>
+    <td width="70%" class="mainbody">
+      <table width="100%" cellspacing="0" cellpadding="4">
+        <tr>
+          <td class="contenthead">$Text{"Result"}:</td>
+        </tr>
+        <tr>
+          <td class="contentbody">
+            <table border="0" cellspacing="0" cellpadding="3" width="100%">
+              <tr>
+                <td class="contentkey" width="33%">$Text{"Subgroup"}</td>
+                <td class="contentkey" width="33%">$Text{"Elements"}</td>
+                <td class="contentkey" width="33%">$Text{"Group"}</td>
+              </tr>
 <!-- dtl:block:Row -->
-                        <tr>
-                            <td>
-                                <a class="AsBlock" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Edit;SysConfigSubGroup=$LQData{"SubGroup"};SysConfigGroup=$LQData{"Group"}">
-                                    $QData{"SubGroup"}
-                                </a>
-                            </td>
-                            <td>$QData{"SubGroupCount"}</td>
-                            <td>$QData{"Group"}</td>
-                        </tr>
+              <dtl if ($Env{"Color"} eq "") { $Env{"Color"} = "searchactive"; }>
+              <tr>
+                <td class="$Env{"Color"}"><a href="$Env{"Baselink"}Action=$Env{"Action"}&Subaction=Edit&SysConfigSubGroup=$QData{"SubGroup"}&SysConfigGroup=$QData{"Group"}">$QData{"SubGroup"}</a></td>
+                <td class="$Env{"Color"}">$QData{"SubGroupCount"}</td>
+                <td class="$Env{"Color"}">$QData{"Group"}</td>
+              </tr>
+              <dtl if ($Env{"Color"} eq "searchpassive") { $Env{"Color"} = ""; }>
+              <dtl if ($Env{"Color"} eq "searchactive") { $Env{"Color"} = "searchpassive"; }>
 <!-- dtl:block:Row -->
-                    </tbody>
-                </table>
-<!-- dtl:block:OverviewResult -->
-            </div>
-        </div>
-<!-- dtl:block:ContentOverview -->
-
-    </div>
-    <div class="Clear"></div>
-</div>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td class="contentfooter">&nbsp;</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- end form -->
