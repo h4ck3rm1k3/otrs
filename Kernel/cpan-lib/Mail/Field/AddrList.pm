@@ -1,66 +1,110 @@
-# Copyrights 1995-2011 by Mark Overmeer <perl@overmeer.net>.
-#  For other contributors see ChangeLog.
-# See the manual pages for details on the licensing terms.
-# Pod stripped from pm file by OODoc 2.00.
-use strict;
-
 package Mail::Field::AddrList;
-use vars '$VERSION';
-$VERSION = '2.08';
 
-use base 'Mail::Field';
+=head1 NAME 
 
+Mail::Field::AddrList - object representation of e-mail address lists
+
+=head1 DESCRIPTION
+
+I<Don't use this class directly!> Instead ask Mail::Field for new
+instances based on the field name!
+
+=head1 SYNOPSIS
+
+  use Mail::Field::AddrList;
+
+  $to = Mail::Field->new('To');
+  $from = Mail::Field->new('From', 'poe@daimi.aau.dk (Peter Orbaek)');
+  
+  $from->create('foo@bar.com' => 'Mr. Foo', poe => 'Peter');
+  $from->parse('foo@bar.com (Mr Foo), Peter Orbaek <poe>');
+
+  # make a RFC822 header string
+  print $from->stringify(),"\n";
+
+  # extract e-mail addresses and names
+  @addresses = $from->addresses();
+  @names = $from->names();
+
+  # adjoin a new address to the list
+  $from->set_address('foo@bar.com', 'Mr. Foo');
+
+=head1 NOTES
+
+Defines parsing and formatting according to RFC822, of the following fields:
+To, From, Cc, Reply-To and Sender.
+
+=head1 AUTHOR
+
+Peter Orbaek <poe@cit.dk> 26-Feb-97
+Modified by Graham Barr <gbarr@pobox.com>
+Maintained by Mark Overmeer <mailtools@overmeer.net>
+
+Copyright (c) 2002-2003 Mark Overmeer. All rights
+reserved. This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+=cut
+
+use strict;
+use vars qw(@ISA $VERSION);
+use Mail::Field ();
 use Carp;
 use Mail::Address;
 
+@ISA = qw(Mail::Field);
+$VERSION = '1.74';
 
-my $x = bless [];
-$x->register('To');
-$x->register('From');
-$x->register('Cc');
-$x->register('Reply-To');
-$x->register('Sender');
+# install header interpretation, see Mail::Field
+INIT: {
+    my $x = bless([]);
 
-sub create(@)
-{   my ($self, %arg)  = @_;
+    $x->register('To');
+    $x->register('From');
+    $x->register('Cc');
+    $x->register('Reply-To');
+    $x->register('Sender');
+}
+
+sub create {
+    my ($self, %arg) = @_;  # (email => name, email => realname,...)
+    my($e,$n);
     $self->{AddrList} = {};
 
-    while(my ($e, $n) = each %arg)
-    {   $self->{AddrList}{$e} = Mail::Address->new($n, $e);
-    }
+    $self->{AddrList}{$e} = Mail::Address->new($n,$e)
+	while(($e,$n) = each %arg);
 
     $self;
 }
 
-sub parse($)
-{   my ($self, $string) = @_;
-    foreach my $a (Mail::Address->parse($string))
-    {   my $e = $a->address;
+sub parse {
+    my ($self, $string) = @_;
+    my ($a,$email,$name);
+
+    foreach $a (Mail::Address->parse($string)) {
+	my $e = $a->address;
 	$self->{AddrList}{$e} = $a;
     }
     $self;
 }
 
-sub stringify()
-{   my $self = shift;
+sub stringify {
+    my $self = shift;
+    my ($x, $email, $name);
+
     join(", ", map { $_->format } values %{$self->{AddrList}});
 }
 
+sub addresses {
+    keys %{shift->{AddrList}};
+}
 
-sub addresses { keys %{shift->{AddrList}} }
+sub names {
+    map { $_->name } values %{shift->{AddrList}};
+}
 
-
-# someone forgot to implement a method to return the Mail::Address
-# objects.  Added in 2.00; a pitty that the name addresses() is already
-# given :(  That one should have been named emails()
-sub addr_list { values %{shift->{AddrList}} }
-
-
-sub names { map { $_->name } values %{shift->{AddrList}} }
-
-
-sub set_address($$)
-{   my ($self, $email, $name) = @_;
+sub set_address {
+    my ($self, $email, $name) = @_;
     $self->{AddrList}{$email} = Mail::Address->new($name, $email);
     $self;
 }
