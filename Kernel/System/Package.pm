@@ -1,34 +1,30 @@
 # --
 # Kernel/System/Package.pm - lib package manager
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Package.pm,v 1.123 2011/11/15 11:41:53 mg Exp $
+# $Id: Package.pm,v 1.53.2.1 2007/03/02 02:17:18 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::Package;
 
 use strict;
-use warnings;
-
 use MIME::Base64;
 use File::Copy;
-
+use LWP::UserAgent;
 use Kernel::System::XML;
-use Kernel::System::SysConfig;
-use Kernel::System::WebUserAgent;
-use Kernel::System::Cache;
-use Kernel::System::Loader;
+use Kernel::System::Config;
 
 use vars qw($VERSION $S);
-$VERSION = qw($Revision: 1.123 $) [1];
+$VERSION = '$Revision: 1.53.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
-Kernel::System::Package - to manage application packages/modules
+Kernel::System::Package - to application packages/modules
 
 =head1 SYNOPSIS
 
@@ -42,109 +38,82 @@ All functions to manage application packages/modules.
 
 =item new()
 
-create an object
+create a object
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::Time;
-    use Kernel::System::Package;
+  use Kernel::Config;
+  use Kernel::System::Log;
+  use Kernel::System::DB;
+  use Kernel::System::Time;
+  use Kernel::System::Package;
 
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $PackageObject = Kernel::System::Package->new(
-        LogObject    => $LogObject,
-        ConfigObject => $ConfigObject,
-        TimeObject   => $TimeObject,
-        DBObject     => $DBObject,
-        EncodeObject => $EncodeObject,
-        MainObject   => $MainObject,
-    );
+  my $ConfigObject = Kernel::Config->new();
+  my $LogObject    = Kernel::System::Log->new(
+      ConfigObject => $ConfigObject,
+  );
+  my $DBObject = Kernel::System::DB->new(
+      ConfigObject => $ConfigObject,
+      LogObject => $LogObject,
+  );
+  my $TimeObject = Kernel::System::Time->new(
+      ConfigObject => $ConfigObject,
+      LogObject => $LogObject,
+  );
+  my $PackageObject    = Kernel::System::Package->new(
+      LogObject => $LogObject,
+      ConfigObject => $ConfigObject,
+      TimeObject => $TimeObject,
+      DBObject => $DBObject,
+  );
 
 =cut
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
+    bless ($Self, $Type);
 
-    # check needed objects
-    for my $Object (qw(DBObject ConfigObject LogObject TimeObject MainObject EncodeObject)) {
-        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
+    # get common objects
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
     }
 
-    # create additional objects
-    $Self->{XMLObject}    = Kernel::System::XML->new( %{$Self} );
-    $Self->{CacheObject}  = Kernel::System::Cache->new( %{$Self} );
-    $Self->{LoaderObject} = Kernel::System::Loader->new( %{$Self} );
+    # check all needed objects
+    foreach (qw(DBObject ConfigObject LogObject TimeObject)) {
+        die "Got no $_" if (!$Self->{$_});
+    }
+    $Self->{XMLObject} = Kernel::System::XML->new(%Param);
 
     $Self->{PackageMap} = {
-        Name            => 'SCALAR',
-        Version         => 'SCALAR',
-        Vendor          => 'SCALAR',
-        BuildDate       => 'SCALAR',
-        BuildHost       => 'SCALAR',
-        License         => 'SCALAR',
-        URL             => 'SCALAR',
-        ChangeLog       => 'ARRAY',
-        Description     => 'ARRAY',
-        Framework       => 'ARRAY',
-        OS              => 'ARRAY',
+        Name => 'SCALAR',
+        Version => 'SCALAR',
+        Vendor => 'SCALAR',
+        BuildDate => 'SCALAR',
+        BuildHost => 'SCALAR',
+        License => 'SCALAR',
+        URL => 'SCALAR',
+        ChangeLog => 'ARRAY',
+        Description => 'ARRAY',
+        Framework => 'ARRAY',
+        OS => 'ARRAY',
         PackageRequired => 'ARRAY',
-        ModuleRequired  => 'ARRAY',
-        IntroInstall    => 'ARRAY',
-        IntroUninstall  => 'ARRAY',
-        IntroUpgrade    => 'ARRAY',
-        IntroReinstall  => 'ARRAY',
-
-        # *(Pre|Post) - just for compat. to 2.2
-        IntroInstallPre    => 'ARRAY',
-        IntroInstallPost   => 'ARRAY',
-        IntroUninstallPre  => 'ARRAY',
-        IntroUninstallPost => 'ARRAY',
-        IntroUpgradePre    => 'ARRAY',
-        IntroUpgradePost   => 'ARRAY',
-        IntroReinstallPre  => 'ARRAY',
-        IntroReinstallPost => 'ARRAY',
-
-        CodeInstall   => 'ARRAY',
-        CodeUpgrade   => 'ARRAY',
-        CodeUninstall => 'ARRAY',
-        CodeReinstall => 'ARRAY',
+        CodeInstall => 'SCALAR',
+        CodeUpgrade => 'SCALAR',
+        CodeUninstall => 'SCALAR',
+        CodeReinstall => 'SCALAR',
     };
-    $Self->{PackageMapFileList} = { File => 'ARRAY', };
+    $Self->{PackageMapFileList} = {
+        File => 'ARRAY',
+    };
 
     $Self->{Home} = $Self->{ConfigObject}->Get('Home');
 
     # permission check
-    if ( !$Self->_FileSystemCheck() ) {
-        die "ERROR: Need write permission in OTRS home\n"
-            . "Try: \$OTRS_HOME/bin/otrs.SetPermissions.pl !!!\n";
+    if (!$Self->_FileSystemCheck()) {
+        die "ERROR: Need write permission in OTRS home\n".
+        "Try: \$OTRS_HOME/bin/SetPermissions.sh !!!\n";
     }
 
     return $Self;
@@ -159,28 +128,32 @@ returns a list of repository packages
 =cut
 
 sub RepositoryList {
-    my ( $Self, %Param ) = @_;
-
-    $Self->{DBObject}->Prepare(
-        SQL =>
-            'SELECT name, version, install_status, content FROM package_repository ORDER BY name, create_time',
-    );
-    my @Data;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    my $Self = shift;
+    my %Param = @_;
+    my @Data = ();
+    # check needed stuff
+    foreach (qw()) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
+        }
+    }
+    my $SQL = "SELECT name, version, install_status, content FROM package_repository ORDER BY name, create_time";
+    $Self->{DBObject}->Prepare(SQL => $SQL);
+    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
         my %Package = (
-            Name    => $Row[0],
+            Name => $Row[0],
             Version => $Row[1],
-            Status  => $Row[2],
+            Status => $Row[2],
         );
-
         # get package attributes
-        if ( $Row[3] ) {
-            my %Structure = $Self->PackageParse( String => \$Row[3] );
-            push @Data, { %Package, %Structure };
+        if ($Row[3]) {
+            my %Structur = $Self->PackageParse(String => $Row[3]);
+            push (@Data, {%Package, %Structur});
         }
     }
 
-    return @Data;
+    return (@Data);
 }
 
 =item RepositoryGet()
@@ -188,115 +161,103 @@ sub RepositoryList {
 get a package from local repository
 
     my $Package = $PackageObject->RepositoryGet(
-        Name    => 'Application A',
+        Name => 'Application A',
         Version => '1.0',
-    );
-
-    my $PackageScalar = $PackageObject->RepositoryGet(
-        Name    => 'Application A',
-        Version => '1.0',
-        Result  => 'SCALAR',
     );
 
 =cut
 
 sub RepositoryGet {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    my $Package = '';
     # check needed stuff
-    for (qw(Name Version)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined!" );
+    foreach (qw(Name Version)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
             return;
         }
     }
-
-    # db access
-    $Self->{DBObject}->Prepare(
-        SQL => 'SELECT content FROM package_repository WHERE name = ? AND version = ?',
-        Bind => [ \$Param{Name}, \$Param{Version} ],
-    );
-    my $Package = '';
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    # db quote
+    foreach (keys %Param) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_});
+    }
+    my $SQL = "SELECT content FROM package_repository WHERE ".
+        " name = '$Param{Name}' AND version = '$Param{Version}'";
+    $Self->{DBObject}->Prepare(SQL => $SQL);
+    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
         $Package = $Row[0];
     }
-    if ( !$Package ) {
+    if (!$Package) {
         $Self->{LogObject}->Log(
             Priority => 'notice',
-            Message  => "No such package $Param{Name}-$Param{Version}!",
+            Message => "No such package $Param{Name}-$Param{Version}!",
         );
         return;
     }
-
-    if ( $Param{Result} && $Param{Result} eq 'SCALAR' ) {
-        return \$Package;
+    else {
+        return $Package;
     }
-
-    return $Package;
 }
 
 =item RepositoryAdd()
 
 add a package to local repository
 
-    $PackageObject->RepositoryAdd( String => $FileString );
+    $PackageObject->RepositoryAdd(String => $FileString);
 
 =cut
 
 sub RepositoryAdd {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !defined $Param{String} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'String not defined!' );
-        return;
+    foreach (qw(String)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
+        }
     }
-
     # get package attributes
-    my %Structure = $Self->PackageParse(%Param);
-    if ( !$Structure{Name} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Name!' );
+    my %Structur = $Self->PackageParse(%Param);
+    if (!$Structur{Name}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need Name!");
         return;
     }
-    if ( !$Structure{Version} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Version!' );
+    if (!$Structur{Version}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need Version!");
         return;
     }
-
     # check if package already exists
-    my $PackageExists = $Self->RepositoryGet(
-        Name    => $Structure{Name}->{Content},
-        Version => $Structure{Version}->{Content},
-        Result  => 'SCALAR',
-    );
-
-    if ($PackageExists) {
-
+    if ($Self->RepositoryGet(Name => $Structur{Name}->{Content}, Version => $Structur{Version}->{Content})) {
 #        $Self->{LogObject}->Log(
 #            Priority => 'error',
-#            Message => "Package $Structure{Name}->{Content}-$Structure{Version}->{Content} already in local repository!",
+#            Message => "Package $Structur{Name}->{Content}-$Structur{Version}->{Content} already in local repository!",
 #        );
 #        return;
-        $Self->{DBObject}->Do(
-            SQL => 'DELETE FROM package_repository WHERE name = ? AND version = ?',
-            Bind => [ \$Structure{Name}->{Content}, \$Structure{Version}->{Content} ],
-        );
+        my $SQL = "DELETE FROM package_repository WHERE ".
+            " name = '".$Self->{DBObject}->Quote($Structur{Name}->{Content})."'".
+            " AND ".
+            " version = '".$Self->{DBObject}->Quote($Structur{Version}->{Content})."'";
+        $Self->{DBObject}->Do(SQL => $SQL);
     }
+    my $SQL = "INSERT INTO package_repository (name, version, vendor, filename, ".
+            " content_size, content_type, content, install_status, ".
+            " create_time, create_by, change_time, change_by)".
+            " VALUES ".
+            " ('".$Self->{DBObject}->Quote($Structur{Name}->{Content})."', ".
+            " '".$Self->{DBObject}->Quote($Structur{Version}->{Content})."', ".
+            " '".$Self->{DBObject}->Quote($Structur{Vendor}->{Content})."', ".
+            " '".$Self->{DBObject}->Quote($Structur{Name}->{Content})."-".$Self->{DBObject}->Quote($Structur{Version}->{Content}).".xml', ".
+            " '213', 'text/xml', ?, 'not installed', ".
+            " current_timestamp, 1, current_timestamp, 1)";
 
-    # add new package
-    my $FileName = $Structure{Name}->{Content} . '-' . $Structure{Version}->{Content} . '.xml';
-    return if !$Self->{DBObject}->Do(
-        SQL => 'INSERT INTO package_repository (name, version, vendor, filename, '
-            . ' content_size, content_type, content, install_status, '
-            . ' create_time, create_by, change_time, change_by)'
-            . ' VALUES  (?, ?, ?, ?, \'213\', \'text/xml\', ?, \'not installed\', '
-            . ' current_timestamp, 1, current_timestamp, 1)',
-        Bind => [
-            \$Structure{Name}->{Content}, \$Structure{Version}->{Content},
-            \$Structure{Vendor}->{Content}, \$FileName, \$Param{String},
-        ],
-    );
-    return 1;
+    if ($Self->{DBObject}->Do(SQL => $SQL, Bind => [\$Param{String}])) {
+        return 1;
+    }
+    else {
+        return;
+    }
 }
 
 =item RepositoryRemove()
@@ -304,30 +265,141 @@ sub RepositoryAdd {
 remove a package from local repository
 
     $PackageObject->RepositoryRemove(
-        Name    => 'Application A',
+        Name => 'Application A',
         Version => '1.0',
     );
 
 =cut
 
 sub RepositoryRemove {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !defined $Param{Name} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Name not defined!' );
+    foreach (qw(Name)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
+        }
+    }
+    # db quote
+    foreach (keys %Param) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_});
+    }
+    # sql
+    my $SQL = "DELETE FROM package_repository WHERE ".
+        " name = '$Param{Name}'";
+    if ($Param{Version}) {
+        $SQL .= " AND version = '$Param{Version}'";
+    }
+    if ($Self->{DBObject}->Do(SQL => $SQL)) {
+        return 1;
+    }
+    else {
         return;
     }
+}
 
-    # sql
-    my @Bind = ( \$Param{Name} );
-    my $SQL  = 'DELETE FROM package_repository WHERE name = ?';
-    if ( $Param{Version} ) {
-        $SQL .= ' AND version = ?';
-        push @Bind, \$Param{Version};
+sub _CheckFramework {
+    my $Self = shift;
+    my %Param = @_;
+    # check needed stuff
+    foreach (qw(Framework)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
+        }
     }
+    # regexp modify
+    $Param{Framework} =~ s/\./\\\./g;
+    $Param{Framework} =~ s/x/.+?/gi;
+    if ($Self->{ConfigObject}->Get('Version') =~ /^$Param{Framework}$/i) {
+        return 1;
+    }
+    else {
+        return;
+    }
+}
 
-    return if !$Self->{DBObject}->Do( SQL => $SQL, Bind => \@Bind );
+sub _CheckVersion {
+    my $Self = shift;
+    my %Param = @_;
+    # check needed stuff
+    foreach (qw(Version1 Version2 Type)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
+        }
+    }
+    foreach my $Type (qw(Version1 Version2)) {
+        my @Parts = split(/\./, $Param{$Type});
+        $Param{$Type} = 0;
+        foreach (0..4) {
+            $Param{$Type} .= sprintf("%04d", $Parts[$_] || 0);
+        }
+        $Param{$Type} = int($Param{$Type});
+    }
+#print STDERR "$Param{Version2} >= $Param{Version1}\n";
+    if ($Param{Type} eq 'Min') {
+        if ($Param{Version2} >= $Param{Version1}) {
+            return 1;
+        }
+        else {
+            return;
+        }
+    }
+    elsif ($Param{Type} eq 'Max') {
+        if ($Param{Version2} < $Param{Version1}) {
+            return 1;
+        }
+        else {
+            return;
+        }
+    }
+    else {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Invalid Type!");
+        return;
+    }
+}
+
+sub _CheckRequired {
+    my $Self = shift;
+    my %Param = @_;
+    # check needed stuff
+    foreach (qw(PackageRequired)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
+        }
+    }
+    # check required packages
+    if ($Param{PackageRequired} && ref($Param{PackageRequired}) eq 'ARRAY') {
+        my $Installed = 0;
+        my $InstalledVersion = 0;
+        foreach my $Module (@{$Param{PackageRequired}}) {
+            foreach my $Local ($Self->RepositoryList()) {
+                if ($Local->{Name}->{Content} eq $Module->{Content} && $Local->{Status} eq 'installed') {
+                    $Installed = 1;
+                    $InstalledVersion = $Local->{Version}->{Content};
+                }
+            }
+            if (!$Installed && !$Param{Force}) {
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message => "Sorry, can't install package, because package $Module->{Content} v$Module->{Version} is required!",
+                );
+                return;
+            }
+            elsif ($Installed && !$Param{Force}) {
+                if (!$Self->_CheckVersion(Version1 => $Module->{Version}, Version2 => $InstalledVersion, Type => 'Min')) {
+                    $Self->{LogObject}->Log(
+                        Priority => 'error',
+                        Message => "Sorry, can't install package, because package $Module->{Content} v$Module->{Version} is required!",
+                    );
+                    return;
+                }
+            }
+        }
+    }
     return 1;
 }
 
@@ -335,204 +407,198 @@ sub RepositoryRemove {
 
 install a package
 
-    $PackageObject->PackageInstall( String => $FileString );
+    $PackageObject->PackageInstall(String => $FileString);
 
 =cut
 
 sub PackageInstall {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !defined $Param{String} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'String not defined!' );
-        return;
+    foreach (qw(String)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
+        }
     }
-
     # conflict check
-    my %Structure = $Self->PackageParse(%Param);
-
+    my %Structur = $Self->PackageParse(%Param);
     # check if package is already installed
-    if ( $Self->PackageIsInstalled( Name => $Structure{Name}->{Content} ) ) {
-        if ( !$Param{Force} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'notice',
-                Message  => 'Package already installed, try upgrade!',
-            );
-            return $Self->PackageUpgrade(%Param);
+    foreach my $Package ($Self->RepositoryList()) {
+        if ($Structur{Name}->{Content} eq $Package->{Name}->{Content}) {
+            if ($Package->{Status} =~ /^installed$/i) {
+                if (!$Param{Force}) {
+                    $Self->{LogObject}->Log(
+                        Priority => 'notice',
+                        Message => "Package already installed, try upgrade!",
+                    );
+                    return $Self->PackageUpgrade(%Param);
+                }
+            }
         }
     }
-
     # check OS
-    if ( $Structure{OS} && !$Param{Force} ) {
-        return if !$Self->_OSCheck( OS => $Structure{OS} );
-    }
-
-    # check framework
-    if ( $Structure{Framework} && !$Param{Force} ) {
-        return if !$Self->_CheckFramework( Framework => $Structure{Framework} );
-    }
-
-    # check required packages
-    if ( $Structure{PackageRequired} && !$Param{Force} ) {
-        return if !$Self->_CheckPackageRequired(
-            %Param,
-            PackageRequired => $Structure{PackageRequired},
-        );
-    }
-
-    # check required modules
-    if ( $Structure{ModuleRequired} && !$Param{Force} ) {
-        return if !$Self->_CheckModuleRequired(
-            %Param,
-            ModuleRequired => $Structure{ModuleRequired},
-        );
-    }
-
-    # check files
-    my $FileCheckOk = 1;
-    if ( $Structure{Filelist} && ref $Structure{Filelist} eq 'ARRAY' ) {
-        for my $File ( @{ $Structure{Filelist} } ) {
-
-            #print STDERR "Notice: Want to install $File->{Location}!\n";
+    my $OSCheckOk = 1;
+    if ($Structur{OS} && ref($Structur{OS}) eq 'ARRAY') {
+        $OSCheckOk = 0;
+        foreach my $OS (@{$Structur{OS}}) {
+            if ($^O =~ /^$OS$/i) {
+                $OSCheckOk = 1;
+            }
         }
     }
-    if ( !$FileCheckOk && !$Param{Force} ) {
+    if (!$OSCheckOk && !$Param{Force}) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'File conflict, can\'t install package!',
+            Message => "Sorry, can't install package, because package is not for your OS!!",
         );
         return;
     }
-
-    # check if one of this files is already intalled by an other package
-    if ( %Structure && !$Param{Force} ) {
-        return if !$Self->_PackageFileCheck(
-            Structure => \%Structure,
-        );
-    }
-
-    # install code (pre)
-    if ( $Structure{CodeInstall} ) {
-        $Self->_Code(
-            Code      => $Structure{CodeInstall},
-            Type      => 'pre',
-            Structure => \%Structure,
-        );
-    }
-
-    # install database (pre)
-    if ( $Structure{DatabaseInstall} && $Structure{DatabaseInstall}->{pre} ) {
-        $Self->_Database( Database => $Structure{DatabaseInstall}->{pre} );
-    }
-
-    # install files
-    if ( $Structure{Filelist} && ref $Structure{Filelist} eq 'ARRAY' ) {
-        for my $File ( @{ $Structure{Filelist} } ) {
-            return if !$Self->_FileInstall( File => $File );
+    # check framework
+    my $FWCheckOk = 0;
+    if ($Structur{Framework} && ref($Structur{Framework}) eq 'ARRAY') {
+        foreach my $FW (@{$Structur{Framework}}) {
+            if ($Self->_CheckFramework(Framework => $FW->{Content})) {
+                $FWCheckOk = 1;
+            }
         }
     }
-
-    # add package
-    return if !$Self->RepositoryAdd( String => $Param{String} );
-
-    # update package status
-    return if !$Self->{DBObject}->Do(
-        SQL => 'UPDATE package_repository SET install_status = \'installed\''
-            . ' WHERE name = ? AND version = ?',
-        Bind => [
-            \$Structure{Name}->{Content},
-            \$Structure{Version}->{Content},
-        ],
-    );
-
-    # install config
-    $Self->{SysConfigObject} = Kernel::System::SysConfig->new( %{$Self} );
-    $Self->{SysConfigObject}->WriteDefault();
-
-    # install database (post)
-    if ( $Structure{DatabaseInstall} && $Structure{DatabaseInstall}->{post} ) {
-        $Self->_Database( Database => $Structure{DatabaseInstall}->{post} );
-    }
-
-    # install code (post)
-    if ( $Structure{CodeInstall} ) {
-        $Self->_Code(
-            Code      => $Structure{CodeInstall},
-            Type      => 'post',
-            Structure => \%Structure,
+    if (!$FWCheckOk && !$Param{Force}) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message => "Sorry, can't install package, because package is not for your Framework!!",
         );
+        return;
     }
+    # check required packages
+    if ($Structur{PackageRequired} && ref($Structur{PackageRequired}) eq 'ARRAY') {
+        if (!$Self->_CheckRequired(%Param, PackageRequired => $Structur{PackageRequired}) && !$Param{Force}) {
+            return;
+        }
+    }
+    # check files
+    my $FileCheckOk = 1;
+    if ($Structur{Filelist} && ref($Structur{Filelist}) eq 'ARRAY') {
+        foreach my $File (@{$Structur{Filelist}}) {
+#            print STDERR "Notice: Want to install $File->{Location}!\n";
+        }
+    }
+    if (!$FileCheckOk && !$Param{Force}) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message => "File conflict, can't install package!",
+        );
+        return;
+    }
+    # check if one of this files is already intalled by an other package
+    foreach my $Package ($Self->RepositoryList()) {
+        if ($Structur{Name}->{Content} ne $Package->{Name}->{Content}) {
+            foreach my $FileNew (@{$Structur{Filelist}}) {
+                foreach my $FileOld (@{$Package->{Filelist}}) {
+                    $FileNew->{Location} =~ s/\/\//\//g;
+                    $FileOld->{Location} =~ s/\/\//\//g;
+                    if ($FileNew->{Location} eq $FileOld->{Location}) {
+                        if (!$Param{Force}) {
+                            $Self->{LogObject}->Log(
+                                Priority => 'error',
+                                Message => "Can't install package, file $FileNew->{Location} already used in package $Package->{Name}->{Content}-$Package->{Version}->{Content}!",
+                            );
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    # add package
+    if ($Self->RepositoryAdd(String => $Param{String})) {
+        # update package status
+        my $SQL = "UPDATE package_repository SET install_status = 'installed'".
+            " WHERE ".
+            " name = '".$Self->{DBObject}->Quote($Structur{Name}->{Content})."'".
+            " AND ".
+            " version = '".$Self->{DBObject}->Quote($Structur{Version}->{Content})."'";
+        $Self->{DBObject}->Do(SQL => $SQL);
 
-    $Self->{CacheObject}->CleanUp();
-    $Self->{LoaderObject}->CacheDelete();
-
-    return 1;
+        # install files
+        if ($Structur{Filelist} && ref($Structur{Filelist}) eq 'ARRAY') {
+            foreach my $File (@{$Structur{Filelist}}) {
+                # install file
+                $Self->_FileInstall(%{$File});
+            }
+        }
+        # install config
+        $Self->{SysConfigObject} = Kernel::System::Config->new(%{$Self});
+        $Self->{SysConfigObject}->WriteDefault();
+        # install code
+        if ($Structur{CodeInstall} && $Structur{CodeInstall}->{Content}) {
+            if ($Structur{CodeInstall}->{Content}) {
+                print STDERR "Code: $Structur{CodeInstall}->{Content}\n";
+                if (!eval $Structur{CodeInstall}->{Content}) {
+                    print STDERR "CodeError: $@\n";
+                }
+            }
+        }
+        # install database
+        if ($Structur{DatabaseInstall} && ref($Structur{DatabaseInstall}) eq 'ARRAY') {
+            my @SQL = $Self->{DBObject}->SQLProcessor(Database => $Structur{DatabaseInstall}, );
+            foreach my $SQL (@SQL) {
+                print STDERR "Notice: $SQL\n";
+                $Self->{DBObject}->Do(SQL => $SQL);
+            }
+            my @SQLPost = $Self->{DBObject}->SQLProcessorPost();
+            foreach my $SQL (@SQLPost) {
+                print STDERR "Notice: $SQL\n";
+                $Self->{DBObject}->Do(SQL => $SQL);
+            }
+        }
+        return 1;
+    }
+    else {
+        return;
+    }
 }
 
 =item PackageReinstall()
 
 reinstall files of a package
 
-    $PackageObject->PackageReinstall( String => $FileString );
+    $PackageObject->PackageReinstall(String => $FileString);
 
 =cut
 
 sub PackageReinstall {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !defined $Param{String} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'String not defined!' );
-        return;
-    }
-
-    # parse source file
-    my %Structure = $Self->PackageParse(%Param);
-
-    # check OS
-    if ( $Structure{OS} && !$Param{Force} ) {
-        return if !$Self->_OSCheck( OS => $Structure{OS} );
-    }
-
-    # check framework
-    if ( $Structure{Framework} && !$Param{Force} ) {
-        return if !$Self->_CheckFramework( Framework => $Structure{Framework} );
-    }
-
-    # reinstall code (pre)
-    if ( $Structure{CodeReinstall} ) {
-        $Self->_Code(
-            Code      => $Structure{CodeReinstall},
-            Type      => 'pre',
-            Structure => \%Structure,
-        );
-    }
-
-    # install files
-    if ( $Structure{Filelist} && ref $Structure{Filelist} eq 'ARRAY' ) {
-        for my $File ( @{ $Structure{Filelist} } ) {
-
-            # install file
-            return if !$Self->_FileInstall( File => $File, Reinstall => 1 );
+    foreach (qw(String)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
         }
     }
-
-    # install config
-    $Self->{SysConfigObject} = Kernel::System::SysConfig->new( %{$Self} );
-    $Self->{SysConfigObject}->WriteDefault();
-
-    # reinstall code (post)
-    if ( $Structure{CodeReinstall} ) {
-        $Self->_Code(
-            Code      => $Structure{CodeReinstall},
-            Type      => 'post',
-            Structure => \%Structure,
-        );
+    # parse source file
+    my %Structur = $Self->PackageParse(%Param);
+    # install files
+    if ($Structur{Filelist} && ref($Structur{Filelist}) eq 'ARRAY') {
+        foreach my $File (@{$Structur{Filelist}}) {
+            # install file
+#            print STDERR "Notice: Reinstall $File->{Location}!\n";
+            $Self->_FileInstall(%{$File}, Reinstall => 1);
+        }
     }
-
-    $Self->{CacheObject}->CleanUp();
-    $Self->{LoaderObject}->CacheDelete();
-
+    # install config
+    $Self->{SysConfigObject} = Kernel::System::Config->new(%{$Self});
+    $Self->{SysConfigObject}->WriteDefault();
+    # install code
+    if ($Structur{CodeReinstall} && $Structur{CodeReinstall}->{Content}) {
+        if ($Structur{CodeReinstall}->{Content}) {
+            print STDERR "Code: $Structur{CodeReinstall}->{Content}\n";
+            if (!eval $Structur{CodeReinstall}->{Content}) {
+                print STDERR "CodeError: $@\n";
+            }
+        }
+    }
     return 1;
 }
 
@@ -540,352 +606,271 @@ sub PackageReinstall {
 
 upgrade a package
 
-    $PackageObject->PackageUpgrade( String => $FileString );
+    $PackageObject->PackageUpgrade(String => $FileString);
 
 =cut
 
 sub PackageUpgrade {
-    my ( $Self, %Param ) = @_;
-
-    my %InstalledStructure;
-
+    my $Self = shift;
+    my %Param = @_;
+    my %InstalledStructur = ();
     # check needed stuff
-    if ( !defined $Param{String} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'String not defined!' );
-        return;
+    foreach (qw(String)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
+        }
     }
-
     # conflict check
-    my %Structure = $Self->PackageParse(%Param);
-
+    my %Structur = $Self->PackageParse(%Param);
     # check if package is already installed
-    my $Installed        = 0;
+    my $Installed = 0;
     my $InstalledVersion = 0;
-    for my $Package ( $Self->RepositoryList() ) {
-        if ( $Structure{Name}->{Content} eq $Package->{Name}->{Content} ) {
-            if ( $Package->{Status} =~ /^installed$/i ) {
-                $Installed          = 1;
-                $InstalledVersion   = $Package->{Version}->{Content};
-                %InstalledStructure = %{$Package};
+    foreach my $Package ($Self->RepositoryList()) {
+        if ($Structur{Name}->{Content} eq $Package->{Name}->{Content}) {
+            if ($Package->{Status} =~ /^installed$/i) {
+                $Installed = 1;
+                $InstalledVersion = $Package->{Version}->{Content};
+                %InstalledStructur = %{$Package};
             }
         }
     }
-    if ( !$Installed ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Package is not installed, can\'t upgrade!',
-        );
+    if (!$Installed) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Package is not installed, can't upgrade!");
         return;
     }
-
-    # check OS
-    if ( $Structure{OS} && !$Param{Force} ) {
-        return if !$Self->_OSCheck( OS => $Structure{OS} );
-    }
-
-    # check framework
-    if ( $Structure{Framework} && !$Param{Force} ) {
-        return if !$Self->_CheckFramework( Framework => $Structure{Framework} );
-    }
-
-    # check required packages
-    if ( $Structure{PackageRequired} && !$Param{Force} ) {
-        return if !$Self->_CheckPackageRequired(
-            %Param,
-            PackageRequired => $Structure{PackageRequired},
-        );
-    }
-
-    # check required modules
-    if ( $Structure{ModuleRequired} && !$Param{Force} ) {
-        return if !$Self->_CheckModuleRequired(
-            %Param,
-            ModuleRequired => $Structure{ModuleRequired},
-        );
-    }
-
-    # check version
-    my $CheckVersion = $Self->_CheckVersion(
-        Version1 => $Structure{Version}->{Content},
-        Version2 => $InstalledVersion,
-        Type     => 'Max'
-    );
-    if ( !$CheckVersion ) {
-        if ( $Structure{Version}->{Content} eq $InstalledVersion ) {
+    # version check
+    if (!$Self->_CheckVersion(Version1 => $Structur{Version}->{Content}, Version2 => $InstalledVersion, Type => 'Max')) {
+        if ($Structur{Version}->{Content} eq $InstalledVersion) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message =>
-                    "Can't upgrade, package '$Structure{Name}->{Content}-$InstalledVersion' already installed!",
+                Message => "Can't upgrade, package '$Structur{Name}->{Content}-$InstalledVersion' already installed!",
             );
-            if ( !$Param{Force} ) {
+            if (!$Param{Force}) {
                 return;
             }
         }
         else {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message =>
-                    "Can't upgrade, installed package '$InstalledVersion' is newer as '$Structure{Version}->{Content}'!",
+                Message => "Can't upgrade, installed package '$InstalledVersion' is newer as '$Structur{Version}->{Content}'!",
             );
-            if ( !$Param{Force} ) {
+            if (!$Param{Force}) {
                 return;
             }
         }
     }
-
-    # check if one of this files is already installed by an other package
-    if ( %Structure && !$Param{Force} ) {
-        return if !$Self->_PackageFileCheck(
-            Structure => \%Structure,
-        );
-    }
-
-    # remove old package
-    return if !$Self->RepositoryRemove( Name => $Structure{Name}->{Content} );
-
-    # add new package
-    return if !$Self->RepositoryAdd( String => $Param{String} );
-
-    # update package status
-    return if !$Self->{DBObject}->Do(
-        SQL => 'UPDATE package_repository SET install_status = \'installed\''
-            . ' WHERE name = ? AND version = ?',
-        Bind => [
-            \$Structure{Name}->{Content}, \$Structure{Version}->{Content},
-        ],
-    );
-
-    # upgrade code (pre)
-    if ( $Structure{CodeUpgrade} && ref $Structure{CodeUpgrade} eq 'ARRAY' ) {
-        my @Parts;
-        PART:
-        for my $Part ( @{ $Structure{CodeUpgrade} } ) {
-            if ( $Part->{Version} ) {
-
-                # skip code upgrade block if its version is bigger than the new package version
-                my $CheckVersion = $Self->_CheckVersion(
-                    Version1 => $Part->{Version},
-                    Version2 => $Structure{Version}->{Content},
-                    Type     => 'Max'
-                );
-                next PART if $CheckVersion;
-
-                $CheckVersion = $Self->_CheckVersion(
-                    Version1 => $Part->{Version},
-                    Version2 => $InstalledVersion,
-                    Type     => 'Min'
-                );
-                if ( !$CheckVersion ) {
-                    push @Parts, $Part;
+    # check if one of this files is already intalled by an other package
+    foreach my $Package ($Self->RepositoryList()) {
+        if ($Structur{Name}->{Content} ne $Package->{Name}->{Content}) {
+            foreach my $FileNew (@{$Structur{Filelist}}) {
+                foreach my $FileOld (@{$Package->{Filelist}}) {
+                    $FileNew->{Location} =~ s/\/\//\//g;
+                    $FileOld->{Location} =~ s/\/\//\//g;
+                    if ($FileNew->{Location} eq $FileOld->{Location}) {
+                        if (!$Param{Force}) {
+                            $Self->{LogObject}->Log(
+                                Priority => 'error',
+                                Message => "Can't upgrade package, file $FileNew->{Location} already used in package $Package->{Name}->{Content}-$Package->{Version}->{Content}!",
+                            );
+                            return;
+                        }
+                    }
                 }
             }
-            else {
-                push @Parts, $Part;
-            }
         }
-        $Self->_Code(
-            Code      => \@Parts,
-            Type      => 'pre',
-            Structure => \%Structure,
-        );
     }
-
-    # upgrade database (pre)
-    if ( $Structure{DatabaseUpgrade}->{pre} && ref $Structure{DatabaseUpgrade}->{pre} eq 'ARRAY' ) {
-        my @Parts;
-        my $Use = 0;
-        for my $Part ( @{ $Structure{DatabaseUpgrade}->{pre} } ) {
-            if ( $Part->{TagLevel} == 3 && $Part->{Version} ) {
-                my $CheckVersion = $Self->_CheckVersion(
-                    Version1 => $Part->{Version},
-                    Version2 => $InstalledVersion,
-                    Type     => 'Min'
-                );
-                if ( !$CheckVersion ) {
-                    $Use   = 1;
-                    @Parts = ();
-                    push @Parts, $Part;
+    # remove old packages
+    $Self->RepositoryRemove(Name => $Structur{Name}->{Content});
+    if ($Self->RepositoryAdd(String => $Param{String})) {
+        # check OS
+        my $OSCheckOk = 1;
+        if ($Structur{OS} && ref($Structur{OS}) eq 'ARRAY') {
+            $OSCheckOk = 0;
+            foreach my $OS (@{$Structur{OS}}) {
+                if ($^O =~ /^$OS$/i) {
+                    $OSCheckOk = 1;
                 }
             }
-            elsif ( $Use && $Part->{TagLevel} == 3 && $Part->{TagType} eq 'End' ) {
-                $Use = 0;
-                push @Parts, $Part;
-                $Self->_Database( Database => \@Parts );
-            }
-            elsif ($Use) {
-                push @Parts, $Part;
-            }
         }
-    }
-
-    # uninstall old package files
-    if ( $InstalledStructure{Filelist} && ref $InstalledStructure{Filelist} eq 'ARRAY' ) {
-        for my $File ( @{ $InstalledStructure{Filelist} } ) {
-
-            # remove file
-            return if !$Self->_FileRemove( File => $File );
+        if (!$OSCheckOk && !$Param{Force}) {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message => "Sorry, can't install package, because package is not for your OS!!",
+            );
+            return;
         }
-    }
-
-    # install files
-    if ( $Structure{Filelist} && ref $Structure{Filelist} eq 'ARRAY' ) {
-        for my $File ( @{ $Structure{Filelist} } ) {
-
-            # install file
-            return if !$Self->_FileInstall( File => $File );
-        }
-    }
-
-    # install config
-    $Self->{SysConfigObject} = Kernel::System::SysConfig->new( %{$Self} );
-    $Self->{SysConfigObject}->WriteDefault();
-
-    # upgrade database (post)
-    if ( $Structure{DatabaseUpgrade}->{post} && ref $Structure{DatabaseUpgrade}->{post} eq 'ARRAY' )
-    {
-        my @Parts;
-        my $Use = 0;
-        for my $Part ( @{ $Structure{DatabaseUpgrade}->{post} } ) {
-            if ( $Part->{TagLevel} == 3 && $Part->{Version} ) {
-                my $CheckVersion = $Self->_CheckVersion(
-                    Version1 => $Part->{Version},
-                    Version2 => $InstalledVersion,
-                    Type     => 'Min'
-                );
-                if ( !$CheckVersion ) {
-                    $Use   = 1;
-                    @Parts = ();
-                    push @Parts, $Part;
+        # check framework
+        my $FWCheckOk = 0;
+        if ($Structur{Framework} && ref($Structur{Framework}) eq 'ARRAY') {
+            foreach my $FW (@{$Structur{Framework}}) {
+                if ($Self->_CheckFramework(Framework => $FW->{Content})) {
+                    $FWCheckOk = 1;
                 }
             }
-            elsif ( $Use && $Part->{TagLevel} == 3 && $Part->{TagType} eq 'End' ) {
-                $Use = 0;
-                push @Parts, $Part;
-                $Self->_Database( Database => \@Parts );
-            }
-            elsif ($Use) {
-                push @Parts, $Part;
+        }
+        if (!$FWCheckOk && !$Param{Force}) {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message => "Sorry, can't install package, because package is not for your Framework!!",
+            );
+            return;
+        }
+        # check required packages
+        if ($Structur{PackageRequired} && ref($Structur{PackageRequired}) eq 'ARRAY') {
+            if (!$Self->_CheckRequired(%Param, PackageRequired => $Structur{PackageRequired}) && !$Param{Force}) {
+                return;
             }
         }
-    }
-
-    # upgrade code (post)
-    if ( $Structure{CodeUpgrade} && ref $Structure{CodeUpgrade} eq 'ARRAY' ) {
-        my @Parts;
-        PART:
-        for my $Part ( @{ $Structure{CodeUpgrade} } ) {
-            if ( $Part->{Version} ) {
-
-                # skip code upgrade block if its version is bigger than the new package version
-                my $CheckVersion = $Self->_CheckVersion(
-                    Version1 => $Part->{Version},
-                    Version2 => $Structure{Version}->{Content},
-                    Type     => 'Max'
-                );
-                next PART if $CheckVersion;
-
-                $CheckVersion = $Self->_CheckVersion(
-                    Version1 => $Part->{Version},
-                    Version2 => $InstalledVersion,
-                    Type     => 'Min'
-                );
-                if ( !$CheckVersion ) {
-                    push @Parts, $Part;
+        # check if one of this files is already intalled by an other package
+        foreach my $Package ($Self->RepositoryList()) {
+            if ($Structur{Name}->{Content} ne $Package->{Name}->{Content}) {
+                foreach my $FileNew (@{$Structur{Filelist}}) {
+                    foreach my $FileOld (@{$Package->{Filelist}}) {
+                        if ($FileNew eq $FileOld) {
+                            if (!$Param{Force}) {
+                                $Self->{LogObject}->Log(
+                                    Priority => 'notice',
+                                    Message => "Can't upgrade package, file $FileNew already used in package $Package->{Name}->{Content}-$Package->{Name}->{Version}!",
+                                );
+                                return;
+                            }
+                        }
+                    }
                 }
             }
-            else {
-                push @Parts, $Part;
+        }
+        # update package status
+        my $SQL = "UPDATE package_repository SET install_status = 'installed'".
+            " WHERE ".
+            " name = '".$Self->{DBObject}->Quote($Structur{Name}->{Content})."'".
+            " AND ".
+            " version = '".$Self->{DBObject}->Quote($Structur{Version}->{Content})."'";
+        $Self->{DBObject}->Do(SQL => $SQL);
+
+        # uninstall old package files
+        if ($InstalledStructur{Filelist} && ref($InstalledStructur{Filelist}) eq 'ARRAY') {
+            foreach my $File (@{$InstalledStructur{Filelist}}) {
+                # remove file
+                $Self->_FileRemove(%{$File});
             }
         }
-        $Self->_Code(
-            Code      => \@Parts,
-            Type      => 'post',
-            Structure => \%Structure,
-        );
+        # install files
+        if ($Structur{Filelist} && ref($Structur{Filelist}) eq 'ARRAY') {
+            foreach my $File (@{$Structur{Filelist}}) {
+                # install file
+                $Self->_FileInstall(%{$File});
+            }
+        }
+        # install config
+        $Self->{SysConfigObject} = Kernel::System::Config->new(%{$Self});
+        $Self->{SysConfigObject}->WriteDefault();
+        # install code
+        if ($Structur{CodeUpgrade} && $Structur{CodeUpgrade}->{Content}) {
+            if ($Structur{CodeUpgrade}->{Content}) {
+                print STDERR "Code: $Structur{CodeUpgrade}->{Content}\n";
+                if (!eval $Structur{CodeUpgrade}->{Content}) {
+                    print STDERR "CodeError: $@\n";
+                }
+            }
+        }
+        # upgrade database
+        if ($Structur{DatabaseUpgrade} && ref($Structur{DatabaseUpgrade}) eq 'ARRAY') {
+            my @Part = ();
+            my $Use = 0;
+            foreach my $S (@{$Structur{DatabaseUpgrade}}) {
+                if ($S->{TagLevel} == 3 && $S->{Version}) {
+                    if (!$Self->_CheckVersion(Version1 => $S->{Version}, Version2 => $InstalledVersion, Type => 'Min')) {
+                        $Use = 1;
+                        @Part = ();
+                        push (@Part, $S);
+                    }
+                }
+                elsif ($Use && $S->{TagLevel} == 3 && $S->{TagType} eq 'End') {
+                    $Use = 0;
+                    push (@Part, $S);
+                    my @SQL = $Self->{DBObject}->SQLProcessor(Database => \@Part);
+                    foreach my $SQL (@SQL) {
+                        print STDERR "Notice: $SQL\n";
+                        $Self->{DBObject}->Do(SQL => $SQL);
+                    }
+                    my @SQLPost = $Self->{DBObject}->SQLProcessorPost();
+                    foreach my $SQL (@SQLPost) {
+                        print STDERR "Notice: $SQL\n";
+                        $Self->{DBObject}->Do(SQL => $SQL);
+                    }
+                }
+                elsif ($Use) {
+                    push (@Part, $S);
+                }
+            }
+        }
+        return 1;
     }
-
-    $Self->{CacheObject}->CleanUp();
-    $Self->{LoaderObject}->CacheDelete();
-
-    return 1;
+    else {
+        return;
+    }
 }
 
 =item PackageUninstall()
 
 uninstall a package
 
-    $PackageObject->PackageUninstall( String => $FileString );
+    $PackageObject->PackageUninstall(String => $FileString);
 
 =cut
 
 sub PackageUninstall {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !defined $Param{String} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'String not defined!' );
-        return;
-    }
-
-    # parse source file
-    my %Structure = $Self->PackageParse(%Param);
-
-    # check depends
-    if ( !$Param{Force} ) {
-        return if !$Self->_CheckPackageDepends( Name => $Structure{Name}->{Content} );
-    }
-
-    # uninstall code (pre)
-    if ( $Structure{CodeUninstall} ) {
-        $Self->_Code(
-            Code      => $Structure{CodeUninstall},
-            Type      => 'pre',
-            Structure => \%Structure,
-        );
-    }
-
-    # uninstall database (pre)
-    if ( $Structure{DatabaseUninstall} && $Structure{DatabaseUninstall}->{pre} ) {
-        $Self->_Database( Database => $Structure{DatabaseUninstall}->{pre} );
-    }
-
-    # files
-    my $FileCheckOk = 1;
-    if ( $Structure{Filelist} && ref $Structure{Filelist} eq 'ARRAY' ) {
-        for my $File ( @{ $Structure{Filelist} } ) {
-
-            # remove file
-            return if !$Self->_FileRemove( File => $File );
+    foreach (qw(String)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
         }
     }
-
+    # parse source file
+    my %Structur = $Self->PackageParse(%Param);
+    # files
+    my $FileCheckOk = 1;
+    if ($Structur{Filelist} && ref($Structur{Filelist}) eq 'ARRAY') {
+        foreach my $File (@{$Structur{Filelist}}) {
+            # remove file
+            $Self->_FileRemove(%{$File});
+        }
+    }
     # remove old packages
-    $Self->RepositoryRemove( Name => $Structure{Name}->{Content} );
+    $Self->RepositoryRemove(Name => $Structur{Name}->{Content});
 
     # install config
-    $Self->{SysConfigObject} = Kernel::System::SysConfig->new( %{$Self} );
+    $Self->{SysConfigObject} = Kernel::System::Config->new(%{$Self});
     $Self->{SysConfigObject}->WriteDefault();
-
-    # uninstall database (post)
-    if ( $Structure{DatabaseUninstall} && $Structure{DatabaseUninstall}->{post} ) {
-        $Self->_Database( Database => $Structure{DatabaseUninstall}->{post} );
+    if (!$FileCheckOk) {
+#        return;
     }
-
-    # uninstall code (post)
-    if ( $Structure{CodeUninstall} ) {
-        $Self->_Code(
-            Code      => $Structure{CodeUninstall},
-            Type      => 'post',
-            Structure => \%Structure,
-        );
+    # uninstall code
+    if ($Structur{CodeUninstall} && $Structur{CodeUninstall}->{Content}) {
+        if ($Structur{CodeUninstall}->{Content}) {
+            print STDERR "Code: $Structur{CodeUninstall}->{Content}\n";
+            if (!eval $Structur{CodeUninstall}->{Content}) {
+                print STDERR "CodeError: $@\n";
+            }
+        }
     }
-
-    # install config
-    $Self->{ConfigObject} = Kernel::Config->new( %{$Self} );
-
-    $Self->{CacheObject}->CleanUp();
-    $Self->{LoaderObject}->CacheDelete();
-
+    # uninstall database
+    if ($Structur{DatabaseUninstall} && ref($Structur{DatabaseUninstall}) eq 'ARRAY') {
+        my @SQL = $Self->{DBObject}->SQLProcessor(Database => $Structur{DatabaseUninstall}, );
+        foreach my $SQL (@SQL) {
+            print STDERR "Notice: $SQL\n";
+            $Self->{DBObject}->Do(SQL => $SQL);
+        }
+        my @SQLPost = $Self->{DBObject}->SQLProcessorPost();
+        foreach my $SQL (@SQLPost) {
+            print STDERR "Notice: $SQL\n";
+            $Self->{DBObject}->Do(SQL => $SQL);
+        }
+    }
     return 1;
 }
 
@@ -898,40 +883,48 @@ returns a list of available online repositories
 =cut
 
 sub PackageOnlineRepositories {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    # check needed stuff
+    foreach (qw()) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
+        }
+    }
     # check if online repository should be fetched
-    if ( !$Self->{ConfigObject}->Get('Package::RepositoryRoot') ) {
+    if (!$Self->{ConfigObject}->Get('Package::RepositoryRoot')) {
         return ();
     }
-
     # get repository list
     my $XML = '';
-    for my $URL ( @{ $Self->{ConfigObject}->Get('Package::RepositoryRoot') } ) {
-        $XML = $Self->_Download( URL => $URL );
-
-        last if $XML;
+    foreach (@{$Self->{ConfigObject}->Get('Package::RepositoryRoot')}) {
+        $XML = $Self->_Download(URL => $_);
+        if ($XML) {
+            last;
+        }
     }
-    return if !$XML;
-
-    my @XMLARRAY = $Self->{XMLObject}->XMLParse( String => $XML );
-    my %List;
+    if (!$XML) {
+        return ();
+    }
+    my @XMLARRAY = $Self->{XMLObject}->XMLParse(String => $XML);
+    my %List = ();
     my $Name = '';
-    for my $Tag (@XMLARRAY) {
-
+    foreach my $Tag (@XMLARRAY) {
         # just use start tags
-        next if $Tag->{TagType} ne 'Start';
-
+        if ($Tag->{TagType} ne 'Start') {
+            next;
+        }
         # reset package data
-        if ( $Tag->{Tag} eq 'Repository' ) {
+        if ($Tag->{Tag} eq 'Repository') {
             $Name = '';
         }
-        elsif ( $Tag->{Tag} eq 'Name' ) {
+        elsif ($Tag->{Tag} eq 'Name') {
             $Name = $Tag->{Content};
         }
-        elsif ( $Tag->{Tag} eq 'URL' ) {
+        elsif ($Tag->{Tag} eq 'URL') {
             if ($Name) {
-                $List{ $Tag->{Content} } = $Name;
+                $List{$Tag->{Content}} = $Name;
             }
         }
     }
@@ -940,122 +933,89 @@ sub PackageOnlineRepositories {
 
 =item PackageOnlineList()
 
-returns a list of available on-line packages
+returns a list of available online packages
 
-    my @List = $PackageObject->PackageOnlineList(
-        URL  => '',
-        Lang => 'en',
-    );
+    my %List = $PackageObject->PackageOnlineList();
 
 =cut
 
 sub PackageOnlineList {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(URL Lang)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined!" );
+    foreach (qw(URL Lang)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
             return;
         }
     }
-    my $XML = $Self->_Download( URL => $Param{URL} . '/otrs.xml' );
-
-    return if !$XML;
-
-    my @XMLARRAY = $Self->{XMLObject}->XMLParse( String => $XML );
-    if ( !@XMLARRAY ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Unable to parse repository index document.',
-        );
-        return;
+    my $XML = $Self->_Download(URL => $Param{URL}."/otrs.xml");
+    if (!$XML) {
+        return ();
     }
-    my @Packages;
-    my %Package;
-    my $Filelist;
-    for my $Tag (@XMLARRAY) {
-
+    my @XMLARRAY = $Self->{XMLObject}->XMLParse(String => $XML);
+    my @Packages = ();
+    my %Package = ();
+    foreach my $Tag (@XMLARRAY) {
         # remember package
-        if ( $Tag->{TagType} eq 'End' && $Tag->{Tag} eq 'Package' ) {
+        if ($Tag->{TagType} eq 'End' && $Tag->{Tag} eq 'Package') {
             if (%Package) {
-                push @Packages, {%Package};
+                push (@Packages, {%Package});
             }
             next;
         }
-
         # just use start tags
-        if ( $Tag->{TagType} ne 'Start' ) {
+        if ($Tag->{TagType} ne 'Start') {
             next;
         }
-
         # reset package data
-        if ( $Tag->{Tag} eq 'Package' ) {
-            %Package  = ();
-            $Filelist = 0;
+        if ($Tag->{Tag} eq 'Package') {
+            %Package = ();
         }
-        elsif ( $Tag->{Tag} eq 'Framework' ) {
-            push @{ $Package{Framework} }, $Tag;
+        elsif ($Tag->{Tag} eq 'Framework') {
+            push (@{$Package{Framework}}, $Tag);
         }
-        elsif ( $Tag->{Tag} eq 'Filelist' ) {
-            $Filelist = 1;
-        }
-        elsif ( $Filelist && $Tag->{Tag} eq 'FileDoc' ) {
-            push @{ $Package{Filelist} }, $Tag;
-        }
-        elsif ( $Tag->{Tag} eq 'Description' ) {
-            if ( !$Package{Description} ) {
+        elsif ($Tag->{Tag} eq 'Description') {
+            if (!$Package{Description}) {
                 $Package{Description} = $Tag->{Content};
             }
-            if ( $Tag->{Lang} eq $Param{Lang} ) {
+            if ($Tag->{Lang} eq $Param{Lang}) {
                 $Package{Description} = $Tag->{Content};
             }
         }
         else {
-            $Package{ $Tag->{Tag} } = $Tag->{Content};
+            $Package{$Tag->{Tag}} = $Tag->{Content};
         }
     }
 
     # just framework packages
-    my @NewPackages;
-    my $PackageForRequestedFramework = 0;
-    for my $Package (@Packages) {
+    my @NewPackages = ();
+    foreach my $Package (@Packages) {
         my $FWCheckOk = 0;
-        if ( $Package->{Framework} ) {
-            if ( $Self->_CheckFramework( Framework => $Package->{Framework}, NoLog => 1 ) ) {
-                $FWCheckOk                    = 1;
-                $PackageForRequestedFramework = 1;
+        if ($Package->{Framework} && ref($Package->{Framework}) eq 'ARRAY') {
+            foreach my $FW (@{$Package->{Framework}}) {
+                if ($Self->_CheckFramework(Framework => $FW->{Content})) {
+                    $FWCheckOk = 1;
+#print STDERR "FWCheckOk: $Package->{Name} $Package->{Version} -> $FW->{Content}\n";
+                }
             }
         }
         if ($FWCheckOk) {
-            push @NewPackages, $Package;
+            push (@NewPackages, $Package);
         }
-    }
-
-    # return if there are packages, just not for this framework version
-    if ( @Packages && !$PackageForRequestedFramework ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message =>
-                'No packages for your framework version found in this repository, it only contains packages for other framework versions.',
-        );
     }
     @Packages = @NewPackages;
 
     # just the newest packages
-    my %Newest;
-    for my $Package (@Packages) {
-        if ( !$Newest{ $Package->{Name} } ) {
-            $Newest{ $Package->{Name} } = $Package;
+    my %Newest = ();
+    foreach my $Package (@Packages) {
+        if (!$Newest{$Package->{Name}}) {
+            $Newest{$Package->{Name}} = $Package;
         }
         else {
-            my $CheckVersion = $Self->_CheckVersion(
-                Version1 => $Package->{Version},
-                Version2 => $Newest{ $Package->{Name} }->{Version},
-                Type     => 'Min'
-            );
-            if ( !$CheckVersion ) {
-                $Newest{ $Package->{Name} } = $Package;
+            if (!$Self->_CheckVersion(Version1 => $Package->{Version}, Version2 => $Newest{$Package->{Name}}->{Version}, Type => 'Min')) {
+#            if ($Newest{$Package->{Name}}->{Version} < $Package->{Version}) {
+                $Newest{$Package->{Name}} = $Package;
             }
         }
     }
@@ -1063,42 +1023,30 @@ sub PackageOnlineList {
     # get possible actions
     @NewPackages = ();
     my @LocalList = $Self->RepositoryList();
-    for my $Data ( sort keys %Newest ) {
+    foreach my $Data (sort keys %Newest) {
         my $InstalledSameVersion = 0;
-        for my $Package (@LocalList) {
-            if ( $Newest{$Data}->{Name} eq $Package->{Name}->{Content} ) {
+        foreach my $Package (@LocalList) {
+            if ($Newest{$Data}->{Name} eq $Package->{Name}->{Content}) {
                 $Newest{$Data}->{Local} = 1;
-                if ( $Package->{Status} eq 'installed' ) {
+                if ($Package->{Status} eq 'installed') {
                     $Newest{$Data}->{Installed} = 1;
-                    if (
-                        !$Self->_CheckVersion(
-                            Version1 => $Newest{$Data}->{Version},
-                            Version2 => $Package->{Version}->{Content},
-                            Type     => 'Min'
-                        )
-                        )
-                    {
+#                    if ($Newest{$Data}->{Version} > $Package->{Version}->{Content}) {
+#                    if (!$Self->_CheckVersion(Version1 => $Package->{Version}->{Content}, Version2 => $Newest{$Data}->{Version}, Type => 'Max')) {
+                    if (!$Self->_CheckVersion(Version1 => $Newest{$Data}->{Version}, Version2 => $Package->{Version}->{Content}, Type => 'Min')) {
                         $Newest{$Data}->{Upgrade} = 1;
                     }
-
                     # check if version or lower is already installed
-                    elsif (
-                        !$Self->_CheckVersion(
-                            Version1 => $Newest{$Data}->{Version},
-                            Version2 => $Package->{Version}->{Content},
-                            Type     => 'Max'
-                        )
-                        )
-                    {
+#                    elsif ($Newest{$Data}->{Version} <= $Package->{Version}->{Content}) {
+#                    elsif (!$Self->_CheckVersion(Version1 => $Package->{Version}->{Content}, Version2 => $Newest{$Data}->{Version}, Type => 'Min')) {
+                    elsif (!$Self->_CheckVersion(Version1 => $Newest{$Data}->{Version}, Version2 => $Package->{Version}->{Content}, Type => 'Max')) {
                         $InstalledSameVersion = 1;
                     }
                 }
             }
         }
-
         # add package if not already installed
-        if ( !$InstalledSameVersion ) {
-            push @NewPackages, $Newest{$Data};
+        if (!$InstalledSameVersion) {
+            push (@NewPackages, $Newest{$Data});
         }
     }
     @Packages = @NewPackages;
@@ -1108,26 +1056,26 @@ sub PackageOnlineList {
 
 =item PackageOnlineGet()
 
-download of an online package and put it int to the local repository
+donwload of an online package and put it int to the local reposetory
 
     $PackageObject->PackageOnlineGet(
-        Source => 'L<http://host.example.com/>',
-        File   => 'SomePackage-1.0.opm',
+        Source => 'http://host/',
+        File => 'SomePackage-1.0.opm',
     );
 
 =cut
 
 sub PackageOnlineGet {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(File Source)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined!" );
+    foreach (qw(File Source)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
             return;
         }
     }
-    return $Self->_Download( URL => $Param{Source} . '/' . $Param{File} );
+    return $Self->_Download(URL => $Param{Source}."/$Param{File}");
 }
 
 =item DeployCheck()
@@ -1135,74 +1083,57 @@ sub PackageOnlineGet {
 check if package (files) is deployed, returns true if it's ok
 
     $PackageObject->DeployCheck(
-        Name    => 'Application A',
+        Name => 'Application A',
         Version => '1.0',
     );
 
 =cut
 
 sub DeployCheck {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(Name Version)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined!" );
+    foreach (qw(Name Version)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
             return;
         }
     }
-    my $Package = $Self->RepositoryGet( %Param, Result => 'SCALAR' );
-    my %Structure = $Self->PackageParse( String => $Package );
+    my $Package = $Self->RepositoryGet(%Param);
+    my %Structur = $Self->PackageParse(String => $Package);
     $Self->{DeployCheckInfo} = undef;
-    if ( $Structure{Filelist} && ref $Structure{Filelist} eq 'ARRAY' ) {
+    if ($Structur{Filelist} && ref($Structur{Filelist}) eq 'ARRAY') {
         my $Hit = 0;
-        for my $File ( @{ $Structure{Filelist} } ) {
-            my $LocalFile = $Self->{Home} . '/' . $File->{Location};
-            if ( !-e $LocalFile ) {
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => "$Param{Name}-$Param{Version}: No such $LocalFile!"
-                );
-                $Self->{DeployCheckInfo}->{File}->{ $File->{Location} } = 'No file installed!';
+        foreach my $File (@{$Structur{Filelist}}) {
+            my $LocalFile = "$Self->{Home}/$File->{Location}";
+            if (! -e $LocalFile) {
+                $Self->{LogObject}->Log(Priority => 'error', Message => "$Param{Name}-$Param{Version}: No such $LocalFile!");
+                $Self->{DeployCheckInfo}->{File}->{$File->{Location}} = 'No file installed!';
                 $Hit = 1;
             }
-            elsif ( -e $LocalFile ) {
-
-                # md5 alternative for file deploy check (may will have better performance?)
-                #                my $MD5File = $Self->{MainObject}->MD5sum(
-                #                    Filename => $LocalFile,
-                #                );
-                #                if ($MD5File) {
-                #                    my $MD5Package = $Self->{MainObject}->MD5sum(
-                #                        String => \$File->{Content},
-                #                    );
-                #                    if ( $MD5File ne $MD5Package ) {
-                my $Content = $Self->{MainObject}->FileRead(
-                    Location => $Self->{Home} . '/' . $File->{Location},
-                    Mode     => 'binmode',
-                );
-                if ($Content) {
-                    if ( ${$Content} ne $File->{Content} ) {
-                        $Self->{LogObject}->Log(
-                            Priority => 'error',
-                            Message  => "$Param{Name}-$Param{Version}: $LocalFile is different!",
-                        );
+            elsif (-e $LocalFile) {
+                my $Content = '';
+                if (open(IN, "< $LocalFile")) {
+                    # set bin mode
+                    binmode IN;
+                    while (<IN>) {
+                        $Content .= $_;
+                    }
+                    close (IN);
+                    if ($Content ne $File->{Content}) {
+                        $Self->{LogObject}->Log(Priority => 'error', Message => "$Param{Name}-$Param{Version}: $LocalFile is different!");
                         $Hit = 1;
-                        $Self->{DeployCheckInfo}->{File}->{ $File->{Location} }
-                            = 'File is different!';
+                        $Self->{DeployCheckInfo}->{File}->{$File->{Location}} = 'File is different!';
                     }
                 }
                 else {
-                    $Self->{LogObject}->Log(
-                        Priority => 'error',
-                        Message  => "Can't read $LocalFile!",
-                    );
-                    $Self->{DeployCheckInfo}->{File}->{ $File->{Location} }
-                        = 'Can\' read File!';
+                    $Self->{LogObject}->Log(Priority => 'error', Message => "Can't read $LocalFile!");
                 }
             }
         }
-        return if $Hit;
+        if ($Hit) {
+            return;
+        }
     }
     return 1;
 }
@@ -1216,93 +1147,26 @@ returns the info of the latest DeployCheck(), what's not deployed correctly
 =cut
 
 sub DeployCheckInfo {
-    my ( $Self, %Param ) = @_;
-
-    if ( $Self->{DeployCheckInfo} ) {
-        return %{ $Self->{DeployCheckInfo} };
-    }
-    return ();
-}
-
-=item PackageVerify()
-
-check if package is verified by the vendor
-this code is not implemented yet
-
-    $PackageObject->PackageVerify(
-        Package   => $Package,
-        Structure => \%Structure,
-    );
-
-=cut
-
-sub PackageVerify {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(Package Structure)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined!" );
+    foreach (qw()) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
             return;
         }
     }
-
-    # disable verifying
-    return 1;
-
-    # check input type (not used at this moment)
-    if ( ref $Param{Package} ) {
-        $Param{Package} = ${ $Param{Package} };
+    if ($Self->{DeployCheckInfo}) {
+        return %{$Self->{DeployCheckInfo}};
     }
-
-    $Self->{PackageVerifyInfo} = undef;
-
-    # vendor name check
-    if ( $Param{Structure}->{Vendor}->{Content} =~ /^otrs/i ) {
-        return 1;
+    else {
+        return ();
     }
-
-    # verify info
-    $Self->{PackageVerifyInfo} = {
-        Description => "This package is not deployed by the OTRS Project. The OTRS "
-            . "Project is not responsible if you run into problems by using this package. "
-            . "Please contact <a href=\"mailto:sales\@otrs.com?Subject=Package "
-            . $Param{Structure}->{Name}->{Content}
-            . "Version=" . $Param{Structure}->{Name}->{Content}
-            . "\">sales\@otrs.com</a> if you have any "
-            . "problems.<br>For more info see: "
-            . "<a href=\"http://otrs.org/verify?Name="
-            . $Param{Structure}->{Name}->{Content}
-            . "&Version="
-            . $Param{Structure}->{Version}->{Content}
-            . "\">http://otrs.org/verify/</a>",
-        Title => 'Package Verification failed (not deployed by the OTRS Project)',
-
-    };
-
-    return;
-}
-
-=item PackageVerifyInfo()
-
-returns the info of the latest PackageVerify(), what's not correctly
-
-    my %Hash = $PackageObject->PackageVerifyInfo();
-
-=cut
-
-sub PackageVerifyInfo {
-    my ( $Self, %Param ) = @_;
-
-    if ( $Self->{PackageVerifyInfo} ) {
-        return %{ $Self->{PackageVerifyInfo} };
-    }
-    return ();
 }
 
 =item PackageBuild()
 
-build an opm package
+build a opm package
 
     my $Package = $PackageObject->PackageBuild(
         Name => {
@@ -1312,34 +1176,34 @@ build an opm package
             Content => '1.0',
         },
         Vendor => {
-            Content => 'OTRS AG',
+            Content => 'OTRS GmbH',
         },
         URL => {
-            Content => 'L<http://otrs.org/>',
+            Content => 'http://otrs.org/',
         },
         License => {
             Content => 'GNU GENERAL PUBLIC LICENSE Version 2, June 1991',
         }
         Description => [
             {
-                Lang    => 'en',
+                Lang => 'en',
                 Content => 'english description',
             },
             {
-                Lang    => 'de',
+                Lang => 'de',
                 Content => 'german description',
             },
         ],
         Filelist = [
             {
-                Location   => 'Kernel/System/Lala.pm'
+                Location => 'Kernel/System/Lala.pm'
                 Permission => '644',
-                Content    => $FileInString,
+                Content => $FileInString,
             },
             {
-                Location   => 'Kernel/System/Lulu.pm'
+                Location => 'Kernel/System/Lulu.pm'
                 Permission => '644',
-                Content    => $FileInString,
+                Content => $FileInString,
             },
         ],
     );
@@ -1347,221 +1211,133 @@ build an opm package
 =cut
 
 sub PackageBuild {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     my $XML = '';
     my $Home = $Param{Home} || $Self->{ConfigObject}->Get('Home');
-
     # check needed stuff
-    for (qw(Name Version Vendor License Description)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined!" );
+    foreach (qw(Name Version Vendor License Description)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
             return;
         }
     }
-
-    # find framework, may we need do some things different to be compat. to 2.2
-    my $Framework;
-    if ( $Param{Framework} ) {
-        for my $FW ( @{ $Param{Framework} } ) {
-            if ( $FW->{Content} =~ /2\.2\./ ) {
-                $Framework = '2.2';
-            }
-        }
-    }
-
-    # build xml
-    if ( !$Param{Type} ) {
+    if (!$Param{Type}) {
         $XML .= '<?xml version="1.0" encoding="utf-8" ?>';
         $XML .= "\n";
-        $XML .= '<otrs_package version="1.1">';
+        $XML .= '<otrs_package version="1.0">';
         $XML .= "\n";
     }
-    for my $Tag (
-        qw(Name Version Vendor URL License ChangeLog Description Framework OS
-        IntroInstall IntroUninstall IntroReinstall IntroUpgrade
-        PackageRequired ModuleRequired CodeInstall CodeUpgrade CodeUninstall CodeReinstall)
-        )
-    {
-
-        # don't use CodeInstall CodeUpgrade CodeUninstall CodeReinstall in index mode
-        if ( $Param{Type} && $Tag =~ /(Code|Intro)(Install|Upgrade|Uninstall|Reinstall)/ ) {
-            next;
-        }
-        if ( ref $Param{$Tag} eq 'HASH' ) {
-            my %OldParam;
-            for (qw(Content Encode TagType Tag TagLevel TagCount TagKey TagLastLevel)) {
+    foreach my $Tag (qw(Name Version Vendor URL License ChangeLog Description Framework OS PackageRequired CodeInstall CodeUpgrade CodeUninstall CodeReinstall)) {
+        if (ref($Param{$Tag}) eq 'HASH') {
+            my %OldParam = ();
+            foreach (qw(Content Encode TagType Tag TagLevel TagCount TagKey TagLastLevel)) {
                 $OldParam{$_} = $Param{$Tag}->{$_};
                 delete $Param{$Tag}->{$_};
             }
-            $XML .= "    <$Tag";
-            for ( sort keys %{ $Param{$Tag} } ) {
-                $XML .= " $_=\"" . $Self->_Encode( $Param{$Tag}->{$_} ) . "\"";
+            $XML .= "  <$Tag";
+            foreach (sort keys %{$Param{$Tag}}) {
+                $XML .= " $_=\"".$Self->_Encode($Param{$Tag}->{$_})."\"";
             }
             $XML .= ">";
-            $XML .= $Self->_Encode( $OldParam{Content} ) . "</$Tag>\n";
+            $XML .= $Self->_Encode($OldParam{Content})."</$Tag>\n";
         }
-        elsif ( ref $Param{$Tag} eq 'ARRAY' ) {
-            for ( @{ $Param{$Tag} } ) {
-                my $TagSub = $Tag;
-                my %Hash   = %{$_};
-                my %OldParam;
-                for (qw(Content Encode TagType Tag TagLevel TagCount TagKey TagLastLevel)) {
+        elsif (ref($Param{$Tag}) eq 'ARRAY') {
+            foreach (@{$Param{$Tag}}) {
+                my %Hash = %{$_};
+                my %OldParam = ();
+                foreach (qw(Content Encode TagType Tag TagLevel TagCount TagKey TagLastLevel)) {
                     $OldParam{$_} = $Hash{$_};
                     delete $Hash{$_};
                 }
-
-                # compat. to 2.2
-                if ( $Framework && $Tag =~ /^Intro/ ) {
-                    if ( $Hash{Type} eq 'pre' ) {
-                        $Hash{Type} = 'Pre';
-                    }
-                    else {
-                        $Hash{Type} = 'Post';
-                    }
-                    $TagSub = $Tag . $Hash{Type};
-                    delete $Hash{Type};
-                }
-
-                $XML .= "    <$TagSub";
-
-                for ( keys %Hash ) {
-                    $XML .= " $_=\"" . $Self->_Encode( $Hash{$_} ) . "\"";
+                $XML .= "  <$Tag";
+                foreach (keys %Hash) {
+                    $XML .= " $_=\"".$Self->_Encode($Hash{$_})."\"";
                 }
                 $XML .= ">";
-                $XML .= $Self->_Encode( $OldParam{Content} ) . "</$TagSub>\n";
+                $XML .= $Self->_Encode($OldParam{Content})."</$Tag>\n";
             }
         }
         else {
-
 #            $XML .= "  <$Tag></$Tag>\n";
+#           die "No Hash no Array: $Tag: $Param{$Tag}\n";
 #            $Self->{LogObject}->Log(Priority => 'error', Message => "Invalid Ref data in tag $Tag!");
 #            return;
         }
     }
-
-    # don't use Build* in index mode
-    if ( !$Param{Type} ) {
-        my $Time = $Self->{TimeObject}->SystemTime2TimeStamp(
-            SystemTime => $Self->{TimeObject}->SystemTime(),
-        );
-        $XML .= "    <BuildDate>" . $Time . "</BuildDate>\n";
-        $XML .= "    <BuildHost>" . $Self->{ConfigObject}->Get('FQDN') . "</BuildHost>\n";
+    if ($Param{Type}) {
+        return $XML;
     }
-    if ( $Param{Filelist} ) {
-        $XML .= "    <Filelist>\n";
-        for my $File ( @{ $Param{Filelist} } ) {
-            my %OldParam;
-            for (qw(Content Encode TagType Tag TagLevel TagCount TagKey TagLastLevel)) {
+    $XML .= "  <BuildDate>".$Self->{TimeObject}->SystemTime2TimeStamp(
+        SystemTime => $Self->{TimeObject}->SystemTime(),
+    )."</BuildDate>\n";
+    $XML .= "  <BuildHost>".$Self->{ConfigObject}->Get('FQDN')."</BuildHost>\n";
+    if ($Param{Filelist}) {
+        $XML .= "  <Filelist>\n";
+        foreach my $File (@{$Param{Filelist}}) {
+            my %OldParam = ();
+            foreach (qw(Content Encode TagType Tag TagLevel TagCount TagKey TagLastLevel)) {
                 $OldParam{$_} = $File->{$_} || '';
                 delete $File->{$_};
             }
 
-            # do only use doc/* Filelist in index mode
-            next if $Param{Type} && $File->{Location} !~ /^doc\//;
-
-            if ( !$Param{Type} ) {
-                $XML .= "        <File";
-            }
-            else {
-                $XML .= "        <FileDoc";
-            }
-            for ( sort keys %{$File} ) {
-                if ( $_ ne 'Tag' && $_ ne 'Content' && $_ ne 'TagType' && $_ ne 'Size' ) {
-                    $XML .= " " . $Self->_Encode($_) . "=\"" . $Self->_Encode( $File->{$_} ) . "\"";
+            $XML .= "    <File";
+            foreach (sort keys %{$File}) {
+                if ($_ ne 'Tag' && $_ ne 'Content' && $_ ne 'TagType' && $_ ne 'Size') {
+                    $XML .= " ".$Self->_Encode($_)."=\"".$Self->_Encode($File->{$_})."\"";
                 }
             }
-
-            # don't use content in in index mode
-            if ( !$Param{Type} ) {
-                $XML .= " Encode=\"Base64\">";
-                my $FileContent = $Self->{MainObject}->FileRead(
-                    Location => $Home . '/' . $File->{Location},
-                    Mode     => 'binmode',
-                );
-
-                return if !defined $FileContent;
-
-                $XML .= encode_base64( ${$FileContent}, '' );
-                $XML .= "</File>\n";
+            $XML .= " Encode=\"Base64\">";
+            my $File = $Home."/$File->{Location}";
+            my $FileContent = '';
+            if (open(IN, "< $File")) {
+                # set bin mode
+                binmode IN;
+                while (<IN>) {
+                    $FileContent .= $_;
+                }
+                close (IN);
             }
             else {
-                $XML .= " >";
-                $XML .= "</FileDoc>\n";
+                die "Can't open: $File: $!";
             }
+            $XML .= encode_base64($FileContent, '');
+            $XML .= "</File>\n";
         }
-        $XML .= "    </Filelist>\n";
+        $XML .= "  </Filelist>\n";
     }
-
-    # don't use Database* in index mode
-    return $XML if $Param{Type};
-
-    for (qw(DatabaseInstall DatabaseUpgrade DatabaseReinstall DatabaseUninstall)) {
-        if ( ref $Param{$_} ne 'HASH' ) {
-            next;
-        }
-        for my $Type ( sort %{ $Param{$_} } ) {
-            if ( $Param{$_}->{$Type} ) {
-                my $Counter = 1;
-                for my $Tag ( @{ $Param{$_}->{$Type} } ) {
-                    if ( $Tag->{TagType} eq 'Start' ) {
-                        my $Space = '';
-                        for ( 1 .. $Counter ) {
-                            $Space .= '    ';
-                        }
-                        $Counter++;
-                        $XML .= $Space . "<$Tag->{Tag}";
-                        if ( $Tag->{TagLevel} == 3 ) {
-                            $XML .= " Type=\"$Type\"";
-                        }
-                        for ( sort keys %{$Tag} ) {
-                            if (
-                                $_    ne 'Tag'
-                                && $_ ne 'Content'
-                                && $_ ne 'TagType'
-                                && $_ ne 'TagLevel'
-                                && $_ ne 'TagCount'
-                                && $_ ne 'TagKey'
-                                && $_ ne 'TagLastLevel'
-                                )
-                            {
-                                if ( defined( $Tag->{$_} ) ) {
-                                    $XML .= ' '
-                                        . $Self->_Encode($_) . '="'
-                                        . $Self->_Encode( $Tag->{$_} ) . '"';
-                                }
+    foreach (qw(DatabaseInstall DatabaseUpgrade DatabaseReinstall DatabaseUninstall)) {
+        if ($Param{$_}) {
+            $XML .= "  <$_>\n";
+            my @Close = ();
+            my $Space = '    ';
+            foreach my $Tag (@{$Param{$_}}) {
+                if ($Tag->{TagType} eq 'Start') {
+                    if ($Tag->{Tag} eq 'Data' || $Tag->{Tag} eq 'Column') {
+                        $Space .= '    ';
+                    }
+                    $XML .= $Space."<$Tag->{Tag}";
+                    foreach (sort keys %{$Tag}) {
+                        if ($_ ne 'Tag' && $_ ne 'Content' && $_ ne 'TagType' && $_ ne 'TagLevel' && $_ ne 'TagCount' && $_ ne 'TagKey' && $_ ne 'TagLastLevel') {
+                            if (defined($Tag->{$_})) {
+                                $XML .= " ".$Self->_Encode($_)."=\"".$Self->_Encode($Tag->{$_})."\"";
                             }
                         }
-                        $XML .= ">";
-                        if ( $Tag->{TagLevel} <= 3 || $Tag->{Tag} =~ /(Foreign|Reference|Index)/ ) {
-                            $XML .= "\n";
-                        }
                     }
-                    if (
-                        defined( $Tag->{Content} )
-                        && $Tag->{TagLevel} >= 4
-                        && $Tag->{Tag} !~ /(Foreign|Reference|Index)/
-                        )
-                    {
-                        $XML .= $Self->_Encode( $Tag->{Content} );
+                    $XML .= ">";
+                    if ($Tag->{Content}) {
+                        $XML .= "\n";
                     }
-                    if ( $Tag->{TagType} eq 'End' ) {
-                        $Counter = $Counter - 1;
-                        if ( $Tag->{TagLevel} > 3 && $Tag->{Tag} !~ /(Foreign|Reference|Index)/ ) {
-                            $XML .= "</$Tag->{Tag}>\n";
-                        }
-                        else {
-                            my $Space = '';
-                            for ( 1 .. $Counter ) {
-                                $Space .= '    ';
-                            }
-                            $XML .= $Space . "</$Tag->{Tag}>\n";
-                        }
+                    else {
+                        $Space = '';
                     }
                 }
-
-                #            $XML .= "    </$_>\n";
+                if ($Tag->{TagType} eq 'End') {
+                   $XML .= $Space."</$Tag->{Tag}>\n";
+                   $Space = '    ';
+                }
             }
+            $XML .= "  </$_>\n";
         }
     }
     $XML .= '</otrs_package>';
@@ -1572,95 +1348,82 @@ sub PackageBuild {
 
 parse a package
 
-    my %Structure = $PackageObject->PackageParse( String => $FileString );
+    my %Structur = $PackageObject->PackageParse(String => $FileString);
 
 =cut
 
 sub PackageParse {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !defined $Param{String} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'String not defined!' );
-        return;
+    foreach (qw(String)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
+        }
     }
-
     my @XMLARRAY = $Self->{XMLObject}->XMLParse(%Param);
-
     # cleanup global vars
     undef $Self->{Package};
-
     # parse package
-    my %PackageMap = %{ $Self->{PackageMap} };
-    for my $Tag (@XMLARRAY) {
-        if ( $Tag->{TagType} ne 'Start' ) {
+    my %PackageMap = %{$Self->{PackageMap}};
+
+    foreach my $Tag (@XMLARRAY) {
+        if ($Tag->{TagType} ne 'Start') {
             next;
         }
-        if ( $PackageMap{ $Tag->{Tag} } && $PackageMap{ $Tag->{Tag} } eq 'SCALAR' ) {
-            $Self->{Package}->{ $Tag->{Tag} } = $Tag;
+        if ($PackageMap{$Tag->{Tag}} && $PackageMap{$Tag->{Tag}} eq 'SCALAR') {
+            $Self->{Package}->{$Tag->{Tag}} = $Tag;
         }
-        elsif ( $PackageMap{ $Tag->{Tag} } && $PackageMap{ $Tag->{Tag} } eq 'ARRAY' ) {
-
-            # For compat. to 2.2 - convert Intro(Install|Upgrade|Unintall)(Pre|Post) to
-            # e. g. <IntroInstall Type="post">.
-            if ( $Tag->{Tag} =~ /^(Intro(Install|Upgrade|Uninstall))(Pre|Post)/ ) {
-                $Tag->{Tag}  = $1;
-                $Tag->{Type} = lc $3;
-            }
-
-            # Set default type of Code* and Intro* to post.
-            elsif ( $Tag->{Tag} =~ /^(Code|Intro)/ && !$Tag->{Type} ) {
-                $Tag->{Type} = 'post';
-            }
-            push( @{ $Self->{Package}->{ $Tag->{Tag} } }, $Tag );
+        elsif ($PackageMap{$Tag->{Tag}} && $PackageMap{$Tag->{Tag}} eq 'ARRAY') {
+            push (@{$Self->{Package}->{$Tag->{Tag}}}, $Tag);
         }
     }
     my $Open = 0;
-    for my $Tag (@XMLARRAY) {
-        if ( $Open && $Tag->{Tag} eq 'Filelist' ) {
+    foreach my $Tag (@XMLARRAY) {
+        if ($Open && $Tag->{Tag} eq "Filelist") {
             $Open = 0;
         }
-        elsif ( !$Open && $Tag->{Tag} eq 'Filelist' ) {
+        elsif (!$Open && $Tag->{Tag} eq "Filelist") {
             $Open = 1;
             next;
         }
-        if ( $Open && $Tag->{TagType} eq 'Start' ) {
-
+        if ($Open && $Tag->{TagType} eq 'Start') {
             # get attachment size
             {
-                if ( $Tag->{Content} ) {
+                if ($Tag->{Content}) {
                     my $ContentPlain = 0;
-                    if ( $Tag->{Encode} && $Tag->{Encode} eq 'Base64' ) {
-                        $Tag->{Encode}  = '';
-                        $Tag->{Content} = decode_base64( $Tag->{Content} );
+                    if ($Tag->{Encode} && $Tag->{Encode} eq 'Base64') {
+                        $Tag->{Encode} = '';
+                        $Tag->{Content} = decode_base64($Tag->{Content});
                     }
-                    $Tag->{Size} = bytes::length( $Tag->{Content} );
+                    use bytes;
+                    $Tag->{Size} = length($Tag->{Content});
+                    no bytes;
                 }
             }
-            push( @{ $Self->{Package}->{Filelist} }, $Tag );
+            push (@{$Self->{Package}->{Filelist}}, $Tag);
         }
     }
-    for my $Key (qw(DatabaseInstall DatabaseUpgrade DatabaseReinstall DatabaseUninstall)) {
-        my $Type = 'post';
-        for my $Tag (@XMLARRAY) {
-            if ( $Open && $Tag->{Tag} eq $Key ) {
+    foreach (qw(DatabaseInstall DatabaseUpgrade DatabaseReinstall DatabaseUninstall)) {
+        foreach my $Tag (@XMLARRAY) {
+            if ($Open && $Tag->{Tag} eq $_) {
                 $Open = 0;
-                push( @{ $Self->{Package}->{$Key}->{$Type} }, $Tag );
             }
-            elsif ( !$Open && $Tag->{Tag} eq $Key ) {
+            elsif (!$Open && $Tag->{Tag} eq $_) {
                 $Open = 1;
-                if ( $Tag->{Type} ) {
-                    $Type = $Tag->{Type};
-                }
+                next;
             }
+
+#            if ($Open && $Tag->{Type} eq 'Start') {
             if ($Open) {
-                push( @{ $Self->{Package}->{$Key}->{$Type} }, $Tag );
+#print STDERR "$Tag->{Tag} $Tag->{Type}\n";
+                push (@{$Self->{Package}->{$_}}, $Tag);
             }
         }
     }
-
     # return package structur
-    my %Return = %{ $Self->{Package} };
+    my %Return = %{$Self->{Package}};
     undef $Self->{Package};
     return %Return;
 }
@@ -1671,831 +1434,236 @@ export files of an package
 
     $PackageObject->PackageExport(
         String => $FileString,
-        Home   => '/path/to/export'
+        Home => '/path/to/export'
     );
 
 =cut
 
 sub PackageExport {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
 
     # check needed stuff
-    for (qw(String Home)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined!" );
+    foreach (qw(String Home)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
             return;
         }
     }
-
     # parse source file
-    my %Structure = $Self->PackageParse(%Param);
-
+    my %Structur = $Self->PackageParse(%Param);
     # install files
-    if ( $Structure{Filelist} && ref $Structure{Filelist} eq 'ARRAY' ) {
-        for my $File ( @{ $Structure{Filelist} } ) {
-
+    if ($Structur{Filelist} && ref($Structur{Filelist}) eq 'ARRAY') {
+        foreach my $File (@{$Structur{Filelist}}) {
             # install file
-            return if !$Self->_FileInstall( File => $File, Home => $Param{Home} );
+            $Self->_FileInstall(%{$File}, Home => $Param{Home});
         }
     }
     return 1;
 }
-
-=item PackageIsInstalled()
-
-returns true if the package is already installed
-
-    $PackageObject->PackageIsInstalled(
-        String => $PackageString,    # Attribute String or Name is required
-        Name   => $NameOfThePackage,
-    );
-
-=cut
-
-sub PackageIsInstalled {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{String} && !$Param{Name} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need String (PackageString) or Name (Name of the package)!'
-        );
-        return;
-    }
-
-    if ( $Param{String} ) {
-        my %Structure = $Self->PackageParse(%Param);
-        $Param{Name} = $Structure{Name}->{Content};
-    }
-
-    $Self->{DBObject}->Prepare(
-        SQL =>
-            "SELECT name FROM package_repository WHERE name = ? AND install_status = 'installed'",
-        Bind => [ \$Param{Name} ],
-    );
-
-    my $Flag = 0;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        $Flag = 1;
-    }
-
-    return $Flag;
-}
-
-=item PackageInstallDefaultFiles()
-
-returns true if the distribution package (located under ) can get installed
-
-    $PackageObject->PackageInstallDefaultFiles();
-
-=cut
-
-sub PackageInstallDefaultFiles {
-    my ( $Self, %Param ) = @_;
-
-    my $Directory    = $Self->{ConfigObject}->Get('Home') . '/var/packages';
-    my @PackageFiles = $Self->{MainObject}->DirectoryRead(
-        Directory => $Directory,
-        Filter    => '*.opm',
-    );
-
-    # read packages and install
-    for my $Location (@PackageFiles) {
-
-        # read package
-        my $ContentSCALARRef = $Self->{MainObject}->FileRead(
-            Location => $Location,
-            Mode     => 'binmode',
-            Type     => 'Local',
-            Result   => 'SCALAR',
-        );
-        next if !$ContentSCALARRef;
-
-        # install package (use eval to be save)
-        eval {
-            $Self->PackageInstall( String => ${$ContentSCALARRef} );
-        };
-        if ($@) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => $@ );
-        }
-    }
-    return 1;
-}
-
-=begin Internal:
-
-=cut
 
 sub _Download {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    my $Content = '';
     # check needed stuff
-    if ( !defined $Param{URL} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'URL not defined!' );
-        return;
-    }
-
-    my $WebUserAgentObject = Kernel::System::WebUserAgent->new(
-        DBObject     => $Self->{DBObject},
-        ConfigObject => $Self->{ConfigObject},
-        LogObject    => $Self->{LogObject},
-        MainObject   => $Self->{MainObject},
-        Timeout      => $Self->{ConfigObject}->Get('Package::Timeout'),
-        Proxy        => $Self->{ConfigObject}->Get('Package::Proxy'),
-    );
-
-    my %Response = $WebUserAgentObject->Request(
-        URL => $Param{URL},
-    );
-
-    return if !$Response{Content};
-
-    return ${ $Response{Content} };
-}
-
-sub _Database {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !defined $Param{Database} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Database not defined!' );
-        return;
-    }
-
-    if ( ref $Param{Database} ne 'ARRAY' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need array ref in Database param!'
-        );
-        return;
-    }
-    my @SQL = $Self->{DBObject}->SQLProcessor( Database => $Param{Database} );
-    for my $SQL (@SQL) {
-        print STDERR "Notice: $SQL\n";
-        $Self->{DBObject}->Do( SQL => $SQL );
-    }
-    my @SQLPost = $Self->{DBObject}->SQLProcessorPost();
-    for my $SQL (@SQLPost) {
-        print STDERR "Notice: $SQL\n";
-        $Self->{DBObject}->Do( SQL => $SQL );
-    }
-    return 1;
-}
-
-sub _Code {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Code Type Structure)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined!" );
+    foreach (qw(URL)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
             return;
         }
     }
-
-    # check format
-    if ( ref $Param{Code} ne 'ARRAY' ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need array ref in Code param!' );
-        return;
+    # init agent
+    my $UserAgent = LWP::UserAgent->new();
+    # set timeout
+    $UserAgent->timeout($Self->{ConfigObject}->Get('Package::Timeout') || 15);
+    # set user agent
+    $UserAgent->agent($Self->{ConfigObject}->Get('Product').' '.$Self->{ConfigObject}->Get('Version'));
+    # set proxy
+    if ($Self->{ConfigObject}->Get('Package::Proxy')) {
+        $UserAgent->proxy(['http', 'ftp'], $Self->{ConfigObject}->Get('Package::Proxy'));
     }
-
-    # code exec
-    for my $Code ( @{ $Param{Code} } ) {
-        if ( $Code->{Content} && $Param{Type} =~ /^$Code->{Type}$/i ) {
-            print STDERR "Code: $Code->{Content}\n";
-            if ( !eval $Code->{Content} . "\n1;" ) {
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => "Code: $@",
-                );
-                return;
-            }
-        }
+    # get file
+    my $Response = $UserAgent->get($Param{URL});
+    if ($Response->is_success()) {
+        return $Response->content();
     }
-    return 1;
-}
-
-sub _OSCheck {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !defined $Param{OS} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'OS not defined!' );
-        return;
-    }
-
-    # check format
-    if ( ref $Param{OS} ne 'ARRAY' ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need array ref in OS param!' );
-        return;
-    }
-
-    # check OS
-    my $OSCheck    = 0;
-    my $CurrentOS  = $^O;
-    my $PossibleOS = '';
-    if ( ref $Param{OS} eq 'ARRAY' ) {
-        for my $OS ( @{ $Param{OS} } ) {
-            next if !$OS;
-            $PossibleOS .= $OS->{Content} . ';';
-            if ( $CurrentOS =~ /^$OS$/i ) {
-                $OSCheck = 1;
-            }
-        }
-    }
-
-    if ( !$OSCheck ) {
-        if ( !$Param{NoLog} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Sorry, can't install/upgrade package, because OS of package "
-                    . "($PossibleOS) does not match your OS ($CurrentOS)!",
-            );
-        }
-        return;
-    }
-
-    return 1;
-}
-
-sub _CheckFramework {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !defined $Param{Framework} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Framework not defined!' );
-        return;
-    }
-
-    # check format
-    if ( ref $Param{Framework} ne 'ARRAY' ) {
+    else {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Need array ref in Framework param!'
+            Message => "Can't get file from $Param{URL}: ".$Response->status_line(),
         );
         return;
     }
-
-    my $FWCheck           = 0;
-    my $CurrentFramework  = $Self->{ConfigObject}->Get('Version');
-    my $PossibleFramework = '';
-    if ( ref $Param{Framework} eq 'ARRAY' ) {
-        for my $FW ( @{ $Param{Framework} } ) {
-            next if !$FW;
-            $PossibleFramework .= $FW->{Content} . ';';
-
-            # regexp modify
-            my $Framework = $FW->{Content};
-            $Framework =~ s/\./\\\./g;
-            $Framework =~ s/x/.+?/gi;
-            if ( $CurrentFramework =~ /^$Framework$/i ) {
-                $FWCheck = 1;
-            }
-        }
-    }
-    if ( !$FWCheck ) {
-        if ( !$Param{NoLog} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message =>
-                    "Sorry, can't install/upgrade package, because the framework version required"
-                    . " by the package ($PossibleFramework) does not match your Framework ($CurrentFramework)!",
-            );
-        }
-        return;
-    }
-
-    return 1;
-}
-
-=item _CheckVersion()
-
-Compare the two version strings C<Version1> and C<Version2>.
-The C<Type> is either 'Min' or 'Max'.
-'Min' returns a true value when C<Version2> >= C<Version1>.
-'Max' returns a true value when C<Version2> < C<Version1>.
-Otherwise undef is returned in scalar context.
-
-    my $CheckOk = $PackageObject->_CheckVersion(
-        Version1 => '1.3.92',
-        Version2 => '1.3.91',
-        Type     => 'Min',    # 'Min' or 'Max' a
-    )
-
-=cut
-
-sub _CheckVersion {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Version1 Version2 Type)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined!" );
-            return;
-        }
-    }
-    for my $Type (qw(Version1 Version2)) {
-        my @Parts = split( /\./, $Param{$Type} );
-        $Param{$Type} = 0;
-        for ( 0 .. 4 ) {
-            if ( defined $Parts[$_] ) {
-                $Param{$Type} .= sprintf( "%04d", $Parts[$_] );
-            }
-            else {
-                $Param{$Type} .= '0000';
-            }
-        }
-        $Param{$Type} = int( $Param{$Type} );
-    }
-    if ( $Param{Type} eq 'Min' ) {
-        return 1 if ( $Param{Version2} >= $Param{Version1} );
-        return;
-    }
-    elsif ( $Param{Type} eq 'Max' ) {
-        return 1 if ( $Param{Version2} < $Param{Version1} );
-        return;
-    }
-
-    $Self->{LogObject}->Log( Priority => 'error', Message => 'Invalid Type!' );
-    return;
-}
-
-sub _CheckPackageRequired {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !defined $Param{PackageRequired} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'PackageRequired not defined!' );
-        return;
-    }
-
-    # check required packages
-    if ( $Param{PackageRequired} && ref $Param{PackageRequired} eq 'ARRAY' ) {
-        for my $Package ( @{ $Param{PackageRequired} } ) {
-            next if !$Package;
-            my $Installed        = 0;
-            my $InstalledVersion = 0;
-            for my $Local ( $Self->RepositoryList() ) {
-                if (
-                    $Local->{Name}->{Content} eq $Package->{Content}
-                    && $Local->{Status} eq 'installed'
-                    )
-                {
-                    $Installed        = 1;
-                    $InstalledVersion = $Local->{Version}->{Content};
-                    last;
-                }
-            }
-            if ( !$Installed ) {
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => "Sorry, can't install package, because package "
-                        . "$Package->{Content} v$Package->{Version} is required!",
-                );
-                return;
-            }
-
-            if (
-                !$Self->_CheckVersion(
-                    Version1 => $Package->{Version},
-                    Version2 => $InstalledVersion,
-                    Type     => 'Min'
-                )
-                )
-            {
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => "Sorry, can't install package, because "
-                        . "package $Package->{Content} v$Package->{Version} is required!",
-                );
-                return;
-            }
-        }
-    }
-    return 1;
-}
-
-sub _CheckModuleRequired {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !defined $Param{ModuleRequired} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'ModuleRequired not defined!' );
-        return;
-    }
-
-    # check required perl modules
-    if ( $Param{ModuleRequired} && ref $Param{ModuleRequired} eq 'ARRAY' ) {
-        for my $Module ( @{ $Param{ModuleRequired} } ) {
-            next if !$Module;
-            my $Installed        = 0;
-            my $InstalledVersion = 0;
-
-            # check if module is installed
-            if ( $Self->{MainObject}->Require( $Module->{Content} ) ) {
-                $Installed = 1;
-
-                # check version if installed module
-                $InstalledVersion = $Module->{Content}->VERSION;
-            }
-            if ( !$Installed ) {
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => "Sorry, can't install package, because module "
-                        . "$Module->{Content} v$Module->{Version} is required "
-                        . "and not installed!",
-                );
-                return;
-            }
-
-            # return if no version is required
-            return 1 if !$Module->{Version};
-
-            # return if no module version is available
-            return 1 if !$InstalledVersion;
-
-            # check version
-            my $Ok = $Self->_CheckVersion(
-                Version1 => $Module->{Version},
-                Version2 => $InstalledVersion,
-                Type     => 'Min'
-            );
-            if ( !$Ok ) {
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => "Sorry, can't install package, because module "
-                        . "$Module->{Content} v$Module->{Version} is required and "
-                        . "$InstalledVersion is installed! You need to upgrade "
-                        . "$Module->{Content} to $Module->{Version} or higher first!",
-                );
-                return;
-            }
-        }
-    }
-    return 1;
-}
-
-sub _CheckPackageDepends {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !defined $Param{Name} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Name not defined!' );
-        return;
-    }
-
-    for my $Local ( $Self->RepositoryList() ) {
-        if (
-            $Local->{PackageRequired}
-            && ref $Local->{PackageRequired} eq 'ARRAY'
-            && $Local->{Name}->{Content} ne $Param{Name}
-            && $Local->{Status} eq 'installed'
-            )
-        {
-            for my $Module ( @{ $Local->{PackageRequired} } ) {
-                if ( $Param{Name} eq $Module->{Content} && !$Param{Force} ) {
-                    $Self->{LogObject}->Log(
-                        Priority => 'error',
-                        Message =>
-                            "Sorry, can't uninstall package $Param{Name}, "
-                            . "because package $Local->{Name}->{Content} depends on it!",
-                    );
-                    return;
-                }
-            }
-        }
-    }
-    return 1;
-}
-
-sub _PackageFileCheck {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !defined $Param{Structure} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Structure not defined!' );
-        return;
-    }
-
-    # check if one of this files is already intalled by an other package
-    for my $Package ( $Self->RepositoryList() ) {
-        if ( $Param{Structure}->{Name}->{Content} eq $Package->{Name}->{Content} ) {
-            next;
-        }
-        for my $FileNew ( @{ $Param{Structure}->{Filelist} } ) {
-            for my $FileOld ( @{ $Package->{Filelist} } ) {
-                $FileNew->{Location} =~ s/\/\//\//g;
-                $FileOld->{Location} =~ s/\/\//\//g;
-                if ( $FileNew->{Location} ne $FileOld->{Location} ) {
-                    next;
-                }
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => "Can't install/upgrade package, file $FileNew->{Location} already "
-                        . "used in package $Package->{Name}->{Content}-$Package->{Version}->{Content}!",
-                );
-                return;
-            }
-        }
-    }
-    return 1;
 }
 
 sub _FileInstall {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     my $Home = $Param{Home} || $Self->{Home};
-
     # check needed stuff
-    for (qw(File)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined!" );
+    foreach (qw(Location Content Permission)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
             return;
         }
     }
-    for (qw(Location Content Permission)) {
-        if ( !defined $Param{File}->{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined in File!" );
-            return;
-        }
-    }
-
     # check Home
-    if ( !-e $Home ) {
+    if (! -e $Home) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "No such home directory: $Home!",
+            Message => "No such home directory: $Home!",
         );
         return;
     }
-
-    # get real file name in fs
-    my $RealFile = $Home . '/' . $Param{File}->{Location};
-    $RealFile =~ s/\/\//\//g;
-
-    # check not allowed files
-    my $FilesNotAllowed = [
-        'Kernel/Config.pm$',
-        'Kernel/Config/Files/ZZZAuto.pm$',
-        'Kernel/Config/Files/ZZZAAuto.pm$',
-        'var/tmp/Cache.*',
-        'var/log/.*',
-        '\.\./',
-    ];
-
-    for my $FileNotAllowed ( @{$FilesNotAllowed} ) {
-        next if $RealFile !~ /$FileNotAllowed/;
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Not allowed to overwrite $RealFile via package manager!",
-        );
-        return;
-    }
-
-    # backup old file (if reinstall, don't overwrite .backup and .save files)
-    if ( -e $RealFile ) {
-        if ( $Param{File}->{Type} && $Param{File}->{Type} =~ /^replace$/i ) {
-            if ( !$Param{Reinstall} || ( $Param{Reinstall} && !-e "$RealFile.backup" ) ) {
-                move( $RealFile, "$RealFile.backup" );
+    # backup old file (if reinstall, don't overwrite .backup an .save files)
+    if (-e "$Home/$Param{Location}") {
+        if ($Param{Type} && $Param{Type} =~ /^replace$/i) {
+            if (!$Param{Reinstall} || ($Param{Reinstall} && -e ! "$Home/$Param{Location}.backup")) {
+                move("$Home/$Param{Location}", "$Home/$Param{Location}.backup");
             }
         }
         else {
-
-            # check if we reinstall the same file, create a .save it not the same one
-            my $Save = 0;
-            if ( $Param{Reinstall} && !-e "$RealFile.save" ) {
-
-                # check if it's not the same
-                my $Content = $Self->{MainObject}->FileRead(
-                    Location => $RealFile,
-                    Mode     => 'binmode',
-                );
-                if ( $Content && ${$Content} ne $Param{File}->{Content} ) {
-
-                    # check if it's framework file, create .save file
-                    my %File = $Self->_ReadDistArchive( Home => $Home );
-                    if ( $File{ $Param{File}->{Location} } ) {
-                        $Save = 1;
-                    }
-                }
-            }
-
-            # if it's no reinstall or reinstall and framework file but different, back it up
-            if ( !$Param{Reinstall} || ( $Param{Reinstall} && $Save ) ) {
-                move( $RealFile, "$RealFile.save" );
+            if (!$Param{Reinstall} || ($Param{Reinstall} && -e ! "$Home/$Param{Location}.save")) {
+                move("$Home/$Param{Location}", "$Home/$Param{Location}.save");
             }
         }
     }
-
-    # check directory of location (in case create a directory)
-    if ( $Param{File}->{Location} =~ /^(.*)\/(.+?|)$/ ) {
-        my $Directory        = $1;
-        my @Directories      = split( /\//, $Directory );
+    # check directory of loaction (in case create a directory)
+    if ($Param{Location} =~ /^(.*)\/(.+?|)$/) {
+        my $Directory = $1;
+        my @Directories = split(/\//, $Directory);
         my $DirectoryCurrent = $Home;
-        for (@Directories) {
+        foreach (@Directories) {
             $DirectoryCurrent .= "/$_";
-            if ( !-d $DirectoryCurrent ) {
-                if ( mkdir $DirectoryCurrent ) {
+            if (! -d $DirectoryCurrent) {
+                if (mkdir $DirectoryCurrent) {
                     print STDERR "Notice: Create Directory $DirectoryCurrent!\n";
                 }
                 else {
                     $Self->{LogObject}->Log(
                         Priority => 'error',
-                        Message  => "Can't create directory: $DirectoryCurrent: $!",
+                        Message => "Can't create directory: $DirectoryCurrent: $!",
                     );
                 }
             }
         }
     }
-
     # write file
-    return if !$Self->{MainObject}->FileWrite(
-        Location   => $RealFile,
-        Content    => \$Param{File}->{Content},
-        Mode       => 'binmode',
-        Permission => $Param{File}->{Permission},
-    );
-
-    print STDERR "Notice: Install $RealFile ($Param{File}->{Permission})!\n";
+    if (open(OUT, "> $Home/$Param{Location}")) {
+        print STDERR "Notice: Install $Param{Location} ($Param{Permission})!\n";
+        # set bin mode
+        binmode OUT;
+        print OUT $Param{Content};
+        close(OUT);
+        # set permission
+        if (length($Param{Permission}) == 3) {
+            $Param{Permission} = "0$Param{Permission}";
+        }
+        chmod(oct($Param{Permission}), "$Home/$Param{Location}");
+    }
+    else {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message => "Can't write file: $Home/$Param{Location}: $!",
+        );
+    }
     return 1;
 }
 
 sub _FileRemove {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     my $Home = $Param{Home} || $Self->{Home};
-
     # check needed stuff
-    for (qw(File)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined!" );
+    foreach (qw(Location)) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
             return;
         }
     }
-    for (qw(Location)) {
-        if ( !defined $Param{File}->{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "$_ not defined in File!" );
-            return;
-        }
-    }
-
     # check Home
-    if ( !-e $Home ) {
+    if (! -e $Home) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "No such home directory: $Home!",
+            Message => "No such home directory: $Home!",
         );
         return;
     }
-
-    # get real file name in fs
-    my $RealFile = $Home . '/' . $Param{File}->{Location};
-    $RealFile =~ s/\/\//\//g;
-
+    my $RealFile = "$Home/$Param{Location}";
     # check if file exists
-    if ( !-e $RealFile ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "No such file: $RealFile!",
-        );
-        return;
-    }
-
-    # check if we should backup this file, if it is touched/different
-    if ( $Param{File}->{Content} ) {
-        my $Content = $Self->{MainObject}->FileRead(
-            Location => $RealFile,
-            Mode     => 'binmode',
-        );
-        if ( $Content && ${$Content} ne $Param{File}->{Content} ) {
-            print STDERR "Notice: Backup for changed file: $RealFile.backup\n";
-            copy( $RealFile, "$RealFile.custom_backup" );
+    if (-e $RealFile) {
+        # remove old file
+        if (unlink $RealFile) {
+            print STDERR "Notice: Removed file: $RealFile\n";
+            # restore old file (if exists)
+            if (-e "$RealFile.backup") {
+                print STDERR "Notice: Recovered: $RealFile.backup\n";
+                move("$RealFile.backup", $RealFile);
+            }
+            elsif (-e "$RealFile.save") {
+                print STDERR "Notice: Recovered: $RealFile.save\n";
+                move("$RealFile.save", $RealFile);
+            }
+            return 1;
         }
-    }
-
-    # check if it's framework file and if $RealFile.(backup|save) exists
-    # then do not remove it!
-    my %File = $Self->_ReadDistArchive( Home => $Home );
-    if ( $File{ $Param{File}->{Location} } && ( !-e "$RealFile.backup" && !-e "$RealFile.save" ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't remove file $RealFile, because it a framework file and no "
-                . "other one exists!",
-        );
-        return;
-    }
-
-    # remove old file
-    if ( !$Self->{MainObject}->FileDelete( Location => $RealFile ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't remove file $RealFile: $!!",
-        );
-        return;
-    }
-
-    print STDERR "Notice: Removed file: $RealFile\n";
-
-    # restore old file (if exists)
-    if ( -e "$RealFile.backup" ) {
-        print STDERR "Notice: Recovered: $RealFile.backup\n";
-        move( "$RealFile.backup", $RealFile );
-    }
-
-    # restore old file (if exists)
-    elsif ( -e "$RealFile.save" ) {
-        print STDERR "Notice: Recovered: $RealFile.save\n";
-        move( "$RealFile.save", $RealFile );
-    }
-
-    return 1;
-}
-
-sub _ReadDistArchive {
-    my ( $Self, %Param ) = @_;
-
-    my $Home = $Param{Home} || $Self->{Home};
-
-    # check cache
-    if ( $Self->{Cache}->{DistArchive}->{$Home} ) {
-        return %{ $Self->{Cache}->{DistArchive}->{$Home} };
-    }
-
-    # check if ARCHIVE exists
-    if ( !-e "$Home/ARCHIVE" ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "No such file $Home/ARCHIVE!",
-        );
-        return;
-    }
-
-    # read ARCHIVE file
-    my $Content = $Self->{MainObject}->FileRead(
-        Directory => $Home,
-        Filename  => 'ARCHIVE',
-        Result    => 'ARRAY',
-    );
-    my %File;
-    if ($Content) {
-        for ( @{$Content} ) {
-            my @Row = split( /::/, $_ );
-            $Row[1] =~ s/\/\///g;
-            $Row[1] =~ s/(\n|\r)//g;
-            $File{ $Row[1] } = $Row[0];
+        else {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message => "Can't remove file $RealFile: $!!",
+            );
+            return;
         }
     }
     else {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "Can't open $Home/ARCHIVE: $!",
-        );
-    }
-
-    # cache it
-    $Self->{Cache}->{DistArchive}->{$Home} = \%File;
-
-    return %File;
-}
-
-sub _FileSystemCheck {
-    my ( $Self, %Param ) = @_;
-
-    my $Home = $Param{Home} || $Self->{Home};
-
-    # check Home
-    if ( !-e $Home ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "No such home directory: $Home!",
+            Message => "No such file: $RealFile!",
         );
         return;
     }
+}
 
-    # create test files in following directories
-    for (qw(/bin/ /Kernel/ /Kernel/System/ /Kernel/Output/ /Kernel/Output/HTML/ /Kernel/Modules/)) {
-        my $Location = "$Home/$_/check_permissons.$$";
-        my $Content  = 'test';
-
-        # create test file
-        my $Write = $Self->{MainObject}->FileWrite(
-            Location => $Location,
-            Content  => \$Content,
+sub _FileSystemCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Home = $Param{Home} || $Self->{Home};
+    # check needed stuff
+    foreach (qw()) {
+        if (!defined $Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "$_ not defined!");
+            return;
+        }
+    }
+    # check Home
+    if (! -e $Home) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message => "No such home directory: $Home!",
         );
-
-        # return false if not created
-        return if !$Write;
-
-        # delete test file
-        $Self->{MainObject}->FileDelete( Location => $Location );
+        return;
+    }
+    foreach (qw(/bin/ /Kernel/ /Kernel/System/ /Kernel/Output/ /Kernel/Output/HTML/ /Kernel/Modules/)) {
+        my $File = "$Home/$_/check_permissons.$$";
+        if (open(OUT, "> $File")) {
+            print OUT "test";
+            close (OUT);
+            unlink $File;
+        }
+        else {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message => "Can't write file $File: $!!",
+            );
+            return;
+        }
     }
     return 1;
 }
 
 sub _Encode {
-    my ( $Self, $Text ) = @_;
-
+    my $Self = shift;
+    my $Text = shift;
     $Text =~ s/&/&amp;/g;
     $Text =~ s/</&lt;/g;
     $Text =~ s/>/&gt;/g;
@@ -2505,22 +1673,18 @@ sub _Encode {
 
 1;
 
-=end Internal:
-
-=back
-
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.123 $ $Date: 2011/11/15 11:41:53 $
+$Revision: 1.53.2.1 $ $Date: 2007/03/02 02:17:18 $
 
 =cut
