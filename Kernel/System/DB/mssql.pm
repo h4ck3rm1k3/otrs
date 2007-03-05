@@ -1,233 +1,170 @@
 # --
 # Kernel/System/DB/mssql.pm - mssql database backend
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mssql.pm,v 1.63 2011/12/12 08:19:14 mg Exp $
+# $Id: mssql.pm,v 1.7.2.1 2007/03/05 00:41:55 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::DB::mssql;
 
 use strict;
-use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.63 $) [1];
+$VERSION = '$Revision: 1.7.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
 
+    # check needed objects
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
     return $Self;
 }
 
 sub LoadPreferences {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
 
     # db settings
-    $Self->{'DB::Limit'}                = 0;
-    $Self->{'DB::DirectBlob'}           = 0;
-    $Self->{'DB::QuoteSingle'}          = '\'';
-    $Self->{'DB::QuoteBack'}            = 0;
-    $Self->{'DB::QuoteSemicolon'}       = '';
-    $Self->{'DB::QuoteUnderscoreStart'} = '[';
-    $Self->{'DB::QuoteUnderscoreEnd'}   = ']';
-    $Self->{'DB::CaseInsensitive'}      = 1;
-    $Self->{'DB::LikeEscapeString'}     = '';
-
-    # dbi attributes
+    $Self->{'DB::Limit'} = 0;
+    $Self->{'DB::DirectBlob'} = 0;
+    $Self->{'DB::QuoteSingle'} = '\'';
+    $Self->{'DB::QuoteBack'} = 0;
+    $Self->{'DB::QuoteSemicolon'} = '\\';
     $Self->{'DB::Attribute'} = {
         LongTruncOk => 1,
-        LongReadLen => 70 * 1024 * 1024,
+        LongReadLen => 100*1024,
     };
 
-    # set current time stamp if different to "current_timestamp"
-    $Self->{'DB::CurrentTimestamp'} = '';
-
-    # set encoding of selected data to utf8
-    $Self->{'DB::Encode'} = 1;
-
     # shell setting
-    $Self->{'DB::Comment'}     = '-- ';
+    $Self->{'DB::Comment'} = '-- ';
     $Self->{'DB::ShellCommit'} = ';';
-
-    #$Self->{'DB::ShellConnect'} = '';
-
-    # init sql setting on db connect
-    if ( !$Self->{ConfigObject}->Get('Database::ShellOutput') ) {
-        $Self->{'DB::Connect'} = 'SET DATEFORMAT ymd';
-    }
 
     return 1;
 }
 
 sub Quote {
-    my ( $Self, $Text, $Type ) = @_;
-
-    if ( defined ${$Text} ) {
-        if ( $Self->{'DB::QuoteBack'} ) {
+    my $Self = shift;
+    my $Text = shift;
+    if (defined(${$Text})) {
+        if ($Self->{'DB::QuoteBack'}) {
             ${$Text} =~ s/\\/$Self->{'DB::QuoteBack'}\\/g;
         }
-        if ( $Self->{'DB::QuoteSingle'} ) {
+        if ($Self->{'DB::QuoteSingle'}) {
             ${$Text} =~ s/'/$Self->{'DB::QuoteSingle'}'/g;
         }
-        if ( $Self->{'DB::QuoteSemicolon'} ) {
+        if ($Self->{'DB::QuoteSemicolon'}) {
             ${$Text} =~ s/;/$Self->{'DB::QuoteSemicolon'};/g;
-        }
-        if ( $Type && $Type eq 'Like' ) {
-            ${$Text} =~ s/\[/[[]/g;
-            if ( $Self->{'DB::QuoteUnderscoreStart'} || $Self->{'DB::QuoteUnderscoreEnd'} ) {
-                ${$Text}
-                    =~ s/_/$Self->{'DB::QuoteUnderscoreStart'}_$Self->{'DB::QuoteUnderscoreEnd'}/g;
-            }
         }
     }
     return $Text;
 }
 
 sub DatabaseCreate {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !$Param{Name} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Name!' );
+    if (!$Param{Name}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need Name!");
         return;
     }
-
     # return SQL
     return ("CREATE DATABASE $Param{Name}");
 }
 
 sub DatabaseDrop {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !$Param{Name} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Name!' );
+    if (!$Param{Name}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need Name!");
         return;
     }
-
     # return SQL
-    return ("DROP DATABASE $Param{Name}");
+    return ("DROP DATABASE IF EXISTS $Param{Name}");
 }
 
 sub TableCreate {
-    my ( $Self, @Param ) = @_;
-
-    my $SQLStart     = '';
-    my $SQLEnd       = '';
-    my $SQL          = '';
-    my @Column       = ();
-    my $TableName    = '';
-    my %Default      = ();
-    my $ForeignKey   = ();
-    my %Foreign      = ();
+    my $Self = shift;
+    my @Param = @_;
+    my $SQLStart = '';
+    my $SQLEnd = '';
+    my $SQL = '';
+    my @Column = ();
+    my $TableName = '';
+    my $ForeignKey = ();
+    my %Foreign = ();
     my $IndexCurrent = ();
-    my %Index        = ();
-    my $UniqCurrent  = ();
-    my %Uniq         = ();
-    my $PrimaryKey   = '';
-    my @Return       = ();
-    for my $Tag (@Param) {
-
-        if (
-            ( $Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate' )
-            && $Tag->{TagType} eq 'Start'
-            )
-        {
-            if ( $Self->{ConfigObject}->Get('Database::ShellOutput') ) {
-                $SQLStart .= $Self->{'DB::Comment'}
-                    . "----------------------------------------------------------\n";
-                $SQLStart .= $Self->{'DB::Comment'} . " create table $Tag->{Name}\n";
-                $SQLStart .= $Self->{'DB::Comment'}
-                    . "----------------------------------------------------------\n";
-            }
+    my %Index = ();
+    my $UniqCurrent = ();
+    my %Uniq = ();
+    my $PrimaryKey = '';
+    my @Return = ();
+    foreach my $Tag (@Param) {
+        if ($Tag->{Tag} eq 'Table' && $Tag->{TagType} eq 'Start') {
+            $SQLStart .= $Self->{'DB::Comment'}."----------------------------------------------------------\n";
+            $SQLStart .= $Self->{'DB::Comment'}." create table $Tag->{Name}\n";
+            $SQLStart .= $Self->{'DB::Comment'}."----------------------------------------------------------\n";
         }
-        if (
-            ( $Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate' )
-            && $Tag->{TagType} eq 'Start'
-            )
-        {
+        if (($Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate') && $Tag->{TagType} eq 'Start') {
             $SQLStart .= "CREATE TABLE $Tag->{Name} (\n";
             $TableName = $Tag->{Name};
         }
-        if (
-            ( $Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate' )
-            && $Tag->{TagType} eq 'End'
-            )
-        {
-            $SQLEnd .= ')';
+        if (($Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate') && $Tag->{TagType} eq 'End') {
+            $SQLEnd .= ")";
         }
-        elsif ( $Tag->{Tag} eq 'Column' && $Tag->{TagType} eq 'Start' ) {
-            push @Column, $Tag;
+        elsif ($Tag->{Tag} eq 'Column' && $Tag->{TagType} eq 'Start') {
+            push (@Column, $Tag);
         }
-        elsif ( $Tag->{Tag} eq 'Index' && $Tag->{TagType} eq 'Start' ) {
+        elsif ($Tag->{Tag} eq 'Index' && $Tag->{TagType} eq 'Start') {
             $IndexCurrent = $Tag->{Name};
         }
-        elsif ( $Tag->{Tag} eq 'IndexColumn' && $Tag->{TagType} eq 'Start' ) {
-            push @{ $Index{$IndexCurrent} }, $Tag;
+        elsif ($Tag->{Tag} eq 'IndexColumn' && $Tag->{TagType} eq 'Start') {
+            push (@{$Index{$IndexCurrent}}, $Tag);
         }
-        elsif ( $Tag->{Tag} eq 'Unique' && $Tag->{TagType} eq 'Start' ) {
-            $UniqCurrent = $Tag->{Name} || $TableName . '_U_' . int( rand(999) );
+        elsif ($Tag->{Tag} eq 'Unique' && $Tag->{TagType} eq 'Start') {
+            $UniqCurrent = $Tag->{Name} || $TableName.'_U_'.int(rand(999));
         }
-        elsif ( $Tag->{Tag} eq 'UniqueColumn' && $Tag->{TagType} eq 'Start' ) {
-            push @{ $Uniq{$UniqCurrent} }, $Tag;
+        elsif ($Tag->{Tag} eq 'UniqueColumn' && $Tag->{TagType} eq 'Start') {
+            push (@{$Uniq{$UniqCurrent}}, $Tag);
         }
-        elsif ( $Tag->{Tag} eq 'ForeignKey' && $Tag->{TagType} eq 'Start' ) {
+        elsif ($Tag->{Tag} eq 'ForeignKey' && $Tag->{TagType} eq 'Start') {
             $ForeignKey = $Tag->{ForeignTable};
         }
-        elsif ( $Tag->{Tag} eq 'Reference' && $Tag->{TagType} eq 'Start' ) {
-            push @{ $Foreign{$ForeignKey} }, $Tag;
+        elsif ($Tag->{Tag} eq 'Reference' && $Tag->{TagType} eq 'Start') {
+            push (@{$Foreign{$ForeignKey}}, $Tag);
         }
     }
-    for my $Tag (@Column) {
-
-        # type translation
+    foreach my $Tag (@Column) {
         $Tag = $Self->_TypeTranslation($Tag);
-
-        # add new line
         if ($SQL) {
             $SQL .= ",\n";
         }
-
         # normal data type
         $SQL .= "    $Tag->{Name} $Tag->{Type}";
-
-        # handle require
-        if ( $Tag->{Required} && lc $Tag->{Required} eq 'true' ) {
-            $SQL .= ' NOT NULL';
+        if ($Tag->{Required} =~ /^true$/i) {
+            $SQL .= " NOT NULL";
         }
-        else {
-            $SQL .= ' NULL';
-        }
-
         # auto increment
-        if ( $Tag->{AutoIncrement} && $Tag->{AutoIncrement} =~ /^true$/i ) {
-            $SQL .= ' IDENTITY(1,1) ';
+        if ($Tag->{AutoIncrement} && $Tag->{AutoIncrement} =~ /^true$/i) {
+            $SQL .= " IDENTITY(1,1) ";
         }
-
         # add primary key
-        if ( $Tag->{PrimaryKey} && $Tag->{PrimaryKey} =~ /true/i ) {
+        if ($Tag->{PrimaryKey} && $Tag->{PrimaryKey} =~ /true/i) {
             $PrimaryKey = "    PRIMARY KEY($Tag->{Name})";
         }
-
-        # save default value
-        if ( defined $Tag->{Default} ) {
-            if ( $Tag->{Type} =~ /int/i ) {
-                $Default{ $Tag->{Name} } = $Tag->{Default};
-            }
-            else {
-                $Default{ $Tag->{Name} } = "'" . $Tag->{Default} . "'";
-            }
-        }
     }
-
     # add primary key
     if ($PrimaryKey) {
         if ($SQL) {
@@ -235,454 +172,236 @@ sub TableCreate {
         }
         $SQL .= $PrimaryKey;
     }
-
-    # add uniqueness
-    for my $Name ( sort keys %Uniq ) {
+    # add uniq
+    foreach my $Name (keys %Uniq) {
         if ($SQL) {
             $SQL .= ",\n";
         }
-        $SQL .= "    CONSTRAINT $Name UNIQUE (";
-        my @Array = @{ $Uniq{$Name} };
-        for ( 0 .. $#Array ) {
-            if ( $_ > 0 ) {
-                $SQL .= ', ';
+        $SQL .= "    UNIQUE (";
+        my @Array = @{$Uniq{$Name}};
+        foreach (0..$#Array) {
+            if ($_ > 0) {
+                $SQL .= ", ";
             }
             $SQL .= $Array[$_]->{Name};
         }
-        $SQL .= ')';
+        $SQL .= ")";
     }
-
-    $SQL .= "\n";
-    push @Return, $SQLStart . $SQL . $SQLEnd;
-
-    # add default constraint
-    for my $Column ( keys %Default ) {
-
-        # create the default name
-        my $DefaultName = 'DF_' . $TableName . '_' . $Column;
-
-        push @Return,
-            "ALTER TABLE $TableName ADD CONSTRAINT $DefaultName DEFAULT ($Default{$Column}) FOR $Column";
-    }
-
     # add index
-    for my $Name ( sort keys %Index ) {
-        push(
-            @Return,
-            $Self->IndexCreate(
-                TableName => $TableName,
-                Name      => $Name,
-                Data      => $Index{$Name},
-            ),
-        );
+#    foreach my $Name (keys %Index) {
+#        if ($SQL) {
+#            $SQL .= ",\n";
+#        }
+#        $SQL .= "    INDEX $Name (";
+#        my @Array = @{$Index{$Name}};
+#        foreach (0..$#Array) {
+#            if ($_ > 0) {
+#                $SQL .= ", ";
+#            }
+#            $SQL .= $Array[$_]->{Name};
+#            if ($Array[$_]->{Size}) {
+#                $SQL .= "($Array[$_]->{Size})";
+#            }
+#        }
+#        $SQL .= ")";
+#    }
+    $SQL .= "\n";
+    push(@Return, $SQLStart.$SQL.$SQLEnd);
+    # add indexs
+    foreach my $Name (keys %Index) {
+        push (@Return, $Self->IndexCreate(
+            TableName => $TableName,
+            Name => $Name,
+            Data => $Index{$Name},
+        ));
     }
-
+    # add indexs
+#    foreach my $Name (keys %Index) {
+#        push (@Return, $Self->IndexCreate(
+#            TableName => $TableName,
+#            Name => $Name,
+#            Data => $Index{$Name},
+#        ));
+#    }
+    # add uniq
+#    foreach my $Name (keys %Uniq) {
+#        push (@Return, $Self->UniqueCreate(
+#            TableName => $TableName,
+#            Name => $Name,
+#            Data => $Uniq{$Name},
+#        ));
+#    }
     # add foreign keys
-    for my $ForeignKey ( sort keys %Foreign ) {
-        my @Array = @{ $Foreign{$ForeignKey} };
-        for ( 0 .. $#Array ) {
-            push(
-                @{ $Self->{Post} },
-                $Self->ForeignKeyCreate(
-                    LocalTableName   => $TableName,
-                    Local            => $Array[$_]->{Local},
-                    ForeignTableName => $ForeignKey,
-                    Foreign          => $Array[$_]->{Foreign},
-                ),
-            );
+    foreach my $ForeignKey (keys %Foreign) {
+        my @Array = @{$Foreign{$ForeignKey}};
+        foreach (0..$#Array) {
+            push (@{$Self->{Post}}, $Self->ForeignKeyCreate(
+                LocalTableName => $TableName,
+                Local => $Array[$_]->{Local},
+                ForeignTableName => $ForeignKey,
+                Foreign => $Array[$_]->{Foreign},
+            ));
         }
     }
     return @Return;
 }
 
 sub TableDrop {
-    my ( $Self, @Param ) = @_;
-
+    my $Self = shift;
+    my @Param = @_;
     my $SQL = '';
-    for my $Tag (@Param) {
-        if ( $Tag->{Tag} eq 'Table' && $Tag->{TagType} eq 'Start' ) {
-            if ( $Self->{ConfigObject}->Get('Database::ShellOutput') ) {
-                $SQL .= $Self->{'DB::Comment'}
-                    . "----------------------------------------------------------\n";
-                $SQL .= $Self->{'DB::Comment'} . " drop table $Tag->{Name}\n";
-                $SQL .= $Self->{'DB::Comment'}
-                    . "----------------------------------------------------------\n";
-            }
+    foreach my $Tag (@Param) {
+        if ($Tag->{Tag} eq 'Table' && $Tag->{TagType} eq 'Start') {
+            $SQL .= $Self->{'DB::Comment'}."----------------------------------------------------------\n";
+            $SQL .= $Self->{'DB::Comment'}." drop table $Tag->{Name}\n";
+            $SQL .= $Self->{'DB::Comment'}."----------------------------------------------------------\n";
         }
-        $SQL .= 'DROP TABLE ' . $Tag->{Name};
+        $SQL .= "DROP TABLE IF EXISTS $Tag->{Name}";
         return ($SQL);
     }
     return ();
 }
 
 sub TableAlter {
-    my ( $Self, @Param ) = @_;
-
-    my $SQLStart      = '';
-    my @SQL           = ();
-    my @Index         = ();
-    my $IndexName     = ();
-    my $ForeignTable  = '';
-    my $ReferenceName = '';
-    my @Reference     = ();
-    my $Table         = '';
-
-    my $Start = '';
-    if ( $Self->{ConfigObject}->Get('Database::ShellOutput') ) {
-        $Start = "GO\n";
-    }
-
-    for my $Tag (@Param) {
-
-        if ( $Tag->{Tag} eq 'TableAlter' && $Tag->{TagType} eq 'Start' ) {
-            $Table = $Tag->{Name} || $Tag->{NameNew};
-            if ( $Self->{ConfigObject}->Get('Database::ShellOutput') ) {
-                $SQLStart .= $Self->{'DB::Comment'}
-                    . "----------------------------------------------------------\n";
-                $SQLStart .= $Self->{'DB::Comment'} . " alter table $Table\n";
-                $SQLStart .= $Self->{'DB::Comment'}
-                    . "----------------------------------------------------------\n";
-            }
-
-            # rename table
-            if ( $Tag->{NameOld} && $Tag->{NameNew} ) {
-                push @SQL,
-                    $SQLStart
-                    . $Start
-                    . "EXEC sp_rename '$Tag->{NameOld}', '$Tag->{NameNew}'\n"
-                    . $Start;
-            }
-            $SQLStart .= "ALTER TABLE $Table";
+    my $Self = shift;
+    my @Param = @_;
+    my $SQLStart = '';
+    my @SQL = ();
+    foreach my $Tag (@Param) {
+        if ($Tag->{Tag} eq 'TableAlter' && $Tag->{TagType} eq 'Start') {
+            $SQLStart .= "ALTER TABLE $Tag->{Name}";
         }
-        elsif ( $Tag->{Tag} eq 'ColumnAdd' && $Tag->{TagType} eq 'Start' ) {
-
+        elsif ($Tag->{Tag} eq 'ColumnAdd' && $Tag->{TagType} eq 'Start') {
             # Type translation
             $Tag = $Self->_TypeTranslation($Tag);
-
             # normal data type
-            push @SQL, $SQLStart . " ADD $Tag->{Name} $Tag->{Type} NULL";
-
-            # investigate the default value
-            my $Default = '';
-            if ( $Tag->{Type} =~ /int/i ) {
-                $Default = defined $Tag->{Default} ? $Tag->{Default} : 0;
+            my $SQLEnd = $SQLStart." ADD $Tag->{Name} $Tag->{Type}";
+            if ($Tag->{Required} && $Tag->{Required} =~ /^true$/i) {
+                $SQLEnd .= " NOT NULL";
             }
-            else {
-                $Default = defined $Tag->{Default} ? "'$Tag->{Default}'" : "''";
-            }
-
-            # investigate the require
-            my $Required = ( $Tag->{Required} && lc $Tag->{Required} eq 'true' ) ? 1 : 0;
-
-            # handle default and require
-            if ( $Required || defined $Tag->{Default} ) {
-
-                # fill up empty rows
-                push @SQL,
-                    $Start . "UPDATE $Table SET $Tag->{Name} = $Default WHERE $Tag->{Name} IS NULL";
-
-                # add require
-                my $SQLAlter = "ALTER TABLE $Table ALTER COLUMN $Tag->{Name} $Tag->{Type}";
-                if ($Required) {
-                    $SQLAlter .= ' NOT NULL';
-                }
-                else {
-                    $SQLAlter .= ' NULL';
-                }
-                push @SQL, $Start . $SQLAlter;
-
-                # add default
-                my $DefaultName = 'DF_' . $Table . '_' . $Tag->{Name};
-                if ( defined $Tag->{Default} ) {
-                    push @SQL, $Start
-                        . "ALTER TABLE $Table ADD CONSTRAINT $DefaultName DEFAULT ($Default) FOR $Tag->{Name}";
-                }
-            }
+            push (@SQL, $SQLEnd);
         }
-        elsif ( $Tag->{Tag} eq 'ColumnChange' && $Tag->{TagType} eq 'Start' ) {
-
+        elsif ($Tag->{Tag} eq 'ColumnChange' && $Tag->{TagType} eq 'Start') {
             # Type translation
             $Tag = $Self->_TypeTranslation($Tag);
-
-            # rename oldname to newname
-            if ( $Tag->{NameOld} ne $Tag->{NameNew} ) {
-                push @SQL, $Start
-                    . "EXECUTE sp_rename N'$Table.$Tag->{NameOld}', N'$Tag->{NameNew}', 'COLUMN'";
+            # normal data type
+            my $SQLEnd = $SQLStart." CHANGE $Tag->{NameOld} $Tag->{NameNew} $Tag->{Type}";
+            if ($Tag->{Required} && $Tag->{Required} =~ /^true$/i) {
+                $SQLEnd .= " NOT NULL";
             }
-
-            # alter table name modify
-            if ( !$Tag->{Name} && $Tag->{NameNew} ) {
-                $Tag->{Name} = $Tag->{NameNew};
-            }
-            if ( !$Tag->{Name} && $Tag->{NameOld} ) {
-                $Tag->{Name} = $Tag->{NameOld};
-            }
-            push @SQL, $Start . "ALTER TABLE $Table ALTER COLUMN $Tag->{Name} $Tag->{Type} NULL";
-
-            # create the default name
-            my $DefaultName = 'DF_' . $Table . '_' . $Tag->{Name};
-
-            # remove possible default
-            push @SQL, $Start . "IF EXISTS (SELECT * FROM dbo.sysobjects WHERE "
-                . "name = '$DefaultName' )\n"
-                . "ALTER TABLE $Table DROP CONSTRAINT $DefaultName";
-
-            # investigate the default value
-            my $Default = '';
-            if ( $Tag->{Type} =~ /int/i ) {
-                $Default = defined $Tag->{Default} ? $Tag->{Default} : 0;
-            }
-            else {
-                $Default = defined $Tag->{Default} ? "'$Tag->{Default}'" : "''";
-            }
-
-            # investigate the require
-            my $Required = ( $Tag->{Required} && lc $Tag->{Required} eq 'true' ) ? 1 : 0;
-
-            # handle default and require
-            if ( $Required || defined $Tag->{Default} ) {
-
-                # fill up empty rows
-                push @SQL, $Start
-                    . "UPDATE $Table SET $Tag->{NameNew} = $Default WHERE $Tag->{NameNew} IS NULL";
-
-                # add require
-                my $SQLAlter = "ALTER TABLE $Table ALTER COLUMN $Tag->{Name} $Tag->{Type}";
-                if ($Required) {
-                    $SQLAlter .= ' NOT NULL';
-                }
-                else {
-                    $SQLAlter .= ' NULL';
-                }
-                push @SQL, $Start . $SQLAlter;
-
-                # add default
-                if ( defined $Tag->{Default} ) {
-                    push @SQL, $Start
-                        . "ALTER TABLE $Table ADD CONSTRAINT $DefaultName DEFAULT ($Default) FOR $Tag->{Name}";
-                }
-            }
+            push (@SQL, $SQLEnd);
         }
-        elsif ( $Tag->{Tag} eq 'ColumnDrop' && $Tag->{TagType} eq 'Start' ) {
-
-            # create the default name
-            my $DefaultName = 'DF_' . $Table . '_' . $Tag->{Name};
-
-            # remove possible default
-            push @SQL, sprintf(
-                <<END
-                DECLARE \@defname%s VARCHAR(200), \@cmd%s VARCHAR(2000)
-                SET \@defname%s = (
-                    SELECT name FROM sysobjects so JOIN sysconstraints sc ON so.id = sc.constid
-                    WHERE object_name(so.parent_obj) = '%s' AND so.xtype = 'D' AND sc.colid = (
-                        SELECT colid FROM syscolumns WHERE id = object_id('%s') AND name = '%s'
-                    )
-                )
-                SET \@cmd%s = 'ALTER TABLE %s DROP CONSTRAINT ' + \@defname%s
-                EXEC(\@cmd%s)
-END
-                , $Table . $Tag->{Name}, $Table . $Tag->{Name}, $Table . $Tag->{Name}, $Table,
-                $Table, $Tag->{Name}, $Table . $Tag->{Name}, $Table, $Table . $Tag->{Name},
-                $Table . $Tag->{Name},
-            );
-
-            # remove all possible constrains
-            push @SQL, sprintf(
-                <<HEREDOC
-                    DECLARE \@sql%s NVARCHAR(4000)
-
-                    WHILE 1=1
-                    BEGIN
-                        SET \@sql%s = (SELECT TOP 1 'ALTER TABLE %s DROP CONSTRAINT [' + constraint_name + ']'
-                        -- SELECT *
-                        FROM information_schema.CONSTRAINT_COLUMN_USAGE where table_name='%s' and column_name='%s'
-                        )
-                        IF \@sql%s IS NULL BREAK
-                        EXEC (\@sql%s)
-                    END
-HEREDOC
-                , $Table . $Tag->{Name}, $Table . $Tag->{Name}, $Table, $Table, $Tag->{Name},
-                $Table . $Tag->{Name}, $Table . $Tag->{Name},
-            );
-
-            push @SQL, $SQLStart . " DROP COLUMN $Tag->{Name}";
-        }
-        elsif ( $Tag->{Tag} =~ /^((Index|Unique)(Create|Drop))/ ) {
-            my $Method = $Tag->{Tag};
-            if ( $Tag->{Name} ) {
-                $IndexName = $Tag->{Name};
-            }
-            if ( $Tag->{TagType} eq 'End' ) {
-                push @SQL, $Self->$Method(
-                    TableName => $Table,
-                    Name      => $IndexName,
-                    Data      => \@Index,
-                );
-                $IndexName = '';
-                @Index     = ();
-            }
-        }
-        elsif ( $Tag->{Tag} =~ /^(IndexColumn|UniqueColumn)/ && $Tag->{TagType} eq 'Start' ) {
-            push @Index, $Tag;
-        }
-        elsif ( $Tag->{Tag} =~ /^((ForeignKey)(Create|Drop))/ ) {
-            my $Method = $Tag->{Tag};
-            if ( $Tag->{ForeignTable} ) {
-                $ForeignTable = $Tag->{ForeignTable};
-            }
-            if ( $Tag->{TagType} eq 'End' ) {
-                for my $Reference (@Reference) {
-                    push @SQL, $Self->$Method(
-                        LocalTableName   => $Table,
-                        Local            => $Reference->{Local},
-                        ForeignTableName => $ForeignTable,
-                        Foreign          => $Reference->{Foreign},
-                    );
-                }
-                $ReferenceName = '';
-                @Reference     = ();
-            }
-        }
-        elsif ( $Tag->{Tag} =~ /^(Reference)/ && $Tag->{TagType} eq 'Start' ) {
-            push @Reference, $Tag;
+        elsif ($Tag->{Tag} eq 'ColumnDrop' && $Tag->{TagType} eq 'Start') {
+            my $SQLEnd = $SQLStart." DROP $Tag->{Name}";
+            push (@SQL, $SQLEnd);
         }
     }
-
     return @SQL;
 }
 
 sub IndexCreate {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(TableName Name Data)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    foreach (qw(TableName Name Data)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-    my $SQL   = "CREATE INDEX $Param{Name} ON $Param{TableName} (";
-    my @Array = @{ $Param{Data} };
-    for ( 0 .. $#Array ) {
-        if ( $_ > 0 ) {
-            $SQL .= ', ';
+    my $SQL = "CREATE INDEX $Param{Name} ON $Param{TableName} (";
+    my @Array = @{$Param{'Data'}};
+    foreach (0..$#Array) {
+        if ($_ > 0) {
+            $SQL .= ", ";
         }
         $SQL .= $Array[$_]->{Name};
-        if ( $Array[$_]->{Size} ) {
-
-            #           $SQL .= "($Array[$_]->{Size})";
+        if ($Array[$_]->{Size}) {
+#           $SQL .= "($Array[$_]->{Size})";
         }
     }
-    $SQL .= ')';
-
+    $SQL .= ")";
     # return SQL
     return ($SQL);
 
 }
 
 sub IndexDrop {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(TableName Name)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    foreach (qw(TableName Name)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-    my $SQL = 'DROP INDEX ' . $Param{TableName} . '.' . $Param{Name};
+    my $SQL = "DROP INDEX $Param{Name}";
     return ($SQL);
 }
 
 sub ForeignKeyCreate {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(LocalTableName Local ForeignTableName Foreign)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    foreach (qw(LocalTableName Local ForeignTableName Foreign)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
-    # create foreign key name
-    my $ForeignKey = "FK_$Param{LocalTableName}_$Param{Local}_$Param{Foreign}";
-    if ( length($ForeignKey) > 60 ) {
-        my $MD5 = $Self->{MainObject}->MD5sum(
-            String => $ForeignKey,
-        );
-        $ForeignKey = substr $ForeignKey, 0, 58;
-        $ForeignKey .= substr $MD5, 0,  1;
-        $ForeignKey .= substr $MD5, 61, 1;
-    }
-
-    # add foreign key
-    my $SQL = "ALTER TABLE $Param{LocalTableName} ADD CONSTRAINT $ForeignKey FOREIGN KEY "
-        . "($Param{Local}) REFERENCES $Param{ForeignTableName} ($Param{Foreign})";
-
+    my $SQL = "ALTER TABLE $Param{LocalTableName} ADD FOREIGN KEY (";
+    $SQL .= "$Param{Local}) REFERENCES ";
+    $SQL .= "`$Param{ForeignTableName}($Param{Foreign})`";
+    # return SQL
     return ($SQL);
 }
 
 sub ForeignKeyDrop {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(LocalTableName Local ForeignTableName Foreign)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    foreach (qw(TableName Name)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
-    # create foreign key name
-    my $ForeignKey = "FK_$Param{LocalTableName}_$Param{Local}_$Param{Foreign}";
-    if ( length($ForeignKey) > 60 ) {
-        my $MD5 = $Self->{MainObject}->MD5sum(
-            String => $ForeignKey,
-        );
-        $ForeignKey = substr $ForeignKey, 0, 58;
-        $ForeignKey .= substr $MD5, 0,  1;
-        $ForeignKey .= substr $MD5, 61, 1;
-    }
-
-    # drop foreign key
-    my $SQL = "ALTER TABLE $Param{LocalTableName} DROP CONSTRAINT $ForeignKey";
-
-    return ($SQL);
+#    my $SQL = "ALTER TABLE $Param{TableName} DROP CONSTRAINT $Param{Name}";
+#    return ($SQL);
 }
 
 sub UniqueCreate {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(TableName Name Data)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    foreach (qw(TableName Name Data)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-    my $SQL   = "ALTER TABLE $Param{TableName} ADD CONSTRAINT $Param{Name} UNIQUE (";
-    my @Array = @{ $Param{Data} };
-    for ( 0 .. $#Array ) {
-        if ( $_ > 0 ) {
-            $SQL .= ', ';
+    my $SQL = "ALTER TABLE $Param{TableName} ADD CONSTRAINT $Param{Name} UNIQUE (";
+    my @Array = @{$Param{'Data'}};
+    foreach (0..$#Array) {
+        if ($_ > 0) {
+            $SQL .= ", ";
         }
         $SQL .= $Array[$_]->{Name};
     }
-    $SQL .= ')';
-
+    $SQL .= ")";
     # return SQL
     return ($SQL);
 
 }
 
 sub UniqueDrop {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(TableName Name)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    foreach (qw(TableName Name)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
@@ -691,106 +410,73 @@ sub UniqueDrop {
 }
 
 sub Insert {
-    my ( $Self, @Param ) = @_;
-
-    my $SQL    = '';
-    my @Keys   = ();
+    my $Self = shift;
+    my @Param = @_;
+    my $SQL = '';
+    my @Keys = ();
     my @Values = ();
-    for my $Tag (@Param) {
-        if ( $Tag->{Tag} eq 'Insert' && $Tag->{TagType} eq 'Start' ) {
-            if ( $Self->{ConfigObject}->Get('Database::ShellOutput') ) {
-                $SQL .= $Self->{'DB::Comment'}
-                    . "----------------------------------------------------------\n";
-                $SQL .= $Self->{'DB::Comment'} . " insert into table $Tag->{Table}\n";
-                $SQL .= $Self->{'DB::Comment'}
-                    . "----------------------------------------------------------\n";
-            }
-            $SQL .= "INSERT INTO $Tag->{Table} ";
+    foreach my $Tag (@Param) {
+        if ($Tag->{Tag} eq 'Insert' && $Tag->{TagType} eq 'Start') {
+            $SQL = "INSERT INTO $Tag->{Table} "
         }
-        if ( $Tag->{Tag} eq 'Data' && $Tag->{TagType} eq 'Start' ) {
-
-            # do not use auto increment values
-            if ( $Tag->{Type} && $Tag->{Type} =~ /^AutoIncrement$/i ) {
-                next;
-            }
-            $Tag->{Key} = ${ $Self->Quote( \$Tag->{Key} ) };
-            push @Keys, $Tag->{Key};
-            my $Value;
-            if ( defined $Tag->{Value} ) {
-                $Value = $Tag->{Value};
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => 'The content for inserts is not longer appreciated '
-                        . 'attribut Value, use Content from now on! Reason: You can\'t '
-                        . 'use new lines in attributes.',
-                );
-            }
-            elsif ( defined $Tag->{Content} ) {
-                $Value = $Tag->{Content};
+        if ($Tag->{Tag} eq 'Data' && $Tag->{TagType} eq 'Start') {
+            $Tag->{Key} = ${$Self->Quote(\$Tag->{Key})};
+            push (@Keys, $Tag->{Key});
+            if ($Tag->{Type} && $Tag->{Type} eq 'Quote') {
+                $Tag->{Value} = "'".${$Self->Quote(\$Tag->{Value})}."'";
             }
             else {
-                $Value = '';
+                $Tag->{Value} = ${$Self->Quote(\$Tag->{Value})};
             }
-            if ( $Tag->{Type} && $Tag->{Type} eq 'Quote' ) {
-                $Value = "'" . ${ $Self->Quote( \$Value ) } . "'";
-            }
-            else {
-                $Value = ${ $Self->Quote( \$Value ) };
-            }
-            push @Values, $Value;
+            push (@Values, $Tag->{Value});
         }
     }
     my $Key = '';
-    for (@Keys) {
-        if ( $Key ne '' ) {
-            $Key .= ', ';
+    foreach (@Keys) {
+        if ($Key ne '') {
+            $Key .= ",";
         }
         $Key .= $_;
     }
     my $Value = '';
-    for my $Tmp (@Values) {
-        if ( $Value ne '' ) {
-            $Value .= ', ';
+    foreach (@Values) {
+        if ($Value ne '') {
+            $Value .= ",";
         }
-        if ( $Tmp eq 'current_timestamp' ) {
-            if ( $Self->{ConfigObject}->Get('Database::ShellOutput') ) {
-                $Value .= $Tmp;
-            }
-            else {
-                my $Timestamp = $Self->{TimeObject}->CurrentTimestamp();
-                $Value .= '\'' . $Timestamp . '\'';
-            }
-        }
-        else {
-            if ( $Self->{ConfigObject}->Get('Database::ShellOutput') ) {
-                $Tmp =~ s/\n/\r/g;
-            }
-            $Value .= $Tmp;
-        }
+        $Value .= $_;
     }
-    $SQL .= "($Key)\n    VALUES\n    ($Value)";
+    $SQL .= "($Key) VALUES ($Value)";
     return ($SQL);
 }
 
 sub _TypeTranslation {
-    my ( $Self, $Tag ) = @_;
-
-    if ( $Tag->{Type} =~ /^DATE$/i ) {
+    my $Self = shift;
+    my $Tag = shift;
+    if ($Tag->{Type} =~ /^DATE$/i) {
         $Tag->{Type} = 'DATETIME';
     }
-    elsif ( $Tag->{Type} =~ /^VARCHAR$/i ) {
-        if ( $Tag->{Size} > 4000 ) {
-            $Tag->{Type} = 'NVARCHAR (MAX)';
+    elsif ($Tag->{Type} =~ /^VARCHAR$/i) {
+        if ($Tag->{Size} > 16777215) {
+#            $Tag->{Type} = "LONGTEXT";
+            $Tag->{Type} = "VARCHAR(MAX)";
         }
+        elsif ($Tag->{Size} > 6000) {
+#            $Tag->{Type} = "MEDIUMTEXT";
+            $Tag->{Type} = "VARCHAR(MAX)";
+        }
+#        elsif ($Tag->{Size} > 255) {
+#            $Tag->{Type} = "TEXT";
+#        }
         else {
-            $Tag->{Type} = 'NVARCHAR (' . $Tag->{Size} . ')';
+            $Tag->{Type} = "VARCHAR ($Tag->{Size})";
         }
     }
-    elsif ( $Tag->{Type} =~ /^longblob$/i ) {
-        $Tag->{Type} = 'NVARCHAR (MAX)';
+    elsif ($Tag->{Type} =~ /^longblob$/i) {
+        $Tag->{Type} = "VARCHAR(MAX)";
+#        $Tag->{Type} = 'CLOB';
     }
-    elsif ( $Tag->{Type} =~ /^DECIMAL$/i ) {
-        $Tag->{Type} = 'DECIMAL (' . $Tag->{Size} . ')';
+    elsif ($Tag->{Type} =~ /^DECIMAL$/i) {
+        $Tag->{Type} = "DECIMAL ($Tag->{Size})";
     }
     return $Tag;
 }

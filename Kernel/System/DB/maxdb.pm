@@ -1,20 +1,20 @@
 # --
-# Kernel/System/DB/oracle.pm - oracle database backend
+# Kernel/System/DB/maxdb.pm - maxdb database backend
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.17.2.2 2007/03/05 00:41:55 martin Exp $
+# $Id: maxdb.pm,v 1.11.2.1 2007/03/05 00:41:55 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
-package Kernel::System::DB::oracle;
+package Kernel::System::DB::maxdb;
 
 use strict;
 
 use vars qw($VERSION);
-$VERSION = '$Revision: 1.17.2.2 $';
+$VERSION = '$Revision: 1.11.2.1 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -41,15 +41,16 @@ sub LoadPreferences {
     $Self->{'DB::DirectBlob'} = 0;
     $Self->{'DB::QuoteSingle'} = '\'';
     $Self->{'DB::QuoteBack'} = 0;
-    $Self->{'DB::QuoteSemicolon'} = '';
+    $Self->{'DB::QuoteSemicolon'} = '\'';
     $Self->{'DB::Attribute'} = {
         LongTruncOk => 1,
-        LongReadLen => 4*1024*1024,
+        LongReadLen => 100*1024,
     };
+    $Self->{'DB::CurrentTimestamp'} = 'timestamp';
 
     # shell setting
-    $Self->{'DB::Comment'} = '-- ';
-    $Self->{'DB::ShellCommit'} = ';';
+    $Self->{'DB::Comment'} = '// ';
+    $Self->{'DB::ShellCommit'} = "\n//";
 
     return 1;
 }
@@ -111,7 +112,6 @@ sub TableCreate {
     my %Uniq = ();
     my $PrimaryKey = '';
     my @Return = ();
-    my @Return2 = ();
     foreach my $Tag (@Param) {
         if ($Tag->{Tag} eq 'Table' && $Tag->{TagType} eq 'Start') {
             $SQLStart .= $Self->{'DB::Comment'}."----------------------------------------------------------\n";
@@ -123,7 +123,7 @@ sub TableCreate {
             $TableName = $Tag->{Name};
         }
         if (($Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate') && $Tag->{TagType} eq 'End') {
-            $SQLEnd .= "\n)";
+            $SQLEnd .= ")";
         }
         elsif ($Tag->{Tag} eq 'Column' && $Tag->{TagType} eq 'Start') {
             push (@Column, $Tag);
@@ -150,42 +150,39 @@ sub TableCreate {
     foreach my $Tag (@Column) {
         # type translation
         $Tag = $Self->_TypeTranslation($Tag);
+        # type translation
         if ($SQL) {
             $SQL .= ",\n";
-        }
-        # normal data type
-        $SQL .= "    $Tag->{Name} $Tag->{Type}";
-        if ($Tag->{Required} =~ /^true$/i) {
-            $SQL .= " NOT NULL";
-        }
-        # add primary key
-        my $Constraint = $TableName;
-        if (length($Constraint) > 26) {
-            $Constraint = substr($Constraint, 0, 24);
-            $Constraint .= int(rand(99));
-        }
-        if ($Tag->{PrimaryKey} && $Tag->{PrimaryKey} =~ /true/i) {
-            push (@Return2, "ALTER TABLE $TableName ADD CONSTRAINT $Constraint"."_PK PRIMARY KEY ($Tag->{Name})");
         }
         # auto increment
         if ($Tag->{AutoIncrement} && $Tag->{AutoIncrement} =~ /^true$/i) {
-            my $Shell = '';
-            if ($Self->{ConfigObject}->Get('Database::ShellOutput')) {
-                $Shell = "/\n--";
+            $SQL = "    $Tag->{Name} serial";
+        }
+        # normal data type
+        else {
+            $SQL .= "    $Tag->{Name} $Tag->{Type}";
+            if ($Tag->{Required} =~ /^true$/i) {
+                $SQL .= " NOT NULL";
             }
-            push (@Return2, "DROP SEQUENCE $Constraint"."_seq");
-            push (@Return2, "CREATE SEQUENCE $Constraint"."_seq");
-            push (@Return2, "CREATE OR REPLACE TRIGGER $Constraint"."_s_t\nbefore insert on $TableName\nfor each row\nbegin\n    select $Constraint"."_seq.nextval\n    into :new.$Tag->{Name}\n    from dual;\nend;\n$Shell");
+        }
+        # add primary key
+        if ($Tag->{PrimaryKey} && $Tag->{PrimaryKey} =~ /true/i) {
+            $PrimaryKey = "    PRIMARY KEY($Tag->{Name})";
         }
     }
-    # add uniq
-    my $UniqCunter = 0;
-    foreach my $Name (keys %Uniq) {
-        $UniqCunter++;
+    # add primary key
+    if ($PrimaryKey) {
         if ($SQL) {
             $SQL .= ",\n";
         }
-        $SQL .= "    CONSTRAINT $TableName"."_U_$UniqCunter UNIQUE (";
+        $SQL .= $PrimaryKey;
+    }
+    # add uniq
+    foreach my $Name (keys %Uniq) {
+        if ($SQL) {
+            $SQL .= ",\n";
+        }
+        $SQL .= "    UNIQUE (";
         my @Array = @{$Uniq{$Name}};
         foreach (0..$#Array) {
             if ($_ > 0) {
@@ -195,7 +192,8 @@ sub TableCreate {
         }
         $SQL .= ")";
     }
-    push(@Return, $SQLStart.$SQL.$SQLEnd, @Return2);
+    $SQL .= "\n";
+    push(@Return, $SQLStart.$SQL.$SQLEnd);
     # add indexs
     foreach my $Name (keys %Index) {
         push (@Return, $Self->IndexCreate(
@@ -237,7 +235,7 @@ sub TableDrop {
             $SQL .= $Self->{'DB::Comment'}." drop table $Tag->{Name}\n";
             $SQL .= $Self->{'DB::Comment'}."----------------------------------------------------------\n";
         }
-        $SQL .= "DROP TABLE $Tag->{Name} CASCADE CONSTRAINTS";
+        $SQL .= "DROP TABLE $Tag->{Name}";
         return ($SQL);
     }
     return ();
@@ -273,23 +271,10 @@ sub TableAlter {
         elsif ($Tag->{Tag} eq 'ColumnChange' && $Tag->{TagType} eq 'Start') {
             # Type translation
             $Tag = $Self->_TypeTranslation($Tag);
-            # rename oldname to newname
-            if ($Tag->{NameOld} ne $Tag->{NameNew}) {
-                push (@SQL, $SQLStart." RENAME COLUMN $Tag->{NameOld} TO $Tag->{NameNew}");
-            }
-            # alter table tabname modify
-            if (!$Tag->{Name} && $Tag->{NameNew}) {
-                $Tag->{Name} = $Tag->{NameNew};
-            }
-            if (!$Tag->{Name} && $Tag->{NameOld}) {
-                $Tag->{Name} = $Tag->{NameOld};
-            }
-            my $SQLEnd = $SQLStart." MODIFY $Tag->{Name} $Tag->{Type}";
+            # normal data type
+            my $SQLEnd = $SQLStart." CHANGE $Tag->{NameOld} $Tag->{NameNew} $Tag->{Type}";
             if ($Tag->{Required} && $Tag->{Required} =~ /^true$/i) {
                 $SQLEnd .= " NOT NULL";
-            }
-            else {
-                $SQLEnd .= " NULL";
             }
             # auto increment
             if ($Tag->{AutoIncrement} && $Tag->{AutoIncrement} =~ /^true$/i) {
@@ -319,10 +304,9 @@ sub IndexCreate {
             return;
         }
     }
-    my $Index = $Param{Name};
-    if (length($Index) > 30) {
-        $Index = substr($Index, 0, 28);
-        $Index .= int(rand(99));
+    my $Index = substr($Param{Name}, 0, 20);
+    if (length($Index) >= 20) {
+         $Index .= int(rand(99));
     }
     my $SQL = "CREATE INDEX $Index ON $Param{TableName} (";
     my @Array = @{$Param{'Data'}};
@@ -365,12 +349,7 @@ sub ForeignKeyCreate {
             return;
         }
     }
-    my $ForeignKey = "fk_$Param{LocalTableName}_$Param{Local}_$Param{Foreign}";
-    if (length($ForeignKey) > 30) {
-        $ForeignKey = substr($ForeignKey, 0, 28);
-        $ForeignKey .= int(rand(99));
-    }
-    my $SQL = "ALTER TABLE $Param{LocalTableName} ADD CONSTRAINT $ForeignKey FOREIGN KEY (";
+    my $SQL = "ALTER TABLE $Param{LocalTableName} ADD FOREIGN KEY (";
     $SQL .= "$Param{Local}) REFERENCES ";
     $SQL .= "$Param{ForeignTableName}($Param{Foreign})";
     # return SQL
@@ -387,8 +366,8 @@ sub ForeignKeyDrop {
             return;
         }
     }
-    my $SQL = "ALTER TABLE $Param{TableName} DISABLE CONSTRAINT $Param{Name}";
-    return ($SQL);
+#    my $SQL = "ALTER TABLE $Param{TableName} DROP CONSTRAINT $Param{Name}";
+#    return ($SQL);
 }
 
 sub UniqueCreate {
@@ -472,26 +451,18 @@ sub Insert {
 sub _TypeTranslation {
     my $Self = shift;
     my $Tag = shift;
-    # Type translation
+    # type translation
     if ($Tag->{Type} =~ /^DATE$/i) {
-        $Tag->{Type} = 'DATE';
+        $Tag->{Type} = 'timestamp';
     }
-    elsif ($Tag->{Type} =~ /^integer$/i) {
-        $Tag->{Type} = 'NUMBER';
-    }
-    elsif ($Tag->{Type} =~ /^smallint$/i) {
-        $Tag->{Type} = 'NUMBER (5, 0)';
-    }
-    elsif ($Tag->{Type} =~ /^bigint$/i) {
-        $Tag->{Type} = 'NUMBER (20, 0)';
-    }
+    # performance option
     elsif ($Tag->{Type} =~ /^longblob$/i) {
-        $Tag->{Type} = 'CLOB';
+        $Tag->{Type} = 'LONG';
     }
     elsif ($Tag->{Type} =~ /^VARCHAR$/i) {
-        $Tag->{Type} = "VARCHAR2 ($Tag->{Size})";
-        if ($Tag->{Size}  > 4000) {
-            $Tag->{Type} = "CLOB";
+        $Tag->{Type} = "VARCHAR ($Tag->{Size})";
+        if ($Tag->{Size} >= 4000) {
+            $Tag->{Type} = "LONG";
         }
     }
     elsif ($Tag->{Type} =~ /^DECIMAL$/i) {
@@ -499,5 +470,4 @@ sub _TypeTranslation {
     }
     return $Tag;
 }
-
 1;
