@@ -1,8 +1,8 @@
 # --
-# RPM spec file for SUSE Linux 9.1 of the OTRS package
+# RPM spec file for RedHat Linux of the OTRS package
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: suse-otrs-10.0.spec,v 1.3.2.1 2007/03/08 19:36:42 martin Exp $
+# $Id: redhat-otrs-8.0.spec,v 1.11.2.1 2007/03/08 19:36:42 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -18,16 +18,14 @@ Version:      0.0
 Copyright:    GNU GENERAL PUBLIC LICENSE Version 2, June 1991
 Group:        Applications/Mail
 Provides:     otrs
-Requires:     perl perl-DBI perl-GD perl-GDGraph perl-GDTextUtil perl-Net-DNS perl-Digest-MD5 apache2 apache2-mod_perl mysql mysql-client perl-Msql-Mysql-modules mysql-shared fetchmail procmail perl-libwww-perl
-Autoreqprov:  on
+Requires:     perl perl-DBI perl-DBD-MySQL perl-URI mod_perl httpd mysql mysql-server fetchmail procmail perl-libwww-perl
+Autoreqprov:  no
 Release:      01
 Source0:      otrs-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
 
 %description
 <DESCRIPTION>
-
-SuSE series: ap
 
 %prep
 %setup
@@ -52,30 +50,23 @@ export DESTROOT="/opt/otrs/"
 mkdir -p $RPM_BUILD_ROOT/$DESTROOT/
 # copy files
 cp -R . $RPM_BUILD_ROOT/$DESTROOT
-# install init-Script and rc.config entry
-install -d -m 755 $RPM_BUILD_ROOT/etc/init.d
-install -d -m 755 $RPM_BUILD_ROOT/usr/sbin
+# install init-Script
+install -d -m 755 $RPM_BUILD_ROOT/etc/rc.d/init.d
 install -d -m 755 $RPM_BUILD_ROOT/etc/sysconfig
-install -d -m 744 $RPM_BUILD_ROOT/var/adm/fillup-templates
-install -d -m 755 $RPM_BUILD_ROOT/etc/apache2/conf.d
+install -d -m 755 $RPM_BUILD_ROOT/etc/httpd/conf.d
 
-# replace apache with apache2
-sed  "s/rcapache/rcapache2/" scripts/suse-rcotrs-config > /tmp.otrs.$$ && mv /tmp.otrs.$$ scripts/suse-rcotrs-config
-sed  "s/apache/apache2/" scripts/suse-rcotrs > /tmp.otrs.$$ && mv /tmp.otrs.$$ scripts/suse-rcotrs
-install -m 644 scripts/suse-rcotrs-config $RPM_BUILD_ROOT/etc/sysconfig/otrs
+install -m 755 scripts/redhat-rcotrs $RPM_BUILD_ROOT/etc/rc.d/init.d/otrs
+install -m 644 scripts/redhat-rcotrs-config $RPM_BUILD_ROOT/etc/sysconfig/otrs
 
-install -m 755 scripts/suse-rcotrs $RPM_BUILD_ROOT/etc/init.d/otrs
-rm -f $RPM_BUILD_ROOT/sbin/otrs
-ln -s ../../etc/init.d/otrs $RPM_BUILD_ROOT/usr/sbin/rcotrs
-
-install -m 644 scripts/apache2-httpd-new.include.conf $RPM_BUILD_ROOT/etc/apache2/conf.d/otrs.conf
+# copy apache2-httpd.include.conf to /etc/httpd/conf.d/otrs.conf
+install -m 644 scripts/apache2-httpd.include.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/otrs.conf
 
 # set permission
 export OTRSUSER=otrs
 useradd $OTRSUSER || :
-useradd wwwrun || :
-groupadd www || :
-$RPM_BUILD_ROOT/opt/otrs/bin/SetPermissions.sh $RPM_BUILD_ROOT/opt/otrs $OTRSUSER wwwrun www www
+useradd apache || :
+groupadd apache || :
+$RPM_BUILD_ROOT/opt/otrs/bin/SetPermissions.sh $RPM_BUILD_ROOT/opt/otrs $OTRSUSER apache apache apache
 
 %pre
 # remember about the installed version
@@ -87,19 +78,14 @@ export OTRSUSER=otrs
 echo -n "Check OTRS user (/etc/passwd)... "
 if cat /etc/passwd | grep $OTRSUSER > /dev/null ; then
     echo "$OTRSUSER exists."
-    # update groups
-    usermod -g www $OTRSUSER
     # update home dir
     usermod -d /opt/otrs $OTRSUSER
 else
-    useradd $OTRSUSER -d /opt/otrs/ -s /bin/false -g nogroup -c 'OTRS System User' && echo "$OTRSUSER added."
+    useradd $OTRSUSER -d /opt/otrs/ -s /bin/false -g apache -c 'OTRS System User' && echo "$OTRSUSER added."
 fi
 
 
 %post
-# sysconfig
-%{fillup_and_insserv -s otrs START_OTRS}
-
 # if it's a major-update backup old version templates (maybe not compatible!)
 if test -e /tmp/otrs-old.tmp; then
     TOINSTALL=`echo %{version}| sed 's/..$//'`
@@ -132,23 +118,22 @@ HOST=`hostname -f`
 echo ""
 echo "Next steps: "
 echo ""
-echo "[SuSEconfig]"
-echo " Execute 'SuSEconfig' to configure the webserver."
+echo "[httpd services]"
+echo " Restart httpd 'service httpd restart'"
 echo ""
-echo "[start Apache and MySQL]"
-echo " Execute 'rcapache2 restart' and 'rcmysql start' in case they don't run."
+echo "[mysqld service]"
+echo " Start mysqld 'service mysqld start'"
 echo ""
 echo "[install the OTRS database]"
 echo " Use a webbrowser and open this link:"
 echo " http://$HOST/otrs/installer.pl"
 echo ""
 echo "[OTRS services]"
-echo " Start OTRS 'rcotrs start-force' (rcotrs {start|stop|status|restart|start-force|stop-force})."
+echo " Start OTRS 'service otrs start' (service otrs {start|stop|status|restart)."
 echo ""
 echo "Have fun!"
 echo ""
 echo " Your OTRS Team"
-echo " http://otrs.org/"
 echo ""
 
 %clean
@@ -156,16 +141,13 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %config(noreplace) /etc/sysconfig/otrs
-%config /etc/apache2/conf.d/otrs.conf
-
-/etc/init.d/otrs
-/usr/sbin/rcotrs
-
+%config /etc/httpd/conf.d/otrs.conf
+/etc/rc.d/init.d/otrs
 <FILES>
 
 %changelog
 * Thu Oct 18 2006 - martin+rpm@otrs.org
 - added rename of old /opt/otrs/Kernel/Config/Files/(Ticket|TicketPostMaster|FAQ).pm files
-* Sun Mar 25 2006 - martin+rpm@otrs.org
-- added SUSE 10.0 support
+* Thu Feb 12 2003 - martin+rpm@otrs.org
+- spec for RedHat 8.0 created
 

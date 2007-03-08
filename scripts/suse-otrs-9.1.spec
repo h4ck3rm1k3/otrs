@@ -2,7 +2,7 @@
 # RPM spec file for SUSE Linux 9.1 of the OTRS package
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: suse-otrs-10.0.spec,v 1.3.2.1 2007/03/08 19:36:42 martin Exp $
+# $Id: suse-otrs-9.1.spec,v 1.10.2.1 2007/03/08 19:36:42 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -68,7 +68,7 @@ install -m 755 scripts/suse-rcotrs $RPM_BUILD_ROOT/etc/init.d/otrs
 rm -f $RPM_BUILD_ROOT/sbin/otrs
 ln -s ../../etc/init.d/otrs $RPM_BUILD_ROOT/usr/sbin/rcotrs
 
-install -m 644 scripts/apache2-httpd-new.include.conf $RPM_BUILD_ROOT/etc/apache2/conf.d/otrs.conf
+install -m 644 scripts/apache2-httpd.include.conf $RPM_BUILD_ROOT/etc/apache2/conf.d/otrs.conf
 
 # set permission
 export OTRSUSER=otrs
@@ -166,6 +166,35 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Thu Oct 18 2006 - martin+rpm@otrs.org
 - added rename of old /opt/otrs/Kernel/Config/Files/(Ticket|TicketPostMaster|FAQ).pm files
-* Sun Mar 25 2006 - martin+rpm@otrs.org
-- added SUSE 10.0 support
+* Sun Jun 18 2004 - martin+rpm@otrs.org
+- added SUSE 9.1 support
+* Sun Dec 07 2003 - martin+rpm@otrs.org
+- added SUSE 9.0 support
+* Thu Jan 02 2003 - martin+rpm@otrs.org
+- moved from /opt/OpenTRS to /opt/otrs
+* Thu Nov 12 2002 - martin+rpm@otrs.org
+- moved %doc/install* to /opt/OpenTRS/ (installer problems!)
+  and added Kernel/cpan-lib*
+* Sun Sep 22 2002 - martin+rpm@otrs.org
+- added /etc/sysconfig/otrs for rc script (Thanks to Lars Müller)
+* Fri Sep 06 2002 - martin+rpm@otrs.org
+- added Kernel/Config/*.pm
+* Sat Jun 16 2002 - martin+rpm@otrs.org
+- added new modules for 0.5 BETA6
+* Thu Jun 04 2002 - martin+rpm@otrs.org
+- added .fetchmailrc
+* Mon May 20 2002 - martin+rpm@otrs.org
+- moved all .dlt and all Kernel::Language::*.pm to %config(noreplace)
+* Sat May 05 2002 - martin+rpm@otrs.org
+- added Kernel/Output/HTML/Standard/Motd.dtl as config file
+* Thu Apr 16 2002 - martin+rpm@otrs.org
+- moved to SuSE 8.0 support
+* Sun Feb 03 2002 - martin+rpm@otrs.org
+- added SuSE-Apache support
+* Wed Jan 30 2002 - martin+rpm@otrs.org
+- added to useradd bash=/bin/false
+* Sat Jan 12 2002 - martin+rpm@otrs.org
+- added SuSE like rc scripts
+* Tue Jan 10 2002 - martin+rpm@otrs.org
+- new package created
 
