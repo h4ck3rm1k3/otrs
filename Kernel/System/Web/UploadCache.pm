@@ -1,21 +1,22 @@
 # --
 # Kernel/System/Web/UploadCache.pm - a fs upload cache
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: UploadCache.pm,v 1.23 2011/02/14 10:29:59 martin Exp $
+# $Id: UploadCache.pm,v 1.3.2.1 2007/03/12 23:56:52 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::Web::UploadCache;
 
 use strict;
-use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.23 $) [1];
+
+$VERSION = '$Revision: 1.3.2.1 $ ';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
@@ -35,76 +36,61 @@ All upload cache functions.
 
 create param object
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::Web::UploadCache;
+  use Kernel::Config;
+  use Kernel::System::Log;
+  use Kernel::System::DB;
+  use Kernel::System::Web::UploadCache;
 
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $UploadCache = Kernel::System::Web::UploadCache->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        EncodeObject => $EncodeObject,
-        MainObject   => $MainObject,
-    );
+  my $ConfigObject = Kernel::Config->new();
+  my $LogObject    = Kernel::System::Log->new(
+      ConfigObject => $ConfigObject,
+  );
+  my $DBObject = Kernel::System::DB->new(
+      ConfigObject => $ConfigObject,
+      LogObject => $LogObject,
+  );
+  my $UploadParamObject = Kernel::System::Web::UploadCache->new(
+      ConfigObject => $ConfigObject,
+      LogObject => $LogObject,
+      DBObject => $DBObject,
+  );
 
 =cut
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
-
+    bless ($Self, $Type);
     # check needed objects
-    for (qw(ConfigObject LogObject MainObject EncodeObject)) {
+    foreach (qw(ConfigObject LogObject EncodeObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
     # load generator auth module
     $Self->{GenericModule} = $Self->{ConfigObject}->Get('WebUploadCacheModule')
-        || 'Kernel::System::Web::UploadCache::DB';
-
-    if ( $Self->{MainObject}->Require( $Self->{GenericModule} ) ) {
-        $Self->{Backend} = $Self->{GenericModule}->new(%Param);
-        return $Self;
+      || 'Kernel::System::Web::UploadCache::DB';
+    if (!eval "require $Self->{GenericModule}") {
+        die "Can't load backend module $Self->{GenericModule}! $@";
     }
-    return;
+
+    $Self->{Backend} = $Self->{GenericModule}->new(%Param);
+
+    return $Self;
 }
 
 =item FormIDCreate()
 
 create a new form id
 
-    my $FormID = $UploadCacheObject->FormIDCreate();
+  my $FormID = $UploadParamObject->FormIDCreate();
 
 =cut
 
 sub FormIDCreate {
     my $Self = shift;
-
     return $Self->{Backend}->FormIDCreate(@_);
 }
 
@@ -112,13 +98,12 @@ sub FormIDCreate {
 
 remove all data with form id
 
-    $UploadCacheObject->FormIDRemove( FormID => 123456 );
+  $UploadParamObject->FormIDRemove(FormID => 123456);
 
 =cut
 
 sub FormIDRemove {
     my $Self = shift;
-
     return $Self->{Backend}->FormIDRemove(@_);
 }
 
@@ -126,30 +111,17 @@ sub FormIDRemove {
 
 add a file to the form id
 
-    $UploadCacheObject->FormIDAddFile(
-        FormID      => 12345,
-        Filename    => 'somefile.html',
-        Content     => $FileInString,
-        ContentType => 'text/html',
-        Disposition => 'inline', # optional
-    );
-
-ContentID is optional (automatically generated if not given on disposition = inline)
-
-    $UploadCacheObject->FormIDAddFile(
-        FormID      => 12345,
-        Filename    => 'somefile.html',
-        Content     => $FileInString,
-        CententID   => 'some_id@example.com',
-        ContentType => 'text/html',
-        Disposition => 'inline', # optional
-    );
+  $UploadParamObject->FormIDAddFile(
+      FormID => 12345,
+      Filename => 'somefile.html',
+      Content => $FileInSting,
+      ContentType => 'text/html',
+  );
 
 =cut
 
 sub FormIDAddFile {
     my $Self = shift;
-
     return $Self->{Backend}->FormIDAddFile(@_);
 }
 
@@ -157,16 +129,15 @@ sub FormIDAddFile {
 
 removes a file to the form id
 
-    $UploadCacheObject->FormIDRemoveFile(
-        FormID => 12345,
-        FileID => 1,
-    );
+  $UploadParamObject->FormIDRemoveFile(
+      FormID => 12345,
+      FileID => 1,
+  );
 
 =cut
 
 sub FormIDRemoveFile {
     my $Self = shift;
-
     return $Self->{Backend}->FormIDRemoveFile(@_);
 }
 
@@ -174,18 +145,17 @@ sub FormIDRemoveFile {
 
 returns a array with hash ref of all form id files
 
-    my @Data = $UploadCacheObject->FormIDGetAllFilesData(
-        FormID => 12345,
-    );
+  my @Data = $UploadParamObject->FormIDGetAllFilesData(
+      FormID => 12345,
+  );
 
-    Return data of on hash is Content, ContentType, ContentID, Filename, Filesize, FileID;
+  Return data of on hash is Content, ContentType, Filename, Filesize, FileID;
 
 =cut
 
 sub FormIDGetAllFilesData {
     my $Self = shift;
-
-    return @{ $Self->{Backend}->FormIDGetAllFilesData(@_) };
+    return @{$Self->{Backend}->FormIDGetAllFilesData(@_)};
 }
 
 =item FormIDGetAllFilesMeta()
@@ -194,18 +164,17 @@ returns a array with hash ref of all form id files
 
 Note: No Content will be returned, just meta data.
 
-    my @Data = $UploadCacheObject->FormIDGetAllFilesMeta(
-        FormID => 12345,
-    );
+  my @Data = $UploadParamObject->FormIDGetAllFilesMeta(
+      FormID => 12345,
+  );
 
-    Return data of on hash is ContentType, ContentID, Filename, Filesize, FileID;
+  Return data of on hash is Filename, Filesize, FileID;
 
 =cut
 
 sub FormIDGetAllFilesMeta {
     my $Self = shift;
-
-    return @{ $Self->{Backend}->FormIDGetAllFilesMeta(@_) };
+    return @{$Self->{Backend}->FormIDGetAllFilesMeta(@_)};
 }
 
 =item FormIDCleanUp()
@@ -214,32 +183,29 @@ Removed no longer needed tmp file.
 
 Each file older then 1 day will be removed.
 
-    $UploadCacheObject->FormIDCleanUp();
+  $UploadParamObject->FormIDCleanUp();
 
 =cut
 
 sub FormIDCleanUp {
     my $Self = shift;
-
     return $Self->{Backend}->FormIDCleanUp(@_);
 }
 
 1;
 
-=back
-
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.23 $ $Date: 2011/02/14 10:29:59 $
+$Revision: 1.3.2.1 $ $Date: 2007/03/12 23:56:52 $
 
 =cut
