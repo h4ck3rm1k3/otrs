@@ -1,33 +1,33 @@
 # --
 # Kernel/System/Web/UploadCache/DB.pm - a db upload cache
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: DB.pm,v 1.24 2010/02/03 14:51:03 bes Exp $
+# $Id: DB.pm,v 1.6.2.1 2007/03/12 23:55:51 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::Web::UploadCache::DB;
 
 use strict;
-use warnings;
-
 use MIME::Base64;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.24 $) [1];
+
+$VERSION = '$Revision: 1.6.2.1 $ ';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
-
+    bless ($Self, $Type);
     # check needed objects
-    for (qw(ConfigObject LogObject DBObject EncodeObject MainObject)) {
+    foreach (qw(ConfigObject LogObject DBObject EncodeObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -35,206 +35,177 @@ sub new {
 }
 
 sub FormIDCreate {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # cleanup temp form ids
     $Self->FormIDCleanUp();
-
     # return requested form id
-    return time() . '.' . rand(12341241);
+    return time().'.'.rand(12341241);
 }
 
 sub FormIDRemove {
-    my ( $Self, %Param ) = @_;
-
-    for (qw(FormID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
+    my $Self = shift;
+    my %Param = @_;
+    foreach (qw(FormID)) {
+      if (!$Param{$_}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+        return;
+      }
     }
-    return if !$Self->{DBObject}->Do(
-        SQL  => 'DELETE FROM web_upload_cache WHERE form_id = ?',
-        Bind => [ \$Param{FormID} ],
+    return $Self->{DBObject}->Do(
+        SQL => "DELETE FROM web_upload_cache WHERE form_id = '$Param{FormID}'",
     );
-    return 1;
 }
 
 sub FormIDAddFile {
-    my ( $Self, %Param ) = @_;
-
-    for (qw(FormID Filename Content ContentType)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
+    my $Self = shift;
+    my %Param = @_;
+    foreach (qw(FormID Filename Content ContentType)) {
+      if (!$Param{$_}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+        return;
+      }
     }
-
     # get file size
-    $Param{Filesize} = bytes::length( $Param{Content} );
-
-    # encode attachment if it's a postgresql backend!!!
-    if ( !$Self->{DBObject}->GetDatabaseFunction('DirectBlob') ) {
-        $Self->{EncodeObject}->EncodeOutput( \$Param{Content} );
-        $Param{Content} = encode_base64( $Param{Content} );
+    {
+        use bytes;
+        $Param{Filesize} = length($Param{Content});
+        no bytes;
     }
-
-    # create content id
-    my $ContentID = $Param{ContentID};
-    my $Disposition = $Param{Disposition} || '';
-    if ( !$ContentID && lc $Disposition eq 'inline' ) {
-        my $Random = rand 999999;
-        my $FQDN   = $Self->{ConfigObject}->Get('FQDN');
-        $ContentID = "$Disposition$Random.$Param{FormID}\@$FQDN";
+    # encode attachemnt if it's a postgresql backend!!!
+    $Self->{EncodeObject}->EncodeOutput(\$Param{Content});
+    if (!$Self->{DBObject}->GetDatabaseFunction('DirectBlob')) {
+        $Param{Content} = encode_base64($Param{Content});
     }
-
+    # db quote (just not Content, use db Bind values)
+    foreach (keys %Param) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_}) if ($_ ne 'Content');
+    }
+    my $SQL = "INSERT INTO web_upload_cache ".
+        " (form_id, filename, content_type, content_size, content, ".
+        " create_time_unix) " .
+        " VALUES ".
+        " ('$Param{FormID}', '$Param{Filename}', '$Param{ContentType}', ".
+        " '$Param{Filesize}', ?, ".time().")";
     # write attachment to db
-    my $Time = time();
-    return if !$Self->{DBObject}->Do(
-        SQL => 'INSERT INTO web_upload_cache '
-            . ' (form_id, filename, content_type, content_size, content, create_time_unix,'
-            . ' content_id)'
-            . ' VALUES  (?, ?, ?, ?, ?, ?, ?)',
-        Bind => [
-            \$Param{FormID}, \$Param{Filename}, \$Param{ContentType}, \$Param{Filesize},
-            \$Param{Content}, \$Time, \$ContentID
-        ],
-    );
-    return 1;
+    return $Self->{DBObject}->Do(SQL => $SQL, Bind => [\$Param{Content}]);
 }
 
 sub FormIDRemoveFile {
-    my ( $Self, %Param ) = @_;
-
-    for (qw(FormID FileID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
+    my $Self = shift;
+    my %Param = @_;
+    foreach (qw(FormID FileID)) {
+      if (!$Param{$_}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+        return;
+      }
     }
-    my @Index = @{ $Self->FormIDGetAllFilesMeta(%Param) };
-    my $ID    = $Param{FileID} - 1;
-    $Param{Filename} = $Index[$ID]->{Filename};
-
-    return if !$Self->{DBObject}->Do(
-        SQL => 'DELETE FROM web_upload_cache WHERE form_id = ? AND filename = ?',
-        Bind => [ \$Param{FormID}, \$Param{Filename} ],
+    my @Index = @{$Self->FormIDGetAllFilesMeta(%Param)};
+    my $ID = $Param{FileID}-1;
+    # db quote
+    foreach (keys %Param) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_});
+    }
+    return $Self->{DBObject}->Do(
+        SQL => "DELETE FROM web_upload_cache WHERE form_id = '$Param{FormID}' AND filename = '$Index[$ID]->{Filename}'",
     );
-    return 1;
 }
 
 sub FormIDGetAllFilesData {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     my $Counter = 0;
-    my @Data;
-    for (qw(FormID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
+    my @Data = ();
+    foreach (qw(FormID)) {
+      if (!$Param{$_}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+        return;
+      }
     }
-    $Self->{DBObject}->Prepare(
-        SQL => 'SELECT filename, content_type, content_size, content, content_id'
-            . ' FROM web_upload_cache '
-            . ' WHERE form_id = ? ORDER BY create_time_unix',
-        Bind => [ \$Param{FormID} ],
-        Encode => [ 1, 1, 1, 0, 1 ],
-    );
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    my $SQL = "SELECT filename, content_type, content_size, content FROM web_upload_cache ".
+        " WHERE ".
+        " form_id = '".$Self->{DBObject}->Quote($Param{FormID})."'".
+        " ORDER BY create_time_unix";
+    $Self->{DBObject}->Prepare(SQL => $SQL);
+    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
         $Counter++;
-
         # human readable file size
-        if ( $Row[2] ) {
-            if ( $Row[2] > ( 1024 * 1024 ) ) {
-                $Row[2] = sprintf "%.1f MBytes", ( $Row[2] / ( 1024 * 1024 ) );
+        if ($Row[2]) {
+            if ($Row[2] > (1024*1024)) {
+                $Row[2] = sprintf "%.1f MBytes", ($Row[2]/(1024*1024));
             }
-            elsif ( $Row[2] > 1024 ) {
-                $Row[2] = sprintf "%.1f KBytes", ( ( $Row[2] / 1024 ) );
+            elsif ($Row[2] > 1024) {
+                $Row[2] = sprintf "%.1f KBytes", (($Row[2]/1024));
             }
             else {
-                $Row[2] = $Row[2] . ' Bytes';
+                $Row[2] = $Row[2].' Bytes';
             }
         }
-
-        # encode attachment if it's a postgresql backend!!!
-        if ( !$Self->{DBObject}->GetDatabaseFunction('DirectBlob') ) {
-            $Row[3] = decode_base64( $Row[3] );
+        # encode attachemnt if it's a postgresql backend!!!
+        if (!$Self->{DBObject}->GetDatabaseFunction('DirectBlob')) {
+            $Row[3] = decode_base64($Row[3]);
+            $Self->{EncodeObject}->Encode(\$Row[3]);
         }
-
         # add the info
-        push(
-            @Data,
-            {
-                Content     => $Row[3],
-                ContentID   => $Row[4],
-                ContentType => $Row[1],
-                Filename    => $Row[0],
-                Filesize    => $Row[2],
-                FileID      => $Counter,
-            }
-        );
+        push (@Data, {
+            Content => $Row[3],
+            ContentType => $Row[1],
+            Filename => $Row[0],
+            Filesize => $Row[2],
+            FileID => $Counter,
+        });
     }
     return \@Data;
 }
 
 sub FormIDGetAllFilesMeta {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     my $Counter = 0;
-    my @Data;
-    for (qw(FormID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
+    my @Data = ();
+    foreach (qw(FormID)) {
+      if (!$Param{$_}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+        return;
+      }
     }
-    $Self->{DBObject}->Prepare(
-        SQL => 'SELECT filename, content_type, content_size, content_id'
-            . ' FROM web_upload_cache '
-            . ' WHERE form_id = ? ORDER BY create_time_unix',
-        Bind => [ \$Param{FormID} ],
-    );
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    my $SQL = "SELECT filename, content_type, content_size FROM web_upload_cache ".
+        " WHERE ".
+        " form_id = '".$Self->{DBObject}->Quote($Param{FormID})."'".
+        " ORDER BY create_time_unix";
+    $Self->{DBObject}->Prepare(SQL => $SQL);
+    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
         $Counter++;
-
         # human readable file size
-        if ( $Row[2] ) {
-            if ( $Row[2] > ( 1024 * 1024 ) ) {
-                $Row[2] = sprintf "%.1f MBytes", ( $Row[2] / ( 1024 * 1024 ) );
+        if ($Row[2]) {
+            if ($Row[2] > (1024*1024)) {
+                $Row[2] = sprintf "%.1f MBytes", ($Row[2]/(1024*1024));
             }
-            elsif ( $Row[2] > 1024 ) {
-                $Row[2] = sprintf "%.1f KBytes", ( ( $Row[2] / 1024 ) );
+            elsif ($Row[2] > 1024) {
+                $Row[2] = sprintf "%.1f KBytes", (($Row[2]/1024));
             }
             else {
-                $Row[2] = $Row[2] . ' Bytes';
+                $Row[2] = $Row[2].' Bytes';
             }
         }
-
         # add the info
-        push(
-            @Data,
-            {
-                ContentID   => $Row[3],
-                ContentType => $Row[1],
-                Filename    => $Row[0],
-                Filesize    => $Row[2],
-                FileID      => $Counter,
-            }
-        );
+        push (@Data, {
+            ContentType => $Row[1],
+            Filename => $Row[0],
+            Filesize => $Row[2],
+            FileID => $Counter,
+        });
     }
     return \@Data;
 }
 
 sub FormIDCleanUp {
-    my ( $Self, %Param ) = @_;
-
-    my $CurrentTile = time() - ( 60 * 60 * 24 * 1 );
-    return if !$Self->{DBObject}->Do(
-        SQL  => 'DELETE FROM web_upload_cache WHERE create_time_unix < ?',
-        Bind => [ \$CurrentTile ],
+    my $Self = shift;
+    my %Param = @_;
+    my $CurrentTile = time() - (60*60*24*1);
+    return $Self->{DBObject}->Do(
+        SQL => "DELETE FROM web_upload_cache WHERE create_time_unix < $CurrentTile",
     );
-    return 1;
 }
 
 1;
