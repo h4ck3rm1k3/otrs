@@ -1,348 +1,191 @@
 # --
 # Kernel/Output/HTML/LayoutTicket.pm - provides generic ticket HTML output
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: LayoutTicket.pm,v 1.140 2011/12/14 19:03:14 mb Exp $
+# $Id: LayoutTicket.pm,v 1.5.2.1 2007/03/12 00:22:46 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::Output::HTML::LayoutTicket;
 
 use strict;
-use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.140 $) [1];
+$VERSION = '$Revision: 1.5.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
-sub AgentCustomerViewTable {
-    my ( $Self, %Param ) = @_;
-
-    # check customer params
-    if ( ref $Param{Data} ne 'HASH' ) {
-        $Self->FatalError( Message => 'Need Hash ref in Data param' );
-    }
-    elsif ( ref $Param{Data} eq 'HASH' && !%{ $Param{Data} } ) {
-        return $Self->{LanguageObject}->Get('none');
-    }
-
-    # add ticket params if given
-    if ( $Param{Ticket} ) {
-        %{ $Param{Data} } = ( %{ $Param{Data} }, %{ $Param{Ticket} } );
-    }
-
-    my @MapNew;
-    my $Map = $Param{Data}->{Config}->{Map};
-    if ($Map) {
-        @MapNew = ( @{$Map} );
-    }
-
-    # check if customer company support is enabled
-    if ( $Param{Data}->{Config}->{CustomerCompanySupport} ) {
-        my $Map2 = $Param{Data}->{CompanyConfig}->{Map};
-        if ($Map2) {
-            push( @MapNew, @{$Map2} );
+sub TicketStdResponseString {
+    my $Self = shift;
+    my %Param = @_;
+    # check needed stuff
+    foreach (qw(StdResponsesRef TicketID ArticleID)) {
+        if (!$Param{$_}) {
+            return "Need $_ in TicketStdResponseString()";
         }
     }
+    # get StdResponsesStrg
+    if ($Self->{ConfigObject}->Get('Ticket::Frontend::StdResponsesMode') eq 'Form') {
+        # build html string
+        $Param{StdResponsesStrg} .= '<form action="'.$Self->{CGIHandle}.'" method="post">'.
+            '<input type="hidden" name="Action" value="AgentTicketCompose">'.
+            '<input type="hidden" name="ArticleID" value="'.$Param{ArticleID}.'">'.
+            '<input type="hidden" name="TicketID" value="'.$Param{TicketID}.'">'.
+            $Self->OptionStrgHashRef(
+                Name => 'ResponseID',
+                Data => $Param{StdResponsesRef},
+            ).
+            '<input class="button" type="submit" value="$Text{"Compose"}"></form>';
+    }
+    else {
+        my %StdResponses = %{$Param{StdResponsesRef}};
+        foreach (sort { $StdResponses{$a} cmp $StdResponses{$b} } keys %StdResponses) {
+            # build html string
+            $Param{StdResponsesStrg} .= "\n<li><a href=\"$Self->{Baselink}"."Action=AgentTicketCompose&".
+                "ResponseID=$_&TicketID=$Param{TicketID}&ArticleID=$Param{ArticleID}\" ".
+                'onmouseover="window.status=\'$Text{"Compose"}\'; return true;" '.
+                'onmouseout="window.status=\'\';">'.
+            # html quote
+            $Self->Ascii2Html(Text => $StdResponses{$_})."</A></li>\n";
+        }
+    }
+    return $Param{StdResponsesStrg};
+}
 
+sub AgentCustomerView {
+    my $Self = shift;
+    my %Param = @_;
+    $Param{Table} = $Self->AgentCustomerViewTable(%Param);
+    # create & return output
+    return $Self->Output(TemplateFile => 'AgentCustomerView', Data => \%Param);
+}
+
+sub AgentCustomerViewTable {
+    my $Self = shift;
+    my %Param = @_;
     my $ShownType = 1;
-    if ( $Param{Type} && $Param{Type} eq 'Lite' ) {
+    if (ref($Param{Data}) ne 'HASH') {
+        $Self->FatalError(Message => 'Need Hash ref in Data param');
+    }
+    elsif (ref($Param{Data}) eq 'HASH' && !%{$Param{Data}}) {
+        return '$Text{"none"}';
+    }
+    my $Map = $Param{Data}->{Config}->{Map};
+    if ($Param{Type} && $Param{Type} eq 'Lite') {
         $ShownType = 2;
-
         # check if min one lite view item is configured, if not, use
         # the normal view also
         my $Used = 0;
-        for my $Field (@MapNew) {
-            if ( $Field->[3] == 2 ) {
+        foreach my $Field (@{$Map}) {
+            if ($Field->[3] == 2) {
                 $Used = 1;
             }
         }
-        if ( !$Used ) {
+        if (!$Used) {
             $ShownType = 1;
         }
     }
-
     # build html table
-    $Self->Block(
-        Name => 'Customer',
-        Data => $Param{Data},
-    );
-
-    # check Frontend::CustomerUser::Image
-    my $CustomerImage = $Self->{ConfigObject}->Get('Frontend::CustomerUser::Image');
-    if ($CustomerImage) {
-        my %Modules = %{$CustomerImage};
-        for my $Module ( sort keys %Modules ) {
-            if ( !$Self->{MainObject}->Require( $Modules{$Module}->{Module} ) ) {
-                $Self->FatalDie();
-            }
-
-            my $Object = $Modules{$Module}->{Module}->new(
-                %{$Self},
-                LayoutObject => $Self,
-            );
-
-            # run module
-            next if !$Object;
-
-            $Object->Run(
-                Config => $Modules{$Module},
-                Data   => $Param{Data},
-            );
-        }
-    }
-
-    # build table
-    for my $Field (@MapNew) {
-        if ( $Field->[3] && $Field->[3] >= $ShownType && $Param{Data}->{ $Field->[0] } ) {
-            my %Record = (
-                %{ $Param{Data} },
-                Key   => $Field->[1],
-                Value => $Param{Data}->{ $Field->[0] },
-            );
-            if ( $Field->[6] ) {
-                $Record{LinkStart} = "<a href=\"$Field->[6]\"";
-                if ( $Field->[8] ) {
-                    $Record{LinkStart} .= " target=\"$Field->[8]\"";
-                }
-                $Record{LinkStart} .= "\">";
+    foreach my $Field (@{$Map}) {
+        if ($Field->[3] && $Field->[3] >= $ShownType && $Param{Data}->{$Field->[0]}) {
+            my %Record = ();
+            if ($Field->[6]) {
+                $Record{LinkStart} = "<a href=\"$Field->[6]\">";
                 $Record{LinkStop} = "</a>";
             }
-            if ( $Field->[0] ) {
-                $Record{ValueShort} = $Self->Ascii2Html(
-                    Text => $Record{Value},
-                    Max  => $Param{Max}
-                );
+            if ($Field->[0]) {
+                $Record{ValueShort} = $Self->Ascii2Html(Text => $Param{Data}->{$Field->[0]}, Max => $Param{Max});
             }
             $Self->Block(
                 Name => 'CustomerRow',
-                Data => \%Record,
+                Data => {
+                    %{$Param{Data}},
+                    Key => $Field->[1],
+                    Value => $Param{Data}->{$Field->[0]},
+                    %Record,
+                },
             );
         }
     }
-
-    # check Frontend::CustomerUser::Item
-    my $CustomerItem      = $Self->{ConfigObject}->Get('Frontend::CustomerUser::Item');
-    my $CustomerItemCount = 0;
-    if ($CustomerItem) {
-        $Self->Block(
-            Name => 'CustomerItem',
-        );
-        my %Modules = %{$CustomerItem};
-        for my $Module ( sort keys %Modules ) {
-            if ( !$Self->{MainObject}->Require( $Modules{$Module}->{Module} ) ) {
-                $Self->FatalDie();
-            }
-
-            my $Object = $Modules{$Module}->{Module}->new(
-                %{$Self},
-                LayoutObject => $Self,
-            );
-
-            # run module
-            next if !$Object;
-
-            my $Run = $Object->Run(
-                Config => $Modules{$Module},
-                Data   => $Param{Data},
-            );
-
-            next if !$Run;
-
-            $CustomerItemCount++;
-        }
-    }
-
-    # Acivity Index: History
-    # CTI
-    # vCard
-    # Bugzilla Status
     # create & return output
-    return $Self->Output( TemplateFile => 'AgentCustomerTableView', Data => \%Param );
+    return $Self->Output(TemplateFile => 'AgentCustomerTableView', Data => \%Param);
 }
 
-# AgentQueueListOption()
-#
-# !! DONT USE THIS FUNCTION !! Use BuildSelection() instead.
-#
-# Due to compatibility reason this function is still in use and will be removed
-# in a future release.
-
 sub AgentQueueListOption {
-    my ( $Self, %Param ) = @_;
-
-    my $Size           = $Param{Size}                      ? "size='$Param{Size}'"  : '';
-    my $MaxLevel       = defined( $Param{MaxLevel} )       ? $Param{MaxLevel}       : 10;
-    my $SelectedID     = defined( $Param{SelectedID} )     ? $Param{SelectedID}     : '';
-    my $Selected       = defined( $Param{Selected} )       ? $Param{Selected}       : '';
-    my $CurrentQueueID = defined( $Param{CurrentQueueID} ) ? $Param{CurrentQueueID} : '';
-    my $Class          = defined( $Param{Class} )          ? $Param{Class}          : '';
+    my $Self = shift;
+    my %Param = @_;
+    my $Size = $Param{Size} ? "size='$Param{Size}'" : '';
+    my $MaxLevel = defined($Param{MaxLevel}) ? $Param{MaxLevel} : 10;
+    my $SelectedID = defined($Param{SelectedID}) ? $Param{SelectedID} : '';
+    my $Selected = defined($Param{Selected}) ? $Param{Selected} : '';
     my $SelectedIDRefArray = $Param{SelectedIDRefArray} || '';
-    my $Multiple       = $Param{Multiple}                  ? 'multiple = "multiple"' : '';
-    my $OptionTitle    = defined( $Param{OptionTitle} )    ? $Param{OptionTitle}     : 0;
-    my $OnChangeSubmit = defined( $Param{OnChangeSubmit} ) ? $Param{OnChangeSubmit}  : '';
+    my $Multiple = $Param{Multiple} ? 'multiple' : '';
+    my $OnChangeSubmit = defined($Param{OnChangeSubmit}) ? $Param{OnChangeSubmit} : '';
     if ($OnChangeSubmit) {
-        $OnChangeSubmit = " onchange=\"submit();\"";
+        $OnChangeSubmit = " onchange=\"submit()\"";
     }
     else {
         $OnChangeSubmit = '';
     }
-
-    # set OnChange if AJAX is used
-    if ( $Param{Ajax} ) {
-        if ( !$Param{Ajax}->{Depend} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Need Depend Param Ajax option!',
-            );
-            $Self->FatalError();
-        }
-        if ( !$Param{Ajax}->{Update} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Need Update Param Ajax option()!',
-            );
-            $Self->FatalError();
-        }
-        $Param{OnChange}
-            = "Core.AJAX.FormUpdate($('#"
-            . $Param{Name} . "'), '"
-            . $Param{Ajax}->{Subaction} . "',"
-            . " '$Param{Name}',"
-            . " ['"
-            . join( "', '", @{ $Param{Ajax}->{Update} } ) . "']);";
-    }
-
-    if ( $Param{OnChange} ) {
+    if ($Param{OnChange}) {
         $OnChangeSubmit = " onchange=\"$Param{OnChange}\"";
     }
 
     # just show a simple list
-    if ( $Self->{ConfigObject}->Get('Ticket::Frontend::ListType') eq 'list' ) {
-        $Param{MoveQueuesStrg} = $Self->BuildSelection(
+    if ($Self->{ConfigObject}->Get('Ticket::Frontend::QueueListType') eq 'list') {
+        $Param{'MoveQueuesStrg'} = $Self->OptionStrgHashRef(
             %Param,
-            HTMLQuote     => 0,
-            SelectedID    => $Param{SelectedID} || $Param{SelectedIDRefArray} || '',
-            SelectedValue => $Param{Selected},
-            Translation   => 0,
+            HTMLQuote => 0,
+#            OnChangeSubmit => 1,
         );
         return $Param{MoveQueuesStrg};
     }
-
     # build tree list
-    $Param{MoveQueuesStrg}
-        = '<select name="'
-        . $Param{Name}
-        . '" id="'
-        . $Param{Name}
-        . '" class="'
-        . $Class
-        . "\" $Size $Multiple $OnChangeSubmit>\n";
-    my %UsedData;
-    my %Data;
-
-    if ( $Param{Data} && ref $Param{Data} eq 'HASH' ) {
-        %Data = %{ $Param{Data} };
+    $Param{MoveQueuesStrg} = '<select name="'.$Param{Name}."\" $Size $Multiple $OnChangeSubmit>\n";
+    my %UsedData = ();
+    my %Data = ();
+    if ($Param{Data} && ref($Param{Data}) eq 'HASH') {
+        %Data = %{$Param{Data}};
     }
     else {
         return 'Need Data Ref in AgentQueueListOption()!';
     }
-
     # add suffix for correct sorting
-    for ( sort { $Data{$a} cmp $Data{$b} } keys %Data ) {
+    foreach (sort {$Data{$a} cmp $Data{$b}} keys %Data) {
         $Data{$_} .= '::';
     }
-
-    # to show disabled queues only one time in the selection tree
-    my %DisabledQueueAlreadyUsed;
-
     # build selection string
-    for ( sort { $Data{$a} cmp $Data{$b} } keys %Data ) {
-        my @Queue = split( /::/, $Param{Data}->{$_} );
-        $UsedData{ $Param{Data}->{$_} } = 1;
+    foreach (sort {$Data{$a} cmp $Data{$b}} keys %Data) {
+        my @Queue = split(/::/, $Param{Data}->{$_});
+        $UsedData{$Param{Data}->{$_}} = 1;
         my $UpQueue = $Param{Data}->{$_};
         $UpQueue =~ s/^(.*)::.+?$/$1/g;
-        if ( !$Queue[$MaxLevel] && $Queue[-1] ne '' ) {
-            $Queue[-1] = $Self->Ascii2Html( Text => $Queue[-1], Max => 50 - $#Queue );
+        if (! $Queue[$MaxLevel] && $Queue[$#Queue] ne '') {
+            $Queue[$#Queue] = $Self->Ascii2Html(Text => $Queue[$#Queue], Max => 50-$#Queue);
             my $Space = '';
-            for ( my $i = 0; $i < $#Queue; $i++ ) {
+            for (my $i = 0; $i < $#Queue; $i++) {
                 $Space .= '&nbsp;&nbsp;';
             }
-
             # check if SelectedIDRefArray exists
             if ($SelectedIDRefArray) {
-                for my $ID ( @{$SelectedIDRefArray} ) {
-                    if ( $ID eq $_ ) {
+                foreach my $ID (@{$SelectedIDRefArray}) {
+                    if ($ID eq $_) {
                         $Param{SelectedIDRefArrayOK}->{$_} = 1;
                     }
                 }
             }
-
-            if ( !$UsedData{$UpQueue} ) {
-
-                # integrate the not selectable parent and root queues of this queue
-                # useful for ACLs and complex permission settings
-                for my $Index ( 0 .. ( scalar @Queue - 2 ) ) {
-                    if ( !$DisabledQueueAlreadyUsed{ $Queue[$Index] } ) {
-                        my $DSpace               = '&nbsp;&nbsp;' x $Index;
-                        my $OptionTitleHTMLValue = '';
-                        if ($OptionTitle) {
-                            my $HTMLValue = $Self->{HTMLUtilsObject}->ToHTML(
-                                String => $Queue[$Index],
-                            );
-                            $OptionTitleHTMLValue = ' title="' . $HTMLValue . '"';
-                        }
-                        $Param{MoveQueuesStrg}
-                            .= '<option value="-" disabled="disabled"'
-                            . $OptionTitleHTMLValue
-                            . '>'
-                            . $DSpace
-                            . $Queue[$Index]
-                            . "</option>\n";
-                        $DisabledQueueAlreadyUsed{ $Queue[$Index] } = 1;
-                    }
+            # build select string
+            if ($UsedData{$UpQueue}) {
+                if ($SelectedID eq $_ || $Selected eq $Param{Data}->{$_} || $Param{SelectedIDRefArrayOK}->{$_}) {
+                    $Param{MoveQueuesStrg} .= '<option selected value="'.$_.'">'.
+                        $Space.$Queue[$#Queue]."</option>\n";
                 }
-            }
-
-            # create selectable elements
-            my $String               = $Space . $Queue[-1];
-            my $OptionTitleHTMLValue = '';
-            if ($OptionTitle) {
-                my $HTMLValue = $Self->{HTMLUtilsObject}->ToHTML(
-                    String => $Queue[-1],
-                );
-                $OptionTitleHTMLValue = ' title="' . $HTMLValue . '"';
-            }
-            if (
-                $SelectedID  eq $_
-                || $Selected eq $Param{Data}->{$_}
-                || $Param{SelectedIDRefArrayOK}->{$_}
-                )
-            {
-                $Param{MoveQueuesStrg}
-                    .= '<option selected="selected" value="'
-                    . $_ . '"'
-                    . $OptionTitleHTMLValue . '>'
-                    . $String
-                    . "</option>\n";
-            }
-            elsif ( $CurrentQueueID eq $_ )
-            {
-                $Param{MoveQueuesStrg}
-                    .= '<option value="-" disabled="disabled"'
-                    . $OptionTitleHTMLValue . '>'
-                    . $String
-                    . "</option>\n";
-            }
-            else {
-                $Param{MoveQueuesStrg}
-                    .= '<option value="'
-                    . $_ . '"'
-                    . $OptionTitleHTMLValue . '>'
-                    . $String
-                    . "</option>\n";
+                else {
+                    $Param{MoveQueuesStrg} .= '<option value="'.$_.'">'.
+                        $Space.$Queue[$#Queue]."</option>\n";
+                }
             }
         }
     }
@@ -351,664 +194,277 @@ sub AgentQueueListOption {
     return $Param{MoveQueuesStrg};
 }
 
-=item ArticleQuote()
-
-get body and attach e. g. inline documents and/or attach all attachments to
-upload cache
-
-for forward or split, get body and attach all attachments
-
-    my $HTMLBody = $LayoutObject->ArticleQuote(
-        TicketID           => 123,
-        ArticleID          => 123,
-        FormID             => $Self->{FormID},
-        UploadCacheObject   => $Self->{UploadCacheObject},
-        AttachmentsInclude => 1,
-    );
-
-or just for including inline documents to upload cache
-
-    my $HTMLBody = $LayoutObject->ArticleQuote(
-        TicketID           => 123,
-        ArticleID          => 123,
-        FormID             => $Self->{FormID},
-        UploadCacheObject   => $Self->{UploadCacheObject},
-        AttachmentsInclude => 0,
-    );
-
-Both will also work without rich text (if $ConfigObject->Get('Frontend::RichText')
-is false), return param will be text/plain instead.
-
-=cut
-
-sub ArticleQuote {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(TicketID ArticleID FormID UploadCacheObject)) {
-        if ( !$Param{$_} ) {
-            $Self->FatalError( Message => "Need $_!" );
-        }
+sub AgentFreeText {
+    my $Self = shift;
+    my %Param = @_;
+    my %NullOption = ();
+    my %SelectData = ();
+    my %Ticket = ();
+    my %Config = ();
+    if ($Param{NullOption}) {
+#        $NullOption{''} = '-';
+        $SelectData{Size} = 3;
+        $SelectData{Multiple} = 1;
     }
-
-    # body preparation for plain text processing
-    if ( $Self->{ConfigObject}->Get('Frontend::RichText') ) {
-
-        my $Body = '';
-
-        # check for html body
-        my @ArticleBox = $Self->{TicketObject}->ArticleContentIndex(
-            TicketID                   => $Param{TicketID},
-            StripPlainBodyAsAttachment => 3,
-            UserID                     => $Self->{UserID},
-            DynamicFields              => 0,
-        );
-
-        my %NotInlineAttachments;
-        ARTICLE:
-        for my $ArticleTmp (@ArticleBox) {
-
-            # search for article to answer (reply article)
-            next ARTICLE if $ArticleTmp->{ArticleID} ne $Param{ArticleID};
-
-            # check if no html body exists
-            last ARTICLE if !$ArticleTmp->{AttachmentIDOfHTMLBody};
-
-            my %AttachmentHTML = $Self->{TicketObject}->ArticleAttachment(
-                ArticleID => $ArticleTmp->{ArticleID},
-                FileID    => $ArticleTmp->{AttachmentIDOfHTMLBody},
-                UserID    => $Self->{UserID},
-            );
-            my $Charset = $AttachmentHTML{ContentType} || '';
-            $Charset =~ s/.+?charset=("|'|)(\w+)/$2/gi;
-            $Charset =~ s/"|'//g;
-            $Charset =~ s/(.+?);.*/$1/g;
-
-            # convert html body to correct charset
-            $Body = $Self->{EncodeObject}->Convert(
-                Text => $AttachmentHTML{Content},
-                From => $Charset,
-                To   => $Self->{UserCharset},
-            );
-
-            # add url quoting
-            $Body = $Self->{HTMLUtilsObject}->LinkQuote(
-                String => $Body,
-            );
-
-            # strip head, body and meta elements
-            $Body = $Self->{HTMLUtilsObject}->DocumentStrip(
-                String => $Body,
-            );
-
-            # display inline images if exists
-            my $SessionID = '';
-            if ( $Self->{SessionID} && !$Self->{SessionIDCookie} ) {
-                $SessionID = ';' . $Self->{SessionName} . '=' . $Self->{SessionID};
+    if ($Param{Ticket}) {
+        %Ticket = %{$Param{Ticket}};
+    }
+    if ($Param{Config}) {
+        %Config = %{$Param{Config}};
+    }
+    my %Data = ();
+    foreach (1..16) {
+        # key
+        if (ref($Config{"TicketFreeKey$_"}) eq 'HASH' && %{$Config{"TicketFreeKey$_"}}) {
+            my $Counter = 0;
+            my $LastKey = '';
+            foreach (keys %{$Config{"TicketFreeKey$_"}}) {
+                $Counter++;
+                $LastKey = $_;
             }
-            my $AttachmentLink = $Self->{Baselink}
-                . 'Action=PictureUpload'
-                . ';FormID='
-                . $Param{FormID}
-                . $SessionID
-                . ';ContentID=';
-
-            # search inline documents in body and add it to upload cache
-            my %Attachments = %{ $ArticleTmp->{Atms} };
-            my %AttachmentAlreadyUsed;
-            $Body =~ s{
-                (=|"|')cid:(.*?)("|'|>|\/>|\s)
-            }
-            {
-                my $Start= $1;
-                my $ContentID = $2;
-                my $End = $3;
-
-                # improve html quality
-                if ( $Start ne '"' && $Start ne '\'' ) {
-                    $Start .= '"';
+            if ($Counter == 1 && $Param{NullOption}) {
+                if ($LastKey) {
+                    $Data{"TicketFreeKeyField$_"} = $Config{"TicketFreeKey$_"}->{$LastKey};
                 }
-                if ( $End ne '"' && $End ne '\'' ) {
-                    $End = '"' . $End;
-                }
-
-                # find attachment to include
-                ATMCOUNT:
-                for my $AttachmentID ( sort keys %Attachments ) {
-
-                    # next is cid is not matchin
-                    if ( lc $Attachments{$AttachmentID}->{ContentID} ne lc "<$ContentID>" ) {
-                        next ATMCOUNT;
-                    }
-
-                    # get whole attachment
-                    my %AttachmentPicture = $Self->{TicketObject}->ArticleAttachment(
-                        ArticleID => $Param{ArticleID},
-                        FileID    => $AttachmentID,
-                        UserID    => $Self->{UserID},
-                    );
-
-                    # content id cleanup
-                    $AttachmentPicture{ContentID} =~ s/^<//;
-                    $AttachmentPicture{ContentID} =~ s/>$//;
-
-                    # find cid, add attachment URL and remeber, file is already uploaded
-                    $ContentID = $AttachmentLink . $Self->LinkEncode( $AttachmentPicture{ContentID} );
-
-                    # add to upload cache if not uploaded and remember
-                    if (!$AttachmentAlreadyUsed{$AttachmentID}) {
-
-                        # remember
-                        $AttachmentAlreadyUsed{$AttachmentID} = 1;
-
-                        # write attachment to upload cache
-                        $Param{UploadCacheObject}->FormIDAddFile(
-                            FormID      => $Param{FormID},
-                            Disposition => 'inline',
-                            %{ $Attachments{$AttachmentID} },
-                            %AttachmentPicture,
-                        );
-                    }
-                }
-
-                # return link
-                $Start . $ContentID . $End;
-            }egxi;
-
-            # find inlines images using Content-Location instead of Content-ID
-            for my $AttachmentID ( sort keys %Attachments ) {
-
-                next if !$Attachments{$AttachmentID}->{ContentID};
-
-                # get whole attachment
-                my %AttachmentPicture = $Self->{TicketObject}->ArticleAttachment(
-                    ArticleID => $Param{ArticleID},
-                    FileID    => $AttachmentID,
-                    UserID    => $Self->{UserID},
-                );
-
-                # content id cleanup
-                $AttachmentPicture{ContentID} =~ s/^<//;
-                $AttachmentPicture{ContentID} =~ s/>$//;
-
-                $Body =~ s{
-                    ("|')(\Q$AttachmentPicture{ContentID}\E)("|'|>|\/>|\s)
-                }
-                {
-                    my $Start= $1;
-                    my $ContentID = $2;
-                    my $End = $3;
-
-                    # find cid, add attachment URL and remeber, file is already uploaded
-                    $ContentID = $AttachmentLink . $Self->LinkEncode( $AttachmentPicture{ContentID} );
-
-                    # add to upload cache if not uploaded and remember
-                    if (!$AttachmentAlreadyUsed{$AttachmentID}) {
-
-                        # remember
-                        $AttachmentAlreadyUsed{$AttachmentID} = 1;
-
-                        # write attachment to upload cache
-                        $Param{UploadCacheObject}->FormIDAddFile(
-                            FormID      => $Param{FormID},
-                            Disposition => 'inline',
-                            %{ $Attachments{$AttachmentID} },
-                            %AttachmentPicture,
-                        );
-                    }
-
-                    # return link
-                    $Start . $ContentID . $End;
-                }egxi;
             }
-
-            # find not inline images
-            for my $AttachmentID ( sort keys %Attachments ) {
-                next if $AttachmentAlreadyUsed{$AttachmentID};
-                $NotInlineAttachments{$AttachmentID} = 1;
-            }
-
-            # do no more article
-            last ARTICLE;
-        }
-
-        # attach also other attachments on article forward
-        if ( $Body && $Param{AttachmentsInclude} ) {
-            for my $AttachmentID ( sort keys %NotInlineAttachments ) {
-                my %Attachment = $Self->{TicketObject}->ArticleAttachment(
-                    ArticleID => $Param{ArticleID},
-                    FileID    => $AttachmentID,
-                    UserID    => $Self->{UserID},
-                );
-
-                # add attachment
-                $Param{UploadCacheObject}->FormIDAddFile(
-                    FormID => $Param{FormID},
-                    %Attachment,
-                );
-            }
-        }
-        return $Body if $Body;
-    }
-
-    # as fallback use text body for quote
-    my %Article = $Self->{TicketObject}->ArticleGet(
-        ArticleID     => $Param{ArticleID},
-        DynamicFields => 0,
-    );
-
-    # check if original content isn't text/plain or text/html, don't use it
-    if ( !$Article{ContentType} ) {
-        $Article{ContentType} = 'text/plain';
-    }
-
-    if ( $Article{ContentType} !~ /text\/(plain|html)/i ) {
-        $Article{Body}        = '-> no quotable message <-';
-        $Article{ContentType} = 'text/plain';
-    }
-    else {
-        my $Size = $Self->{ConfigObject}->Get('Ticket::Frontend::TextAreaEmail') || 82;
-        $Article{Body} =~ s/(^>.+|.{4,$Size})(?:\s|\z)/$1\n/gm;
-    }
-
-    # attach attachments
-    if ( $Param{AttachmentsInclude} ) {
-        my %ArticleIndex = $Self->{TicketObject}->ArticleAttachmentIndex(
-            ArticleID => $Param{ArticleID},
-            UserID    => $Self->{UserID},
-        );
-        for my $Index ( keys %ArticleIndex ) {
-            my %Attachment = $Self->{TicketObject}->ArticleAttachment(
-                ArticleID => $Param{ArticleID},
-                FileID    => $Index,
-                UserID    => $Self->{UserID},
-            );
-
-            # add attachment
-            $Param{UploadCacheObject}->FormIDAddFile(
-                FormID => $Param{FormID},
-                %Attachment,
-            );
-        }
-    }
-
-    # return body as html
-    if ( $Self->{ConfigObject}->Get('Frontend::RichText') ) {
-
-        $Article{Body} = $Self->Ascii2Html(
-            Text           => $Article{Body},
-            HTMLResultMode => 1,
-            LinkFeature    => 1,
-        );
-    }
-
-    # return body as plain text
-    return $Article{Body};
-}
-
-sub TicketListShow {
-    my ( $Self, %Param ) = @_;
-
-    # take object ref to local, remove it from %Param (prevent memory leak)
-    my $Env = $Param{Env};
-    delete $Param{Env};
-
-    # lookup latest used view mode
-    if ( !$Param{View} && $Self->{ 'UserTicketOverview' . $Env->{Action} } ) {
-        $Param{View} = $Self->{ 'UserTicketOverview' . $Env->{Action} };
-    }
-
-    # set defaut view mode to 'small'
-    my $View = $Param{View} || 'Small';
-
-    # set default view mode for AgentTicketQueue
-    if ( !$Param{View} && $Env->{Action} eq 'AgentTicketQueue' ) {
-        $View = 'Preview';
-    }
-
-    # store latest view mode
-    $Self->{SessionObject}->UpdateSessionID(
-        SessionID => $Self->{SessionID},
-        Key       => 'UserTicketOverview' . $Env->{Action},
-        Value     => $View,
-    );
-
-    # update preferences if needed
-    my $Key = 'UserTicketOverview' . $Env->{Action};
-    if ( !$Self->{ConfigObject}->Get('DemoSystem') && $Self->{$Key} ne $View ) {
-        $Self->{UserObject}->SetPreferences(
-            UserID => $Self->{UserID},
-            Key    => $Key,
-            Value  => $View,
-        );
-    }
-
-    # check backends
-    my $Backends = $Self->{ConfigObject}->Get('Ticket::Frontend::Overview');
-    if ( !$Backends ) {
-        return $Env->{LayoutObject}->FatalError(
-            Message => 'Need config option Ticket::Frontend::Overview',
-        );
-    }
-    if ( ref $Backends ne 'HASH' ) {
-        return $Env->{LayoutObject}->FatalError(
-            Message => 'Config option Ticket::Frontend::Overview need to be HASH ref!',
-        );
-    }
-
-    # check if selected view is available
-    if ( !$Backends->{$View} ) {
-
-        # try to find fallback, take first configured view mode
-        for my $Key ( sort keys %{$Backends} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "No Config option found for view mode $View, took $Key instead!",
-            );
-            $View = $Key;
-            last;
-        }
-    }
-
-    # load overview backend module
-    if ( !$Self->{MainObject}->Require( $Backends->{$View}->{Module} ) ) {
-        return $Env->{LayoutObject}->FatalError();
-    }
-    my $Object = $Backends->{$View}->{Module}->new( %{$Env} );
-    return if !$Object;
-
-    # run action row backend module
-    $Param{ActionRow} = $Object->ActionRow(
-        %Param,
-        Config => $Backends->{$View},
-    );
-
-    # run overview backend module
-    $Param{SortOrderBar} = $Object->SortOrderBar(
-        %Param,
-        Config => $Backends->{$View},
-    );
-
-    # check start option, if higher then tickets available, set
-    # it to the last ticket page (Thanks to Stefan Schmidt!)
-    my $StartHit = $Self->{ParamObject}->GetParam( Param => 'StartHit' ) || 1;
-
-    # get personal page shown count
-    my $PageShownPreferencesKey = 'UserTicketOverview' . $View . 'PageShown';
-    my $PageShown               = $Self->{$PageShownPreferencesKey} || 10;
-    my $Group                   = 'TicketOverview' . $View . 'PageShown';
-
-    # get data selection
-    my %Data;
-    my $Config = $Self->{ConfigObject}->Get('PreferencesGroups');
-    if ( $Config && $Config->{$Group} && $Config->{$Group}->{Data} ) {
-        %Data = %{ $Config->{$Group}->{Data} };
-    }
-
-    # calculate max. shown per page
-    if ( $StartHit > $Param{Total} ) {
-        my $Pages = int( ( $Param{Total} / $PageShown ) + 0.99999 );
-        $StartHit = ( ( $Pages - 1 ) * $PageShown ) + 1;
-    }
-
-    # build nav bar
-    my $Limit = $Param{Limit} || 20_000;
-    my %PageNav = $Env->{LayoutObject}->PageNavBar(
-        Limit     => $Limit,
-        StartHit  => $StartHit,
-        PageShown => $PageShown,
-        AllHits   => $Param{Total} || 0,
-        Action    => 'Action=' . $Env->{LayoutObject}->{Action},
-        Link      => $Param{LinkPage},
-        IDPrefix  => $Env->{LayoutObject}->{Action},
-    );
-
-    # build shown ticket per page
-    $Param{RequestedURL}    = "Action=$Self->{Action}";
-    $Param{Group}           = $Group;
-    $Param{PreferencesKey}  = $PageShownPreferencesKey;
-    $Param{PageShownString} = $Self->BuildSelection(
-        Name        => $PageShownPreferencesKey,
-        SelectedID  => $PageShown,
-        Translation => 0,
-        Data        => \%Data,
-    );
-
-    # nav bar at the beginning of a overview
-    $Param{View} = $View;
-    $Env->{LayoutObject}->Block(
-        Name => 'OverviewNavBar',
-        Data => \%Param,
-    );
-
-    # back link
-    if ( $Param{LinkBack} ) {
-        $Env->{LayoutObject}->Block(
-            Name => 'OverviewNavBarPageBack',
-            Data => \%Param,
-        );
-    }
-
-    # filter selection
-    if ( $Param{Filters} ) {
-        my @NavBarFilters;
-        for my $Prio ( sort keys %{ $Param{Filters} } ) {
-            push @NavBarFilters, $Param{Filters}->{$Prio};
-        }
-        $Env->{LayoutObject}->Block(
-            Name => 'OverviewNavBarFilter',
-            Data => {
-                %Param,
-            },
-        );
-        my $Count = 0;
-        for my $Filter (@NavBarFilters) {
-            $Count++;
-            if ( $Count == scalar @NavBarFilters ) {
-                $Filter->{CSS} = 'Last';
-            }
-            $Env->{LayoutObject}->Block(
-                Name => 'OverviewNavBarFilterItem',
-                Data => {
-                    %Param,
-                    %{$Filter},
-                },
-            );
-            if ( $Filter->{Filter} eq $Param{Filter} ) {
-                $Env->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarFilterItemSelected',
+            elsif ($Counter > 1) {
+                $Data{"TicketFreeKeyField$_"} = $Self->OptionStrgHashRef(
                     Data => {
-                        %Param,
-                        %{$Filter},
+                        %NullOption,
+                        %{$Config{"TicketFreeKey$_"}},
                     },
+                    Name => "TicketFreeKey$_",
+                    SelectedID => $Ticket{"TicketFreeKey$_"},
+                    SelectedIDRefArray => $Ticket{"TicketFreeKey$_"},
+                    LanguageTranslation => 0,
+                    HTMLQuote => 1,
+                    %SelectData,
                 );
             }
             else {
-                $Env->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarFilterItemSelectedNot',
+                if ($LastKey) {
+                    $Data{"TicketFreeKeyField$_"} = $Config{"TicketFreeKey$_"}->{$LastKey}.
+                        '<input type="hidden" name="TicketFreeKey'.$_.'" value="'.$Self->{LayoutObject}->Ascii2Html(Text => $LastKey).'">';
+                }
+            }
+        }
+        else {
+            if (defined($Ticket{"TicketFreeKey$_"})) {
+                if (ref($Ticket{"TicketFreeKey$_"}) eq 'ARRAY') {
+                    if ($Ticket{"TicketFreeKey$_"}->[0]) {
+                        $Ticket{"TicketFreeKey$_"} = $Ticket{"TicketFreeKey$_"}->[0];
+                    }
+                    else {
+                       $Ticket{"TicketFreeKey$_"} = '';
+                    }
+                }
+                $Data{"TicketFreeKeyField$_"} = '<input type="text" name="TicketFreeKey'.$_.'" value="'.$Self->{LayoutObject}->Ascii2Html(Text => $Ticket{"TicketFreeKey$_"}).'" size="20">';
+            }
+            else {
+                $Data{"TicketFreeKeyField$_"} = '<input type="text" name="TicketFreeKey'.$_.'" value="" size="20">';
+            }
+        }
+        # value
+        if (ref($Config{"TicketFreeText$_"}) eq 'HASH') {
+            $Data{"TicketFreeTextField$_"} = $Self->OptionStrgHashRef(
+                Data => {
+                    %NullOption,
+                    %{$Config{"TicketFreeText$_"}},
+                },
+                Name => "TicketFreeText$_",
+                SelectedID => $Ticket{"TicketFreeText$_"},
+                SelectedIDRefArray => $Ticket{"TicketFreeText$_"},
+                LanguageTranslation => 0,
+                HTMLQuote => 1,
+                %SelectData,
+            );
+        }
+        else {
+            if (defined($Ticket{"TicketFreeText$_"})) {
+                if (ref($Ticket{"TicketFreeText$_"}) eq 'ARRAY') {
+                    if ($Ticket{"TicketFreeText$_"}->[0]) {
+                        $Ticket{"TicketFreeText$_"} = $Ticket{"TicketFreeText$_"}->[0];
+                    }
+                    else {
+                        $Ticket{"TicketFreeText$_"} = '';
+                    }
+                }
+                $Data{"TicketFreeTextField$_"} = '<input type="text" name="TicketFreeText'.$_.'" value="'.$Self->{LayoutObject}->Ascii2Html(Text => $Ticket{"TicketFreeText$_"}).'" size="30">';
+            }
+            else {
+                $Data{"TicketFreeTextField$_"} = '<input type="text" name="TicketFreeText'.$_.'" value="" size="30">';
+            }
+        }
+    }
+    return %Data;
+}
+
+sub AgentFreeDate {
+    my $Self = shift;
+    my %Param = @_;
+    my %NullOption = ();
+    my %SelectData = ();
+    my %Ticket = ();
+    my %Config = ();
+    if ($Param{NullOption}) {
+#        $NullOption{''} = '-';
+        $SelectData{Size} = 3;
+        $SelectData{Multiple} = 1;
+    }
+    if ($Param{Ticket}) {
+        %Ticket = %{$Param{Ticket}};
+    }
+    if ($Param{Config}) {
+        %Config = %{$Param{Config}};
+    }
+    my %Data = ();
+    foreach my $Count (1..2) {
+        $Data{'TicketFreeTime'.$Count} = $Self->BuildDateSelection(
+            %Param,
+            %Ticket,
+            Prefix => 'TicketFreeTime'.$Count,
+            Format => 'DateInputFormatLong',
+            DiffTime => $Self->{ConfigObject}->Get('TicketFreeTimeDiff'.$Count) || 0,
+        );
+    }
+    return %Data;
+}
+
+sub TicketArticleFreeText {
+    my $Self = shift;
+    my %Param = @_;
+    my %NullOption = ();
+    my %SelectData = ();
+    my %Article = ();
+    my %Config = ();
+    if ($Param{NullOption}) {
+#        $NullOption{''} = '-';
+        $SelectData{Size} = 3;
+        $SelectData{Multiple} = 1;
+    }
+    if ($Param{Article}) {
+        %Article = %{$Param{Article}};
+    }
+    if ($Param{Config}) {
+        %Config = %{$Param{Config}};
+    }
+    my %Data = ();
+    foreach (1..3) {
+        # key
+        if (ref($Config{"ArticleFreeKey$_"}) eq 'HASH' && %{$Config{"ArticleFreeKey$_"}}) {
+            my $Counter = 0;
+            my $LastKey = '';
+            foreach (keys %{$Config{"ArticleFreeKey$_"}}) {
+                $Counter++;
+                $LastKey = $_;
+            }
+            if ($Counter == 1 && $Param{NullOption}) {
+                if ($LastKey) {
+                    $Data{"ArticleFreeKeyField$_"} = $Config{"ArticleFreeKey$_"}->{$LastKey};
+                }
+            }
+            elsif ($Counter > 1) {
+                $Data{"ArticleFreeKeyField$_"} = $Self->OptionStrgHashRef(
                     Data => {
-                        %Param,
-                        %{$Filter},
+                        %NullOption,
+                        %{$Config{"ArticleFreeKey$_"}},
                     },
+                    Name => "ArticleFreeKey$_",
+                    SelectedID => $Article{"ArticleFreeKey$_"},
+                    SelectedIDRefArray => $Article{"ArticleFreeKey$_"},
+                    LanguageTranslation => 0,
+                    HTMLQuote => 1,
+                    %SelectData,
                 );
             }
-        }
-    }
-
-    # view mode
-    for my $Backend ( keys %{$Backends} ) {
-        $Env->{LayoutObject}->Block(
-            Name => 'OverviewNavBarViewMode',
-            Data => {
-                %Param,
-                %{ $Backends->{$Backend} },
-                Filter => $Param{Filter},
-                View   => $Backend,
-            },
-        );
-        if ( $View eq $Backend ) {
-            $Env->{LayoutObject}->Block(
-                Name => 'OverviewNavBarViewModeSelected',
-                Data => {
-                    %Param,
-                    %{ $Backends->{$Backend} },
-                    Filter => $Param{Filter},
-                    View   => $Backend,
-                },
-            );
-        }
-        else {
-            $Env->{LayoutObject}->Block(
-                Name => 'OverviewNavBarViewModeNotSelected',
-                Data => {
-                    %Param,
-                    %{ $Backends->{$Backend} },
-                    Filter => $Param{Filter},
-                    View   => $Backend,
-                },
-            );
-        }
-    }
-
-    if (%PageNav) {
-        $Env->{LayoutObject}->Block(
-            Name => 'OverviewNavBarPageNavBar',
-            Data => \%PageNav,
-        );
-
-        # don't show context settings in AJAX case (e. g. in customer ticket history),
-        #   because the submit with page reload will not work there
-        if ( !$Param{AJAX} ) {
-            $Env->{LayoutObject}->Block(
-                Name => 'ContextSettings',
-                Data => {
-                    %PageNav,
-                    %Param,
-                },
-            );
-        }
-    }
-
-    if ( $Param{NavBar} ) {
-        if ( $Param{NavBar}->{MainName} ) {
-            $Env->{LayoutObject}->Block(
-                Name => 'OverviewNavBarMain',
-                Data => $Param{NavBar},
-            );
-        }
-    }
-
-    my $OutputNavBar = $Env->{LayoutObject}->Output(
-        TemplateFile => 'AgentTicketOverviewNavBar',
-        Data         => { %Param, },
-    );
-    my $OutputRaw = '';
-    if ( !$Param{Output} ) {
-        $Env->{LayoutObject}->Print( Output => \$OutputNavBar );
-    }
-    else {
-        $OutputRaw .= $OutputNavBar;
-    }
-
-    # run overview backend module
-    my $Output = $Object->Run(
-        %Param,
-        Config    => $Backends->{$View},
-        Limit     => $Limit,
-        StartHit  => $StartHit,
-        PageShown => $PageShown,
-        AllHits   => $Param{Total} || 0,
-        Output    => $Param{Output} || '',
-    );
-    if ( !$Param{Output} ) {
-        $Env->{LayoutObject}->Print( Output => \$Output );
-    }
-    else {
-        $OutputRaw .= $Output;
-    }
-
-    return $OutputRaw;
-}
-
-sub TicketMetaItemsCount {
-    my ( $Self, %Param ) = @_;
-    return ( 'Priority', 'New Article' );
-}
-
-sub TicketMetaItems {
-    my ( $Self, %Param ) = @_;
-
-    if ( ref $Param{Ticket} ne 'HASH' ) {
-        $Self->FatalError( Message => 'Need Hash ref in Ticket param!' );
-    }
-
-    # return attributes
-    my @Result;
-
-    # show priority
-    push @Result, {
-
-        #            Image => $Image,
-        Title      => $Param{Ticket}->{Priority},
-        Class      => 'Flag',
-        ClassSpan  => 'PriorityID-' . $Param{Ticket}->{PriorityID},
-        ClassTable => 'Flags',
-    };
-
-    # show new article
-    my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
-        TicketID => $Param{Ticket}->{TicketID},
-        UserID   => $Self->{UserID},
-    );
-
-    # show if new message is in there
-    if ( $TicketFlag{Seen} ) {
-        push @Result, undef;
-    }
-    else {
-
-        # just show ticket flags if agent belongs to the ticket
-        my $ShowMeta;
-        if (
-            $Self->{UserID} == $Param{Ticket}->{OwnerID}
-            || $Self->{UserID} == $Param{Ticket}->{ResponsibleID}
-            )
-        {
-            $ShowMeta = 1;
-        }
-        if ( !$ShowMeta && $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
-            my %Watch = $Self->{TicketObject}->TicketWatchGet(
-                TicketID => $Param{Ticket}->{TicketID},
-            );
-            if ( $Watch{ $Self->{UserID} } ) {
-                $ShowMeta = 1;
+            else {
+                if ($LastKey) {
+                    $Data{"ArticleFreeKeyField$_"} = $Config{"ArticleFreeKey$_"}->{$LastKey}.
+                        '<input type="hidden" name="ArticleFreeKey'.$_.'" value="'.$Self->{LayoutObject}->Ascii2Html(Text => $LastKey).'">';
+                }
             }
         }
-
-        # show ticket flags
-        my $Image = 'meta-new-inactive.png';
-        if ($ShowMeta) {
-            $Image = 'meta-new.png';
-            push @Result, {
-                Image      => $Image,
-                Title      => 'Unread article(s) available',
-                Class      => 'UnreadArticles',
-                ClassSpan  => 'UnreadArticles Important',
-                ClassTable => 'UnreadArticles',
-            };
+        else {
+            if (defined($Article{"ArticleFreeKey$_"})) {
+                if (ref($Article{"ArticleFreeKey$_"}) eq 'ARRAY') {
+                    if ($Article{"ArticleFreeKey$_"}->[0]) {
+                        $Article{"ArticleFreeKey$_"} = $Article{"ArticleFreeKey$_"}->[0];
+                    }
+                    else {
+                        $Article{"ArticleFreeKey$_"} = '';
+                    }
+                }
+                $Data{"ArticleFreeKeyField$_"} = '<input type="text" name="ArticleFreeKey'.$_.'" value="'.$Self->{LayoutObject}->Ascii2Html(Text => $Article{"ArticleFreeKey$_"}).'" size="20">';
+            }
+            else {
+                $Data{"ArticleFreeKeyField$_"} = '<input type="text" name="ArticleFreeKey'.$_.'" value="" size="20">';
+            }
+        }
+        # value
+        if (ref($Config{"ArticleFreeText$_"}) eq 'HASH') {
+            $Data{"ArticleFreeTextField$_"} = $Self->OptionStrgHashRef(
+                Data => {
+                    %NullOption,
+                    %{$Config{"ArticleFreeText$_"}},
+                },
+                Name => "ArticleFreeText$_",
+                SelectedID => $Article{"ArticleFreeText$_"},
+                SelectedIDRefArray => $Article{"ArticleFreeText$_"},
+                LanguageTranslation => 0,
+                HTMLQuote => 1,
+                %SelectData,
+            );
         }
         else {
-            push @Result, {
-                Image      => $Image,
-                Title      => 'Unread article(s) available',
-                Class      => 'UnreadArticles',
-                ClassSpan  => 'UnreadArticles Unimportant',
-                ClassTable => 'UnreadArticles',
-            };
+            if (defined($Article{"ArticleFreeText$_"})) {
+                if (ref($Article{"ArticleFreeText$_"}) eq 'ARRAY') {
+                    if ($Article{"ArticleFreeText$_"}->[0]) {
+                        $Article{"ArticleFreeText$_"} = $Article{"ArticleFreeText$_"}->[0];
+                    }
+                    else {
+                        $Article{"ArticleFreeText$_"} = '';
+                    }
+                }
+                $Data{"ArticleFreeTextField$_"} = '<input type="text" name="ArticleFreeText'.$_.'" value="'.$Self->{LayoutObject}->Ascii2Html(Text => $Article{"ArticleFreeText$_"}).'" size="30">';
+            }
+            else {
+                $Data{"ArticleFreeTextField$_"} = '<input type="text" name="ArticleFreeText'.$_.'" value="" size="30">';
+            }
         }
     }
+    return %Data;
+}
 
-    return @Result;
+sub CustomerFreeDate {
+    my $Self = shift;
+    my %Param = @_;
+    my %NullOption = ();
+    my %SelectData = ();
+    my %Ticket = ();
+    my %Config = ();
+    if ($Param{NullOption}) {
+#        $NullOption{''} = '-';
+        $SelectData{Size} = 3;
+        $SelectData{Multiple} = 1;
+    }
+    if ($Param{Ticket}) {
+        %Ticket = %{$Param{Ticket}};
+    }
+    if ($Param{Config}) {
+        %Config = %{$Param{Config}};
+    }
+    my %Data = ();
+    foreach my $Count (1..2) {
+        $Data{'TicketFreeTime'.$Count} = $Self->BuildDateSelection(
+            Area => 'Customer',
+            %Param,
+            %Ticket,
+            Prefix => 'TicketFreeTime'.$Count,
+            Format => 'DateInputFormatLong',
+            DiffTime => $Self->{ConfigObject}->Get('TicketFreeTimeDiff'.$Count) || 0,
+        );
+    }
+    return %Data;
 }
 
 1;
