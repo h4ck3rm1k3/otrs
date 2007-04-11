@@ -1,23 +1,19 @@
 # --
 # FileTemp.t - FileTemp tests
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: FileTemp.t,v 1.11 2010/10/29 05:03:20 en Exp $
+# $Id: FileTemp.t,v 1.2.2.1 2007/04/11 10:05:51 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
-
-use strict;
-use warnings;
-use vars (qw($Self));
 
 use Kernel::System::FileTemp;
 
-my $FileTempObject = Kernel::System::FileTemp->new( %{$Self} );
+$Self->{FileTempObject} = Kernel::System::FileTemp->new(%{$Self});
 
-my ( $FH, $Filename ) = $FileTempObject->TempFile();
+my ($fh, $Filename) = $Self->{FileTempObject}->TempFile();
 
 $Self->True(
     $Filename,
@@ -25,16 +21,18 @@ $Self->True(
 );
 
 $Self->True(
-    ( -e $Filename ),
+    (-e $Filename),
     'TempFile() -e',
 );
 
-# destruction of object should delete the tempfiles
-$FileTempObject = undef;
+$Self->{FileTempObject} = undef;
 
-$Self->False(
-    ( -e $Filename ),
-    'TempFile() -e after destroy',
-);
+# don't use this check on win (because it just gets removed after ending the process)
+if ($^O !~ /win/) {
+    $Self->True(
+        (! -e $Filename),
+        'TempFile() -e after destroy',
+    );
+}
 
 1;
