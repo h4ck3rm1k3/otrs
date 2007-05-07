@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.1 2007/05/07 18:47:55 sr Exp $
+# $Id: Support.pm,v 1.2 2007/05/07 19:20:56 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::Email;
 use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.1 $';
+$VERSION = '$Revision: 1.2 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -40,17 +40,17 @@ All required support informations to a running OTRS system.
 
 create Support object
 
-  use Kernel::Config;
-  use Kernel::System::Log;
-  my $ConfigObject = Kernel::Config->new();
-  my $LogObject = Kernel::System::Log->new(
-      ConfigObject => $ConfigObject,
-  );
+use Kernel::Config;
+use Kernel::System::Log;
+my $ConfigObject = Kernel::Config->new();
+my $LogObject = Kernel::System::Log->new(
+    ConfigObject => $ConfigObject,
+);
 
-  $SupportObject = Kernel::System::Support->new(
-      ConfigObject => $ConfigObject,
-      LogObject => $LogObject,
-  );
+$SupportObject = Kernel::System::Support->new(
+    ConfigObject => $ConfigObject,
+    LogObject => $LogObject,
+);
 
 =cut
 
@@ -69,7 +69,7 @@ sub new {
         ConfigObject => $Self->{ConfigObject},
         MainObject => $Self->{MainObject},
         LogObject => $Self->{LogObject},
-        
+
     );
     $Self->{TimeObject} = Kernel::System::Time->new(%Param);
     $Self->{EmailObject} = Kernel::System::Email->new(
@@ -157,10 +157,10 @@ sub SupportInfoGet {
         $Self->{LogObject}->Log(Priority => 'error', Message => "DataHash and InputHash must be a hash reference!");
         return;
     }
-    
+
     # get the directory name
     my $DirName = $Self->{ConfigObject}->Get('Home').'/Kernel/System/Support/';
-    
+
     # read all availible modules in @List
     my @List = glob($DirName."/*.pm");
     foreach my $File (@List) {
@@ -202,7 +202,7 @@ get a hash reference with possibility checks.
 
 =cut
 
-sub AdminChecksGet {  
+sub AdminChecksGet {
     my $Self = shift;
     my %Param = @_;
     # check needed stuff
@@ -259,15 +259,15 @@ returns a string with xml.
 
 <?xml version="1.0" encoding="iso-8859-1"?>
 <SupportInfo>
-  <Hardware>
-    <MemorySwapCheck>
-      <Check>OK</Check>
-      <Comment>The Host System has 1011 MB Memory total. 108 MB Memory free. 643 MB Swap total. 643 MB Swap free. </Comment>
-      <Description>A Memory Check. We try to find out if SwapFree : SwapTotal &lt; 60 % or if more than 200 MB Swap is used.</Description>
-      <Name>Memory Swap Check</Name>
-      <Key>MemorySwapCheck</Key>
-    </MemorySwapCheck>
-  </Hardware>
+    <Hardware>
+        <MemorySwapCheck>
+            <Check>OK</Check>
+            <Comment>The Host System has 1011 MB Memory total. 108 MB Memory free. 643 MB Swap total. 643 MB Swap free. </Comment>
+            <Description>A Memory Check. We try to find out if SwapFree : SwapTotal &lt; 60 % or if more than 200 MB Swap is used.</Description>
+            <Name>Memory Swap Check</Name>
+            <Key>MemorySwapCheck</Key>
+        </MemorySwapCheck>
+    </Hardware>
 </SupportInfo>
 
 =cut
@@ -286,7 +286,7 @@ sub XMLStringCreate {
         $Self->{LogObject}->Log(Priority => 'error', Message => "DataHash must be a hash reference!");
         return;
     }
-    
+
     my $XMLHash = [];
     foreach my $Module (keys %{$Param{DataHash}}) {
         foreach my $DataHashRow (@{$Param{DataHash}->{$Module}}) {
@@ -320,7 +320,7 @@ sub SupportSendInfo {
     # send mail to gateway
     if ($Self->{EmailObject}->Send(
         From => $Self->{ConfigObject}->Get('AdminEmail'),
-        To => 'sr@otrs.com',
+        To => 'support@otrs.com',
         Subject => 'Customer SystemInfo from',
         Type => 'text/plain',
         Charset => 'utf-8',
@@ -361,6 +361,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.1 $ $Date: 2007/05/07 18:47:55 $
+$Revision: 1.2 $ $Date: 2007/05/07 19:20:56 $
 
 =cut
