@@ -1,0 +1,168 @@
+# --
+# AdminSupport.dtl - provides HTML form for AdminSupport
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
+# --
+# $Id: AdminSupport.dtl,v 1.1 2007/05/07 18:47:55 sr Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# --
+
+<!-- dtl:block:Overview -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+  <tr>
+    <td class="mainhead">$Env{"Box0"}$Text{"Admin Support Info"}$Env{"Box1"}</td>
+  </tr>
+  <tr>
+    <td class="menu">
+      <a href="$Env{"Baselink"}Action=$Env{"Action"}&Subaction=GetRequiredInfo">Create Support Package</a>
+    </td>
+  </tr>
+  <tr>
+    <td class="mainbody" align="center">
+      <br>
+<!-- dtl:block:OverviewModule -->
+      <table width="800" cellspacing="0" cellpadding="4">
+        <tr>
+          <td class="contenthead">$QData{"Module"}</td>
+        </tr>
+        <tr>
+          <td class="contentbody">
+            <table width="100%" border="0" cellspacing="0" cellpadding="3">
+              <tr>
+                <td class="contentkey" width="150">$Text{"Name"}</td>
+                <td class="contentkey" width="250">$Text{"Description"}</td>
+                <td class="contentkey">$Text{"Comment"}</td>
+                <td class="contentkey" width="50">$Text{"Check"}</td>
+              </tr>
+<!-- dtl:block:OverviewModuleRow -->
+              <tr>
+                <td class="$QData{"CssClass"}">$QData{"Name"}</td>
+                <td class="$QData{"CssClass"}">$QData{"Description"}</td>
+                <td class="$QData{"CssClass"}">$QData{"Comment"}</td>
+                <td class="$QData{"CssClass"}"><font color="$QData{"FontColor"}">$QData{"Check"}</font></td>
+              </tr>
+<!-- dtl:block:OverviewModuleRow -->
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td class="contentfooter">
+            &nbsp;
+          </td>
+        </tr>
+      </table>
+      <br>
+<!-- dtl:block:OverviewModule -->
+      <br>
+    </td>
+  </tr>
+</table>
+<!-- dtl:block:Overview -->
+<!-- dtl:block:Required -->
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td class="mainhead">$Env{"Box0"}$Text{"Admin Support Info"}$Env{"Box1"}</td>
+  </tr>
+  <tr>
+    <td class="mainbody" align="center">
+      <br>
+        <form action="$Env{"CGIHandle"}" method="post">
+        <input type="hidden" name="Action" value="$Env{"Action"}">
+        <input type="hidden" name="Subaction" value="Confidential">
+        <table border="0" width="800px" align="center" cellspacing="0" cellpadding="3">
+<!-- dtl:block:RequiredInfo -->
+          <tr>
+            <td colspan="3" class="contenthead">$QData{"ConfigModule"}</td>
+          </tr>
+          <tr>
+            <td class="contentbody">
+              <table width="800px" cellspacing="0" cellpadding="3">
+<!-- dtl:block:RequiredInfoRow -->
+<!-- dtl:block:RequiredInfoRowText -->
+                <tr>
+                  <td class="contentkey" width="25%">$QData{"Name"}:</td>                
+                  <td class="contentvalue" width="35%"><input type="text" name="$QData{"Key"}" value="$QData{"Value"}" size="$QData{"Size"}"></td>
+                  <td class="contentvalue"><font color="red" size="-2"> (* $QData{"Description"}</font></td>
+                </tr>
+<!-- dtl:block:RequiredInfoRowText -->
+<!-- dtl:block:RequiredInfoRowSelect -->
+                <tr>
+                  <td class="contentkey" width="25%">$QData{"Name"}:</td>                
+                  <td class="contentvalue" width="35%">$Data{"SelectStrg"}</td>
+                  <td class="contentvalue"><font color="red" size="-2"> (* $QData{"Description"}</font></td>
+                </tr>
+<!-- dtl:block:RequiredInfoRowSelect -->
+<!-- dtl:block:RequiredInfoRow -->
+              </table>
+            </td>
+          </tr>
+<!-- dtl:block:RequiredInfo -->
+          <tr>
+            <td class="contentfooter">
+              <input class="button" type="submit" value="$Text{"Next..."}">
+            </td>
+          </tr>
+        </table>
+        </form>
+      <br>
+    </td>
+  </tr>
+</table>
+<!-- dtl:block:Required -->
+<!-- dtl:block:Confidential -->
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td class="mainhead">$Env{"Box0"}$Text{"Admin Support Info"}$Env{"Box1"}</td>
+  </tr>
+  <tr>
+    <td class="mainbody" align="center">
+      <br>
+        <form action="$Env{"CGIHandle"}" method="post">
+	    <input type="hidden" name="Action" value="$Env{"Action"}">
+	    <input type="hidden" name="Subaction" value="UploadSupportInfo">
+        <table border="0" width="800px" align="center" cellspacing="0" cellpadding="3">
+          <tr>
+            <td colspan="3" class="contenthead">$Text{"Confidential information"}</td>
+          </tr>
+          <tr>
+            <td class="contentbody">
+            
+<!-- dtl:block:ConfidentialHidden -->
+            <input type="hidden" name="$QData{"Name"}" value="$QData{"Value"}">
+<!-- dtl:block:ConfidentialHidden -->
+
+              <table width="800px" cellspacing="0" cellpadding="3">
+                <tr>
+                  <td class="contentkey" width="150">$Text{"Confidential"}:</td>
+                  <td class="contentbody" colspan="2">
+                  <textarea name="Confidential" rows="4" cols="78">
+Any and all information disclosed to OTRS will be kept strictly confidential and are only used for providing better support services to our customers.
+                  </textarea>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="3" class="contenthead">$Text{"Commercial support"}</td>
+                </tr>
+                <tr>
+                  <td class="contentkey" width="150">$Text{"Commercial support ID"}:</td>
+                  <td class="contentvalue"><input type="Text" name="SupportID" value="" size="40"></td>
+                  <td class="contentvalue"><font color="red" size="-2"> (* $Text{"if you are already a commercial support customer, please add your support id. (not required!)"})</font></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="contentfooter">
+              <input class="button" type="submit" name="Download" value="$Text{"Download"}">
+              <input class="button" type="submit" name="Send" value="$Text{"Send"}">
+            </td>
+          </tr>
+        </table>
+        </form>
+      <br>
+    </td>
+  </tr>
+</table>
+<!-- dtl:block:Confidential -->

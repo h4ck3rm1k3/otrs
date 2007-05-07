@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<otrs_package version="1.0">
+    <CVS>$Id: Support.sopm,v 1.1 2007/05/07 18:47:55 sr Exp $</CVS>
+    <Name>Support</Name>
+    <Version>0.0.0</Version>
+    <Framework>2.2</Framework>
+    <Vendor>OTRS GmbH</Vendor>
+    <URL>http://otrs.org/</URL>
+    <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
+    <Description Lang="en">A admin support tool.</Description>
+    <Description Lang="de">Ein Admin Support Tool.</Description>
+    <Filelist>
+        <File Permission="644" Location="Kernel/Config/Files/Support.xml" />
+        <File Permission="644" Location="Kernel/Modules/AdminSupport.pm" />
+        <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupport.dtl" />
+        <File Permission="644" Location="Kernel/System/Support.pm" />
+        <File Permission="644" Location="Kernel/System/Support/Cron.pm" />
+        <File Permission="644" Location="Kernel/System/Support/Database.pm" />
+        <File Permission="644" Location="Kernel/System/Support/Hardware.pm" />
+        <File Permission="644" Location="Kernel/System/Support/OTRS.pm" />
+        <File Permission="644" Location="Kernel/System/Support/Webserver.pm" />
+    </Filelist>
+</otrs_package>
