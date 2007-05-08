@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.1 2007/05/07 18:47:55 sr Exp $
+# $Id: AdminSupport.pm,v 1.2 2007/05/08 07:50:19 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = '$Revision: 1.1 $';
+$VERSION = '$Revision: 1.2 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -37,7 +37,7 @@ sub new {
         }
     }
     $Self->{SupportObject} = Kernel::System::Support->new(%Param);
-    
+
     return $Self;
 }
 
@@ -45,7 +45,7 @@ sub Run {
     my $Self = shift;
     my %Param = @_;
     my $ConfigHash = {};
-    
+
     # create config hash reference
     $Self->{SupportObject}->SupportConfigHashGet(
         ConfigHash => $ConfigHash,
@@ -65,18 +65,21 @@ sub Run {
         );
         # first level Hashref (each module name)
         foreach my $ConfigModule (sort keys %{$ConfigHash}) {
+            if (!$ConfigHash->{$ConfigModule}->[0]) {
+                next;
+            }
             $Self->{LayoutObject}->Block(
                 Name => 'RequiredInfo',
                 Data => {
                     ConfigModule => $ConfigModule,
                 },
             );
-             # second level Arrayref (each module)
+            # second level array reference (each module)
             foreach my $ConfigHashRow (@{$ConfigHash->{$ConfigModule}}) {
                 $Self->{LayoutObject}->Block(
                     Name => 'RequiredInfoRow',
                 );
-                # if $ConfigHashRow->{Input}->{Type} = "Text", create a new textfield
+                # create a new textfield
                 if ($ConfigHashRow->{Input}->{Type} eq "Text") {
                     $Self->{LayoutObject}->Block(
                         Name => 'RequiredInfoRowText',
@@ -89,7 +92,7 @@ sub Run {
                         },
                     );
                 }
-                # if $ConfigHashRow->{Input}->{Type} = "Search", create a new dropdown field
+                # create a new dropdown field
                 elsif ($ConfigHashRow->{Input}->{Type} eq "Select") {
                     my $SelectStrg = $Self->{LayoutObject}->BuildSelection(
                         Data => $ConfigHashRow->{Input}->{Data} || {},
@@ -113,11 +116,11 @@ sub Run {
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
-    
+
     # ------------------------------------------------------------ #
     # Confidential and SupportID
     # ------------------------------------------------------------ #
-    
+
     elsif ($Self->{Subaction} eq 'Confidential') {
         # create & return output
         my $Output = $Self->{LayoutObject}->Header();
@@ -130,7 +133,7 @@ sub Run {
         foreach my $ConfigModule (keys %{$ConfigHash}) {
             foreach my $ConfigHashRow (@{$ConfigHash->{$ConfigModule}}) {
                 my $Value = $Self->{ParamObject}->GetParam(Param => $ConfigModule . '::' . $ConfigHashRow->{Key});
-                
+
                 $Self->{LayoutObject}->Block(
                     Name => 'ConfidentialHidden',
                     Data => {
@@ -148,15 +151,15 @@ sub Run {
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
-    
+
     # ------------------------------------------------------------ #
     # UploadSupportInfo
     # ------------------------------------------------------------ #
-    
+
     elsif ($Self->{Subaction} eq 'UploadSupportInfo') {
         my $DataHash = {};
         my $InputHash = {};
-        
+
         # create & return output
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
@@ -169,7 +172,7 @@ sub Run {
         foreach my $ConfigModule (keys %{$ConfigHash}) {
             my $ModuleInputData = {};
             foreach my $ConfigHashRow (@{$ConfigHash->{$ConfigModule}}) {
-                $ModuleInputData->{$ConfigHashRow->{Key}} = 
+                $ModuleInputData->{$ConfigHashRow->{Key}} =
                     $Self->{ParamObject}->GetParam(Param => $ConfigModule . '::' . $ConfigHashRow->{Key}) || '';
             }
             $InputHash->{$ConfigModule} = $ModuleInputData;
@@ -179,7 +182,7 @@ sub Run {
             DataHash => $DataHash,
             InputHash => $InputHash,
         );
-        
+
         my $XMLString = $Self->{SupportObject}->XMLStringCreate(
             DataHash => $DataHash,
         );
@@ -191,16 +194,16 @@ sub Run {
                 $SendMessage = $Self->{SupportObject}->SupportSendInfo(
                     XMLString => $XMLString,
                     SupportID => $Self->{ParamObject}->GetParam(Param => "SupportID"),
-                );   
+                );
                 $Output .= $Self->{LayoutObject}->Notify(
                     Priority => 'warning',
                     Info => $SendMessage,
-                );                 
+                );
             }
             else {
                 $Output .= $Self->{LayoutObject}->Notify(
-                   Priority => 'warning',
-                   Info => 'Can\'t send email to the ((otrs)) support team!'."\n\n".
+                    Priority => 'warning',
+                    Info => 'Can\'t send email to the ((otrs)) support team!'."\n\n".
                         "You will found the otrs system information package at\n".
                         "If you would like to use OTRS support services please send the package to support\@otrs.com or call\n".
                         "our support team per phone to review the next step\n\n".
@@ -226,7 +229,7 @@ sub Run {
                 Type => 'attached',
             );
         }
-        
+
         $Output .= $Self->{LayoutObject}->Output(
             TemplateFile => 'AdminSupport',
             Data => { },
@@ -234,18 +237,18 @@ sub Run {
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
-    
+
     # ------------------------------------------------------------ #
     # overview
     # ------------------------------------------------------------ #
-    
+
     else {
         my $DataHash = {};
         # create data hash reference
         $Self->{SupportObject}->AdminChecksGet(
             DataHash => $DataHash,
         );
-        
+
         # create & return output
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
@@ -274,6 +277,18 @@ sub Run {
                 my $FontColor = "red";
                 if ($RowHash->{Check} eq "OK") {
                     $FontColor = "green";
+                }
+                if ($RowHash->{Description}) {
+                    $RowHash->{Description} = $Self->{LayoutObject}->Ascii2Html(
+                        Text => $RowHash->{Description},
+                        HTMLResultMode => '1',
+                    );
+                }
+                if ($RowHash->{Comment}) {
+                    $RowHash->{Comment} = $Self->{LayoutObject}->Ascii2Html(
+                        Text => $RowHash->{Comment},
+                        HTMLResultMode => '1',
+                    );
                 }
                 # create new block with rotatory css
                 $Self->{LayoutObject}->Block(
