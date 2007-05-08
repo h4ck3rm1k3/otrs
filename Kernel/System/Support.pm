@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.2 2007/05/07 19:20:56 sr Exp $
+# $Id: Support.pm,v 1.3 2007/05/08 07:48:20 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::Email;
 use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.2 $';
+$VERSION = '$Revision: 1.3 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -122,7 +122,7 @@ sub SupportConfigHashGet {
             my $SupportObject = $GenericModule->new(%{$Self});
             if ($SupportObject) {
                 my $ArrayRef = $SupportObject->SupportConfigArrayGet();
-                if (@{$ArrayRef}) {
+                if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
                     $Param{ConfigHash}->{$File} = $ArrayRef;
                 }
             }
@@ -320,7 +320,7 @@ sub SupportSendInfo {
     # send mail to gateway
     if ($Self->{EmailObject}->Send(
         From => $Self->{ConfigObject}->Get('AdminEmail'),
-        To => 'support@otrs.com',
+        To => 'sr@otrs.com',
         Subject => 'Customer SystemInfo from',
         Type => 'text/plain',
         Charset => 'utf-8',
@@ -361,6 +361,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.2 $ $Date: 2007/05/07 19:20:56 $
+$Revision: 1.3 $ $Date: 2007/05/08 07:48:20 $
 
 =cut
