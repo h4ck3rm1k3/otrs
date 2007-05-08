@@ -2,7 +2,7 @@
 # Kernel/System/Support/Hardware.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Hardware.pm,v 1.2 2007/05/08 08:00:56 sr Exp $
+# $Id: Hardware.pm,v 1.3 2007/05/08 09:43:59 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Hardware;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.2 $';
+$VERSION = '$Revision: 1.3 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -198,6 +198,9 @@ sub AdminChecksGet {
     # please add for each new check a part like this
     my $OneCheck = $Self->MemorySwapCheck();
     push (@{$DataArray}, $OneCheck);
+    # please add for each new check a part like this
+    $OneCheck = $Self->CPULoadCheck();
+    push (@{$DataArray}, $OneCheck);
 
     return $DataArray;
 }
@@ -267,10 +270,10 @@ sub MemorySwapCheck {
 
     # build return hash
     my $Describtion = "The Host System has: \n"
-        .'- '.sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{MemTotal} / 1024)) . " MB Memory total \n"
-        .'- '.sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{MemFree} / 1024)) . " MB Memory free \n"
-        .'- '.sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{SwapTotal} / 1024)) . " MB Swap total \n"
-        .'- '.sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{SwapFree} / 1024)) . " MB Swap free ";
+        .sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{MemTotal} / 1024)) . " MB Memory total \n"
+        .sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{MemFree} / 1024)) . " MB Memory free \n"
+        .sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{SwapTotal} / 1024)) . " MB Swap total \n"
+        .sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{SwapFree} / 1024)) . " MB Swap free ";
 
     if ((($MemTmpInfo{MemorySwapCheck}{SwapFree})/($MemTmpInfo{MemorySwapCheck}{SwapTotal}) < 60) ||
         (($MemTmpInfo{MemorySwapCheck}{SwapTotal})-($MemTmpInfo{MemorySwapCheck}{SwapFree}) > 20000)
@@ -288,11 +291,65 @@ sub MemorySwapCheck {
     else {
         $ReturnHash = {
             Key => 'MemorySwapCheck',
-            Name => "A Memory Check. We try to find out if \n"
-                ."SwapFree : SwapTotal < 60 %"
+            Name => 'Memory Swap Check',
+            Description => "A Memory Check. We try to find out if \n"
+                ."SwapFree : SwapTotal < 60 % \n"
                 ." or if more than 200 MB Swap is used.",
             Comment => "$Describtion",
-            Description => 'A Memory Check.',
+            Check => 'Failed',
+        };
+    }
+    return $ReturnHash;
+}
+
+sub CPULoadCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $ReturnHash = {};
+    # check needed stuff
+    foreach (qw()) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+            return;
+        }
+    }
+    my @SplitArray = {};
+    # If used OS is a linux system
+    if ($^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/) {
+        if (-e "/proc/loadavg") {
+            open(LOADFILE, "</proc/loadavg");
+            while(<LOADFILE>) {
+                @SplitArray = split (" ", $_);
+            }
+            close(LOADFILE);
+        }
+    }
+    elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
+
+    }
+    # build return hash
+    my $Describtion = "The Host System has a load: \n"
+        . $SplitArray[0] . " in the last 1 minute \n"
+        . $SplitArray[1] . " in the last 5 minutes \n"
+        . $SplitArray[2] . " in the last 15 minutes";
+
+    if ($SplitArray[2] < '1.00') {
+        $ReturnHash = {
+            Key => 'CPULoadCheck',
+            Name => 'CPU Load',
+            Description => "A CPU load check. We try to find out if \n"
+                ."the system load in the last 15 minutes > 1. \n",
+            Comment => "$Describtion",
+            Check => 'OK',
+        };
+    }
+    else {
+        $ReturnHash = {
+            Key => 'CPULoadCheck',
+            Name => 'CPU Load',
+            Description => "A CPU load check. We try to find out if \n"
+                ."the system load in the last 15 minutes < 1 \n",
+            Comment => "$Describtion",
             Check => 'Failed',
         };
     }
@@ -315,6 +372,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.2 $ $Date: 2007/05/08 08:00:56 $
+$Revision: 1.3 $ $Date: 2007/05/08 09:43:59 $
 
 =cut
