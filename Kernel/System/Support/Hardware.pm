@@ -2,7 +2,7 @@
 # Kernel/System/Support/Hardware.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Hardware.pm,v 1.3 2007/05/08 09:43:59 sr Exp $
+# $Id: Hardware.pm,v 1.4 2007/05/08 10:36:13 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Hardware;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.3 $';
+$VERSION = '$Revision: 1.4 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -154,6 +154,11 @@ sub SupportInfoGet {
     }
     # please add for each new check a part like this
     my $OneCheck = $Self->MemorySwapCheck(
+        Type => $Param{ModuleInputHash}->{Type} || '',
+    );
+    push (@{$DataArray}, $OneCheck);
+    # please add for each new check a part like this
+    $OneCheck = $Self->CPULoadCheck(
         Type => $Param{ModuleInputHash}->{Type} || '',
     );
     push (@{$DataArray}, $OneCheck);
@@ -372,6 +377,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.3 $ $Date: 2007/05/08 09:43:59 $
+$Revision: 1.4 $ $Date: 2007/05/08 10:36:13 $
 
 =cut
