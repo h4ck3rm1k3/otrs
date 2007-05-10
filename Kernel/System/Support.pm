@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.4 2007/05/08 14:56:34 sr Exp $
+# $Id: Support.pm,v 1.5 2007/05/10 06:18:33 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::Email;
 use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.4 $';
+$VERSION = '$Revision: 1.5 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -295,6 +295,7 @@ sub XMLStringCreate {
                 if ($Element eq 'Key') {
                     next;
                 }
+                # remove newlines
                 $DataHashRow->{$Element} =~ s/\015\012|\012|\015//g;
                 $Data->{$Element}->[1]->{Content} = quotemeta($DataHashRow->{$Element});
             }
@@ -362,6 +363,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.4 $ $Date: 2007/05/08 14:56:34 $
+$Revision: 1.5 $ $Date: 2007/05/10 06:18:33 $
 
 =cut
