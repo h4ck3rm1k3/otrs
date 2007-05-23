@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/Oracle.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Oracle.pm,v 1.2 2007/05/23 18:08:35 sr Exp $
+# $Id: Oracle.pm,v 1.3 2007/05/23 18:58:58 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Database::Oracle;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.2 $';
+$VERSION = '$Revision: 1.3 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -191,6 +191,10 @@ sub AdminChecksGet {
             return;
         }
     }
+    # please add for each new check a part like this
+    my $OneCheck = $Self->ORACLE_HOMECheck();
+    push (@{$DataArray}, $OneCheck);
+
 #    # please add for each new check a part like this
 #    my $OneCheck = $Self->Check();
 #    push (@{$DataArray}, $OneCheck);
@@ -198,7 +202,7 @@ sub AdminChecksGet {
     return $DataArray;
 }
 
-=item Check()
+=item ORACLE_HOMECheck()
 
 returns a hash reference with Check information.
 
@@ -218,10 +222,11 @@ if ($Param{Type}) {
 
 =cut
 
-sub Check {
+sub ORACLE_HOMECheck {
     my $Self = shift;
     my %Param = @_;
     my $ReturnHash = {};
+
     # check needed stuff
     foreach (qw()) {
         if (!$Param{$_}) {
@@ -229,14 +234,27 @@ sub Check {
             return;
         }
     }
-
-    # If used OS is a linux system
-    if ($^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/) {
-
+    if ($ENV{ORACLE_HOME}) {
+        $ReturnHash =
+            {
+                Key => 'ORACLE_HOME_CHECK',
+                Name => 'ORACLE_HOME Check',
+                Comment => 'Check if ORACLE_HOME is seated.',
+                Description => "ORACLE_HOME is seated in $ENV{ORACLE_HOME}.",
+                Check => 'OK',
+            };
     }
-    elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
-
+    else {
+        $ReturnHash =
+            {
+                Key => 'ORACLE_HOME_CHECK',
+                Name => 'ORACLE_HOME Check',
+                Comment => 'Check if ORACLE_HOME is seated.',
+                Description => "ORACLE_HOME is not seated!",
+                Check => 'Failed',
+            };
     }
+
     return $ReturnHash;
 }
 
@@ -256,6 +274,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.2 $ $Date: 2007/05/23 18:08:35 $
+$Revision: 1.3 $ $Date: 2007/05/23 18:58:58 $
 
 =cut
