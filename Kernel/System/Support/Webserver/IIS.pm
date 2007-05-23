@@ -1,25 +1,25 @@
 # --
-# Kernel/System/Support/Webserver/IIS.pm - all required system informations
+# Kernel/System/Support/Database/IIS.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: IIS.pm,v 1.2 2007/05/23 18:12:02 sr Exp $
+# $Id: IIS.pm,v 1.1 2007/05/23 18:07:45 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
-package Kernel::System::Support::Webserver::IIS;
+package Kernel::System::Support::Database::IIS;
 
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.2 $';
+$VERSION = '$Revision: 1.1 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
-Kernel::System::Support::Webserver::IIS - IIS information
+Kernel::System::Support::Database::IIS - IIS information
 
 =head1 SYNOPSIS
 
@@ -33,7 +33,7 @@ All required system informations to a running OTRS host.
 
 =item new()
 
-create Webserver info object
+create Database info object
 
     use Kernel::Config;
     use Kernel::System::Log;
@@ -42,7 +42,7 @@ create Webserver info object
         ConfigObject => $ConfigObject,
     );
 
-    $SystemInfoObject = Kernel::System::Support::Webserver->new(
+    $SystemInfoObject = Kernel::System::Support::Database->new(
         ConfigObject => $ConfigObject,
         LogObject => $LogObject,
     );
@@ -114,7 +114,7 @@ sub SupportConfigArrayGet {
 
 returns a array reference with support information.
 
-$WebserverArray => [
+$DatabaseArray => [
             {
                 Key => 'Plattform',
                 Name => 'Plattform',
@@ -161,7 +161,7 @@ sub SupportInfoGet {
 
 returns a array reference with AdminChecks information.
 
-$WebserverArray => [
+$DatabaseArray => [
             {
                 Key => 'Plattform',
                 Name => 'Plattform',
@@ -256,6 +256,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.2 $ $Date: 2007/05/23 18:12:02 $
+$Revision: 1.1 $ $Date: 2007/05/23 18:07:45 $
 
 =cut
