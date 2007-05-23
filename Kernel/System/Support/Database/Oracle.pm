@@ -1,25 +1,25 @@
 # --
-# Kernel/System/Support/Database.pm - all required system informations
+# Kernel/System/Support/Database/Oracle.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Database.pm,v 1.2 2007/05/23 17:23:14 sr Exp $
+# $Id: Oracle.pm,v 1.1 2007/05/23 17:20:25 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
-package Kernel::System::Support::Database;
+package Kernel::System::Support::Database::Oracle;
 
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.2 $';
+$VERSION = '$Revision: 1.1 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
-Kernel::System::Support::Database - global system informations
+Kernel::System::Support::Database::Oracle - Oracle information
 
 =head1 SYNOPSIS
 
@@ -56,7 +56,7 @@ sub new {
     my $Self = {};
     bless ($Self, $Type);
     # check needed objects
-    foreach (qw(ConfigObject LogObject MainObject)) {
+    foreach (qw(ConfigObject LogObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -108,11 +108,6 @@ sub SupportConfigArrayGet {
             return;
         }
     }
-
-    # ------------------------------------------------------------ #
-    # Get information about all databases
-    # ------------------------------------------------------------ #
-
     # create config array
     my $ConfigArray = [
         {
@@ -131,37 +126,6 @@ sub SupportConfigArrayGet {
             },
         },
     ];
-
-    # ------------------------------------------------------------ #
-    # Get information about used database
-    # ------------------------------------------------------------ #
-
-    # try to find out which ticket database is configured
-    my $DatabaseType = $Self->{ConfigObject}->Get('DatabaseDSN');
-    $DatabaseType =~ s/^.*?:(.*?):.*$/$1/;
-
-    # try to get availible modules and the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Database";
-    # read all availible modules in @List
-    my @List = glob($DirName."/*.pm");
-    foreach my $File (@List) {
-        # remove .pm
-        $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        if ($DatabaseType eq $File) {
-            my $GenericModule = "Kernel::System::Support::Database::$File";
-            # load module $GenericModule and check if loadable
-            if ($Self->{MainObject}->Require($GenericModule)){
-                # create new object
-                my $SupportObject = $GenericModule->new(%{$Self});
-                if ($SupportObject) {
-                    my $ArrayRef = $SupportObject->SupportConfigArrayGet();
-                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
-                        push (@{$ConfigArray}, @{$ArrayRef});
-                    }
-                }
-            }
-        }
-    }
     # return config array
     return $ConfigArray;
 }
@@ -204,50 +168,11 @@ sub SupportInfoGet {
         $Self->{LogObject}->Log(Priority => 'error', Message => "ModuleInputHash must be a hash reference!");
         return;
     }
-
-    # ------------------------------------------------------------ #
-    # Get information about all databases
-    # ------------------------------------------------------------ #
-
-    # please add for each new check a part like this
+#    # please add for each new check a part like this
 #    my $OneCheck = $Self->Check(
 #        Type => $Param{ModuleInputHash}->{Type} || '',
 #    );
 #    push (@{$DataArray}, $OneCheck);
-
-    # ------------------------------------------------------------ #
-    # Get information about used database
-    # ------------------------------------------------------------ #
-
-    # try to find out which ticket database is configured
-    my $DatabaseType = $Self->{ConfigObject}->Get('DatabaseDSN');
-    $DatabaseType =~ s/^.*?:(.*?):.*$/$1/;
-
-    # try to get availible modules and the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Database";
-    # read all availible modules in @List
-    my @List = glob($DirName."/*.pm");
-    foreach my $File (@List) {
-        # remove .pm
-        $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        if ($DatabaseType =~ /ODBC/i) {
-            $DatabaseType = $Self->{ConfigObject}->Get('Database::Type');
-        }
-        if ($DatabaseType eq $File) {
-            my $GenericModule = "Kernel::System::Support::Database::$File";
-            # load module $GenericModule and check if loadable
-            if ($Self->{MainObject}->Require($GenericModule)){
-                # create new object
-                my $SupportObject = $GenericModule->new(%{$Self});
-                if ($SupportObject) {
-                    my $ArrayRef = $SupportObject->SupportInfoGet();
-                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
-                        push (@{$DataArray}, @{$ArrayRef});
-                    }
-                }
-            }
-        }
-    }
 
     return $DataArray;
 }
@@ -286,45 +211,9 @@ sub AdminChecksGet {
             return;
         }
     }
-
-    # ------------------------------------------------------------ #
-    # Get information about all databases
-    # ------------------------------------------------------------ #
-
-    # please add for each new check a part like this
+#    # please add for each new check a part like this
 #    my $OneCheck = $Self->Check();
 #    push (@{$DataArray}, $OneCheck);
-
-    # ------------------------------------------------------------ #
-    # Get information about used database
-    # ------------------------------------------------------------ #
-
-    # try to find out which ticket database is configured
-    my $DatabaseType = $Self->{ConfigObject}->Get('DatabaseDSN');
-    $DatabaseType =~ s/^.*?:(.*?):.*$/$1/;
-    # try to get availible modules and the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Database";
-    # read all availible modules in @List
-    my @List = glob($DirName."/*.pm");
-    foreach my $File (@List) {
-        # remove .pm
-        $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        if ($DatabaseType =~ /^$File/i) {
-            my $GenericModule = "Kernel::System::Support::Database::$File";
-            # load module $GenericModule and check if loadable
-            if ($Self->{MainObject}->Require($GenericModule)){
-                # create new object
-                my $SupportObject = $GenericModule->new(%{$Self});
-                if ($SupportObject) {
-                    my $ArrayRef = $SupportObject->AdminChecksGet();
-                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
-                        push (@{$DataArray}, @{$ArrayRef});
-                    }
-                }
-            }
-        }
-
-    }
 
     return $DataArray;
 }
@@ -387,6 +276,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.2 $ $Date: 2007/05/23 17:23:14 $
+$Revision: 1.1 $ $Date: 2007/05/23 17:20:25 $
 
 =cut
