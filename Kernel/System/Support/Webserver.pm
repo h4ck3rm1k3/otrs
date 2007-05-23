@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Webserver.pm,v 1.1 2007/05/07 18:47:55 sr Exp $
+# $Id: Webserver.pm,v 1.2 2007/05/23 18:08:21 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Webserver;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.1 $';
+$VERSION = '$Revision: 1.2 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -35,17 +35,17 @@ All required system informations to a running OTRS host.
 
 create Webserver info object
 
-  use Kernel::Config;
-  use Kernel::System::Log;
-  my $ConfigObject = Kernel::Config->new();
-  my $LogObject = Kernel::System::Log->new(
-      ConfigObject => $ConfigObject,
-  );
+    use Kernel::Config;
+    use Kernel::System::Log;
+    my $ConfigObject = Kernel::Config->new();
+    my $LogObject = Kernel::System::Log->new(
+        ConfigObject => $ConfigObject,
+    );
 
-  $SystemInfoObject = Kernel::System::Support::Webserver->new(
-      ConfigObject => $ConfigObject,
-      LogObject => $LogObject,
-  );
+    $SystemInfoObject = Kernel::System::Support::Webserver->new(
+        ConfigObject => $ConfigObject,
+        LogObject => $LogObject,
+    );
 
 =cut
 
@@ -56,10 +56,10 @@ sub new {
     my $Self = {};
     bless ($Self, $Type);
     # check needed objects
-    foreach (qw(ConfigObject LogObject)) {
+    foreach (qw(ConfigObject LogObject MainObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
-    
+
     return $Self;
 }
 
@@ -68,7 +68,7 @@ sub new {
 return an array reference with required config information.
 
     $ArrayRef = $Support->SupportConfigArrayGet();
-    
+
     my $ConfigArray = [
         {
             Key => 'TicketDump',
@@ -108,27 +108,65 @@ sub SupportConfigArrayGet {
             return;
         }
     }
+
+    # ------------------------------------------------------------ #
+    # Get information about all Webservers
+    # ------------------------------------------------------------ #
+
     # create config array
     my $ConfigArray = [
         {
-            Key => 'ApacheHome',
-            Name => 'Apache Home Directory',
-            Description => 'Please tell me the path to the Apache home directory (/etc/apache2)',
+            Key => 'TicketDump',
+            Name => 'Dump Tickets',
+            Description => 'Please tell me how many latest Tickets we shut dump?',
             Input => {
-                Type => 'Text',
-                Size => 40,
-            },
-        },
-        {
-            Key => 'ApacheLog',
-            Name => 'Apache Log File',
-            Description => 'Please tell me the path to the Apache log file, used for OTRS (/var/log/apache2/error_log)',
-            Input => {
-                Type => 'Text',
-                Size => 40,
+                Type => 'Select',
+                Data => {
+                    All => 'All',
+                    0 => '0',
+                    10 => 'Last 10',
+                    100 => 'Last 100',
+                    1000 => 'Last 1000',
+                },
             },
         },
     ];
+
+    # ------------------------------------------------------------ #
+    # Get information about used Webserver
+    # ------------------------------------------------------------ #
+
+    # try to find out which Webserver is configured
+    my $WebserverType = '';
+    if ($ENV{SERVER_SOFTWARE} =~ /^.*Apache.*$/i) {
+        $WebserverType = 'Apache.pm';
+    }
+    else {
+        $WebserverType = 'IIS.pm';
+    }
+
+    # try to get availible modules and the directory name
+    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Webserver";
+    # read all availible modules in @List
+    my @List = glob($DirName."/*.pm");
+    foreach my $File (@List) {
+        # remove .pm
+        $File =~ s/^.*\/(.+?)\.pm$/$1/;
+        if ($WebserverType eq $File) {
+            my $GenericModule = "Kernel::System::Support::Webserver::$File";
+            # load module $GenericModule and check if loadable
+            if ($Self->{MainObject}->Require($GenericModule)){
+                # create new object
+                my $SupportObject = $GenericModule->new(%{$Self});
+                if ($SupportObject) {
+                    my $ArrayRef = $SupportObject->SupportConfigArrayGet();
+                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
+                        push (@{$ConfigArray}, @{$ArrayRef});
+                    }
+                }
+            }
+        }
+    }
     # return config array
     return $ConfigArray;
 }
@@ -142,18 +180,18 @@ $WebserverArray => [
                 Key => 'Plattform',
                 Name => 'Plattform',
                 Comment => 'Linux',
-                Description => 'Please add more memory.', 
+                Description => 'Please add more memory.',
                 Check => 'OK',
             },
             {
                 Key => 'Version',
                 Name => 'Version',
                 Comment => 'openSUSE 10.2',
-                Description => 'Please add more memory.', 
+                Description => 'Please add more memory.',
                 Check => 'OK',
             },
         ];
-        
+
 =cut
 
 sub SupportInfoGet {
@@ -171,11 +209,52 @@ sub SupportInfoGet {
         $Self->{LogObject}->Log(Priority => 'error', Message => "ModuleInputHash must be a hash reference!");
         return;
     }
-#    # please add for each new check a part like this
+
+    # ------------------------------------------------------------ #
+    # Get information about all Webservers
+    # ------------------------------------------------------------ #
+
+    # please add for each new check a part like this
 #    my $OneCheck = $Self->Check(
 #        Type => $Param{ModuleInputHash}->{Type} || '',
 #    );
 #    push (@{$DataArray}, $OneCheck);
+
+    # ------------------------------------------------------------ #
+    # Get information about used Webserver
+    # ------------------------------------------------------------ #
+
+    # try to find out which Webserver is configured
+    my $WebserverType = '';
+    if ($ENV{SERVER_SOFTWARE} =~ /^.*Apache.*$/i) {
+        $WebserverType = 'Apache.pm';
+    }
+    else {
+        $WebserverType = 'IIS.pm';
+    }
+
+    # try to get availible modules and the directory name
+    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Webserver";
+    # read all availible modules in @List
+    my @List = glob($DirName."/*.pm");
+    foreach my $File (@List) {
+        # remove .pm
+        $File =~ s/^.*\/(.+?)\.pm$/$1/;
+        if ($WebserverType eq $File) {
+            my $GenericModule = "Kernel::System::Support::Webserver::$File";
+            # load module $GenericModule and check if loadable
+            if ($Self->{MainObject}->Require($GenericModule)){
+                # create new object
+                my $SupportObject = $GenericModule->new(%{$Self});
+                if ($SupportObject) {
+                    my $ArrayRef = $SupportObject->SupportInfoGet();
+                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
+                        push (@{$DataArray}, @{$ArrayRef});
+                    }
+                }
+            }
+        }
+    }
 
     return $DataArray;
 }
@@ -189,18 +268,18 @@ $WebserverArray => [
                 Key => 'Plattform',
                 Name => 'Plattform',
                 Comment => 'Linux',
-                Description => 'Please add more memory.', 
+                Description => 'Please add more memory.',
                 Check => 'OK',
             },
             {
                 Key => 'Version',
                 Name => 'Version',
                 Comment => 'openSUSE 10.2',
-                Description => 'Please add more memory.', 
+                Description => 'Please add more memory.',
                 Check => 'OK',
             },
         ];
-        
+
 =cut
 
 sub AdminChecksGet {
@@ -214,9 +293,50 @@ sub AdminChecksGet {
             return;
         }
     }
-#    # please add for each new check a part like this
+
+    # ------------------------------------------------------------ #
+    # Get information about all Webservers
+    # ------------------------------------------------------------ #
+
+    # please add for each new check a part like this
 #    my $OneCheck = $Self->Check();
 #    push (@{$DataArray}, $OneCheck);
+
+    # ------------------------------------------------------------ #
+    # Get information about used Webserver
+    # ------------------------------------------------------------ #
+
+    # try to find out which Webserver is configured
+    my $WebserverType = '';
+    if ($ENV{SERVER_SOFTWARE} =~ /^.*Apache.*$/i) {
+        $WebserverType = 'Apache.pm';
+    }
+    else {
+        $WebserverType = 'IIS.pm';
+    }
+    # try to get availible modules and the directory name
+    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Webserver";
+    # read all availible modules in @List
+    my @List = glob($DirName."/*.pm");
+    foreach my $File (@List) {
+        # remove .pm
+        $File =~ s/^.*\/(.+?)\.pm$/$1/;
+        if ($WebserverType =~ /^$File/i) {
+            my $GenericModule = "Kernel::System::Support::Webserver::$File";
+            # load module $GenericModule and check if loadable
+            if ($Self->{MainObject}->Require($GenericModule)){
+                # create new object
+                my $SupportObject = $GenericModule->new(%{$Self});
+                if ($SupportObject) {
+                    my $ArrayRef = $SupportObject->AdminChecksGet();
+                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
+                        push (@{$DataArray}, @{$ArrayRef});
+                    }
+                }
+            }
+        }
+
+    }
 
     return $DataArray;
 }
@@ -225,12 +345,12 @@ sub AdminChecksGet {
 
 returns a hash reference with Check information.
 
-$CheckHash => 
+$CheckHash =>
             {
                 Key => 'Plattform',
                 Name => 'Plattform',
                 Comment => 'Linux',
-                Description => 'Please add more memory.', 
+                Description => 'Please add more memory.',
                 Check => 'OK',
             };
 
@@ -238,7 +358,7 @@ $CheckHash =>
 if ($Param{Type}) {
     print STDERR "TYPE: " . $Param{Type};
 }
-        
+
 =cut
 
 sub Check {
@@ -252,15 +372,33 @@ sub Check {
             return;
         }
     }
-    
+
     # If used OS is a linux system
     if ($^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/) {
-      
+
     }
     elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
-        
+
     }
     return $ReturnHash;
 }
 
 1;
+
+=back
+
+=head1 TERMS AND CONDITIONS
+
+This software is part of the OTRS project (http://otrs.org/).
+
+This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+
+=cut
+
+=head1 VERSION
+
+$Revision: 1.2 $ $Date: 2007/05/23 18:08:21 $
+
+=cut

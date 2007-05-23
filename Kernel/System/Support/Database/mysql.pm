@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.1 2007/05/23 17:22:20 sr Exp $
+# $Id: mysql.pm,v 1.2 2007/05/23 18:08:49 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Database::mysql;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.1 $';
+$VERSION = '$Revision: 1.2 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -108,26 +108,6 @@ sub SupportConfigArrayGet {
             return;
         }
     }
-    # create config array
-    my $ConfigArray = [
-        {
-            Key => 'TicketDump',
-            Name => 'Dump Tickets',
-            Description => 'Please tell me how many latest Tickets we shut dump?',
-            Input => {
-                Type => 'Select',
-                Data => {
-                    All => 'All',
-                    0 => '0',
-                    10 => 'Last 10',
-                    100 => 'Last 100',
-                    1000 => 'Last 1000',
-                },
-            },
-        },
-    ];
-    # return config array
-    return $ConfigArray;
 }
 
 =item SupportInfoGet()
@@ -276,6 +256,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.1 $ $Date: 2007/05/23 17:22:20 $
+$Revision: 1.2 $ $Date: 2007/05/23 18:08:49 $
 
 =cut
