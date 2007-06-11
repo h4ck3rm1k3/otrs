@@ -1,21 +1,21 @@
 # --
-# Kernel/System/Support/Database/mysql.pm - all required system informations
+# Kernel/System/Support/Database/oracle.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.3 2007/06/11 09:25:39 martin Exp $
+# $Id: oracle.pm,v 1.1 2007/06/11 09:25:39 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
-package Kernel::System::Support::Database::mysql;
+package Kernel::System::Support::Database::Oracle;
 
 use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.3 $';
+$VERSION = '$Revision: 1.1 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -64,6 +64,7 @@ sub SupportInfoGet {
 #    # please add for each new check a part like this
 #    my $OneCheck = $Self->Check(
 #        Type => $Param{ModuleInputHash}->{Type} || '',
+#    );
 #    push (@{$DataArray}, $OneCheck);
 
     return $DataArray;
@@ -80,58 +81,78 @@ sub AdminChecksGet {
             return;
         }
     }
-
-    # utf-8 support check
-    if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
-        my $Check = 'Failed';
-        my $Message = 'No version found!';
-        $Self->{DBObject}->Prepare(SQL => "show variables");
-        while (my @Row = $Self->{DBObject}->FetchrowArray()) {
-            if ($Row[0] =~ /^version$/i) {
-                if ($Row[1] =~ /^(4\.(1|2|3)|5\.)/) {
-                    $Message = "(MySQL $Row[1])";
-                    $Check = 'OK';
-                }
-                else {
-                    $Message = "utf8 not supported (MySQL $Row[1])";
-                    $Check = 'Failed';
-                }
+    # check ORACLE_HOME
+    my $Check = 'Failed';
+    my $Message = 'No ORACLE_HOME found!';
+    if ($ENV{ORACLE_HOME}) {
+        if (! -e $ENV{ORACLE_HOME}) {
+            $Message = "ORACLE_HOME don't exists ($ENV{ORACLE_HOME})";
+            $Check = 'Failed';
+        }
+        else {
+            $Message = "";
+            $Check = 'OK';
+        }
+    }
+    push (@DataArray,
+        {
+            Key => 'ORACLE_HOME Check',
+            Name => 'ORACLE_HOME Check',
+            Description => "Check ORACLE_HOME",
+            Comment => $Message,
+            Check => $Check,
+        },
+    );
+    # check NLS_LANG
+    $Check = 'Failed';
+    $Message = 'No NLS_LANG found!';
+    if ($ENV{NLS_LANG}) {
+        if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
+            if ($ENV{NLS_LANG} !~ /utf(\-8|8)/) {
+                $Message = "Need .utf8 in NLS_LANG (e. g. german_germany.utf8)";
+                $Check = 'Failed';
+            }
+            else {
+                $Message = "";
+                $Check = 'OK';
             }
         }
-        push (@DataArray,
-            {
-                Key => 'utf8 support Check',
-                Name => 'utf8 support Check',
-                Description => "Check database utf8 support",
-                Comment => $Message,
-                Check => $Check,
-            },
-        );
-    }
-    # utf-8 check
-    if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
-        my $Check = 'Failed';
-        my $Message = 'No character_set_client found!';
-        $Self->{DBObject}->Prepare(SQL => "show variables");
-        while (my @Row = $Self->{DBObject}->FetchrowArray()) {
-            if ($Row[0] =~ /^character_set_client/i) {
-                $Message = "character_set_client found but it's set to $Row[1] (need to be utf8)";
-                if ($Row[1] =~ /utf8/) {
-                    $Check = 'OK';
-                    $Message = '';
-                }
-            }
+        else {
+            $Message = "";
+            $Check = 'OK';
         }
-        push (@DataArray,
-            {
-                Key => 'utf8 Check',
-                Name => 'utf8 Check',
-                Description => "Check the utf8 client connection",
-                Comment => $Message,
-                Check => $Check,
-            },
-        );
     }
+    push (@DataArray,
+        {
+            Key => 'NLS_LANG Check',
+            Name => 'NLS_LANG Check',
+            Description => "Check NLS_LANG",
+            Comment => $Message,
+            Check => $Check,
+        },
+    );
+    # check NLS_DATE_FORMAT
+    $Check = 'Failed';
+    $Message = 'No NLS_DATE_FORMAT found!';
+    if ($ENV{NLS_DATE_FORMAT}) {
+        if ($ENV{NLS_DATE_FORMAT} ne "YYYY-MM-DD HH24:MI:SS") {
+            $Message = "Need 'YYYY-MM-DD HH24:MI:SS' for NLS_DATE_FORMAT (not $ENV{NLS_DATE_FORMAT})";
+            $Check = 'Failed';
+        }
+        else {
+            $Message = "";
+            $Check = 'OK';
+        }
+    }
+    push (@DataArray,
+        {
+            Key => 'NLS_DATE_FORMAT Check',
+            Name => 'NLS_DATE_FORMAT Check',
+            Description => "Check NLS_DATE_FORMAT",
+            Comment => $Message,
+            Check => $Check,
+        },
+    );
     # table check
     my $File = $Self->{ConfigObject}->Get('Home')."/scripts/database/otrs-schema.xml";
     if (-f $File) {
@@ -183,17 +204,6 @@ sub AdminChecksGet {
                 },
             );
         }
-    }
-    else {
-        push (@DataArray,
-            {
-                Key => 'Table Check',
-                Name => 'Table Check',
-                Description => "Check existing tables",
-                Comment => "Can't find file $File!",
-                Check => 'Failed',
-            },
-        );
     }
 
     return \@DataArray;
