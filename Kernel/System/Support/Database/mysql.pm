@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.3 2007/06/11 09:25:39 martin Exp $
+# $Id: mysql.pm,v 1.4 2007/06/11 10:03:04 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.3 $';
+$VERSION = '$Revision: 1.4 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -89,7 +89,7 @@ sub AdminChecksGet {
         while (my @Row = $Self->{DBObject}->FetchrowArray()) {
             if ($Row[0] =~ /^version$/i) {
                 if ($Row[1] =~ /^(4\.(1|2|3)|5\.)/) {
-                    $Message = "(MySQL $Row[1])";
+                    $Message = "MySQL $Row[1]";
                     $Check = 'OK';
                 }
                 else {
@@ -118,7 +118,7 @@ sub AdminChecksGet {
                 $Message = "character_set_client found but it's set to $Row[1] (need to be utf8)";
                 if ($Row[1] =~ /utf8/) {
                     $Check = 'OK';
-                    $Message = '';
+                    $Message = "$Row[1]";
                 }
             }
         }
@@ -132,9 +132,37 @@ sub AdminChecksGet {
             },
         );
     }
+    # max_allowed_packet check
+    my $Check = 'Failed';
+    my $Message = 'No max_allowed_packet found!';
+    $Self->{DBObject}->Prepare(SQL => "show variables");
+    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+            if ($Row[0] =~ /^max_allowed_packet/i) {
+                if ($Row[1] < 1024*1024*7) {
+                    $Row[1] = int($Row[1]/1024);
+                    $Check = 'Failed';
+                    $Message = "max_allowed_packet should be higher the 7000 KB (its $Row[1] KB)";
+                }
+                else {
+                    $Row[1] = int($Row[1]/1024);
+                    $Check = 'OK';
+                    $Message = "$Row[1] KB";
+                }
+            }
+    }
+    push (@DataArray,
+        {
+            Key => 'max_allowed_packet Check',
+            Name => 'max_allowed_packet Check',
+            Description => "Check max_allowed_packet setting",
+            Comment => $Message,
+            Check => $Check,
+        },
+    );
     # table check
     my $File = $Self->{ConfigObject}->Get('Home')."/scripts/database/otrs-schema.xml";
     if (-f $File) {
+        my $Count = 0;
         my $Check = 'Failed';
         my $Message = '';
         my $Content = '';
@@ -147,6 +175,7 @@ sub AdminChecksGet {
 
             foreach my $Table (@{$XMLHash[1]->{database}->[1]->{Table}}) {
                 if ($Table) {
+                    $Count++;
                     if ($Self->{DBObject}->Prepare(SQL => "select * from $Table->{Name}", Limit => 1)) {
                         while (my @Row = $Self->{DBObject}->FetchrowArray()) {
                         }
@@ -161,6 +190,7 @@ sub AdminChecksGet {
             }
             else {
                 $Check = 'OK';
+                $Message = "$Count Tables";
             }
             push (@DataArray,
                 {
