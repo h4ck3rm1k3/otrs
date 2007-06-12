@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver/Apache.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Apache.pm,v 1.1 2007/05/23 18:07:28 sr Exp $
+# $Id: Apache.pm,v 1.2 2007/06/12 13:01:30 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,40 +14,8 @@ package Kernel::System::Support::Webserver::Apache;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.1 $';
+$VERSION = '$Revision: 1.2 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
-
-=head1 NAME
-
-Kernel::System::Support::Webserver::Apache - Apache information
-
-=head1 SYNOPSIS
-
-All required system informations to a running OTRS host.
-
-=head1 PUBLIC INTERFACE
-
-=over 4
-
-=cut
-
-=item new()
-
-create Webserver info object
-
-    use Kernel::Config;
-    use Kernel::System::Log;
-    my $ConfigObject = Kernel::Config->new();
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-    );
-
-    $SystemInfoObject = Kernel::System::Support::Webserver->new(
-        ConfigObject => $ConfigObject,
-        LogObject => $LogObject,
-    );
-
-=cut
 
 sub new {
     my $Type = shift;
@@ -63,41 +31,6 @@ sub new {
     return $Self;
 }
 
-=item SupportConfigArrayGet()
-
-return an array reference with required config information.
-
-    $ArrayRef = $Support->SupportConfigArrayGet();
-
-    my $ConfigArray = [
-        {
-            Key => 'TicketDump',
-            Name => 'Dump Tickets',
-            Description => 'Please tell me how many latest Tickets we shut dump?',
-            Input => {
-                Type => 'Select',
-                Data => {
-                    All => 'All',
-                    0 => '0',
-                    10 => 'Last 10',
-                    100 => 'Last 100',
-                    1000 => 'Last 1000',
-                },
-            },
-        },
-        {
-            Key => 'ApacheHome',
-            Name => 'Apache Home Directory',
-            Description => 'Please tell me the path to the Apache home directory (/etc/apache2)',
-            Input => {
-                Type => 'Text',
-                Size => 40,
-            },
-        },
-    ];
-
-=cut
-
 sub SupportConfigArrayGet {
     my $Self = shift;
     my %Param = @_;
@@ -109,29 +42,6 @@ sub SupportConfigArrayGet {
         }
     }
 }
-
-=item SupportInfoGet()
-
-returns a array reference with support information.
-
-$WebserverArray => [
-            {
-                Key => 'Plattform',
-                Name => 'Plattform',
-                Comment => 'Linux',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-            {
-                Key => 'Version',
-                Name => 'Version',
-                Comment => 'openSUSE 10.2',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-        ];
-
-=cut
 
 sub SupportInfoGet {
     my $Self = shift;
@@ -157,33 +67,10 @@ sub SupportInfoGet {
     return $DataArray;
 }
 
-=item AdminChecksGet()
-
-returns a array reference with AdminChecks information.
-
-$WebserverArray => [
-            {
-                Key => 'Plattform',
-                Name => 'Plattform',
-                Comment => 'Linux',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-            {
-                Key => 'Version',
-                Name => 'Version',
-                Comment => 'openSUSE 10.2',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-        ];
-
-=cut
-
 sub AdminChecksGet {
     my $Self = shift;
     my %Param = @_;
-    my $DataArray = [];
+    my @DataArray = ();
     # check needed stuff
     foreach (qw()) {
         if (!$Param{$_}) {
@@ -191,71 +78,78 @@ sub AdminChecksGet {
             return;
         }
     }
-#    # please add for each new check a part like this
-#    my $OneCheck = $Self->Check();
-#    push (@{$DataArray}, $OneCheck);
-
-    return $DataArray;
-}
-
-=item Check()
-
-returns a hash reference with Check information.
-
-$CheckHash =>
-            {
-                Key => 'Plattform',
-                Name => 'Plattform',
-                Comment => 'Linux',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            };
-
-# check if config value availible
-if ($Param{Type}) {
-    print STDERR "TYPE: " . $Param{Type};
-}
-
-=cut
-
-sub Check {
-    my $Self = shift;
-    my %Param = @_;
-    my $ReturnHash = {};
-    # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
-            return;
+    # check mod_perl version
+    my $Check = 'Failed';
+    my $Message = '';
+    if ($ENV{MOD_PERL}) {
+        if ($ENV{MOD_PERL} =~ /\/1.99/) {
+            $Check = 'Critical';
+            $Message = 'You should use mod_perl to increase your performance.';
+        }
+        if ($ENV{MOD_PERL} =~ /\/1/) {
+            $Check = 'Critical';
+            $Message = 'You should update mod_perl to 2.x.';
+        }
+        else {
+            $Check = 'OK';
+            $Message = "$ENV{MOD_PERL}";
         }
     }
-
-    # If used OS is a linux system
-    if ($^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/) {
-
+    else {
+        $Check = 'Critical';
+        $Message = 'You should use mod_perl to increase your performance.';
     }
-    elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
-
+    push (@DataArray,
+        {
+            Key => 'mod_perl version',
+            Name => 'mod_perl version',
+            Description => "Check used mod_perl version.",
+            Comment => $Message,
+            Check => $Check,
+        },
+    );
+    # reload check
+    $Check = 'Failed';
+    $Message = '';
+    if ($ENV{MOD_PERL}) {
+        eval "require mod_perl";
+        if (defined $mod_perl::VERSION) {
+            if ($mod_perl::VERSION >= 1.99) {
+                # check if Apache::Reload is loaded
+                my $ApacheReload = 0;
+                foreach my $Module (keys %INC) {
+                    $Module =~ s/\//::/g;
+                    $Module =~ s/\.pm$//g;
+                    if ($Module eq 'Apache::Reload' || $Module eq 'Apache2::Reload') {
+                        $ApacheReload = $Module;
+                    }
+                }
+                if (!$ApacheReload) {
+                    $Check = 'Critical';
+                    $Message = 'Apache::Reload or Apache2::Reload should be used as PerlModule and PerlInitHandler in Apache config file.';
+                }
+                else {
+                    $Check = 'OK';
+                    $Message = "$ApacheReload";
+                }
+            }
+        }
     }
-    return $ReturnHash;
+    else {
+        $Check = 'Critical';
+        $Message = 'You should use mod_perl to increase your performance.';
+    }
+    push (@DataArray,
+        {
+            Key => 'Apache::Reload',
+            Name => 'Apache::Reload',
+            Description => "Check used Apache::Reload/Apache2::Reload.",
+            Comment => $Message,
+            Check => $Check,
+        },
+    );
+
+    return \@DataArray;
 }
 
 1;
-
-=back
-
-=head1 TERMS AND CONDITIONS
-
-This software is part of the OTRS project (http://otrs.org/).
-
-This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (GPL). If you
-did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
-
-=cut
-
-=head1 VERSION
-
-$Revision: 1.1 $ $Date: 2007/05/23 18:07:28 $
-
-=cut
