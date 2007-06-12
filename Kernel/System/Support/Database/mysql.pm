@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.4 2007/06/11 10:03:04 martin Exp $
+# $Id: mysql.pm,v 1.5 2007/06/12 13:00:47 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.4 $';
+$VERSION = '$Revision: 1.5 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -100,9 +100,9 @@ sub AdminChecksGet {
         }
         push (@DataArray,
             {
-                Key => 'utf8 support Check',
-                Name => 'utf8 support Check',
-                Description => "Check database utf8 support",
+                Key => 'utf8 support',
+                Name => 'utf8 support',
+                Description => "Check database utf8 support.",
                 Comment => $Message,
                 Check => $Check,
             },
@@ -124,9 +124,9 @@ sub AdminChecksGet {
         }
         push (@DataArray,
             {
-                Key => 'utf8 Check',
-                Name => 'utf8 Check',
-                Description => "Check the utf8 client connection",
+                Key => 'utf8 client connection',
+                Name => 'utf8 client connection',
+                Description => "Check the utf8 client connection.",
                 Comment => $Message,
                 Check => $Check,
             },
@@ -152,9 +152,9 @@ sub AdminChecksGet {
     }
     push (@DataArray,
         {
-            Key => 'max_allowed_packet Check',
-            Name => 'max_allowed_packet Check',
-            Description => "Check max_allowed_packet setting",
+            Key => 'max_allowed_packet',
+            Name => 'max_allowed_packet',
+            Description => "Check max_allowed_packet setting.",
             Comment => $Message,
             Check => $Check,
         },
@@ -194,9 +194,9 @@ sub AdminChecksGet {
             }
             push (@DataArray,
                 {
-                    Key => 'Table Check',
-                    Name => 'Table Check',
-                    Description => "Check existing tables",
+                    Key => 'Table',
+                    Name => 'Table',
+                    Description => "Check existing framework tables.",
                     Comment => $Message,
                     Check => $Check,
                 },
@@ -205,9 +205,9 @@ sub AdminChecksGet {
         else {
             push (@DataArray,
                 {
-                    Key => 'Table Check',
-                    Name => 'Table Check',
-                    Description => "Check existing tables",
+                    Key => 'Table',
+                    Name => 'Table',
+                    Description => "Check existing framework tables.",
                     Comment => "Can't open file $File: $!",
                     Check => $Check,
                 },
@@ -217,9 +217,9 @@ sub AdminChecksGet {
     else {
         push (@DataArray,
             {
-                Key => 'Table Check',
-                Name => 'Table Check',
-                Description => "Check existing tables",
+                Key => 'Table',
+                Name => 'Table',
+                Description => "Check existing framework tables.",
                 Comment => "Can't find file $File!",
                 Check => 'Failed',
             },

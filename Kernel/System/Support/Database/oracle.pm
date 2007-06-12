@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/oracle.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.2 2007/06/11 09:28:33 martin Exp $
+# $Id: oracle.pm,v 1.3 2007/06/12 13:00:47 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.2 $';
+$VERSION = '$Revision: 1.3 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -90,15 +90,15 @@ sub AdminChecksGet {
             $Check = 'Failed';
         }
         else {
-            $Message = "";
+            $Message = "$ENV{ORACLE_HOME}";
             $Check = 'OK';
         }
     }
     push (@DataArray,
         {
-            Key => 'ORACLE_HOME Check',
-            Name => 'ORACLE_HOME Check',
-            Description => "Check ORACLE_HOME",
+            Key => 'ORACLE_HOME',
+            Name => 'ORACLE_HOME',
+            Description => "Check ORACLE_HOME.",
             Comment => $Message,
             Check => $Check,
         },
@@ -109,24 +109,24 @@ sub AdminChecksGet {
     if ($ENV{NLS_LANG}) {
         if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
             if ($ENV{NLS_LANG} !~ /utf(\-8|8)/) {
-                $Message = "Need .utf8 in NLS_LANG (e. g. german_germany.utf8)";
+                $Message = "$ENV{NLS_LANG}, need .utf8 in NLS_LANG (e. g. german_germany.utf8)";
                 $Check = 'Failed';
             }
             else {
-                $Message = "";
+                $Message = "$ENV{NLS_LANG}";
                 $Check = 'OK';
             }
         }
         else {
-            $Message = "";
+            $Message = "$ENV{NLS_LANG}";
             $Check = 'OK';
         }
     }
     push (@DataArray,
         {
-            Key => 'NLS_LANG Check',
-            Name => 'NLS_LANG Check',
-            Description => "Check NLS_LANG",
+            Key => 'NLS_LANG',
+            Name => 'NLS_LANG',
+            Description => "Check NLS_LANG.",
             Comment => $Message,
             Check => $Check,
         },
@@ -136,19 +136,19 @@ sub AdminChecksGet {
     $Message = 'No NLS_DATE_FORMAT found!';
     if ($ENV{NLS_DATE_FORMAT}) {
         if ($ENV{NLS_DATE_FORMAT} ne "YYYY-MM-DD HH24:MI:SS") {
-            $Message = "Need 'YYYY-MM-DD HH24:MI:SS' for NLS_DATE_FORMAT (not $ENV{NLS_DATE_FORMAT})";
+            $Message = "$ENV{NLS_DATE_FORMAT}, need 'YYYY-MM-DD HH24:MI:SS' for NLS_DATE_FORMAT (not $ENV{NLS_DATE_FORMAT})";
             $Check = 'Failed';
         }
         else {
-            $Message = "";
+            $Message = "$ENV{NLS_DATE_FORMAT}";
             $Check = 'OK';
         }
     }
     push (@DataArray,
         {
-            Key => 'NLS_DATE_FORMAT Check',
-            Name => 'NLS_DATE_FORMAT Check',
-            Description => "Check NLS_DATE_FORMAT",
+            Key => 'NLS_DATE_FORMAT',
+            Name => 'NLS_DATE_FORMAT',
+            Description => "Check NLS_DATE_FORMAT.",
             Comment => $Message,
             Check => $Check,
         },
@@ -185,9 +185,9 @@ sub AdminChecksGet {
             }
             push (@DataArray,
                 {
-                    Key => 'Table Check',
-                    Name => 'Table Check',
-                    Description => "Check existing tables",
+                    Key => 'Table',
+                    Name => 'Table',
+                    Description => "Check existing framework tables.",
                     Comment => $Message,
                     Check => $Check,
                 },
@@ -196,9 +196,9 @@ sub AdminChecksGet {
         else {
             push (@DataArray,
                 {
-                    Key => 'Table Check',
-                    Name => 'Table Check',
-                    Description => "Check existing tables",
+                    Key => 'Table',
+                    Name => 'Table',
+                    Description => "Check existing framework tables.",
                     Comment => "Can't open file $File: $!",
                     Check => $Check,
                 },
