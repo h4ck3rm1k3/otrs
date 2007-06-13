@@ -2,7 +2,7 @@
 # Kernel/System/Support/Hardware.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Hardware.pm,v 1.4 2007/05/08 10:36:13 sr Exp $
+# $Id: Hardware.pm,v 1.5 2007/06/13 10:09:53 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Hardware;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.4 $';
+$VERSION = '$Revision: 1.5 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -203,8 +203,11 @@ sub AdminChecksGet {
     # please add for each new check a part like this
     my $OneCheck = $Self->MemorySwapCheck();
     push (@{$DataArray}, $OneCheck);
-    # please add for each new check a part like this
+
     $OneCheck = $Self->CPULoadCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->DiskUsageCheck();
     push (@{$DataArray}, $OneCheck);
 
     return $DataArray;
@@ -244,7 +247,7 @@ sub MemorySwapCheck {
 
     my %MemTmpInfo = ();
     # If used OS is a linux system
-    if ($^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/) {
+    if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
         if (-e "/proc/meminfo") {
             open(MEMINFOFILE, "</proc/meminfo");
             while(<MEMINFOFILE>) {
@@ -320,7 +323,7 @@ sub CPULoadCheck {
     }
     my @SplitArray = {};
     # If used OS is a linux system
-    if ($^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/) {
+    if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
         if (-e "/proc/loadavg") {
             open(LOADFILE, "</proc/loadavg");
             while(<LOADFILE>) {
@@ -361,6 +364,50 @@ sub CPULoadCheck {
     return $ReturnHash;
 }
 
+sub DiskUsageCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+    my $Check = 'OK';
+    my $Message = '';
+
+    # If used OS is a linux system
+    if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
+        if (open(IN, "df -l |")) {
+            while(<IN>) {
+                if ($_ =~ /^(.+?)\s.*\s(\d\d\d|\d\d|\d)%.+?$/) {
+                    if ($2 > 90) {
+                        $Check = 'Failed';
+                    }
+                    if ($Check ne 'Failed' && $2 > 85) {
+                        $Check = 'Critical';
+                    }
+                    if ($Message) {
+                        $Message .= ",";
+                    }
+                    $Message .= "$1\[$2%\]";
+                }
+            }
+            close(IN);
+            if ($Check eq 'Failed') {
+                $Message = "Disk ist full ($Message).";
+            }
+            else {
+                $Message = "Disk usage ($Message).";
+            }
+        }
+        $Data = {
+            Key => 'disk usage',
+            Name => 'disk usage',
+            Description => "Check disk usage.",
+            Comment => $Message,
+            Check => $Check,
+        };
+    }
+
+    return $Data;
+}
+
 1;
 
 =back
@@ -377,6 +424,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.4 $ $Date: 2007/05/08 10:36:13 $
+$Revision: 1.5 $ $Date: 2007/06/13 10:09:53 $
 
 =cut
