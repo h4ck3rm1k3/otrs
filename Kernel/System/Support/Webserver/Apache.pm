@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver/Apache.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Apache.pm,v 1.2 2007/06/12 13:01:30 martin Exp $
+# $Id: Apache.pm,v 1.3 2007/06/13 09:57:15 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Webserver::Apache;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.2 $';
+$VERSION = '$Revision: 1.3 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -84,11 +84,11 @@ sub AdminChecksGet {
     if ($ENV{MOD_PERL}) {
         if ($ENV{MOD_PERL} =~ /\/1.99/) {
             $Check = 'Critical';
-            $Message = 'You should use mod_perl to increase your performance.';
+            $Message = "You use a beta version of mod_perl ($ENV{MOD_PERL}), you should upgrade to a stable version.";
         }
-        if ($ENV{MOD_PERL} =~ /\/1/) {
+        elsif ($ENV{MOD_PERL} =~ /\/1/) {
             $Check = 'Critical';
-            $Message = 'You should update mod_perl to 2.x.';
+            $Message = "You should update mod_perl to 2.x ($ENV{MOD_PERL}).";
         }
         else {
             $Check = 'OK';
