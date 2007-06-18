@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/oracle.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.3 2007/06/12 13:00:47 martin Exp $
+# $Id: oracle.pm,v 1.4 2007/06/18 19:47:58 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.3 $';
+$VERSION = '$Revision: 1.4 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -178,7 +178,7 @@ sub AdminChecksGet {
                 }
             }
             if ($Message) {
-                $Message = "Tables dosn't exists: $Message";
+                $Message = "Table dosn't exists: $Message";
             }
             else {
                 $Check = 'OK';
