@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.5 2007/06/12 13:00:47 martin Exp $
+# $Id: mysql.pm,v 1.6 2007/06/18 19:48:26 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.5 $';
+$VERSION = '$Revision: 1.6 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -88,7 +88,7 @@ sub AdminChecksGet {
         $Self->{DBObject}->Prepare(SQL => "show variables");
         while (my @Row = $Self->{DBObject}->FetchrowArray()) {
             if ($Row[0] =~ /^version$/i) {
-                if ($Row[1] =~ /^(4\.(1|2|3)|5\.)/) {
+                if ($Row[1] =~ /^(4\.(1|2|3)|5\.|6\.)/) {
                     $Message = "MySQL $Row[1]";
                     $Check = 'OK';
                 }
@@ -108,7 +108,7 @@ sub AdminChecksGet {
             },
         );
     }
-    # utf-8 check
+    # utf-8 client check
     if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
         my $Check = 'Failed';
         my $Message = 'No character_set_client found!';
@@ -127,6 +127,62 @@ sub AdminChecksGet {
                 Key => 'utf8 client connection',
                 Name => 'utf8 client connection',
                 Description => "Check the utf8 client connection.",
+                Comment => $Message,
+                Check => $Check,
+            },
+        );
+    }
+    # utf-8 database check
+    if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
+        my $Check = 'Failed';
+        my $Message = 'No character_set_databse found!';
+        $Self->{DBObject}->Prepare(SQL => "show variables");
+        while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+            if ($Row[0] =~ /^character_set_database/i) {
+                $Message = "character_set_database found but it's set to $Row[1] (need to be utf8)";
+                if ($Row[1] =~ /utf8/) {
+                    $Check = 'OK';
+                    $Message = "$Row[1]";
+                }
+            }
+        }
+        push (@DataArray,
+            {
+                Key => 'utf8 database character',
+                Name => 'utf8 database character',
+                Description => "Check the utf8 database character.",
+                Comment => $Message,
+                Check => $Check,
+            },
+        );
+    }
+    # utf-8 table check
+    if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
+        my $Check = 'Failed';
+        my $Message = '';
+        my $Message2 = '';
+        $Self->{DBObject}->Prepare(SQL => "show table status");
+        while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+            if ($Row[14] !~ /^utf8/i) {
+                $Message .= "$Row[0][$Row[14]],";
+            }
+            else {
+                $Message2 = $Row[14];
+            }
+        }
+        if ($Message) {
+            $Check = 'Failed';
+            $Message = "Invalid collation for: $Message";
+        }
+        else {
+            $Check = 'OK';
+            $Message = $Message2;
+        }
+        push (@DataArray,
+            {
+                Key => 'utf8 table collation',
+                Name => 'utf8 table collation',
+                Description => "Check the utf8 table collation.",
                 Comment => $Message,
                 Check => $Check,
             },
@@ -186,7 +242,7 @@ sub AdminChecksGet {
                 }
             }
             if ($Message) {
-                $Message = "Tables dosn't exists: $Message";
+                $Message = "Table dosn't exists: $Message";
             }
             else {
                 $Check = 'OK';
