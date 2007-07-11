@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.2 2007/07/11 12:52:54 sr Exp $
+# $Id: OTRS.pm,v 1.3 2007/07/11 14:13:32 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::OTRS;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.2 $';
+$VERSION = '$Revision: 1.3 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -154,11 +154,15 @@ sub SupportInfoGet {
         $Self->{LogObject}->Log(Priority => 'error', Message => "ModuleInputHash must be a hash reference!");
         return;
     }
+    my $OneCheck = $Self->OTRSLogGet(
+        Type => $Param{ModuleInputHash}->{Type} || '',
+    );
+
 #    # please add for each new check a part like this
 #    my $OneCheck = $Self->Check(
 #        Type => $Param{ModuleInputHash}->{Type} || '',
 #    );
-#    push (@{$DataArray}, $OneCheck);
+    push (@{$DataArray}, $OneCheck);
 
     return $DataArray;
 }
@@ -215,33 +219,23 @@ sub OTRSLogGet {
             return;
         }
     }
-
-    # If used OS is a linux system
-    if ($^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/) {
-        my $Filehandle = '';
-        my $TmpLine = '';
-        my $Logfile = $Self->{Home}."/var/log/support.log";
-
-        if (open ($Filehandle, "$Logfile")) {
-            while (<$Filehandle>) {
-                $TmpLine .= $_;
-            }
-            close ($Filehandle);
-            if($TmpLine) {
-                $ReturnHash =
-                {
-                    Key => 'OTRSLog',
-                    Name => 'OTRSLog',
-                    Comment => 'The OTRS Log',
-                    Description => $TmpLine,
-                    Check => 'OK',
-                };
-            }
+    my $TmpLine = '';
+    my $Logfile = $Self->{ConfigObject}->Get('Home')."/var/log/support.log";
+    if (open (LOGFILE, $Logfile)) {
+        while (<LOGFILE>) {
+            $TmpLine .= $_;
         }
-
-    }
-    elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
-
+        close (LOGFILE);
+        if($TmpLine) {
+            $ReturnHash =
+            {
+                Key => 'OTRSLog',
+                Name => 'OTRSLog',
+                Comment => 'The OTRS Log',
+                Description => $TmpLine,
+                Check => 'OK',
+            };
+        }
     }
     return $ReturnHash;
 }
@@ -262,6 +256,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.2 $ $Date: 2007/07/11 12:52:54 $
+$Revision: 1.3 $ $Date: 2007/07/11 14:13:32 $
 
 =cut
