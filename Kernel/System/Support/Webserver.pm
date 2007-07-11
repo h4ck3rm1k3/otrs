@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Webserver.pm,v 1.2 2007/05/23 18:08:21 sr Exp $
+# $Id: Webserver.pm,v 1.3 2007/07/11 10:20:50 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Webserver;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.2 $';
+$VERSION = '$Revision: 1.3 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -116,18 +116,12 @@ sub SupportConfigArrayGet {
     # create config array
     my $ConfigArray = [
         {
-            Key => 'TicketDump',
-            Name => 'Dump Tickets',
-            Description => 'Please tell me how many latest Tickets we shut dump?',
+            Key => 'ApacheHome',
+            Name => 'Apache Home Directory',
+            Description => 'Please tell me the path to the Apache home directory (/etc/apache2)',
             Input => {
-                Type => 'Select',
-                Data => {
-                    All => 'All',
-                    0 => '0',
-                    10 => 'Last 10',
-                    100 => 'Last 100',
-                    1000 => 'Last 1000',
-                },
+                Type => 'Text',
+                Size => 40,
             },
         },
     ];
@@ -227,12 +221,11 @@ sub SupportInfoGet {
     # try to find out which Webserver is configured
     my $WebserverType = '';
     if ($ENV{SERVER_SOFTWARE} =~ /^.*Apache.*$/i) {
-        $WebserverType = 'Apache.pm';
+        $WebserverType = 'Apache';
     }
     else {
-        $WebserverType = 'IIS.pm';
+        $WebserverType = 'IIS';
     }
-
     # try to get availible modules and the directory name
     my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Webserver";
     # read all availible modules in @List
@@ -247,7 +240,9 @@ sub SupportInfoGet {
                 # create new object
                 my $SupportObject = $GenericModule->new(%{$Self});
                 if ($SupportObject) {
-                    my $ArrayRef = $SupportObject->SupportInfoGet();
+                    my $ArrayRef = $SupportObject->SupportInfoGet(
+                        ModuleInputHash => $Param{ModuleInputHash},
+                    );
                     if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
                         push (@{$DataArray}, @{$ArrayRef});
                     }
@@ -399,6 +394,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.2 $ $Date: 2007/05/23 18:08:21 $
+$Revision: 1.3 $ $Date: 2007/07/11 10:20:50 $
 
 =cut
