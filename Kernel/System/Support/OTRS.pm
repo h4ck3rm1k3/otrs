@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.1 2007/05/07 18:47:55 sr Exp $
+# $Id: OTRS.pm,v 1.2 2007/07/11 12:52:54 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::OTRS;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.1 $';
+$VERSION = '$Revision: 1.2 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -35,17 +35,17 @@ All required system informations to a running OTRS host.
 
 create OTRS info object
 
-  use Kernel::Config;
-  use Kernel::System::Log;
-  my $ConfigObject = Kernel::Config->new();
-  my $LogObject = Kernel::System::Log->new(
-      ConfigObject => $ConfigObject,
-  );
+    use Kernel::Config;
+    use Kernel::System::Log;
+    my $ConfigObject = Kernel::Config->new();
+    my $LogObject = Kernel::System::Log->new(
+        ConfigObject => $ConfigObject,
+    );
 
-  $SystemInfoObject = Kernel::System::Support::OTRS->new(
-      ConfigObject => $ConfigObject,
-      LogObject => $LogObject,
-  );
+    $SystemInfoObject = Kernel::System::Support::OTRS->new(
+        ConfigObject => $ConfigObject,
+        LogObject => $LogObject,
+    );
 
 =cut
 
@@ -59,7 +59,7 @@ sub new {
     foreach (qw(ConfigObject LogObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
-    
+
     return $Self;
 }
 
@@ -125,18 +125,18 @@ $OTRSArray => [
                 Key => 'Plattform',
                 Name => 'Plattform',
                 Comment => 'Linux',
-                Description => 'Please add more memory.', 
+                Description => 'Please add more memory.',
                 Check => 'OK',
             },
             {
                 Key => 'Version',
                 Name => 'Version',
                 Comment => 'openSUSE 10.2',
-                Description => 'Please add more memory.', 
+                Description => 'Please add more memory.',
                 Check => 'OK',
             },
         ];
-        
+
 =cut
 
 sub SupportInfoGet {
@@ -172,18 +172,18 @@ $OTRSArray => [
                 Key => 'Plattform',
                 Name => 'Plattform',
                 Comment => 'Linux',
-                Description => 'Please add more memory.', 
+                Description => 'Please add more memory.',
                 Check => 'OK',
             },
             {
                 Key => 'Version',
                 Name => 'Version',
                 Comment => 'openSUSE 10.2',
-                Description => 'Please add more memory.', 
+                Description => 'Please add more memory.',
                 Check => 'OK',
             },
         ];
-        
+
 =cut
 
 sub AdminChecksGet {
@@ -204,27 +204,7 @@ sub AdminChecksGet {
     return $DataArray;
 }
 
-=item Check()
-
-returns a hash reference with Check information.
-
-$CheckHash => 
-            {
-                Key => 'Plattform',
-                Name => 'Plattform',
-                Comment => 'Linux',
-                Description => 'Please add more memory.', 
-                Check => 'OK',
-            };
-
-# check if config value availible
-if ($Param{Type}) {
-    print STDERR "TYPE: " . $Param{Type};
-}
-        
-=cut
-
-sub Check {
+sub OTRSLogGet {
     my $Self = shift;
     my %Param = @_;
     my $ReturnHash = {};
@@ -235,15 +215,53 @@ sub Check {
             return;
         }
     }
-    
+
     # If used OS is a linux system
     if ($^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/) {
-      
+        my $Filehandle = '';
+        my $TmpLine = '';
+        my $Logfile = $Self->{Home}."/var/log/support.log";
+
+        if (open ($Filehandle, "$Logfile")) {
+            while (<$Filehandle>) {
+                $TmpLine .= $_;
+            }
+            close ($Filehandle);
+            if($TmpLine) {
+                $ReturnHash =
+                {
+                    Key => 'OTRSLog',
+                    Name => 'OTRSLog',
+                    Comment => 'The OTRS Log',
+                    Description => $TmpLine,
+                    Check => 'OK',
+                };
+            }
+        }
+
     }
     elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
-        
+
     }
     return $ReturnHash;
 }
 
 1;
+
+=back
+
+=head1 TERMS AND CONDITIONS
+
+This software is part of the OTRS project (http://otrs.org/).
+
+This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+
+=cut
+
+=head1 VERSION
+
+$Revision: 1.2 $ $Date: 2007/07/11 12:52:54 $
+
+=cut
