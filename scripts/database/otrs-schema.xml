@@ -5,9 +5,17 @@
     XML File for the OTRS database description
     Copyright (C) 2001-2006 OTRS GmbH, http://otrs.org/
 
-    $Id: otrs-schema.xml,v 1.69 2007/07/23 10:53:30 mh Exp $
+    $Id: otrs-schema.xml,v 1.70 2007/07/26 13:26:46 martin Exp $
 
     $Log: otrs-schema.xml,v $
+    Revision 1.70  2007/07/26 13:26:46  martin
+    Improved system performance of escalation (bug# 2020 Performance
+    problem after updating to 2.2.0).
+    -->Because of this fact you need to add to new column to the ticket table.<--
+
+        ALTER TABLE ticket ADD escalation_response_time INTEGER;
+        ALTER TABLE ticket ADD escalation_solution_time INTEGER;
+
     Revision 1.69  2007/07/23 10:53:30  mh
     Fixed bug# 2021 - Errors in scripts/database/otrs-schema.xml file.
 
@@ -786,6 +794,8 @@
     <Column Name="timeout" Required="false" Type="INTEGER"/>
     <Column Name="until_time" Required="false" Type="INTEGER"/>
     <Column Name="escalation_start_time" Required="true" Type="INTEGER"/>
+    <Column Name="escalation_response_time" Required="true" Type="INTEGER"/>
+    <Column Name="escalation_solution_time" Required="true" Type="INTEGER"/>
     <Column Name="freekey1" Required="false" Size="80" Type="VARCHAR"/>
     <Column Name="freetext1" Required="false" Size="150" Type="VARCHAR"/>
     <Column Name="freekey2" Required="false" Size="80" Type="VARCHAR"/>
