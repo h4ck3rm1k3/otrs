@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.6 2007/06/18 19:48:26 martin Exp $
+# $Id: mysql.pm,v 1.7 2007/08/29 15:41:37 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.6 $';
+$VERSION = '$Revision: 1.7 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -215,6 +215,38 @@ sub AdminChecksGet {
             Check => $Check,
         },
     );
+    # query_cache_size check
+    $Check = 'Failed';
+    $Message = 'No query_cache_size found!';
+    $Self->{DBObject}->Prepare(SQL => "show variables");
+    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+            if ($Row[0] =~ /^query_cache_size/i) {
+                if (!$Row[1]) {
+                    $Check = 'Failed';
+                    $Message = "query_cache_size should be used, you will get improvements between 10 and 30 % of speed!";
+                }
+                elsif ($Row[1] < 1024*1024*8) {
+                    $Row[1] = int($Row[1]/1024);
+                    $Check = 'Critical';
+                    $Message = "query_cache_size should be higher the 8000 KB (its $Row[1] KB)";
+                }
+                else {
+                    $Row[1] = int($Row[1]/1024);
+                    $Check = 'OK';
+                    $Message = "$Row[1] KB";
+                }
+            }
+    }
+    push (@DataArray,
+        {
+            Key => 'query_cache_size',
+            Name => 'query_cache_size',
+            Description => "Check query_cache_size setting.",
+            Comment => $Message,
+            Check => $Check,
+        },
+    );
+
     # table check
     my $File = $Self->{ConfigObject}->Get('Home')."/scripts/database/otrs-schema.xml";
     if (-f $File) {
