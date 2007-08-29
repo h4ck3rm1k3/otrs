@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.7 2007/08/29 15:41:37 martin Exp $
+# $Id: mysql.pm,v 1.8 2007/08/29 16:35:25 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.7 $';
+$VERSION = '$Revision: 1.8 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -81,6 +81,37 @@ sub AdminChecksGet {
         }
     }
 
+    # verion check
+    my $Check = 'Failed';
+    my $Message = 'No version found!';
+    $Self->{DBObject}->Prepare(SQL => "show variables");
+    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+            if ($Row[0] =~ /^version$/i) {
+                if ($Row[1] =~ /^(\d{1,3})\.(\d{1,3}).*$/) {
+                    if ($1 > 3 && $2 > 0) {
+                        $Check = 'OK';
+                        $Message = "MySQL $Row[1]";
+                    }
+                    else {
+                        $Check = 'Failed';
+                        $Message = "Version $Row[1], you should use 4.1 or higner.";
+                    }
+                }
+                else {
+                    $Check = 'Failed';
+                    $Message = "Unkown version $Row[1]";
+                }
+            }
+    }
+    push (@DataArray,
+        {
+            Key => 'version',
+            Name => 'version',
+            Description => "Check version.",
+            Comment => $Message,
+            Check => $Check,
+        },
+    );
     # utf-8 support check
     if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
         my $Check = 'Failed';
@@ -189,8 +220,8 @@ sub AdminChecksGet {
         );
     }
     # max_allowed_packet check
-    my $Check = 'Failed';
-    my $Message = 'No max_allowed_packet found!';
+    $Check = 'Failed';
+    $Message = 'No max_allowed_packet found!';
     $Self->{DBObject}->Prepare(SQL => "show variables");
     while (my @Row = $Self->{DBObject}->FetchrowArray()) {
             if ($Row[0] =~ /^max_allowed_packet/i) {
