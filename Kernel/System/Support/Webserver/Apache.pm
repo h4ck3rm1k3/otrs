@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver/Apache.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Apache.pm,v 1.3 2007/06/13 09:57:15 martin Exp $
+# $Id: Apache.pm,v 1.4 2007/08/29 15:49:15 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Webserver::Apache;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.3 $';
+$VERSION = '$Revision: 1.4 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -137,13 +137,39 @@ sub AdminChecksGet {
     }
     else {
         $Check = 'Critical';
-        $Message = 'You should use mod_perl to increase your performance.';
+        $Message = 'You should use mod_perl to increase your performance very strong!';
     }
     push (@DataArray,
         {
             Key => 'Apache::Reload',
             Name => 'Apache::Reload',
             Description => "Check used Apache::Reload/Apache2::Reload.",
+            Comment => $Message,
+            Check => $Check,
+        },
+    );
+    # check if Apache::DBI is loaded
+    my $ApacheDBI = 0;
+    foreach my $Module (keys %INC) {
+        $Module =~ s/\//::/g;
+        $Module =~ s/\.pm$//g;
+        if ($Module eq 'Apache::DBI' || $Module eq 'Apache2::DBI') {
+            $ApacheDBI = $Module;
+        }
+    }
+    if (!$ApacheDBI) {
+        $Check = 'Critical';
+        $Message = 'Apache::DBI should be used to get a better performance (pre establish datababase connections).';
+    }
+    else {
+        $Check = 'OK';
+        $Message = "$ApacheDBI";
+    }
+    push (@DataArray,
+        {
+            Key => 'Apache::DBI',
+            Name => 'Apache::DBI',
+            Description => "Check used Apache::DBI.",
             Comment => $Message,
             Check => $Check,
         },
