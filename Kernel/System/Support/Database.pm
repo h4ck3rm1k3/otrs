@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Database.pm,v 1.4 2007/06/11 09:25:39 martin Exp $
+# $Id: Database.pm,v 1.5 2007/08/29 16:35:58 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Database;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.4 $';
+$VERSION = '$Revision: 1.5 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -137,8 +137,7 @@ sub SupportConfigArrayGet {
     # ------------------------------------------------------------ #
 
     # try to find out which ticket database is configured
-    my $DatabaseType = $Self->{ConfigObject}->Get('DatabaseDSN');
-    $DatabaseType =~ s/^.*?:(.*?):.*$/$1/;
+    my $DatabaseType = $Self->{DBObject}->{'DB::Type'};
 
     # try to get availible modules and the directory name
     my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Database";
@@ -223,8 +222,7 @@ sub SupportInfoGet {
     # ------------------------------------------------------------ #
 
     # try to find out which ticket database is configured
-    my $DatabaseType = $Self->{ConfigObject}->Get('DatabaseDSN');
-    $DatabaseType =~ s/^.*?:(.*?):.*$/$1/;
+    my $DatabaseType = $Self->{DBObject}->{'DB::Type'};
 
     # try to get availible modules and the directory name
     my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Database";
@@ -303,8 +301,7 @@ sub AdminChecksGet {
     # ------------------------------------------------------------ #
 
     # try to find out which ticket database is configured
-    my $DatabaseType = $Self->{ConfigObject}->Get('DatabaseDSN');
-    $DatabaseType =~ s/^.*?:(.*?):.*$/$1/;
+    my $DatabaseType = $Self->{DBObject}->{'DB::Type'};
     # try to get availible modules and the directory name
     my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Database";
     # read all availible modules in @List
@@ -393,6 +390,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.4 $ $Date: 2007/06/11 09:25:39 $
+$Revision: 1.5 $ $Date: 2007/08/29 16:35:58 $
 
 =cut
