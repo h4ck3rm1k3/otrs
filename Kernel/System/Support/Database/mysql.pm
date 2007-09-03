@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.8 2007/08/29 16:35:25 martin Exp $
+# $Id: mysql.pm,v 1.9 2007/09/03 15:57:51 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.8 $';
+$VERSION = '$Revision: 1.9 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -88,7 +88,7 @@ sub AdminChecksGet {
     while (my @Row = $Self->{DBObject}->FetchrowArray()) {
             if ($Row[0] =~ /^version$/i) {
                 if ($Row[1] =~ /^(\d{1,3})\.(\d{1,3}).*$/) {
-                    if ($1 > 3 && $2 > 0) {
+                    if ($1 > 4 || ($1 > 3 && $2 > 0)) {
                         $Check = 'OK';
                         $Message = "MySQL $Row[1]";
                     }
