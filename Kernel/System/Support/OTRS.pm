@@ -1,8 +1,8 @@
 # --
-# Kernel/System/Support/OTRS.pm - all required system informations
+# Kernel/System/Support/OTRS.pm - all required otrs informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.3 2007/07/11 14:13:32 sr Exp $
+# $Id: OTRS.pm,v 1.4 2007/09/03 15:57:24 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -12,42 +12,11 @@
 package Kernel::System::Support::OTRS;
 
 use strict;
+use Kernel::System::Ticket;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.3 $';
+$VERSION = '$Revision: 1.4 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
-
-=head1 NAME
-
-Kernel::System::Support::OTRS - global system informations
-
-=head1 SYNOPSIS
-
-All required system informations to a running OTRS host.
-
-=head1 PUBLIC INTERFACE
-
-=over 4
-
-=cut
-
-=item new()
-
-create OTRS info object
-
-    use Kernel::Config;
-    use Kernel::System::Log;
-    my $ConfigObject = Kernel::Config->new();
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-    );
-
-    $SystemInfoObject = Kernel::System::Support::OTRS->new(
-        ConfigObject => $ConfigObject,
-        LogObject => $LogObject,
-    );
-
-=cut
 
 sub new {
     my $Type = shift;
@@ -56,47 +25,14 @@ sub new {
     my $Self = {};
     bless ($Self, $Type);
     # check needed objects
-    foreach (qw(ConfigObject LogObject)) {
+    foreach (qw(ConfigObject LogObject DBObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
+    $Self->{TicketObject} = Kernel::System::Ticket->new(%Param);
+
     return $Self;
 }
-
-=item SupportConfigArrayGet()
-
-return an array reference with required config information.
-
-    $ArrayRef = $Support->SupportConfigArrayGet();
-
-    my $ConfigArray = [
-        {
-            Key => 'TicketDump',
-            Name => 'Dump Tickets',
-            Description => 'Please tell me how many latest Tickets we shut dump?',
-            Input => {
-                Type => 'Select',
-                Data => {
-                    All => 'All',
-                    0 => '0',
-                    10 => 'Last 10',
-                    100 => 'Last 100',
-                    1000 => 'Last 1000',
-                },
-            },
-        },
-        {
-            Key => 'ApacheHome',
-            Name => 'Apache Home Directory',
-            Description => 'Please tell me the path to the Apache home directory (/etc/apache2)',
-            Input => {
-                Type => 'Text',
-                Size => 40,
-            },
-        },
-    ];
-
-=cut
 
 sub SupportConfigArrayGet {
     my $Self = shift;
@@ -115,29 +51,6 @@ sub SupportConfigArrayGet {
     # return config array
     return $ConfigArray;
 }
-
-=item SupportInfoGet()
-
-returns a array reference with support information.
-
-$OTRSArray => [
-            {
-                Key => 'Plattform',
-                Name => 'Plattform',
-                Comment => 'Linux',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-            {
-                Key => 'Version',
-                Name => 'Version',
-                Comment => 'openSUSE 10.2',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-        ];
-
-=cut
 
 sub SupportInfoGet {
     my $Self = shift;
@@ -167,33 +80,10 @@ sub SupportInfoGet {
     return $DataArray;
 }
 
-=item AdminChecksGet()
-
-returns a array reference with AdminChecks information.
-
-$OTRSArray => [
-            {
-                Key => 'Plattform',
-                Name => 'Plattform',
-                Comment => 'Linux',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-            {
-                Key => 'Version',
-                Name => 'Version',
-                Comment => 'openSUSE 10.2',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-        ];
-
-=cut
-
 sub AdminChecksGet {
     my $Self = shift;
     my %Param = @_;
-    my $DataArray = [];
+    my @DataArray = ();
     # check needed stuff
     foreach (qw()) {
         if (!$Param{$_}) {
@@ -201,11 +91,83 @@ sub AdminChecksGet {
             return;
         }
     }
-#    # please add for each new check a part like this
-#    my $OneCheck = $Self->Check();
-#    push (@{$DataArray}, $OneCheck);
+    # Ticket::IndexModule check
+    my $Check = 'Failed';
+    my $Message = '';
+    my $Module = $Self->{ConfigObject}->Get('Ticket::IndexModule');
+    $Self->{DBObject}->Prepare(SQL => "SELECT count(*) from ticket");
+    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+        if ($Row[0] > 80000) {
+            if ($Module =~ /RuntimeDB/) {
+                $Check = 'Failed';
+                $Message = "You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
+            }
+            else {
+                $Check = 'OK';
+                $Message = "";
+            }
+        }
+        elsif ($Row[0] > 60000) {
+            if ($Module =~ /RuntimeDB/) {
+                $Check = 'Critical';
+                $Message = "You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
+            }
+            else {
+                $Check = 'OK';
+                $Message = "";
+            }
+        }
+        else {
+            $Check = 'OK';
+            $Message = "";
+        }
+    }
+    push (@DataArray,
+        {
+            Key => 'Ticket::IndexModule',
+            Name => 'Ticket::IndexModule',
+            Description => "Check Ticket::IndexModule setting.",
+            Comment => $Message,
+            Check => $Check,
+        },
+    );
+    # OpenTicketCheck check
+    $Check = 'Failed';
+    $Message = '';
+    my @TicketIDs = $Self->{TicketObject}->TicketSearch(
+        Result => 'ARRAY',
+        StateType => 'Open',
+        UserID => 1,
+        Permission => 'ro',
+        Limit => 99999999,
+    );
+    if ($#TicketIDs > 10000) {
+        $Check = 'Failed';
+        $Message = "You should not have more then 6000 open tickets in your system. You currently have ".
+            $#TicketIDs.". In case you want to improve your performance, close not needed open tickets.";
 
-    return $DataArray;
+    }
+    elsif ($#TicketIDs > 6000) {
+        $Check = 'Critical';
+        $Message = "You should not have more then 6000 open tickets in your system. You currently have ".
+            $#TicketIDs.". In case you want to improve your performance, close not needed open tickets.";
+
+    }
+    else {
+        $Check = 'OK';
+        $Message = "";
+    }
+    push (@DataArray,
+        {
+            Key => 'OpenTicketCheck',
+            Name => 'OpenTicketCheck',
+            Description => "Check open tickets in your system.",
+            Comment => $Message,
+            Check => $Check,
+        },
+    );
+
+    return \@DataArray;
 }
 
 sub OTRSLogGet {
@@ -241,21 +203,3 @@ sub OTRSLogGet {
 }
 
 1;
-
-=back
-
-=head1 TERMS AND CONDITIONS
-
-This software is part of the OTRS project (http://otrs.org/).
-
-This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (GPL). If you
-did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
-
-=cut
-
-=head1 VERSION
-
-$Revision: 1.3 $ $Date: 2007/07/11 14:13:32 $
-
-=cut
