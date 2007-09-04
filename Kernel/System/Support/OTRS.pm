@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.4 2007/09/03 15:57:24 martin Exp $
+# $Id: OTRS.pm,v 1.5 2007/09/04 08:42:58 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::Ticket;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.4 $';
+$VERSION = '$Revision: 1.5 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -119,7 +119,7 @@ sub AdminChecksGet {
         }
         else {
             $Check = 'OK';
-            $Message = "";
+            $Message = "You are using $Module, that's fine for $Row[0] tickets in your system.";
         }
     }
     push (@DataArray,
@@ -143,19 +143,19 @@ sub AdminChecksGet {
     );
     if ($#TicketIDs > 10000) {
         $Check = 'Failed';
-        $Message = "You should not have more then 6000 open tickets in your system. You currently have ".
+        $Message = "You should not have more then 8000 open tickets in your system. You currently have ".
             $#TicketIDs.". In case you want to improve your performance, close not needed open tickets.";
 
     }
-    elsif ($#TicketIDs > 6000) {
+    elsif ($#TicketIDs > 8000) {
         $Check = 'Critical';
-        $Message = "You should not have more then 6000 open tickets in your system. You currently have ".
+        $Message = "You should not have more then 8000 open tickets in your system. You currently have ".
             $#TicketIDs.". In case you want to improve your performance, close not needed open tickets.";
 
     }
     else {
         $Check = 'OK';
-        $Message = "";
+        $Message = "You have ".$#TicketIDs." open tickets in your system.";
     }
     push (@DataArray,
         {
