@@ -1,459 +1,280 @@
 # --
 # Main.t - Main tests
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Main.t,v 1.25 2011/08/12 09:06:15 mg Exp $
+# $Id: Main.t,v 1.3.2.1 2007/09/24 04:42:08 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
-use strict;
-use warnings;
-use vars (qw($Self));
 use utf8;
-use Encode;
-use File::Path;
-use Unicode::Normalize;
 
-# FilenameCleanUp - tests
-my @Tests = (
-    {
-        Name         => 'FilenameCleanUp() - Local',
-        FilenameOrig => 'me_t o/alal.xml',
-        FilenameNew  => 'me_t o_alal.xml',
-        Type         => 'Local',
-    },
-    {
-        Name         => 'FilenameCleanUp() - Local',
-        FilenameOrig => 'me_to/al?al"l.xml',
-        FilenameNew  => 'me_to_al_al_l.xml',
-        Type         => 'Local',
-    },
-    {
-        Name         => 'FilenameCleanUp() - Local',
-        FilenameOrig => 'me_to/a\/\\lal.xml',
-        FilenameNew  => 'me_to_a___lal.xml',
-        Type         => 'Local',
-    },
-    {
-        Name         => 'FilenameCleanUp() - Local',
-        FilenameOrig => 'me_to/al[al].xml',
-        FilenameNew  => 'me_to_al_al_.xml',
-        Type         => 'Local',
-    },
-    {
-        Name         => 'FilenameCleanUp() - Local',
-        FilenameOrig => 'me_to/alal.xml',
-        FilenameNew  => 'me_to_alal.xml',
-        Type         => 'Local',
-    },
-    {
-        Name         => 'FilenameCleanUp() - Attachment',
-        FilenameOrig => 'me_to/a+la l.xml',
-        FilenameNew  => 'me_to_a+la_l.xml',
-        Type         => 'Attachment',
-    },
-    {
-        Name         => 'FilenameCleanUp() - Local',
-        FilenameOrig => 'me_to/a+lal Grüße 0.xml',
-        FilenameNew  => 'me_to_a+lal Grüße 0.xml',
-        Type         => 'Local',
-    },
-    {
-        Name => 'FilenameCleanUp() - Attachment',
-        FilenameOrig =>
-            'me_to/a+lal123456789012345678901234567890Liebe Grüße aus Straubing123456789012345678901234567890123456789012345678901234567890.xml',
-        FilenameNew =>
-            'me_to_a+lal123456789012345678901234567890Liebe_Gruesse_aus_Straubing123456789012345678901234567.xml',
-        Type => 'Attachment',
-    },
-    {
-        Name         => 'FilenameCleanUp() - md5',
-        FilenameOrig => 'some file.xml',
-        FilenameNew  => '6b9e62f9a8c56a0c06c66cc716e30c45',
-        Type         => 'md5',
-    },
-    {
-        Name         => 'FilenameCleanUp() - md5',
-        FilenameOrig => 'me_to/a+lal Grüße 0öäüßカスタマ.xml',
-        FilenameNew  => 'c235a9eabe8494b5f90ffd1330af3407',
-        Type         => 'md5',
-    },
+# FilenameCleanUp
+my $Filename1 = $Self->{MainObject}->FilenameCleanUp(
+    Filename => 'me_t o/alal.xml',
+    Type => 'Local', # Local|Attachment|MD5
+);
+$Self->Is(
+    $Filename1 || '',
+    'me_t o_alal.xml',
+    '#1 FilenameCleanUp() - Local',
 );
 
-for my $Test (@Tests) {
-    my $Filename = $Self->{MainObject}->FilenameCleanUp(
-        Filename => $Test->{FilenameOrig},
-        Type     => $Test->{Type},
-    );
-    $Self->Is(
-        $Filename || '',
-        $Test->{FilenameNew},
-        $Test->{Name},
-    );
-}
+my $Filename2 = $Self->{MainObject}->FilenameCleanUp(
+    Filename => 'me_to/al?al"l.xml',
+    Type => 'Local', # Local|Attachment|MD5
+);
+$Self->Is(
+    $Filename2 || '',
+    'me_to_al_al_l.xml',
+    '#2 FilenameCleanUp() - Local',
+);
+
+my $Filename3 = $Self->{MainObject}->FilenameCleanUp(
+    Filename => 'me_to/a\/\\lal.xml',
+    Type => 'Local', # Local|Attachment|MD5
+);
+$Self->Is(
+    $Filename3 || '',
+    'me_to_a___lal.xml',
+    '#3 FilenameCleanUp() - Local',
+);
+
+my $Filename4 = $Self->{MainObject}->FilenameCleanUp(
+    Filename => 'me_to/al[al].xml',
+    Type => 'Local', # Local|Attachment|MD5
+);
+$Self->Is(
+    $Filename4 || '',
+    'me_to_al_al_.xml',
+    '#4 FilenameCleanUp() - Local',
+);
+
+my $Filename5 = $Self->{MainObject}->FilenameCleanUp(
+    Filename => 'me_to/alal.xml',
+    Type => 'Local', # Local|Attachment|MD5
+);
+$Self->Is(
+    $Filename5 || '',
+    'me_to_alal.xml',
+    '#5 FilenameCleanUp() - Local',
+);
+
+my $Filename6 = $Self->{MainObject}->FilenameCleanUp(
+    Filename => 'me_to/a+la l.xml',
+    Type => 'Attachment', # Local|Attachment|MD5
+);
+$Self->Is(
+    $Filename6 || '',
+    'me_to_a+la_l.xml',
+    '#6 FilenameCleanUp() - Attachment',
+);
+
+my $Filename7 = $Self->{MainObject}->FilenameCleanUp(
+    Filename => 'me_to/a+lal Grüße 0.xml',
+    Type => 'Local', # Local|Attachment|MD5
+);
+$Self->Is(
+    $Filename7 || '',
+    'me_to_a+lal Grüße 0.xml',
+    '#7 FilenameCleanUp() - Local',
+);
+
+my $Filename8 = $Self->{MainObject}->FilenameCleanUp(
+    Filename => 'me_to/a+lal123456789012345678901234567890Liebe Grüße aus Straubing123456789012345678901234567890123456789012345678901234567890.xml',
+    Type => 'Attachment', # Local|Attachment|MD5
+);
+$Self->Is(
+    $Filename8 || '',
+    'me_to_a+lal123456789012345678901234567890Liebe_Gruesse_aus_Straubing123456789012345678901234567.xml',
+    '#8 FilenameCleanUp() - Attachment',
+);
 
 # md5sum tests
 my $String = 'abc1234567890';
-my $MD5Sum = $Self->{MainObject}->MD5sum( String => \$String );
+my $MD5Sum = $Self->{MainObject}->MD5sum(
+   String => \$String,
+);
 $Self->Is(
     $MD5Sum || '',
     '57041f8f7dff9b67e3f97d7facbaf8d3',
-    "MD5sum() - String - abc1234567890",
+    "#9 MD5sum() - String - abc1234567890",
 );
-
-# test charset specific situations
 $String = 'abc1234567890äöüß-カスタマ';
-$MD5Sum = $Self->{MainObject}->MD5sum( String => \$String );
-
+$MD5Sum = $Self->{MainObject}->MD5sum(
+   String => \$String,
+);
 $Self->Is(
     $MD5Sum || '',
     '56a681e0c46b1f156020182cdf62e825',
-    "MD5sum() - String - $String",
+    "#9 MD5sum() - String - abc1234567890äöüß-カスタマ",
 );
-
-my %MD5SumOf = (
-    doc => '2e520036a0cda6a806a8838b1000d9d7',
-    pdf => '5ee767f3b68f24a9213e0bef82dc53e5',
-    png => 'e908214e672ed20c9c3f417b82e4e637',
-    txt => '0596f2939525c6bd50fc2b649e40fbb6',
-    xls => '39fae660239f62bb0e4a29fe14ff5663',
-);
-
-# on Win32 we have Windows style line endings for the .txt file.
-# this causes a different md5sum then when run on Linux.
-
-if ( $^O =~ 'MSWin' ) {
-    $MD5SumOf{txt} = '930d6f64fb8949ce4ddceb4ab45b1d2e';
-}
-
-for my $Extention (qw(doc pdf png txt xls)) {
+foreach my $Extention (qw(doc pdf png txt xls)) {
     my $MD5Sum = $Self->{MainObject}->MD5sum(
-        Filename => $Self->{ConfigObject}->Get('Home')
-            . "/scripts/test/sample/Main/Main-Test1.$Extention",
+        Filename => $Self->{ConfigObject}->Get('Home')."/scripts/test/sample/Main-Test1.$Extention",
     );
-    $Self->Is(
-        $MD5Sum || '',
-        $MD5SumOf{$Extention},
-        "MD5sum() - Filename - Main-Test1.$Extention",
-    );
+    if ($Extention eq 'doc') {
+        $Self->Is(
+            $MD5Sum || '',
+            '2e520036a0cda6a806a8838b1000d9d7',
+            "#10 MD5sum() - Filename - Main-Test1.$Extention",
+        );
+    }
+    elsif ($Extention eq 'pdf') {
+        $Self->Is(
+            $MD5Sum || '',
+            '5ee767f3b68f24a9213e0bef82dc53e5',
+            "#10 MD5sum() - Filename - Main-Test1.$Extention",
+        );
+    }
+    elsif ($Extention eq 'png') {
+        $Self->Is(
+            $MD5Sum || '',
+            'e908214e672ed20c9c3f417b82e4e637',
+            "#10 MD5sum() - Filename - Main-Test1.$Extention",
+        );
+    }
+    elsif ($Extention eq 'txt') {
+        $Self->Is(
+            $MD5Sum || '',
+            '0596f2939525c6bd50fc2b649e40fbb6',
+            "#10 MD5sum() - Filename - Main-Test1.$Extention",
+        );
+    }
+    elsif ($Extention eq 'xls') {
+        $Self->Is(
+            $MD5Sum || '',
+            '39fae660239f62bb0e4a29fe14ff5663',
+            "#10 MD5sum() - Filename - Main-Test1.$Extention",
+        );
+    }
 }
 
 # write & read some files via Directory/Filename
-for my $Extention (qw(doc pdf png txt xls)) {
+foreach my $Extention (qw(doc pdf png txt xls)) {
     my $MD5Sum = $Self->{MainObject}->MD5sum(
-        Filename => $Self->{ConfigObject}->Get('Home')
-            . "/scripts/test/sample/Main/Main-Test1.$Extention",
+        Filename => $Self->{ConfigObject}->Get('Home')."/scripts/test/sample/Main-Test1.$Extention",
     );
     my $Content = $Self->{MainObject}->FileRead(
-        Directory => $Self->{ConfigObject}->Get('Home') . '/scripts/test/sample/Main/',
-        Filename  => "Main-Test1.$Extention",
+        Directory => $Self->{ConfigObject}->Get('Home').'/scripts/test/sample/',
+        Filename => "Main-Test1.$Extention",
     );
     $Self->True(
         ${$Content} || '',
-        "FileRead() - Main-Test1.$Extention",
+        "#11 FileRead() - Main-Test1.$Extention",
     );
     my $FileLocation = $Self->{MainObject}->FileWrite(
         Directory => $Self->{ConfigObject}->Get('TempDir'),
-        Filename  => "me_öüto/al<>?Main-Test1.$Extention",
-        Content   => $Content,
+        Filename => "me_öüto/al<>?Main-Test1.$Extention",
+        Content => $Content,
     );
     $Self->True(
         $FileLocation || '',
-        "FileWrite() - $FileLocation",
+        "#11 FileWrite() - $FileLocation",
     );
     my $MD5Sum2 = $Self->{MainObject}->MD5sum(
-        Filename => $Self->{ConfigObject}->Get('TempDir') . '/' . $FileLocation,
+        Filename => $Self->{ConfigObject}->Get('TempDir').'/'.$FileLocation,
     );
     $Self->Is(
         $MD5Sum2 || '',
-        $MD5Sum  || '',
-        "MD5sum()>FileWrite()>MD5sum() - $FileLocation",
+        $MD5Sum || '',
+        "#11 MD5sum()>FileWrite()>MD5sum() - $FileLocation",
     );
     my $Success = $Self->{MainObject}->FileDelete(
         Directory => $Self->{ConfigObject}->Get('TempDir'),
-        Filename  => $FileLocation,
+        Filename => $FileLocation,
     );
     $Self->True(
         $Success || '',
-        "FileDelete() - $FileLocation",
+        "#11 FileDelete() - $FileLocation",
     );
 }
 
 # write & read some files via Location
-for my $Extention (qw(doc pdf png txt xls)) {
+foreach my $Extention (qw(doc pdf png txt xls)) {
     my $MD5Sum = $Self->{MainObject}->MD5sum(
-        Filename => $Self->{ConfigObject}->Get('Home')
-            . "/scripts/test/sample/Main/Main-Test1.$Extention",
+        Filename => $Self->{ConfigObject}->Get('Home')."/scripts/test/sample/Main-Test1.$Extention",
     );
     my $Content = $Self->{MainObject}->FileRead(
-        Location => $Self->{ConfigObject}->Get('Home')
-            . '/scripts/test/sample/Main/'
-            . "Main-Test1.$Extention",
+        Location => $Self->{ConfigObject}->Get('Home').'/scripts/test/sample/'."Main-Test1.$Extention",
     );
     $Self->True(
         ${$Content} || '',
-        "FileRead() - Main-Test1.$Extention",
+        "#12 FileRead() - Main-Test1.$Extention",
     );
     my $FileLocation = $Self->{MainObject}->FileWrite(
-        Location => $Self->{ConfigObject}->Get('TempDir') . "Main-Test1.$Extention",
-        Content  => $Content,
+        Location => $Self->{ConfigObject}->Get('TempDir')."Main-Test1.$Extention",
+        Content => $Content,
     );
     $Self->True(
         $FileLocation || '',
-        "FileWrite() - $FileLocation",
+        "#12 FileWrite() - $FileLocation",
     );
-    my $MD5Sum2 = $Self->{MainObject}->MD5sum( Filename => $FileLocation );
+    my $MD5Sum2 = $Self->{MainObject}->MD5sum(
+        Filename => $FileLocation,
+    );
     $Self->Is(
         $MD5Sum2 || '',
-        $MD5Sum  || '',
-        "MD5sum()>FileWrite()>MD5sum() - $FileLocation",
+        $MD5Sum || '',
+        "#12 MD5sum()>FileWrite()>MD5sum() - $FileLocation",
     );
-    my $Success = $Self->{MainObject}->FileDelete( Location => $FileLocation );
+    my $Success = $Self->{MainObject}->FileDelete(
+        Location => $FileLocation,
+    );
     $Self->True(
         $Success || '',
-        "FileDelete() - $FileLocation",
+        "#12 FileDelete() - $FileLocation",
     );
 }
 
 # write / read ARRAYREF test
-my $Content      = "some\ntest\nöäüßカスタマ";
+my $Content = "some\ntest\nöäüßカスタマ";
 my $FileLocation = $Self->{MainObject}->FileWrite(
     Directory => $Self->{ConfigObject}->Get('TempDir'),
-    Filename  => "some-test.txt",
-    Mode      => 'utf8',
-    Content   => \$Content,
+    Filename => "some-test.txt",
+    Mode => 'utf8',
+    Content => \$Content,
 );
 $Self->True(
     $FileLocation || '',
-    "FileWrite() - $FileLocation",
+    "#13 FileWrite() - $FileLocation",
 );
 
 my $ContentARRAYRef = $Self->{MainObject}->FileRead(
     Directory => $Self->{ConfigObject}->Get('TempDir'),
-    Filename  => $FileLocation,
-    Mode      => 'utf8',
-    Result    => 'ARRAY',                                 # optional - SCALAR|ARRAY
+    Filename => $FileLocation,
+    Mode => 'utf8',
+    Result => 'ARRAY', # optional - SCALAR|ARRAY
 );
 $Self->True(
     $ContentARRAYRef || '',
-    "FileRead() - $FileLocation $ContentARRAYRef",
+    "#13 FileRead() - $FileLocation $ContentARRAYRef",
 );
 $Self->Is(
     $ContentARRAYRef->[0] || '',
-    "some\n",
-    "FileRead() [0] - $FileLocation",
+   "some\n",
+    "#13 FileRead() [0] - $FileLocation",
 );
 $Self->Is(
     $ContentARRAYRef->[1] || '',
-    "test\n",
-    "FileRead() [1] - $FileLocation",
+   "test\n",
+    "#13 FileRead() [1] - $FileLocation",
 );
 $Self->Is(
     $ContentARRAYRef->[2] || '',
     "öäüßカスタマ",
-    "FileRead() [2] - $FileLocation",
+    "#13 FileRead() [2] - $FileLocation",
 );
 
 my $Success = $Self->{MainObject}->FileDelete(
     Directory => $Self->{ConfigObject}->Get('TempDir'),
-    Filename  => $FileLocation,
+    Filename => $FileLocation,
 );
 $Self->True(
     $Success || '',
-    "FileDelete() - $FileLocation",
+    "#13 FileDelete() - $FileLocation",
 );
-
-# check if the file have the correct charset
-my $ContentSCALARRef = $Self->{MainObject}->FileRead(
-    Location => $Self->{ConfigObject}->Get('Home')
-        . '/scripts/test/sample/Main/PDF-test2-utf-8.txt',
-    Mode   => 'utf8',
-    Result => 'SCALAR',
-);
-
-my $Text = ${$ContentSCALARRef};
-
-$Self->True(
-    Encode::is_utf8($Text),
-    "FileRead() - Check a utf8 file - exists the utf8 flag ( $Text )",
-);
-
-$Self->True(
-    Encode::is_utf8( $Text, 1 ),
-    "FileRead() - Check a utf8 file - is the utf8 content wellformed ( $Text )",
-);
-
-my $FileMTime = $Self->{MainObject}->FileGetMTime(
-    Location => $Self->{ConfigObject}->Get('Home')
-        . '/Kernel/Config.pm',
-);
-
-$Self->True(
-    int $FileMTime > 1_000_000,
-    'FileGetMTime()',
-);
-
-my $FileMTimeNonexisting = $Self->{MainObject}->FileGetMTime(
-    Location => $Self->{ConfigObject}->Get('Home')
-        . '/Kernel/some.nonexisting.file',
-);
-
-$Self->False(
-    defined $FileMTimeNonexisting,
-    'FileGetMTime() for nonexisting file',
-);
-
-# testing DirectoryRead function
-my $Path                  = $Self->{ConfigObject}->Get('TempDir');
-my $DirectoryWithFiles    = "$Path/WithFiles";
-my $DirectoryWithoutFiles = "$Path/WithoutFiles";
-
-# create needed test directories
-for my $Directory ( $DirectoryWithFiles, $DirectoryWithoutFiles ) {
-    if ( !mkdir $Directory ) {
-        $Self->True(
-            0,
-            "DirectoryRead() - create '$Directory': $!",
-        );
-    }
-}
-
-# create test files
-for my $Suffix ( 0 .. 5, 'öäüßカスタマ' ) {
-    my $Success = $Self->{MainObject}->FileWrite(
-        Directory => $DirectoryWithFiles,
-        Filename  => "Example_File_$Suffix",
-        Content   => \'',
-    );
-    $Self->True(
-        $Success,
-        "DirectoryRead() - create '$DirectoryWithFiles/Example_File_$Suffix'!",
-    );
-}
-
-@Tests = (
-    {
-        Name      => 'Read directory with files, \'Example_File*\' Filter',
-        Filter    => 'Example_File*',
-        Directory => $DirectoryWithFiles,
-        Results   => [
-            "$DirectoryWithFiles/Example_File_0",
-            "$DirectoryWithFiles/Example_File_1",
-            "$DirectoryWithFiles/Example_File_2",
-            "$DirectoryWithFiles/Example_File_3",
-            "$DirectoryWithFiles/Example_File_4",
-            "$DirectoryWithFiles/Example_File_5",
-            "$DirectoryWithFiles/Example_File_öäüßカスタマ",
-        ],
-    },
-    {
-        Name      => 'Read directory with files, \'XX_NOTEXIST_XX\' Filter',
-        Filter    => 'XX_NOTEXIST_XX',
-        Directory => $DirectoryWithFiles,
-        Results   => [],
-    },
-    {
-        Name      => 'Read directory with files, *0 *1 *2 Filters',
-        Filter    => [ '*0', '*1', '*2' ],
-        Directory => $DirectoryWithFiles,
-        Results   => [
-            "$DirectoryWithFiles/Example_File_0",
-            "$DirectoryWithFiles/Example_File_1",
-            "$DirectoryWithFiles/Example_File_2",
-        ],
-    },
-    {
-        Name      => 'Read directory with files, *0 *1 *2 Filters',
-        Filter    => [ '*0', '*2', '*1', '*1', '*0', '*2' ],
-        Directory => $DirectoryWithFiles,
-        Results   => [
-            "$DirectoryWithFiles/Example_File_0",
-            "$DirectoryWithFiles/Example_File_2",
-            "$DirectoryWithFiles/Example_File_1",
-        ],
-    },
-    {
-        Name      => 'Read directory with files, no Filter',
-        Filter    => '*',
-        Directory => $DirectoryWithFiles,
-        Results   => [
-            "$DirectoryWithFiles/Example_File_0",
-            "$DirectoryWithFiles/Example_File_1",
-            "$DirectoryWithFiles/Example_File_2",
-            "$DirectoryWithFiles/Example_File_3",
-            "$DirectoryWithFiles/Example_File_4",
-            "$DirectoryWithFiles/Example_File_5",
-            "$DirectoryWithFiles/Example_File_öäüßカスタマ",
-        ],
-    },
-    {
-        Name      => 'Read directory with files, no Filter (multiple)',
-        Filter    => [ '*', '*', '*' ],
-        Directory => $DirectoryWithFiles,
-        Results   => [
-            "$DirectoryWithFiles/Example_File_0",
-            "$DirectoryWithFiles/Example_File_1",
-            "$DirectoryWithFiles/Example_File_2",
-            "$DirectoryWithFiles/Example_File_3",
-            "$DirectoryWithFiles/Example_File_4",
-            "$DirectoryWithFiles/Example_File_5",
-            "$DirectoryWithFiles/Example_File_öäüßカスタマ",
-        ],
-    },
-    {
-        Name      => 'Read directory without files, * Filter',
-        Filter    => '*',
-        Directory => $DirectoryWithoutFiles,
-        Results   => [],
-    },
-    {
-        Name      => 'Read directory without files, no Filter',
-        Filter    => '*',
-        Directory => $DirectoryWithoutFiles,
-        Results   => [],
-    },
-    {
-        Name      => 'Directory doesn\'t exists!',
-        Directory => 'THIS',
-        Filter    => '*',
-        Results   => [],
-    },
-);
-
-for my $Test (@Tests) {
-
-    my @UnicodeResults;
-    for my $Result ( @{ $Test->{Results} } ) {
-        push @UnicodeResults, $Self->{EncodeObject}->Convert2CharsetInternal(
-            Text => $Result,
-            From => 'utf-8',
-        );
-    }
-    @UnicodeResults = sort @UnicodeResults;
-
-    my @Results = $Self->{MainObject}->DirectoryRead(
-        Directory => $Test->{Directory},
-        Filter    => $Test->{Filter},
-    );
-
-    #use Data::Dumper;
-    #print STDERR "Dump: " . Dumper(\@Results) . "\n";
-    #print STDERR "Dump: " . Dumper(\@UnicodeResults) . "\n";
-
-    $Self->IsDeeply( \@Results, \@UnicodeResults, $Test->{Name} );
-}
-
-# delete needed test directories
-for my $Directory ( $DirectoryWithFiles, $DirectoryWithoutFiles ) {
-    if ( !File::Path::rmtree( [$Directory] ) ) {
-        $Self->True(
-            0,
-            "DirectoryRead() - delete '$Directory'",
-        );
-    }
-}
 
 1;
