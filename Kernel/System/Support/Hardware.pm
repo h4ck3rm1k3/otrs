@@ -2,7 +2,7 @@
 # Kernel/System/Support/Hardware.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Hardware.pm,v 1.5 2007/06/13 10:09:53 martin Exp $
+# $Id: Hardware.pm,v 1.6 2007/09/27 10:09:48 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Hardware;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.5 $';
+$VERSION = '$Revision: 1.6 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -244,13 +244,13 @@ sub MemorySwapCheck {
             return;
         }
     }
-
+    my $MemInfoFile;
     my %MemTmpInfo = ();
     # If used OS is a linux system
     if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
         if (-e "/proc/meminfo") {
-            open(MEMINFOFILE, "</proc/meminfo");
-            while(<MEMINFOFILE>) {
+            open($MemInfoFile, '<', "/proc/meminfo");
+            while(<$MemInfoFile>) {
                 my $TmpLine = $_;
                 if ($TmpLine =~ /MemTotal/) {
                     $TmpLine =~ s/^.*?(\d+).*$/$1/;
@@ -269,7 +269,7 @@ sub MemorySwapCheck {
                     $MemTmpInfo{MemorySwapCheck}{SwapFree} = $TmpLine;
                 }
             }
-            close(MEMINFOFILE);
+            close($MemInfoFile);
         }
     }
     elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
@@ -325,11 +325,12 @@ sub CPULoadCheck {
     # If used OS is a linux system
     if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
         if (-e "/proc/loadavg") {
-            open(LOADFILE, "</proc/loadavg");
-            while(<LOADFILE>) {
+            my $LoadFile;
+            open($LoadFile, '<', "/proc/loadavg");
+            while(<$LoadFile>) {
                 @SplitArray = split (" ", $_);
             }
-            close(LOADFILE);
+            close($LoadFile);
         }
     }
     elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
@@ -373,8 +374,9 @@ sub DiskUsageCheck {
 
     # If used OS is a linux system
     if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
-        if (open(IN, "df -l |")) {
-            while(<IN>) {
+        my $In;
+        if (open($In, "df -l |")) {
+            while(<$In>) {
                 if ($_ =~ /^(.+?)\s.*\s(\d\d\d|\d\d|\d)%.+?$/) {
                     if ($2 > 90) {
                         $Check = 'Failed';
@@ -388,7 +390,7 @@ sub DiskUsageCheck {
                     $Message .= "$1\[$2%\]";
                 }
             }
-            close(IN);
+            close($In);
             if ($Check eq 'Failed') {
                 $Message = "Disk ist full ($Message).";
             }
@@ -424,6 +426,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.5 $ $Date: 2007/06/13 10:09:53 $
+$Revision: 1.6 $ $Date: 2007/09/27 10:09:48 $
 
 =cut

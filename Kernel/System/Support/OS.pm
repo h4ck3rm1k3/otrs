@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.2 2007/06/13 09:57:41 martin Exp $
+# $Id: OS.pm,v 1.3 2007/09/27 10:10:31 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::OS;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.2 $';
+$VERSION = '$Revision: 1.3 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -249,11 +249,12 @@ sub DistributionCheck {
     # If used OS is a linux system
     if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
         my $TmpLine = "";
-        if (open(DISTRIBUTION, "</etc/issue")) {
-            while(<DISTRIBUTION>) {
+        my $Distribution;
+        if (open($Distribution, '<', "/etc/issue")) {
+            while(<$Distribution>) {
                 $TmpLine .= $_;
             }
-            close(DISTRIBUTION);
+            close($Distribution);
             if($TmpLine) {
                 $TmpLine =~ s/\\.*//;
                 $TmpLine =~ s/\n//g;
@@ -297,11 +298,12 @@ sub KernelInfoCheck {
     # If used OS is a linux system
     if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
         my $TmpLine = "";
-        if (open(KERNELINFO, "uname -a |")) {
-            while(<KERNELINFO>) {
+        my $KernelInfo;
+        if (open($KernelInfo, "uname -a |")) {
+            while(<$KernelInfo>) {
                 $TmpLine .= $_;
             }
-            close(KERNELINFO);
+            close($KernelInfo);
             if($TmpLine) {
                 $TmpLine =~ s/\s+$//g;
                 $TmpLine =~ s/^\s+//g;
@@ -346,6 +348,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.2 $ $Date: 2007/06/13 09:57:41 $
+$Revision: 1.3 $ $Date: 2007/09/27 10:10:31 $
 
 =cut

@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.9 2007/09/03 15:57:51 martin Exp $
+# $Id: mysql.pm,v 1.10 2007/09/27 10:16:13 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.9 $';
+$VERSION = '$Revision: 1.10 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -285,11 +285,12 @@ sub AdminChecksGet {
         my $Check = 'Failed';
         my $Message = '';
         my $Content = '';
-        if (open(IN, "< $File")) {
-            while (<IN>) {
+        my $In;
+        if (open($In, '<', "$File")) {
+            while (<$In>) {
                 $Content .= $_;
             }
-            close (IN);
+            close ($In);
             my @XMLHash = $Self->{XMLObject}->XMLParse2XMLHash(String => $Content);
 
             foreach my $Table (@{$XMLHash[1]->{database}->[1]->{Table}}) {
