@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.5 2007/09/04 08:42:58 martin Exp $
+# $Id: OTRS.pm,v 1.6 2007/09/27 10:12:47 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -11,11 +11,12 @@
 
 package Kernel::System::Support::OTRS;
 
+use Kernel::System::Support;
 use strict;
 use Kernel::System::Ticket;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.5 $';
+$VERSION = '$Revision: 1.6 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -25,10 +26,11 @@ sub new {
     my $Self = {};
     bless ($Self, $Type);
     # check needed objects
-    foreach (qw(ConfigObject LogObject DBObject)) {
+    foreach (qw(ConfigObject LogObject MainObject DBObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
+    $Self->{SupportObject} = Kernel::System::Support->new(%Param);
     $Self->{TicketObject} = Kernel::System::Ticket->new(%Param);
 
     return $Self;
@@ -70,12 +72,26 @@ sub SupportInfoGet {
     my $OneCheck = $Self->OTRSLogGet(
         Type => $Param{ModuleInputHash}->{Type} || '',
     );
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->OTRSKernelGet(
+        Type => $Param{ModuleInputHash}->{Type} || '',
+    );
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->OTRSCheckSumGet(
+        Type => $Param{ModuleInputHash}->{Type} || '',
+    );
+    push (@{$DataArray}, $OneCheck);
+        $OneCheck = $Self->OTRSCheckModulesGet(
+        Type => $Param{ModuleInputHash}->{Type} || '',
+    );
+    push (@{$DataArray}, $OneCheck);
 
 #    # please add for each new check a part like this
 #    my $OneCheck = $Self->Check(
 #        Type => $Param{ModuleInputHash}->{Type} || '',
 #    );
-    push (@{$DataArray}, $OneCheck);
 
     return $DataArray;
 }
@@ -181,23 +197,151 @@ sub OTRSLogGet {
             return;
         }
     }
-    my $TmpLine = '';
-    my $Logfile = $Self->{ConfigObject}->Get('Home')."/var/log/support.log";
-    if (open (LOGFILE, $Logfile)) {
-        while (<LOGFILE>) {
-            $TmpLine .= $_;
+    my $LogString = $Self->{LogObject}->GetLog(Limit => 1000);
+    my $TmpLog;
+    open ($TmpLog, '>', $Self->{ConfigObject}->Get('Home')."/var/tmp/tmplog");
+    print $TmpLog $LogString;
+    close ($TmpLog);
+
+    my $Filename = $Self->{SupportObject}->TarPackageWrite(
+        FileName => $Self->{ConfigObject}->Get('Home')."/var/tmp/tmplog",
+        OutputPath => $Self->{ConfigObject}->Get('Home')."/var/tmp/support/",
+        OutputName => 'otrs.log.tar',
+    );
+    # remove tmp file
+    unlink $Self->{ConfigObject}->Get('Home')."/var/tmp/tmplog";
+
+    if($Filename) {
+        $ReturnHash =
+        {
+            Key => 'OTRSLog',
+            Name => 'OTRSLog',
+            Comment => 'The OTRS Log',
+            Description =>  $Filename,
+            Check => 'Package',
+        };
+    }
+    return $ReturnHash;
+}
+
+sub OTRSKernelGet {
+    my $Self = shift;
+    my %Param = @_;
+    my $ReturnHash = {};
+    # check needed stuff
+    foreach (qw()) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+            return;
         }
-        close (LOGFILE);
-        if($TmpLine) {
-            $ReturnHash =
-            {
-                Key => 'OTRSLog',
-                Name => 'OTRSLog',
-                Comment => 'The OTRS Log',
-                Description => $TmpLine,
-                Check => 'OK',
-            };
+    }
+
+    # get the directory name
+    my $DirName = $Self->{ConfigObject}->Get('Home').'/Kernel/';
+
+    my $Filename = $Self->{SupportObject}->TarPackageWrite(
+        DirName => $DirName,
+        OutputPath => $Self->{ConfigObject}->Get('Home')."/var/tmp/support/",
+        OutputName => 'kernel.tar',
+    );
+
+    if($Filename) {
+        $ReturnHash =
+        {
+            Key => 'OTRSKernel',
+            Name => 'OTRSKernel',
+            Comment => 'The OTRS Kernel ',
+            Description => $Filename,
+            Check => 'Package',
+        };
+    }
+    return $ReturnHash;
+}
+
+sub OTRSCheckSumGet {
+    my $Self = shift;
+    my %Param = @_;
+    my $ReturnHash = {};
+    # check needed stuff
+    foreach (qw()) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+            return;
         }
+    }
+
+    my $TmpSumString;
+    my $TmpLog;
+    open ($TmpSumString, "perl ".$Self->{ConfigObject}->Get('Home')."/bin/CheckSum.pl |");
+    open ($TmpLog, '>', $Self->{ConfigObject}->Get('Home')."/var/tmp/CheckSum.log");
+
+    while (<$TmpSumString>) {
+        print $TmpLog $_;
+    }
+    close ($TmpSumString);
+    close ($TmpLog);
+
+    my $Filename = $Self->{SupportObject}->TarPackageWrite(
+        FileName => $Self->{ConfigObject}->Get('Home')."/var/tmp/CheckSum.log",
+        OutputPath => $Self->{ConfigObject}->Get('Home')."/var/tmp/support/",
+        OutputName => 'CheckSum.log.tar',
+    );
+    # remove tmp file
+    unlink $Self->{ConfigObject}->Get('Home')."/var/tmp/CheckSum.log";
+
+    if($Filename) {
+        $ReturnHash =
+        {
+            Key => 'OTRSCheckSum',
+            Name => 'OTRSCheckSum',
+            Comment => 'The OTRS CheckSum.',
+            Description =>  $Filename,
+            Check => 'Package',
+        };
+    }
+    return $ReturnHash;
+}
+
+sub OTRSCheckModulesGet {
+    my $Self = shift;
+    my %Param = @_;
+    my $ReturnHash = {};
+    # check needed stuff
+    foreach (qw()) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+            return;
+        }
+    }
+
+    my $TmpSumString;
+    my $TmpLog;
+    open ($TmpSumString, "perl ".$Self->{ConfigObject}->Get('Home')."/bin/otrs.checkModules |");
+    open ($TmpLog, '>', $Self->{ConfigObject}->Get('Home')."/var/tmp/CheckModules.log");
+
+    while (<$TmpSumString>) {
+        print $TmpLog $_;
+    }
+    close ($TmpSumString);
+    close ($TmpLog);
+
+    my $Filename = $Self->{SupportObject}->TarPackageWrite(
+        FileName => $Self->{ConfigObject}->Get('Home')."/var/tmp/CheckModules.log",
+        OutputPath => $Self->{ConfigObject}->Get('Home')."/var/tmp/support/",
+        OutputName => 'CheckModules.log.tar',
+    );
+    # remove tmp file
+    unlink $Self->{ConfigObject}->Get('Home')."/var/tmp/CheckModules.log";
+
+    if($Filename) {
+        $ReturnHash =
+        {
+            Key => 'OTRSCheckSum',
+            Name => 'OTRSCheckSum',
+            Comment => 'The OTRS CheckSum.',
+            Description =>  $Filename,
+            Check => 'Package',
+        };
     }
     return $ReturnHash;
 }
