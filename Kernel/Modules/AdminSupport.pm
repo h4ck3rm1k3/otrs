@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.3 2007/08/24 08:56:24 sr Exp $
+# $Id: AdminSupport.pm,v 1.4 2007/09/27 10:02:58 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = '$Revision: 1.3 $';
+$VERSION = '$Revision: 1.4 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -31,7 +31,7 @@ sub new {
     }
 
     # check needed Objects
-    foreach (qw(ParamObject LayoutObject LogObject ConfigObject)) {
+    foreach (qw(ParamObject LayoutObject LogObject ConfigObject TimeObject)) {
         if (!$Self->{$_}) {
             $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
@@ -56,72 +56,88 @@ sub Run {
     # ------------------------------------------------------------ #
 
     if ($Self->{Subaction} eq 'GetRequiredInfo') {
-        # create & return output
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-
-        $Self->{LayoutObject}->Block(
-            Name => 'Required',
-        );
         # first level Hashref (each module name)
+        my $ContentCheck = '0';
         foreach my $ConfigModule (sort keys %{$ConfigHash}) {
             if (!$ConfigHash->{$ConfigModule}->[0]) {
                 next;
             }
-            $Self->{LayoutObject}->Block(
-                Name => 'RequiredInfo',
-                Data => {
-                    ConfigModule => $ConfigModule,
-                },
-            );
-            # second level array reference (each module)
-            foreach my $ConfigHashRow (@{$ConfigHash->{$ConfigModule}}) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'RequiredInfoRow',
-                );
-                # create a new textfield
-                if ($ConfigHashRow->{Input}->{Type} eq "Text") {
-                    $Self->{LayoutObject}->Block(
-                        Name => 'RequiredInfoRowText',
-                        Data => {
-                            Key => $ConfigModule . '::' . $ConfigHashRow->{Key},
-                            Name => $ConfigHashRow->{Name},
-                            Value => $ConfigHashRow->{Value} || '',
-                            Size => $ConfigHashRow->{Input}->{Size} || '40',
-                            Description => $ConfigHashRow->{Description} || '',
-                        },
-                    );
-                }
-                # create a new dropdown field
-                elsif ($ConfigHashRow->{Input}->{Type} eq "Select") {
-                    my $SelectStrg = $Self->{LayoutObject}->BuildSelection(
-                        Data => $ConfigHashRow->{Input}->{Data} || {},
-                        Name => $ConfigModule . '::' . $ConfigHashRow->{Key},
-                    );
-                    $Self->{LayoutObject}->Block(
-                        Name => 'RequiredInfoRowSelect',
-                        Data => {
-                            Name => $ConfigHashRow->{Name},
-                            Description => $ConfigHashRow->{Description} || '',
-                            SelectStrg => $SelectStrg,
-                        },
-                    );
-                }
+            else{
+                $ContentCheck = '1';
             }
         }
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminSupport',
-            Data => { },
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
+        if ($ContentCheck eq '1') {
+            # create & return output
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+
+            $Self->{LayoutObject}->Block(
+                Name => 'Required',
+            );
+            # first level Hashref (each module name)
+            foreach my $ConfigModule (sort keys %{$ConfigHash}) {
+                if (!$ConfigHash->{$ConfigModule}->[0]) {
+                    next;
+                }
+                $Self->{LayoutObject}->Block(
+                    Name => 'RequiredInfo',
+                    Data => {
+                        ConfigModule => $ConfigModule,
+                    },
+                );
+                # second level array reference (each module)
+                foreach my $ConfigHashRow (@{$ConfigHash->{$ConfigModule}}) {
+                    $Self->{LayoutObject}->Block(
+                        Name => 'RequiredInfoRow',
+                    );
+                    # create a new textfield
+                    if ($ConfigHashRow->{Input}->{Type} eq "Text") {
+                        $Self->{LayoutObject}->Block(
+                            Name => 'RequiredInfoRowText',
+                            Data => {
+                                Key => $ConfigModule . '::' . $ConfigHashRow->{Key},
+                                Name => $ConfigHashRow->{Name},
+                                Value => $ConfigHashRow->{Value} || '',
+                                Size => $ConfigHashRow->{Input}->{Size} || '40',
+                                Description => $ConfigHashRow->{Description} || '',
+                            },
+                        );
+                    }
+                    # create a new dropdown field
+                    elsif ($ConfigHashRow->{Input}->{Type} eq "Select") {
+                        my $SelectStrg = $Self->{LayoutObject}->BuildSelection(
+                            Data => $ConfigHashRow->{Input}->{Data} || {},
+                            Name => $ConfigModule . '::' . $ConfigHashRow->{Key},
+                        );
+                        $Self->{LayoutObject}->Block(
+                            Name => 'RequiredInfoRowSelect',
+                            Data => {
+                                Name => $ConfigHashRow->{Name},
+                                Description => $ConfigHashRow->{Description} || '',
+                                SelectStrg => $SelectStrg,
+                            },
+                        );
+                    }
+                }
+            }
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminSupport',
+                Data => { },
+            );
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
+        }
+        else {
+            # next side...
+            $Self->{Subaction} = 'Confidential';
+        }
     }
 
     # ------------------------------------------------------------ #
     # Confidential and SupportID
     # ------------------------------------------------------------ #
 
-    elsif ($Self->{Subaction} eq 'Confidential') {
+    if ($Self->{Subaction} eq 'Confidential') {
         # create & return output
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
@@ -183,17 +199,25 @@ sub Run {
             InputHash => $InputHash,
         );
 
-        my $XMLString = $Self->{SupportObject}->XMLStringCreate(
+        my $SupportString = $Self->{SupportObject}->CreatePackageToSend(
             DataHash => $DataHash,
         );
+
         # if the button send becomes the submit
         if ($Self->{ParamObject}->GetParam(Param => "Send")) {
+            my ($s,$m,$h, $D,$M,$Y, $wd,$yd,$dst) = $Self->{TimeObject}->SystemTime2Date(
+            SystemTime => $Self->{TimeObject}->SystemTime(),
+            );
+            $M = sprintf("%02d", $M);
+            $D = sprintf("%02d", $D);
+            $h = sprintf("%02d", $h);
+            $m = sprintf("%02d", $m);
             my $SendMessage;
-            if (length($XMLString) < 9961472) {
+            if (length($SupportString) < 9961472) {
                 # send info to ((otrs))
                 $SendMessage = $Self->{SupportObject}->SupportSendInfo(
-                    XMLString => $XMLString,
-                    SupportID => $Self->{ParamObject}->GetParam(Param => "SupportID"),
+                    SupportString => $SupportString,
+                    SupportID => "SupportInfo_"."$Y-$M-$D"."_$h-$m"."_"."Support-ID_".$Self->{ParamObject}->GetParam(Param => "SupportID"),
                 );
                 $Output .= $Self->{LayoutObject}->Notify(
                     Priority => 'warning',
@@ -224,8 +248,8 @@ sub Run {
             # return file
             return $Self->{LayoutObject}->Attachment(
                 ContentType => 'application/octet-stream',
-                Content => $XMLString,
-                Filename => "SupportInfo"."_"."$Y-$M-$D"."_$h-$m.pm",
+                Content => $SupportString,
+                Filename => "SupportInfo"."_"."$Y-$M-$D"."_$h-$m",
                 Type => 'attached',
             );
         }

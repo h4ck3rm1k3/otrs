@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.5 2007/05/10 06:18:33 sr Exp $
+# $Id: Support.pm,v 1.6 2007/09/27 10:06:34 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,9 +17,11 @@ use Kernel::System::XML;
 use Kernel::System::DB;
 use Kernel::System::Email;
 use Kernel::System::Time;
+use MIME::Base64;
+use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.5 $';
+$VERSION = '$Revision: 1.6 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -297,7 +299,7 @@ sub XMLStringCreate {
                 }
                 # remove newlines
                 $DataHashRow->{$Element} =~ s/\015\012|\012|\015//g;
-                $Data->{$Element}->[1]->{Content} = quotemeta($DataHashRow->{$Element});
+                $Data->{$Element}->[1]->{Content} = $DataHashRow->{$Element};
             }
             $XMLHash->[1]->{SupportInfo}->[1]->{$Module}->[1]->{$DataHashRow->{Key}}->[1] = $Data;
         }
@@ -308,12 +310,118 @@ sub XMLStringCreate {
     return $XMLString;
 }
 
+sub TarPackageWrite {
+    my $Self = shift;
+    my %Param = @_;
+
+    # check needed stuff
+    foreach (qw(OutputName OutputPath)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+            return;
+        }
+    }
+
+    mkdir ($Self->{ConfigObject}->Get('Home')."/var/tmp/support");
+
+    $Self->{TarObject} = Archive::Tar->new();
+
+    if ($Param{DirName}) {
+        # add files to the tar archive
+        $Self->{TarObject}->add_files($Self->ReadTree(Tree => $Param{DirName})) or return;
+    } elsif ($Param{FileName}) {
+        # add files to the tar archive
+        $Self->{TarObject}->add_files($Param{FileName}) or return;
+    }
+    # write tar archiv to OTRS_HOME/var/tmp/otrskernel.tar
+    $Self->{TarObject}->write($Param{OutputPath}.$Param{OutputName}, 0) or return; # Archive schreiben
+
+    return $Param{OutputName};
+}
+
+sub ReadTree {
+    my $Self = shift;
+    my %Param = @_;
+    # check needed stuff
+    foreach (qw(Tree)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+            return;
+        }
+    }
+    my $aktdir = $Param{Tree};
+    local *DIR;
+    my @flist  = ();
+
+    opendir(DIR,$aktdir) or do {
+        $Self->{LogObject}->Log(Priority => 'error', "Error reading directory '$aktdir': $_!");
+        return;
+    };
+
+    while(my $entry = readdir(DIR)) {
+        next if $entry eq "." || $entry eq "..";
+
+        if(-d $aktdir."/".$entry) {
+            push @flist, $Self->ReadTree(Tree => $aktdir."/".$entry);
+            next;
+        }
+
+        push @flist,$aktdir."/".$entry;
+    }
+
+    closedir(DIR);
+
+    return @flist;
+}
+
+sub CreatePackageToSend {
+    my $Self = shift;
+    my %Param = @_;
+
+    # check needed stuff
+    foreach (qw(DataHash)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+            return;
+        }
+    }
+    my $XMLString = $Self->XMLStringCreate(
+            DataHash => $Param{DataHash},
+    );
+    my $TmpXML;
+    open ($TmpXML, '>', $Self->{ConfigObject}->Get('Home')."/var/tmp/support/check.xml");
+    print $TmpXML $XMLString;
+    close ($TmpXML);
+
+    # add files to the tar archive
+    $Self->{TarObject} = Archive::Tar->new();
+    $Self->{TarObject}->add_files($Self->ReadTree(Tree => $Self->{ConfigObject}->Get('Home')."/var/tmp/support/")) or die "Could not add: $_!";
+    $Self->{TarObject}->write($Self->{ConfigObject}->Get('Home')."/var/tmp/support.tar", 0) or die "Could not write: $_!"; # Archive schreiben
+
+    my $Gzip;
+    open ($Gzip, '<', $Self->{ConfigObject}->Get('Home')."/var/tmp/support.tar");
+    binmode($Gzip);
+
+        my $TmpGzip = '';
+        while (<$Gzip>) {
+            $TmpGzip .= $_;
+        }
+    close ($Gzip);
+    if ($Self->{MainObject}->Require("Compress::Zlib")) {
+        my $GzContent = Compress::Zlib::memGzip($TmpGzip);
+        return $GzContent;
+    }
+    else {
+        return $TmpGzip;
+    }
+}
+
 sub SupportSendInfo {
     my $Self = shift;
     my %Param = @_;
     my $Message = "";
     # check needed stuff
-    foreach (qw(XMLString)) {
+    foreach (qw(SupportString)) {
         if (!$Param{$_}) {
             $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
@@ -329,9 +437,9 @@ sub SupportSendInfo {
         Body => 'Customer SupportInfo',
         Loop => 1, # not required, removes smtp from
         Attachment => [{
-        Filename    => "SupportID-$Param{SupportID}.xml",
-        Content     => "$Param{XMLString}",
-            ContentType => "application/xml",
+        Filename    => "$Param{SupportID}",
+        Content     => "$Param{SupportString}",
+            ContentType => "application/tar.gz",
             }],
         )) {
             $Message = "Email sent to the ((otrs)) support team.\n";
@@ -363,6 +471,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.5 $ $Date: 2007/05/10 06:18:33 $
+$Revision: 1.6 $ $Date: 2007/09/27 10:06:34 $
 
 =cut
