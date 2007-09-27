@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Webserver.pm,v 1.3 2007/07/11 10:20:50 sr Exp $
+# $Id: Webserver.pm,v 1.4 2007/09/27 10:13:57 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Webserver;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.3 $';
+$VERSION = '$Revision: 1.4 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -114,17 +114,18 @@ sub SupportConfigArrayGet {
     # ------------------------------------------------------------ #
 
     # create config array
-    my $ConfigArray = [
-        {
-            Key => 'ApacheHome',
-            Name => 'Apache Home Directory',
-            Description => 'Please tell me the path to the Apache home directory (/etc/apache2)',
-            Input => {
-                Type => 'Text',
-                Size => 40,
-            },
-        },
-    ];
+    my $ConfigArray = [];
+#    my $ConfigArray = [
+#        {
+#            Key => 'ApacheHome',
+#            Name => 'Apache Home Directory',
+#            Description => 'Please tell me the path to the Apache home directory (/etc/apache2)',
+#            Input => {
+#                Type => 'Text',
+#                Size => 40,
+#            },
+#        },
+#    ];
 
     # ------------------------------------------------------------ #
     # Get information about used Webserver
@@ -394,6 +395,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.3 $ $Date: 2007/07/11 10:20:50 $
+$Revision: 1.4 $ $Date: 2007/09/27 10:13:57 $
 
 =cut
