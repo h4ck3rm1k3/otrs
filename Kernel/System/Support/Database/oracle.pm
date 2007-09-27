@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/oracle.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.5 2007/09/27 10:16:52 sr Exp $
+# $Id: oracle.pm,v 1.6 2007/09/27 12:12:58 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.5 $';
+$VERSION = '$Revision: 1.6 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -61,6 +61,19 @@ sub SupportInfoGet {
         $Self->{LogObject}->Log(Priority => 'error', Message => "ModuleInputHash must be a hash reference!");
         return;
     }
+
+    my $OneCheck = $Self->TableCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->NLSLangCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->NLSDateFormatCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->OracleHomeCheck();
+    push (@{$DataArray}, $OneCheck);
+
 #    # please add for each new check a part like this
 #    my $OneCheck = $Self->Check(
 #        Type => $Param{ModuleInputHash}->{Type} || '',
@@ -81,6 +94,26 @@ sub AdminChecksGet {
             return;
         }
     }
+    my $OneCheck = $Self->TableCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->NLSLangCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->NLSDateFormatCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->OracleHomeCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    return $DataArray;
+}
+
+sub OracleHomeCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
     # check ORACLE_HOME
     my $Check = 'Failed';
     my $Message = 'No ORACLE_HOME found!';
@@ -94,15 +127,21 @@ sub AdminChecksGet {
             $Check = 'OK';
         }
     }
-    push (@DataArray,
-        {
-            Key => 'ORACLE_HOME',
-            Name => 'ORACLE_HOME',
-            Description => "Check ORACLE_HOME.",
-            Comment => $Message,
-            Check => $Check,
-        },
-    );
+    $Data = {
+        Key => 'ORACLE_HOME',
+        Name => 'ORACLE_HOME',
+        Description => "Check ORACLE_HOME.",
+        Comment => $Message,
+        Check => $Check,
+    },
+    return $Data;
+}
+
+sub NLSLangCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
     # check NLS_LANG
     $Check = 'Failed';
     $Message = 'No NLS_LANG found!';
@@ -122,15 +161,21 @@ sub AdminChecksGet {
             $Check = 'OK';
         }
     }
-    push (@DataArray,
-        {
-            Key => 'NLS_LANG',
-            Name => 'NLS_LANG',
-            Description => "Check NLS_LANG.",
-            Comment => $Message,
-            Check => $Check,
-        },
-    );
+    $Data = {
+        Key => 'NLS_LANG',
+        Name => 'NLS_LANG',
+        Description => "Check NLS_LANG.",
+        Comment => $Message,
+        Check => $Check,
+    },
+    return $Data;
+}
+
+sub NLSDateFormatCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
     # check NLS_DATE_FORMAT
     $Check = 'Failed';
     $Message = 'No NLS_DATE_FORMAT found!';
@@ -144,18 +189,25 @@ sub AdminChecksGet {
             $Check = 'OK';
         }
     }
-    push (@DataArray,
-        {
-            Key => 'NLS_DATE_FORMAT',
-            Name => 'NLS_DATE_FORMAT',
-            Description => "Check NLS_DATE_FORMAT.",
-            Comment => $Message,
-            Check => $Check,
-        },
-    );
+    $Data = {
+        Key => 'NLS_DATE_FORMAT',
+        Name => 'NLS_DATE_FORMAT',
+        Description => "Check NLS_DATE_FORMAT.",
+        Comment => $Message,
+        Check => $Check,
+    },
+    return $Data;
+}
+
+sub TableCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
     # table check
     my $File = $Self->{ConfigObject}->Get('Home')."/scripts/database/otrs-schema.xml";
     if (-f $File) {
+        my $Count = 0;
         my $Check = 'Failed';
         my $Message = '';
         my $Content = '';
@@ -169,6 +221,7 @@ sub AdminChecksGet {
 
             foreach my $Table (@{$XMLHash[1]->{database}->[1]->{Table}}) {
                 if ($Table) {
+                    $Count++;
                     if ($Self->{DBObject}->Prepare(SQL => "select * from $Table->{Name}", Limit => 1)) {
                         while (my @Row = $Self->{DBObject}->FetchrowArray()) {
                         }
@@ -183,31 +236,36 @@ sub AdminChecksGet {
             }
             else {
                 $Check = 'OK';
+                $Message = "$Count Tables";
             }
-            push (@DataArray,
-                {
-                    Key => 'Table',
-                    Name => 'Table',
-                    Description => "Check existing framework tables.",
-                    Comment => $Message,
-                    Check => $Check,
-                },
-            );
+            $Data = {
+                Key => 'Table',
+                Name => 'Table',
+                Description => "Check existing framework tables.",
+                Comment => $Message,
+                Check => $Check,
+            },
         }
         else {
-            push (@DataArray,
-                {
-                    Key => 'Table',
-                    Name => 'Table',
-                    Description => "Check existing framework tables.",
-                    Comment => "Can't open file $File: $!",
-                    Check => $Check,
-                },
-            );
+            $Data = {
+                Key => 'Table',
+                Name => 'Table',
+                Description => "Check existing framework tables.",
+                Comment => "Can't open file $File: $!",
+                Check => $Check,
+            },
         }
     }
-
-    return \@DataArray;
+    else {
+        $Data = {
+            Key => 'Table',
+            Name => 'Table',
+            Description => "Check existing framework tables.",
+            Comment => "Can't find file $File!",
+            Check => 'Failed',
+        },
+    }
+    return $Data;
 }
 
 1;

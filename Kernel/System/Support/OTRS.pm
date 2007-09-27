@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.6 2007/09/27 10:12:47 sr Exp $
+# $Id: OTRS.pm,v 1.7 2007/09/27 12:10:33 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -16,7 +16,7 @@ use strict;
 use Kernel::System::Ticket;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.6 $';
+$VERSION = '$Revision: 1.7 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -88,6 +88,12 @@ sub SupportInfoGet {
     );
     push (@{$DataArray}, $OneCheck);
 
+    $OneCheck = $Self->OpenTicketCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->TicketIndexModuleCheck();
+    push (@{$DataArray}, $OneCheck);
+
 #    # please add for each new check a part like this
 #    my $OneCheck = $Self->Check(
 #        Type => $Param{ModuleInputHash}->{Type} || '',
@@ -99,7 +105,7 @@ sub SupportInfoGet {
 sub AdminChecksGet {
     my $Self = shift;
     my %Param = @_;
-    my @DataArray = ();
+    my $DataArray = [];
     # check needed stuff
     foreach (qw()) {
         if (!$Param{$_}) {
@@ -107,83 +113,13 @@ sub AdminChecksGet {
             return;
         }
     }
-    # Ticket::IndexModule check
-    my $Check = 'Failed';
-    my $Message = '';
-    my $Module = $Self->{ConfigObject}->Get('Ticket::IndexModule');
-    $Self->{DBObject}->Prepare(SQL => "SELECT count(*) from ticket");
-    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
-        if ($Row[0] > 80000) {
-            if ($Module =~ /RuntimeDB/) {
-                $Check = 'Failed';
-                $Message = "You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
-            }
-            else {
-                $Check = 'OK';
-                $Message = "";
-            }
-        }
-        elsif ($Row[0] > 60000) {
-            if ($Module =~ /RuntimeDB/) {
-                $Check = 'Critical';
-                $Message = "You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
-            }
-            else {
-                $Check = 'OK';
-                $Message = "";
-            }
-        }
-        else {
-            $Check = 'OK';
-            $Message = "You are using $Module, that's fine for $Row[0] tickets in your system.";
-        }
-    }
-    push (@DataArray,
-        {
-            Key => 'Ticket::IndexModule',
-            Name => 'Ticket::IndexModule',
-            Description => "Check Ticket::IndexModule setting.",
-            Comment => $Message,
-            Check => $Check,
-        },
-    );
-    # OpenTicketCheck check
-    $Check = 'Failed';
-    $Message = '';
-    my @TicketIDs = $Self->{TicketObject}->TicketSearch(
-        Result => 'ARRAY',
-        StateType => 'Open',
-        UserID => 1,
-        Permission => 'ro',
-        Limit => 99999999,
-    );
-    if ($#TicketIDs > 10000) {
-        $Check = 'Failed';
-        $Message = "You should not have more then 8000 open tickets in your system. You currently have ".
-            $#TicketIDs.". In case you want to improve your performance, close not needed open tickets.";
+    my $OneCheck = $Self->OpenTicketCheck();
+    push (@{$DataArray}, $OneCheck);
 
-    }
-    elsif ($#TicketIDs > 8000) {
-        $Check = 'Critical';
-        $Message = "You should not have more then 8000 open tickets in your system. You currently have ".
-            $#TicketIDs.". In case you want to improve your performance, close not needed open tickets.";
+    $OneCheck = $Self->TicketIndexModuleCheck();
+    push (@{$DataArray}, $OneCheck);
 
-    }
-    else {
-        $Check = 'OK';
-        $Message = "You have ".$#TicketIDs." open tickets in your system.";
-    }
-    push (@DataArray,
-        {
-            Key => 'OpenTicketCheck',
-            Name => 'OpenTicketCheck',
-            Description => "Check open tickets in your system.",
-            Comment => $Message,
-            Check => $Check,
-        },
-    );
-
-    return \@DataArray;
+    return $DataArray;
 }
 
 sub OTRSLogGet {
@@ -344,6 +280,93 @@ sub OTRSCheckModulesGet {
         };
     }
     return $ReturnHash;
+}
+
+sub TicketIndexModuleCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
+    # Ticket::IndexModule check
+    my $Check = 'Failed';
+    my $Message = '';
+    my $Module = $Self->{ConfigObject}->Get('Ticket::IndexModule');
+    $Self->{DBObject}->Prepare(SQL => "SELECT count(*) from ticket");
+    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+        if ($Row[0] > 80000) {
+            if ($Module =~ /RuntimeDB/) {
+                $Check = 'Failed';
+                $Message = "You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
+            }
+            else {
+                $Check = 'OK';
+                $Message = "";
+            }
+        }
+        elsif ($Row[0] > 60000) {
+            if ($Module =~ /RuntimeDB/) {
+                $Check = 'Critical';
+                $Message = "You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
+            }
+            else {
+                $Check = 'OK';
+                $Message = "";
+            }
+        }
+        else {
+            $Check = 'OK';
+            $Message = "You are using $Module, that's fine for $Row[0] tickets in your system.";
+        }
+    }
+    $Data = {
+        Key => 'Ticket::IndexModule',
+        Name => 'Ticket::IndexModule',
+        Description => "Check Ticket::IndexModule setting.",
+        Comment => $Message,
+        Check => $Check,
+    },
+    return $Data;
+}
+
+sub OpenTicketCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
+    # OpenTicketCheck check
+    my $Check = 'Failed';
+    my $Message = '';
+    my @TicketIDs = $Self->{TicketObject}->TicketSearch(
+        Result => 'ARRAY',
+        StateType => 'Open',
+        UserID => 1,
+        Permission => 'ro',
+        Limit => 99999999,
+    );
+    if ($#TicketIDs > 10000) {
+        $Check = 'Failed';
+        $Message = "You should not have more then 8000 open tickets in your system. You currently have ".
+            $#TicketIDs.". In case you want to improve your performance, close not needed open tickets.";
+
+    }
+    elsif ($#TicketIDs > 8000) {
+        $Check = 'Critical';
+        $Message = "You should not have more then 8000 open tickets in your system. You currently have ".
+            $#TicketIDs.". In case you want to improve your performance, close not needed open tickets.";
+
+    }
+    else {
+        $Check = 'OK';
+        $Message = "You have ".$#TicketIDs." open tickets in your system.";
+    }
+    $Data = {
+        Key => 'OpenTicketCheck',
+        Name => 'OpenTicketCheck',
+        Description => "Check open tickets in your system.",
+        Comment => $Message,
+        Check => $Check,
+    },
+    return $Data;
 }
 
 1;

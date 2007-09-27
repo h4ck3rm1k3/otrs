@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver/Apache.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Apache.pm,v 1.4 2007/08/29 15:49:15 martin Exp $
+# $Id: Apache.pm,v 1.5 2007/09/27 12:13:32 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Webserver::Apache;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.4 $';
+$VERSION = '$Revision: 1.5 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -58,6 +58,16 @@ sub SupportInfoGet {
         $Self->{LogObject}->Log(Priority => 'error', Message => "ModuleInputHash must be a hash reference!");
         return;
     }
+
+    my $OneCheck = $Self->ApacheDBICheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->ApacheReloadCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->ModPerlVersionCheck();
+    push (@{$DataArray}, $OneCheck);
+
 #    # please add for each new check a part like this
 #    my $OneCheck = $Self->Check(
 #        Type => $Param{ModuleInputHash}->{Type} || '',
@@ -70,7 +80,7 @@ sub SupportInfoGet {
 sub AdminChecksGet {
     my $Self = shift;
     my %Param = @_;
-    my @DataArray = ();
+    my $DataArray = [];
     # check needed stuff
     foreach (qw()) {
         if (!$Param{$_}) {
@@ -78,39 +88,61 @@ sub AdminChecksGet {
             return;
         }
     }
-    # check mod_perl version
-    my $Check = 'Failed';
+    my $OneCheck = $Self->ApacheDBICheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->ApacheReloadCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->ModPerlVersionCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    return $DataArray;
+}
+
+sub ApacheDBICheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
+    # check if Apache::DBI is loaded
+    my $ApacheDBI = 0;
+    my $Check = '';
     my $Message = '';
-    if ($ENV{MOD_PERL}) {
-        if ($ENV{MOD_PERL} =~ /\/1.99/) {
-            $Check = 'Critical';
-            $Message = "You use a beta version of mod_perl ($ENV{MOD_PERL}), you should upgrade to a stable version.";
+
+    foreach my $Module (keys %INC) {
+        $Module =~ s/\//::/g;
+        $Module =~ s/\.pm$//g;
+        if ($Module eq 'Apache::DBI' || $Module eq 'Apache2::DBI') {
+            $ApacheDBI = $Module;
         }
-        elsif ($ENV{MOD_PERL} =~ /\/1/) {
-            $Check = 'Critical';
-            $Message = "You should update mod_perl to 2.x ($ENV{MOD_PERL}).";
-        }
-        else {
-            $Check = 'OK';
-            $Message = "$ENV{MOD_PERL}";
-        }
+    }
+    if (!$ApacheDBI) {
+        $Check = 'Critical';
+        $Message = 'Apache::DBI should be used to get a better performance (pre establish datababase connections).';
     }
     else {
-        $Check = 'Critical';
-        $Message = 'You should use mod_perl to increase your performance.';
+        $Check = 'OK';
+        $Message = "$ApacheDBI";
     }
-    push (@DataArray,
-        {
-            Key => 'mod_perl version',
-            Name => 'mod_perl version',
-            Description => "Check used mod_perl version.",
-            Comment => $Message,
-            Check => $Check,
-        },
-    );
+    $Data = {
+        Key => 'Apache::DBI',
+        Name => 'Apache::DBI',
+        Description => "Check used Apache::DBI.",
+        Comment => $Message,
+        Check => $Check,
+    },
+    return $Data;
+}
+
+sub ApacheReloadCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
     # reload check
-    $Check = 'Failed';
-    $Message = '';
+    my $Check = 'Failed';
+    my $Message = '';
     if ($ENV{MOD_PERL}) {
         eval "require mod_perl";
         if (defined $mod_perl::VERSION) {
@@ -139,43 +171,50 @@ sub AdminChecksGet {
         $Check = 'Critical';
         $Message = 'You should use mod_perl to increase your performance very strong!';
     }
-    push (@DataArray,
-        {
-            Key => 'Apache::Reload',
-            Name => 'Apache::Reload',
-            Description => "Check used Apache::Reload/Apache2::Reload.",
-            Comment => $Message,
-            Check => $Check,
-        },
-    );
-    # check if Apache::DBI is loaded
-    my $ApacheDBI = 0;
-    foreach my $Module (keys %INC) {
-        $Module =~ s/\//::/g;
-        $Module =~ s/\.pm$//g;
-        if ($Module eq 'Apache::DBI' || $Module eq 'Apache2::DBI') {
-            $ApacheDBI = $Module;
+    $Data = {
+        Key => 'Apache::Reload',
+        Name => 'Apache::Reload',
+        Description => "Check used Apache::Reload/Apache2::Reload.",
+        Comment => $Message,
+        Check => $Check,
+    },
+    return $Data;
+}
+
+sub ModPerlVersionCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
+    # check mod_perl version
+    my $Check = 'Failed';
+    my $Message = '';
+    if ($ENV{MOD_PERL}) {
+        if ($ENV{MOD_PERL} =~ /\/1.99/) {
+            $Check = 'Critical';
+            $Message = "You use a beta version of mod_perl ($ENV{MOD_PERL}), you should upgrade to a stable version.";
+        }
+        elsif ($ENV{MOD_PERL} =~ /\/1/) {
+            $Check = 'Critical';
+            $Message = "You should update mod_perl to 2.x ($ENV{MOD_PERL}).";
+        }
+        else {
+            $Check = 'OK';
+            $Message = "$ENV{MOD_PERL}";
         }
     }
-    if (!$ApacheDBI) {
-        $Check = 'Critical';
-        $Message = 'Apache::DBI should be used to get a better performance (pre establish datababase connections).';
-    }
     else {
-        $Check = 'OK';
-        $Message = "$ApacheDBI";
+        $Check = 'Critical';
+        $Message = 'You should use mod_perl to increase your performance.';
     }
-    push (@DataArray,
-        {
-            Key => 'Apache::DBI',
-            Name => 'Apache::DBI',
-            Description => "Check used Apache::DBI.",
-            Comment => $Message,
-            Check => $Check,
-        },
-    );
-
-    return \@DataArray;
+    $Data = {
+        Key => 'mod_perl version',
+        Name => 'mod_perl version',
+        Description => "Check used mod_perl version.",
+        Comment => $Message,
+        Check => $Check,
+    },
+    return $Data;
 }
 
 1;

@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.10 2007/09/27 10:16:13 sr Exp $
+# $Id: mysql.pm,v 1.11 2007/09/27 12:11:49 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.10 $';
+$VERSION = '$Revision: 1.11 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -61,8 +61,33 @@ sub SupportInfoGet {
         $Self->{LogObject}->Log(Priority => 'error', Message => "ModuleInputHash must be a hash reference!");
         return;
     }
+
+    my $OneCheck = $Self->MaxAllowedPackageCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->QueryCacheSizeCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->TableCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->UTF8ClientCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->UTF8DatabaseCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->UTF8SupportCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->UTF8TableCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->VersionCheck();
+    push (@{$DataArray}, $OneCheck);
+
 #    # please add for each new check a part like this
-#    my $OneCheck = $Self->Check(
+#    my $OneCheck = $Self->AdminChecksGet(
 #        Type => $Param{ModuleInputHash}->{Type} || '',
 #    push (@{$DataArray}, $OneCheck);
 
@@ -72,7 +97,7 @@ sub SupportInfoGet {
 sub AdminChecksGet {
     my $Self = shift;
     my %Param = @_;
-    my @DataArray = ();
+    my $DataArray = [];
     # check needed stuff
     foreach (qw()) {
         if (!$Param{$_}) {
@@ -80,8 +105,40 @@ sub AdminChecksGet {
             return;
         }
     }
+    # please add for each new check a part like this
+    my $OneCheck = $Self->MaxAllowedPackageCheck();
+    push (@{$DataArray}, $OneCheck);
 
-    # verion check
+    $OneCheck = $Self->QueryCacheSizeCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->TableCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->UTF8ClientCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->UTF8DatabaseCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->UTF8SupportCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->UTF8TableCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    $OneCheck = $Self->VersionCheck();
+    push (@{$DataArray}, $OneCheck);
+
+    return $DataArray;
+}
+
+sub VersionCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
+    # version check
     my $Check = 'Failed';
     my $Message = 'No version found!';
     $Self->{DBObject}->Prepare(SQL => "show variables");
@@ -103,15 +160,21 @@ sub AdminChecksGet {
                 }
             }
     }
-    push (@DataArray,
-        {
-            Key => 'version',
-            Name => 'version',
-            Description => "Check version.",
-            Comment => $Message,
-            Check => $Check,
-        },
-    );
+    $Data = {
+        Key => 'version',
+        Name => 'version',
+        Description => "Check version.",
+        Comment => $Message,
+        Check => $Check,
+    },
+    return $Data;
+}
+
+sub UTF8SupportCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
     # utf-8 support check
     if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
         my $Check = 'Failed';
@@ -129,16 +192,23 @@ sub AdminChecksGet {
                 }
             }
         }
-        push (@DataArray,
-            {
-                Key => 'utf8 support',
-                Name => 'utf8 support',
-                Description => "Check database utf8 support.",
-                Comment => $Message,
-                Check => $Check,
-            },
-        );
+        $Data = {
+            Key => 'utf8 support',
+            Name => 'utf8 support',
+            Description => "Check database utf8 support.",
+            Comment => $Message,
+            Check => $Check,
+        },
     }
+
+    return $Data;
+}
+
+sub UTF8ClientCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
     # utf-8 client check
     if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
         my $Check = 'Failed';
@@ -153,16 +223,24 @@ sub AdminChecksGet {
                 }
             }
         }
-        push (@DataArray,
-            {
-                Key => 'utf8 client connection',
-                Name => 'utf8 client connection',
-                Description => "Check the utf8 client connection.",
-                Comment => $Message,
-                Check => $Check,
-            },
-        );
+
+        $Data = {
+            Key => 'utf8 client connection',
+            Name => 'utf8 client connection',
+            Description => "Check the utf8 client connection.",
+            Comment => $Message,
+            Check => $Check,
+        },
     }
+
+    return $Data;
+}
+
+sub UTF8DatabaseCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
     # utf-8 database check
     if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
         my $Check = 'Failed';
@@ -177,17 +255,25 @@ sub AdminChecksGet {
                 }
             }
         }
-        push (@DataArray,
-            {
-                Key => 'utf8 database character',
-                Name => 'utf8 database character',
-                Description => "Check the utf8 database character.",
-                Comment => $Message,
-                Check => $Check,
-            },
-        );
+
+        $Data = {
+            Key => 'utf8 database character',
+            Name => 'utf8 database character',
+            Description => "Check the utf8 database character.",
+            Comment => $Message,
+            Check => $Check,
+        },
     }
-    # utf-8 table check
+
+    return $Data;
+}
+
+sub UTF8TableCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
+        # utf-8 table check
     if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i) {
         my $Check = 'Failed';
         my $Message = '';
@@ -209,19 +295,25 @@ sub AdminChecksGet {
             $Check = 'OK';
             $Message = $Message2;
         }
-        push (@DataArray,
-            {
-                Key => 'utf8 table collation',
-                Name => 'utf8 table collation',
-                Description => "Check the utf8 table collation.",
-                Comment => $Message,
-                Check => $Check,
-            },
-        );
+        $Data = {
+            Key => 'utf8 table collation',
+            Name => 'utf8 table collation',
+            Description => "Check the utf8 table collation.",
+            Comment => $Message,
+            Check => $Check,
+        },
     }
+    return $Data;
+}
+
+sub MaxAllowedPackageCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
     # max_allowed_packet check
-    $Check = 'Failed';
-    $Message = 'No max_allowed_packet found!';
+    my $Check = 'Failed';
+    my $Message = 'No max_allowed_packet found!';
     $Self->{DBObject}->Prepare(SQL => "show variables");
     while (my @Row = $Self->{DBObject}->FetchrowArray()) {
             if ($Row[0] =~ /^max_allowed_packet/i) {
@@ -237,18 +329,24 @@ sub AdminChecksGet {
                 }
             }
     }
-    push (@DataArray,
-        {
-            Key => 'max_allowed_packet',
-            Name => 'max_allowed_packet',
-            Description => "Check max_allowed_packet setting.",
-            Comment => $Message,
-            Check => $Check,
-        },
-    );
+    $Data = {
+        Key => 'max_allowed_packet',
+        Name => 'max_allowed_packet',
+        Description => "Check max_allowed_packet setting.",
+        Comment => $Message,
+        Check => $Check,
+    },
+    return $Data;
+}
+
+sub QueryCacheSizeCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
     # query_cache_size check
-    $Check = 'Failed';
-    $Message = 'No query_cache_size found!';
+    my $Check = 'Failed';
+    my $Message = 'No query_cache_size found!';
     $Self->{DBObject}->Prepare(SQL => "show variables");
     while (my @Row = $Self->{DBObject}->FetchrowArray()) {
             if ($Row[0] =~ /^query_cache_size/i) {
@@ -268,15 +366,20 @@ sub AdminChecksGet {
                 }
             }
     }
-    push (@DataArray,
-        {
-            Key => 'query_cache_size',
-            Name => 'query_cache_size',
-            Description => "Check query_cache_size setting.",
-            Comment => $Message,
-            Check => $Check,
-        },
-    );
+    $Data = {
+        Key => 'query_cache_size',
+        Name => 'query_cache_size',
+        Description => "Check query_cache_size setting.",
+        Comment => $Message,
+        Check => $Check,
+    },
+    return $Data;
+}
+
+sub TableCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
 
     # table check
     my $File = $Self->{ConfigObject}->Get('Home')."/scripts/database/otrs-schema.xml";
@@ -312,41 +415,34 @@ sub AdminChecksGet {
                 $Check = 'OK';
                 $Message = "$Count Tables";
             }
-            push (@DataArray,
-                {
-                    Key => 'Table',
-                    Name => 'Table',
-                    Description => "Check existing framework tables.",
-                    Comment => $Message,
-                    Check => $Check,
-                },
-            );
-        }
-        else {
-            push (@DataArray,
-                {
-                    Key => 'Table',
-                    Name => 'Table',
-                    Description => "Check existing framework tables.",
-                    Comment => "Can't open file $File: $!",
-                    Check => $Check,
-                },
-            );
-        }
-    }
-    else {
-        push (@DataArray,
-            {
+            $Data = {
                 Key => 'Table',
                 Name => 'Table',
                 Description => "Check existing framework tables.",
-                Comment => "Can't find file $File!",
-                Check => 'Failed',
+                Comment => $Message,
+                Check => $Check,
             },
-        );
+        }
+        else {
+            $Data = {
+                Key => 'Table',
+                Name => 'Table',
+                Description => "Check existing framework tables.",
+                Comment => "Can't open file $File: $!",
+                Check => $Check,
+            },
+        }
     }
-
-    return \@DataArray;
+    else {
+        $Data = {
+            Key => 'Table',
+            Name => 'Table',
+            Description => "Check existing framework tables.",
+            Comment => "Can't find file $File!",
+            Check => 'Failed',
+        },
+    }
+    return $Data;
 }
 
 1;
