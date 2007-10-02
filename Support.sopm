@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-    <CVS>$Id: Support.sopm,v 1.7 2007/09/27 09:53:05 sr Exp $</CVS>
+    <CVS>$Id: Support.sopm,v 1.8 2007/10/02 07:38:28 sr Exp $</CVS>
     <Name>Support</Name>
     <Version>0.0.0</Version>
     <Framework>2.1.x</Framework>
@@ -13,25 +13,25 @@
     <IntroInstallPost Title="Notice - Introduction" Lang="en">The Support application will be found at the admin navigation bar in the fourth column and can be used for system checks to find setup errors.</IntroInstallPost>
     <IntroInstallPost Title="Hinweis - Einfuerhrung" Lang="de">Die Support Applikation ist in der Admin-Navigationsleiste, in der vierten Spalte zu finden. Mit ihr koennen System-Checks ausgeführt werden um Fehler im Setup zu finden.</IntroInstallPost>
     <Filelist>
-        <File Permission="644" Location="Support/Kernel/Output/HTML/Standard/AdminSupport.dtl"/>
-        <File Permission="644" Location="Support/Kernel/System/Support.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/Database.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/OS.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/Cron.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/Hardware.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/OTRS.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/Webserver/IIS.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/Webserver/Apache.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/Database/oracle.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/Database/mssql.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/Database/postgresql.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/Database/mysql.pm"/>
-        <File Permission="644" Location="Support/Kernel/System/Support/Webserver.pm"/>
-        <File Permission="644" Location="Support/Kernel/cpan-lib/Archive/Tar/Constant.pm"/>
-        <File Permission="644" Location="Support/Kernel/cpan-lib/Archive/Tar/File.pm"/>
-        <File Permission="644" Location="Support/Kernel/cpan-lib/Archive/Tar.pm"/>
-        <File Permission="644" Location="Support/Kernel/Modules/AdminSupport.pm"/>
-        <File Permission="644" Location="Support/Support.sopm"/>
+        <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupport.dtl"/>
+        <File Permission="644" Location="Kernel/System/Support.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/Database.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/OS.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/Cron.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/Hardware.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/OTRS.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/Webserver/IIS.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/Webserver/Apache.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/Database/oracle.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/Database/mssql.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/Database/postgresql.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/Database/mysql.pm"/>
+        <File Permission="644" Location="Kernel/System/Support/Webserver.pm"/>
+        <File Permission="644" Location="Kernel/cpan-lib/Archive/Tar/Constant.pm"/>
+        <File Permission="644" Location="Kernel/cpan-lib/Archive/Tar/File.pm"/>
+        <File Permission="644" Location="Kernel/cpan-lib/Archive/Tar.pm"/>
+        <File Permission="644" Location="Kernel/Modules/AdminSupport.pm"/>
+        <File Permission="644" Location="Support.sopm"/>
 
     </Filelist>
 </otrs_package>
