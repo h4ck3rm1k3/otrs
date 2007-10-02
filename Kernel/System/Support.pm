@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.6 2007/09/27 10:06:34 sr Exp $
+# $Id: Support.pm,v 1.7 2007/10/02 12:42:04 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -21,7 +21,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.6 $';
+$VERSION = '$Revision: 1.7 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -430,7 +430,7 @@ sub SupportSendInfo {
     # send mail to gateway
     if ($Self->{EmailObject}->Send(
         From => $Self->{ConfigObject}->Get('AdminEmail'),
-        To => 'sr@otrs.com',
+        To => 'support@otrs.com',
         Subject => 'Customer SystemInfo from',
         Type => 'text/plain',
         Charset => 'utf-8',
@@ -471,6 +471,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.6 $ $Date: 2007/09/27 10:06:34 $
+$Revision: 1.7 $ $Date: 2007/10/02 12:42:04 $
 
 =cut
