@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.4 2007/09/27 10:02:58 sr Exp $
+# $Id: AdminSupport.pm,v 1.5 2007/10/02 12:40:53 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = '$Revision: 1.4 $';
+$VERSION = '$Revision: 1.5 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -217,7 +217,7 @@ sub Run {
                 # send info to ((otrs))
                 $SendMessage = $Self->{SupportObject}->SupportSendInfo(
                     SupportString => $SupportString,
-                    SupportID => "SupportInfo_"."$Y-$M-$D"."_$h-$m"."_"."Support-ID_".$Self->{ParamObject}->GetParam(Param => "SupportID"),
+                    SupportID => "SupportInfo_"."$Y-$M-$D"."_$h-$m"."_"."Support-ID_".$Self->{ParamObject}->GetParam(Param => "SupportID").'tar.gz',
                 );
                 $Output .= $Self->{LayoutObject}->Notify(
                     Priority => 'warning',
