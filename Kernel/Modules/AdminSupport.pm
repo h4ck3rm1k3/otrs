@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.5 2007/10/02 12:40:53 sr Exp $
+# $Id: AdminSupport.pm,v 1.6 2007/10/04 08:32:58 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = '$Revision: 1.5 $';
+$VERSION = '$Revision: 1.6 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -299,11 +299,13 @@ sub Run {
                     $CssClass = 'searchactive';
                 }
                 my $FontColor = "red";
-                if ($RowHash->{Check} eq "OK") {
-                    $FontColor = "green";
-                }
-                elsif ($RowHash->{Check} eq "Critical") {
-                    $FontColor = "orange";
+                if ($RowHash->{Check}) {
+                    if ($RowHash->{Check} eq "OK") {
+                        $FontColor = "green";
+                    }
+                    elsif ($RowHash->{Check} eq "Critical") {
+                        $FontColor = "orange";
+                    }
                 }
                 if ($RowHash->{Description}) {
                     $RowHash->{Description} = $Self->{LayoutObject}->Ascii2Html(
