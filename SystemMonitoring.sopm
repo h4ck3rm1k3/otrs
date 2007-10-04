@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.1">
-    <CVS>$Id: SystemMonitoring.sopm,v 1.1 2007/10/04 13:34:40 bb Exp $</CVS>
+    <CVS>$Id: SystemMonitoring.sopm,v 1.1.1.1 2007/10/04 13:34:40 bb Exp $</CVS>
     <Name>SystemMonitoring</Name>
     <Version>1.2.0</Version>
     <Framework>2.2.x</Framework>
