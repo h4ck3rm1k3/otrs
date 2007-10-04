@@ -2,7 +2,7 @@
 # Kernel/System/Support/Hardware.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Hardware.pm,v 1.6 2007/09/27 10:09:48 sr Exp $
+# $Id: Hardware.pm,v 1.7 2007/10/04 06:40:48 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Hardware;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.6 $';
+$VERSION = '$Revision: 1.7 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -254,59 +254,71 @@ sub MemorySwapCheck {
                 my $TmpLine = $_;
                 if ($TmpLine =~ /MemTotal/) {
                     $TmpLine =~ s/^.*?(\d+).*$/$1/;
-                    $MemTmpInfo{MemorySwapCheck}{MemTotal} = $TmpLine;
+                    $MemTmpInfo{MemorySwapCheck}{MemTotal} = int($TmpLine);
                 }
                 elsif ($TmpLine =~ /MemFree/) {
                     $TmpLine =~ s/^.*?(\d+).*$/$1/;
-                    $MemTmpInfo{MemorySwapCheck}{MemFree} = $TmpLine;
+                    $MemTmpInfo{MemorySwapCheck}{MemFree} = int($TmpLine);
                 }
                 elsif ($TmpLine =~ /SwapTotal/) {
                     $TmpLine =~ s/^.*?(\d+).*$/$1/;
-                    $MemTmpInfo{MemorySwapCheck}{SwapTotal} = $TmpLine;
+                    $MemTmpInfo{MemorySwapCheck}{SwapTotal} = int($TmpLine);
                 }
                 elsif ($TmpLine =~ /SwapFree/) {
                     $TmpLine =~ s/^.*?(\d+).*$/$1/;
-                    $MemTmpInfo{MemorySwapCheck}{SwapFree} = $TmpLine;
+                    $MemTmpInfo{MemorySwapCheck}{SwapFree} = int($TmpLine);
                 }
             }
             close($MemInfoFile);
+
+            # build return hash
+            my $Describtion = "The Host System has: \n"
+                .int($MemTmpInfo{MemorySwapCheck}{MemTotal} / 1024) . " MB Memory total \n"
+                .int($MemTmpInfo{MemorySwapCheck}{MemFree} / 1024) . " MB Memory free \n"
+                .int($MemTmpInfo{MemorySwapCheck}{SwapTotal} / 1024) . " MB Swap total \n"
+                .int($MemTmpInfo{MemorySwapCheck}{SwapFree} / 1024) . " MB Swap free ";
+
+            if (!$MemTmpInfo{MemorySwapCheck}{SwapTotal}){
+                $ReturnHash = {
+                    Key => 'MemorySwapCheck',
+                    Name => 'Memory Swap Check',
+                    Description => "A Memory Check. We try to find out if \n"
+                        ."SwapFree : SwapTotal < 60 % \n"
+                        ." or if more than 200 MB Swap is used.",
+                    Comment => "No Swap enabled!",
+                    Check => 'Failed',
+                };
+            }
+            elsif ((($MemTmpInfo{MemorySwapCheck}{SwapFree})/($MemTmpInfo{MemorySwapCheck}{SwapTotal}) < 60) ||
+                (($MemTmpInfo{MemorySwapCheck}{SwapTotal})-($MemTmpInfo{MemorySwapCheck}{SwapFree}) > 20000)
+            ) {
+                $ReturnHash = {
+                    Key => 'MemorySwapCheck',
+                    Name => 'Memory Swap Check',
+                    Description => "A Memory Check. We try to find out if \n"
+                        ."SwapFree : SwapTotal < 60 % \n"
+                        ." or if more than 200 MB Swap is used.",
+                    Comment => "$Describtion",
+                    Check => 'OK',
+                };
+            }
+            else {
+                $ReturnHash = {
+                    Key => 'MemorySwapCheck',
+                    Name => 'Memory Swap Check',
+                    Description => "A Memory Check. We try to find out if \n"
+                        ."SwapFree : SwapTotal < 60 % \n"
+                        ." or if more than 200 MB Swap is used.",
+                    Comment => "$Describtion",
+                    Check => 'Failed',
+                };
+            }
         }
     }
     elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
 
     }
 
-    # build return hash
-    my $Describtion = "The Host System has: \n"
-        .sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{MemTotal} / 1024)) . " MB Memory total \n"
-        .sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{MemFree} / 1024)) . " MB Memory free \n"
-        .sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{SwapTotal} / 1024)) . " MB Swap total \n"
-        .sprintf ("%.0f", ($MemTmpInfo{MemorySwapCheck}{SwapFree} / 1024)) . " MB Swap free ";
-
-    if ((($MemTmpInfo{MemorySwapCheck}{SwapFree})/($MemTmpInfo{MemorySwapCheck}{SwapTotal}) < 60) ||
-        (($MemTmpInfo{MemorySwapCheck}{SwapTotal})-($MemTmpInfo{MemorySwapCheck}{SwapFree}) > 20000)
-    ) {
-        $ReturnHash = {
-            Key => 'MemorySwapCheck',
-            Name => 'Memory Swap Check',
-            Description => "A Memory Check. We try to find out if \n"
-                ."SwapFree : SwapTotal < 60 % \n"
-                ." or if more than 200 MB Swap is used.",
-            Comment => "$Describtion",
-            Check => 'OK',
-        };
-    }
-    else {
-        $ReturnHash = {
-            Key => 'MemorySwapCheck',
-            Name => 'Memory Swap Check',
-            Description => "A Memory Check. We try to find out if \n"
-                ."SwapFree : SwapTotal < 60 % \n"
-                ." or if more than 200 MB Swap is used.",
-            Comment => "$Describtion",
-            Check => 'Failed',
-        };
-    }
     return $ReturnHash;
 }
 
@@ -331,36 +343,37 @@ sub CPULoadCheck {
                 @SplitArray = split (" ", $_);
             }
             close($LoadFile);
+
+            # build return hash
+            my $Describtion = "The Host System has a load: \n"
+                . $SplitArray[0] . " in the last 1 minute \n"
+                . $SplitArray[1] . " in the last 5 minutes \n"
+                . $SplitArray[2] . " in the last 15 minutes";
+
+            if ($SplitArray[2] < '1.00') {
+                $ReturnHash = {
+                    Key => 'CPULoadCheck',
+                    Name => 'CPU Load',
+                    Description => "A CPU load check. We try to find out if \n"
+                        ."the system load in the last 15 minutes > 1. \n",
+                    Comment => "$Describtion",
+                    Check => 'OK',
+                };
+            }
+            else {
+                $ReturnHash = {
+                    Key => 'CPULoadCheck',
+                    Name => 'CPU Load',
+                    Description => "A CPU load check. We try to find out if \n"
+                        ."the system load in the last 15 minutes < 1 \n",
+                    Comment => "$Describtion",
+                    Check => 'Failed',
+                };
+            }
         }
     }
     elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
 
-    }
-    # build return hash
-    my $Describtion = "The Host System has a load: \n"
-        . $SplitArray[0] . " in the last 1 minute \n"
-        . $SplitArray[1] . " in the last 5 minutes \n"
-        . $SplitArray[2] . " in the last 15 minutes";
-
-    if ($SplitArray[2] < '1.00') {
-        $ReturnHash = {
-            Key => 'CPULoadCheck',
-            Name => 'CPU Load',
-            Description => "A CPU load check. We try to find out if \n"
-                ."the system load in the last 15 minutes > 1. \n",
-            Comment => "$Describtion",
-            Check => 'OK',
-        };
-    }
-    else {
-        $ReturnHash = {
-            Key => 'CPULoadCheck',
-            Name => 'CPU Load',
-            Description => "A CPU load check. We try to find out if \n"
-                ."the system load in the last 15 minutes < 1 \n",
-            Comment => "$Describtion",
-            Check => 'Failed',
-        };
     }
     return $ReturnHash;
 }
@@ -426,6 +439,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.6 $ $Date: 2007/09/27 10:09:48 $
+$Revision: 1.7 $ $Date: 2007/10/04 06:40:48 $
 
 =cut
