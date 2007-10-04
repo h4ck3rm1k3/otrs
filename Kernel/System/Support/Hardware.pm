@@ -2,7 +2,7 @@
 # Kernel/System/Support/Hardware.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Hardware.pm,v 1.7 2007/10/04 06:40:48 sr Exp $
+# $Id: Hardware.pm,v 1.8 2007/10/04 07:02:33 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::Hardware;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.7 $';
+$VERSION = '$Revision: 1.8 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -316,7 +316,7 @@ sub MemorySwapCheck {
         }
     }
     elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
-
+        return;
     }
 
     return $ReturnHash;
@@ -373,7 +373,7 @@ sub CPULoadCheck {
         }
     }
     elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
-
+        return;
     }
     return $ReturnHash;
 }
@@ -439,6 +439,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.7 $ $Date: 2007/10/04 06:40:48 $
+$Revision: 1.8 $ $Date: 2007/10/04 07:02:33 $
 
 =cut

@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.3 2007/09/27 10:10:31 sr Exp $
+# $Id: OS.pm,v 1.4 2007/10/04 07:02:48 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -14,7 +14,7 @@ package Kernel::System::Support::OS;
 use strict;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.3 $';
+$VERSION = '$Revision: 1.4 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
@@ -278,7 +278,13 @@ sub DistributionCheck {
         }
     }
     elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
-
+        $ReturnHash = {
+            Key => 'DistributionCheck',
+            Name => 'Distribution',
+            Description => "Shows the used distribution. \n",
+            Comment => "$^O is used.",
+            Check => 'OK',
+        };
     }
     return $ReturnHash;
 }
@@ -348,6 +354,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.3 $ $Date: 2007/09/27 10:10:31 $
+$Revision: 1.4 $ $Date: 2007/10/04 07:02:48 $
 
 =cut
