@@ -20,23 +20,20 @@ Common non-standard MIME encodings for this:
     x-gzip64
 
 Since this class relies on external programs which may not
-exist on your machine, MIME-tools does not "install" it by default.
+exist on your machine, MIME-tools does not "install" it by default.  
 To use it, you need to say in your main program:
 
     install MIME::Decoder::Gzip64 'x-gzip64';
 
-Note: if this class isn't working for you, you may need to change the
-commands it runs.  In your main program, you can do so by setting up
-the two commands which handle the compression/decompression.
+Note: if this class isn't working for you, you may need to change
+the commands it runs.  In your main program, you can do so
+by setting up the two commands which 
 
     use MIME::Decoder::Gzip64;
-
+     
     $MIME::Decoder::Gzip64::GZIP   = 'gzip -c';
     $MIME::Decoder::Gzip64::GUNZIP = 'gzip -d -c';
 
-=head1 SEE ALSO
-
-L<MIME::Decoder>
 
 =head1 AUTHOR
 
@@ -61,7 +58,7 @@ use MIME::Tools qw(tmpopen whine);
 @ISA = qw(MIME::Decoder::Base64);
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = "5.428";
+$VERSION = "5.423";
 
 # How to compress stdin to stdout:
 $GZIP   = "gzip -c";

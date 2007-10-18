@@ -180,7 +180,7 @@ package MIME::Parser;
 #------------------------------
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = "5.428";
+$VERSION = "5.423";
 
 ### How to catenate:
 $CAT = '/bin/cat';
@@ -818,30 +818,16 @@ sub process_singlepart {
 
     ### Get a content-decoder to decode this part's encoding:
     my $encoding = $head->mime_encoding;
-# ---
-# OTRS
-# ---
-# 2011-01-07 added patch/workaround for bug in MIME::Words (v5.428)
-# see also: https://rt.cpan.org/Public/Bug/Display.html?id=64589
-#           http://bugs.otrs.org/show_bug.cgi?id=6555
-#    my $decoder = new MIME::Decoder $encoding;
-#    if (!$decoder) {
-#	$self->whine("Unsupported encoding '$encoding': using 'binary'... \n".
-#		     "The entity will have an effective MIME type of \n".
-#		     "application/octet-stream.");  ### as per RFC-2045
-#	$ent->effective_type('application/octet-stream');
-#	$decoder = new MIME::Decoder 'binary';
-#	$encoding = 'binary';
-#    }
-    if ( ! supported MIME::Decoder $encoding ){
-        $self->whine("Unsupported encoding '$encoding': using 'binary'... \n".
-                 "The entity will have an effective MIME type of \n".
-                 "application/octet-stream.");  ### as per RFC-2045
-        $ent->effective_type('application/octet-stream');
-        $encoding = 'binary';
-    }
     my $decoder = new MIME::Decoder $encoding;
-    
+    if (!$decoder) {
+	$self->whine("Unsupported encoding '$encoding': using 'binary'... \n".
+		     "The entity will have an effective MIME type of \n".
+		     "application/octet-stream.");  ### as per RFC-2045
+	$ent->effective_type('application/octet-stream');
+	$decoder = new MIME::Decoder 'binary';
+	$encoding = 'binary';
+    }
+
     ### Data should be stored encoded / as-is?
     if ( !$self->decode_bodies ) {
 	$decoder = new MIME::Decoder 'binary';
@@ -1065,7 +1051,7 @@ sub process_part {
     if (not defined $head) {
        $self->debug("bogus empty part");
        $head = $self->interface('HEAD_CLASS')->new;
-       $head->mime_type('text/plain');
+       $head->mime_type('text/plain; charset=US-ASCII');
        $ent->head($head);
        $ent->bodyhandle($self->new_body_for($head));
        $ent->bodyhandle->open("w")->close or die "$ME: can't close: $!";
@@ -1489,25 +1475,6 @@ sub output_to_core {
     }
     $self->{MP5_FilerToCore};
 }
-
-
-=item tmp_recycling
-
-I<Instance method, DEPRECATED.>
-
-This method is a no-op to preserve the pre-5.421 API.
-
-The tmp_recycling() feature was removed in 5.421 because it had never actually
-worked.  Please update your code to stop using it.
-
-=cut
-
-sub tmp_recycling 
-{
-	return;
-}
-
-
 
 #------------------------------
 
@@ -2043,9 +2010,7 @@ my attention.>
 
 =back
 
-=head1 SEE ALSO
 
-L<MIME::Tools>, L<MIME::Head>, L<MIME::Body>, L<MIME::Entity>, L<MIME::Decoder>
 
 =head1 AUTHOR
 

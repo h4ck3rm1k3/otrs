@@ -246,7 +246,7 @@ use IO::Lines;
 #------------------------------
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = "5.428";
+$VERSION = "5.423";
 
 ### Boundary counter:
 my $BCount = 0;
@@ -646,16 +646,7 @@ sub build {
     ### Add other MIME fields:
     $head->replace('Content-transfer-encoding', $encoding) if $encoding;
     $head->replace('Content-description', $desc)           if $desc;
-
-    # Content-Id value should be surrounded by < >, but versions before 5.428
-    # did not do this.  So, we check, and add if the caller has not done so
-    # already.
-    if( defined $id ) {
-	if( $id !~ /^<.*>$/ ) {
-		$id = "<$id>";
-	}
-	$head->replace('Content-id', $id);
-    }
+    $head->replace('Content-id', $id)                      if defined($id);
     $head->replace('MIME-Version', '1.0')                  if $top;
 
     ### Add the X-Mailer field, if top level (use default value if not given):
@@ -695,7 +686,7 @@ external data in bodyhandles is I<not> copied to new files!
 Changing the data in one entity's data file, or purging that entity,
 I<will> affect its duplicate.  Entities with in-core data probably need
 not worry.
-
+'
 =cut
 
 sub dup {
@@ -747,9 +738,7 @@ sub dup {
 
 I<Instance method.>
 Get the I<encoded> (transport-ready) body, as an array of lines.
-Returns an array reference.  Each array entry is a newline-terminated
-line.
-
+Returns an array reference.
 This is a read-only data structure: changing its contents will have
 no effect.  Its contents are identical to what is printed by
 L<print_body()|/print_body>.
@@ -776,9 +765,6 @@ sub body {
 		$self->print_body($fh);
 		close($fh);
 		my @ary = split(/\n/, $output);
-		# Each line needs the terminating newline
-		@ary = map { "$_\n" } @ary;
-
 		return \@ary;
 	}
 }
@@ -1172,14 +1158,15 @@ sub make_singlepart {
     return 'ALREADY' if !$self->is_multipart;      ### already a singlepart?
     return '0' if ($self->parts > 1);              ### can this even be done?
 
-    # Get rid of all our existing content info
-    my $tag;
-    foreach $tag (grep {/^content-/i} $self->head->tags) {
-        $self->head->delete($tag);
-    }
-
+    ### Do it:
     if ($self->parts == 1) {    ### one part
 	my $part = $self->parts(0);
+	my $tag;
+
+	### Get rid of all our existing content info:
+	foreach $tag (grep {/^content-/i} $self->head->tags) {
+	    $self->head->delete($tag);
+	}
 
 	### Populate ourselves with any content info from the part:
 	foreach $tag (grep {/^content-/i} $part->head->tags) {
@@ -1287,17 +1274,8 @@ sub remove_sig {
     my $self = shift;
     my $nlines = shift;
 
-    # If multipart, we only attempt to remove the sig from the first
-    # part.  This is usually a good assumption for multipart/mixed, but
-    # may not always be correct.  It is also possibly incorrect on
-    # multipart/alternative (both may have sigs).
-    if( $self->is_multipart ) {
-	my $first_part = $self->parts(0);
-	if( $first_part ) {
-            return $first_part->remove_sig(@_);
-	}
-	return undef;
-    }
+    ### Handle multiparts:
+    $self->is_multipart and return $self->{ME_Parts}[0]->remove_sig(@_);
 
     ### Refuse non-textual unless forced:
     textual_type($self->head->mime_type)
@@ -2237,9 +2215,6 @@ how we work.
 
 =back
 
-=head1 SEE ALSO
-
-L<MIME::Tools>, L<MIME::Head>, L<MIME::Body>, L<MIME::Decoder>, L<Mail::Internet>
 
 =head1 AUTHOR
 

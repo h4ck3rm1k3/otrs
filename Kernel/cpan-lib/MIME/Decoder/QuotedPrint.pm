@@ -36,9 +36,6 @@ B<Note:> just like MIME::QuotedPrint, we currently use the
 native C<"\n"> for line breaks, and not C<CRLF>.  This may
 need to change in future versions.
 
-=head1 SEE ALSO
-
-L<MIME::Decoder>
 
 =head1 AUTHOR
 
@@ -56,7 +53,7 @@ use MIME::QuotedPrint;
 @ISA = qw(MIME::Decoder);
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = "5.428";
+$VERSION = "5.423";
 
 #------------------------------
 # If we have MIME::QuotedPrint 3.03 or later, use the three-argument

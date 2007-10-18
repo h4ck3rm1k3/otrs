@@ -25,10 +25,6 @@ read-and-write fixed-size chunks.
 Both the B<encoder> and B<decoder> do a simple pass-through of the data
 from input to output.
 
-=head1 SEE ALSO
-
-L<MIME::Decoder>
-
 
 =head1 AUTHOR
 
@@ -45,7 +41,7 @@ use vars qw(@ISA $VERSION);
 @ISA = qw(MIME::Decoder);
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = "5.428";
+$VERSION = "5.423";
 
 ### Buffer length:
 my $BUFLEN = 8192;

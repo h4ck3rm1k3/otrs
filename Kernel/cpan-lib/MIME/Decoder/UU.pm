@@ -22,9 +22,6 @@ data are uuencoded.  Common non-standard MIME encodings for this:
     x-uu
     x-uuencode
 
-=head1 SEE ALSO
-
-L<MIME::Decoder>
 
 =head1 AUTHOR
 
@@ -47,7 +44,7 @@ use MIME::Tools qw(whine);
 @ISA = qw(MIME::Decoder);
 
 # The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = "5.428";
+$VERSION = "5.423";
 
 
 #------------------------------
