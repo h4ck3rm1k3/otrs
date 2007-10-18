@@ -82,12 +82,6 @@ Eryq (F<eryq@zeegee.com>), ZeeGee Software Inc (F<http://www.zeegee.com>).
 All rights reserved.  This program is free software; you can redistribute 
 it and/or modify it under the same terms as Perl itself.
 
-
-=head1 VERSION
-
-$Revision: 1.10 $ $Date: 2006/03/17 21:03:23 $
-
-
 =cut
 
 use vars qw(@ISA $VERSION);
@@ -98,7 +92,7 @@ use MIME::Tools qw(:msgs);
 @ISA = qw(MIME::Decoder);
 
 ### The package version, both in 1.23 style *and* usable by MakeMaker:
-$VERSION = "5.420";
+$VERSION = "5.423";
 
 ### How many bytes to decode at a time?
 my $DecodeChunkLength = 8 * 1024;
