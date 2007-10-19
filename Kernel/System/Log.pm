@@ -1,23 +1,22 @@
 # --
 # Kernel/System/Log.pm - log wapper
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Log.pm,v 1.65 2011/08/15 13:43:12 mb Exp $
+# $Id: Log.pm,v 1.38.2.1 2007/10/19 10:26:08 sb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::Log;
 
 use strict;
-use warnings;
-
 use Kernel::System::Encode;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.65 $) [1];
+$VERSION = '$Revision: 1.38.2.1 $ ';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
@@ -38,68 +37,49 @@ All log functions.
 create a log object
 
     use Kernel::Config;
-    use Kernel::System::Encode;
     use Kernel::System::Log;
 
     my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
+    my $LogObject = Kernel::System::Log->new(
         ConfigObject => $ConfigObject,
-    );
-    my $LogObject    = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogPrefix    => 'InstallScriptX',  # not required, but highly recommend
     );
 
 =cut
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
+    bless ($Self, $Type);
 
     # get config object
-    if ( !$Param{ConfigObject} ) {
-        die 'Got no ConfigObject!';
+    if (!$Param{ConfigObject}) {
+        die "Got no ConfigObject!";
     }
-
-    # get system id
-    my $SystemID = $Param{ConfigObject}->Get('SystemID');
-
-    # get or create encode object
-    $Self->{EncodeObject} = $Param{EncodeObject};
-    $Self->{EncodeObject} ||= Kernel::System::Encode->new(%Param);
-
+    # create encode object
+    $Self->{EncodeObject} = Kernel::System::Encode->new(%Param);
     # check log prefix
     $Self->{LogPrefix} = $Param{LogPrefix} || '?LogPrefix?';
-    $Self->{LogPrefix} .= '-' . $SystemID;
-
+    $Self->{LogPrefix} .= '-'.$Param{ConfigObject}->Get('SystemID');
     # load log backend
     my $GenericModule = $Param{ConfigObject}->Get('LogModule') || 'Kernel::System::Log::SysLog';
-    if ( !eval "require $GenericModule" ) {
+    if (!eval "require $GenericModule") {
         die "Can't load log backend module $GenericModule! $@";
     }
-
     # create backend handle
-    $Self->{Backend} = $GenericModule->new(
-        %Param,
-        EncodeObject => $Self->{EncodeObject},
-    );
-
-    return $Self if !eval "require IPC::SysV";
-
-    # create the IPC options
-    $Self->{IPC}     = 1;
-    $Self->{IPCKey}  = '444423' . $SystemID;
-    $Self->{IPCSize} = $Param{ConfigObject}->Get('LogSystemCacheSize') || 32 * 1024;
-
-    # init session data mem
-    if ( !eval { $Self->{Key} = shmget( $Self->{IPCKey}, $Self->{IPCSize}, oct(1777) ) } ) {
-        $Self->{Key} = shmget( $Self->{IPCKey}, 1, oct(1777) );
-        $Self->CleanUp();
-        $Self->{Key} = shmget( $Self->{IPCKey}, $Self->{IPCSize}, oct(1777) );
+    $Self->{Backend} = $GenericModule->new(%Param);
+    # check/load ipc stuff
+    if (eval "require IPC::SysV") {
+        $Self->{IPC} = 1;
+        $Self->{IPCKey} = "444423".$Param{ConfigObject}->Get('SystemID');
+        $Self->{IPCSize} = $Param{ConfigObject}->Get('LogSystemCacheSize') || 4*1024;
+        # init session data mem (at first a dummy for RH8 workaround)
+        my $DummyIPCKey = "444424".$Param{ConfigObject}->Get('SystemID');
+        shmget($DummyIPCKey, 1, 0777 | 0001000);
+        # init session data mem (the real one)
+        $Self->{Key} = shmget($Self->{IPCKey}, $Self->{IPCSize}, 0777 | 0001000) || die $!;
     }
 
     return $Self;
@@ -111,86 +91,70 @@ log something, log priorities are 'debug', 'info', 'notice' and 'error'.
 
     $LogObject->Log(
         Priority => 'error',
-        Message  => "Need something!",
+        Message => "Need something!",
     );
 
 =cut
 
 sub Log {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     my $Priority = $Param{Priority} || 'debug';
-    my $Message  = $Param{MSG}      || $Param{Message} || '???';
-    my $Caller   = $Param{Caller}   || 0;
-
+    my $Message = $Param{MSG} || $Param{Message} || '???';
+    my $Caller = $Param{Caller} || 0;
     # returns the context of the current subroutine and sub-subroutine!
-    my ( $Package1, $Filename1, $Line1, $Subroutine1 ) = caller( $Caller + 0 );
-    my ( $Package2, $Filename2, $Line2, $Subroutine2 ) = caller( $Caller + 1 );
-    if ( !$Subroutine2 ) {
+    my ($Package1, $Filename1, $Line1, $Subroutine1) = caller($Caller+0);
+    my ($Package2, $Filename2, $Line2, $Subroutine2) = caller($Caller+1);
+    if (!$Subroutine2) {
         $Subroutine2 = $0;
     }
-
     # log backend
     $Self->{Backend}->Log(
-        Priority  => $Priority,
-        Message   => $Message,
+        Priority => $Priority,
+        Message => $Message,
         LogPrefix => $Self->{LogPrefix},
-        Module    => $Subroutine2,
-        Line      => $Line1,
+        Module => $Subroutine2,
+        Line => $Line1,
     );
-
     # if error, write it to STDERR
-    if ( $Priority =~ /^error/i ) {
-        my $Error
-            = sprintf "ERROR: $Self->{LogPrefix} Perl: %vd OS: $^O Time: " . localtime() . "\n\n",
-            $^V;
+    if ($Priority =~ /^error/i) {
+        my $Error = sprintf "ERROR: $Self->{LogPrefix} Perl: %vd OS: $^O Time: ".localtime()."\n\n", $^V;
         $Error .= " Message: $Message\n\n";
         $Error .= " Traceback ($$): \n";
-        for ( my $i = 0; $i < 12; $i++ ) {
-            my ( $Package1, $Filename1, $Line1, $Subroutine1 ) = caller( $Caller + $i );
-            my ( $Package2, $Filename2, $Line2, $Subroutine2 ) = caller( $Caller + 1 + $i );
-
+        for (my $i = 0; $i < 12; $i++) {
+            my ($Package1, $Filename1, $Line1, $Subroutine1) = caller($Caller+$i);
+            my ($Package2, $Filename2, $Line2, $Subroutine2) = caller($Caller+1+$i);
             # if there is no caller module use the file name
-            if ( !$Subroutine2 ) {
+            if (!$Subroutine2) {
                 $Subroutine2 = $0;
             }
-
             # print line if upper caller module exists
             if ($Line1) {
-                my $VersionString;
-                eval { $VersionString = 'v' . ($Package1->VERSION || "UNKNOWN VERSION") };
-                if ( !$VersionString || $VersionString eq 'v' ) {
-                    $VersionString = 'unknown version';
-                }
-                $Error .= "   Module: $Subroutine2 ($VersionString) Line: $Line1\n";
+                my $Version = eval("\$$Package1". '::VERSION');
+                $Error .= "   Module: $Subroutine2 (v$Version) Line: $Line1\n";
             }
-
             # return if there is no upper caller module
-            if ( !$Line2 ) {
+            if (!$Line2) {
                 $i = 12;
             }
         }
         $Error .= "\n";
         print STDERR $Error;
-
         # store data (for the frontend)
-        $Self->{error}->{Message}   = $Message;
+        $Self->{error}->{Message} = $Message;
         $Self->{error}->{Traceback} = $Error;
     }
-
     # remember to info and notice messages
-    elsif ( lc $Priority eq 'info' || lc $Priority eq 'notice' ) {
-        $Self->{ lc($Priority) }->{Message} = $Message;
+    elsif ($Priority =~ /^(info|notice)/i) {
+        $Self->{lc($Priority)}->{Message} = $Message;
     }
-
     # write shm cache log
-    if ( lc $Priority ne 'debug' && $Self->{IPC} ) {
+    if ($Priority !~ /^debug/i && $Self->{IPC}) {
         $Priority = lc($Priority);
-        my $Data   = localtime() . ";;$Priority;;$Self->{LogPrefix};;$Message\n";
+        my $Data = localtime().";;$Priority;;$Self->{LogPrefix};;$Message\n";
         my $String = $Self->GetLog();
-        shmwrite( $Self->{Key}, $Data . $String, 0, $Self->{IPCSize} ) || die $!;
+        shmwrite($Self->{Key}, $Data.$String, 0, $Self->{IPCSize}) || die $!;
     }
-
     return 1;
 }
 
@@ -206,9 +170,9 @@ to get the last log info back
 =cut
 
 sub GetLogEntry {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{ lc( $Param{Type} ) }->{ $Param{What} } || '';
+    my $Self = shift;
+    my %Param = @_;
+    return $Self->{lc($Param{Type})}->{$Param{What}} || '';
 }
 
 =item GetLog()
@@ -220,16 +184,12 @@ to get the tmp log data (from shared memory - ipc) in csv form
 =cut
 
 sub GetLog {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
     my $String = '';
-    if ( $Self->{IPC} ) {
-        shmread( $Self->{Key}, $String, 0, $Self->{IPCSize} ) || die "$!";
+    if ($Self->{IPC}) {
+        shmread($Self->{Key}, $String, 0, $Self->{IPCSize}) || die "$!";
     }
-
-    # encode the string
-    $Self->{EncodeObject}->EncodeInput( \$String );
-
+    $Self->{EncodeObject}->Encode(\$String);
     return $String;
 }
 
@@ -242,19 +202,16 @@ to clean up tmp log data from shared memory (ipc)
 =cut
 
 sub CleanUp {
-    my ( $Self, %Param ) = @_;
-
-    return 1 if !$Self->{IPC};
-
-    # remove the shm
-    if ( !shmctl( $Self->{Key}, 0, 0 ) ) {
-        $Self->Log(
-            Priority => 'error',
-            Message  => "Can't remove shm for log: $!",
-        );
-        return;
+    my $Self = shift;
+    if ($Self->{IPC}) {
+        if (!shmctl($Self->{Key}, 0, 0)) {
+            $Self->Log(
+                Priority => 'error',
+                Message => "Can't remove shm for log: $!",
+            );
+            return;
+        }
     }
-
     return 1;
 }
 
@@ -271,26 +228,26 @@ dump a perl variable to log
 =cut
 
 sub Dumper {
-    my ( $Self, @Data ) = @_;
+    my $Self = shift;
 
     require Data::Dumper;
 
+    my $Caller = 0;
     # returns the context of the current subroutine and sub-subroutine!
-    my ( $Package1, $Filename1, $Line1, $Subroutine1 ) = caller(0);
-    my ( $Package2, $Filename2, $Line2, $Subroutine2 ) = caller(1);
-    if ( !$Subroutine2 ) {
+    my ($Package1, $Filename1, $Line1, $Subroutine1) = caller($Caller+0);
+    my ($Package2, $Filename2, $Line2, $Subroutine2) = caller($Caller+1);
+    if (!$Subroutine2) {
         $Subroutine2 = $0;
     }
 
     # log backend
     $Self->{Backend}->Log(
-        Priority  => 'debug',
-        Message   => substr( Data::Dumper::Dumper(@Data), 0, 600600600 ),
+        Priority => 'debug',
+        Message => substr(Data::Dumper::Dumper(@_), 0, 600600600),
         LogPrefix => $Self->{LogPrefix},
-        Module    => $Subroutine2,
-        Line      => $Line1,
+        Module => $Subroutine2,
+        Line => $Line1,
     );
-
     return 1;
 }
 
@@ -300,14 +257,14 @@ sub Dumper {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.65 $ $Date: 2011/08/15 13:43:12 $
+$Revision: 1.38.2.1 $ $Date: 2007/10/19 10:26:08 $
 
 =cut
