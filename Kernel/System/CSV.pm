@@ -1,26 +1,25 @@
 # --
 # Kernel/System/CSV.pm - all csv functions
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: CSV.pm,v 1.27 2011/04/27 19:21:13 mb Exp $
+# $Id: CSV.pm,v 1.10.2.1 2007/10/19 06:14:31 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::CSV;
 
 use strict;
-use warnings;
-use Text::CSV;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.27 $) [1];
+$VERSION = '$Revision: 1.10.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
-Kernel::System::CSV - CSV lib
+Kernel::System::CSV - CVS lib
 
 =head1 SYNOPSIS
 
@@ -32,20 +31,14 @@ All csv functions.
 
 =item new()
 
-create an object
+create a object
 
     use Kernel::Config;
-    use Kernel::System::Encode;
     use Kernel::System::Log;
-    use Kernel::System::CSV;
 
     my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
     my $LogObject = Kernel::System::Log->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
     );
     my $CSVObject = Kernel::System::CSV->new(
         LogObject => $LogObject,
@@ -54,14 +47,15 @@ create an object
 =cut
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
+    bless ($Self, $Type);
 
     # check needed objects
-    for (qw(LogObject)) {
+    foreach (qw(LogObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -73,87 +67,62 @@ sub new {
 Returns a csv formatted string based on a array with head data.
 
     $CSV = $CSVObject->Array2CSV(
-        Head => [ 'RowA', 'RowB', ],   # optional
+        Head => ['RowA', 'RowB', ],   # optional
         Data => [
-            [ 1, 4 ],
-            [ 7, 3 ],
-            [ 1, 9 ],
-            [ 34, 4 ],
+            [1,4],
+            [7,3],
+            [1,9],
+            [34,4],
         ],
-        Separator => ';', # optional separator (default is ;)
-        Quote     => '"', # optional quote (default is ")
     );
 
 =cut
 
 sub Array2CSV {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    my $Output = '';
+    my @Head = ();
+    my @Data = (['##No Data##']);
     # check required params
-    for (qw(Data)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Got no $_ param!" );
+    foreach (qw(Data)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => "error", Message => "Got no $_ param!");
             return;
         }
     }
-
-    my @Head;
-    my @Data = ( ['##No Data##'] );
-    if ( $Param{Head} ) {
-        @Head = @{ $Param{Head} };
+    if ($Param{Head}) {
+        @Head = @{$Param{Head}};
     }
-    if ( $Param{Data} ) {
-        @Data = @{ $Param{Data} };
+    if ($Param{Data}) {
+        @Data = @{$Param{Data}};
     }
-
-    # get separator
-    if ( !defined $Param{Separator} || $Param{Separator} eq '' ) {
-        $Param{Separator} = ';';
-    }
-
-    # get separator
-    if ( !defined $Param{Quote} ) {
-        $Param{Quote} = '"';
-    }
-
-    # create new csv backend object
-    my $CSV = Text::CSV->new(
-        {
-            quote_char          => $Param{Quote},
-            escape_char         => $Param{Quote},
-            sep_char            => $Param{Separator},
-            eol                 => '',
-            always_quote        => 1,
-            binary              => 1,
-            keep_meta_info      => 0,
-            allow_loose_quotes  => 0,
-            allow_loose_escapes => 0,
-            allow_whitespace    => 0,
-            verbatim            => 0,
-        }
-    );
-
-    my $Output = '';
 
     # if we have head param fill in header
-    if (@Head) {
-        my $Status = $CSV->combine(@Head);
-        $Output .= $CSV->string() . "\n";
+    foreach my $Entry (@Head) {
+        # csv quote
+        $Entry =~ s/"/""/g if ($Entry);
+        $Entry = '' if (!defined($Entry));
+        $Output .= "\"$Entry\";";
+    }
+    if ($Output) {
+        $Output .= "\n";
+    }
+    # fill in data
+    foreach my $EntryRow (@Data) {
+        foreach my $Entry (@{$EntryRow}) {
+            # Copy $Entry because otherwise you maniplate the content
+            # of the original $Param{Data}!!!! Array in Array Referenc
+            my $Content = $Entry;
+
+            # csv quote
+            $Content =~ s/"/""/g if ($Content);
+            $Content = '' if ( !defined($Content) );
+            $Output .= "\"$Content\";";
+        }
+        $Output .= "\n";
     }
 
-    # fill in data
-    for my $Row (@Data) {
-        my $Status = $CSV->combine( @{$Row} );
-        if ($Status) {
-            $Output .= $CSV->string() . "\n";
-        }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Failed to build line: ' . $CSV->error_input(),
-            );
-        }
-    }
     return $Output;
 }
 
@@ -162,61 +131,43 @@ sub Array2CSV {
 Returns an array with parsed csv data.
 
     my $RefArray = $CSVObject->CSV2Array(
-        String    => $CSVString,
+        String => $CSVString,
         Separator => ';', # optional separator (default is ;)
-        Quote     => '"', # optional quote (default is ")
+        Quote => '"',     # optional quote (default is ")
     );
 
 =cut
 
 sub CSV2Array {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
+    my @Array = ();
 
     # get separator
-    if ( !defined $Param{Separator} || $Param{Separator} eq '' ) {
+    if (!defined($Param{Separator}) || $Param{Separator} eq '') {
         $Param{Separator} = ';';
     }
 
+    # a better solution can be the use of
+    # use Text::ParseWords;
+    # for more information read "PerlKochbuch" page 32
+
     # get separator
-    if ( !defined $Param{Quote} ) {
+    if (!defined($Param{Quote})) {
         $Param{Quote} = '"';
     }
 
-    # create new csv backend object
-    my $CSV = Text::CSV->new(
-        {
-
-            #            quote_char          => $Param{Quote},
-            #            escape_char         => $Param{Quote},
-            sep_char            => $Param{Separator},
-            eol                 => '',
-            always_quote        => 0,
-            binary              => 1,
-            keep_meta_info      => 0,
-            allow_loose_quotes  => 0,
-            allow_loose_escapes => 0,
-            allow_whitespace    => 0,
-            verbatim            => 0,
-        }
-    );
-
-    # do some dos/unix file conversions
-    $Param{String} =~ s/(\n\r|\r\r\n|\r\n|\r)/\n/g;
-
     # if you change the split options, remember that each value can include \n
-    my @Array;
-    my @Lines = split /$Param{Quote}\n/, $Param{String};
+    my @Lines = split( /$Param{Quote}$Param{Separator}\n/, $Param{String} );
     for my $Line (@Lines) {
-        if ( $CSV->parse( $Line . $Param{Quote} ) ) {
-            my @Fields = $CSV->fields();
-            push @Array, \@Fields;
+        my @Fields = split( /$Param{Quote}$Param{Separator}$Param{Quote}/, $Line );
+        $Fields[0] =~ s/^$Param{Quote}//mgs;
+
+        for my $Field (@Fields) {
+            $Field =~ s/$Param{Quote}$Param{Quote}/$Param{Quote}/g;
         }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Failed to parse line: ' . $CSV->error_input(),
-            );
-        }
+
+        push( @Array, \@Fields );
     }
 
     return \@Array;
@@ -228,14 +179,14 @@ sub CSV2Array {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.27 $ $Date: 2011/04/27 19:21:13 $
+$Revision: 1.10.2.1 $ $Date: 2007/10/19 06:14:31 $
 
 =cut
