@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Cache.pm - all cache functions
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Cache.pm,v 1.20 2010/05/06 18:33:12 mb Exp $
+# $Id: Cache.pm,v 1.3.2.1 2007/10/22 16:09:42 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::Cache;
@@ -15,11 +15,12 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.20 $) [1];
+$VERSION = '$Revision: 1.3.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
-Kernel::System::Cache - cache lib
+Kernel::System::Cache - valid lib
 
 =head1 SYNOPSIS
 
@@ -33,57 +34,46 @@ All cache functions.
 
 =item new()
 
-create an object
+create a object
 
     use Kernel::Config;
-    use Kernel::System::Encode;
     use Kernel::System::Log;
     use Kernel::System::Main;
     use Kernel::System::Cache;
 
     my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
     my $LogObject = Kernel::System::Log->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
     );
     my $MainObject = Kernel::System::Main->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
+        LogObject => $LogObject,
     );
     my $CacheObject = Kernel::System::Cache->new(
         ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+        LogObject => $LogObject,
+        MainObject => $MainObject,
     );
 
 =cut
 
 sub new {
-    my ( $Type, %Param ) = @_;
-
+    my $Type = shift;
+    my %Param = @_;
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
-
+    bless ($Self, $Type);
     # 0=off; 1=set+get_cache; 2=+delete+get_request;
     $Self->{Debug} = $Param{Debug} || 0;
-
     # check needed objects
-    for (qw(MainObject ConfigObject LogObject EncodeObject)) {
+    foreach (qw(MainObject ConfigObject LogObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
     # cache backend
     my $CacheModule = $Self->{ConfigObject}->Get('Cache::Module')
-        || 'Kernel::System::Cache::FileStorable';
-
-    #        || 'Kernel::System::Cache::Memcached';
-    if ( !$Self->{MainObject}->Require($CacheModule) ) {
+        || 'Kernel::System::Cache::File';
+    if (!$Self->{MainObject}->Require($CacheModule)) {
         die "Can't load backend module $CacheModule! $@";
     }
 
@@ -97,30 +87,27 @@ sub new {
 set a new cache
 
     $CacheObject->Set(
-        Type  => 'ObjectName', # only A-z chars usable
-        Key   => 'SomeKey',
+        Key => 'SomeKey',
         Value => 'Some Value',
-        TTL   => 24*60*60,     # in sec. in this case 24h
+        TTL => 24*60*60, # in sec. in this case 24h
     );
 
 =cut
 
 sub Set {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Type Key Value TTL)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    my $Self = shift;
+    my %Param = @_;
+    foreach (qw(Key Value)) {
+        if (!defined($Param{$_})) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
     # debug
-    if ( $Self->{Debug} > 0 ) {
+    if ($Self->{Debug} > 0) {
         $Self->{LogObject}->Log(
             Priority => 'notice',
-            Message  => "Set Key:$Param{Key} TTL:$Param{TTL}!",
+            Message => "Set Key:$Param{Key} TTL:$Param{TTL}!",
         );
     }
     return $Self->{CacheObject}->Set(%Param);
@@ -131,36 +118,34 @@ sub Set {
 return a cache
 
     my $Value = $CacheObject->Get(
-        Type => 'ObjectName', # only A-z chars usable
-        Key  => 'SomeKey',
+        Key => 'SomeKey',
     );
 
 =cut
 
 sub Get {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(Type Key)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    foreach (qw(Key)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
     # debug
-    if ( $Self->{Debug} > 1 ) {
+    if ($Self->{Debug} > 1) {
         $Self->{LogObject}->Log(
             Priority => 'notice',
-            Message  => "Get Key:$Param{Key}!",
+            Message => "Get Key:$Param{Key}!",
         );
     }
     my $Value = $Self->{CacheObject}->Get(%Param);
-    if ( defined $Value ) {
-        if ( $Self->{Debug} > 0 ) {
+    if (defined($Value)) {
+        if ($Self->{Debug} > 0) {
             $Self->{LogObject}->Log(
                 Priority => 'notice',
-                Message  => "Get cached Key:$Param{Key}!",
+                Message => "Get cached Key:$Param{Key}!",
             );
         }
     }
@@ -172,67 +157,29 @@ sub Get {
 delete a cache
 
     $CacheObject->Delete(
-        Type => 'ObjectName', # only A-z chars usable
-        Key  => 'SomeKey',
+        Key => 'SomeKey',
     );
 
 =cut
 
 sub Delete {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(Type Key)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    foreach (qw(Key)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
     # debug
-    if ( $Self->{Debug} > 1 ) {
+    if ($Self->{Debug} > 1) {
         $Self->{LogObject}->Log(
             Priority => 'notice',
-            Message  => "Delete Key:$Param{Key}!",
+            Message => "Delete Key:$Param{Key}!",
         );
     }
     return $Self->{CacheObject}->Delete(%Param);
-}
-
-=item CleanUp()
-
-delete chache or parts of the cache
-
-    To delete the whole cache
-
-    $CacheObject->CleanUp();
-
-    of if you want to cleanup only one object cache
-
-    $CacheObject->CleanUp(
-        Type => 'ObjectName', # only A-z chars are usable
-    );
-
-    of if you want to cleanup only one object cache with expired caches
-
-    $CacheObject->CleanUp(
-        Type    => 'ObjectName', # only A-z chars are usable
-        Expired => 1, # 1|0, default 0
-    );
-
-=cut
-
-sub CleanUp {
-    my ( $Self, %Param ) = @_;
-
-    # debug
-    if ( $Self->{Debug} > 1 ) {
-        $Self->{LogObject}->Log(
-            Priority => 'notice',
-            Message  => 'CleanUp cache!',
-        );
-    }
-    return $Self->{CacheObject}->CleanUp(%Param);
 }
 
 1;
@@ -241,16 +188,16 @@ sub CleanUp {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This Software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.20 $ $Date: 2010/05/06 18:33:12 $
+$Revision: 1.3.2.1 $ $Date: 2007/10/22 16:09:42 $
 
 =cut
