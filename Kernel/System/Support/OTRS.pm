@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.7 2007/09/27 12:10:33 sr Exp $
+# $Id: OTRS.pm,v 1.8 2007/10/26 13:07:20 ho Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -11,12 +11,12 @@
 
 package Kernel::System::Support::OTRS;
 
-use Kernel::System::Support;
 use strict;
+use Kernel::System::Support;
 use Kernel::System::Ticket;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.7 $';
+$VERSION = '$Revision: 1.8 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -119,6 +119,8 @@ sub AdminChecksGet {
     $OneCheck = $Self->TicketIndexModuleCheck();
     push (@{$DataArray}, $OneCheck);
 
+    $OneCheck = $Self->FQDNConfigCheck();
+    push (@{$DataArray}, $OneCheck);
     return $DataArray;
 }
 
@@ -369,4 +371,35 @@ sub OpenTicketCheck {
     return $Data;
 }
 
+# Check if the configured FQDN is valid.
+sub FQDNConfigCheck {
+    my ($Self, %Param) = @_;
+    my $Data = {
+        Key => 'FQDNConfigCheck',
+        Name => 'FQDNConfigCheck',
+        Description => "Check if the configured fully qualified host name is valid.",
+        Check => 'Failed',
+        Comment => '',
+    };
+
+    # Get the configured FQDN
+    my $FQDN = $Self->{ConfigObject}->Get('FQDN');
+
+    # Do we have set our FQDN?
+    if ($FQDN eq 'yourhost.example.com') {
+        $Data->{Check} = 'Failed';
+        $Data->{Comment} = 'Please configure your FQDN.';
+    }
+    # FQDN syntax check.
+    elsif ($FQDN =~ /\.\.|\s|[^a-zA-Z0-9-.]/g) {
+        $Data->{Check} = 'Failed';
+        $Data->{Comment} = "Invalid FQDN '$FQDN'.";
+    }
+    # Nothing to complain. :-(
+    else {
+        $Data->{Check} = 'OK';
+        $Data->{Comment} = "FQDN '$FQDN' looks good.";
+    }
+    return $Data;
+}
 1;
