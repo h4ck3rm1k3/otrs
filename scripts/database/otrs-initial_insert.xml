@@ -5,9 +5,12 @@
     XML File for the OTRS database description
     Copyright (C) 2001-2006 OTRS GmbH, http://otrs.org/
 
-    $Id: otrs-initial_insert.xml,v 1.10 2007/08/31 09:14:53 martin Exp $
+    $Id: otrs-initial_insert.xml,v 1.11 2007/11/05 13:34:13 mh Exp $
 
     $Log: otrs-initial_insert.xml,v $
+    Revision 1.11  2007/11/05 13:34:13  mh
+    Fixed small typo in the escalation notification.
+
     Revision 1.10  2007/08/31 09:14:53  martin
     Fixed typo in <OTRS__UserFirstname> and increased shown Subject and Body in notification emails.
 
@@ -1421,7 +1424,7 @@ Your OTRS Notification Master</Data>
         <Data Key="subject" Type="Quote">Ticket Escalation! (&lt;OTRS_CUSTOMER_SUBJECT[24]&gt;)</Data>
         <Data Key="text" Type="Quote">Hi &lt;OTRS_UserFirstname&gt;,
 
-the ticket "&lt;OTRS_TICKET_TicketNumber&gt;" is escaleted!
+the ticket "&lt;OTRS_TICKET_TicketNumber&gt;" is escalated!
 
 &lt;OTRS_CUSTOMER_FROM&gt;
 
