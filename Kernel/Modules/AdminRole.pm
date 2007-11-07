@@ -1,35 +1,40 @@
 # --
 # Kernel/Modules/AdminRole.pm - to add/update/delete roles
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: AdminRole.pm,v 1.31 2010/11/19 22:28:58 en Exp $
+# $Id: AdminRole.pm,v 1.11.2.1 2007/11/07 09:41:33 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::Modules::AdminRole;
 
 use strict;
-use warnings;
-
 use Kernel::System::Valid;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.31 $) [1];
+$VERSION = '$Revision: 1.11.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
+
+    # allocate new hash for objects
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
 
     # check all needed objects
-    for my $Needed (qw(ParamObject DBObject LayoutObject ConfigObject LogObject GroupObject)) {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    foreach (qw(ParamObject DBObject LayoutObject ConfigObject LogObject GroupObject)) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
     $Self->{ValidObject} = Kernel::System::Valid->new(%Param);
@@ -38,189 +43,127 @@ sub new {
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
 
     # ------------------------------------------------------------ #
     # change
     # ------------------------------------------------------------ #
-    if ( $Self->{Subaction} eq 'Change' ) {
-        my $ID
-            = $Self->{ParamObject}->GetParam( Param => 'ID' )
-            || $Self->{ParamObject}->GetParam( Param => 'RoleID' )
-            || '';
-        my %Data = $Self->{GroupObject}->RoleGet( ID => $ID, );
+    if ($Self->{Subaction} eq 'Change') {
+        my $ID = $Self->{ParamObject}->GetParam(Param => 'ID') || $Self->{ParamObject}->GetParam( Param => 'RoleID' ) || '';
+        my %Data = $Self->{GroupObject}->RoleGet(
+            ID => $ID,
+        );
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Self->_Edit(
-            Action => 'Change',
+            Action => "Change",
             %Data,
         );
         $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminRole',
-            Data         => \%Param,
+            TemplateFile => 'AdminRoleForm',
+            Data => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
-
     # ------------------------------------------------------------ #
     # change action
     # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'ChangeAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
+    elsif ($Self->{Subaction} eq 'ChangeAction') {
         my $Note = '';
-        my ( %GetParam, %Errors );
-        for my $Parameter (qw(ID Name Comment ValidID)) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+        my %GetParam;
+        foreach (qw(ID Name Comment ValidID)) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam(Param => $_) || '';
         }
-
-        # check for needed data
-        if ( !$GetParam{Name} ) {
-            $Errors{NameInvalid} = 'ServerError';
-        }
-
-        # if no errors occurred
-        if ( !%Errors ) {
-
-            # update group
-            my $RoleUpdate = $Self->{GroupObject}->RoleUpdate(
-                %GetParam,
-                UserID => $Self->{UserID}
+        # update group
+        if ($Self->{GroupObject}->RoleUpdate(%GetParam, UserID => $Self->{UserID})) {
+            $Self->_Overview();
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Notify(Info => 'Role updated!');
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminRoleForm',
+                Data => \%Param,
             );
-
-            if ($RoleUpdate) {
-                $Self->_Overview();
-                my $Output = $Self->{LayoutObject}->Header();
-                $Output .= $Self->{LayoutObject}->NavigationBar();
-                $Output .= $Self->{LayoutObject}->Notify( Info => 'Role updated!' );
-                $Output .= $Self->{LayoutObject}->Output(
-                    TemplateFile => 'AdminRole',
-                    Data         => \%Param,
-                );
-                $Output .= $Self->{LayoutObject}->Footer();
-                return $Output;
-            }
-            else {
-                $Note = $Self->{LogObject}->GetLogEntry(
-                    Type => 'Error',
-                    What => 'Message',
-                );
-            }
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
         }
-
-        # something went wrong
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Note
-            ? $Self->{LayoutObject}->Notify(
-            Priority => 'Error',
-            Info     => $Note,
-            )
-            : '';
-        $Self->_Edit(
-            Action => 'Change',
-            %GetParam,
-            %Errors,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminRole',
-            Data         => \%Param,
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
+        else {
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Notify(Priority => 'Error');
+            $Self->_Edit(
+                Action => "Change",
+                %GetParam,
+            );
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminRoleForm',
+                Data => \%Param,
+            );
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
+        }
     }
-
     # ------------------------------------------------------------ #
     # add
     # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'Add' ) {
+    elsif ($Self->{Subaction} eq 'Add') {
         my %GetParam = ();
-        $GetParam{Name} = $Self->{ParamObject}->GetParam( Param => 'Name' );
+        foreach (qw(Name)) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam(Param => $_);
+        }
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Self->_Edit(
-            Action => 'Add',
+            Action => "Add",
             %GetParam,
         );
         $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminRole',
-            Data         => \%Param,
+            TemplateFile => 'AdminRoleForm',
+            Data => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
-
     # ------------------------------------------------------------ #
     # add action
     # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'AddAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
+    elsif ($Self->{Subaction} eq 'AddAction') {
         my $Note = '';
-        my ( %GetParam, %Errors );
-        for my $Parameter (qw(ID Name Comment ValidID)) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+        my %GetParam;
+        foreach (qw(ID Name Comment ValidID)) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam(Param => $_) || '';
         }
-
-        # check for needed data
-        if ( !$GetParam{Name} ) {
-            $Errors{NameInvalid} = 'ServerError';
-        }
-
-        # if no errors occurred
-        if ( !%Errors ) {
-
-            # add role
-            my $RoleID = $Self->{GroupObject}->RoleAdd(
-                %GetParam,
-                UserID => $Self->{UserID}
+        # add role
+        if (my $RoleID = $Self->{GroupObject}->RoleAdd(%GetParam, UserID => $Self->{UserID})) {
+            $Self->_Overview();
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Notify(Info => 'Role added!');
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminRoleForm',
+                Data => \%Param,
             );
-
-            if ($RoleID) {
-                $Self->_Overview();
-                my $Output = $Self->{LayoutObject}->Header();
-                $Output .= $Self->{LayoutObject}->NavigationBar();
-                $Output .= $Self->{LayoutObject}->Notify( Info => 'Role added!' );
-                $Output .= $Self->{LayoutObject}->Output(
-                    TemplateFile => 'AdminRole',
-                    Data         => \%Param,
-                );
-                $Output .= $Self->{LayoutObject}->Footer();
-                return $Output;
-            }
-            else {
-                $Note = $Self->{LogObject}->GetLogEntry(
-                    Type => 'Error',
-                    What => 'Message',
-                );
-            }
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
         }
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Note
-            ? $Self->{LayoutObject}->Notify(
-            Priority => 'Error',
-            Info     => $Note,
-            )
-            : '';
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Self->_Edit(
-            Action => 'Add',
-            %GetParam,
-            %Errors,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminRole',
-            Data         => \%Param,
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
+        else {
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Notify(Priority => 'Error');
+            $Self->_Edit(
+                Action => "Add",
+                %GetParam,
+            );
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminRoleForm',
+                Data => \%Param,
+            );
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
+        }
     }
-
     # ------------------------------------------------------------
     # overview
     # ------------------------------------------------------------
@@ -229,8 +172,8 @@ sub Run {
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminRole',
-            Data         => \%Param,
+            TemplateFile => 'AdminRoleForm',
+            Data => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
@@ -239,89 +182,65 @@ sub Run {
 }
 
 sub _Edit {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
 
     $Self->{LayoutObject}->Block(
         Name => 'Overview',
         Data => \%Param,
     );
-
-    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-    $Self->{LayoutObject}->Block( Name => 'ActionOverview' );
-
-    # get valid list
-    my %ValidList        = $Self->{ValidObject}->ValidList();
-    my %ValidListReverse = reverse %ValidList;
-
-    $Param{ValidOption} = $Self->{LayoutObject}->BuildSelection(
-        Data       => \%ValidList,
-        Name       => 'ValidID',
-        SelectedID => $Param{ValidID} || $ValidListReverse{valid},
+    $Param{'ValidOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data => {
+            $Self->{ValidObject}->ValidList(),
+        },
+        Name => 'ValidID',
+        SelectedID => $Param{ValidID},
     );
 
     $Self->{LayoutObject}->Block(
         Name => 'OverviewUpdate',
         Data => \%Param,
     );
-
-    # shows header
-    if ( $Param{Action} eq 'Change' ) {
-        $Self->{LayoutObject}->Block( Name => 'HeaderEdit' );
-    }
-    else {
-        $Self->{LayoutObject}->Block( Name => 'HeaderAdd' );
-    }
-
     return 1;
 }
 
 sub _Overview {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     my $Output = '';
 
     $Self->{LayoutObject}->Block(
         Name => 'Overview',
         Data => \%Param,
     );
-
-    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-    $Self->{LayoutObject}->Block( Name => 'ActionAdd' );
-
     $Self->{LayoutObject}->Block(
-        Name => 'OverviewHeader',
-        Data => {},
+        Name => 'OverviewResult',
+        Data => \%Param,
     );
-
-    my %List = $Self->{GroupObject}->RoleList( ValidID => 0, );
-
-    # if there is data available, it is shown
-    if (%List) {
-        $Self->{LayoutObject}->Block(
-            Name => 'OverviewResult',
-            Data => \%Param,
-        );
-
-        # get valid list
-        my %ValidList = $Self->{ValidObject}->ValidList();
-        for my $KeyList ( sort { $List{$a} cmp $List{$b} } keys %List ) {
-
-            my %Data = $Self->{GroupObject}->RoleGet( ID => $KeyList );
-            $Self->{LayoutObject}->Block(
-                Name => 'OverviewResultRow',
-                Data => {
-                    Valid => $ValidList{ $Data{ValidID} },
-                    %Data,
-                },
-            );
+    my %List = $Self->{GroupObject}->RoleList(
+        ValidID => 0,
+    );
+    # get valid list
+    my %ValidList = $Self->{ValidObject}->ValidList();
+    my $CssClass = '';
+    foreach (sort {$List{$a} cmp $List{$b}}  keys %List) {
+        # set output class
+        if ($CssClass && $CssClass eq 'searchactive') {
+            $CssClass = 'searchpassive';
         }
-    }
-
-    # otherwise, a message is displayed
-    else {
+        else {
+            $CssClass = 'searchactive';
+        }
+        my %Data = $Self->{GroupObject}->RoleGet(
+            ID => $_,
+        );
         $Self->{LayoutObject}->Block(
-            Name => 'NoRolesDefined',
-            Data => {},
+            Name => 'OverviewResultRow',
+            Data => {
+                Valid => $ValidList{$Data{ValidID}},
+                CssClass => $CssClass,
+                %Data,
+            },
         );
     }
     return 1;
