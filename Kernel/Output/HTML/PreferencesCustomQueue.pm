@@ -1,76 +1,75 @@
 # --
 # Kernel/Output/HTML/PreferencesCustomQueue.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: PreferencesCustomQueue.pm,v 1.16 2011/03/20 08:59:39 mb Exp $
+# $Id: PreferencesCustomQueue.pm,v 1.7.2.1 2007/11/07 09:06:59 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::Output::HTML::PreferencesCustomQueue;
 
 use strict;
-use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.16 $) [1];
+$VERSION = '$Revision: 1.7.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
+
+    # get env
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
 
     # get needed objects
-    for (qw(ConfigObject LogObject DBObject LayoutObject UserID ParamObject QueueObject ConfigItem))
-    {
-        die "Got no $_!" if ( !$Self->{$_} );
+    foreach (qw(ConfigObject LogObject DBObject LayoutObject UserID ParamObject QueueObject ConfigItem)) {
+        die "Got no $_!" if (!$Self->{$_});
     }
 
     return $Self;
 }
 
 sub Param {
-    my ( $Self, %Param ) = @_;
-
-    my @Params    = ();
+    my $Self = shift;
+    my %Param = @_;
+    my @Params = ();
     my %QueueData = ();
     my @CustomQueueIDs;
-
     # check needed param, if no user id is given, do not show this box
-    if ( !$Param{UserData}->{UserID} ) {
+    if (!$Param{UserData}->{UserID}) {
         return ();
     }
-    if ( $Param{UserData}->{UserID} ) {
+    if ($Param{UserData}->{UserID}) {
         %QueueData = $Self->{QueueObject}->GetAllQueues(
             UserID => $Param{UserData}->{UserID},
             Type => $Self->{ConfigItem}->{Permission} || 'ro',
         );
     }
-    if ( $Self->{ParamObject}->GetArray( Param => 'QueueID' ) ) {
-        @CustomQueueIDs = $Self->{ParamObject}->GetArray( Param => 'QueueID' );
+    if ($Self->{ParamObject}->GetArray(Param => 'QueueID')) {
+        @CustomQueueIDs = $Self->{ParamObject}->GetArray(Param => 'QueueID');
     }
-    elsif ( $Param{UserData}->{UserID} && !defined $CustomQueueIDs[0] ) {
-        @CustomQueueIDs = $Self->{QueueObject}->GetAllCustomQueues(
-            UserID => $Param{UserData}->{UserID}
-        );
+    elsif ($Param{UserData}->{UserID} && !defined($CustomQueueIDs[0])) {
+        @CustomQueueIDs = $Self->{QueueObject}->GetAllCustomQueues(UserID => $Param{UserData}->{UserID});
     }
-    push(
-        @Params,
-        {
+    push (@Params, {
             %Param,
             Option => $Self->{LayoutObject}->AgentQueueListOption(
-                Data               => \%QueueData,
-                Size               => 10,
-                Name               => 'QueueID',
+                Data => \%QueueData,
+                Size => 10,
+                Name => 'QueueID',
                 SelectedIDRefArray => \@CustomQueueIDs,
-                Multiple           => 1,
-                Translation        => 0,
-                OnChangeSubmit     => 0,
-                OptionTitle        => 1,
+                Multiple => 1,
+                LanguageTranslation => 0,
+                OnChangeSubmit => 0,
             ),
             Name => 'QueueID',
         },
@@ -79,36 +78,32 @@ sub Param {
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
 
     # delete old custom queues
     $Self->{DBObject}->Do(
         SQL => "DELETE FROM personal_queues WHERE user_id = $Param{UserData}->{UserID}",
     );
-
     # get ro groups of agent
     my %GroupMember = $Self->{GroupObject}->GroupMemberList(
         UserID => $Param{UserData}->{UserID},
-        Type   => 'ro',
+        Type => 'ro',
         Result => 'HASH',
     );
-
     # add new custom queues
-    for my $Key ( keys %{ $Param{GetParam} } ) {
-        my @Array = @{ $Param{GetParam}->{$Key} };
-        for my $ID (@Array) {
-
+    foreach my $Key (keys %{$Param{GetParam}}) {
+        my @Array = @{$Param{GetParam}->{$Key}};
+        foreach my $ID (@Array) {
             # get group of queue
-            my %Queue = $Self->{QueueObject}->QueueGet( ID => $ID );
-
+            my %Queue = $Self->{QueueObject}->QueueGet(ID => $ID);
             # check permissions
-            if ( $GroupMember{ $Queue{GroupID} } ) {
-
+            if ($GroupMember{$Queue{GroupID}}) {
                 # db quote
                 $ID = $Self->{DBObject}->Quote($ID);
                 $Self->{DBObject}->Do(
-                    SQL => "INSERT INTO personal_queues (queue_id, user_id) "
-                        . " VALUES ($ID, $Param{UserData}->{UserID})",
+                    SQL => "INSERT INTO personal_queues (queue_id, user_id) " .
+                        " VALUES ($ID, $Param{UserData}->{UserID})",
                 );
             }
         }
@@ -118,14 +113,14 @@ sub Run {
 }
 
 sub Error {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     return $Self->{Error} || '';
 }
 
 sub Message {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     return $Self->{Message} || '';
 }
 
