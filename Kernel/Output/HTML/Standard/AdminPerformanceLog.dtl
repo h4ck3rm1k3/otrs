@@ -1,207 +1,159 @@
 # --
 # AdminPerformanceLog.dtl - provides HTML form for AdminPerformanceLog
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: AdminPerformanceLog.dtl,v 1.28 2010/11/03 09:10:55 mg Exp $
+# $Id: AdminPerformanceLog.dtl,v 1.8.2.1 2007/11/13 10:21:45 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
-<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
-    <h1>$Text{"Performance Log"}</h1>
-
-    <div class="SidebarColumn">
-<!-- dtl:block:ActionList -->
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"Actions"}</h2>
-            </div>
-            <div class="Content">
-                <ul class="ActionList">
-<!-- dtl:block:ActionOverview -->
-                    <li>
-                        <a href="$Env{"Baselink"}Action=$Env{"Action"}" class="CallForAction"><span>$Text{"Go to overview"}</span></a>
-                    </li>
-<!-- dtl:block:ActionOverview -->
-                </ul>
-            </div>
-        </div>
-<!-- dtl:block:ActionList -->
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"Hint"}</h2>
-            </div>
-            <div class="Content">
+<!-- start form -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+  <tr>
+    <td colspan="2" class="mainhead">
+      $Env{"Box0"}$Text{"Performance Log"}$Env{"Box1"}
+    </td>
+  </tr>
+  <tr>
+    <td width="30%" class="mainbody">
 <!-- dtl:block:Enabled -->
-                <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="Action" value="AdminSysConfig"/>
-                    <input type="hidden" name="Subaction" value="Edit"/>
-                    <input type="hidden" name="SysConfigGroup" value="Framework"/>
-                    <input type="hidden" name="SysConfigSubGroup" value="Core::PerformanceLog"/>
-                    <h3>$Text{"This feature is enabled!"}</h3>
-                    <fieldset>
-                        <p class="FieldExplanation">
-                            $Text{"Just use this feature if you want to log each request."}
-                        </p>
-                        <p class="Error">
-                            $Text{"Activating this feature might affect your system performance!"}
-                        </p>
-                        <div class="Field SpacingTop">
-                            <button class="CallForAction" type="submit" value="$Text{"Disable it here!"}">
-                                <span>$Text{"Disable it here!"}</span>
-                            </button>
-                        </div>
-                        <div class="Clear"></div>
-
-                    </fieldset>
-                </form>
+      <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="Action" value="AdminSysConfig">
+        <input type="hidden" name="Subaction" value="Edit">
+        <input type="hidden" name="SysConfigGroup" value="Framework">
+        <input type="hidden" name="SysConfigSubGroup" value="Core::PerformanceLog">
+        <table width="100%" cellspacing="0" cellpadding="4">
+          <tr>
+            <td class="contenthead">
+              $Text{"This feature is enabled!"}:
+            </td>
+          </tr>
+          <tr>
+            <td class="contentbody">
+              <p>$Text{"Just use this feature if you want to log each request."}<font color="red">*</font></p>
+              <p><font color="red">$Text{"Of couse this feature will take some system performance it self!"}</font></p>
+            </td>
+          </tr>
+          <tr>
+            <td class="contentfooter">
+              <input class="button" type="submit" value="$Text{"Disable it here!"}">
+            </td>
+          </tr>
+        </table>
+      </form>
 <!-- dtl:block:Enabled -->
 <!-- dtl:block:Disabled -->
-                <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="Action" value="AdminSysConfig"/>
-                    <input type="hidden" name="Subaction" value="Edit"/>
-                    <input type="hidden" name="SysConfigGroup" value="Framework"/>
-                    <input type="hidden" name="SysConfigSubGroup" value="Core::PerformanceLog"/>
-                    <h3>$Text{"This feature is disabled!"}</h3>
-                    <fieldset>
-                        <p class="FieldExplanation">
-                            $Text{"Just use this feature if you want to log each request."}
-                        </p>
-                        <p class="Error">
-                            $Text{"Activating this feature might affect your system performance!"}
-                        </p>
-                        <div class="Field SpacingTop">
-                            <button class="CallForAction" type="submit" value="$Text{"Enable it here!"}">
-                                <span>$Text{"Enable it here!"}</span>
-                            </button>
-                        </div>
-                        <div class="Clear"></div>
-
-                    </fieldset>
-                </form>
+      <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="Action" value="AdminSysConfig">
+        <input type="hidden" name="Subaction" value="Edit">
+        <input type="hidden" name="SysConfigGroup" value="Framework">
+        <input type="hidden" name="SysConfigSubGroup" value="Core::PerformanceLog">
+        <table width="100%" cellspacing="0" cellpadding="4">
+          <tr>
+            <td class="contenthead">
+              $Text{"This feature is disabled!"}:
+            </td>
+          </tr>
+          <tr>
+            <td class="contentbody">
+              <p>$Text{"Just use this feature if you want to log each request."}<font color="red">*</font></p>
+              <p><font color="red">$Text{"Of couse this feature will take some system performance it self!"}</font></p>
+            </td>
+          </tr>
+          <tr>
+            <td class="contentfooter">
+              <input class="button" type="submit" value="$Text{"Enable it here!"}">
+            </td>
+          </tr>
+        </table>
+      </form>
 <!-- dtl:block:Disabled -->
+    </td>
+    <td width="70%" class="mainbody">
 <!-- dtl:block:Reset -->
-                <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                    <input type="hidden" name="Subaction" value="Reset"/>
-                    <h3>$Text{"Logfile too large!"} ($QData{"Size"})</h3>
-                    <fieldset>
-                        <p class="Error">
-                            $Text{"The logfile is too large, you need to reset it"} ($QData{"Size"}).
-                        </p>
-                        <div class="Field SpacingTop">
-                            <button class="CallForAction" type="submit" value="$Text{"Reset"}">
-                                <span>$Text{"Reset"}</span>
-                            </button>
-                        </div>
-                        <div class="Clear"></div>
-
-                    </fieldset>
-                </form>
+      <table border="0" width="100%" align="center" cellspacing="0" cellpadding="4">
+        <tr>
+          <td class="contenthead">
+            $Text{"Logfile too large!"} ($QData{"Size"} MB)
+          </td>
+        </tr>
+        <tr>
+          <td class="contentbody">
+            <table border="0" width="700" align="center" cellspacing="0" cellpadding="4">
+              <tr>
+                <td>
+                  $Text{"Logfile too large, you need to reset it!"}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td class="contentfooter">
+            <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
+              <input type="hidden" name="Action" value="$Env{"Action"}">
+              <input type="hidden" name="Subaction" value="Reset">
+              <input class="button" type="submit" value="$Text{"Reset"}">
+            </form>
+          </td>
+        </tr>
+      </table>
+      <br>
 <!-- dtl:block:Reset -->
-            </div>
-        </div>
-    </div>
-
-<!-- dtl:block:Overview -->
-    <div class="ContentColumn">
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"Overview"}</h2>
-            </div>
-
-<!-- dtl:block:OverviewTable -->
-            <h3 class="Spacing">$Text{"Range"} ($Text{"last"} $QData{"Age"})</h3>
-            <div class="Content">
-
-                <table class="DataTable">
-                    <thead>
-                        <tr>
-                            <th>$Text{"Interface"}</th>
-                            <th>$Text{"Requests"}</th>
-                            <th>$Text{"Min Response"}</th>
-                            <th>$Text{"Max Response"}</th>
-                            <th>$Text{"Average Response"}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-<!-- dtl:block:OverviewInterface -->
-                        <tr>
-                            <td>
-                                <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=View;Interface=$LQData{"Interface"};Minute=$LQData{"Minute"}" title="$QData{"Interface"}">
-                                    $QData{"Interface", "40"}
-                                </a>
-                            </td>
-                            <td>$QData{"Count"}</td>
-                            <td>$QData{"Min"}s</td>
-                            <td>$QData{"Max"}s</td>
-                            <td>$QData{"Average"}s</td>
-                        </tr>
-<!-- dtl:block:OverviewRow -->
-                        <tr>
-                            <td class="Indent">
-                                <em>
-                                <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=View;Interface=$LQData{"Interface"};Module=$LQData{"Module"};Minute=$LQData{"Minute"}" title="$QData{"Module"}">
-                                    $QData{"Module", "40"}
-                                </a>
-                                </em>
-                            </td>
-                            <td><em>$QData{"Count"}</em></td>
-                            <td><em>$QData{"Min"}s</em></td>
-                            <td><em>$QData{"Max"}s</em></td>
-                            <td><em>$QData{"Average"}s</em></td>
-                        </tr>
-<!-- dtl:block:OverviewRow -->
-<!-- dtl:block:OverviewInterface -->
-                    </tbody>
-                </table>
-<!-- dtl:block:OverviewTable -->
-            </div>
-        </div>
-    </div>
-<!-- dtl:block:Overview -->
-
-<!-- dtl:block:View -->
-    <div class="ContentColumn">
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"Range"} ($Text{"last"} $QData{"Age"})</h2>
-            </div>
-            <div class="Content">
-                <p>
-                    <strong>$Text{"Interface"}:</strong> $QData{"Interface"},
-                    <strong>$Text{"Module"}:</strong> $QData{"Module"},
-                    <strong>$Text{"Period"}:</strong> $QData{"Period"} $Text{"minutes"}
-                </p>
-                <table class="DataTable SpacingTop AdminPerformanceLog">
-                    <thead>
-                        <tr>
-                            <th>$Text{"Date"}</th>
-                            <th>$Text{"Requests"}</th>
-                            <th>$Text{"Min"}</th>
-                            <th>$Text{"Max"}</th>
-                            <th>$Text{"Average"}</th>
-                            <th class="ProgressbarColumn"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-<!-- dtl:block:ViewRow -->
-                        <tr>
-                            <td><em>$TimeShort{"$QData{"Date"}"}</em></td>
-                            <td><em>$QData{"Count"}</em></td>
-                            <td><em>$QData{"Min"}s</em></td>
-                            <td><em>$QData{"Max"}s</em></td>
-                            <td><em>$QData{"Average"}s</em></td>
-                            <td><div class="Progressbar" style="width:$QData{"Width"};">&nbsp;</div></td>
-                        </tr>
-<!-- dtl:block:ViewRow -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-<!-- dtl:block:View -->
-    <div class="Clear"></div>
-</div>
+<!-- dtl:block:Table -->
+      <table border="0" width="100%" align="center" cellspacing="0" cellpadding="4">
+        <tr>
+          <td class="contenthead">
+            $Text{"Range"} ($Text{"last"} $QData{"Age"})
+          </td>
+        </tr>
+        <tr>
+          <td class="contentbody">
+            <table border="0" width="700" align="center" cellspacing="0" cellpadding="4">
+              <tr>
+                <td class="contentkey">$Text{"Interface"}</td>
+                <td class="contentkey">$Text{"Requests"}</td>
+                <td class="contentkey">$Text{"Min Response"}</td>
+                <td class="contentkey">$Text{"Max Response"}</td>
+                <td class="contentkey">$Text{"Average Response"}</td>
+              </tr>
+<!-- dtl:block:Interface -->
+              <tr>
+                <td class="$QData{"CssClass"}">$QData{"Interface"}</td>
+                <td class="$QData{"CssClass"}">$QData{"Count"}</td>
+                <td class="$QData{"CssClass"}">$QData{"Min"}s</td>
+                <td class="$QData{"CssClass"}">$QData{"Max"}s</td>
+                <td class="$QData{"CssClass"}">$QData{"Average"}s</td>
+              </tr>
+<!-- dtl:block:Row -->
+              <tr>
+                <td class="$QData{"CssClass"}"><i> o $QData{"Interface"}</i></td>
+                <td class="$QData{"CssClass"}"><i>$QData{"Count"}</i></td>
+                <td class="$QData{"CssClass"}"><i>$QData{"Min"}s</i></td>
+                <td class="$QData{"CssClass"}"><i>$QData{"Max"}s</i></td>
+                <td class="$QData{"CssClass"}"><i>$QData{"Average"}s</i></td>
+              </tr>
+<!-- dtl:block:Row -->
+              <tr>
+                <td colspan="5">
+                  <hr>
+                </td>
+              </tr>
+<!-- dtl:block:Interface -->
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td class="contentfooter">
+            &nbsp;
+          </td>
+        </tr>
+      </table>
+      <br>
+<!-- dtl:block:Table -->
+    </td>
+  </tr>
+</table>
+<!-- end form -->
