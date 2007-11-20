@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.8 2007/10/26 13:07:20 ho Exp $
+# $Id: OTRS.pm,v 1.9 2007/11/20 17:37:56 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -16,7 +16,7 @@ use Kernel::System::Support;
 use Kernel::System::Ticket;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.8 $';
+$VERSION = '$Revision: 1.9 $';
 $VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
@@ -113,14 +113,14 @@ sub AdminChecksGet {
             return;
         }
     }
-    my $OneCheck = $Self->OpenTicketCheck();
-    push (@{$DataArray}, $OneCheck);
+    push (@{$DataArray}, $Self->OpenTicketCheck());
 
-    $OneCheck = $Self->TicketIndexModuleCheck();
-    push (@{$DataArray}, $OneCheck);
+    push (@{$DataArray}, $Self->TicketIndexModuleCheck());
 
-    $OneCheck = $Self->FQDNConfigCheck();
-    push (@{$DataArray}, $OneCheck);
+    push (@{$DataArray}, $Self->LogCheck());
+
+    push (@{$DataArray}, $Self->FQDNConfigCheck());
+
     return $DataArray;
 }
 
@@ -284,6 +284,47 @@ sub OTRSCheckModulesGet {
     return $ReturnHash;
 }
 
+# check if error log entries are available
+sub LogCheck {
+    my $Self = shift;
+    my %Param = @_;
+    my $Data = {};
+
+    # Ticket::IndexModule check
+    my $Check = 'OK';
+    my $Message = '';
+    my $Error = '';
+
+    my @Lines = split( /\n/, $Self->{LogObject}->GetLog() );
+    for (@Lines) {
+        my @Row = split( /;;/, $_ );
+        if ( $Row[3] ) {
+            if ( $Row[1] =~ /error/i ) {
+                $Check = 'Failed';
+                if ( $Message ) {
+                    $Message = 'You have more error log entries: ';
+                }
+                else {
+                    $Message = 'There is one error log entry: ';
+                }
+                if ( $Error ) {
+                    $Error .= ", ";
+                }
+                $Error .= $Row[3];
+            }
+        }
+    }
+
+    $Data = {
+        Key => 'LogCheck',
+        Name => 'LogCheck',
+        Description => "Check log for error log enties.",
+        Comment => $Message . $Error,
+        Check => $Check,
+    },
+    return $Data;
+}
+
 sub TicketIndexModuleCheck {
     my $Self = shift;
     my %Param = @_;
@@ -330,12 +371,12 @@ sub TicketIndexModuleCheck {
     return $Data;
 }
 
+# OpenTicketCheck check
 sub OpenTicketCheck {
     my $Self = shift;
     my %Param = @_;
     my $Data = {};
 
-    # OpenTicketCheck check
     my $Check = 'Failed';
     my $Message = '';
     my @TicketIDs = $Self->{TicketObject}->TicketSearch(
