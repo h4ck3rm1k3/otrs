@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Webserver.pm,v 1.4 2007/09/27 10:13:57 sr Exp $
+# $Id: Webserver.pm,v 1.5 2007/11/22 13:05:10 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -12,10 +12,10 @@
 package Kernel::System::Support::Webserver;
 
 use strict;
+use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.4 $';
-$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
+$VERSION = qw($Revision: 1.5 $) [1];
 
 =head1 NAME
 
@@ -50,13 +50,14 @@ create Webserver info object
 =cut
 
 sub new {
-    my $Type = shift;
-    my %Param = @_;
+    my ( $Type, %Param ) = @_;
+
     # allocate new hash for object
     my $Self = {};
-    bless ($Self, $Type);
+    bless( $Self, $Type );
+
     # check needed objects
-    foreach (qw(ConfigObject LogObject MainObject)) {
+    for (qw(ConfigObject LogObject MainObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -99,12 +100,12 @@ return an array reference with required config information.
 =cut
 
 sub SupportConfigArrayGet {
-    my $Self = shift;
-    my %Param = @_;
+    my ( $Self, %Param ) = @_;
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
@@ -115,17 +116,18 @@ sub SupportConfigArrayGet {
 
     # create config array
     my $ConfigArray = [];
-#    my $ConfigArray = [
-#        {
-#            Key => 'ApacheHome',
-#            Name => 'Apache Home Directory',
-#            Description => 'Please tell me the path to the Apache home directory (/etc/apache2)',
-#            Input => {
-#                Type => 'Text',
-#                Size => 40,
-#            },
-#        },
-#    ];
+
+    #    my $ConfigArray = [
+    #        {
+    #            Key => 'ApacheHome',
+    #            Name => 'Apache Home Directory',
+    #            Description => 'Please tell me the path to the Apache home directory (/etc/apache2)',
+    #            Input => {
+    #                Type => 'Text',
+    #                Size => 40,
+    #            },
+    #        },
+    #    ];
 
     # ------------------------------------------------------------ #
     # Get information about used Webserver
@@ -133,7 +135,7 @@ sub SupportConfigArrayGet {
 
     # try to find out which Webserver is configured
     my $WebserverType = '';
-    if ($ENV{SERVER_SOFTWARE} =~ /^.*Apache.*$/i) {
+    if ( $ENV{SERVER_SOFTWARE} =~ /^.*Apache.*$/i ) {
         $WebserverType = 'Apache.pm';
     }
     else {
@@ -141,27 +143,32 @@ sub SupportConfigArrayGet {
     }
 
     # try to get availible modules and the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Webserver";
+    my $DirName = $Self->{ConfigObject}->Get('Home') . "/Kernel/System/Support/Webserver";
+
     # read all availible modules in @List
-    my @List = glob($DirName."/*.pm");
-    foreach my $File (@List) {
+    my @List = glob( $DirName . "/*.pm" );
+    for my $File (@List) {
+
         # remove .pm
         $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        if ($WebserverType eq $File) {
+        if ( $WebserverType eq $File ) {
             my $GenericModule = "Kernel::System::Support::Webserver::$File";
+
             # load module $GenericModule and check if loadable
-            if ($Self->{MainObject}->Require($GenericModule)){
+            if ( $Self->{MainObject}->Require($GenericModule) ) {
+
                 # create new object
-                my $SupportObject = $GenericModule->new(%{$Self});
+                my $SupportObject = $GenericModule->new( %{$Self} );
                 if ($SupportObject) {
                     my $ArrayRef = $SupportObject->SupportConfigArrayGet();
-                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
-                        push (@{$ConfigArray}, @{$ArrayRef});
+                    if ( $ArrayRef && ref($ArrayRef) eq 'ARRAY' ) {
+                        push( @{$ConfigArray}, @{$ArrayRef} );
                     }
                 }
             }
         }
     }
+
     # return config array
     return $ConfigArray;
 }
@@ -190,18 +197,20 @@ $WebserverArray => [
 =cut
 
 sub SupportInfoGet {
-    my $Self = shift;
-    my %Param = @_;
+    my ( $Self, %Param ) = @_;
+
     my $DataArray = [];
+
     # check needed stuff
-    foreach (qw(ModuleInputHash)) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw(ModuleInputHash)) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
-    if (ref($Param{ModuleInputHash}) ne 'HASH') {
-        $Self->{LogObject}->Log(Priority => 'error', Message => "ModuleInputHash must be a hash reference!");
+    if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
+        $Self->{LogObject}
+            ->Log( Priority => 'error', Message => "ModuleInputHash must be a hash reference!" );
         return;
     }
 
@@ -210,10 +219,10 @@ sub SupportInfoGet {
     # ------------------------------------------------------------ #
 
     # please add for each new check a part like this
-#    my $OneCheck = $Self->Check(
-#        Type => $Param{ModuleInputHash}->{Type} || '',
-#    );
-#    push (@{$DataArray}, $OneCheck);
+    #    my $OneCheck = $Self->Check(
+    #        Type => $Param{ModuleInputHash}->{Type} || '',
+    #    );
+    #    push (@{$DataArray}, $OneCheck);
 
     # ------------------------------------------------------------ #
     # Get information about used Webserver
@@ -221,31 +230,35 @@ sub SupportInfoGet {
 
     # try to find out which Webserver is configured
     my $WebserverType = '';
-    if ($ENV{SERVER_SOFTWARE} =~ /^.*Apache.*$/i) {
+    if ( $ENV{SERVER_SOFTWARE} =~ /^.*Apache.*$/i ) {
         $WebserverType = 'Apache';
     }
     else {
         $WebserverType = 'IIS';
     }
+
     # try to get availible modules and the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Webserver";
+    my $DirName = $Self->{ConfigObject}->Get('Home') . "/Kernel/System/Support/Webserver";
+
     # read all availible modules in @List
-    my @List = glob($DirName."/*.pm");
-    foreach my $File (@List) {
+    my @List = glob( $DirName . "/*.pm" );
+    for my $File (@List) {
+
         # remove .pm
         $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        if ($WebserverType eq $File) {
+        if ( $WebserverType eq $File ) {
             my $GenericModule = "Kernel::System::Support::Webserver::$File";
+
             # load module $GenericModule and check if loadable
-            if ($Self->{MainObject}->Require($GenericModule)){
+            if ( $Self->{MainObject}->Require($GenericModule) ) {
+
                 # create new object
-                my $SupportObject = $GenericModule->new(%{$Self});
+                my $SupportObject = $GenericModule->new( %{$Self} );
                 if ($SupportObject) {
                     my $ArrayRef = $SupportObject->SupportInfoGet(
-                        ModuleInputHash => $Param{ModuleInputHash},
-                    );
-                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
-                        push (@{$DataArray}, @{$ArrayRef});
+                        ModuleInputHash => $Param{ModuleInputHash}, );
+                    if ( $ArrayRef && ref($ArrayRef) eq 'ARRAY' ) {
+                        push( @{$DataArray}, @{$ArrayRef} );
                     }
                 }
             }
@@ -279,13 +292,14 @@ $WebserverArray => [
 =cut
 
 sub AdminChecksGet {
-    my $Self = shift;
-    my %Param = @_;
+    my ( $Self, %Param ) = @_;
+
     my $DataArray = [];
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
@@ -295,8 +309,8 @@ sub AdminChecksGet {
     # ------------------------------------------------------------ #
 
     # please add for each new check a part like this
-#    my $OneCheck = $Self->Check();
-#    push (@{$DataArray}, $OneCheck);
+    #    my $OneCheck = $Self->Check();
+    #    push (@{$DataArray}, $OneCheck);
 
     # ------------------------------------------------------------ #
     # Get information about used Webserver
@@ -304,29 +318,34 @@ sub AdminChecksGet {
 
     # try to find out which Webserver is configured
     my $WebserverType = '';
-    if ($ENV{SERVER_SOFTWARE} =~ /^.*Apache.*$/i) {
+    if ( $ENV{SERVER_SOFTWARE} =~ /^.*Apache.*$/i ) {
         $WebserverType = 'Apache.pm';
     }
     else {
         $WebserverType = 'IIS.pm';
     }
+
     # try to get availible modules and the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Webserver";
+    my $DirName = $Self->{ConfigObject}->Get('Home') . "/Kernel/System/Support/Webserver";
+
     # read all availible modules in @List
-    my @List = glob($DirName."/*.pm");
-    foreach my $File (@List) {
+    my @List = glob( $DirName . "/*.pm" );
+    for my $File (@List) {
+
         # remove .pm
         $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        if ($WebserverType =~ /^$File/i) {
+        if ( $WebserverType =~ /^$File/i ) {
             my $GenericModule = "Kernel::System::Support::Webserver::$File";
+
             # load module $GenericModule and check if loadable
-            if ($Self->{MainObject}->Require($GenericModule)){
+            if ( $Self->{MainObject}->Require($GenericModule) ) {
+
                 # create new object
-                my $SupportObject = $GenericModule->new(%{$Self});
+                my $SupportObject = $GenericModule->new( %{$Self} );
                 if ($SupportObject) {
                     my $ArrayRef = $SupportObject->AdminChecksGet();
-                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
-                        push (@{$DataArray}, @{$ArrayRef});
+                    if ( $ArrayRef && ref($ArrayRef) eq 'ARRAY' ) {
+                        push( @{$DataArray}, @{$ArrayRef} );
                     }
                 }
             }
@@ -337,7 +356,7 @@ sub AdminChecksGet {
     return $DataArray;
 }
 
-=item Check()
+=item _Check()
 
 returns a hash reference with Check information.
 
@@ -357,23 +376,24 @@ if ($Param{Type}) {
 
 =cut
 
-sub Check {
-    my $Self = shift;
-    my %Param = @_;
+sub _Check {
+    my ( $Self, %Param ) = @_;
+
     my $ReturnHash = {};
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
 
     # If used OS is a linux system
-    if ($^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/) {
+    if ( $^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/ ) {
 
     }
-    elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
+    elsif ( $^O =~ /win/i ) {
 
     }
     return $ReturnHash;
@@ -395,6 +415,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.4 $ $Date: 2007/09/27 10:13:57 $
+$Revision: 1.5 $ $Date: 2007/11/22 13:05:10 $
 
 =cut
