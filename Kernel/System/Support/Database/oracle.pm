@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/oracle.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.8 2007/11/22 11:53:54 sr Exp $
+# $Id: oracle.pm,v 1.7 2007/11/22 11:50:21 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.8 $) [1];
+$VERSION = qw($Revision: 1.7 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -100,7 +100,7 @@ sub AdminChecksGet {
     for my $FunctionName (@ModuleList) {
 
         # run function and get check data
-        my $Check = $Self->$FunctionName();
+        my $Check = $Self->$FunctionName( Type => $Param{ModuleInputHash}->{Type} || '', );
 
         next FUNCTIONNAME if !$Check;
 
