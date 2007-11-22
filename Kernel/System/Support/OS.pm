@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.6 2007/11/22 12:29:02 sr Exp $
+# $Id: OS.pm,v 1.7 2007/11/22 15:57:24 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.6 $) [1];
+$VERSION = qw($Revision: 1.7 $) [1];
 
 =head1 NAME
 
@@ -231,16 +231,8 @@ sub _DistributionCheck {
 
     my $ReturnHash = {};
 
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
     # If used OS is a linux system
-    if ( $^O =~ /(linux|unix|netbsd|freebsd|darwin)/i ) {
+    if ( $^O =~ /(linux|unix|netbsd|darwin)/i ) {
         my $TmpLine = "";
         my $Distribution;
         if ( open( $Distribution, '<', "/etc/issue" ) ) {
@@ -270,7 +262,7 @@ sub _DistributionCheck {
             };
         }
     }
-    elsif ( $^O =~ /win/i ) {
+    elsif ( $^O =~ /(win|freebsd)/i ) {
         $ReturnHash = {
             Key         => 'DistributionCheck',
             Name        => 'Distribution',
@@ -286,14 +278,6 @@ sub _KernelInfoCheck {
     my ( $Self, %Param ) = @_;
 
     my $ReturnHash = {};
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
 
     # If used OS is a linux system
     if ( $^O =~ /(linux|unix|netbsd|freebsd|darwin)/i ) {
@@ -348,6 +332,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.6 $ $Date: 2007/11/22 12:29:02 $
+$Revision: 1.7 $ $Date: 2007/11/22 15:57:24 $
 
 =cut
