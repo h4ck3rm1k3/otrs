@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mssql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mssql.pm,v 1.4 2007/11/22 11:54:26 sr Exp $
+# $Id: mssql.pm,v 1.5 2007/11/22 15:09:14 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.4 $) [1];
+$VERSION = qw($Revision: 1.5 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -130,6 +130,9 @@ sub _TableCheck {
             my @XMLHash = $Self->{XMLObject}->XMLParse2XMLHash( String => $Content );
             for my $Table ( @{ $XMLHash[1]->{database}->[1]->{Table} } ) {
                 if ($Table) {
+                    if ($Table->{Name} eq system_user) {
+                        $Table->{Name} = 'system_user2';
+                    }
                     $Count++;
                     if ( $Self->{DBObject}
                         ->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 ) )
