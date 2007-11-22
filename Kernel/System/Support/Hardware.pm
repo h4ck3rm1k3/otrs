@@ -2,7 +2,7 @@
 # Kernel/System/Support/Hardware.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Hardware.pm,v 1.10 2007/11/22 12:25:18 sr Exp $
+# $Id: Hardware.pm,v 1.11 2007/11/22 14:57:20 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.11 $) [1];
 
 =head1 NAME
 
@@ -437,9 +437,8 @@ sub _DiskUsageCheck {
             Comment     => $Message,
             Check       => $Check,
         };
+        return $Data;
     }
-
-    return $Data;
 }
 
 1;
@@ -458,6 +457,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.10 $ $Date: 2007/11/22 12:25:18 $
+$Revision: 1.11 $ $Date: 2007/11/22 14:57:20 $
 
 =cut
