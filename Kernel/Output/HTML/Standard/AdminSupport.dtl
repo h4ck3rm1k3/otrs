@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.4 2007/11/22 16:02:28 sr Exp $
+# $Id: AdminSupport.dtl,v 1.5 2007/11/22 16:51:08 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -31,10 +31,10 @@
           <td class="contentbody">
             <table width="100%" border="0" cellspacing="0" cellpadding="3">
               <tr>
-                <td class="contentkey" width="150">$Text{"Check"}</td>
-                <td class="contentkey" width="250">$Text{"Description"}</td>
-                <td class="contentkey">$Text{"Comment"}</td>
-                <td class="contentkey" width="50">$Text{"State"}</td>
+                <td class="contentkey" width="20%">$Text{"Check"}</td>
+                <td class="contentkey" width="30%">$Text{"Description"}</td>
+                <td class="contentkey" width="40%">$Text{"Comment"}</td>
+                <td class="contentkey" width="10%">$Text{"State"}</td>
               </tr>
 <!-- dtl:block:OverviewModuleRow -->
               <tr>
