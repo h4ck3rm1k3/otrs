@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.3 2007/06/12 13:01:59 martin Exp $
+# $Id: AdminSupport.dtl,v 1.4 2007/11/22 16:02:28 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -149,6 +149,41 @@ Any and all information disclosed to OTRS will be kept strictly confidential and
                   <td class="contentkey" width="150">$Text{"Commercial support ID"}:</td>
                   <td class="contentvalue"><input type="Text" name="SupportID" value="" size="40"></td>
                   <td class="contentvalue"><font color="red" size="-2"> (* $Text{"if you are already a commercial support customer, please add your support id. (not required!)"})</font></td>
+                </tr>
+                <tr>
+                  <td class="contentkey" width="150">$Text{"Company"}:</td>
+                  <td class="contentvalue"><input type="Text" name="Company" value="" size="40"></td>
+                  <td class="contentvalue"><font color="red" size="-2"></font></td>
+                </tr>
+                <tr>
+                  <td class="contentkey" width="150">$Text{"Street"}:</td>
+                  <td class="contentvalue"><input type="Text" name="Street" value="" size="40"></td>
+                  <td class="contentvalue"><font color="red" size="-2"></font></td>
+                </tr>
+                <tr>
+                  <td class="contentkey" width="150">$Text{"Postcode"}:</td>
+                  <td class="contentvalue"><input type="Text" name="Postcode" value="" size="40"></td>
+                  <td class="contentvalue"><font color="red" size="-2"></font></td>
+                </tr>
+                <tr>
+                  <td class="contentkey" width="150">$Text{"City"}:</td>
+                  <td class="contentvalue"><input type="Text" name="City" value="" size="40"></td>
+                  <td class="contentvalue"><font color="red" size="-2"></font></td>
+                </tr>
+                <tr>
+                  <td class="contentkey" width="150">$Text{"Email"}:</td>
+                  <td class="contentvalue"><input type="Text" name="Email" value="" size="40"></td>
+                  <td class="contentvalue"><font color="red" size="-2"></font></td>
+                </tr>
+                <tr>
+                  <td class="contentkey" width="150">$Text{"Phone"}:</td>
+                  <td class="contentvalue"><input type="Text" name="Phone" value="" size="40"></td>
+                  <td class="contentvalue"><font color="red" size="-2"></font></td>
+                </tr>
+                <tr>
+                  <td class="contentkey" width="300">$Text{"Please send me informations about ((otrs)) support packages."}:</td>
+                  <td class="contentvalue"><input type="radio" name="SendInfo" value="" size="10"></td>
+                  <td class="contentvalue"><font color="red" size="-2"></font></td>
                 </tr>
               </table>
             </td>

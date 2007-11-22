@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/oracle.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.9 2007/11/22 13:39:21 sr Exp $
+# $Id: oracle.pm,v 1.10 2007/11/22 15:58:08 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.9 $) [1];
+$VERSION = qw($Revision: 1.10 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -142,8 +142,6 @@ sub _OracleHomeCheck {
 sub _NLSLangCheck {
     my ( $Self, %Param ) = @_;
 
-    my $Data = {};
-
     # check NLS_LANG
     my $Check   = 'Failed';
     my $Message = 'No NLS_LANG found!';
@@ -163,7 +161,7 @@ sub _NLSLangCheck {
             $Check   = 'OK';
         }
     }
-    $Data = {
+    my $Data = {
         Key         => 'NLS_LANG',
         Name        => 'NLS_LANG',
         Description => "Check NLS_LANG.",
@@ -175,8 +173,6 @@ sub _NLSLangCheck {
 
 sub _NLSDateFormatCheck {
     my ( $Self, %Param ) = @_;
-
-    my $Data = {};
 
     # check NLS_DATE_FORMAT
     my $Check   = 'Failed';
@@ -192,7 +188,7 @@ sub _NLSDateFormatCheck {
             $Check   = 'OK';
         }
     }
-    $Data = {
+    my $Data = {
         Key         => 'NLS_DATE_FORMAT',
         Name        => 'NLS_DATE_FORMAT',
         Description => "Check NLS_DATE_FORMAT.",
