@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver/IIS.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: IIS.pm,v 1.3 2007/11/22 15:22:25 sr Exp $
+# $Id: IIS.pm,v 1.4 2007/11/22 15:22:38 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.3 $) [1];
+$VERSION = qw($Revision: 1.4 $) [1];
 
 =head1 NAME
 
@@ -251,7 +251,7 @@ sub _Check {
     if ( $^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/ ) {
 
     }
-    elsif ( $^O =~ /win/i ) {    # TODO / Ausgabe unter Windows noch pruefen
+    elsif ( $^O =~ /win/i ) {
 
     }
     return $ReturnHash;
@@ -273,6 +273,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.3 $ $Date: 2007/11/22 15:22:25 $
+$Revision: 1.4 $ $Date: 2007/11/22 15:22:38 $
 
 =cut
