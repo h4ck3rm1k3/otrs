@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mssql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mssql.pm,v 1.3 2007/09/27 12:10:49 sr Exp $
+# $Id: mssql.pm,v 1.4 2007/11/22 11:54:26 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -12,20 +12,22 @@
 package Kernel::System::Support::Database::mssql;
 
 use strict;
+use warnings;
+
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.3 $';
-$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
+$VERSION = qw($Revision: 1.4 $) [1];
 
 sub new {
-    my $Type = shift;
-    my %Param = @_;
+    my ( $Type, %Param ) = @_;
+
     # allocate new hash for object
     my $Self = {};
-    bless ($Self, $Type);
+    bless( $Self, $Type );
+
     # check needed objects
-    foreach (qw(ConfigObject LogObject DBObject)) {
+    for (qw(ConfigObject LogObject DBObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -35,87 +37,104 @@ sub new {
 }
 
 sub SupportConfigArrayGet {
-    my $Self = shift;
-    my %Param = @_;
+    my ( $Self, %Param ) = @_;
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
 }
 
 sub SupportInfoGet {
-    my $Self = shift;
-    my %Param = @_;
-    my $DataArray = [];
+    my ( $Self, %Param ) = @_;
+
     # check needed stuff
-    foreach (qw(ModuleInputHash)) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
-            return;
-        }
+    if ( !$Param{ModuleInputHash} ) {
+        $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+        return;
     }
-    if (ref($Param{ModuleInputHash}) ne 'HASH') {
-        $Self->{LogObject}->Log(Priority => 'error', Message => "ModuleInputHash must be a hash reference!");
+    if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
+        $Self->{LogObject}
+            ->Log( Priority => 'error', Message => "ModuleInputHash must be a hash reference!" );
         return;
     }
 
-    my $OneCheck = $Self->TableCheck();
-    push (@{$DataArray}, $OneCheck);
+    # add new function name here
+    my @ModuleList = (
+        '_TableCheck',
+    );
 
-#    # please add for each new check a part like this
-#    my $OneCheck = $Self->Check(
-#        Type => $Param{ModuleInputHash}->{Type} || '',
-#    push (@{$DataArray}, $OneCheck);
+    my @DataArray;
 
-    return $DataArray;
+    FUNCTIONNAME:
+    for my $FunctionName (@ModuleList) {
+
+        # run function and get check data
+        my $Check = $Self->$FunctionName( Type => $Param{ModuleInputHash}->{Type} || '', );
+
+        next FUNCTIONNAME if !$Check;
+
+        # attach check data if valid
+        push @DataArray, $Check;
+    }
+
+    return \@DataArray;
 }
 
 sub AdminChecksGet {
-    my $Self = shift;
-    my %Param = @_;
-    my $DataArray = [];
-    # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
-            return;
-        }
+    my ( $Self, %Param ) = @_;
+
+    # add new function name here
+    my @ModuleList = (
+        '_TableCheck',
+    );
+
+    my @DataArray;
+
+    FUNCTIONNAME:
+    for my $FunctionName (@ModuleList) {
+
+        # run function and get check data
+        my $Check = $Self->$FunctionName();
+
+        next FUNCTIONNAME if !$Check;
+
+        # attach check data if valid
+        push @DataArray, $Check;
     }
 
-    my $OneCheck = $Self->TableCheck();
-    push (@{$DataArray}, $OneCheck);
-
-    return $DataArray;
+    return \@DataArray;
 }
 
-sub TableCheck {
-    my $Self = shift;
-    my %Param = @_;
+sub _TableCheck {
+    my ( $Self, %Param ) = @_;
+
     my $Data = {};
 
     # table check
-    my $File = $Self->{ConfigObject}->Get('Home')."/scripts/database/otrs-schema.xml";
-    if (-f $File) {
-        my $Count = 0;
-        my $Check = 'Failed';
+    my $File = $Self->{ConfigObject}->Get('Home') . "/scripts/database/otrs-schema.xml";
+    if ( -f $File ) {
+        my $Count   = 0;
+        my $Check   = 'Failed';
         my $Message = '';
         my $Content = '';
         my $In;
-        if (open($In, '<', "$File")) {
+        if ( open( $In, '<', "$File" ) ) {
             while (<$In>) {
                 $Content .= $_;
             }
-            close ($In);
-            my @XMLHash = $Self->{XMLObject}->XMLParse2XMLHash(String => $Content);
-
-            foreach my $Table (@{$XMLHash[1]->{database}->[1]->{Table}}) {
+            close($In);
+            my @XMLHash = $Self->{XMLObject}->XMLParse2XMLHash( String => $Content );
+            for my $Table ( @{ $XMLHash[1]->{database}->[1]->{Table} } ) {
                 if ($Table) {
                     $Count++;
-                    if ($Self->{DBObject}->Prepare(SQL => "select * from $Table->{Name}", Limit => 1)) {
-                        while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+                    if ( $Self->{DBObject}
+                        ->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 ) )
+                    {
+                        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
                         }
                     }
                     else {
@@ -127,35 +146,38 @@ sub TableCheck {
                 $Message = "Table dosn't exists: $Message";
             }
             else {
-                $Check = 'OK';
+                $Check   = 'OK';
                 $Message = "$Count Tables";
             }
             $Data = {
-                Key => 'Table',
-                Name => 'Table',
+                Key         => 'Table',
+                Name        => 'Table',
                 Description => "Check existing framework tables.",
-                Comment => $Message,
-                Check => $Check,
-            },
+                Comment     => $Message,
+                Check       => $Check,
+                },
+                ;
         }
         else {
             $Data = {
-                Key => 'Table',
-                Name => 'Table',
+                Key         => 'Table',
+                Name        => 'Table',
                 Description => "Check existing framework tables.",
-                Comment => "Can't open file $File: $!",
-                Check => $Check,
-            },
+                Comment     => "Can't open file $File: $!",
+                Check       => $Check,
+                },
+                ;
         }
     }
     else {
         $Data = {
-            Key => 'Table',
-            Name => 'Table',
+            Key         => 'Table',
+            Name        => 'Table',
             Description => "Check existing framework tables.",
-            Comment => "Can't find file $File!",
-            Check => 'Failed',
-        },
+            Comment     => "Can't find file $File!",
+            Check       => 'Failed',
+            },
+            ;
     }
     return $Data;
 }
