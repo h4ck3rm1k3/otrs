@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.12 2007/11/22 11:50:05 sr Exp $
+# $Id: mysql.pm,v 1.13 2007/11/22 13:37:10 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.13 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -255,7 +255,7 @@ sub _UTF8DatabaseCheck {
         Description => "Check the utf8 database character.",
         Comment     => $Message,
         Check       => $Check,
-        },
+        };
         return $Data;
 }
 
