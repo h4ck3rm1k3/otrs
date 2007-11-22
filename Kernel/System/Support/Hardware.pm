@@ -2,7 +2,7 @@
 # Kernel/System/Support/Hardware.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Hardware.pm,v 1.8 2007/10/04 07:02:33 sr Exp $
+# $Id: Hardware.pm,v 1.9 2007/11/22 12:24:57 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -12,10 +12,10 @@
 package Kernel::System::Support::Hardware;
 
 use strict;
+use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.8 $';
-$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
+$VERSION = qw($Revision: 1.9 $) [1];
 
 =head1 NAME
 
@@ -50,13 +50,14 @@ $SystemInfoObject = Kernel::System::Support::Hardware->new(
 =cut
 
 sub new {
-    my $Type = shift;
-    my %Param = @_;
+    my ( $Type, %Param ) = @_;
+
     # allocate new hash for object
     my $Self = {};
-    bless ($Self, $Type);
+    bless( $Self, $Type );
+
     # check needed objects
-    foreach (qw(ConfigObject LogObject)) {
+    for (qw(ConfigObject LogObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -99,17 +100,19 @@ my $ConfigArray = [
 =cut
 
 sub SupportConfigArrayGet {
-    my $Self = shift;
-    my %Param = @_;
+    my ( $Self, %Param ) = @_;
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
+
     # create config array
     my $ConfigArray = [];
+
     # return config array
     return $ConfigArray;
 }
@@ -138,32 +141,40 @@ $HardwareArray => [
 =cut
 
 sub SupportInfoGet {
-    my $Self = shift;
-    my %Param = @_;
-    my $DataArray = [];
+    my ( $Self, %Param ) = @_;
+
     # check needed stuff
-    foreach (qw(ModuleInputHash)) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
-            return;
-        }
-    }
-    if (ref($Param{ModuleInputHash}) ne 'HASH') {
-        $Self->{LogObject}->Log(Priority => 'error', Message => "ModuleInputHash must be a hash reference!");
+    if ( !$Param{ModuleInputHash} ) {
+        $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
         return;
     }
-    # please add for each new check a part like this
-    my $OneCheck = $Self->MemorySwapCheck(
-        Type => $Param{ModuleInputHash}->{Type} || '',
-    );
-    push (@{$DataArray}, $OneCheck);
-    # please add for each new check a part like this
-    $OneCheck = $Self->CPULoadCheck(
-        Type => $Param{ModuleInputHash}->{Type} || '',
-    );
-    push (@{$DataArray}, $OneCheck);
+    if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
+        $Self->{LogObject}
+            ->Log( Priority => 'error', Message => "ModuleInputHash must be a hash reference!" );
+        return;
+    }
 
-    return $DataArray;
+    # add new function name here
+    my @ModuleList = (
+        '_CPULoadCheck', '_DiskUsageCheck',
+        '_MemorySwapCheck',
+    );
+
+    my @DataArray;
+
+    FUNCTIONNAME:
+    for my $FunctionName (@ModuleList) {
+
+        # run function and get check data
+        my $Check = $Self->$FunctionName( Type => $Param{ModuleInputHash}->{Type} || '', );
+
+        next FUNCTIONNAME if !$Check;
+
+        # attach check data if valid
+        push @DataArray, $Check;
+    }
+
+    return \@DataArray;
 }
 
 =item AdminChecksGet()
@@ -190,30 +201,32 @@ $HardwareArray => [
 =cut
 
 sub AdminChecksGet {
-    my $Self = shift;
-    my %Param = @_;
-    my $DataArray = [];
-    # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
-            return;
-        }
+    my ( $Self, %Param ) = @_;
+
+    # add new function name here
+    my @ModuleList = (
+        '_CPULoadCheck', '_DiskUsageCheck',
+        '_MemorySwapCheck',
+    );
+
+    my @DataArray;
+
+    FUNCTIONNAME:
+    for my $FunctionName (@ModuleList) {
+
+        # run function and get check data
+        my $Check = $Self->$FunctionName();
+
+        next FUNCTIONNAME if !$Check;
+
+        # attach check data if valid
+        push @DataArray, $Check;
     }
-    # please add for each new check a part like this
-    my $OneCheck = $Self->MemorySwapCheck();
-    push (@{$DataArray}, $OneCheck);
 
-    $OneCheck = $Self->CPULoadCheck();
-    push (@{$DataArray}, $OneCheck);
-
-    $OneCheck = $Self->DiskUsageCheck();
-    push (@{$DataArray}, $OneCheck);
-
-    return $DataArray;
+    return \@DataArray;
 }
 
-=item MemorySwapCheck()
+=item _MemorySwapCheck()
 
 returns a hash reference with MemorySwapCheck information.
 
@@ -232,169 +245,175 @@ if ($Param{Type}) {
 }
 
 =cut
-
-sub MemorySwapCheck {
-    my $Self = shift;
-    my %Param = @_;
+sub _MemorySwapCheck {
+    my ( $Self, %Param ) = @_;
     my $ReturnHash = {};
-    # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
-            return;
-        }
-    }
+
     my $MemInfoFile;
-    my %MemTmpInfo = ();
+    my $MemTotal;
+    my $MemFree;
+    my $SwapTotal;
+    my $SwapFree;
+
     # If used OS is a linux system
-    if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
-        if (-e "/proc/meminfo") {
-            open($MemInfoFile, '<', "/proc/meminfo");
-            while(<$MemInfoFile>) {
+    if ( $^O =~ /(linux|unix|netbsd|freebsd|darwin)/i ) {
+        if ( open( $MemInfoFile, '<', "/proc/meminfo" ) ) {
+            while (<$MemInfoFile>) {
                 my $TmpLine = $_;
-                if ($TmpLine =~ /MemTotal/) {
+                if ( $TmpLine =~ /MemTotal/ ) {
                     $TmpLine =~ s/^.*?(\d+).*$/$1/;
-                    $MemTmpInfo{MemorySwapCheck}{MemTotal} = int($TmpLine);
+                    $MemTotal = int($TmpLine);
                 }
-                elsif ($TmpLine =~ /MemFree/) {
+                elsif ( $TmpLine =~ /MemFree/ ) {
                     $TmpLine =~ s/^.*?(\d+).*$/$1/;
-                    $MemTmpInfo{MemorySwapCheck}{MemFree} = int($TmpLine);
+                    $MemFree = int($TmpLine);
                 }
-                elsif ($TmpLine =~ /SwapTotal/) {
+                elsif ( $TmpLine =~ /SwapTotal/ ) {
                     $TmpLine =~ s/^.*?(\d+).*$/$1/;
-                    $MemTmpInfo{MemorySwapCheck}{SwapTotal} = int($TmpLine);
+                    $SwapTotal = int($TmpLine);
                 }
-                elsif ($TmpLine =~ /SwapFree/) {
+                elsif ( $TmpLine =~ /SwapFree/ ) {
                     $TmpLine =~ s/^.*?(\d+).*$/$1/;
-                    $MemTmpInfo{MemorySwapCheck}{SwapFree} = int($TmpLine);
+                    $SwapFree = int($TmpLine);
                 }
             }
             close($MemInfoFile);
 
             # build return hash
-            my $Describtion = "The Host System has: \n"
-                .int($MemTmpInfo{MemorySwapCheck}{MemTotal} / 1024) . " MB Memory total \n"
-                .int($MemTmpInfo{MemorySwapCheck}{MemFree} / 1024) . " MB Memory free \n"
-                .int($MemTmpInfo{MemorySwapCheck}{SwapTotal} / 1024) . " MB Swap total \n"
-                .int($MemTmpInfo{MemorySwapCheck}{SwapFree} / 1024) . " MB Swap free ";
+            my $Describtion
+                = "The Host System has: \n"
+                . int( $MemTotal / 1024 )
+                . " MB Memory total \n"
+                . int( $MemFree / 1024 )
+                . " MB Memory free \n"
+                . int( $SwapTotal / 1024 )
+                . " MB Swap total \n"
+                . int( $SwapFree / 1024 )
+                . " MB Swap free ";
 
-            if (!$MemTmpInfo{MemorySwapCheck}{SwapTotal}){
+            if ( !$SwapTotal ) {
                 $ReturnHash = {
-                    Key => 'MemorySwapCheck',
-                    Name => 'Memory Swap Check',
+                    Key         => 'MemorySwapCheck',
+                    Name        => 'Memory Swap Check',
                     Description => "A Memory Check. We try to find out if \n"
-                        ."SwapFree : SwapTotal < 60 % \n"
-                        ." or if more than 200 MB Swap is used.",
+                        . "SwapFree : SwapTotal < 60 % \n"
+                        . " or if more than 200 MB Swap is used.",
                     Comment => "No Swap enabled!",
-                    Check => 'Failed',
+                    Check   => 'Failed',
                 };
             }
-            elsif ((($MemTmpInfo{MemorySwapCheck}{SwapFree})/($MemTmpInfo{MemorySwapCheck}{SwapTotal}) < 60) ||
-                (($MemTmpInfo{MemorySwapCheck}{SwapTotal})-($MemTmpInfo{MemorySwapCheck}{SwapFree}) > 20000)
-            ) {
+            elsif (( ($SwapFree) / ($SwapTotal) < 60 )
+                || ( ($SwapTotal) - ($SwapFree) > 20000 ) )
+            {
                 $ReturnHash = {
-                    Key => 'MemorySwapCheck',
-                    Name => 'Memory Swap Check',
+                    Key         => 'MemorySwapCheck',
+                    Name        => 'Memory Swap Check',
                     Description => "A Memory Check. We try to find out if \n"
-                        ."SwapFree : SwapTotal < 60 % \n"
-                        ." or if more than 200 MB Swap is used.",
+                        . "SwapFree : SwapTotal < 60 % \n"
+                        . " or if more than 200 MB Swap is used.",
                     Comment => "$Describtion",
-                    Check => 'OK',
+                    Check   => 'OK',
                 };
             }
             else {
                 $ReturnHash = {
-                    Key => 'MemorySwapCheck',
-                    Name => 'Memory Swap Check',
+                    Key         => 'MemorySwapCheck',
+                    Name        => 'Memory Swap Check',
                     Description => "A Memory Check. We try to find out if \n"
-                        ."SwapFree : SwapTotal < 60 % \n"
-                        ." or if more than 200 MB Swap is used.",
+                        . "SwapFree : SwapTotal < 60 % \n"
+                        . " or if more than 200 MB Swap is used.",
                     Comment => "$Describtion",
-                    Check => 'Failed',
+                    Check   => 'Failed',
                 };
             }
         }
     }
-    elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
+    elsif ( $^O =~ /win/i ) {
         return;
     }
 
     return $ReturnHash;
 }
 
-sub CPULoadCheck {
-    my $Self = shift;
-    my %Param = @_;
+sub _CPULoadCheck {
+    my ( $Self, %Param ) = @_;
+
     my $ReturnHash = {};
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
     my @SplitArray = {};
+
     # If used OS is a linux system
-    if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
-        if (-e "/proc/loadavg") {
+    if ( $^O =~ /(linux|unix|netbsd|freebsd|darwin)/i ) {
+        if ( -e "/proc/loadavg" ) {
             my $LoadFile;
-            open($LoadFile, '<', "/proc/loadavg");
-            while(<$LoadFile>) {
-                @SplitArray = split (" ", $_);
+            open( $LoadFile, '<', "/proc/loadavg" );
+            while (<$LoadFile>) {
+                @SplitArray = split( " ", $_ );
             }
             close($LoadFile);
 
             # build return hash
-            my $Describtion = "The Host System has a load: \n"
-                . $SplitArray[0] . " in the last 1 minute \n"
-                . $SplitArray[1] . " in the last 5 minutes \n"
-                . $SplitArray[2] . " in the last 15 minutes";
+            my $Describtion
+                = "The Host System has a load: \n"
+                . $SplitArray[0]
+                . " in the last 1 minute \n"
+                . $SplitArray[1]
+                . " in the last 5 minutes \n"
+                . $SplitArray[2]
+                . " in the last 15 minutes";
 
-            if ($SplitArray[2] < '1.00') {
+            if ( $SplitArray[2] < '1.00' ) {
                 $ReturnHash = {
-                    Key => 'CPULoadCheck',
-                    Name => 'CPU Load',
+                    Key         => 'CPULoadCheck',
+                    Name        => 'CPU Load',
                     Description => "A CPU load check. We try to find out if \n"
-                        ."the system load in the last 15 minutes > 1. \n",
+                        . "the system load in the last 15 minutes > 1. \n",
                     Comment => "$Describtion",
-                    Check => 'OK',
+                    Check   => 'OK',
                 };
             }
             else {
                 $ReturnHash = {
-                    Key => 'CPULoadCheck',
-                    Name => 'CPU Load',
+                    Key         => 'CPULoadCheck',
+                    Name        => 'CPU Load',
                     Description => "A CPU load check. We try to find out if \n"
-                        ."the system load in the last 15 minutes < 1 \n",
+                        . "the system load in the last 15 minutes < 1 \n",
                     Comment => "$Describtion",
-                    Check => 'Failed',
+                    Check   => 'Failed',
                 };
             }
         }
     }
-    elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
+    elsif ( $^O =~ /win/i ) {    # TODO / Ausgabe unter Windows noch pruefen
         return;
     }
     return $ReturnHash;
 }
 
-sub DiskUsageCheck {
-    my $Self = shift;
-    my %Param = @_;
-    my $Data = {};
-    my $Check = 'OK';
+sub _DiskUsageCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $Data    = {};
+    my $Check   = 'OK';
     my $Message = '';
 
     # If used OS is a linux system
-    if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
+    if ( $^O =~ /(linux|unix|netbsd|freebsd|darwin)/i ) {
         my $In;
-        if (open($In, "df -l |")) {
-            while(<$In>) {
-                if ($_ =~ /^(.+?)\s.*\s(\d\d\d|\d\d|\d)%.+?$/) {
-                    if ($2 > 90) {
+        if ( open( $In, "df -l |" ) ) {
+            while (<$In>) {
+                if ( $_ =~ /^(.+?)\s.*\s(\d\d\d|\d\d|\d)%.+?$/ ) {
+                    if ( $2 > 90 ) {
                         $Check = 'Failed';
                     }
-                    if ($Check ne 'Failed' && $2 > 85) {
+                    if ( $Check ne 'Failed' && $2 > 85 ) {
                         $Check = 'Critical';
                     }
                     if ($Message) {
@@ -404,7 +423,7 @@ sub DiskUsageCheck {
                 }
             }
             close($In);
-            if ($Check eq 'Failed') {
+            if ( $Check eq 'Failed' ) {
                 $Message = "Disk ist full ($Message).";
             }
             else {
@@ -412,11 +431,11 @@ sub DiskUsageCheck {
             }
         }
         $Data = {
-            Key => 'disk usage',
-            Name => 'disk usage',
+            Key         => 'disk usage',
+            Name        => 'disk usage',
             Description => "Check disk usage.",
-            Comment => $Message,
-            Check => $Check,
+            Comment     => $Message,
+            Check       => $Check,
         };
     }
 
@@ -439,6 +458,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.8 $ $Date: 2007/10/04 07:02:33 $
+$Revision: 1.9 $ $Date: 2007/11/22 12:24:57 $
 
 =cut

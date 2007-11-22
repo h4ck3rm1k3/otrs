@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.5 2007/10/04 08:33:32 sr Exp $
+# $Id: OS.pm,v 1.6 2007/11/22 12:29:02 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -12,10 +12,10 @@
 package Kernel::System::Support::OS;
 
 use strict;
+use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.5 $';
-$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
+$VERSION = qw($Revision: 1.6 $) [1];
 
 =head1 NAME
 
@@ -50,13 +50,14 @@ $SystemInfoObject = Kernel::System::Support::OS->new(
 =cut
 
 sub new {
-    my $Type = shift;
-    my %Param = @_;
+    my ( $Type, %Param ) = @_;
+
     # allocate new hash for object
     my $Self = {};
-    bless ($Self, $Type);
+    bless( $Self, $Type );
+
     # check needed objects
-    foreach (qw(ConfigObject LogObject)) {
+    for (qw(ConfigObject LogObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -99,19 +100,21 @@ return an array reference with required config information.
 =cut
 
 sub SupportConfigArrayGet {
-    my $Self = shift;
-    my %Param = @_;
+    my ( $Self, %Param ) = @_;
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
+
     # create config array
     my $ConfigArray = [
 
     ];
+
     # return config array
     return $ConfigArray;
 }
@@ -140,34 +143,39 @@ $OSArray => [
 =cut
 
 sub SupportInfoGet {
-    my $Self = shift;
-    my %Param = @_;
-    my $DataArray = [];
+    my ( $Self, %Param ) = @_;
+
     # check needed stuff
-    foreach (qw(ModuleInputHash)) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
-            return;
-        }
+    if ( !$Param{ModuleInputHash} ) {
+        $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+        return;
     }
-    if (ref($Param{ModuleInputHash}) ne 'HASH') {
-        $Self->{LogObject}->Log(Priority => 'error', Message => "ModuleInputHash must be a hash reference!");
+    if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
+        $Self->{LogObject}
+            ->Log( Priority => 'error', Message => "ModuleInputHash must be a hash reference!" );
         return;
     }
 
-    # please add for each new check a part like this
-    my $OneCheck = $Self->DistributionCheck(
-        Type => $Param{ModuleInputHash}->{Type} || '',
+    # add new function name here
+    my @ModuleList = (
+        '_DistributionCheck', '_KernelInfoCheck',
     );
-    push (@{$DataArray}, $OneCheck);
 
-    # please add for each new check a part like this
-    $OneCheck = $Self->KernelInfoCheck(
-        Type => $Param{ModuleInputHash}->{Type} || '',
-    );
-    push (@{$DataArray}, $OneCheck);
+    my @DataArray;
 
-    return $DataArray;
+    FUNCTIONNAME:
+    for my $FunctionName (@ModuleList) {
+
+        # run function and get check data
+        my $Check = $Self->$FunctionName( Type => $Param{ModuleInputHash}->{Type} || '', );
+
+        next FUNCTIONNAME if !$Check;
+
+        # attach check data if valid
+        push @DataArray, $Check;
+    }
+
+    return \@DataArray;
 }
 
 =item AdminChecksGet()
@@ -194,145 +202,131 @@ $OSArray => [
 =cut
 
 sub AdminChecksGet {
-    my $Self = shift;
-    my %Param = @_;
-    my @DataArray = ();
-    # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
-            return;
-        }
-    }
-    # please add for each new check a part like this
-    my $OneCheck = $Self->DistributionCheck();
-    push (@DataArray, $OneCheck);
+    my ( $Self, %Param ) = @_;
 
-    $OneCheck = $Self->KernelInfoCheck();
-    push (@DataArray, $OneCheck);
+    # add new function name here
+    my @ModuleList = (
+        '_DistributionCheck', '_KernelInfoCheck',
+    );
+
+    my @DataArray;
+
+    FUNCTIONNAME:
+    for my $FunctionName (@ModuleList) {
+
+        # run function and get check data
+        my $Check = $Self->$FunctionName();
+
+        next FUNCTIONNAME if !$Check;
+
+        # attach check data if valid
+        push @DataArray, $Check;
+    }
 
     return \@DataArray;
 }
 
-=item DistributionCheck()
+sub _DistributionCheck {
+    my ( $Self, %Param ) = @_;
 
-returns a hash reference with DistributionCheck information.
-
-$DistributionCheck =>
-            {
-                Key => 'Plattform',
-                Name => 'Plattform',
-                Comment => 'Linux',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            };
-
-# check if config value availible
-if ($Param{Type}) {
-    print STDERR "TYPE: " . $Param{Type};
-}
-
-=cut
-
-sub DistributionCheck {
-    my $Self = shift;
-    my %Param = @_;
     my $ReturnHash = {};
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
 
     # If used OS is a linux system
-    if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
+    if ( $^O =~ /(linux|unix|netbsd|freebsd|darwin)/i ) {
         my $TmpLine = "";
         my $Distribution;
-        if (open($Distribution, '<', "/etc/issue")) {
-            while(<$Distribution>) {
+        if ( open( $Distribution, '<', "/etc/issue" ) ) {
+            while (<$Distribution>) {
                 $TmpLine .= $_;
             }
             close($Distribution);
-            if($TmpLine) {
+            if ($TmpLine) {
                 $TmpLine =~ s/\\.*//;
                 $TmpLine =~ s/\n//g;
                 $ReturnHash = {
-                    Key => 'DistributionCheck',
-                    Name => 'Distribution',
+                    Key         => 'DistributionCheck',
+                    Name        => 'Distribution',
                     Description => "Shows the used distribution. \n",
-                    Comment => "\"$TmpLine\" is used.",
-                    Check => 'OK',
+                    Comment     => "\"$TmpLine\" is used.",
+                    Check       => 'OK',
                 };
             }
         }
         else {
             $ReturnHash = {
-                Key => 'DistributionCheck',
-                Name => 'Distribution',
+                Key         => 'DistributionCheck',
+                Name        => 'Distribution',
                 Description => "Shows the used distribution. \n",
-                Comment => "Can´\'t find /etc/issue... \n",
-                Check => 'Failed',
+                Comment     => "Can´\'t find /etc/issue... \n",
+                Check       => 'Failed',
             };
         }
     }
-    elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
+    elsif ( $^O =~ /win/i ) {
         $ReturnHash = {
-            Key => 'DistributionCheck',
-            Name => 'Distribution',
+            Key         => 'DistributionCheck',
+            Name        => 'Distribution',
             Description => "Shows the used distribution. \n",
-            Comment => "$^O is used.",
-            Check => 'OK',
+            Comment     => "$^O is used.",
+            Check       => 'OK',
         };
     }
     return $ReturnHash;
 }
 
-sub KernelInfoCheck {
-    my $Self = shift;
-    my %Param = @_;
+sub _KernelInfoCheck {
+    my ( $Self, %Param ) = @_;
+
     my $ReturnHash = {};
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
 
     # If used OS is a linux system
-    if ($^O =~ /(linux|unix|netbsd|freebsd|darwin)/i) {
+    if ( $^O =~ /(linux|unix|netbsd|freebsd|darwin)/i ) {
         my $TmpLine = "";
         my $KernelInfo;
-        if (open($KernelInfo, "uname -a |")) {
-            while(<$KernelInfo>) {
+        if ( open( $KernelInfo, "uname -a |" ) ) {
+            while (<$KernelInfo>) {
                 $TmpLine .= $_;
             }
             close($KernelInfo);
-            if($TmpLine) {
+            if ($TmpLine) {
                 $TmpLine =~ s/\s+$//g;
                 $TmpLine =~ s/^\s+//g;
                 $ReturnHash = {
-                    Key => 'KernelVersionCheck',
-                    Name => 'Kernel Version',
+                    Key         => 'KernelVersionCheck',
+                    Name        => 'Kernel Version',
                     Description => "Shows the used Kernel version. \n",
-                    Comment => "\"$TmpLine\" is used.",
-                    Check => 'OK',
+                    Comment     => "\"$TmpLine\" is used.",
+                    Check       => 'OK',
                 };
             }
         }
         else {
             $ReturnHash = {
-                Key => 'KernelVersionCheck',
-                Name => 'Kernel Version',
+                Key         => 'KernelVersionCheck',
+                Name        => 'Kernel Version',
                 Description => "Shows the used Kernel version. \n",
-                Comment => "Can´\'t execute uname -a... \n",
-                Check => 'Failed',
+                Comment     => "Can´\'t execute uname -a... \n",
+                Check       => 'Failed',
             };
         }
     }
-    elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
+    elsif ( $^O =~ /win/i ) {
         return;
     }
     return $ReturnHash;
@@ -354,6 +348,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.5 $ $Date: 2007/10/04 08:33:32 $
+$Revision: 1.6 $ $Date: 2007/11/22 12:29:02 $
 
 =cut
