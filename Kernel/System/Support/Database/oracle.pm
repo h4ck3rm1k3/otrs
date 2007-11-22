@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/oracle.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.7 2007/11/22 11:50:21 sr Exp $
+# $Id: oracle.pm,v 1.9 2007/11/22 13:39:21 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.7 $) [1];
+$VERSION = qw($Revision: 1.9 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -100,7 +100,7 @@ sub AdminChecksGet {
     for my $FunctionName (@ModuleList) {
 
         # run function and get check data
-        my $Check = $Self->$FunctionName( Type => $Param{ModuleInputHash}->{Type} || '', );
+        my $Check = $Self->$FunctionName();
 
         next FUNCTIONNAME if !$Check;
 
@@ -135,7 +135,7 @@ sub _OracleHomeCheck {
         Description => "Check ORACLE_HOME.",
         Comment     => $Message,
         Check       => $Check,
-        },
+        };
         return $Data;
 }
 
@@ -169,7 +169,7 @@ sub _NLSLangCheck {
         Description => "Check NLS_LANG.",
         Comment     => $Message,
         Check       => $Check,
-        },
+        };
         return $Data;
 }
 
@@ -198,7 +198,7 @@ sub _NLSDateFormatCheck {
         Description => "Check NLS_DATE_FORMAT.",
         Comment     => $Message,
         Check       => $Check,
-        },
+        };
         return $Data;
 }
 
@@ -248,8 +248,7 @@ sub _TableCheck {
                 Description => "Check existing framework tables.",
                 Comment     => $Message,
                 Check       => $Check,
-                },
-                ;
+                };
         }
         else {
             $Data = {
@@ -258,8 +257,7 @@ sub _TableCheck {
                 Description => "Check existing framework tables.",
                 Comment     => "Can't open file $File: $!",
                 Check       => $Check,
-                },
-                ;
+                };
         }
     }
     else {
@@ -269,8 +267,7 @@ sub _TableCheck {
             Description => "Check existing framework tables.",
             Comment     => "Can't find file $File!",
             Check       => 'Failed',
-            },
-            ;
+            };
     }
     return $Data;
 }
