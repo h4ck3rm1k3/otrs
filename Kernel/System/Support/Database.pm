@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Database.pm,v 1.6 2007/09/27 10:08:32 sr Exp $
+# $Id: Database.pm,v 1.8 2007/11/22 12:16:39 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -12,10 +12,10 @@
 package Kernel::System::Support::Database;
 
 use strict;
+use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.6 $';
-$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
+$VERSION = qw($Revision: 1.8 $) [1];
 
 =head1 NAME
 
@@ -50,13 +50,14 @@ create Database info object
 =cut
 
 sub new {
-    my $Type = shift;
-    my %Param = @_;
+    my ( $Type, %Param ) = @_;
+
     # allocate new hash for object
     my $Self = {};
-    bless ($Self, $Type);
+    bless( $Self, $Type );
+
     # check needed objects
-    foreach (qw(ConfigObject LogObject MainObject DBObject)) {
+    for (qw(ConfigObject LogObject MainObject DBObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -99,12 +100,12 @@ return an array reference with required config information.
 =cut
 
 sub SupportConfigArrayGet {
-    my $Self = shift;
-    my %Param = @_;
+    my ( $Self, %Param ) = @_;
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
@@ -114,24 +115,25 @@ sub SupportConfigArrayGet {
     # ------------------------------------------------------------ #
 
     # create config array
-    my $ConfigArray =[];
-#    my $ConfigArray = [
-#        {
-#            Key => 'TicketDump',
-#            Name => 'Dump Tickets',
-#            Description => 'Please tell me how many latest Tickets we shut dump?',
-#           Input => {
-#                Type => 'Select',
-#                Data => {
-#                  All => 'All',
-#                   0 => '0',
-#                    10 => 'Last 10',
-#                    100 => 'Last 100',
-#                   1000 => 'Last 1000',
-#                },
-#            },
-#        },
-#    ];
+    my $ConfigArray = [];
+
+    #    my $ConfigArray = [
+    #        {
+    #            Key => 'TicketDump',
+    #            Name => 'Dump Tickets',
+    #            Description => 'Please tell me how many latest Tickets we shut dump?',
+    #           Input => {
+    #                Type => 'Select',
+    #                Data => {
+    #                  All => 'All',
+    #                   0 => '0',
+    #                    10 => 'Last 10',
+    #                    100 => 'Last 100',
+    #                   1000 => 'Last 1000',
+    #                },
+    #            },
+    #        },
+    #    ];
 
     # ------------------------------------------------------------ #
     # Get information about used database
@@ -141,30 +143,35 @@ sub SupportConfigArrayGet {
     my $DatabaseType = $Self->{DBObject}->{'DB::Type'};
 
     # try to get availible modules and the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Database";
+    my $DirName = $Self->{ConfigObject}->Get('Home') . "/Kernel/System/Support/Database";
+
     # read all availible modules in @List
-    my @List = glob($DirName."/*.pm");
-    foreach my $File (@List) {
+    my @List = glob( $DirName . "/*.pm" );
+    for my $File (@List) {
+
         # remove .pm
         $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        if ($DatabaseType =~ /ODBC/i) {
+        if ( $DatabaseType =~ /ODBC/i ) {
             $DatabaseType = $Self->{ConfigObject}->Get('Database::Type');
         }
-        if ($DatabaseType eq $File) {
+        if ( $DatabaseType eq $File ) {
             my $GenericModule = "Kernel::System::Support::Database::$File";
+
             # load module $GenericModule and check if loadable
-            if ($Self->{MainObject}->Require($GenericModule)){
+            if ( $Self->{MainObject}->Require($GenericModule) ) {
+
                 # create new object
-                my $SupportObject = $GenericModule->new(%{$Self});
+                my $SupportObject = $GenericModule->new( %{$Self} );
                 if ($SupportObject) {
                     my $ArrayRef = $SupportObject->SupportConfigArrayGet();
-                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
-                        push (@{$ConfigArray}, @{$ArrayRef});
+                    if ( $ArrayRef && ref($ArrayRef) eq 'ARRAY' ) {
+                        push( @{$ConfigArray}, @{$ArrayRef} );
                     }
                 }
             }
         }
     }
+
     # return config array
     return $ConfigArray;
 }
@@ -193,18 +200,20 @@ $DatabaseArray => [
 =cut
 
 sub SupportInfoGet {
-    my $Self = shift;
-    my %Param = @_;
+    my ( $Self, %Param ) = @_;
+
     my $DataArray = [];
+
     # check needed stuff
-    foreach (qw(ModuleInputHash)) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw(ModuleInputHash)) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
-    if (ref($Param{ModuleInputHash}) ne 'HASH') {
-        $Self->{LogObject}->Log(Priority => 'error', Message => "ModuleInputHash must be a hash reference!");
+    if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
+        $Self->{LogObject}
+            ->Log( Priority => 'error', Message => "ModuleInputHash must be a hash reference!" );
         return;
     }
 
@@ -213,10 +222,10 @@ sub SupportInfoGet {
     # ------------------------------------------------------------ #
 
     # please add for each new check a part like this
-#    my $OneCheck = $Self->Check(
-#        Type => $Param{ModuleInputHash}->{Type} || '',
-#    );
-#    push (@{$DataArray}, $OneCheck);
+    #    my $OneCheck = $Self->Check(
+    #        Type => $Param{ModuleInputHash}->{Type} || '',
+    #    );
+    #    push (@{$DataArray}, $OneCheck);
 
     # ------------------------------------------------------------ #
     # Get information about used database
@@ -226,27 +235,30 @@ sub SupportInfoGet {
     my $DatabaseType = $Self->{DBObject}->{'DB::Type'};
 
     # try to get availible modules and the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Database";
+    my $DirName = $Self->{ConfigObject}->Get('Home') . "/Kernel/System/Support/Database";
+
     # read all availible modules in @List
-    my @List = glob($DirName."/*.pm");
-    foreach my $File (@List) {
+    my @List = glob( $DirName . "/*.pm" );
+    for my $File (@List) {
+
         # remove .pm
         $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        if ($DatabaseType =~ /ODBC/i) {
+        if ( $DatabaseType =~ /ODBC/i ) {
             $DatabaseType = $Self->{ConfigObject}->Get('Database::Type');
         }
-        if ($DatabaseType eq $File) {
+        if ( $DatabaseType eq $File ) {
             my $GenericModule = "Kernel::System::Support::Database::$File";
+
             # load module $GenericModule and check if loadable
-            if ($Self->{MainObject}->Require($GenericModule)){
+            if ( $Self->{MainObject}->Require($GenericModule) ) {
+
                 # create new object
-                my $SupportObject = $GenericModule->new(%{$Self});
+                my $SupportObject = $GenericModule->new( %{$Self} );
                 if ($SupportObject) {
                     my $ArrayRef = $SupportObject->SupportInfoGet(
-                        ModuleInputHash => $Param{ModuleInputHash},
-                    );
-                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
-                        push (@{$DataArray}, @{$ArrayRef});
+                        ModuleInputHash => $Param{ModuleInputHash}, );
+                    if ( $ArrayRef && ref($ArrayRef) eq 'ARRAY' ) {
+                        push( @{$DataArray}, @{$ArrayRef} );
                     }
                 }
             }
@@ -280,13 +292,14 @@ $DatabaseArray => [
 =cut
 
 sub AdminChecksGet {
-    my $Self = shift;
-    my %Param = @_;
+    my ( $Self, %Param ) = @_;
+
     my $DataArray = [];
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
@@ -296,8 +309,8 @@ sub AdminChecksGet {
     # ------------------------------------------------------------ #
 
     # please add for each new check a part like this
-#    my $OneCheck = $Self->Check();
-#    push (@{$DataArray}, $OneCheck);
+    #    my $OneCheck = $Self->Check();
+    #    push (@{$DataArray}, $OneCheck);
 
     # ------------------------------------------------------------ #
     # Get information about used database
@@ -305,26 +318,31 @@ sub AdminChecksGet {
 
     # try to find out which ticket database is configured
     my $DatabaseType = $Self->{DBObject}->{'DB::Type'};
+
     # try to get availible modules and the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home')."/Kernel/System/Support/Database";
+    my $DirName = $Self->{ConfigObject}->Get('Home') . "/Kernel/System/Support/Database";
+
     # read all availible modules in @List
-    my @List = glob($DirName."/*.pm");
-    foreach my $File (@List) {
+    my @List = glob( $DirName . "/*.pm" );
+    for my $File (@List) {
+
         # remove .pm
         $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        if ($DatabaseType =~ /ODBC/i) {
+        if ( $DatabaseType =~ /ODBC/i ) {
             $DatabaseType = $Self->{ConfigObject}->Get('Database::Type');
         }
-        if ($DatabaseType =~ /^$File/i) {
+        if ( $DatabaseType =~ /^$File/i ) {
             my $GenericModule = "Kernel::System::Support::Database::$File";
+
             # load module $GenericModule and check if loadable
-            if ($Self->{MainObject}->Require($GenericModule)){
+            if ( $Self->{MainObject}->Require($GenericModule) ) {
+
                 # create new object
-                my $SupportObject = $GenericModule->new(%{$Self});
+                my $SupportObject = $GenericModule->new( %{$Self} );
                 if ($SupportObject) {
                     my $ArrayRef = $SupportObject->AdminChecksGet();
-                    if ($ArrayRef && ref($ArrayRef) eq 'ARRAY') {
-                        push (@{$DataArray}, @{$ArrayRef});
+                    if ( $ArrayRef && ref($ArrayRef) eq 'ARRAY' ) {
+                        push( @{$DataArray}, @{$ArrayRef} );
                     }
                 }
             }
@@ -335,7 +353,7 @@ sub AdminChecksGet {
     return $DataArray;
 }
 
-=item Check()
+=item _Check()
 
 returns a hash reference with Check information.
 
@@ -355,23 +373,24 @@ if ($Param{Type}) {
 
 =cut
 
-sub Check {
-    my $Self = shift;
-    my %Param = @_;
+sub _Check {
+    my ( $Self, %Param ) = @_;
+
     my $ReturnHash = {};
+
     # check needed stuff
-    foreach (qw()) {
-        if (!$Param{$_}) {
-            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
 
     # If used OS is a linux system
-    if ($^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/) {
+    if ( $^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/ ) {
 
     }
-    elsif ($^O =~ /win/i) {# TODO / Ausgabe unter Windows noch pruefen
+    elsif ( $^O =~ /win/i ) {
 
     }
     return $ReturnHash;
@@ -393,6 +412,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.6 $ $Date: 2007/09/27 10:08:32 $
+$Revision: 1.8 $ $Date: 2007/11/22 12:16:39 $
 
 =cut
