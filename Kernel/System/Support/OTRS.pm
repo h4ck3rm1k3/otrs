@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.10 2007/11/22 13:04:03 sr Exp $
+# $Id: OTRS.pm,v 1.11 2007/11/29 13:20:20 ho Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Support;
 use Kernel::System::Ticket;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.11 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -77,7 +77,7 @@ sub SupportInfoGet {
         '_OTRSLogGet', '_OTRSKernelGet',
         '_OTRSCheckSumGet', '_OTRSCheckModulesGet',
         '_OpenTicketCheck', '_TicketIndexModuleCheck',
-        '_FQDNConfigCheck', '_LogCheck',
+        '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
     );
 
     my @DataArray;
@@ -103,7 +103,7 @@ sub AdminChecksGet {
     # add new function name here
     my @ModuleList = (
         '_OpenTicketCheck', '_TicketIndexModuleCheck',
-        '_FQDNConfigCheck', '_LogCheck',
+        '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
     );
 
     my @DataArray;
@@ -451,6 +451,31 @@ sub _FQDNConfigCheck {
     else {
         $Data->{Check}   = 'OK';
         $Data->{Comment} = "FQDN '$FQDN' looks good.";
+    }
+    return $Data;
+}
+
+# Check if the SystemID contains only digits.
+sub _SystemIDConfigCheck {
+    my ( $Self, %Param ) = @_;
+    my $Data = {
+        Key         => 'SystemIDConfigCheck',
+        Name        => 'SystemIDConfigCheck',
+        Description => "Check if the configured SystemID contains only digits.",
+        Check       => 'Failed',
+        Comment     => '',
+    };
+
+    # Get the configured SystemID
+    my $SystemID = $Self->{ConfigObject}->Get('SystemID');
+
+    # Does the SystemID contain non-digits?
+    if ( $SystemID =~ /^\d+$/ ) {
+        $Data->{Check}   = 'OK';
+    }
+    else {
+        $Data->{Check}   = 'Failed';
+        $Data->{Comment} = "The SystemID \'$SystemID\' must consist of digits exclusively.";
     }
     return $Data;
 }
