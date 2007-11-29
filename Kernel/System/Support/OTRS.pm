@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.11 2007/11/29 13:20:20 ho Exp $
+# $Id: OTRS.pm,v 1.12 2007/11/29 13:21:23 ho Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Support;
 use Kernel::System::Ticket;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = qw($Revision: 1.12 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -321,7 +321,7 @@ sub _LogCheck {
     $Data = {
         Key         => 'LogCheck',
         Name        => 'LogCheck',
-        Description => "Check log for error log enties.",
+        Description => "Check log for error log entries.",
         Comment     => $Message . $Error,
         Check       => $Check,
         },
