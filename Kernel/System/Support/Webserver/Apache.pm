@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver/Apache.pm - all required system informations
 # Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
 # --
-# $Id: Apache.pm,v 1.6 2007/11/22 12:02:31 sr Exp $
+# $Id: Apache.pm,v 1.7 2007/12/21 11:01:46 ho Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.6 $) [1];
+$VERSION = qw($Revision: 1.7 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -126,7 +126,7 @@ sub _ApacheDBICheck {
     if ( !$ApacheDBI ) {
         $Check = 'Critical';
         $Message
-            = 'Apache::DBI should be used to get a better performance (pre establish datababase connections).';
+            = 'Apache::DBI should be used to get a better performance (pre establish database connections).';
     }
     else {
         $Check   = 'OK';
