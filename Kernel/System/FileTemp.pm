@@ -1,12 +1,12 @@
 # --
 # Kernel/System/FileTemp.pm - tmp files
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS GmbH, http://otrs.org/
 # --
-# $Id: FileTemp.pm,v 1.16 2010/06/17 21:39:40 cr Exp $
+# $Id: FileTemp.pm,v 1.6.2.1 2008/01/08 07:54:40 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
 package Kernel::System::FileTemp;
@@ -18,7 +18,7 @@ use File::Temp qw( tempfile tempdir );
 
 use vars qw(@ISA $VERSION);
 
-$VERSION = qw($Revision: 1.16 $) [1];
+$VERSION = qw($Revision: 1.6.2.1 $) [1];
 
 =head1 NAME
 
@@ -62,8 +62,8 @@ sub new {
     }
 
     # set global variables
-    $Self->{TempDir}        = $Self->{ConfigObject}->Get('TempDir');
-    $Self->{FileList}       = [];
+    $Self->{TempDir} = $Self->{ConfigObject}->Get('TempDir');
+    $Self->{FileList} = [];
     $Self->{FileHandleList} = [];
 
     return $Self;
@@ -78,17 +78,16 @@ returns a file handle and the file name
 =cut
 
 sub TempFile {
-    my $Self = shift;
+    my ( $Self ) = @_;
 
     my ( $FH, $Filename ) = tempfile(
         DIR    => $Self->{TempDir},
         SUFFIX => '.tmp',
-        UNLINK => 1,
     );
 
     # remember created tmp files and handles
-    push @{ $Self->{FileList} },       $Filename;
-    push @{ $Self->{FileHandleList} }, $FH;
+    push( @{ $Self->{FileList} }, $Filename );
+    push( @{ $Self->{FileHandleList} }, $FH );
 
     return ( $FH, $Filename );
 }
@@ -117,16 +116,16 @@ sub DESTROY {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.16 $ $Date: 2010/06/17 21:39:40 $
+$Revision: 1.6.2.1 $ $Date: 2008/01/08 07:54:40 $
 
 =cut
