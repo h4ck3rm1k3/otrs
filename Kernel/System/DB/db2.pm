@@ -1,12 +1,13 @@
 # --
 # Kernel/System/DB/db2.pm - db2 database backend
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Modified for DB2 UDB Friedmar Moch <friedmar@acm.org>
 # --
-# $Id: db2.pm,v 1.62 2011/12/12 09:04:47 mg Exp $
+# $Id: db2.pm,v 1.20.2.1 2008/02/11 00:44:08 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::DB::db2;
@@ -15,13 +16,13 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.62 $) [1];
+$VERSION = qw($Revision: 1.20.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
+    my $Self = { %Param };
     bless( $Self, $Type );
 
     return $Self;
@@ -31,16 +32,12 @@ sub LoadPreferences {
     my ( $Self, %Param ) = @_;
 
     # db settings
-    $Self->{'DB::Limit'}                = 0;
-    $Self->{'DB::DirectBlob'}           = 0;
-    $Self->{'DB::QuoteSingle'}          = '\'';
-    $Self->{'DB::QuoteBack'}            = 0;
-    $Self->{'DB::QuoteSemicolon'}       = '';
-    $Self->{'DB::CaseInsensitive'}      = 0;
-    $Self->{'DB::QuoteUnderscoreStart'} = '\\';
-    $Self->{'DB::QuoteUnderscoreEnd'}   = '';
-    $Self->{'DB::LcaseLikeInLargeText'} = 1;
-    $Self->{'DB::LikeEscapeString'}     = '';
+    $Self->{'DB::Limit'}             = 0;
+    $Self->{'DB::DirectBlob'}        = 0;
+    $Self->{'DB::QuoteSingle'}       = '\'';
+    $Self->{'DB::QuoteBack'}         = 0;
+    $Self->{'DB::QuoteSemicolon'}    = '';
+    $Self->{'DB::NoLikeInLargeText'} = 1;
 
     # dbi attributes
     $Self->{'DB::Attribute'} = {
@@ -69,7 +66,7 @@ sub LoadPreferences {
 sub Quote {
     my ( $Self, $Text, $Type ) = @_;
 
-    if ( defined ${$Text} ) {
+    if ( defined( ${$Text} ) ) {
         if ( $Self->{'DB::QuoteBack'} ) {
             ${$Text} =~ s/\\/$Self->{'DB::QuoteBack'}\\/g;
         }
@@ -78,12 +75,6 @@ sub Quote {
         }
         if ( $Self->{'DB::QuoteSemicolon'} ) {
             ${$Text} =~ s/;/$Self->{'DB::QuoteSemicolon'};/g;
-        }
-        if ( $Type && $Type eq 'Like' ) {
-            if ( $Self->{'DB::QuoteUnderscoreStart'} || $Self->{'DB::QuoteUnderscoreEnd'} ) {
-                ${$Text}
-                    =~ s/_/$Self->{'DB::QuoteUnderscoreStart'}_$Self->{'DB::QuoteUnderscoreEnd'}/g;
-            }
         }
     }
     return $Text;
@@ -94,12 +85,12 @@ sub DatabaseCreate {
 
     # check needed stuff
     if ( !$Param{Name} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Name!' );
+        $Self->{LogObject}->Log( Priority => 'error', Message => "Need Name!" );
         return;
     }
 
     # return SQL
-    return ("CREATE DATABASE $Param{Name} using codeset utf-8 territory us pagesize 32 k");
+    return ("CREATE DATABASE $Param{Name}");
 }
 
 sub DatabaseDrop {
@@ -107,7 +98,7 @@ sub DatabaseDrop {
 
     # check needed stuff
     if ( !$Param{Name} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Name!' );
+        $Self->{LogObject}->Log( Priority => 'error', Message => "Need Name!" );
         return;
     }
 
@@ -133,10 +124,8 @@ sub TableCreate {
     my @Return       = ();
     for my $Tag (@Param) {
 
-        if (
-            ( $Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate' )
-            && $Tag->{TagType} eq 'Start'
-            )
+        if ( ( $Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate' )
+            && $Tag->{TagType} eq 'Start' )
         {
             if ( $Self->{ConfigObject}->Get('Database::ShellOutput') ) {
                 $SQLStart .= $Self->{'DB::Comment'}
@@ -146,69 +135,51 @@ sub TableCreate {
                     . "----------------------------------------------------------\n";
             }
         }
-        if (
-            ( $Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate' )
-            && $Tag->{TagType} eq 'Start'
-            )
+        if ( ( $Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate' )
+            && $Tag->{TagType} eq 'Start' )
         {
             $SQLStart .= "CREATE TABLE $Tag->{Name} (\n";
             $TableName = $Tag->{Name};
         }
-        if (
-            ( $Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate' )
-            && $Tag->{TagType} eq 'End'
-            )
+        if ( ( $Tag->{Tag} eq 'Table' || $Tag->{Tag} eq 'TableCreate' )
+            && $Tag->{TagType} eq 'End' )
         {
-            $SQLEnd .= ')';
+            $SQLEnd .= ")";
         }
         elsif ( $Tag->{Tag} eq 'Column' && $Tag->{TagType} eq 'Start' ) {
-            push @Column, $Tag;
+            push( @Column, $Tag );
         }
         elsif ( $Tag->{Tag} eq 'Index' && $Tag->{TagType} eq 'Start' ) {
             $IndexCurrent = $Tag->{Name};
         }
         elsif ( $Tag->{Tag} eq 'IndexColumn' && $Tag->{TagType} eq 'Start' ) {
-            push @{ $Index{$IndexCurrent} }, $Tag;
+            push( @{ $Index{$IndexCurrent} }, $Tag );
         }
         elsif ( $Tag->{Tag} eq 'Unique' && $Tag->{TagType} eq 'Start' ) {
             $UniqCurrent = $Tag->{Name} || $TableName . '_U_' . int( rand(999) );
         }
         elsif ( $Tag->{Tag} eq 'UniqueColumn' && $Tag->{TagType} eq 'Start' ) {
-            push @{ $Uniq{$UniqCurrent} }, $Tag;
+            push( @{ $Uniq{$UniqCurrent} }, $Tag );
         }
         elsif ( $Tag->{Tag} eq 'ForeignKey' && $Tag->{TagType} eq 'Start' ) {
             $ForeignKey = $Tag->{ForeignTable};
         }
         elsif ( $Tag->{Tag} eq 'Reference' && $Tag->{TagType} eq 'Start' ) {
-            push @{ $Foreign{$ForeignKey} }, $Tag;
+            push( @{ $Foreign{$ForeignKey} }, $Tag );
         }
     }
     for my $Tag (@Column) {
 
         # type translation
         $Tag = $Self->_TypeTranslation($Tag);
-
-        # add new line
         if ($SQL) {
             $SQL .= ",\n";
         }
 
         # normal data type
         $SQL .= "    $Tag->{Name} $Tag->{Type}";
-
-        # handle require
-        if ( $Tag->{Required} && lc $Tag->{Required} eq 'true' ) {
-            $SQL .= ' NOT NULL';
-        }
-
-        # handle default
-        if ( defined $Tag->{Default} ) {
-            if ( $Tag->{Type} =~ /int/i ) {
-                $SQL .= " DEFAULT " . $Tag->{Default};
-            }
-            else {
-                $SQL .= " DEFAULT '" . $Tag->{Default} . "'";
-            }
+        if ( $Tag->{Required} =~ /^true$/i ) {
+            $SQL .= " NOT NULL";
         }
 
         # auto increment
@@ -231,37 +202,45 @@ sub TableCreate {
     }
 
     # add uniq
-    for my $Name ( sort keys %Uniq ) {
+    for my $Name ( keys %Uniq ) {
         if ($SQL) {
             $SQL .= ",\n";
         }
-        $SQL .= "    CONSTRAINT $Name UNIQUE (";
+        $SQL .= "    UNIQUE (";
         my @Array = @{ $Uniq{$Name} };
         for ( 0 .. $#Array ) {
             if ( $_ > 0 ) {
-                $SQL .= ', ';
+                $SQL .= ", ";
             }
             $SQL .= $Array[$_]->{Name};
         }
-        $SQL .= ')';
+        $SQL .= ")";
     }
     $SQL .= "\n";
-    push @Return, $SQLStart . $SQL . $SQLEnd;
+    push( @Return, $SQLStart . $SQL . $SQLEnd );
 
     # add indexs
-    for my $Name ( sort keys %Index ) {
+    for my $Name ( keys %Index ) {
         push(
             @Return,
             $Self->IndexCreate(
                 TableName => $TableName,
                 Name      => $Name,
                 Data      => $Index{$Name},
-            ),
+            )
         );
     }
 
+    # add uniq
+    #    for my $Name (keys %Uniq) {
+    #        push (@Return, $Self->UniqueCreate(
+    #            TableName => $TableName,
+    #            Name => $Name,
+    #            Data => $Uniq{$Name},
+    #        ));
+    #    }
     # add foreign keys
-    for my $ForeignKey ( sort keys %Foreign ) {
+    for my $ForeignKey ( keys %Foreign ) {
         my @Array = @{ $Foreign{$ForeignKey} };
         for ( 0 .. $#Array ) {
             push(
@@ -271,7 +250,7 @@ sub TableCreate {
                     Local            => $Array[$_]->{Local},
                     ForeignTableName => $ForeignKey,
                     Foreign          => $Array[$_]->{Foreign},
-                ),
+                )
             );
         }
     }
@@ -301,31 +280,20 @@ sub TableDrop {
 sub TableAlter {
     my ( $Self, @Param ) = @_;
 
-    my $SQLStart      = '';
-    my @SQL           = ();
-    my @Index         = ();
-    my $IndexName     = ();
-    my $ForeignTable  = '';
-    my $ReferenceName = '';
-    my @Reference     = ();
-    my $Table         = '';
-
+    my $SQLStart = '';
+    my @SQL      = ();
+    my $Table    = '';
     for my $Tag (@Param) {
         if ( $Tag->{Tag} eq 'TableAlter' && $Tag->{TagType} eq 'Start' ) {
-            $Table = $Tag->{Name} || $Tag->{NameNew};
             if ( $Self->{ConfigObject}->Get('Database::ShellOutput') ) {
                 $SQLStart .= $Self->{'DB::Comment'}
                     . "----------------------------------------------------------\n";
-                $SQLStart .= $Self->{'DB::Comment'} . " alter table $Table\n";
+                $SQLStart .= $Self->{'DB::Comment'} . " alter table $Tag->{Name}\n";
                 $SQLStart .= $Self->{'DB::Comment'}
                     . "----------------------------------------------------------\n";
             }
-
-            # rename table
-            if ( $Tag->{NameOld} && $Tag->{NameNew} ) {
-                push @SQL, $SQLStart . "RENAME TABLE $Tag->{NameOld} TO $Tag->{NameNew}";
-            }
-            $SQLStart .= "ALTER TABLE $Table";
+            $SQLStart .= "ALTER TABLE $Tag->{Name}";
+            $Table = $Tag->{Name};
         }
         elsif ( $Tag->{Tag} eq 'ColumnAdd' && $Tag->{TagType} eq 'Start' ) {
 
@@ -333,36 +301,38 @@ sub TableAlter {
             $Tag = $Self->_TypeTranslation($Tag);
 
             # normal data type
-            push @SQL, $SQLStart . " ADD $Tag->{Name} $Tag->{Type}";
-
-            # investigate the default value
-            my $Default = '';
-            if ( $Tag->{Type} =~ /int/i ) {
-                $Default = defined $Tag->{Default} ? $Tag->{Default} : 0;
-            }
-            else {
-                $Default = defined $Tag->{Default} ? "'$Tag->{Default}'" : "''";
+            my $SQLEnd = $SQLStart . " ADD $Tag->{Name} $Tag->{Type}";
+            if ( !$Tag->{Default} && $Tag->{Required} && $Tag->{Required} =~ /^true$/i ) {
+                $SQLEnd .= " NOT NULL";
             }
 
-            # investigate the require
-            my $Required = ( $Tag->{Required} && lc $Tag->{Required} eq 'true' ) ? 1 : 0;
+            # auto increment
+            if ( $Tag->{AutoIncrement} && $Tag->{AutoIncrement} =~ /^true$/i ) {
+                $SQLEnd .= " AUTO_INCREMENT";
+            }
 
-            # handle default and require
-            if ( $Required || defined $Tag->{Default} ) {
+            # add primary key
+            if ( $Tag->{PrimaryKey} && $Tag->{PrimaryKey} =~ /true/i ) {
+                $SQLEnd .= " PRIMARY KEY($Tag->{Name})";
+            }
+            push( @SQL, $SQLEnd );
 
-                # fill up empty rows
-                push @SQL, "UPDATE $Table SET $Tag->{Name} = $Default WHERE $Tag->{Name} IS NULL";
-
-                # add default
-                if ( defined $Tag->{Default} ) {
-                    push @SQL, "ALTER TABLE $Table ALTER COLUMN $Tag->{Name} SET DEFAULT $Default";
-                    push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
+            # default values
+            if ( $Tag->{Default} ) {
+                if ( $Tag->{Type} =~ /int/i ) {
+                    push( @SQL,
+                        "UPDATE $Table SET $Tag->{Name} = $Tag->{Default} WHERE $Tag->{Name} IS NULL"
+                    );
                 }
-
-                # add require
-                if ($Required) {
-                    push @SQL, "ALTER TABLE $Table ALTER COLUMN $Tag->{Name} SET NOT NULL";
-                    push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
+                else {
+                    push( @SQL,
+                        "UPDATE $Table SET $Tag->{Name} = $Tag->{Default} WHERE '$Tag->{Name}' IS NULL"
+                    );
+                }
+                if ( $Tag->{Required} && $Tag->{Required} =~ /^true$/i ) {
+                    push( @SQL,
+                        "ALTER TABLE $Table CHANGE $Tag->{Name} $Tag->{Name} $Tag->{Type} NOT NULL"
+                    );
                 }
             }
         }
@@ -371,106 +341,26 @@ sub TableAlter {
             # Type translation
             $Tag = $Self->_TypeTranslation($Tag);
 
-            # renaming column
-            if ( $Tag->{NameOld} ne $Tag->{NameNew} ) {
-                push @SQL, "SET INTEGRITY FOR $Table OFF";
-                push @SQL, $SQLStart
-                    . " ADD COLUMN $Tag->{NameNew} $Tag->{Type} GENERATED ALWAYS AS ($Tag->{NameOld})";
-                push @SQL, "SET INTEGRITY FOR $Table IMMEDIATE CHECKED FORCE GENERATED";
-                push @SQL, $SQLStart . " ALTER $Tag->{NameNew} DROP EXPRESSION";
-                push @SQL, $SQLStart . " DROP COLUMN $Tag->{NameOld}";
-                push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
+            # normal data type
+            my $SQLEnd = $SQLStart . " CHANGE $Tag->{NameOld} $Tag->{NameNew} $Tag->{Type}";
+            if ( $Tag->{Required} && $Tag->{Required} =~ /^true$/i ) {
+                $SQLEnd .= " NOT NULL";
             }
 
-            # investigate the default value
-            my $Default = '';
-            if ( $Tag->{Type} =~ /int/i ) {
-                $Default = defined $Tag->{Default} ? $Tag->{Default} : 0;
-            }
-            else {
-                $Default = defined $Tag->{Default} ? "'$Tag->{Default}'" : "''";
+            # auto increment
+            if ( $Tag->{AutoIncrement} && $Tag->{AutoIncrement} =~ /^true$/i ) {
+                $SQLEnd .= " AUTO_INCREMENT";
             }
 
-        # Not sure if this might cause problems if the column does not have a NOT NULL constraint...
-            push @SQL, "ALTER TABLE $Table ALTER COLUMN $Tag->{NameNew} DROP NOT NULL";
-            push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
-            push @SQL, "ALTER TABLE $Table ALTER COLUMN $Tag->{NameNew} SET DATA TYPE $Tag->{Type}";
-            push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
-
-            # remove possible default
-            # First set a default value, to be able to always drop it afterwards.
-            push @SQL, "ALTER TABLE $Table ALTER COLUMN $Tag->{NameNew} SET DEFAULT $Default";
-            push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
-            push @SQL, "ALTER TABLE $Table ALTER COLUMN $Tag->{NameNew} DROP DEFAULT";
-            push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
-
-            # investigate the require
-            my $Required = ( $Tag->{Required} && lc $Tag->{Required} eq 'true' ) ? 1 : 0;
-
-            # handle default and require
-            if ( $Required || defined $Tag->{Default} ) {
-
-                # fill up empty rows
-                push @SQL,
-                    "UPDATE $Table SET $Tag->{NameNew} = $Default WHERE $Tag->{NameNew} IS NULL";
-
-                # add default
-                if ( defined $Tag->{Default} ) {
-                    push @SQL,
-                        "ALTER TABLE $Table ALTER COLUMN $Tag->{NameNew} SET DEFAULT $Default";
-                    push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
-                }
-
-                # add require
-                if ($Required) {
-                    push @SQL, "ALTER TABLE $Table ALTER COLUMN $Tag->{NameNew} SET NOT NULL";
-                    push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
-                }
+            # add primary key
+            if ( $Tag->{PrimaryKey} && $Tag->{PrimaryKey} =~ /true/i ) {
+                $SQLEnd .= " PRIMARY KEY($Tag->{Name})";
             }
+            push( @SQL, $SQLEnd );
         }
         elsif ( $Tag->{Tag} eq 'ColumnDrop' && $Tag->{TagType} eq 'Start' ) {
             my $SQLEnd = $SQLStart . " DROP $Tag->{Name}";
-            push @SQL, $SQLEnd;
-            push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
-        }
-        elsif ( $Tag->{Tag} =~ /^((Index|Unique)(Create|Drop))/ ) {
-            my $Method = $Tag->{Tag};
-            if ( $Tag->{Name} ) {
-                $IndexName = $Tag->{Name};
-            }
-            if ( $Tag->{TagType} eq 'End' ) {
-                push @SQL, $Self->$Method(
-                    TableName => $Table,
-                    Name      => $IndexName,
-                    Data      => \@Index,
-                );
-                $IndexName = '';
-                @Index     = ();
-            }
-        }
-        elsif ( $Tag->{Tag} =~ /^(IndexColumn|UniqueColumn)/ && $Tag->{TagType} eq 'Start' ) {
-            push @Index, $Tag;
-        }
-        elsif ( $Tag->{Tag} =~ /^((ForeignKey)(Create|Drop))/ ) {
-            my $Method = $Tag->{Tag};
-            if ( $Tag->{ForeignTable} ) {
-                $ForeignTable = $Tag->{ForeignTable};
-            }
-            if ( $Tag->{TagType} eq 'End' ) {
-                for my $Reference (@Reference) {
-                    push @SQL, $Self->$Method(
-                        LocalTableName   => $Table,
-                        Local            => $Reference->{Local},
-                        ForeignTableName => $ForeignTable,
-                        Foreign          => $Reference->{Foreign},
-                    );
-                }
-                $ReferenceName = '';
-                @Reference     = ();
-            }
-        }
-        elsif ( $Tag->{Tag} =~ /^(Reference)/ && $Tag->{TagType} eq 'Start' ) {
-            push @Reference, $Tag;
+            push( @SQL, $SQLEnd );
         }
     }
     return @SQL;
@@ -486,20 +376,15 @@ sub IndexCreate {
             return;
         }
     }
-    my $Index = $Param{Name};
-    if ( length $Index > 32 ) {
-        my $MD5 = $Self->{MainObject}->MD5sum(
-            String => $Index,
-        );
-        $Index = substr $Index, 0, 30;
-        $Index .= substr $MD5, 0,  1;
-        $Index .= substr $MD5, 31, 1;
+    my $Index = substr( $Param{Name}, 0, 16 );
+    if ( length($Index) >= 16 ) {
+        $Index .= int( rand(99) );
     }
     my $SQL   = "CREATE INDEX $Index ON $Param{TableName} (";
-    my @Array = @{ $Param{Data} };
+    my @Array = @{ $Param{'Data'} };
     for ( 0 .. $#Array ) {
         if ( $_ > 0 ) {
-            $SQL .= ', ';
+            $SQL .= ", ";
         }
         $SQL .= $Array[$_]->{Name};
         if ( $Array[$_]->{Size} ) {
@@ -507,7 +392,7 @@ sub IndexCreate {
             #           $SQL .= "($Array[$_]->{Size})";
         }
     }
-    $SQL .= ')';
+    $SQL .= ")";
 
     # return SQL
     return ($SQL);
@@ -524,16 +409,7 @@ sub IndexDrop {
             return;
         }
     }
-    my $Index = $Param{Name};
-    if ( length $Index > 32 ) {
-        my $MD5 = $Self->{MainObject}->MD5sum(
-            String => $Index,
-        );
-        $Index = substr $Index, 0, 30;
-        $Index .= substr $MD5, 0,  1;
-        $Index .= substr $MD5, 31, 1;
-    }
-    my $SQL = 'DROP INDEX ' . $Index;
+    my $SQL = "DROP INDEX $Param{Name}";
     return ($SQL);
 }
 
@@ -547,22 +423,11 @@ sub ForeignKeyCreate {
             return;
         }
     }
+    my $SQL = "ALTER TABLE $Param{LocalTableName} ADD FOREIGN KEY (";
+    $SQL .= "$Param{Local}) REFERENCES ";
+    $SQL .= "$Param{ForeignTableName}($Param{Foreign})";
 
-    # create foreign key name
-    my $ForeignKey = "FK_$Param{LocalTableName}_$Param{Local}_$Param{Foreign}";
-    if ( length($ForeignKey) > 60 ) {
-        my $MD5 = $Self->{MainObject}->MD5sum(
-            String => $ForeignKey,
-        );
-        $ForeignKey = substr $ForeignKey, 0, 58;
-        $ForeignKey .= substr $MD5, 0,  1;
-        $ForeignKey .= substr $MD5, 61, 1;
-    }
-
-    # add foreign key
-    my $SQL = "ALTER TABLE $Param{LocalTableName} ADD CONSTRAINT $ForeignKey FOREIGN KEY "
-        . "($Param{Local}) REFERENCES $Param{ForeignTableName} ($Param{Foreign})";
-
+    # return SQL
     return ($SQL);
 }
 
@@ -570,28 +435,16 @@ sub ForeignKeyDrop {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(LocalTableName Local ForeignTableName Foreign)) {
+    for (qw(TableName Name)) {
         if ( !$Param{$_} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
 
-    # create foreign key name
-    my $ForeignKey = "FK_$Param{LocalTableName}_$Param{Local}_$Param{Foreign}";
-    if ( length($ForeignKey) > 60 ) {
-        my $MD5 = $Self->{MainObject}->MD5sum(
-            String => $ForeignKey,
-        );
-        $ForeignKey = substr $ForeignKey, 0, 58;
-        $ForeignKey .= substr $MD5, 0,  1;
-        $ForeignKey .= substr $MD5, 61, 1;
-    }
-
-    # drop foreign key
-    my $SQL = "ALTER TABLE $Param{LocalTableName} DROP CONSTRAINT $ForeignKey";
-
-    return ($SQL);
+    #    my $SQL = "ALTER TABLE $Param{TableName} DROP CONSTRAINT $Param{Name}";
+    #    return ($SQL);
+    return;
 }
 
 sub UniqueCreate {
@@ -605,14 +458,14 @@ sub UniqueCreate {
         }
     }
     my $SQL   = "ALTER TABLE $Param{TableName} ADD CONSTRAINT $Param{Name} UNIQUE (";
-    my @Array = @{ $Param{Data} };
+    my @Array = @{ $Param{'Data'} };
     for ( 0 .. $#Array ) {
         if ( $_ > 0 ) {
-            $SQL .= ', ';
+            $SQL .= ", ";
         }
         $SQL .= $Array[$_]->{Name};
     }
-    $SQL .= ')';
+    $SQL .= ")";
 
     # return SQL
     return ($SQL);
@@ -651,24 +504,18 @@ sub Insert {
             $SQL .= "INSERT INTO $Tag->{Table} ";
         }
         if ( $Tag->{Tag} eq 'Data' && $Tag->{TagType} eq 'Start' ) {
-
-            # do not use auto increment values
-            if ( $Tag->{Type} && $Tag->{Type} =~ /^AutoIncrement$/i ) {
-                next;
-            }
             $Tag->{Key} = ${ $Self->Quote( \$Tag->{Key} ) };
-            push @Keys, $Tag->{Key};
+            push( @Keys, $Tag->{Key} );
             my $Value;
-            if ( defined $Tag->{Value} ) {
+            if ( defined( $Tag->{Value} ) ) {
                 $Value = $Tag->{Value};
                 $Self->{LogObject}->Log(
                     Priority => 'error',
-                    Message  => 'The content for inserts is not longer appreciated '
-                        . 'attribut Value, use Content from now on! Reason: You can\'t '
-                        . 'use new lines in attributes.',
+                    Message =>
+                        "The content for inserts is not longer appreciated attribut Value, use Content from now on! Reason: You can't use new lines in attributes.",
                 );
             }
-            elsif ( defined $Tag->{Content} ) {
+            elsif ( defined( $Tag->{Content} ) ) {
                 $Value = $Tag->{Content};
             }
             else {
@@ -680,20 +527,20 @@ sub Insert {
             else {
                 $Value = ${ $Self->Quote( \$Value ) };
             }
-            push @Values, $Value;
+            push( @Values, $Value );
         }
     }
     my $Key = '';
     for (@Keys) {
         if ( $Key ne '' ) {
-            $Key .= ', ';
+            $Key .= ", ";
         }
         $Key .= $_;
     }
     my $Value = '';
     for my $Tmp (@Values) {
         if ( $Value ne '' ) {
-            $Value .= ', ';
+            $Value .= ", ";
         }
         if ( $Tmp eq 'current_timestamp' ) {
             if ( $Self->{ConfigObject}->Get('Database::ShellOutput') ) {
@@ -725,17 +572,17 @@ sub _TypeTranslation {
 
     # performance option
     elsif ( $Tag->{Type} =~ /^longblob$/i ) {
-        $Tag->{Type} = 'BLOB (30M)';
+        $Tag->{Type} = 'BLOB';
     }
     elsif ( $Tag->{Type} =~ /^VARCHAR$/i ) {
-        $Tag->{Type} = 'VARCHAR (' . $Tag->{Size} . ')';
+        $Tag->{Type} = "VARCHAR ($Tag->{Size})";
         if ( $Tag->{Size} >= 4000 ) {
-            my $Size = int( ( $Tag->{Size} * 8 ) / 1024 );
-            $Tag->{Type} = 'CLOB (' . $Size . 'K)';
+            my $Size = int (($Tag->{Size} * 8) / 1024);
+            $Tag->{Type} = "CLOB (".$Size."K)";
         }
     }
     elsif ( $Tag->{Type} =~ /^DECIMAL$/i ) {
-        $Tag->{Type} = 'DECIMAL (' . $Tag->{Size} . ')';
+        $Tag->{Type} = "DECIMAL ($Tag->{Size})";
     }
     return $Tag;
 }
