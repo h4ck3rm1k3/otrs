@@ -1,49 +1,43 @@
 # --
 # Kernel/Modules/AgentTicketMerge.pm - to merge tickets
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketMerge.pm,v 1.57 2012/01/24 00:08:45 cr Exp $
+# $Id: AgentTicketMerge.pm,v 1.14.2.1 2008/02/18 16:36:36 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AgentTicketMerge;
 
 use strict;
-use warnings;
-
 use Kernel::System::CustomerUser;
-use Kernel::System::TemplateGenerator;
-use Kernel::System::SystemAddress;
-use Kernel::System::CheckItem;
-use Kernel::System::VariableCheck qw(:all);
-use Mail::Address;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.57 $) [1];
+$VERSION = '$Revision: 1.14.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
 
-    # check needed objects
-    for my $Needed (
-        qw(ParamObject DBObject TicketObject LayoutObject LogObject QueueObject ConfigObject)
-        )
-    {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
+
+    # check needed Opjects
+    foreach (qw(ParamObject DBObject TicketObject LayoutObject LogObject QueueObject ConfigObject)) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
 
     $Self->{CustomerUserObject} = Kernel::System::CustomerUser->new(%Param);
-    $Self->{SystemAddress}      = Kernel::System::SystemAddress->new(%Param);
-    $Self->{CheckItemObject}    = Kernel::System::CheckItem->new(%Param);
 
     $Self->{Config} = $Self->{ConfigObject}->Get("Ticket::Frontend::$Self->{Action}");
 
@@ -51,368 +45,285 @@ sub new {
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     my $Output;
-    my %Error;
-    my %GetParam;
-
     # check needed stuff
-    if ( !$Self->{TicketID} ) {
+    if (!$Self->{TicketID}) {
+        # error page
         return $Self->{LayoutObject}->ErrorScreen(
-            Message => 'No TicketID is given!',
+            Message => "Need TicketID is given!",
             Comment => 'Please contact the admin.',
         );
+        return $Output;
     }
-
     # check permissions
-    my $Access = $Self->{TicketObject}->TicketPermission(
-        Type     => $Self->{Config}->{Permission},
+    if (!$Self->{TicketObject}->Permission(
+        Type => 'rw',
         TicketID => $Self->{TicketID},
-        UserID   => $Self->{UserID}
-    );
-
-    # error screen, don't show ticket
-    if ( !$Access ) {
-        return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
-    }
-
-    # get ACL restrictions
-    $Self->{TicketObject}->TicketAcl(
-        Data          => '-',
-        TicketID      => $Self->{TicketID},
-        ReturnType    => 'Action',
-        ReturnSubType => '-',
-        UserID        => $Self->{UserID},
-    );
-    my %AclAction = $Self->{TicketObject}->TicketAclActionData();
-
-    # check if ACL resctictions if exist
-    if ( IsHashRefWithData( \%AclAction ) ) {
-
-        # show error screen if ACL prohibits this action
-        if ( defined $AclAction{ $Self->{Action} } && $AclAction{ $Self->{Action} } eq '0' ) {
-            return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
-        }
+        UserID => $Self->{UserID})) {
+        # error screen, don't show ticket
+        return $Self->{LayoutObject}->NoPermission(WithHeader => 'yes');
     }
 
     # get ticket data
-    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Self->{TicketID} );
-
+    my %Ticket = $Self->{TicketObject}->TicketGet(TicketID => $Self->{TicketID});
+    # check permissions
+    if (!$Self->{TicketObject}->Permission(
+        Type => $Self->{Config}->{Permission},
+        TicketID => $Self->{TicketID},
+        UserID => $Self->{UserID})) {
+        # error screen, don't show ticket
+        return $Self->{LayoutObject}->NoPermission(WithHeader => 'yes');
+    }
     # get lock state && write (lock) permissions
-    if ( $Self->{Config}->{RequiredLock} ) {
-        if ( !$Self->{TicketObject}->TicketLockGet( TicketID => $Self->{TicketID} ) ) {
-            $Self->{TicketObject}->TicketLockSet(
+    if ($Self->{Config}->{RequiredLock}) {
+        if (!$Self->{TicketObject}->LockIsTicketLocked(TicketID => $Self->{TicketID})) {
+            $Self->{TicketObject}->LockSet(
                 TicketID => $Self->{TicketID},
-                Lock     => 'lock',
-                UserID   => $Self->{UserID}
+                Lock => 'lock',
+                UserID => $Self->{UserID}
             );
-            if (
-                $Self->{TicketObject}->TicketOwnerSet(
-                    TicketID  => $Self->{TicketID},
-                    UserID    => $Self->{UserID},
-                    NewUserID => $Self->{UserID},
-                )
-                )
-            {
-
+            if ($Self->{TicketObject}->OwnerSet(
+                TicketID => $Self->{TicketID},
+                UserID => $Self->{UserID},
+                NewUserID => $Self->{UserID},
+            )) {
                 # show lock state
                 $Self->{LayoutObject}->Block(
                     Name => 'PropertiesLock',
-                    Data => { %Param, TicketID => $Self->{TicketID}, },
+                    Data => {
+                        %Param,
+                        TicketID => $Self->{TicketID},
+                    },
                 );
             }
         }
         else {
             my $AccessOk = $Self->{TicketObject}->OwnerCheck(
                 TicketID => $Self->{TicketID},
-                OwnerID  => $Self->{UserID},
+                OwnerID => $Self->{UserID},
             );
-            if ( !$AccessOk ) {
-                my $Output = $Self->{LayoutObject}->Header(
-                    Value => $Ticket{Number},
-                    Type  => 'Small',
-                );
+            if (!$AccessOk) {
+                my $Output = $Self->{LayoutObject}->Header(Value => $Ticket{Number});
                 $Output .= $Self->{LayoutObject}->Warning(
-                    Message => "Sorry, you need to be the ticket owner to perform this action.",
+                    Message => "Sorry, you need to be the owner to do this action!",
                     Comment => 'Please change the owner first.',
                 );
-                $Output .= $Self->{LayoutObject}->Footer(
-                    Type => 'Small',
-                );
+                $Output .= $Self->{LayoutObject}->Footer();
                 return $Output;
             }
-
-            # show back link
-            $Self->{LayoutObject}->Block(
-                Name => 'TicketBack',
-                Data => { %Param, TicketID => $Self->{TicketID} },
-            );
+            else {
+                $Self->{LayoutObject}->Block(
+                    Name => 'TicketBack',
+                    Data => {
+                        %Param,
+                        TicketID => $Self->{TicketID},
+                    },
+                );
+            }
         }
     }
     else {
-
-        # show back link
         $Self->{LayoutObject}->Block(
             Name => 'TicketBack',
-            Data => { %Param, TicketID => $Self->{TicketID} },
+            Data => {
+                %Param,
+                %Ticket,
+            },
         );
     }
 
     # merge action
-    if ( $Self->{Subaction} eq 'Merge' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        # get all parameters
-        for my $Parameter (qw( From To Subject Body InformSender MainTicketNumber )) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
-        }
-
-        # rewrap body if no rich text is used
-        if ( $GetParam{Body} && !$Self->{LayoutObject}->{BrowserRichText} ) {
-            my $Size = $Self->{ConfigObject}->Get('Ticket::Frontend::TextAreaNote') || 70;
-            $GetParam{Body} =~ s/(^>.+|.{4,$Size})(?:\s|\z)/$1\n/gm;
-        }
-
-        # removing blank spaces from the ticket number
-        $Self->{CheckItemObject}->StringClean(
-            StringRef => \$GetParam{'MainTicketNumber'},
-            TrimLeft  => 1,
-            TrimRight => 1,
-        );
-
-        # check some stuff
-        my $MainTicketID = $Self->{TicketObject}->TicketIDLookup(
-            TicketNumber => $GetParam{'MainTicketNumber'},
-        );
-
-        # check for errors
-        if ( !$MainTicketID ) {
-            $Error{'MainTicketNumberInvalid'} = 'ServerError';
-        }
-
-        for my $Parameter (qw( To Subject Body )) {
-            if ( !$Parameter ) {
-                $Error{ $Parameter . 'Invalid' } = 'ServerError';
-            }
-        }
-
-        if (%Error) {
-            my $Output = $Self->{LayoutObject}->Header(
-                Type => 'Small',
-            );
-
-            # add rich text editor
-            if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'RichText',
-                    Data => \%Param,
-                );
-
-            }
-
-            $Output .= $Self->{LayoutObject}->Output(
-                TemplateFile => 'AgentTicketMerge',
-                Data => { %Param, %GetParam, %Ticket, %Error },
-            );
-            $Output .= $Self->{LayoutObject}->Footer(
-                Type => 'Small',
-            );
-            return $Output;
-        }
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
+    if ($Self->{Subaction} eq 'Merge') {
+        my $MainTicketNumber = $Self->{ParamObject}->GetParam(Param => 'MainTicketNumber');
+        my $MainTicketID = $Self->{TicketObject}->TicketIDLookup(TicketNumber => $MainTicketNumber);
         # check permissions
-        my $Access = $Self->{TicketObject}->TicketPermission(
-            Type     => $Self->{Config}->{Permission},
+        if (!$Self->{TicketObject}->Permission(
+            Type => 'rw',
             TicketID => $MainTicketID,
-            UserID   => $Self->{UserID},
-        );
-
-        # error screen, don't show ticket
-        if ( !$Access ) {
-            return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
+            UserID => $Self->{UserID})) {
+            # error screen, don't show ticket
+            return $Self->{LayoutObject}->NoPermission(WithHeader => 'yes');
         }
-
         # check errors
-        if (
-            $Self->{TicketID} == $MainTicketID
-            || !$Self->{TicketObject}->TicketMerge(
-                MainTicketID  => $MainTicketID,
+        if ($Self->{TicketID} == $MainTicketID ||
+            !$Self->{TicketObject}->TicketMerge(
+                MainTicketID => $MainTicketID,
                 MergeTicketID => $Self->{TicketID},
-                UserID        => $Self->{UserID},
+                UserID => $Self->{UserID},
             )
-            )
-        {
-            my $Output .= $Self->{LayoutObject}->Header(
-                Type => 'Small',
-            );
-
-            # add rich text editor
-            if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'RichText',
-                    Data => \%Param,
-                );
-
-            }
-
-            $Output .= $Self->{LayoutObject}->Output(
-                TemplateFile => 'AgentTicketMerge',
-                Data => { %Param, %Ticket },
-            );
-            $Output .= $Self->{LayoutObject}->Footer(
-                Type => 'Small',
-            );
+        ) {
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Output(TemplateFile => 'AgentTicketMerge', Data => {%Param,%Ticket});
+            $Output .= $Self->{LayoutObject}->Footer();
             return $Output;
         }
         else {
-
-            # send customer info?
-            if ( $GetParam{InformSender} ) {
-
-                # check notify email address
-                if ( $GetParam{To} ) {
-                    for my $Email ( Mail::Address->parse( $GetParam{To} ) ) {
-                        my $Address = $Email->address();
-                        if (
-                            $Self->{SystemAddress}->SystemAddressIsLocalAddress(
-                                Address => $Address
-                            )
-                            )
-                        {
-
-                            # error page
-                            return $Self->{LayoutObject}->ErrorScreen(
-                                Message => "Can't send notification to $Address! It's a local "
-                                    . "address! You need to move it!",
-                                Comment => 'Please contact the admin.',
-                            );
-                        }
-                    }
-                }
-
-                my $MimeType = 'text/plain';
-                if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-                    $MimeType = 'text/html';
-
-                    # verify html document
-                    $GetParam{Body} = $Self->{LayoutObject}->RichTextDocumentComplete(
-                        String => $GetParam{Body},
+            # get params
+            foreach (qw(From To Subject Body InformSender)) {
+                $Param{$_} = $Self->{ParamObject}->GetParam(Param => $_) || '';
+            }
+            # check forward email address
+            foreach my $Email (Mail::Address->parse($Param{BounceTo})) {
+                my $Address = $Email->address();
+                if ($Self->{SystemAddress}->SystemAddressIsLocalAddress(Address => $Address)) {
+                    # error page
+                    return $Self->{LayoutObject}->ErrorScreen(
+                        Message => "Can't forward ticket to $Address! It's a local ".
+                            "address! You need to move it!",
+                        Comment => 'Please contact the admin.',
                     );
                 }
-                my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Self->{TicketID} );
-                $GetParam{Body} =~ s/(&lt;|<)OTRS_TICKET(&gt;|>)/$Ticket{TicketNumber}/g;
-                $GetParam{Body}
-                    =~ s/(&lt;|<)OTRS_MERGE_TO_TICKET(&gt;|>)/$GetParam{'MainTicketNumber'}/g;
+            }
+            # send customer info?
+            if ($Param{InformSender}) {
+                my %Ticket = $Self->{TicketObject}->TicketGet(TicketID => $Self->{TicketID});
+                $Param{Body} =~ s/<OTRS_TICKET>/$Ticket{TicketNumber}/g;
+                $Param{Body} =~ s/<OTRS_MERGE_TO_TICKET>/$MainTicketNumber/g;
                 my $ArticleID = $Self->{TicketObject}->ArticleSend(
-                    ArticleType    => 'email-external',
-                    SenderType     => 'agent',
-                    TicketID       => $Self->{TicketID},
-                    HistoryType    => 'SendAnswer',
-                    HistoryComment => "Merge info to '$GetParam{To}'.",
-                    From           => $GetParam{From},
-                    Email          => $GetParam{Email},
-                    To             => $GetParam{To},
-                    Subject        => $GetParam{Subject},
-                    UserID         => $Self->{UserID},
-                    Body           => $GetParam{Body},
-                    Charset        => $Self->{LayoutObject}->{UserCharset},
-                    MimeType       => $MimeType,
+                    ArticleType => 'email-external',
+                    SenderType => 'agent',
+                    TicketID => $Self->{TicketID},
+                    HistoryType => 'SendAnswer',
+                    HistoryComment => "Merge info to '$Param{To}'.",
+                    From => $Param{From},
+                    Email => $Param{Email},
+                    To => $Param{To},
+                    Subject => $Param{Subject},
+                    UserID => $Self->{UserID},
+                    Body => $Param{Body},
+                    Type => 'text/plain',
+                    Charset => $Self->{LayoutObject}->{UserCharset},
                 );
-                if ( !$ArticleID ) {
-
+                if ($ArticleID) {
+                    return $Self->{LayoutObject}->Redirect(OP => $Self->{LastScreenOverview});
+                }
+                else {
                     # error page
                     return $Self->{LayoutObject}->ErrorScreen();
                 }
             }
-
-            # redirect to merged ticket
-            return $Self->{LayoutObject}->PopupClose(
-                URL => "Action=AgentTicketZoom;TicketID=$MainTicketID",
-            );
+            else {
+                return $Self->{LayoutObject}->Redirect(OP => $Self->{LastScreenOverview});
+            }
         }
     }
     else {
-
         # get last article
         my %Article = $Self->{TicketObject}->ArticleLastCustomerArticle(
-            TicketID      => $Self->{TicketID},
-            DynamicFields => 1,
+            TicketID => $Self->{TicketID},
         );
-
         # merge box
-        my $Output = $Self->{LayoutObject}->Header(
-            Value => $Ticket{TicketNumber},
-            Type  => 'Small',
-        );
-
-        # prepare salutation
-        my $TemplateGenerator = Kernel::System::TemplateGenerator->new( %{$Self} );
-        my $Salutation        = $TemplateGenerator->Salutation(
-            TicketID  => $Self->{TicketID},
-            ArticleID => $Article{ArticleID},
-            Data      => {%Article},
-            UserID    => $Self->{UserID},
-        );
-
-        # prepare signature
-        my $Signature = $TemplateGenerator->Signature(
-            TicketID  => $Self->{TicketID},
-            ArticleID => $Article{ArticleID},
-            Data      => {%Article},
-            UserID    => $Self->{UserID},
-        );
-
+        my $Output = $Self->{LayoutObject}->Header(Value => $Ticket{TicketNumber});
+        $Output .= $Self->{LayoutObject}->NavigationBar();
+        # get customer data
+        my %Customer = ();
+        if ($Ticket{CustomerUserID}) {
+            %Customer = $Self->{CustomerUserObject}->CustomerUserDataGet(
+                User => $Ticket{CustomerUserID},
+            );
+        }
         # prepare subject ...
         $Article{Subject} = $Self->{TicketObject}->TicketSubjectBuild(
-            TicketNumber => $Article{TicketNumber},
+            TicketNumber => $Ticket{TicketNumber},
             Subject => $Article{Subject} || '',
         );
-
         # prepare from ...
-        $Article{To} = $Article{From};
-        my %Address = $Self->{QueueObject}->GetSystemAddress( QueueID => $Ticket{QueueID} );
-        $Article{From} = "$Address{RealName} <$Address{Email}>";
-
-        # add salutation and signature to body
-        if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-            my $Body = $Self->{LayoutObject}->Ascii2RichText(
-                String => $Self->{ConfigObject}->Get('Ticket::Frontend::MergeText'),
-            );
-            $Article{Body} = $Salutation
-                . '<br/><br/>'
-                . $Body
-                . '<br/><br/>'
-                . $Signature;
-        }
-        else {
-            $Article{Body} = $Salutation
-                . "\n\n"
-                . $Self->{ConfigObject}->Get('Ticket::Frontend::MergeText')
-                . "\n\n"
-                . $Signature;
-        }
-
-        # add rich text editor
-        if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-            $Self->{LayoutObject}->Block(
-                Name => 'RichText',
-                Data => \%Param,
-            );
-        }
-
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AgentTicketMerge',
-            Data => { %Param, %Ticket, %Article, }
+        my %Address = $Self->{QueueObject}->GetSystemAddress(
+            QueueID => $Ticket{QueueID},
         );
-        $Output .= $Self->{LayoutObject}->Footer(
-            Type => 'Small',
-        );
+        $Article{QueueFrom} = "$Address{RealName} <$Address{Email}>";
+        $Article{Email} = $Address{Email};
+        $Article{RealName} = $Address{RealName};
+        # prepare salutation
+        $Param{Salutation} = $Self->{QueueObject}->GetSalutation(%Article);
+        # prepare signature
+        $Param{Signature} = $Self->{QueueObject}->GetSignature(%Article);
+        foreach (qw(Signature Salutation)) {
+            # get and prepare realname
+            if ($Param{$_} =~ /<OTRS_CUSTOMER_REALNAME>/) {
+                my $From = '';
+                if ($Ticket{CustomerUserID}) {
+                    $From = $Self->{CustomerUserObject}->CustomerName(UserLogin => $Ticket{CustomerUserID});
+                }
+                if (!$From) {
+                    $From = $Article{From} || '';
+                    $From =~ s/<.*>|\(.*\)|\"|;|,//g;
+                    $From =~ s/( $)|(  $)//g;
+                }
+                $Param{$_} =~ s/<OTRS_CUSTOMER_REALNAME>/$From/g;
+            }
+
+            # current user
+            my %User = $Self->{UserObject}->GetUserData(
+                UserID => $Self->{UserID},
+                Cached => 1,
+            );
+            foreach my $UserKey (keys %User) {
+                if ($User{$UserKey}) {
+                    $Param{$_} =~ s/<OTRS_Agent_$UserKey>/$User{$UserKey}/gi;
+                    $Param{$_} =~ s/<OTRS_CURRENT_$UserKey>/$User{$UserKey}/gi;
+                }
+            }
+            # replace other needed stuff
+            $Param{$_} =~ s/<OTRS_FIRST_NAME>/$Self->{UserFirstname}/g;
+            $Param{$_} =~ s/<OTRS_LAST_NAME>/$Self->{UserLastname}/g;
+            # cleanup
+            $Param{$_} =~ s/<OTRS_Agent_.+?>/-/gi;
+            $Param{$_} =~ s/<OTRS_CURRENT_.+?>/-/gi;
+
+            # owner user
+            my %OwnerUser = $Self->{UserObject}->GetUserData(
+                UserID => $Ticket{OwnerID},
+                Cached => 1,
+            );
+            foreach my $UserKey (keys %OwnerUser) {
+                if ($OwnerUser{$UserKey}) {
+                    $Param{$_} =~ s/<OTRS_OWNER_$UserKey>/$OwnerUser{$UserKey}/gi;
+                }
+            }
+            # cleanup
+            $Param{$_} =~ s/<OTRS_OWNER_.+?>/-/gi;
+
+            # responsible user
+            my %ResponsibleUser = $Self->{UserObject}->GetUserData(
+                UserID => $Ticket{ResponsibleID},
+                Cached => 1,
+            );
+            foreach my $UserKey (keys %ResponsibleUser) {
+                if ($ResponsibleUser{$UserKey}) {
+                    $Param{$_} =~ s/<OTRS_RESPONSIBLE_$UserKey>/$ResponsibleUser{$UserKey}/gi;
+                }
+            }
+            # cleanup
+            $Param{$_} =~ s/<OTRS_RESPONSIBLE_.+?>/-/gi;
+
+            # replace ticket data
+            foreach my $TicketKey (keys %Ticket) {
+                if ($Ticket{$TicketKey}) {
+                    $Param{$_} =~ s/<OTRS_TICKET_$TicketKey>/$Ticket{$TicketKey}/gi;
+                }
+            }
+            # cleanup all not needed <OTRS_TICKET_ tags
+            $Param{$_} =~ s/<OTRS_TICKET_.+?>/-/gi;
+            # replace customer data
+            foreach my $CustomerKey (keys %Customer) {
+                if ($Customer{$CustomerKey}) {
+                    $Param{$_} =~ s/<OTRS_CUSTOMER_$CustomerKey>/$Customer{$CustomerKey}/gi;
+                    $Param{$_} =~ s/<OTRS_CUSTOMER_DATA_$CustomerKey>/$Customer{$CustomerKey}/gi;
+                }
+            }
+            # cleanup all not needed <OTRS_CUSTOMER_ tags
+            $Param{$_} =~ s/<OTRS_CUSTOMER_.+?>/-/gi;
+            $Param{$_} =~ s/<OTRS_CUSTOMER_DATA_.+?>/-/gi;
+            # replace config options
+            $Param{$_} =~ s{<OTRS_CONFIG_(.+?)>}{$Self->{ConfigObject}->Get($1)}egx;
+            $Param{$_} =~ s/<OTRS_CONFIG_.+?>/-/gi;
+        }
+        $Output .= $Self->{LayoutObject}->Output(TemplateFile => 'AgentTicketMerge', Data => {%Param,%Ticket, %Article});
+        $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
 }
