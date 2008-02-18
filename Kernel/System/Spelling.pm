@@ -1,23 +1,22 @@
 # --
 # Kernel/System/Spelling.pm - the global spelling module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Spelling.pm,v 1.33 2011/08/12 09:06:15 mg Exp $
+# $Id: Spelling.pm,v 1.17.2.1 2008/02/18 18:13:31 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Spelling;
 
 use strict;
-use warnings;
-
 use Kernel::System::FileTemp;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.33 $) [1];
+$VERSION = '$Revision: 1.17.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
@@ -38,37 +37,34 @@ This module is managing spelling functions.
 create a spelling object
 
     use Kernel::Config;
-    use Kernel::System::Encode;
     use Kernel::System::Log;
     use Kernel::System::Spelling;
 
     my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
+
     my $LogObject = Kernel::System::Log->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
     );
+
     my $SpellingObject = Kernel::System::Spelling->new(
         ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        EncodeObject => $EncodeObject,
+        LogObject => $LogObject,
     );
 
 =cut
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
+    bless ($Self, $Type);
 
     $Self->{Debug} = 0;
 
     # get needed objects
-    for (qw(ConfigObject LogObject EncodeObject)) {
+    foreach (qw(ConfigObject LogObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -77,6 +73,7 @@ sub new {
 
     # spell checker config options
     $Self->{SpellChecker} = $Self->{ConfigObject}->Get('SpellCheckerBin') || 'ispell';
+    $Self->{SpellChecker} .= ' -a ';
 
     return $Self;
 }
@@ -86,7 +83,7 @@ sub new {
 spelling check for some text
 
     my %Result = $SpellingObject->Check(
-        Text          => 'Some Text to check.',
+        Text => 'Some Text to check.',
         SpellLanguage => 'en',
     );
 
@@ -103,39 +100,37 @@ spelling check for some text
 =cut
 
 sub Check {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(Text)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    foreach (qw(Text)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
+    # get needed dict
+    if ($Param{SpellLanguage}) {
+        $Self->{SpellChecker} .= " -d $Param{SpellLanguage}";
+    }
     # default ignored words
-    my @Ignore
-        = qw(com org de net Cc www Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec Sun Mon Tue Wed Thu Fri
+    my @Ignore = qw(com org de net Cc www Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec Sun Mon Tue Wed Thu Fri
         Sat Fwd Re DNS Date To Cc Bcc ca tm COM Co op netscape bcc jpg gif email Tel ie eg otrs suse redhat debian
         caldera php perl java html unsubscribe queue event day month year ticket
     );
-
     # add configured ignored words
-    if ( ref $Self->{ConfigObject}->Get('SpellCheckerIgnore') eq 'ARRAY' ) {
-        for ( @{ $Self->{ConfigObject}->Get('SpellCheckerIgnore') } ) {
-            push @Ignore, $_;
+    if (ref($Self->{ConfigObject}->Get('SpellCheckerIgnore')) eq 'ARRAY') {
+        foreach (@{$Self->{ConfigObject}->Get('SpellCheckerIgnore')}) {
+            push (@Ignore, $_);
         }
     }
-
     # don't correct emails
     $Param{Text} =~ s/<.+?\@.+?>//g;
     $Param{Text} =~ s/\s.+?\@.+?\s/ /g;
-
     # don't correct quoted text
     $Param{Text} =~ s/^>.*$//gm;
-
-    # ispell encoding: # ÄÖÜäöü
-    if ( $Self->{SpellChecker} =~ /ispell/ ) {
+    # ÄÖÜäöü? (just do encoding for ispell)
+    if ($Self->{SpellChecker} =~ /ispell/) {
         $Param{Text} =~ s/ä/a"/g;
         $Param{Text} =~ s/ö/o"/g;
         $Param{Text} =~ s/ü/u"/g;
@@ -146,128 +141,97 @@ sub Check {
     }
 
     # check if spell checker exists in file system
-    if ( !-e $Self->{ConfigObject}->Get('SpellCheckerBin') ) {
+    if (! -e $Self->{ConfigObject}->Get('SpellCheckerBin')) {
         $Self->{Error} = 1;
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "Can't find spellchecker ("
-                . $Self->{ConfigObject}->Get('SpellCheckerBin') . "): $!",
+            Message => "Can't open spell: $!",
         );
         return;
-    }
-
-    # add -a
-    $Self->{SpellChecker} .= ' -a ';
-
-    # set dict
-    if ( $Param{SpellLanguage} ) {
-        $Self->{SpellChecker} .= " -d $Param{SpellLanguage}";
     }
 
     # get spell output
 
     # write text to file and read it with (i|a)spell
     # - can't use IPC::Open* because it's not working with mod_perl* :-/
-    my ( $FH, $TmpFile ) = $Self->{FileTempObject}->TempFile();
-    if ( !$FH ) {
+    my ($FH, $TmpFile) = $Self->{FileTempObject}->TempFile();
+    if ($FH) {
+        print $FH $Param{Text};
+    }
+    else {
         $Self->{Error} = 1;
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "Can't write spell tmp text to $TmpFile: $!",
+            Message => "Can't write spell tmp text to $TmpFile: $!",
         );
         return;
     }
-    print $FH $Param{Text};
-
-    # aspell encoding
-    if ( $Self->{SpellChecker} =~ /aspell/ ) {
-        $Self->{SpellChecker} .= ' --encoding=utf-8';
-    }
-
-    # open spell checker
-    my $Spell;
-    if ( !open( $Spell, "$Self->{SpellChecker} < $TmpFile |" ) ) {
-        $Self->{Error} = 1;
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't open spellchecker: $!",
-        );
-        return;
-    }
-
-    my $Output      = '';
-    my $Lines       = 1;
-    my $CurrentLine = 0;
-    my %Data;
-    while ( my $Line = <$Spell> ) {
-        $CurrentLine++;
-
-        # set utf8 stamp if running in utf8 mode
-        $Self->{EncodeObject}->EncodeInput( \$Line );
-
-        # ispell encoding: # ÄÖÜäöü
-        if ( $Self->{SpellChecker} =~ /ispell/ ) {
-            $Line =~ s/a"/ä/g;
-            $Line =~ s/o"/ö/g;
-            $Line =~ s/u"/ü/g;
-            $Line =~ s/A"/Ä/g;
-            $Line =~ s/O"/Ö/g;
-            $Line =~ s/U"/Ü/g;
-            $Line =~ s/sS/ß/g;
-        }
-
-        # '#' words with no suggestions
-        if ( $Line =~ /^# (.+?) .+?$/ ) {
-            $Data{$CurrentLine} = {
-                Word    => $1,
-                Replace => '',
-                Line    => $Lines,
-            };
-        }
-
-        # '&' words with suggestions
-        elsif ( $Line =~ /^& (.+?) .+?: (.*)$/ ) {
-            my @Replace = split /, /, $2;
-            $Data{$CurrentLine} = {
-                Word    => $1,
-                Replace => \@Replace,
-                Line    => $Lines,
-            };
-        }
-
-        # increase line count
-        elsif ( $Line =~ /^\n$/ ) {
-            $Lines++;
-        }
-    }
-
-    # drop double words and add line of double word
-    my %DoubleWords;
-    for ( sort { $a <=> $b } keys %Data ) {
-        if ( $DoubleWords{ $Data{$_}->{Word} } ) {
-            $DoubleWords{ $Data{$_}->{Word} }->{Line} .= "/" . $Data{$_}->{Line};
-            delete $Data{$_};
-        }
-        else {
-            $DoubleWords{ $Data{$_}->{Word} } = $Data{$_};
-        }
-    }
-
-    # remove ignored words
-    for my $Word ( sort keys %Data ) {
-        for my $IgnoreWord (@Ignore) {
-            if (
-                defined $Data{$Word}
-                && $Data{$Word}->{Word}
-                && $Data{$Word}->{Word} =~ /^$IgnoreWord$/i
-                )
-            {
-                delete $Data{$Word};
+    if (open (SPELL, "$Self->{SpellChecker} < $TmpFile |")) {
+        my $Output = '';
+        my %Data = ();
+        my $Lines = 1;
+        my $CurrentLine = 0;
+        while (my $Line = <SPELL>) {
+            $CurrentLine++;
+            # ÄÖÜäöü? (just do encoding for ispell)
+            if ($Self->{SpellChecker} =~ /ispell/) {
+                $Line =~ s/a"/ä/g;
+                $Line =~ s/o"/ö/g;
+                $Line =~ s/u"/ü/g;
+                $Line =~ s/A"/Ä/g;
+                $Line =~ s/O"/Ö/g;
+                $Line =~ s/U"/Ü/g;
+                $Line =~ s/sS/ß/g;
+            }
+            if ($Line =~ /^# (.+?) .+?$/) {
+                $Data{$CurrentLine} = {
+                    Word => $1,
+                    Replace => '',
+                    Line => $Lines,
+                };
+            }
+            elsif ($Line =~ /^& (.+?) .+?: (.*)$/) {
+                my @Replace = split(/, /, $2);
+                $Data{$CurrentLine} = {
+                    Word => $1,
+                    Replace => \@Replace,
+                    Line => $Lines,
+                };
+            }
+            elsif ($Line =~ /^\n$/) {
+                $Lines++;
             }
         }
+        # drop double words and add line of double word
+        my %DoubleWords;
+        foreach (sort {$a <=> $b} keys %Data) {
+            if ($DoubleWords{$Data{$_}->{Word}}) {
+                $DoubleWords{$Data{$_}->{Word}}->{Line} .= "/".$Data{$_}->{Line};
+                delete $Data{$_};
+            }
+            else {
+                $DoubleWords{$Data{$_}->{Word}} = $Data{$_};
+            }
+        }
+        # remove ignored words
+        foreach (sort keys %Data) {
+            foreach my $IgnoreWord (@Ignore) {
+                if ($Data{$_}->{Word} && $Data{$_}->{Word} =~ /^$IgnoreWord$/i) {
+                    delete $Data{$_};
+                }
+            }
+        }
+        close (SPELL);
+        return %Data;
     }
-    close($Spell);
-    return %Data;
+    else {
+        $Self->{Error} = 1;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message => "Can't open spell: $!",
+        );
+        return;
+    }
 }
 
 =item Error()
@@ -279,8 +243,8 @@ check if spelling check returns a system error (read log backend for error messa
 =cut
 
 sub Error {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     return $Self->{Error};
 }
 
@@ -290,14 +254,14 @@ sub Error {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.33 $ $Date: 2011/08/12 09:06:15 $
+$Revision: 1.17.2.1 $ $Date: 2008/02/18 18:13:31 $
 
 =cut
