@@ -1,35 +1,39 @@
 # --
 # Kernel/Modules/PublicRepository.pm - provides a local repository
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: PublicRepository.pm,v 1.12 2009/02/16 11:20:53 tr Exp $
+# $Id: PublicRepository.pm,v 1.4.4.1 2008/03/03 13:48:51 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::PublicRepository;
 
 use strict;
-use warnings;
-
 use Kernel::System::Package;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = '$Revision: 1.4.4.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
 
-    # check needed objects
-    for (qw(ParamObject LayoutObject LogObject ConfigObject MainObject)) {
-        if ( !$Self->{$_} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
+
+    # check needed Opjects
+    foreach (qw(ParamObject LayoutObject LogObject ConfigObject)) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
 
@@ -39,63 +43,61 @@ sub new {
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
-    my $File = $Self->{ParamObject}->GetParam( Param => 'File' ) || '';
+    my $Self = shift;
+    my %Param = @_;
+    my $File = $Self->{ParamObject}->GetParam(Param => 'File') || '';
     $File =~ s/^\///g;
     my $AccessControlRexExp = $Self->{ConfigObject}->Get('Package::RepositoryAccessRegExp');
-    if ( !$AccessControlRexExp ) {
+    if (!$AccessControlRexExp) {
         return $Self->{LayoutObject}->ErrorScreen(
             Message => 'Need config Package::RepositoryAccessRegExp',
         );
     }
     else {
-        if ( $ENV{REMOTE_ADDR} !~ /^$AccessControlRexExp$/ ) {
+        if ($ENV{REMOTE_ADDR} !~ /^$AccessControlRexExp$/) {
             return $Self->{LayoutObject}->ErrorScreen(
-                Message => "Authentication failed from $ENV{REMOTE_ADDR}!",
+                Message => 'Authentication failed!',
             );
         }
     }
 
     # get repository index
-    if ( $File =~ /otrs.xml$/ ) {
-
+    if ($File =~ /otrs.xml$/) {
         # get repository index
         my $Index = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
         $Index .= "<otrs_package_list version=\"1.0\">\n";
         my @List = $Self->{PackageObject}->RepositoryList();
-        for my $Package (@List) {
+        foreach my $Package (@List) {
             $Index .= "<Package>\n";
             $Index .= "  <File>$Package->{Name}->{Content}-$Package->{Version}->{Content}</File>\n";
-            $Index .= $Self->{PackageObject}->PackageBuild( %{$Package}, Type => 'Index' );
+            $Index .= $Self->{PackageObject}->PackageBuild(%{$Package}, Type => 'Index');
             $Index .= "</Package>\n";
         }
         $Index .= "</otrs_package_list>\n";
         return $Self->{LayoutObject}->Attachment(
-            Type        => 'inline',     # inline|attachment
-            Filename    => 'otrs.xml',
+            Type => 'inline', # inline|attachment
+            Filename => 'otrs.xml',
             ContentType => 'text/xml',
-            Content     => $Index,
+            Content => $Index,
         );
     }
-
     # export package
     else {
-        my $Name    = '';
+        my $Name = '';
         my $Version = '';
-        if ( $File =~ /^(.*)\-(.+?)$/ ) {
-            $Name    = $1;
+        if ($File =~ /^(.*)\-(.+?)$/) {
+            $Name = $1;
             $Version = $2;
         }
         my $Package = $Self->{PackageObject}->RepositoryGet(
-            Name    => $Name,
+            Name => $Name,
             Version => $Version,
         );
         return $Self->{LayoutObject}->Attachment(
-            Type        => 'inline',           # inline|attachment
-            Filename    => "$Name-$Version",
+            Type => 'inline', # inline|attachment
+            Filename => "$Name-$Version",
             ContentType => 'text/xml',
-            Content     => $Package,
+            Content => $Package,
         );
     }
 }
