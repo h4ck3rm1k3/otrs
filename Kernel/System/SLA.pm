@@ -1,12 +1,12 @@
 # --
-# Kernel/System/SLA.pm - all sla functions
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Kernel/System/SLA.pm - all sla function
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: SLA.pm,v 1.40 2011/06/17 08:14:12 mb Exp $
+# $Id: SLA.pm,v 1.15.2.1 2008/03/14 14:01:35 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::SLA;
@@ -14,11 +14,11 @@ package Kernel::System::SLA;
 use strict;
 use warnings;
 
-use Kernel::System::CheckItem;
 use Kernel::System::Valid;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.40 $) [1];
+$VERSION = '$Revision: 1.15.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
@@ -36,64 +36,40 @@ All sla functions.
 
 =item new()
 
-create an object
+create a object
 
     use Kernel::Config;
-    use Kernel::System::Encode;
     use Kernel::System::Log;
-    use Kernel::System::Main;
     use Kernel::System::DB;
-    use Kernel::System::SLA;
+    use Kernel::System::Service;
 
     my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
     my $LogObject = Kernel::System::Log->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
     );
     my $DBObject = Kernel::System::DB->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
+        LogObject => $LogObject,
     );
     my $SLAObject = Kernel::System::SLA->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
+        LogObject => $LogObject,
+        DBObject => $DBObject,
     );
 
 =cut
 
 sub new {
-    my ( $Type, %Param ) = @_;
-
+    my $Type = shift;
+    my %Param = @_;
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
-
+    bless ($Self, $Type);
     # check needed objects
-    for my $Object (qw(DBObject ConfigObject EncodeObject LogObject MainObject)) {
-        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
+    foreach (qw(DBObject ConfigObject LogObject)) {
+        $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
-    $Self->{CheckItemObject} = Kernel::System::CheckItem->new( %{$Self} );
-    $Self->{ValidObject}     = Kernel::System::Valid->new( %{$Self} );
-
-    # load generator preferences module
-    my $GeneratorModule = $Self->{ConfigObject}->Get('SLA::PreferencesModule')
-        || 'Kernel::System::SLA::PreferencesDB';
-    if ( $Self->{MainObject}->Require($GeneratorModule) ) {
-        $Self->{PreferencesObject} = $GeneratorModule->new(%Param);
-    }
+    $Self->{ValidObject} = Kernel::System::Valid->new(%Param);
 
     return $Self;
 }
@@ -104,61 +80,53 @@ return a hash list of slas
 
     my %SLAList = $SLAObject->SLAList(
         ServiceID => 1,  # (optional)
-        Valid     => 0,  # (optional) default 1 (0|1)
-        UserID    => 1,
+        Valid => 0,      # (optional) default 1 (0|1)
+        UserID => 1,
     );
 
 =cut
 
 sub SLAList {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    my %SLAList;
     # check needed stuff
-    if ( !$Param{UserID} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need UserID!' );
-        return;
+    foreach (qw(UserID)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
+            return;
+        }
     }
-
-    # set valid param
-    if ( !defined $Param{Valid} ) {
+    # check valid param
+    if (!defined($Param{Valid})) {
         $Param{Valid} = 1;
     }
-
-    # add ServiceID
-    my %SQLTable;
-    $SQLTable{sla} = 'sla s';
-    my @SQLWhere;
-    if ( $Param{ServiceID} ) {
-
-        # quote
-        $Param{ServiceID} = $Self->{DBObject}->Quote( $Param{ServiceID}, 'Integer' );
-
-        $SQLTable{service} = 'service_sla r';
-        push @SQLWhere, "s.id = r.sla_id AND r.service_id = $Param{ServiceID}";
+    # quote
+    foreach (qw(UserID)) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_}, 'Integer');
     }
-
+    # check ServiceID
+    my $Where = '';
+    if ($Param{ServiceID}) {
+        $Param{ServiceID} = $Self->{DBObject}->Quote($Param{ServiceID}, 'Integer');
+        $Where .= "WHERE service_id = $Param{ServiceID} ";
+    }
     # add valid part
-    if ( $Param{Valid} ) {
-
-        # create the valid list
-        my $ValidIDs = join ', ', $Self->{ValidObject}->ValidIDsGet();
-
-        push @SQLWhere, "s.valid_id IN ( $ValidIDs )";
+    if ($Param{Valid}) {
+        if ($Where) {
+            $Where .= "AND ";
+        }
+        else {
+            $Where .= "WHERE ";
+        }
+        $Where .= "valid_id IN ( ${\(join ', ', $Self->{ValidObject}->ValidIDsGet())} )";
     }
-
-    # create the table and where strings
-    my $TableString = join q{, }, values %SQLTable;
-    my $WhereString = @SQLWhere ? ' WHERE ' . join q{ AND }, @SQLWhere : '';
-
     # ask database
     $Self->{DBObject}->Prepare(
-        SQL => "SELECT s.id, s.name FROM $TableString $WhereString",
+        SQL => "SELECT id, name FROM sla $Where",
     );
-
-    # fetch the result
-    my %SLAList;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        $SLAList{ $Row[0] } = $Row[1];
+    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+        $SLAList{$Row[0]} = $Row[1];
     }
 
     return %SLAList;
@@ -166,130 +134,86 @@ sub SLAList {
 
 =item SLAGet()
 
-Returns an SLA as a hash
+return a sla as hash
+
+Return
+    $SLAData{SLAID}
+    $SLAData{ServiceID}
+    $SLAData{Name}
+    $SLAData{Calendar}
+    $SLAData{FirstResponseTime}
+    $SLAData{UpdateTime}
+    $SLAData{SolutionTime}
+    $SLAData{ValidID}
+    $SLAData{Comment}
+    $SLAData{CreateTime}
+    $SLAData{CreateBy}
+    $SLAData{ChangeTime}
+    $SLAData{ChangeBy}
 
     my %SLAData = $SLAObject->SLAGet(
-        SLAID  => 123,
+        SLAID => 123,
         UserID => 1,
-    );
-
-Returns:
-
-    my %SLAData = (
-          'SLAID'               => '2',
-          'Name'                => 'Diamond Pacific - S2',
-          'Calendar'            => '2',
-          'FirstResponseTime'   => '60',  # in minutes according to business hours
-          'FirstResponseNotify' => '70',  # in percent
-          'UpdateTime'          => '360', # in minutes according to business hours
-          'UpdateNotify'        => '70',  # in percent
-          'SolutionTime'        => '960', # in minutes according to business hours
-          'SolutionNotify'      => '80',  # in percent
-          'ServiceIDs'          => [
-                                     '4'
-                                     '7'
-                                     '8'
-                                   ],
-          'ValidID'             => '1',
-          'Comment'             => 'Some Comment',
-          'CreateBy'            => '93',
-          'CreateTime'          => '2011-06-16 22:54:54',
-          'ChangeBy'            => '93',
-          'ChangeTime'          => '2011-06-16 22:54:54',
+        Cache => 1, # optional
     );
 
 =cut
 
 sub SLAGet {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for my $Argument (qw(SLAID UserID)) {
-        if ( !$Param{$Argument} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Argument!" );
+    foreach (qw(SLAID UserID)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
-    # check if result is already cached
-    my $CacheKey = 'Cache::SLAGet::' . $Param{SLAID};
-    if ( $Self->{$CacheKey} ) {
-        return %{ $Self->{$CacheKey} };
+    if ($Param{Cache} && $Self->{"Cache::SLAGet::$Param{SLAID}"}) {
+        return %{$Self->{"Cache::SLAGet::$Param{SLAID}"}};
     }
-
+    # quote
+    foreach (qw(SLAID UserID)) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_}, 'Integer');
+    }
     # get sla from db
+    my %SLAData = ();
     $Self->{DBObject}->Prepare(
-        SQL => 'SELECT id, name, calendar_name, first_response_time, first_response_notify, '
-            . 'update_time, update_notify, solution_time, solution_notify, '
-            . 'valid_id, comments, create_time, create_by, change_time, change_by '
-            . 'FROM sla WHERE id = ?',
-        Bind => [
-            \$Param{SLAID},
-        ],
+        SQL => "SELECT id, service_id, name, calendar_name, first_response_time, update_time, solution_time, ".
+            "valid_id, comments, create_time, create_by, change_time, change_by ".
+            "FROM sla WHERE id = $Param{SLAID}",
         Limit => 1,
     );
-
-    # fetch the result
-    my %SLAData;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        $SLAData{SLAID}               = $Row[0];
-        $SLAData{Name}                = $Row[1];
-        $SLAData{Calendar}            = $Row[2] || '';
-        $SLAData{FirstResponseTime}   = $Row[3];
-        $SLAData{FirstResponseNotify} = $Row[4];
-        $SLAData{UpdateTime}          = $Row[5];
-        $SLAData{UpdateNotify}        = $Row[6];
-        $SLAData{SolutionTime}        = $Row[7];
-        $SLAData{SolutionNotify}      = $Row[8];
-        $SLAData{ValidID}             = $Row[9];
-        $SLAData{Comment}             = $Row[10] || '';
-        $SLAData{CreateTime}          = $Row[11];
-        $SLAData{CreateBy}            = $Row[12];
-        $SLAData{ChangeTime}          = $Row[13];
-        $SLAData{ChangeBy}            = $Row[14];
+    while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+        $SLAData{SLAID} = $Row[0];
+        $SLAData{ServiceID} = $Row[1];
+        $SLAData{Name} = $Row[2];
+        $SLAData{Calendar} = $Row[3] || '';
+        $SLAData{FirstResponseTime} = $Row[4];
+        $SLAData{UpdateTime} = $Row[5];
+        $SLAData{SolutionTime} = $Row[6];
+        $SLAData{ValidID} = $Row[7];
+        $SLAData{Comment} = $Row[8] || '';
+        $SLAData{CreateTime} = $Row[9];
+        $SLAData{CreateBy} = $Row[10];
+        $SLAData{ChangeTime} = $Row[11];
+        $SLAData{ChangeBy} = $Row[12];
     }
-
     # check sla
-    if ( !$SLAData{SLAID} ) {
+    if (!$SLAData{SLAID}) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "No such SLAID ($Param{SLAID})!",
+            Message => "No such SLAID ($Param{SLAID})!",
         );
         return;
     }
-
-    # get all service ids
-    $Self->{DBObject}->Prepare(
-        SQL  => 'SELECT service_id FROM service_sla WHERE sla_id = ? ORDER BY service_id ASC',
-        Bind => [ \$SLAData{SLAID} ],
-    );
-
-    # fetch the result
-    my @ServiceIDs;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        push @ServiceIDs, $Row[0];
-    }
-
-    # add the ids
-    $SLAData{ServiceIDs} = \@ServiceIDs;
-
-    # get sla preferences
-    my %Preferences = $Self->SLAPreferencesGet( SLAID => $Param{SLAID} );
-
-    # merge hash
-    if (%Preferences) {
-        %SLAData = ( %SLAData, %Preferences );
-    }
-
-    # cache the result
-    $Self->{$CacheKey} = \%SLAData;
-
+    $Self->{"Cache::SLAGet::$Param{SLAID}"} = \%SLAData;
     return %SLAData;
 }
 
 =item SLALookup()
 
-returns the name or the sla id
+return a sla id, name and service_id
 
     my $SLAName = $SLAObject->SLALookup(
         SLAID => 123,
@@ -304,68 +228,52 @@ returns the name or the sla id
 =cut
 
 sub SLALookup {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !$Param{SLAID} && !$Param{Name} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need SLAID or Name!',
-        );
+    if (!$Param{SLAID} && !$Param{Name}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need SLAID or Name!");
         return;
     }
-
-    if ( $Param{SLAID} ) {
-
+    if ($Param{SLAID}) {
         # check cache
-        my $CacheKey = 'Cache::SLALookup::ID::' . $Param{SLAID};
-        if ( defined $Self->{$CacheKey} ) {
-            return $Self->{$CacheKey};
+        if ($Self->{"Cache::SLALookup::ID::$Param{SLAID}"}) {
+            return $Self->{"Cache::SLALookup::ID::$Param{SLAID}"};
         }
-
+        my $Name;
+        # quote
+        $Param{SLAID} = $Self->{DBObject}->Quote($Param{SLAID}, 'Integer');
         # lookup
         $Self->{DBObject}->Prepare(
-            SQL   => 'SELECT name FROM sla WHERE id = ?',
-            Bind  => [ \$Param{SLAID}, ],
+            SQL => "SELECT name FROM sla WHERE id = $Param{SLAID}",
             Limit => 1,
         );
-
-        # fetch the result
-        my $Name;
-        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        while (my @Row = $Self->{DBObject}->FetchrowArray()) {
             $Name = $Row[0];
         }
-
         # cache
-        $Self->{$CacheKey} = $Name;
-
+        $Self->{"Cache::SLALookup::ID::$Param{SLAID}"} = $Name;
         return $Name;
     }
     else {
-
         # check cache
-        my $CacheKey = 'Cache::SLALookup::Name::' . $Param{Name};
-        if ( defined $Self->{$CacheKey} ) {
-            return $Self->{$CacheKey};
+        if ($Self->{"Cache::SLALookup::Name::$Param{Name}"}) {
+            return $Self->{"Cache::SLALookup::Name::$Param{Name}"};
         }
-
+        my $ID;
+        # quote
+        $Param{Name} = $Self->{DBObject}->Quote($Param{Name});
         # lookup
         $Self->{DBObject}->Prepare(
-            SQL   => 'SELECT id FROM sla WHERE name = ?',
-            Bind  => [ \$Param{Name} ],
+            SQL => "SELECT id FROM sla WHERE name = '$Param{Name}'",
             Limit => 1,
         );
-
-        # fetch the result
-        my $SLAID;
-        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-            $SLAID = $Row[0];
+        while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+            $ID = $Row[0];
         }
-
         # cache
-        $Self->{$CacheKey} = $SLAID;
-
-        return $SLAID;
+        $Self->{"Cache::SLALookup::Name::$Param{Name}"} = $ID;
+        return $ID;
     }
 }
 
@@ -374,141 +282,76 @@ sub SLALookup {
 add a sla
 
     my $SLAID = $SLAObject->SLAAdd(
-        ServiceIDs          => [ 1, 5, 7 ],  # (optional)
-        Name                => 'SLA Name',
-        Calendar            => 'Calendar1',  # (optional)
-        FirstResponseTime   => 120,          # (optional)
-        FirstResponseNotify => 60,           # (optional) notify agent if first response escalation is 60% reached
-        UpdateTime          => 180,          # (optional)
-        UpdateNotify        => 80,           # (optional) notify agent if update escalation is 80% reached
-        SolutionTime        => 580,          # (optional)
-        SolutionNotify      => 80,           # (optional) notify agent if solution escalation is 80% reached
-        ValidID             => 1,
-        Comment             => 'Comment',    # (optional)
-        UserID              => 1,
+        ServiceID => 1,
+        Name => 'Service Name',
+        Calendar => 'Calendar1',   # (optional)
+        FirstResponseTime => 120,  # (optional)
+        UpdateTime => 180,         # (optional)
+        SolutionTime => 580,       # (optional)
+        ValidID => 1,
+        Comment => 'Comment',      # (optional)
+        UserID => 1,
     );
 
 =cut
 
 sub SLAAdd {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for my $Argument (qw(Name ValidID UserID)) {
-        if ( !$Param{$Argument} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Need $Argument!",
-            );
+    foreach (qw(ServiceID Name ValidID UserID)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
-    # check service ids
-    if ( defined $Param{ServiceIDs} && ref $Param{ServiceIDs} ne 'ARRAY' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'ServiceIDs needs to be an array reference!',
-        );
-        return;
+    foreach (qw(Calendar Comment)) {
+        $Param{$_} = $Param{$_} || '';
     }
-
-    # set default values
-    $Param{ServiceIDs}          ||= [];
-    $Param{Calendar}            ||= '';
-    $Param{Comment}             ||= '';
-    $Param{FirstResponseTime}   ||= 0;
-    $Param{FirstResponseNotify} ||= 0;
-    $Param{UpdateTime}          ||= 0;
-    $Param{UpdateNotify}        ||= 0;
-    $Param{SolutionTime}        ||= 0;
-    $Param{SolutionNotify}      ||= 0;
-
-    # cleanup given params
+    # check escalation times
+    foreach (qw(FirstResponseTime UpdateTime SolutionTime)) {
+        if (!$Param{$_}) {
+            $Param{$_} = 0;
+        }
+    }
+    # quote
+    foreach (qw(Name Calendar Comment)) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_});
+    }
+    foreach (qw(ServiceID FirstResponseTime UpdateTime SolutionTime ValidID UserID)) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_}, 'Integer');
+    }
+    # cleanup given params (replace it with StringClean() in OTRS 2.3 and later)
     for my $Argument (qw(Name Comment)) {
-        $Self->{CheckItemObject}->StringClean(
+        $Self->_StringClean(
             StringRef         => \$Param{$Argument},
             RemoveAllNewlines => 1,
             RemoveAllTabs     => 1,
         );
     }
-
-    # find exiting sla's with the same name
-    $Self->{DBObject}->Prepare(
-        SQL   => 'SELECT id FROM sla WHERE name = ?',
-        Bind  => [ \$Param{Name} ],
-        Limit => 1,
-    );
-
-    # fetch the result
-    my $NoAdd;
-    while ( $Self->{DBObject}->FetchrowArray() ) {
-        $NoAdd = 1;
-    }
-
-    # abort insert of new sla, if name already exists
-    if ($NoAdd) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't add new SLA! '$Param{Name}' already exists.",
-        );
-        return;
-    }
-
     # add sla to database
-    return if !$Self->{DBObject}->Do(
-        SQL => 'INSERT INTO sla '
-            . '(name, calendar_name, first_response_time, first_response_notify, '
-            . 'update_time, update_notify, solution_time, solution_notify, '
-            . 'valid_id, comments, create_time, create_by, change_time, change_by) VALUES '
-            . '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
-        Bind => [
-            \$Param{Name},                \$Param{Calendar},   \$Param{FirstResponseTime},
-            \$Param{FirstResponseNotify}, \$Param{UpdateTime}, \$Param{UpdateNotify},
-            \$Param{SolutionTime}, \$Param{SolutionNotify}, \$Param{ValidID}, \$Param{Comment},
-            \$Param{UserID}, \$Param{UserID},
-        ],
-    );
-
-    # get sla id
-    return if !$Self->{DBObject}->Prepare(
-        SQL   => 'SELECT id FROM sla WHERE name = ?',
-        Bind  => [ \$Param{Name} ],
-        Limit => 1,
-    );
-
-    # fetch the result
-    my $SLAID;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        $SLAID = $Row[0];
-    }
-
-    # check sla id
-    if ( !$SLAID ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't find SLAID for '$Param{Name}'!",
+    if ($Self->{DBObject}->Do(
+        SQL =>"INSERT INTO sla ".
+            "(service_id, name, calendar_name, first_response_time, update_time, solution_time, ".
+            "valid_id, comments, create_time, create_by, change_time, change_by) VALUES ".
+            "($Param{ServiceID}, '$Param{Name}', '$Param{Calendar}', $Param{FirstResponseTime}, ".
+            "$Param{UpdateTime}, $Param{SolutionTime}, $Param{ValidID}, '$Param{Comment}', ".
+            "current_timestamp, $Param{UserID}, current_timestamp, $Param{UserID})",
+    )) {
+        # get sla id
+        $Self->{DBObject}->Prepare(
+            SQL => "SELECT id FROM sla WHERE name = '$Param{Name}'",
+            Limit => 1,
         );
+        my $SLAID;
+        while (my @Row = $Self->{DBObject}->FetchrowArray()) {
+            $SLAID = $Row[0];
+        }
+        return $SLAID;
+    }
+    else {
         return;
     }
-
-    # remove all existing allocations
-    $Self->{DBObject}->Do(
-        SQL  => 'DELETE FROM service_sla WHERE sla_id = ?',
-        Bind => [ \$SLAID ],
-    );
-
-    # add the new allocations
-    for my $ServiceID ( @{ $Param{ServiceIDs} } ) {
-
-        # add one allocation
-        $Self->{DBObject}->Do(
-            SQL => 'INSERT INTO service_sla (service_id, sla_id) VALUES (?, ?)',
-            Bind => [ \$ServiceID, \$SLAID ],
-        );
-    }
-
-    return $SLAID;
 }
 
 =item SLAUpdate()
@@ -516,163 +359,122 @@ sub SLAAdd {
 update a existing sla
 
     my $True = $SLAObject->SLAUpdate(
-        SLAID               => 2,
-        ServiceIDs          => [ 1, 2, 3 ],  # (optional)
-        Name                => 'Service Name',
-        Calendar            => 'Calendar1',  # (optional)
-        FirstResponseTime   => 120,          # (optional)
-        FirstResponseNotify => 60,           # (optional) notify agent if first response escalation is 60% reached
-        UpdateTime          => 180,          # (optional)
-        UpdateNotify        => 80,           # (optional) notify agent if update escalation is 80% reached
-        SolutionTime        => 580,          # (optional)
-        SolutionNotify      => 80,           # (optional) notify agent if solution escalation is 80% reached
-        ValidID             => 1,
-        Comment             => 'Comment',    # (optional)
-        UserID              => 1,
+        SLAID => 2,
+        ServiceID => 1,
+        Name => 'Service Name',
+        Calendar => 'Calendar1',   # (optional)
+        FirstResponseTime => 120,  # (optional)
+        UpdateTime => 120,         # (optional)
+        SolutionTime => 180,       # (optional)
+        ValidID => 1,
+        Comment => 'Comment',      # (optional)
+        UserID => 1,
     );
 
 =cut
 
 sub SLAUpdate {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for my $Argument (qw(SLAID Name ValidID UserID)) {
-        if ( !$Param{$Argument} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Need $Argument!",
-            );
+    foreach (qw(SLAID ServiceID Name ValidID UserID)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
-    # check service ids
-    if ( defined $Param{ServiceIDs} && ref $Param{ServiceIDs} ne 'ARRAY' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'ServiceIDs need to be an array reference!',
-        );
-        return;
-    }
-
+    # reset cache
+    delete $Self->{"Cache::SLAGet::$Param{SLAID}"};
+    delete $Self->{"Cache::SLALookup::Name::$Param{Name}"};
+    delete $Self->{"Cache::SLALookup::ID::$Param{SLAID}"};
     # set default values
-    $Param{ServiceIDs}          ||= [];
-    $Param{Calendar}            ||= '';
-    $Param{Comment}             ||= '';
-    $Param{FirstResponseTime}   ||= 0;
-    $Param{FirstResponseNotify} ||= 0;
-    $Param{UpdateTime}          ||= 0;
-    $Param{UpdateNotify}        ||= 0;
-    $Param{SolutionTime}        ||= 0;
-    $Param{SolutionNotify}      ||= 0;
-
-    # cleanup given params
+    foreach (qw(Calendar Comment)) {
+        $Param{$_} = $Param{$_} || '';
+    }
+    # check escalation times
+    foreach (qw(FirstResponseTime UpdateTime SolutionTime)) {
+        if (!$Param{$_}) {
+            $Param{$_} = 0;
+        }
+    }
+    # quote
+    foreach (qw(Name Calendar Comment)) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_});
+    }
+    foreach (qw(ServiceID FirstResponseTime UpdateTime SolutionTime ValidID UserID)) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_}, 'Integer');
+    }
+    # cleanup given params (replace it with StringClean() in OTRS 2.3 and later)
     for my $Argument (qw(Name Comment)) {
-        $Self->{CheckItemObject}->StringClean(
+        $Self->_StringClean(
             StringRef         => \$Param{$Argument},
             RemoveAllNewlines => 1,
             RemoveAllTabs     => 1,
         );
     }
+    # update service
+    return $Self->{DBObject}->Do(
+        SQL => "UPDATE sla SET service_id = $Param{ServiceID}, name = '$Param{Name}', ".
+            "calendar_name = '$Param{Calendar}', first_response_time = $Param{FirstResponseTime}, ".
+            "update_time = $Param{UpdateTime}, ".
+            "solution_time = $Param{SolutionTime}, valid_id = $Param{ValidID}, ".
+            "comments = '$Param{Comment}', change_time = current_timestamp, change_by = $Param{UserID} ".
+            "WHERE id = $Param{SLAID}",
+    );
+}
 
-    # find exiting sla's with the same name
-    return if !$Self->{DBObject}->Prepare(
-        SQL   => 'SELECT id FROM sla WHERE name = ?',
-        Bind  => [ \$Param{Name} ],
-        Limit => 1,
+=item _StringClean()
+
+DON'T USE THIS INTERNAL FUNCTION IN OTHER MODULES!
+
+This function can be replaced with Kernel::System::CheckItem::StringClean() in OTRS 2.3 and later!
+
+clean a given string
+
+    my $Error = $CheckItemObject->_StringClean(
+        StringRef         => \'String',
+        TrimLeft          => 0,  # (optional) default 1
+        TrimRight         => 0,  # (optional) default 1
+        RemoveAllNewlines => 1,  # (optional) default 0
+        RemoveAllTabs     => 1,  # (optional) default 0
+        RemoveAllSpaces   => 1,  # (optional) default 0
     );
 
-    # fetch the result
-    my $Update = 0;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        if ( $Row[0] != $Param{SLAID} ) {
-            $Update = $Row[0];
-        }
-    }
+=cut
 
-    # abort update of sla, if name already exists
-    if ($Update) {
+sub _StringClean {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Param{StringRef} || ref $Param{StringRef} ne 'SCALAR' ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "Can't update SLA! '$Param{Name}' already exists.",
+            Message  => 'Need a scalar reference!'
         );
         return;
     }
 
-    # reset cache
-    delete $Self->{ 'Cache::SLAGet::' . $Param{SLAID} };
-    delete $Self->{ 'Cache::SLALookup::Name::' . $Param{Name} };
-    delete $Self->{ 'Cache::SLALookup::ID::' . $Param{SLAID} };
+    return 1 if !${ $Param{StringRef} };
 
-    # update service
-    return if !$Self->{DBObject}->Do(
-        SQL => 'UPDATE sla SET name = ?, calendar_name = ?, '
-            . 'first_response_time = ?, first_response_notify = ?, '
-            . 'update_time = ?, update_notify = ?, solution_time = ?, solution_notify = ?, '
-            . 'valid_id = ?, comments = ?, change_time = current_timestamp, change_by = ? '
-            . 'WHERE id = ?',
-        Bind => [
-            \$Param{Name},                \$Param{Calendar},   \$Param{FirstResponseTime},
-            \$Param{FirstResponseNotify}, \$Param{UpdateTime}, \$Param{UpdateNotify},
-            \$Param{SolutionTime}, \$Param{SolutionNotify}, \$Param{ValidID}, \$Param{Comment},
-            \$Param{UserID}, \$Param{SLAID},
-        ],
+    # set default values
+    $Param{TrimLeft}  = defined $Param{TrimLeft}  ? $Param{TrimLeft}  : 1;
+    $Param{TrimRight} = defined $Param{TrimRight} ? $Param{TrimRight} : 1;
+
+    my %TrimAction = (
+        RemoveAllNewlines => qr{ [\n\r\f] }xms,
+        RemoveAllTabs     => qr{ \t       }xms,
+        RemoveAllSpaces   => qr{ [ ]      }xms,
+        TrimLeft          => qr{ \A \s+   }xms,
+        TrimRight         => qr{ \s+ \z   }xms,
     );
 
-    # remove all existing allocations
-    return if !$Self->{DBObject}->Do(
-        SQL  => 'DELETE FROM service_sla WHERE sla_id = ?',
-        Bind => [ \$Param{SLAID}, ]
-    );
+    ACTION:
+    for my $Action ( sort keys %TrimAction ) {
+        next ACTION if !$Param{$Action};
 
-    # add the new allocations
-    for my $ServiceID ( @{ $Param{ServiceIDs} } ) {
-
-        # add one allocation
-        return if !$Self->{DBObject}->Do(
-            SQL => 'INSERT INTO service_sla (service_id, sla_id) VALUES (?, ?)',
-            Bind => [ \$ServiceID, \$Param{SLAID} ],
-        );
+        ${ $Param{StringRef} } =~ s{ $TrimAction{$Action} }{}xmsg;
     }
 
     return 1;
-}
-
-=item SLAPreferencesSet()
-
-set SLA preferences
-
-    $SLAObject->SLAPreferencesSet(
-        SLAID => 123,
-        Key       => 'UserComment',
-        Value     => 'some comment',
-        UserID    => 123,
-    );
-
-=cut
-
-sub SLAPreferencesSet {
-    my $Self = shift;
-
-    return $Self->{PreferencesObject}->SLAPreferencesSet(@_);
-}
-
-=item SLAPreferencesGet()
-
-get SLA preferences
-
-    my %Preferences = $SLAObject->SLAPreferencesGet(
-        SLAID => 123,
-        UserID    => 123,
-    );
-
-=cut
-
-sub SLAPreferencesGet {
-    my $Self = shift;
-
-    return $Self->{PreferencesObject}->SLAPreferencesGet(@_);
 }
 
 1;
@@ -681,16 +483,16 @@ sub SLAPreferencesGet {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This Software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.40 $ $Date: 2011/06/17 08:14:12 $
+$Revision: 1.15.2.1 $ $Date: 2008/03/14 14:01:35 $
 
 =cut
