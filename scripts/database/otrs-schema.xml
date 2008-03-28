@@ -5,9 +5,12 @@
     XML File for the OTRS database description
     Copyright (C) 2001-2006 OTRS GmbH, http://otrs.org/
 
-    $Id: otrs-schema.xml,v 1.73 2008/02/11 11:45:39 martin Exp $
+    $Id: otrs-schema.xml,v 1.74 2008/03/28 11:18:41 martin Exp $
 
     $Log: otrs-schema.xml,v $
+    Revision 1.74  2008/03/28 11:18:41  martin
+    Added POP3/POP3S/IMAP/IMAPS support for PostMaster sub system (new bin/PostMasterMailbox.pl is replacing old bin/PostMasterPOP3.pl). Thanks to Igor Stradwo for this patch!
+
     Revision 1.73  2008/02/11 11:45:39  martin
     Added escalation-warning-notify support.
 
@@ -1530,12 +1533,13 @@
     </Index>
 </Table>
 
-<!-- pop3_account -->
-<Table Name="pop3_account">
+<!-- mail_account -->
+<Table Name="mail_account">
     <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER"/>
     <Column Name="login" Required="true" Size="200" Type="VARCHAR"/>
     <Column Name="pw" Required="true" Size="200" Type="VARCHAR"/>
     <Column Name="host" Required="true" Size="200" Type="VARCHAR"/>
+    <Column Name="account_type" Required="true" Size="20" Type="VARCHAR"/>
     <Column Name="queue_id" Required="true" Type="INTEGER"/>
     <Column Name="trusted" Required="true" Type="SMALLINT"/>
     <Column Name="comments" Required="false" Size="250" Type="VARCHAR"/>
