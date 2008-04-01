@@ -1,149 +1,118 @@
 # --
 # Kernel/Modules/AgentTicketBounce.pm - to bounce articles of tickets
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketBounce.pm,v 1.54 2012/01/24 00:08:45 cr Exp $
+# $Id: AgentTicketBounce.pm,v 1.10.2.1 2008/04/01 20:36:54 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AgentTicketBounce;
 
 use strict;
-use warnings;
-
 use Kernel::System::State;
 use Kernel::System::SystemAddress;
 use Kernel::System::CustomerUser;
-use Kernel::System::TemplateGenerator;
-use Kernel::System::VariableCheck qw(:all);
 use Mail::Address;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.54 $) [1];
+$VERSION = '$Revision: 1.10.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
-
+    my $Type = shift;
+    my %Param = @_;
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
-
-    # check needed objects
-    for my $Needed (
-        qw(ParamObject DBObject TicketObject LayoutObject LogObject QueueObject ConfigObject)
-        )
-    {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    my $Self = {};
+    bless ($Self, $Type);
+    # get common opjects
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
+    # check needed Opjects
+    foreach (qw(ParamObject DBObject TicketObject LayoutObject LogObject QueueObject ConfigObject)) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
-
     # needed objects
-    $Self->{StateObject}        = Kernel::System::State->new(%Param);
+    $Self->{StateObject} = Kernel::System::State->new(%Param);
     $Self->{CustomerUserObject} = Kernel::System::CustomerUser->new(%Param);
-    $Self->{SystemAddress}      = Kernel::System::SystemAddress->new(%Param);
-    $Self->{ArticleID}          = $Self->{ParamObject}->GetParam( Param => 'ArticleID' ) || '';
-    $Self->{Config}             = $Self->{ConfigObject}->Get("Ticket::Frontend::$Self->{Action}");
+    $Self->{SystemAddress} = Kernel::System::SystemAddress->new(%Param);
+    $Self->{ArticleID} = $Self->{ParamObject}->GetParam(Param => 'ArticleID') || '';
+    $Self->{Config} = $Self->{ConfigObject}->Get("Ticket::Frontend::$Self->{Action}");
 
     return $Self;
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for my $Needed (qw(ArticleID TicketID QueueID)) {
-        if ( !defined $Self->{$Needed} ) {
+    foreach (qw(ArticleID TicketID QueueID)) {
+        if (! defined $Self->{$_}) {
             return $Self->{LayoutObject}->ErrorScreen(
-                Message => "$Needed is needed!",
-                Comment => 'Please contact your administrator',
+                Message => "$_ is needed!",
+                Comment => 'Please contact your admin',
             );
         }
     }
-
     # get ticket data
-    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Self->{TicketID} );
-
+    my %Ticket = $Self->{TicketObject}->TicketGet(TicketID => $Self->{TicketID});
     # check permissions
-    my $Access = $Self->{TicketObject}->TicketPermission(
-        Type     => $Self->{Config}->{Permission},
+    if (!$Self->{TicketObject}->Permission(
+        Type => $Self->{Config}->{Permission},
         TicketID => $Self->{TicketID},
-        UserID   => $Self->{UserID}
-    );
-
-    # error screen, don't show ticket
-    if ( !$Access ) {
-        return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
+        UserID => $Self->{UserID})) {
+        # error screen, don't show ticket
+        return $Self->{LayoutObject}->NoPermission(WithHeader => 'yes');
     }
-
-    # get ACL restrictions
-    $Self->{TicketObject}->TicketAcl(
-        Data          => '-',
-        TicketID      => $Self->{TicketID},
-        ReturnType    => 'Action',
-        ReturnSubType => '-',
-        UserID        => $Self->{UserID},
-    );
-    my %AclAction = $Self->{TicketObject}->TicketAclActionData();
-
-    # check if ACL resctictions if exist
-    if ( IsHashRefWithData( \%AclAction ) ) {
-
-        # show error screen if ACL prohibits this action
-        if ( defined $AclAction{ $Self->{Action} } && $AclAction{ $Self->{Action} } eq '0' ) {
-            return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
-        }
-    }
-
     # get lock state && write (lock) permissions
-    if ( $Self->{Config}->{RequiredLock} ) {
-        if ( !$Self->{TicketObject}->TicketLockGet( TicketID => $Self->{TicketID} ) ) {
-            $Self->{TicketObject}->TicketLockSet(
+    if ($Self->{Config}->{RequiredLock}) {
+        if (!$Self->{TicketObject}->LockIsTicketLocked(TicketID => $Self->{TicketID})) {
+            $Self->{TicketObject}->LockSet(
                 TicketID => $Self->{TicketID},
-                Lock     => 'lock',
-                UserID   => $Self->{UserID}
+                Lock => 'lock',
+                UserID => $Self->{UserID}
             );
-            if (
-                $Self->{TicketObject}->TicketOwnerSet(
-                    TicketID  => $Self->{TicketID},
-                    UserID    => $Self->{UserID},
-                    NewUserID => $Self->{UserID},
-                )
-                )
-            {
-
+            if ($Self->{TicketObject}->OwnerSet(
+                TicketID => $Self->{TicketID},
+                UserID => $Self->{UserID},
+                NewUserID => $Self->{UserID},
+            )) {
+                # show lock state
                 $Self->{LayoutObject}->Block(
-                    Name => 'PropertiesLock',
-                    Data => { %Param, TicketID => $Self->{TicketID} },
+                    Name => 'TicketLocked',
+                    Data => {
+                        %Param,
+                        TicketID => $Self->{TicketID},
+                    },
                 );
             }
         }
         else {
             my $AccessOk = $Self->{TicketObject}->OwnerCheck(
                 TicketID => $Self->{TicketID},
-                OwnerID  => $Self->{UserID},
+                OwnerID => $Self->{UserID},
             );
-            if ( !$AccessOk ) {
-                my $Output = $Self->{LayoutObject}->Header(
-                    Value => $Ticket{Number},
-                    Type  => 'Small',
-                );
+            if (!$AccessOk) {
+                my $Output = $Self->{LayoutObject}->Header(Value => $Ticket{Number});
                 $Output .= $Self->{LayoutObject}->Warning(
-                    Message => "Sorry, you need to be the ticket owner to perform this action.",
+                    Message => "Sorry, you need to be the owner to do this action!",
                     Comment => 'Please change the owner first.',
                 );
-                $Output .= $Self->{LayoutObject}->Footer(
-                    Type => 'Small',
-                );
+                $Output .= $Self->{LayoutObject}->Footer();
                 return $Output;
             }
             else {
                 $Self->{LayoutObject}->Block(
                     Name => 'TicketBack',
-                    Data => { %Param, TicketID => $Self->{TicketID}, },
+                    Data => {
+                        %Param,
+                        TicketID => $Self->{TicketID},
+                    },
                 );
             }
         }
@@ -151,316 +120,274 @@ sub Run {
     else {
         $Self->{LayoutObject}->Block(
             Name => 'TicketBack',
-            Data => { %Param, TicketID => $Self->{TicketID}, },
+            Data => {
+                %Param,
+                %Ticket,
+            },
         );
     }
 
-    # ------------------------------------------------------------ #
-    # show screen
-    # ------------------------------------------------------------ #
-    if ( !$Self->{Subaction} ) {
-
+    # prepare salutation
+    if (!$Self->{Subaction}) {
         # check if plain article exists
-        if ( !$Self->{TicketObject}->ArticlePlain( ArticleID => $Self->{ArticleID} ) ) {
+        if (!$Self->{TicketObject}->ArticlePlain(ArticleID => $Self->{ArticleID})) {
             return $Self->{LayoutObject}->ErrorScreen();
         }
-
         # get article data
         my %Article = $Self->{TicketObject}->ArticleGet(
-            ArticleID     => $Self->{ArticleID},
-            DynamicFields => 0,
+            ArticleID => $Self->{ArticleID},
         );
-
+        # prepare subject ...
+        $Article{Subject} = $Self->{TicketObject}->TicketSubjectBuild(
+            TicketNumber => $Article{TicketNumber},
+            Subject => $Article{Subject} || '',
+        );
         # prepare to (ReplyTo!) ...
-        if ( $Article{ReplyTo} ) {
+        if ($Article{ReplyTo}) {
             $Article{To} = $Article{ReplyTo};
         }
         else {
             $Article{To} = $Article{From};
         }
-
-        # prepare salutation
-        my $TemplateGenerator = Kernel::System::TemplateGenerator->new( %{$Self} );
-        $Param{Salutation} = $TemplateGenerator->Salutation(
-            TicketID  => $Self->{TicketID},
-            ArticleID => $Self->{ArticleID},
-            Data      => \%Param,
-            UserID    => $Self->{UserID},
-        );
-
-        # prepare signature
-        $Param{Signature} = $TemplateGenerator->Signature(
-            TicketID  => $Self->{TicketID},
-            ArticleID => $Self->{ArticleID},
-            Data      => \%Param,
-            UserID    => $Self->{UserID},
-        );
-
-        # prepare bounce text
-        $Param{BounceText} = $Self->{ConfigObject}->Get('Ticket::Frontend::BounceText') || '';
-
-        # make sure body is rich text
-        if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-
-            # prepare bounce tags
-            $Param{BounceText} =~ s/<OTRS_TICKET>/&lt;OTRS_TICKET&gt;/g;
-            $Param{BounceText} =~ s/<OTRS_BOUNCE_TO>/&lt;OTRS_BOUNCE_TO&gt;/g;
-
-            $Param{BounceText} = $Self->{LayoutObject}->Ascii2RichText(
-                String => $Param{BounceText},
+        # get customer data
+        my %Customer = ();
+        if ($Ticket{CustomerUserID}) {
+            %Customer = $Self->{CustomerUserObject}->CustomerUserDataGet(
+                User => $Ticket{CustomerUserID},
             );
         }
+        # prepare salutation
+        $Param{Salutation} = $Self->{QueueObject}->GetSalutation(%Article);
+        # prepare signature
+        $Param{Signature} = $Self->{QueueObject}->GetSignature(%Article);
+        foreach (qw(Signature Salutation)) {
+            # get and prepare realname
+            if ($Param{$_} =~ /<OTRS_CUSTOMER_REALNAME>/) {
+                my $From = '';
+                if ($Ticket{CustomerUserID}) {
+                    $From = $Self->{CustomerUserObject}->CustomerName(UserLogin => $Ticket{CustomerUserID});
+                }
+                if (!$From) {
+                    $From = $Article{From} || '';
+                    $From =~ s/<.*>|\(.*\)|\"|;|,//g;
+                    $From =~ s/( $)|(  $)//g;
+                }
+                $Param{$_} =~ s/<OTRS_CUSTOMER_REALNAME>/$From/g;
+            }
 
-        # build InformationFormat
-        if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-            $Param{InformationFormat} = "$Param{Salutation}<br/>
-<br/>
-$Param{BounceText}<br/>
-<br/>
-$Param{Signature}";
+            # current user
+            my %User = $Self->{UserObject}->GetUserData(
+                UserID => $Self->{UserID},
+                Cached => 1,
+            );
+            foreach my $UserKey (keys %User) {
+                if ($User{$UserKey}) {
+                    $Param{$_} =~ s/<OTRS_Agent_$UserKey>/$User{$UserKey}/gi;
+                    $Param{$_} =~ s/<OTRS_CURRENT_$UserKey>/$User{$UserKey}/gi;
+                }
+            }
+            # replace other needed stuff
+            $Param{$_} =~ s/<OTRS_FIRST_NAME>/$Self->{UserFirstname}/g;
+            $Param{$_} =~ s/<OTRS_LAST_NAME>/$Self->{UserLastname}/g;
+            # cleanup
+            $Param{$_} =~ s/<OTRS_Agent_.+?>/-/gi;
+            $Param{$_} =~ s/<OTRS_CURRENT_.+?>/-/gi;
+
+            # owner user
+            my %OwnerUser = $Self->{UserObject}->GetUserData(
+                UserID => $Ticket{OwnerID},
+                Cached => 1,
+            );
+            foreach my $UserKey (keys %OwnerUser) {
+                if ($OwnerUser{$UserKey}) {
+                    $Param{$_} =~ s/<OTRS_OWNER_$UserKey>/$OwnerUser{$UserKey}/gi;
+                }
+            }
+            # cleanup
+            $Param{$_} =~ s/<OTRS_OWNER_.+?>/-/gi;
+
+            # responsible user
+            my %ResponsibleUser = $Self->{UserObject}->GetUserData(
+                UserID => $Ticket{ResponsibleID},
+                Cached => 1,
+            );
+            foreach my $UserKey (keys %ResponsibleUser) {
+                if ($ResponsibleUser{$UserKey}) {
+                    $Param{$_} =~ s/<OTRS_RESPONSIBLE_$UserKey>/$ResponsibleUser{$UserKey}/gi;
+                }
+            }
+            # cleanup
+            $Param{$_} =~ s/<OTRS_RESPONSIBLE_.+?>/-/gi;
+
+            # replace ticket data
+            foreach my $Key (keys %Ticket) {
+                if ($Ticket{$Key}) {
+                    $Param{$_} =~ s/<OTRS_TICKET_$Key>/$Ticket{$Key}/gi;
+                }
+            }
+            # cleanup all not needed <OTRS_TICKET_ tags
+            $Param{$_} =~ s/<OTRS_TICKET_.+?>/-/gi;
+            # replace customer data
+            foreach my $CustomerKey (keys %Customer) {
+                if ($Customer{$CustomerKey}) {
+                    $Param{$_} =~ s/<OTRS_CUSTOMER_$CustomerKey>/$Customer{$CustomerKey}/gi;
+                    $Param{$_} =~ s/<OTRS_CUSTOMER_DATA_$CustomerKey>/$Customer{$CustomerKey}/gi;
+                }
+            }
+            # cleanup all not needed <OTRS_CUSTOMER_ tags
+            $Param{$_} =~ s/<OTRS_CUSTOMER_.+?>/-/gi;
+            $Param{$_} =~ s/<OTRS_CUSTOMER_DATA_.+?>/-/gi;
+            # replace config options
+            $Param{$_} =~ s{<OTRS_CONFIG_(.+?)>}{$Self->{ConfigObject}->Get($1)}egx;
+            $Param{$_} =~ s/<OTRS_CONFIG_.+?>/-/gi;
         }
-        else {
-            $Param{InformationFormat} = "$Param{Salutation}
-
-$Param{BounceText}
-
-$Param{Signature}";
+        # prepare body ...
+        my $NewLine = $Self->{ConfigObject}->Get('Ticket::Frontend::TextAreaEmail') || 75;
+        $Article{Body} =~ s/(.{$NewLine}.+?\s)/$1\n/g;
+        $Article{Body} =~ s/\n/\n> /g;
+        $Article{Body} = "\n> " . $Article{Body};
+        my @Body = split(/\n/, $Article{Body});
+        $Article{Body} = '';
+        foreach (1..4) {
+            $Article{Body} .= $Body[$_]."\n" if ($Body[$_]);
         }
-
-        # prepare sender of bounce email
-        my %Address = $Self->{QueueObject}->GetSystemAddress( QueueID => $Article{QueueID}, );
+        # prepare from ...
+        my %Address = $Self->{QueueObject}->GetSystemAddress(
+            QueueID => $Article{QueueID},
+        );
         $Article{From} = "$Address{RealName} <$Address{Email}>";
+        $Article{Email} = $Address{Email};
+        $Article{RealName} = $Address{RealName};
 
         # get next states
-        my %NextStates = $Self->{TicketObject}->TicketStateList(
-            Action   => $Self->{Action},
+        my %NextStates = $Self->{TicketObject}->StateList(
+            Action => $Self->{Action},
             TicketID => $Self->{TicketID},
-            UserID   => $Self->{UserID},
+            UserID => $Self->{UserID},
         );
-
         # build next states string
-        if ( !$Self->{Config}->{StateDefault} ) {
+        if (!$Self->{Config}->{StateDefault}) {
             $NextStates{''} = '-';
         }
-        $Param{NextStatesStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data          => \%NextStates,
-            Name          => 'BounceStateID',
-            SelectedValue => $Self->{Config}->{StateDefault},
+        $Param{'NextStatesStrg'} = $Self->{LayoutObject}->OptionStrgHashRef(
+            Data => \%NextStates,
+            Name => 'BounceStateID',
+            Selected => $Self->{Config}->{StateDefault},
         );
-
-        # add rich text editor
-        if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-            $Self->{LayoutObject}->Block(
-                Name => 'RichText',
-                Data => \%Param,
-            );
-        }
-
         # print form ...
-        my $Output = $Self->{LayoutObject}->Header(
-            Value => $Ticket{TicketNumber},
-            Type  => 'Small',
-        );
+        my $Output = $Self->{LayoutObject}->Header(Value => $Ticket{TicketNumber});
+        # get output back
         $Output .= $Self->{LayoutObject}->Output(
             TemplateFile => 'AgentTicketBounce',
-            Data         => {
+            Data => {
                 %Param,
                 %Article,
-                TicketID     => $Self->{TicketID},
-                ArticleID    => $Self->{ArticleID},
-                TicketNumber => $Ticket{TicketNumber},
+                TicketID => $Self->{TicketID},
+                ArticleID => $Self->{ArticleID},
             },
         );
-        $Output .= $Self->{LayoutObject}->Footer(
-            Type => 'Small',
-        );
+        $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
-
-    # ------------------------------------------------------------ #
-    # bounce
-    # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'Store' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
+    elsif ($Self->{Subaction} eq 'Store') {
         # get params
-        for my $Parameter (qw(From BounceTo To Subject Body InformSender BounceStateID)) {
-            $Param{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+        foreach (qw(BounceTo To Subject Body InformSender BounceStateID)) {
+            $Param{$_} = $Self->{ParamObject}->GetParam(Param => $_) || '';
         }
-
-        my %Error;
-
         # check forward email address
-        if ( !$Param{BounceTo} ) {
-            $Error{'BounceToInvalid'} = 'ServerError';
-        }
-        for my $Email ( Mail::Address->parse( $Param{BounceTo} ) ) {
+        foreach my $Email (Mail::Address->parse($Param{BounceTo})) {
             my $Address = $Email->address();
-            if ( $Self->{SystemAddress}->SystemAddressIsLocalAddress( Address => $Address ) ) {
-                $Error{'BounceToInvalid'} = 'ServerError';
-            }
-        }
-
-        if ( !$Param{To} ) {
-            $Error{'ToInvalid'} = 'ServerError';
-        }
-
-        if ( !$Param{Subject} ) {
-            $Error{'SubjectInvalid'} = 'ServerError';
-        }
-        if ( !$Param{Body} ) {
-            $Error{'BodyInvalid'} = 'ServerError';
-        }
-
-        #check for error
-        if (%Error) {
-
-            # get next states
-            my %NextStates = $Self->{TicketObject}->TicketStateList(
-                Action   => $Self->{Action},
-                TicketID => $Self->{TicketID},
-                UserID   => $Self->{UserID},
-            );
-
-            # build next states string
-            if ( !$Self->{Config}->{StateDefault} ) {
-                $NextStates{''} = '-';
-            }
-            $Param{NextStatesStrg} = $Self->{LayoutObject}->BuildSelection(
-                Data     => \%NextStates,
-                Name     => 'BounceStateID',
-                Selected => $Param{BounceStateID},
-            );
-
-            # add rich text editor
-            if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'RichText',
+            if ($Self->{SystemAddress}->SystemAddressIsLocalAddress(Address => $Address)) {
+                # error page
+                return $Self->{LayoutObject}->ErrorScreen(
+                    Message => "Can't forward ticket to $Address! It's a local address! You need to move it!",
+                    Comment => 'Please contact the admin.',
                 );
             }
-
-            $Param{InformationFormat} = $Param{Body};
-
-            my $Output = $Self->{LayoutObject}->Header(
-                Type => 'Small',
-            );
-            $Output .= $Self->{LayoutObject}->Output(
-                TemplateFile => 'AgentTicketBounce',
-                Data         => {
-                    %Param,
-                    %Error,
-                    TicketID  => $Self->{TicketID},
-                    ArticleID => $Self->{ArticleID},
-
-                },
-            );
-            $Output .= $Self->{LayoutObject}->Footer(
-                Type => 'Small',
-            );
-            return $Output;
         }
-
-        my $Bounce = $Self->{TicketObject}->ArticleBounce(
-            TicketID    => $Self->{TicketID},
-            ArticleID   => $Self->{ArticleID},
-            UserID      => $Self->{UserID},
-            To          => $Param{BounceTo},
-            From        => $Param{From},
-            HistoryType => 'Bounce',
+        # prepare from ...
+        my %Address = $Self->{QueueObject}->GetSystemAddress(
+            QueueID => $Ticket{QueueID},
         );
-
-        # error page
-        if ( !$Bounce ) {
+        $Param{From} = "$Address{RealName} <$Address{Email}>";
+        $Param{Email} = $Address{Email};
+        $Param{EmailPlain} = $Self->{TicketObject}->ArticlePlain(ArticleID => $Self->{ArticleID});
+        if (!$Self->{TicketObject}->ArticleBounce(
+            TicketID => $Self->{TicketID},
+            ArticleID => $Self->{ArticleID},
+            UserID => $Self->{UserID},
+            To => $Param{BounceTo},
+            From => $Param{Email},
+            Email => $Param{EmailPlain},
+            HistoryType => 'Bounce',
+        )) {
+            # error page
             return $Self->{LayoutObject}->ErrorScreen(
                 Message => "Can't bounce email!",
                 Comment => 'Please contact the admin.',
             );
         }
-
         # send customer info?
-        if ( $Param{InformSender} ) {
-
-            # set mime type
-            my $MimeType = 'text/plain';
-            if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-                $MimeType = 'text/html';
-
-                # verify html document
-                $Param{Body} = $Self->{LayoutObject}->RichTextDocumentComplete(
-                    String => $Param{Body},
-                );
-            }
-
-            # replace placeholders
-            $Param{Body} =~ s/(&lt;|<)OTRS_TICKET(&gt;|>)/$Ticket{TicketNumber}/g;
-            $Param{Body} =~ s/(&lt;|<)OTRS_BOUNCE_TO(&gt;|>)/$Param{BounceTo}/g;
-
-            # send
-            my $ArticleID = $Self->{TicketObject}->ArticleSend(
-                ArticleType    => 'email-external',
-                SenderType     => 'agent',
-                TicketID       => $Self->{TicketID},
-                HistoryType    => 'Bounce',
+        if ($Param{InformSender}) {
+            $Param{Body} =~ s/<OTRS_TICKET>/$Ticket{TicketNumber}/g;
+            $Param{Body} =~ s/<OTRS_BOUNCE_TO>/$Param{BounceTo}/g;
+            if (my $ArticleID = $Self->{TicketObject}->ArticleSend(
+                ArticleType => 'email-external',
+                SenderType => 'agent',
+                TicketID => $Self->{TicketID},
+                HistoryType => 'Bounce',
                 HistoryComment => "Bounced info to '$Param{To}'.",
-                From           => $Param{From},
-                Email          => $Param{Email},
-                To             => $Param{To},
-                Subject        => $Param{Subject},
-                UserID         => $Self->{UserID},
-                Body           => $Param{Body},
-                Charset        => $Self->{LayoutObject}->{UserCharset},
-                MimeType       => $MimeType,
-            );
-
-            # error page
-            if ( !$ArticleID ) {
+                From => $Param{From},
+                Email => $Param{Email},
+                To => $Param{To},
+                Subject => $Param{Subject},
+                UserID => $Self->{UserID},
+                Body => $Param{Body},
+                Charset => $Self->{LayoutObject}->{UserCharset},
+                Type => 'text/plain',
+            )) {
+                # null
+            }
+            else {
+                # error page
                 return $Self->{LayoutObject}->ErrorScreen(
                     Message => "Can't send email!",
                     Comment => 'Please contact the admin.',
                 );
             }
         }
-
-        # check if there is a chosen bounce state id
-        if ( $Param{BounceStateID} ) {
-
-            # set state
-            my %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
-                ID => $Param{BounceStateID},
+        # set state
+        my %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
+            ID => $Param{BounceStateID},
+        );
+        $Self->{TicketObject}->StateSet(
+            TicketID => $Self->{TicketID},
+            ArticleID => $Self->{ArticleID},
+            StateID => $Param{BounceStateID},
+            UserID => $Self->{UserID},
+        );
+        # should i set an unlock?
+        if ($StateData{TypeName} =~ /^close/i) {
+            $Self->{TicketObject}->LockSet(
+                TicketID => $Self->{TicketID},
+                Lock => 'unlock',
+                UserID => $Self->{UserID},
             );
-            $Self->{TicketObject}->TicketStateSet(
-                TicketID  => $Self->{TicketID},
-                ArticleID => $Self->{ArticleID},
-                StateID   => $Param{BounceStateID},
-                UserID    => $Self->{UserID},
-            );
-
-            # should i set an unlock?
-            if ( $StateData{TypeName} =~ /^close/i ) {
-                $Self->{TicketObject}->TicketLockSet(
-                    TicketID => $Self->{TicketID},
-                    Lock     => 'unlock',
-                    UserID   => $Self->{UserID},
-                );
-            }
-
-            # redirect
-            if ( $StateData{TypeName} =~ /^close/i ) {
-                return $Self->{LayoutObject}->PopupClose(
-                    URL => ( $Self->{LastScreenOverview} || 'Action=AgentDashboard' ),
-                );
-            }
         }
-        return $Self->{LayoutObject}->PopupClose(
-            URL => ( $Self->{LastScreenView} || 'Action=AgentDashboard' )
+        # redirect
+        if ($StateData{TypeName} =~ /^close/i) {
+            return $Self->{LayoutObject}->Redirect(OP => $Self->{LastScreenOverview});
+        }
+        else {
+            return $Self->{LayoutObject}->Redirect(OP => $Self->{LastScreenView});
+        }
+    }
+    else {
+        return $Self->{LayoutObject}->ErrorScreen(
+            Message => 'Wrong Subaction!!',
+            Comment => 'Please contact your admin',
         );
     }
-    return $Self->{LayoutObject}->ErrorScreen(
-        Message => 'Wrong Subaction!!',
-        Comment => 'Please contact your administrator',
-    );
 }
 
 1;
