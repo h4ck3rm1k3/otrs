@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Support/Database/mysql.pm - all required system informations
-# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.13 2007/11/22 13:37:10 sr Exp $
+# $Id: mysql.pm,v 1.14 2008/04/02 07:58:39 ot Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Support::Database::mysql;
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.13 $) [1];
+$VERSION = qw($Revision: 1.14 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -385,22 +385,29 @@ sub _TableCheck {
             close($In);
             my @XMLHash = $Self->{XMLObject}->XMLParse2XMLHash( String => $Content );
 
+            my @Problems;
             for my $Table ( @{ $XMLHash[1]->{database}->[1]->{Table} } ) {
                 if ($Table) {
                     $Count++;
-                    if ( $Self->{DBObject}
-                        ->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 ) )
-                    {
+
+                    # use 'CHECK TABLE'-statement to determine state of each table
+                    # (which may yield several lines per table, the last of which will
+                    # contain the overall state of that table)
+                    if ( $Self->{DBObject}->Prepare( SQL => "CHECK TABLE $Table->{Name}" ) ) {
+                        my $Status;
                         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+                            $Status = $Row[3];      # look at field 'Msg_text'
                         }
+                        next if $Status eq 'OK';
+                        push @Problems, $Status;
                     }
                     else {
-                        $Message .= "$Table->{Name}, ";
+                        push @Problems, "unable to check table '$Table->{Name}'";
                     }
                 }
             }
-            if ($Message) {
-                $Message = "Table dosn't exists: $Message";
+            if (@Problems) {
+                $Message = join "\n", @Problems;
             }
             else {
                 $Check   = 'OK';
