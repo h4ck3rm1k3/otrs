@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Support/OTRS.pm - all required otrs informations
-# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.12 2007/11/29 13:21:23 ho Exp $
+# $Id: OTRS.pm,v 1.13 2008/05/01 16:52:02 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Support::OTRS;
@@ -18,7 +18,7 @@ use Kernel::System::Support;
 use Kernel::System::Ticket;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.13 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -273,7 +273,7 @@ sub _OTRSCheckModulesGet {
     );
 
     # remove tmp file
-    unlink $Self->{ConfigObject}->Get('Home') . "/var/tmp/CheckModules.log";
+    unlink $Self->{ConfigObject}->Get('Home') . '/var/tmp/CheckModules.log';
 
     if ($Filename) {
         $ReturnHash = {
@@ -311,7 +311,7 @@ sub _LogCheck {
                     $Message = 'There is one error log entry: ';
                 }
                 if ($Error) {
-                    $Error .= ", ";
+                    $Error .= ', ';
                 }
                 $Error .= $Row[3];
             }
@@ -321,11 +321,11 @@ sub _LogCheck {
     $Data = {
         Key         => 'LogCheck',
         Name        => 'LogCheck',
-        Description => "Check log for error log entries.",
+        Description => 'Check log for error log entries.',
         Comment     => $Message . $Error,
         Check       => $Check,
-        },
-        return $Data;
+    };
+    return $Data;
 }
 
 sub _TicketIndexModuleCheck {
@@ -337,13 +337,12 @@ sub _TicketIndexModuleCheck {
     my $Check   = 'Failed';
     my $Message = '';
     my $Module  = $Self->{ConfigObject}->Get('Ticket::IndexModule');
-    $Self->{DBObject}->Prepare( SQL => "SELECT count(*) from ticket" );
+    $Self->{DBObject}->Prepare( SQL => 'SELECT count(*) from ticket' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         if ( $Row[0] > 80000 ) {
             if ( $Module =~ /RuntimeDB/ ) {
                 $Check = 'Failed';
-                $Message
-                    = "You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
+                $Message = "$Row[0] tickets in your system. You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
             }
             else {
                 $Check   = 'OK';
@@ -353,8 +352,7 @@ sub _TicketIndexModuleCheck {
         elsif ( $Row[0] > 60000 ) {
             if ( $Module =~ /RuntimeDB/ ) {
                 $Check = 'Critical';
-                $Message
-                    = "You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
+                $Message = "$Row[0] tickets in your system. You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
             }
             else {
                 $Check   = 'OK';
@@ -363,17 +361,17 @@ sub _TicketIndexModuleCheck {
         }
         else {
             $Check   = 'OK';
-            $Message = "You are using $Module, that's fine for $Row[0] tickets in your system.";
+            $Message = "You are using \"$Module\", that's fine for $Row[0] tickets in your system.";
         }
     }
     $Data = {
         Key         => 'Ticket::IndexModule',
         Name        => 'Ticket::IndexModule',
-        Description => "Check Ticket::IndexModule setting.",
+        Description => 'Check Ticket::IndexModule setting.',
         Comment     => $Message,
         Check       => $Check,
-        },
-        return $Data;
+    };
+    return $Data;
 }
 
 # OpenTicketCheck check
@@ -389,36 +387,39 @@ sub _OpenTicketCheck {
         StateType  => 'Open',
         UserID     => 1,
         Permission => 'ro',
-        Limit      => 99999999,
+        Limit      => 89999,
     );
-    if ( $#TicketIDs > 10000 ) {
+    if ( $#TicketIDs > 89990 ) {
         $Check = 'Failed';
-        $Message
-            = "You should not have more then 8000 open tickets in your system. You currently have "
+        $Message = 'You should not have more then 8000 open tickets in your system. You currently have over 89999! In case you want to improve your performance, close not needed open tickets.';
+
+    }
+    elsif ( $#TicketIDs > 10000 ) {
+        $Check = 'Failed';
+        $Message = 'You should not have more then 8000 open tickets in your system. You currently have '
             . $#TicketIDs
-            . ". In case you want to improve your performance, close not needed open tickets.";
+            . '. In case you want to improve your performance, close not needed open tickets.';
 
     }
     elsif ( $#TicketIDs > 8000 ) {
         $Check = 'Critical';
-        $Message
-            = "You should not have more then 8000 open tickets in your system. You currently have "
+        $Message = 'You should not have more then 8000 open tickets in your system. You currently have '
             . $#TicketIDs
-            . ". In case you want to improve your performance, close not needed open tickets.";
+            . '. In case you want to improve your performance, close not needed open tickets.';
 
     }
     else {
         $Check   = 'OK';
-        $Message = "You have " . $#TicketIDs . " open tickets in your system.";
+        $Message = 'You have ' . $#TicketIDs . ' open tickets in your system.';
     }
     $Data = {
         Key         => 'OpenTicketCheck',
         Name        => 'OpenTicketCheck',
-        Description => "Check open tickets in your system.",
+        Description => 'Check open tickets in your system.',
         Comment     => $Message,
         Check       => $Check,
-        },
-        return $Data;
+    };
+    return $Data;
 }
 
 # Check if the configured FQDN is valid.
@@ -427,7 +428,7 @@ sub _FQDNConfigCheck {
     my $Data = {
         Key         => 'FQDNConfigCheck',
         Name        => 'FQDNConfigCheck',
-        Description => "Check if the configured fully qualified host name is valid.",
+        Description => 'Check if the configured fully qualified host name is valid.',
         Check       => 'Failed',
         Comment     => '',
     };
@@ -438,7 +439,7 @@ sub _FQDNConfigCheck {
     # Do we have set our FQDN?
     if ( $FQDN eq 'yourhost.example.com' ) {
         $Data->{Check}   = 'Failed';
-        $Data->{Comment} = 'Please configure your FQDN.';
+        $Data->{Comment} = "Please configure your FQDN (it's currently default setting '$FQDN').";
     }
 
     # FQDN syntax check.
@@ -461,7 +462,7 @@ sub _SystemIDConfigCheck {
     my $Data = {
         Key         => 'SystemIDConfigCheck',
         Name        => 'SystemIDConfigCheck',
-        Description => "Check if the configured SystemID contains only digits.",
+        Description => 'Check if the configured SystemID contains only digits.',
         Check       => 'Failed',
         Comment     => '',
     };
@@ -475,7 +476,7 @@ sub _SystemIDConfigCheck {
     }
     else {
         $Data->{Check}   = 'Failed';
-        $Data->{Comment} = "The SystemID \'$SystemID\' must consist of digits exclusively.";
+        $Data->{Comment} = "The SystemID '$SystemID' must consist of digits exclusively.";
     }
     return $Data;
 }

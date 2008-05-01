@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Support/Hardware.pm - all required system informations
-# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Hardware.pm,v 1.12 2007/11/22 16:41:07 sr Exp $
+# $Id: Hardware.pm,v 1.13 2008/05/01 16:51:22 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Support::Hardware;
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.13 $) [1];
 
 =head1 NAME
 
@@ -432,7 +432,7 @@ sub _DiskUsageCheck {
         }
         $Data = {
             Key         => 'disk usage',
-            Name        => 'disk usage',
+            Name        => 'Disk Usage',
             Description => "Check disk usage.",
             Comment     => $Message,
             Check       => $Check,
@@ -451,12 +451,12 @@ This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (GPL). If you
-did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.12 $ $Date: 2007/11/22 16:41:07 $
+$Revision: 1.13 $ $Date: 2008/05/01 16:51:22 $
 
 =cut
