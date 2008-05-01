@@ -1,29 +1,76 @@
 # --
 # AdminSupport.dtl - provides HTML form for AdminSupport
-# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.5 2007/11/22 16:51:08 sr Exp $
+# $Id: AdminSupport.dtl,v 1.6 2008/05/01 16:50:43 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 <!-- dtl:block:Overview -->
 <table border="0" width="100%" cellspacing="0" cellpadding="3">
   <tr>
-    <td class="mainhead">$Env{"Box0"}$Text{"Admin Support Info"}$Env{"Box1"}</td>
   </tr>
   <tr>
-    <td class="menu">
-      <a href="$Env{"Baselink"}Action=$Env{"Action"}&Subaction=GetRequiredInfo">Create Support Package</a>
+    <td colspan="2" class="mainhead">
+      $Env{"Box0"}$Text{"Support"}$Env{"Box1"}
     </td>
   </tr>
   <tr>
-    <td class="mainbody" align="center">
-      <br>
+    <td width="30%" class="mainbody">
+      <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="Action" value="$Env{"Action"}"/>
+        <input type="hidden" name="Subaction" value="GetRequiredInfo"/>
+        <table width="100%" cellspacing="0" cellpadding="4">
+          <tr>
+            <td class="contenthead">$Text{"Commercial Support"}:</td>
+          </tr>
+          <tr>
+            <td class="contentbody">
+              $Text{"For fast help create a commercial support ticket at vendors site."}
+              <br/>
+              $Text{"For more info see:"} <a href="http://otrs.com/" target="_blank">http://otrs.com/</a>
+            </td>
+          </tr>
+          <tr>
+            <td class="contentfooter">
+              <input class="button" type="submit" value="$Text{"Submit"}"/>
+            </td>
+          </tr>
+        </table>
+      </form>
+      <br/>
+      <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="Action" value="$Env{"Action"}"/>
+        <input type="hidden" name="Subaction" value="BenchmarkSQL"/>
+        <table width="100%" cellspacing="0" cellpadding="4">
+          <tr>
+            <td class="contenthead">$Text{"SQL Benmark"}:</td>
+          </tr>
+          <tr>
+            <td class="contentbody">
+              $Text{"Execute and SQL Benchmark on you database to find our how fast your database is (done on dedicated benchmark table)."}
+              <br/>
+              $Text{"Note: This should not be done on productive systems!"}
+              <br/>
+              Multiplier: $Data{"ModeStrg"}
+            </td>
+          </tr>
+          <tr>
+            <td class="contentfooter">
+              <input class="button" type="submit" value="$Text{"Submit"}"/>
+            </td>
+          </tr>
+        </table>
+      </form>
+      <br/>
+    </td>
+    <td width="70%" class="mainbody">
+
 <!-- dtl:block:OverviewModule -->
-      <table width="800" cellspacing="0" cellpadding="4">
+      <table width="100%" cellspacing="0" cellpadding="4">
         <tr>
           <td class="contenthead">$QData{"Module"}</td>
         </tr>
@@ -63,7 +110,7 @@
 <!-- dtl:block:Required -->
 <table border="0" width="100%" cellspacing="0" cellpadding="0">
   <tr>
-    <td class="mainhead">$Env{"Box0"}$Text{"Admin Support Info"}$Env{"Box1"}</td>
+    <td class="mainhead">$Env{"Box0"}$Text{"Support Ticket"}$Env{"Box1"}</td>
   </tr>
   <tr>
     <td class="mainbody" align="center">
@@ -112,9 +159,14 @@
 </table>
 <!-- dtl:block:Required -->
 <!-- dtl:block:Confidential -->
-<table border="0" width="100%" cellspacing="0" cellpadding="0">
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
   <tr>
     <td class="mainhead">$Env{"Box0"}$Text{"Admin Support Info"}$Env{"Box1"}</td>
+  </tr>
+  <tr>
+    <td class="menu">
+      <a href="$Env{"Baselink"}Action=$Env{"Action"}" onmouseover="window.status='$JSText{"Back"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Back"}</a>
+    </td>
   </tr>
   <tr>
     <td class="mainbody" align="center">
@@ -201,3 +253,51 @@ Any and all information disclosed to OTRS will be kept strictly confidential and
   </tr>
 </table>
 <!-- dtl:block:Confidential -->
+<!-- dtl:block:BenchmarkResult -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+  <tr>
+    <td class="mainhead">$Env{"Box0"}$Text{"Benchmark"}$Env{"Box1"}</td>
+  </tr>
+  <tr>
+    <td class="menu">
+      <a href="$Env{"Baselink"}Action=$Env{"Action"}" onmouseover="window.status='$JSText{"Back"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Back"}</a>
+    </td>
+  </tr>
+  <tr>
+    <td class="mainbody" align="center">
+      <br>
+      <table border="0" width="700" align="center" cellspacing="0" cellpadding="4">
+        <tr>
+          <td colspan="2" class="contenthead">$Text{"Result"}: $Text{"$QData{"Head"}"}</td>
+        </tr>
+        <tr>
+          <td class="contentbody">
+            <table border="0" width="100%">
+              <tr>
+                <td width="20%" class="contentkey">$Text{"Key"}</td>
+                <td width="20%" class="contentkey">$Text{"Value"}</td>
+                <td width="20%" class="contentkey">$Text{"Time"}</td>
+                <td width="40%" class="contentkey">$Text{"Comment"}</td>
+              </tr>
+<!-- dtl:block:BenchmarkResultRow -->
+              <tr>
+                <td class="contentkey">$QData{"Key"}:</td>
+                <td class="contentvalue">$QData{"Value"}</td>
+                <td class="contentvalue">$QData{"Time"}</td>
+                <td class="contentvalue">$Data{"Comment"}</td>
+              </tr>
+<!-- dtl:block:BenchmarkResultRow -->
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td class="contentfooter">
+            &nbsp;
+          </td>
+        </tr>
+      </table>
+      <br>
+    </td>
+  </tr>
+</table>
+<!-- dtl:block:BenchmarkResult -->
