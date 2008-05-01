@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Support/Webserver/Apache.pm - all required system informations
-# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Apache.pm,v 1.7 2007/12/21 11:01:46 ho Exp $
+# $Id: Apache.pm,v 1.8 2008/05/01 16:54:57 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Support::Webserver::Apache;
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.7 $) [1];
+$VERSION = qw($Revision: 1.8 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -53,8 +53,10 @@ sub SupportInfoGet {
         return;
     }
     if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
-        $Self->{LogObject}
-            ->Log( Priority => 'error', Message => "ModuleInputHash must be a hash reference!" );
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'ModuleInputHash must be a hash reference!',
+        );
         return;
     }
 
@@ -125,21 +127,20 @@ sub _ApacheDBICheck {
     }
     if ( !$ApacheDBI ) {
         $Check = 'Critical';
-        $Message
-            = 'Apache::DBI should be used to get a better performance (pre establish database connections).';
+        $Message = 'Apache::DBI should be used to get a better performance (pre establish database connections).';
     }
     else {
         $Check   = 'OK';
-        $Message = "$ApacheDBI";
+        $Message = $ApacheDBI;
     }
     $Data = {
         Key         => 'Apache::DBI',
         Name        => 'Apache::DBI',
-        Description => "Check used Apache::DBI.",
+        Description => 'Check used Apache::DBI.',
         Comment     => $Message,
         Check       => $Check,
-        },
-        return $Data;
+    };
+    return $Data;
 }
 
 sub _ApacheReloadCheck {
@@ -166,12 +167,11 @@ sub _ApacheReloadCheck {
                 }
                 if ( !$ApacheReload ) {
                     $Check = 'Critical';
-                    $Message
-                        = 'Apache::Reload or Apache2::Reload should be used as PerlModule and PerlInitHandler in Apache config file.';
+                    $Message = 'Apache::Reload or Apache2::Reload should be used as PerlModule and PerlInitHandler in Apache config file.';
                 }
                 else {
                     $Check   = 'OK';
-                    $Message = "$ApacheReload";
+                    $Message = $ApacheReload;
                 }
             }
         }
@@ -183,11 +183,11 @@ sub _ApacheReloadCheck {
     $Data = {
         Key         => 'Apache::Reload',
         Name        => 'Apache::Reload',
-        Description => "Check used Apache::Reload/Apache2::Reload.",
+        Description => 'Check used Apache::Reload/Apache2::Reload.',
         Comment     => $Message,
         Check       => $Check,
-        },
-        return $Data;
+    };
+    return $Data;
 }
 
 sub _ModPerlVersionCheck {
@@ -201,8 +201,7 @@ sub _ModPerlVersionCheck {
     if ( $ENV{MOD_PERL} ) {
         if ( $ENV{MOD_PERL} =~ /\/1.99/ ) {
             $Check = 'Critical';
-            $Message
-                = "You use a beta version of mod_perl ($ENV{MOD_PERL}), you should upgrade to a stable version.";
+            $Message = "You use a beta version of mod_perl ($ENV{MOD_PERL}), you should upgrade to a stable version.";
         }
         elsif ( $ENV{MOD_PERL} =~ /\/1/ ) {
             $Check   = 'Critical';
@@ -210,21 +209,21 @@ sub _ModPerlVersionCheck {
         }
         else {
             $Check   = 'OK';
-            $Message = "$ENV{MOD_PERL}";
+            $Message = $ENV{MOD_PERL};
         }
     }
     else {
         $Check   = 'Critical';
-        $Message = 'You should use mod_perl to increase your performance.';
+        $Message = 'You should use mod_perl to increase your performance (you really should do this).';
     }
     $Data = {
         Key         => 'mod_perl version',
-        Name        => 'mod_perl version',
-        Description => "Check used mod_perl version.",
+        Name        => 'Version (mod_perl)',
+        Description => 'Check used mod_perl version.',
         Comment     => $Message,
         Check       => $Check,
-        },
-        return $Data;
+    };
+    return $Data;
 }
 
 1;

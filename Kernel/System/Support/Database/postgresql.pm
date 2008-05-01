@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Support/Database/postgresql.pm - all required system informations
-# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: postgresql.pm,v 1.5 2007/11/22 11:58:38 sr Exp $
+# $Id: postgresql.pm,v 1.6 2008/05/01 16:54:01 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Support::Database::postgresql;
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.5 $) [1];
+$VERSION = qw($Revision: 1.6 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -57,8 +57,10 @@ sub SupportInfoGet {
         return;
     }
     if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
-        $Self->{LogObject}
-            ->Log( Priority => 'error', Message => "ModuleInputHash must be a hash reference!" );
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'ModuleInputHash must be a hash reference!',
+        );
         return;
     }
 
@@ -119,14 +121,14 @@ sub _TableCheck {
     my $Data = {};
 
     # table check
-    my $File = $Self->{ConfigObject}->Get('Home') . "/scripts/database/otrs-schema.xml";
+    my $File = $Self->{ConfigObject}->Get('Home') . '/scripts/database/otrs-schema.xml';
     if ( -f $File ) {
         my $Count   = 0;
         my $Check   = 'Failed';
         my $Message = '';
         my $Content = '';
         my $In;
-        if ( open( $In, '<', "$File" ) ) {
+        if ( open( $In, '<', $File ) ) {
             while (<$In>) {
                 $Content .= $_;
             }
@@ -135,8 +137,7 @@ sub _TableCheck {
             for my $Table ( @{ $XMLHash[1]->{database}->[1]->{Table} } ) {
                 if ($Table) {
                     $Count++;
-                    if ( $Self->{DBObject}
-                        ->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 ) )
+                    if ( $Self->{DBObject}->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 ) )
                     {
                         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
                         }
@@ -156,32 +157,29 @@ sub _TableCheck {
             $Data = {
                 Key         => 'Table',
                 Name        => 'Table',
-                Description => "Check existing framework tables.",
+                Description => 'Check existing framework tables.',
                 Comment     => $Message,
                 Check       => $Check,
-                },
-                ;
+            };
         }
         else {
             $Data = {
                 Key         => 'Table',
                 Name        => 'Table',
-                Description => "Check existing framework tables.",
+                Description => 'Check existing framework tables.',
                 Comment     => "Can't open file $File: $!",
                 Check       => $Check,
-                },
-                ;
+            };
         }
     }
     else {
         $Data = {
             Key         => 'Table',
             Name        => 'Table',
-            Description => "Check existing framework tables.",
+            Description => 'Check existing framework tables.',
             Comment     => "Can't find file $File!",
             Check       => 'Failed',
-            },
-            ;
+        };
     }
     return $Data;
 }
@@ -194,7 +192,7 @@ sub _DatestyleCheck {
     # Datestyle check
     my $Check   = 'Failed';
     my $Message = 'No DateStyle found!';
-    $Self->{DBObject}->Prepare( SQL => "show all" );
+    $Self->{DBObject}->Prepare( SQL => 'show all' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         if ( $Row[0] =~ /^DateStyle/i ) {
             if ( $Row[1] =~ /^ISO/i ) {
@@ -210,7 +208,7 @@ sub _DatestyleCheck {
     $Data = {
         Key         => 'DateStyle',
         Name        => 'DateStyle',
-        Description => "Check DateStyle.",
+        Description => 'Check DateStyle.',
         Comment     => $Message,
         Check       => $Check,
         },
@@ -226,11 +224,11 @@ sub _UTF8ServerCheck {
     if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i ) {
         my $Check   = 'Failed';
         my $Message = 'No server_encoding found!';
-        $Self->{DBObject}->Prepare( SQL => "show all" );
+        $Self->{DBObject}->Prepare( SQL => 'show all' );
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
             if ( $Row[0] =~ /^server_encoding/i ) {
-                $Message = "server_encoding found but it's set to $Row[1] (need to be UNICODE)";
-                if ( $Row[1] =~ /UNICODE/i ) {
+                $Message = "server_encoding found but it's set to '$Row[1]' (need to be UNICODE or UTF8)";
+                if ( $Row[1] =~ /(UNICODE|utf(8|\-8))/i ) {
                     $Check   = 'OK';
                     $Message = "$Row[1]";
                 }
@@ -238,12 +236,11 @@ sub _UTF8ServerCheck {
         }
         $Data = {
             Key         => 'utf8 server connection',
-            Name        => 'utf8 server connection',
-            Description => "Check the utf8 server connection.",
+            Name        => 'Server Connection (utf8)',
+            Description => 'Check the utf8 server connection.',
             Comment     => $Message,
             Check       => $Check,
-            },
-            ;
+        };
     }
     return $Data;
 }
@@ -257,11 +254,11 @@ sub _UTF8ClientCheck {
     if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i ) {
         my $Check   = 'Failed';
         my $Message = 'No client_encoding found!';
-        $Self->{DBObject}->Prepare( SQL => "show all" );
+        $Self->{DBObject}->Prepare( SQL => 'show all' );
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
             if ( $Row[0] =~ /^client_encoding/i ) {
-                $Message = "client_encoding found but it's set to $Row[1] (need to be UNICODE)";
-                if ( $Row[1] =~ /UNICODE/i ) {
+                $Message = "client_encoding found but it's set to '$Row[1]' (need to be UNICODE or UTF8)";
+                if ( $Row[1] =~ /(UNICODE|utf(8|\-8))/i ) {
                     $Check   = 'OK';
                     $Message = "$Row[1]";
                 }
@@ -269,12 +266,11 @@ sub _UTF8ClientCheck {
         }
         $Data = {
             Key         => 'utf8 client connection',
-            Name        => 'utf8 client connection',
-            Description => "Check the utf8 client connection.",
+            Name        => 'Client Connection (utf8)',
+            Description => 'Check the utf8 client connection.',
             Comment     => $Message,
             Check       => $Check,
-            },
-            ;
+        };
     }
     return $Data;
 }
@@ -287,7 +283,7 @@ sub _VersionCheck {
     # version check
     my $Check   = 'Failed';
     my $Message = 'No version found!';
-    $Self->{DBObject}->Prepare( SQL => "show all" );
+    $Self->{DBObject}->Prepare( SQL => 'show all' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         if ( $Row[0] =~ /^server_version/i ) {
             if ( $Row[1] =~ /^(\d{1,3}).*$/ ) {
@@ -308,12 +304,12 @@ sub _VersionCheck {
     }
     $Data = {
         Key         => 'version',
-        Name        => 'version',
-        Description => "Check version.",
+        Name        => 'Version',
+        Description => 'Check database version.',
         Comment     => $Message,
         Check       => $Check,
-        },
-        return $Data;
+    };
+    return $Data;
 }
 
 1;

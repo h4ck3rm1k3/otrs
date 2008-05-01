@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system informations
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.14 2008/04/02 07:58:39 ot Exp $
+# $Id: mysql.pm,v 1.15 2008/05/01 16:54:01 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.14 $) [1];
+$VERSION = qw($Revision: 1.15 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -57,16 +57,18 @@ sub SupportInfoGet {
         return;
     }
     if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
-        $Self->{LogObject}
-            ->Log( Priority => 'error', Message => "ModuleInputHash must be a hash reference!" );
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'ModuleInputHash must be a hash reference!',
+        );
         return;
     }
 
     # add new function name here
     my @ModuleList = (
         '_MaxAllowedPackageCheck', '_QueryCacheSizeCheck',
-        '_TableCheck',             '_UTF8ClientCheck',
-        '_UTF8DatabaseCheck',      '_UTF8SupportCheck',
+        '_TableCheck',             '_UTF8SupportCheck',
+        '_UTF8ClientCheck',        '_UTF8DatabaseCheck',
         '_UTF8TableCheck',         '_VersionCheck',
     );
 
@@ -93,8 +95,8 @@ sub AdminChecksGet {
     # add new function name here
     my @ModuleList = (
         '_MaxAllowedPackageCheck', '_QueryCacheSizeCheck',
-        '_TableCheck',             '_UTF8ClientCheck',
-        '_UTF8DatabaseCheck',      '_UTF8SupportCheck',
+        '_TableCheck',             '_UTF8SupportCheck',
+        '_UTF8ClientCheck',        '_UTF8DatabaseCheck',
         '_UTF8TableCheck',         '_VersionCheck',
     );
 
@@ -121,7 +123,7 @@ sub _VersionCheck {
     # version check
     my $Check   = 'Failed';
     my $Message = 'No version found!';
-    $Self->{DBObject}->Prepare( SQL => "show variables" );
+    $Self->{DBObject}->Prepare( SQL => 'show variables' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
 
         # if row not version row, next.
@@ -145,9 +147,9 @@ sub _VersionCheck {
         }
     }
     my $Data = {
-        Key         => 'version',
-        Name        => 'version',
-        Description => "Check version.",
+        Key         => 'Version',
+        Name        => 'Version',
+        Description => 'Check database version.',
         Comment     => $Message,
         Check       => $Check,
     };
@@ -163,9 +165,9 @@ sub _UTF8SupportCheck {
     }
 
     my $Data = {
-        Key         => 'utf8 support',
-        Name        => 'utf8 support',
-        Description => "Check database utf8 support.",
+        Key         => 'utf8database',
+        Name        => 'Database (utf8)',
+        Description => 'Check database utf8 support.',
         Comment     => 'No version found!',
         Check       => 'Failed',
     };
@@ -180,8 +182,8 @@ sub _UTF8SupportCheck {
         next if $Row[0] !~ /^version$/i;
 
         # find the version number
-        if ( $Row[1] =~ /^(4\.(1|2|3)|5\.|6\.)/ ) {
-            $Data->{Comment} = "MySQL $Row[1]";
+        if ( $Row[1] =~ /^(4\.(1|2|3|4|5)|5\.|6\.|7\.)/ ) {
+            $Data->{Comment} = 'Supported.';
             $Data->{Check}   = 'OK';
 
             next;
@@ -197,34 +199,36 @@ sub _UTF8ClientCheck {
     my ( $Self, %Param ) = @_;
     my $Data = {};
 
+    my $Check   = 'Failed';
+    my $Message = 'No character_set_client found!';
     # utf-8 client check
     if ( $Self->{ConfigObject}->Get('DefaultCharset') !~ /utf(\-8|8)/i ) {
         return;
     }
 
-    $Data = {
-        Key         => 'utf8 client connection',
-        Name        => 'utf8 client connection',
-        Description => "Check the utf8 client connection.",
-        Comment     => 'Failed',
-        Check       => 'No character_set_client found!',
-    };
-
     # ask the database
-    $Self->{DBObject}->Prepare( SQL => "show variables" );
+    $Self->{DBObject}->Prepare( SQL => 'show variables' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
 
         #next if row not character_set_client
         next if $Row[0] !~ /^character_set_client/i;
 
         if ( $Row[1] =~ /utf8/ ) {
-            $Data->{Check}   = 'OK';
-            $Data->{Message} = "$Row[1]";
+            $Check   = 'OK';
+            $Message = "Is $Row[1].";
 
             next;
         }
-        $Data->{Message} = "character_set_client found but it's set to $Row[1] (need to be utf8)";
+        $Message = "character_set_client found but it's set to $Row[1] (need to be utf8)";
     }
+
+    $Data = {
+        Key         => 'utf8clientconnection',
+        Name        => 'Client Connection (utf8)',
+        Description => 'Check the utf8 client connection.',
+        Check       => $Check,
+        Comment     => $Message,
+    };
 
     return $Data;
 }
@@ -238,25 +242,25 @@ sub _UTF8DatabaseCheck {
     }
     my $Check   = 'Failed';
     my $Message = 'No character_set_databse found!';
-    $Self->{DBObject}->Prepare( SQL => "show variables" );
+    $Self->{DBObject}->Prepare( SQL => 'show variables' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         if ( $Row[0] =~ /^character_set_database/i ) {
             $Message = "character_set_database found but it's set to $Row[1] (need to be utf8)";
             if ( $Row[1] =~ /utf8/ ) {
                 $Check   = 'OK';
-                $Message = "$Row[1]";
+                $Message = "Is $Row[1].";
             }
         }
     }
 
     my $Data = {
-        Key         => 'utf8 database character',
-        Name        => 'utf8 database character',
-        Description => "Check the utf8 database character.",
+        Key         => 'utf8databasecharacter',
+        Name        => 'Database Character (utf8)',
+        Description => 'Check the utf8 database character.',
         Comment     => $Message,
         Check       => $Check,
-        };
-        return $Data;
+    };
+    return $Data;
 }
 
 sub _UTF8TableCheck {
@@ -268,10 +272,13 @@ sub _UTF8TableCheck {
         my $Check    = 'Failed';
         my $Message  = '';
         my $Message2 = '';
-        $Self->{DBObject}->Prepare( SQL => "show table status" );
+        $Self->{DBObject}->Prepare( SQL => 'show table status' );
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
             if ( $Row[14] !~ /^utf8/i ) {
-                $Message .= "$Row[0][$Row[14]],";
+                if ( $Message ) {
+                    $Message .= ', ';
+                }
+                $Message .= "$Row[0]\[$Row[14]\]";
             }
             else {
                 $Message2 = $Row[14];
@@ -286,13 +293,13 @@ sub _UTF8TableCheck {
             $Message = $Message2;
         }
         $Data = {
-            Key         => 'utf8 table collation',
-            Name        => 'utf8 table collation',
-            Description => "Check the utf8 table collation.",
+            Key         => 'utf8tablecollation',
+            Name        => 'Table Collation (utf8)',
+            Description => 'Check the utf8 table collation/charset.',
             Comment     => $Message,
             Check       => $Check,
-            },
-            return $Data;
+        };
+        return $Data;
     }
     return;
 }
@@ -303,30 +310,30 @@ sub _MaxAllowedPackageCheck {
 
     # max_allowed_packet check
     my $Check   = 'Failed';
-    my $Message = 'No max_allowed_packet found!';
-    $Self->{DBObject}->Prepare( SQL => "show variables" );
+    my $Message = 'No "max_allowed_packet" found!';
+    $Self->{DBObject}->Prepare( SQL => 'show variables' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         if ( $Row[0] =~ /^max_allowed_packet/i ) {
             if ( $Row[1] < 1024 * 1024 * 7 ) {
-                $Row[1]  = int( $Row[1] / 1024 );
+                $Row[1]  = int( $Row[1] / 1024 / 1024 );
                 $Check   = 'Failed';
-                $Message = "max_allowed_packet should be higher the 7000 KB (its $Row[1] KB)";
+                $Message = "\"max_allowed_packet\" should be higher the 7 MB (it's $Row[1] MB)";
             }
             else {
-                $Row[1]  = int( $Row[1] / 1024 );
+                $Row[1]  = int( $Row[1] / 1024 / 1024 );
                 $Check   = 'OK';
-                $Message = "$Row[1] KB";
+                $Message = "Is $Row[1] MB.";
             }
         }
     }
     $Data = {
         Key         => 'max_allowed_packet',
-        Name        => 'max_allowed_packet',
-        Description => "Check max_allowed_packet setting.",
+        Name        => 'Max Package Size',
+        Description => 'Check "max_allowed_packet" setting.',
         Comment     => $Message,
         Check       => $Check,
-        },
-        return $Data;
+    };
+    return $Data;
 }
 
 sub _QueryCacheSizeCheck {
@@ -335,35 +342,34 @@ sub _QueryCacheSizeCheck {
 
     # query_cache_size check
     my $Check   = 'Failed';
-    my $Message = 'No query_cache_size found!';
-    $Self->{DBObject}->Prepare( SQL => "show variables" );
+    my $Message = 'No "query_cache_size" found!';
+    $Self->{DBObject}->Prepare( SQL => 'show variables' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         if ( $Row[0] =~ /^query_cache_size/i ) {
             if ( !$Row[1] ) {
                 $Check = 'Failed';
-                $Message
-                    = "query_cache_size should be used, you will get improvements between 10 and 30 % of speed!";
+                $Message = '"query_cache_size" should be used, you will get improvements between 10 and 30 % of speed!';
             }
-            elsif ( $Row[1] < 1024 * 1024 * 8 ) {
-                $Row[1]  = int( $Row[1] / 1024 );
+            elsif ( $Row[1] < 1024 * 1024 * 10 ) {
+                $Row[1]  = int( $Row[1] / 1024 / 1024 );
                 $Check   = 'Critical';
-                $Message = "query_cache_size should be higher the 8000 KB (its $Row[1] KB)";
+                $Message = "\"query_cache_size\" should be higher then 10 MB (it's $Row[1] MB)";
             }
             else {
-                $Row[1]  = int( $Row[1] / 1024 );
+                $Row[1]  = int( $Row[1] / 1024 / 1024 );
                 $Check   = 'OK';
-                $Message = "$Row[1] KB";
+                $Message = "$Row[1] MB";
             }
         }
     }
     $Data = {
         Key         => 'query_cache_size',
-        Name        => 'query_cache_size',
-        Description => "Check query_cache_size setting.",
+        Name        => 'Query Cache Size',
+        Description => 'Check "query_cache_size" setting.',
         Comment     => $Message,
         Check       => $Check,
-        },
-        return $Data;
+    };
+    return $Data;
 }
 
 sub _TableCheck {
@@ -371,14 +377,14 @@ sub _TableCheck {
     my $Data = {};
 
     # table check
-    my $File = $Self->{ConfigObject}->Get('Home') . "/scripts/database/otrs-schema.xml";
+    my $File = $Self->{ConfigObject}->Get('Home') . '/scripts/database/otrs-schema.xml';
     if ( -f $File ) {
         my $Count   = 0;
         my $Check   = 'Failed';
         my $Message = '';
         my $Content = '';
         my $In;
-        if ( open( $In, '<', "$File" ) ) {
+        if ( open( $In, '<', $File ) ) {
             while (<$In>) {
                 $Content .= $_;
             }
@@ -393,16 +399,18 @@ sub _TableCheck {
                     # use 'CHECK TABLE'-statement to determine state of each table
                     # (which may yield several lines per table, the last of which will
                     # contain the overall state of that table)
-                    if ( $Self->{DBObject}->Prepare( SQL => "CHECK TABLE $Table->{Name}" ) ) {
+                    # Do quick checks on tables, other way it tags over 420 sek
+                    # or longer to check it.
+                    if ( $Self->{DBObject}->Prepare( SQL => "CHECK TABLE $Table->{Name} FAST QUICK" ) ) {
                         my $Status;
                         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-                            $Status = $Row[3];      # look at field 'Msg_text'
+                            $Status = $Row[3]; # look at field 'Msg_text'
                         }
-                        next if $Status eq 'OK';
-                        push @Problems, $Status;
+                        next if $Status =~ /^(OK|Table\sis\salready\sup\sto\sdate)/i;
+                        push @Problems, "$Table->{Name}\[$Status\]";
                     }
                     else {
-                        push @Problems, "unable to check table '$Table->{Name}'";
+                        push @Problems, "$Table->{Name}\[unable to check table\]";
                     }
                 }
             }
@@ -415,33 +423,30 @@ sub _TableCheck {
             }
             $Data = {
                 Key         => 'Table',
-                Name        => 'Table',
-                Description => "Check existing framework tables.",
+                Name        => 'Table Exists',
+                Description => 'Check existing framework tables.',
                 Comment     => $Message,
                 Check       => $Check,
-                },
-                ;
+            };
         }
         else {
             $Data = {
                 Key         => 'Table',
                 Name        => 'Table',
-                Description => "Check existing framework tables.",
+                Description => 'Check existing framework tables.',
                 Comment     => "Can't open file $File: $!",
                 Check       => $Check,
-                },
-                ;
+            };
         }
     }
     else {
         $Data = {
             Key         => 'Table',
             Name        => 'Table',
-            Description => "Check existing framework tables.",
+            Description => 'Check existing framework tables.',
             Comment     => "Can't find file $File!",
             Check       => 'Failed',
-            },
-            ;
+        };
     }
     return $Data;
 }

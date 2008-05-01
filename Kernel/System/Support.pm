@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Support.pm - all required system informations
-# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.8 2007/11/22 11:49:40 sr Exp $
+# $Id: Support.pm,v 1.9 2008/05/01 16:54:57 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Support;
@@ -22,7 +22,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.8 $) [1];
+$VERSION = qw($Revision: 1.9 $) [1];
 
 =head1 NAME
 
@@ -109,8 +109,10 @@ sub SupportConfigHashGet {
 
     # check if $ConfigHash ne a HashRef
     if ( ref( $Param{ConfigHash} ) ne 'HASH' ) {
-        $Self->{LogObject}
-            ->Log( Priority => 'error', Message => "ConfigHash must be a hash reference!" );
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'ConfigHash must be a hash reference!',
+        );
         return;
     }
 
@@ -234,8 +236,10 @@ sub AdminChecksGet {
 
     # check if $DataHash ne a HashRef
     if ( ref( $Param{DataHash} ) ne 'HASH' ) {
-        $Self->{LogObject}
-            ->Log( Priority => 'error', Message => "DataHash must be a hash reference!" );
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'DataHash must be a hash reference!',
+        );
         return;
     }
 
@@ -243,7 +247,7 @@ sub AdminChecksGet {
     my $DirName = $Self->{ConfigObject}->Get('Home') . '/Kernel/System/Support/';
 
     # read all availible modules in @List
-    my @List = glob( $DirName . "/*.pm" );
+    my @List = glob( $DirName . '/*.pm' );
 
     MODULE:
     for my $File (@List) {
@@ -513,12 +517,12 @@ This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (GPL). If you
-did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.8 $ $Date: 2007/11/22 11:49:40 $
+$Revision: 1.9 $ $Date: 2008/05/01 16:54:57 $
 
 =cut
