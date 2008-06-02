@@ -1,8 +1,8 @@
 # --
-# Kernel/System/Support/OTRS.pm - all required otrs informations
+# Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.13 2008/05/01 16:52:02 martin Exp $
+# $Id: OTRS.pm,v 1.14 2008/06/02 08:48:32 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Support;
 use Kernel::System::Ticket;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.13 $) [1];
+$VERSION = qw($Revision: 1.14 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -76,7 +76,7 @@ sub SupportInfoGet {
     my @ModuleList = (
         '_OTRSLogGet', '_OTRSKernelGet',
         '_OTRSCheckSumGet', '_OTRSCheckModulesGet',
-        '_OpenTicketCheck', '_TicketIndexModuleCheck',
+        '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketFulltextIndexModuleCheck',
         '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
     );
 
@@ -102,7 +102,7 @@ sub AdminChecksGet {
 
     # add new function name here
     my @ModuleList = (
-        '_OpenTicketCheck', '_TicketIndexModuleCheck',
+        '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketFulltextIndexModuleCheck',
         '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
     );
 
@@ -368,6 +368,52 @@ sub _TicketIndexModuleCheck {
         Key         => 'Ticket::IndexModule',
         Name        => 'Ticket::IndexModule',
         Description => 'Check Ticket::IndexModule setting.',
+        Comment     => $Message,
+        Check       => $Check,
+    };
+    return $Data;
+}
+
+sub _TicketFulltextIndexModuleCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $Data = {};
+
+    # Ticket::IndexModule check
+    my $Check   = 'Failed';
+    my $Message = '';
+    my $Module  = $Self->{ConfigObject}->Get('Ticket::SearchIndexModule');
+    $Self->{DBObject}->Prepare( SQL => 'SELECT count(*) from article' );
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        if ( $Row[0] > 100000 ) {
+            if ( $Module =~ /RuntimeDB/ ) {
+                $Check = 'Failed';
+                $Message = "$Row[0] article in your system. You should use the StaticDB backend for OTRS 2.3 and higher. See admin manual (Performance Tuning) for more information.";
+            }
+            else {
+                $Check   = 'OK';
+                $Message = "";
+            }
+        }
+        elsif ( $Row[0] > 50000 ) {
+            if ( $Module =~ /RuntimeDB/ ) {
+                $Check = 'Critical';
+                $Message = "$Row[0] article in your system. You should use the StaticDB backend for OTRS 2.3 and higher. See admin manual (Performance Tuning) for more information.";
+            }
+            else {
+                $Check   = 'OK';
+                $Message = "";
+            }
+        }
+        else {
+            $Check   = 'OK';
+            $Message = "You are using \"$Module\", that's fine for $Row[0] article in your system.";
+        }
+    }
+    $Data = {
+        Key         => 'Ticket::SearchIndexModule',
+        Name        => 'Ticket::SearchIndexModule',
+        Description => 'Check Ticket::SearchIndexModule setting.',
         Comment     => $Message,
         Check       => $Check,
     };
