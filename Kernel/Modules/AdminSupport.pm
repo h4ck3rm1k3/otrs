@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.8 2008/05/01 16:50:43 martin Exp $
+# $Id: AdminSupport.pm,v 1.9 2008/06/02 07:35:47 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.8 $) [1];
+$VERSION = qw($Revision: 1.9 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -470,9 +470,9 @@ sub Run {
         $Self->{SupportObject}->AdminChecksGet( DataHash => $DataHash, );
         $Param{'ModeStrg'} = $Self->{LayoutObject}->OptionStrgHashRef(
             Data => {
-                1 => '1 * Normal (ca. 25 sek)',
-                3 => '3 * High   (ca. 75 sek)',
-                5 => '5 * Heavy  (ca. 125 sek)',
+                1 => '1 * Normal (ca. 25 sec)',
+                3 => '3 * High   (ca. 75 sec)',
+                5 => '5 * Heavy  (ca. 125 sec)',
             },
             Name => 'Mode',
         );
