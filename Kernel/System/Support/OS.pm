@@ -1,12 +1,12 @@
 # --
-# Kernel/System/Support/OS.pm - all required system informations
-# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
+# Kernel/System/Support/OS.pm - all required system information
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.7 2007/11/22 15:57:24 sr Exp $
+# $Id: OS.pm,v 1.8 2008/06/03 09:32:21 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Support::OS;
@@ -15,39 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.7 $) [1];
-
-=head1 NAME
-
-Kernel::System::Support::OS - global system informations
-
-=head1 SYNOPSIS
-
-All required system informations to a running OTRS host.
-
-=head1 PUBLIC INTERFACE
-
-=over 4
-
-=cut
-
-=item new()
-
-create OS info object
-
-use Kernel::Config;
-use Kernel::System::Log;
-my $ConfigObject = Kernel::Config->new();
-my $LogObject = Kernel::System::Log->new(
-    ConfigObject => $ConfigObject,
-);
-
-$SystemInfoObject = Kernel::System::Support::OS->new(
-    ConfigObject => $ConfigObject,
-    LogObject => $LogObject,
-);
-
-=cut
+$VERSION = qw($Revision: 1.8 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -63,41 +31,6 @@ sub new {
 
     return $Self;
 }
-
-=item SupportConfigArrayGet()
-
-return an array reference with required config information.
-
-    $ArrayRef = $Support->SupportConfigArrayGet();
-
-    my $ConfigArray = [
-        {
-            Key => 'TicketDump',
-            Name => 'Dump Tickets',
-            Description => 'Please tell me how many latest Tickets we shut dump?',
-            Input => {
-                Type => 'Select',
-                Data => {
-                    All => 'All',
-                    0 => '0',
-                    10 => 'Last 10',
-                    100 => 'Last 100',
-                    1000 => 'Last 1000',
-                },
-            },
-        },
-        {
-            Key => 'ApacheHome',
-            Name => 'Apache Home Directory',
-            Description => 'Please tell me the path to the Apache home directory (/etc/apache2)',
-            Input => {
-                Type => 'Text',
-                Size => 40,
-            },
-        },
-    ];
-
-=cut
 
 sub SupportConfigArrayGet {
     my ( $Self, %Param ) = @_;
@@ -119,29 +52,6 @@ sub SupportConfigArrayGet {
     return $ConfigArray;
 }
 
-=item SupportInfoGet()
-
-returns a array reference with support information.
-
-$OSArray => [
-            {
-                Key => 'Plattform',
-                Name => 'Plattform',
-                Comment => 'Linux',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-            {
-                Key => 'Version',
-                Name => 'Version',
-                Comment => 'openSUSE 10.2',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-        ];
-
-=cut
-
 sub SupportInfoGet {
     my ( $Self, %Param ) = @_;
 
@@ -158,7 +68,7 @@ sub SupportInfoGet {
 
     # add new function name here
     my @ModuleList = (
-        '_DistributionCheck', '_KernelInfoCheck',
+        '_DistributionCheck', '_KernelInfoCheck', '_PerlCheck',
     );
 
     my @DataArray;
@@ -178,35 +88,12 @@ sub SupportInfoGet {
     return \@DataArray;
 }
 
-=item AdminChecksGet()
-
-returns a array reference with AdminChecks information.
-
-$OSArray => [
-            {
-                Key => 'Plattform',
-                Name => 'Plattform',
-                Comment => 'Linux',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-            {
-                Key => 'Version',
-                Name => 'Version',
-                Comment => 'openSUSE 10.2',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-        ];
-
-=cut
-
 sub AdminChecksGet {
     my ( $Self, %Param ) = @_;
 
     # add new function name here
     my @ModuleList = (
-        '_DistributionCheck', '_KernelInfoCheck',
+        '_DistributionCheck', '_KernelInfoCheck', '_PerlCheck',
     );
 
     my @DataArray;
@@ -316,22 +203,44 @@ sub _KernelInfoCheck {
     return $ReturnHash;
 }
 
+sub _PerlCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $ReturnHash = {};
+
+    # check verison string
+    my $Version = sprintf "%vd", $^V;
+    if ( $Version =~ /(\d+)\.(\d+)\.(\d+)/i ) {
+        if ( $1 <= 5 && $2 <= 8 && $3 <= 7 ) {
+            $ReturnHash = {
+                Key         => 'PerlCheck',
+                Name        => 'PerlCheck',
+                Description => "Check Perl Version.",
+                Comment     => "Perl $Version is to old, you should upgrade to Perl 5.8.8 or higher.",
+                Check       => 'Failed',
+            };
+
+        }
+        else {
+            $ReturnHash = {
+                Key         => 'PerlCheck',
+                Name        => 'PerlCheck',
+                Description => "Check Perl Version.",
+                Comment     => "Perl $Version is used.",
+                Check       => 'OK',
+            };
+        }
+    }
+    else {
+        $ReturnHash = {
+            Key         => 'PerlCheck',
+            Name        => 'PerlCheck',
+            Description => "Check Perl Version.",
+            Comment     => "Unable to parse versio string ($Version).",
+            Check       => 'Failed',
+        };
+    }
+    return $ReturnHash;
+}
+
 1;
-
-=back
-
-=head1 TERMS AND CONDITIONS
-
-This software is part of the OTRS project (http://otrs.org/).
-
-This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (GPL). If you
-did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
-
-=cut
-
-=head1 VERSION
-
-$Revision: 1.7 $ $Date: 2007/11/22 15:57:24 $
-
-=cut
