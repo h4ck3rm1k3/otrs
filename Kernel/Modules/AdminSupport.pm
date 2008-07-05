@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.9 2008/06/02 07:35:47 martin Exp $
+# $Id: AdminSupport.pm,v 1.10 2008/07/05 14:36:30 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.9 $) [1];
+$VERSION = qw($Revision: 1.10 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -502,26 +502,14 @@ sub Run {
                 else {
                     $CssClass = 'searchactive';
                 }
-                my $FontColor = "red";
+                my $FontColor = 'red';
                 if ( $RowHash->{Check} ) {
-                    if ( $RowHash->{Check} eq "OK" ) {
-                        $FontColor = "green";
+                    if ( $RowHash->{Check} eq 'OK' ) {
+                        $FontColor = 'green';
                     }
-                    elsif ( $RowHash->{Check} eq "Critical" ) {
-                        $FontColor = "orange";
+                    elsif ( $RowHash->{Check} eq 'Critical' ) {
+                        $FontColor = 'orange';
                     }
-                }
-                if ( $RowHash->{Description} ) {
-                    $RowHash->{Description} = $Self->{LayoutObject}->Ascii2Html(
-                        Text           => $RowHash->{Description},
-                        HTMLResultMode => '1',
-                    );
-                }
-                if ( $RowHash->{Comment} ) {
-                    $RowHash->{Comment} = $Self->{LayoutObject}->Ascii2Html(
-                        Text           => $RowHash->{Comment},
-                        HTMLResultMode => '1',
-                    );
                 }
 
                 # create new block with rotatory css

@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.6 2008/05/01 16:50:43 martin Exp $
+# $Id: AdminSupport.dtl,v 1.7 2008/07/05 14:36:30 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -78,16 +78,14 @@
           <td class="contentbody">
             <table width="100%" border="0" cellspacing="0" cellpadding="3">
               <tr>
-                <td class="contentkey" width="20%">$Text{"Check"}</td>
-                <td class="contentkey" width="30%">$Text{"Description"}</td>
-                <td class="contentkey" width="40%">$Text{"Comment"}</td>
-                <td class="contentkey" width="10%">$Text{"State"}</td>
+                <td class="contentkey" width="30%">$Text{"Check"}</td>
+                <td class="contentkey" width="55%">$Text{"Comment"}</td>
+                <td class="contentkey" width="15%">$Text{"State"}</td>
               </tr>
 <!-- dtl:block:OverviewModuleRow -->
               <tr>
-                <td class="$QData{"CssClass"}">$QData{"Name"}</td>
-                <td class="$QData{"CssClass"}">$Data{"Description"}</td>
-                <td class="$QData{"CssClass"}">$Data{"Comment"}</td>
+                <td class="$QData{"CssClass"}"><div title="$QData{"Description"}">$QData{"Name"}</div></td>
+                <td class="$QData{"CssClass"}">$QData{"Comment"}</td>
                 <td class="$QData{"CssClass"}"><font color="$QData{"FontColor"}">$QData{"Check"}</font></td>
               </tr>
 <!-- dtl:block:OverviewModuleRow -->
@@ -233,7 +231,7 @@ Any and all information disclosed to OTRS will be kept strictly confidential and
                   <td class="contentvalue"><font color="red" size="-2"></font></td>
                 </tr>
                 <tr>
-                  <td class="contentkey" width="300">$Text{"Please send me informations about ((otrs)) support packages."}:</td>
+                  <td class="contentkey" width="300">$Text{"Please send me information about ((otrs)) support packages."}:</td>
                   <td class="contentvalue"><input type="radio" name="SendInfo" value="" size="10"></td>
                   <td class="contentvalue"><font color="red" size="-2"></font></td>
                 </tr>
