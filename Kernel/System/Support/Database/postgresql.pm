@@ -1,8 +1,8 @@
 # --
-# Kernel/System/Support/Database/postgresql.pm - all required system informations
+# Kernel/System/Support/Database/postgresql.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: postgresql.pm,v 1.6 2008/05/01 16:54:01 martin Exp $
+# $Id: postgresql.pm,v 1.7 2008/07/05 14:37:52 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.6 $) [1];
+$VERSION = qw($Revision: 1.7 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -155,8 +155,8 @@ sub _TableCheck {
                 $Message = "$Count Tables";
             }
             $Data = {
-                Key         => 'Table',
-                Name        => 'Table',
+                Key         => 'TableCheck',
+                Name        => 'Table Check',
                 Description => 'Check existing framework tables.',
                 Comment     => $Message,
                 Check       => $Check,
@@ -164,8 +164,8 @@ sub _TableCheck {
         }
         else {
             $Data = {
-                Key         => 'Table',
-                Name        => 'Table',
+                Key         => 'TableCheck',
+                Name        => 'Table Check',
                 Description => 'Check existing framework tables.',
                 Comment     => "Can't open file $File: $!",
                 Check       => $Check,
@@ -174,8 +174,8 @@ sub _TableCheck {
     }
     else {
         $Data = {
-            Key         => 'Table',
-            Name        => 'Table',
+            Key         => 'TableCheck',
+            Name        => 'Table Check',
             Description => 'Check existing framework tables.',
             Comment     => "Can't find file $File!",
             Check       => 'Failed',

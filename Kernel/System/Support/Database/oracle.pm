@@ -1,12 +1,12 @@
 # --
-# Kernel/System/Support/Database/oracle.pm - all required system informations
-# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
+# Kernel/System/Support/Database/oracle.pm - all required system information
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.10 2007/11/22 15:58:08 sr Exp $
+# $Id: oracle.pm,v 1.11 2008/07/05 14:37:52 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Support::Database::oracle;
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.11 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -239,31 +239,31 @@ sub _TableCheck {
                 $Message = "$Count Tables";
             }
             $Data = {
-                Key         => 'Table',
-                Name        => 'Table',
+                Key         => 'TableCheck',
+                Name        => 'Table Check',
                 Description => "Check existing framework tables.",
                 Comment     => $Message,
                 Check       => $Check,
-                };
+            };
         }
         else {
             $Data = {
-                Key         => 'Table',
-                Name        => 'Table',
+                Key         => 'TableCheck',
+                Name        => 'Table Check',
                 Description => "Check existing framework tables.",
                 Comment     => "Can't open file $File: $!",
                 Check       => $Check,
-                };
+            };
         }
     }
     else {
         $Data = {
-            Key         => 'Table',
-            Name        => 'Table',
+            Key         => 'TableCheck',
+            Name        => 'Table Check',
             Description => "Check existing framework tables.",
             Comment     => "Can't find file $File!",
             Check       => 'Failed',
-            };
+        };
     }
     return $Data;
 }
