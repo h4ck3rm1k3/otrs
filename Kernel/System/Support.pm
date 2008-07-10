@@ -1,8 +1,8 @@
 # --
-# Kernel/System/Support.pm - all required system informations
+# Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.9 2008/05/01 16:54:57 martin Exp $
+# $Id: Support.pm,v 1.10 2008/07/10 23:54:48 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -22,15 +22,15 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.9 $) [1];
+$VERSION = qw($Revision: 1.10 $) [1];
 
 =head1 NAME
 
-Kernel::System::Support - global system informations
+Kernel::System::Support - global system information
 
 =head1 SYNOPSIS
 
-All required support informations to a running OTRS system.
+All required support information to a running OTRS system.
 
 =head1 PUBLIC INTERFACE
 
@@ -219,7 +219,7 @@ sub SupportInfoGet {
 
 get a hash reference with possibility checks.
 
-    my $List = $Support->AdminChecksGet(DataHash => $DataHash);
+    my $List = $Support->AdminChecksGet();
 
 =cut
 
@@ -227,20 +227,11 @@ sub AdminChecksGet {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(DataHash)) {
+    for (qw()) {
         if ( !$Param{$_} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
-    }
-
-    # check if $DataHash ne a HashRef
-    if ( ref( $Param{DataHash} ) ne 'HASH' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'DataHash must be a hash reference!',
-        );
-        return;
     }
 
     # get the directory name
@@ -249,6 +240,7 @@ sub AdminChecksGet {
     # read all availible modules in @List
     my @List = glob( $DirName . '/*.pm' );
 
+    my $DataHash;
     MODULE:
     for my $File (@List) {
 
@@ -287,32 +279,11 @@ sub AdminChecksGet {
         my @CleandAdminCheckRef = grep { ref($_) eq 'HASH' } @{$AdminCheckRef};
 
         # attach the cleaned element array
-        $Param{DataHash}->{$File} = \@CleandAdminCheckRef;
+        $DataHash->{$File} = \@CleandAdminCheckRef;
     }
 
-    return 1;
+    return $DataHash;
 }
-
-=item XMLStringCreate()
-
-returns a string with xml.
-
-    my $List = $Support->XMLStringCreate(Data => $Data);
-
-<?xml version="1.0" encoding="iso-8859-1"?>
-<SupportInfo>
-    <Hardware>
-        <MemorySwapCheck>
-            <Check>OK</Check>
-            <Comment>The Host System has 1011 MB Memory total. 108 MB Memory free. 643 MB Swap total. 643 MB Swap free. </Comment>
-            <Description>A Memory Check. We try to find out if SwapFree : SwapTotal &lt; 60 % or if more than 200 MB Swap is used.</Description>
-            <Name>Memory Swap Check</Name>
-            <Key>MemorySwapCheck</Key>
-        </MemorySwapCheck>
-    </Hardware>
-</SupportInfo>
-
-=cut
 
 sub XMLStringCreate {
     my ( $Self, %Param ) = @_;
@@ -325,25 +296,29 @@ sub XMLStringCreate {
         }
     }
     if ( ref( $Param{DataHash} ) ne 'HASH' ) {
-        $Self->{LogObject}
-            ->Log( Priority => 'error', Message => "DataHash must be a hash reference!" );
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "DataHash must be a hash reference!",
+        );
         return;
     }
 
     my $XMLHash = [];
+    my $CountModule = 0;
+    my $CountItem   = 0;
     for my $Module ( keys %{ $Param{DataHash} } ) {
+        $CountModule++;
+        $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Name} = $Module;
         for my $DataHashRow ( @{ $Param{DataHash}->{$Module} } ) {
+            $CountItem++;
             my $Data = {};
             for my $Element ( keys %{$DataHashRow} ) {
-                if ( $Element eq 'Key' ) {
-                    next;
-                }
-
-                # remove newlines
-                $DataHashRow->{$Element} =~ s/\015\012|\012|\015//g;
+                next if $Element eq 'Key';
+                next if $Element eq 'Name';
                 $Data->{$Element}->[1]->{Content} = $DataHashRow->{$Element};
             }
-            $XMLHash->[1]->{SupportInfo}->[1]->{$Module}->[1]->{ $DataHashRow->{Key} }->[1] = $Data;
+            $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem] = $Data;
+            $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem]->{Name} = $DataHashRow->{Key};
         }
     }
 
@@ -352,159 +327,118 @@ sub XMLStringCreate {
     return $XMLString;
 }
 
-sub TarPackageWrite {
+sub ArchiveApplication {
     my ( $Self, %Param ) = @_;
 
-    # check needed stuff
-    for (qw(OutputName OutputPath)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
+    my $Home = $Self->{ConfigObject}->Get('Home');
+    my $Archive = $Self->{ConfigObject}->Get('Home') . '/var/tmp/application.tar';
+    if ( -f $Archive ) {
+        unlink $Archive || die "Can't unlink $Archive: $!";
     }
 
-    mkdir( $Self->{ConfigObject}->Get('Home') . "/var/tmp/support" );
-
-    $Self->{TarObject} = Archive::Tar->new();
-
-    if ( $Param{DirName} ) {
-
-        # add files to the tar archive
-        $Self->{TarObject}->add_files( $Self->ReadTree( Tree => $Param{DirName} ) ) or return;
-    }
-    elsif ( $Param{FileName} ) {
-
-        # add files to the tar archive
-        $Self->{TarObject}->add_files( $Param{FileName} ) or return;
-    }
-
-    # write tar archiv to OTRS_HOME/var/tmp/otrskernel.tar
-    $Self->{TarObject}->write( $Param{OutputPath} . $Param{OutputName}, 0 )
-        or return;    # Archive schreiben
-
-    return $Param{OutputName};
-}
-
-sub ReadTree {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Tree)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-    my $aktdir = $Param{Tree};
-    local *DIR;
-    my @flist = ();
-
-    opendir( DIR, $aktdir ) or do {
-        $Self->{LogObject}->Log( Priority => 'error', "Error reading directory '$aktdir': $_!" );
-        return;
-    };
-
-    while ( my $entry = readdir(DIR) ) {
-        next if $entry eq "." || $entry eq "..";
-
-        if ( -d $aktdir . "/" . $entry ) {
-            push @flist, $Self->ReadTree( Tree => $aktdir . "/" . $entry );
-            next;
-        }
-
-        push @flist, $aktdir . "/" . $entry;
-    }
-
-    closedir(DIR);
-
-    return @flist;
-}
-
-sub CreatePackageToSend {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(DataHash)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-    my $XMLString = $Self->XMLStringCreate( DataHash => $Param{DataHash}, );
-    my $TmpXML;
-    open( $TmpXML, '>', $Self->{ConfigObject}->Get('Home') . "/var/tmp/support/check.xml" );
-    print $TmpXML $XMLString;
-    close($TmpXML);
-
+    my @List = $Self->DirectoryFiles( Directory => $Home );
+#print STDERR "LIST\n";
     # add files to the tar archive
-    $Self->{TarObject} = Archive::Tar->new();
-    $Self->{TarObject}->add_files(
-        $Self->ReadTree( Tree => $Self->{ConfigObject}->Get('Home') . "/var/tmp/support/" ) )
-        or die "Could not add: $_!";
-    $Self->{TarObject}->write( $Self->{ConfigObject}->Get('Home') . "/var/tmp/support.tar", 0 )
-        or die "Could not write: $_!";    # Archive schreiben
+    my $TarObject = Archive::Tar->new();
+    $TarObject->add_files(@List);
+    $TarObject->write( $Archive, 0 ) || die "Could not write: $_!";
 
-    my $Gzip;
-    open( $Gzip, '<', $Self->{ConfigObject}->Get('Home') . "/var/tmp/support.tar" );
-    binmode($Gzip);
-
-    my $TmpGzip = '';
-    while (<$Gzip>) {
-        $TmpGzip .= $_;
+#print STDERR "ARCHIVE\n";
+    # add files to the tar archive
+    open( my $Tar, '<', $Archive );
+    binmode($Tar);
+    my $TmpTar = '';
+    while (<$Tar>) {
+        $TmpTar .= $_;
     }
-    close($Gzip);
+    close($Tar);
     if ( $Self->{MainObject}->Require("Compress::Zlib") ) {
-        my $GzContent = Compress::Zlib::memGzip($TmpGzip);
-        return $GzContent;
+        my $GzTar = Compress::Zlib::memGzip($TmpTar);
+#print STDERR "Compress\n";
+        return ( \$GzTar, 'application.tar.gz');
     }
-    else {
-        return $TmpGzip;
-    }
+#print STDERR "Compress\n";
+
+    return ( \$TmpTar, 'application.tar' );
 }
 
-sub SupportSendInfo {
+sub DirectoryFiles {
     my ( $Self, %Param ) = @_;
 
-    my $Message = "";
-
     # check needed stuff
-    for (qw(SupportString)) {
+    for (qw(Directory)) {
         if ( !$Param{$_} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
 
-    # send mail to gateway
-    if ($Self->{EmailObject}->Send(
-            From       => $Self->{ConfigObject}->Get('AdminEmail'),
-            To         => 'support@otrs.com',
-            Subject    => 'Customer SystemInfo from',
-            Type       => 'text/plain',
-            Charset    => 'utf-8',
-            Body       => 'Customer SupportInfo',
-            Loop       => 1,                                       # not required, removes smtp from
-            Attachment => [
-                {   Filename    => "$Param{SupportID}",
-                    Content     => "$Param{SupportString}",
-                    ContentType => "application/tar.gz",
-                }
-            ],
-        )
-        )
-    {
-        $Message = "Email sent to the ((otrs)) support team.\n";
+    my @Files = ();
+    my @List = glob("$Param{Directory}/*");
+
+    for my $File (@List) {
+        if (-d $File ) {
+            if ( $File =~ /\/CVS/ ) {
+                next;
+            }
+            push @Files, $Self->DirectoryFiles( Directory => $File );
+        }
+        else {
+            if ( $File =~ /^\./ ) {
+                next;
+            }
+            if ( $File =~ /#/ ) {
+                next;
+            }
+            if ( $File =~ /\/(article|tmp\/Cache)/ ) {
+                next;
+            }
+            if ( -s $File > (1024*1024*1) ) {
+#print STDERR "NO: $File\n";
+                next;
+            }
+            push @Files, $File;
+        }
     }
-    else {
-        $Message
-            = 'Can\'t send email to the ((otrs)) support team!' . "\n\n"
-            . "You will found the otrs system information package at\n"
-            . "If you would like to use OTRS support services please send the package to support\@otrs.com or call\n"
-            . "our support team per phone to review the next step\n\n"
-            . " More about OTRS support or face-to-face contact information you will found at\n"
-            . 'http://www.otrs.com/' . "\n\n";
+
+    return @Files;
+}
+
+sub SendInfo {
+    my ( $Self, %Param ) = @_;
+
+    my $DataHash = $Self->AdminChecksGet();
+    my $XMLCheck = $Self->XMLStringCreate( DataHash => $DataHash, );
+    my ($Content, $Filename ) = $Self->ArchiveApplication();
+    my $Body = '';
+    for my $Key (%Param) {
+        $Body .= "$Key:$Param{$Key}\n";
     }
-    return $Message;
+    $Body .= "FQDN:" . $Self->{ConfigObject}->Get('FQDN') . "\n";
+
+    my $Send = $Self->{EmailObject}->Send(
+        From       => $Param{Email} || $Self->{ConfigObject}->Get('AdminEmail'),
+#        To         => 'support@otrs.com',
+        To         => 'vo94@vo.otrs.com',
+        Subject    => 'Support::Request::Auto::Email::CHECK',
+        Type       => 'text/plain',
+        Charset    => 'utf-8',
+        Body       => $Body,
+        Attachment => [
+            {
+                Filename    => 'check.xml',
+                Content     => $XMLCheck,
+                ContentType => 'application/octet-stream',
+            },
+            {
+                Filename    => $Filename,
+                Content     => ${ $Content },
+                ContentType => 'application/octet-stream',
+            }
+        ],
+    );
+
+    return 1;
 }
 
 1;
@@ -523,6 +457,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.9 $ $Date: 2008/05/01 16:54:57 $
+$Revision: 1.10 $ $Date: 2008/07/10 23:54:48 $
 
 =cut
