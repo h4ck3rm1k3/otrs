@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.10 2008/07/05 14:36:30 martin Exp $
+# $Id: AdminSupport.pm,v 1.11 2008/07/10 23:53:15 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.11 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -192,82 +192,25 @@ sub Run {
         }
 
         # create data hash reference
-        $Self->{SupportObject}->SupportInfoGet(
-            DataHash  => $DataHash,
-            InputHash => $InputHash,
-        );
+#        $Self->{SupportObject}->SupportInfoGet(
+#            DataHash  => $DataHash,
+#            InputHash => $InputHash,
+#        );
 
-        $DataHash->{CustomerInfo} = [
-            {   Key         => 'SupportID',
-                Name        => 'SupportID',
-                Comment     => 'The customer support id.',
-                Description => $Self->{ParamObject}->GetParam( Param => "SupportID" ),
-                Check       => 'OK',
-            },
-            {   Key         => 'Company',
-                Name        => 'Company',
-                Comment     => 'The company name.',
-                Description => $Self->{ParamObject}->GetParam( Param => "Company" ),
-                Check       => 'OK',
-            },
-            {   Key         => 'Street',
-                Name        => 'Street',
-                Comment     => 'The street name.',
-                Description => $Self->{ParamObject}->GetParam( Param => "Street" ),
-                Check       => 'OK',
-            },
-            {   Key         => 'Postcode',
-                Name        => 'Postcode',
-                Comment     => 'The postcode.',
-                Description => $Self->{ParamObject}->GetParam( Param => "Postcode" ),
-                Check       => 'OK',
-            },
-            {   Key         => 'City',
-                Name        => 'City',
-                Comment     => 'The city name.',
-                Description => $Self->{ParamObject}->GetParam( Param => "City" ),
-                Check       => 'OK',
-            },
-            {   Key         => 'Email',
-                Name        => 'Email',
-                Comment     => 'The email adress.',
-                Description => $Self->{ParamObject}->GetParam( Param => "Email" ),
-                Check       => 'OK',
-            },
-            {   Key         => 'Phone',
-                Name        => 'Phone',
-                Comment     => 'The phone number.',
-                Description => $Self->{ParamObject}->GetParam( Param => "Phone" ),
-                Check       => 'OK',
-            },
-        ];
-
-        my $SupportString = $Self->{SupportObject}->CreatePackageToSend( DataHash => $DataHash, );
+        my %CustomerInfo;
+        for my $Key (qw(Email Company Street Postcode City Phone SendInfo) ) {
+            $CustomerInfo{$Key} = $Self->{ParamObject}->GetParam( Param => $Key );
+        };
 
         # if the button send becomes the submit
-        if ( $Self->{ParamObject}->GetParam( Param => "Send" ) ) {
-            my ( $s, $m, $h, $D, $M, $Y, $wd, $yd, $dst ) = $Self->{TimeObject}->SystemTime2Date(
-                SystemTime => $Self->{TimeObject}->SystemTime(),
+        if ( $Self->{ParamObject}->GetParam( Param => 'Send' ) ) {
+            my $SendMessage = $Self->{SupportObject}->SendInfo(
+                %CustomerInfo,
             );
-            $M = sprintf( "%02d", $M );
-            $D = sprintf( "%02d", $D );
-            $h = sprintf( "%02d", $h );
-            $m = sprintf( "%02d", $m );
-            my $SendMessage;
-            if ( length($SupportString) < 9961472 ) {
-
-                # send info to ((otrs))
-                $SendMessage = $Self->{SupportObject}->SupportSendInfo(
-                    SupportString => $SupportString,
-                    SupportID     => "SupportInfo_"
-                        . "$Y-$M-$D"
-                        . "_$h-$m" . "_"
-                        . $Self->{ParamObject}->GetParam( Param => "SupportID" )
-                        . '.tar.gz',
-                );
+            if ( $SendMessage ) {
                 $Output .= $Self->{LayoutObject}->Notify(
                     Priority => 'warning',
-                    Info     => $SendMessage,
+                    Info     => "Sent to ((otrs))!",
                 );
             }
             else {
@@ -296,7 +239,7 @@ sub Run {
             # return file
             return $Self->{LayoutObject}->Attachment(
                 ContentType => 'application/octet-stream',
-                Content     => $SupportString,
+#                Content     => $SupportString,
                 Filename    => "SupportInfo_"
                     . "$Y-$M-$D"
                     . "_$h-$m" . "_"
@@ -464,10 +407,9 @@ sub Run {
     # ------------------------------------------------------------ #
 
     else {
-        my $DataHash = {};
 
         # create data hash reference
-        $Self->{SupportObject}->AdminChecksGet( DataHash => $DataHash, );
+        my $DataHash = $Self->{SupportObject}->AdminChecksGet();
         $Param{'ModeStrg'} = $Self->{LayoutObject}->OptionStrgHashRef(
             Data => {
                 1 => '1 * Normal (ca. 25 sec)',

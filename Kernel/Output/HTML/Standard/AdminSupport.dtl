@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.7 2008/07/05 14:36:30 martin Exp $
+# $Id: AdminSupport.dtl,v 1.8 2008/07/10 23:53:15 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -83,10 +83,10 @@
                 <td class="contentkey" width="15%">$Text{"State"}</td>
               </tr>
 <!-- dtl:block:OverviewModuleRow -->
-              <tr>
-                <td class="$QData{"CssClass"}"><div title="$QData{"Description"}">$QData{"Name"}</div></td>
-                <td class="$QData{"CssClass"}">$QData{"Comment"}</td>
-                <td class="$QData{"CssClass"}"><font color="$QData{"FontColor"}">$QData{"Check"}</font></td>
+              <tr class="$QData{"CssClass"}">
+                <td><div title="$QData{"Description"}">$QData{"Name"}</div></td>
+                <td>$QData{"Comment"}</td>
+                <td><font color="$QData{"FontColor"}">$QData{"Check"}</font></td>
               </tr>
 <!-- dtl:block:OverviewModuleRow -->
             </table>
@@ -196,51 +196,43 @@ Any and all information disclosed to OTRS will be kept strictly confidential and
                   <td colspan="3" class="contenthead">$Text{"Commercial support"}</td>
                 </tr>
                 <tr>
-                  <td class="contentkey" width="150">$Text{"Commercial support ID"}:</td>
-                  <td class="contentvalue"><input type="Text" name="SupportID" value="" size="40"></td>
-                  <td class="contentvalue"><font color="red" size="-2"> (* $Text{"if you are already a commercial support customer, please add your support id. (not required!)"})</font></td>
+                  <td class="contentkey" width="150">$Text{"Email"}:</td>
+                  <td class="contentvalue"><input type="Text" name="Email" value="$Env{"UserEmail"}" size="40"><font color="red" size="-2">* $Text{"Required"}</font></td>
                 </tr>
+#                <tr>
+#                  <td class="contentkey" width="150">$Text{"Commercial support ID"}:</td>
+#                  <td class="contentvalue"><input type="Text" name="SupportID" value="" size="40"></td>
+#                  <td class="contentvalue"><font color="red" size="-2"> (* $Text{"if you are already a commercial support customer, please add your support id. (not required!)"})</font></td>
+#                </tr>
                 <tr>
                   <td class="contentkey" width="150">$Text{"Company"}:</td>
                   <td class="contentvalue"><input type="Text" name="Company" value="" size="40"></td>
-                  <td class="contentvalue"><font color="red" size="-2"></font></td>
                 </tr>
                 <tr>
                   <td class="contentkey" width="150">$Text{"Street"}:</td>
                   <td class="contentvalue"><input type="Text" name="Street" value="" size="40"></td>
-                  <td class="contentvalue"><font color="red" size="-2"></font></td>
                 </tr>
                 <tr>
                   <td class="contentkey" width="150">$Text{"Postcode"}:</td>
                   <td class="contentvalue"><input type="Text" name="Postcode" value="" size="40"></td>
-                  <td class="contentvalue"><font color="red" size="-2"></font></td>
                 </tr>
                 <tr>
                   <td class="contentkey" width="150">$Text{"City"}:</td>
                   <td class="contentvalue"><input type="Text" name="City" value="" size="40"></td>
-                  <td class="contentvalue"><font color="red" size="-2"></font></td>
-                </tr>
-                <tr>
-                  <td class="contentkey" width="150">$Text{"Email"}:</td>
-                  <td class="contentvalue"><input type="Text" name="Email" value="" size="40"></td>
-                  <td class="contentvalue"><font color="red" size="-2"></font></td>
                 </tr>
                 <tr>
                   <td class="contentkey" width="150">$Text{"Phone"}:</td>
                   <td class="contentvalue"><input type="Text" name="Phone" value="" size="40"></td>
-                  <td class="contentvalue"><font color="red" size="-2"></font></td>
                 </tr>
                 <tr>
-                  <td class="contentkey" width="300">$Text{"Please send me information about ((otrs)) support packages."}:</td>
-                  <td class="contentvalue"><input type="radio" name="SendInfo" value="" size="10"></td>
-                  <td class="contentvalue"><font color="red" size="-2"></font></td>
+                  <td colspan="2" class="contentkey">$Text{"Please send me information about ((otrs)) support packages."}: <input type="checkbox" name="SendInfo" value="" size="10"></td>
                 </tr>
               </table>
             </td>
           </tr>
           <tr>
             <td class="contentfooter">
-              <input class="button" type="submit" name="Download" value="$Text{"Download"}">
+#              <input class="button" type="submit" name="Download" value="$Text{"Download"}">
               <input class="button" type="submit" name="Send" value="$Text{"Send"}">
             </td>
           </tr>
