@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/oracle.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.11 2008/07/05 14:37:52 martin Exp $
+# $Id: oracle.pm,v 1.12 2008/07/13 23:25:41 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = qw($Revision: 1.12 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -34,55 +34,6 @@ sub new {
     $Self->{XMLObject} = Kernel::System::XML->new(%Param);
 
     return $Self;
-}
-
-sub SupportConfigArrayGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-}
-
-sub SupportInfoGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ModuleInputHash} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-        return;
-    }
-    if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
-        $Self->{LogObject}
-            ->Log( Priority => 'error', Message => "ModuleInputHash must be a hash reference!" );
-        return;
-    }
-
-    # add new function name here
-    my @ModuleList = (
-        '_TableCheck', '_NLSDateFormatCheck',
-        '_OracleHomeCheck', '_NLSLangCheck',
-    );
-
-    my @DataArray;
-
-    FUNCTIONNAME:
-    for my $FunctionName (@ModuleList) {
-
-        # run function and get check data
-        my $Check = $Self->$FunctionName( Type => $Param{ModuleInputHash}->{Type} || '', );
-
-        next FUNCTIONNAME if !$Check;
-
-        # attach check data if valid
-        push @DataArray, $Check;
-    }
-
-    return \@DataArray;
 }
 
 sub AdminChecksGet {
@@ -130,7 +81,6 @@ sub _OracleHomeCheck {
         }
     }
     $Data = {
-        Key         => 'ORACLE_HOME',
         Name        => 'ORACLE_HOME',
         Description => "Check ORACLE_HOME.",
         Comment     => $Message,
@@ -162,7 +112,6 @@ sub _NLSLangCheck {
         }
     }
     my $Data = {
-        Key         => 'NLS_LANG',
         Name        => 'NLS_LANG',
         Description => "Check NLS_LANG.",
         Comment     => $Message,
@@ -189,7 +138,6 @@ sub _NLSDateFormatCheck {
         }
     }
     my $Data = {
-        Key         => 'NLS_DATE_FORMAT',
         Name        => 'NLS_DATE_FORMAT',
         Description => "Check NLS_DATE_FORMAT.",
         Comment     => $Message,
@@ -239,7 +187,6 @@ sub _TableCheck {
                 $Message = "$Count Tables";
             }
             $Data = {
-                Key         => 'TableCheck',
                 Name        => 'Table Check',
                 Description => "Check existing framework tables.",
                 Comment     => $Message,
@@ -248,7 +195,6 @@ sub _TableCheck {
         }
         else {
             $Data = {
-                Key         => 'TableCheck',
                 Name        => 'Table Check',
                 Description => "Check existing framework tables.",
                 Comment     => "Can't open file $File: $!",
@@ -258,7 +204,6 @@ sub _TableCheck {
     }
     else {
         $Data = {
-            Key         => 'TableCheck',
             Name        => 'Table Check',
             Description => "Check existing framework tables.",
             Comment     => "Can't find file $File!",

@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.14 2008/06/02 08:48:32 martin Exp $
+# $Id: OTRS.pm,v 1.15 2008/07/13 23:25:41 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -16,9 +16,10 @@ use warnings;
 
 use Kernel::System::Support;
 use Kernel::System::Ticket;
+use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.14 $) [1];
+$VERSION = qw($Revision: 1.15 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -34,67 +35,9 @@ sub new {
 
     $Self->{SupportObject} = Kernel::System::Support->new(%Param);
     $Self->{TicketObject}  = Kernel::System::Ticket->new(%Param);
+    $Self->{PackageObject} = Kernel::System::Package->new(%Param);
 
     return $Self;
-}
-
-sub SupportConfigArrayGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # create config array
-    my $ConfigArray = [
-
-    ];
-
-    # return config array
-    return $ConfigArray;
-}
-
-sub SupportInfoGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ModuleInputHash} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-        return;
-    }
-    if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
-        $Self->{LogObject}
-            ->Log( Priority => 'error', Message => "ModuleInputHash must be a hash reference!" );
-        return;
-    }
-
-    # add new function name here
-    my @ModuleList = (
-        '_OTRSLogGet', '_OTRSKernelGet',
-        '_OTRSCheckSumGet', '_OTRSCheckModulesGet',
-        '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketFulltextIndexModuleCheck',
-        '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
-    );
-
-    my @DataArray;
-
-    FUNCTIONNAME:
-    for my $FunctionName (@ModuleList) {
-
-        # run function and get check data
-        my $Check = $Self->$FunctionName( Type => $Param{ModuleInputHash}->{Type} || '', );
-
-        next FUNCTIONNAME if !$Check;
-
-        # attach check data if valid
-        push @DataArray, $Check;
-    }
-
-    return \@DataArray;
 }
 
 sub AdminChecksGet {
@@ -104,6 +47,7 @@ sub AdminChecksGet {
     my @ModuleList = (
         '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketFulltextIndexModuleCheck',
         '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
+        '_FileSystemCheck', '_PackageDeployCheck',
     );
 
     my @DataArray;
@@ -121,170 +65,6 @@ sub AdminChecksGet {
     }
 
     return \@DataArray;
-}
-
-sub _OTRSLogGet {
-    my ( $Self, %Param ) = @_;
-
-    my $ReturnHash = {};
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-    my $LogString = $Self->{LogObject}->GetLog( Limit => 1000 );
-    my $TmpLog;
-    open( $TmpLog, '>', $Self->{ConfigObject}->Get('Home') . "/var/tmp/tmplog" );
-    print $TmpLog $LogString;
-    close($TmpLog);
-
-    my $Filename = $Self->{SupportObject}->TarPackageWrite(
-        FileName   => $Self->{ConfigObject}->Get('Home') . "/var/tmp/tmplog",
-        OutputPath => $Self->{ConfigObject}->Get('Home') . "/var/tmp/support/",
-        OutputName => 'otrs.log.tar',
-    );
-
-    # remove tmp file
-    unlink $Self->{ConfigObject}->Get('Home') . "/var/tmp/tmplog";
-
-    if ($Filename) {
-        $ReturnHash = {
-            Key         => 'OTRSLog',
-            Name        => 'OTRSLog',
-            Comment     => 'The OTRS Log',
-            Description => $Filename,
-            Check       => 'Package',
-        };
-    }
-    return $ReturnHash;
-}
-
-sub _OTRSKernelGet {
-    my ( $Self, %Param ) = @_;
-
-    my $ReturnHash = {};
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # get the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home') . '/Kernel/';
-
-    my $Filename = $Self->{SupportObject}->TarPackageWrite(
-        DirName    => $DirName,
-        OutputPath => $Self->{ConfigObject}->Get('Home') . "/var/tmp/support/",
-        OutputName => 'kernel.tar',
-    );
-
-    if ($Filename) {
-        $ReturnHash = {
-            Key         => 'OTRSKernel',
-            Name        => 'OTRSKernel',
-            Comment     => 'The OTRS Kernel ',
-            Description => $Filename,
-            Check       => 'Package',
-        };
-    }
-    return $ReturnHash;
-}
-
-sub _OTRSCheckSumGet {
-    my ( $Self, %Param ) = @_;
-
-    my $ReturnHash = {};
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    my $TmpSumString;
-    my $TmpLog;
-    open( $TmpSumString, "perl " . $Self->{ConfigObject}->Get('Home') . "/bin/CheckSum.pl |" );
-    open( $TmpLog, '>', $Self->{ConfigObject}->Get('Home') . "/var/tmp/CheckSum.log" );
-
-    while (<$TmpSumString>) {
-        print $TmpLog $_;
-    }
-    close($TmpSumString);
-    close($TmpLog);
-
-    my $Filename = $Self->{SupportObject}->TarPackageWrite(
-        FileName   => $Self->{ConfigObject}->Get('Home') . "/var/tmp/CheckSum.log",
-        OutputPath => $Self->{ConfigObject}->Get('Home') . "/var/tmp/support/",
-        OutputName => 'CheckSum.log.tar',
-    );
-
-    # remove tmp file
-    unlink $Self->{ConfigObject}->Get('Home') . "/var/tmp/CheckSum.log";
-
-    if ($Filename) {
-        $ReturnHash = {
-            Key         => 'OTRSCheckSum',
-            Name        => 'OTRSCheckSum',
-            Comment     => 'The OTRS CheckSum.',
-            Description => $Filename,
-            Check       => 'Package',
-        };
-    }
-    return $ReturnHash;
-}
-
-sub _OTRSCheckModulesGet {
-    my ( $Self, %Param ) = @_;
-
-    my $ReturnHash = {};
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    my $TmpSumString;
-    my $TmpLog;
-    open( $TmpSumString,
-        "perl " . $Self->{ConfigObject}->Get('Home') . "/bin/otrs.checkModules |" );
-    open( $TmpLog, '>', $Self->{ConfigObject}->Get('Home') . "/var/tmp/CheckModules.log" );
-
-    while (<$TmpSumString>) {
-        print $TmpLog $_;
-    }
-    close($TmpSumString);
-    close($TmpLog);
-
-    my $Filename = $Self->{SupportObject}->TarPackageWrite(
-        FileName   => $Self->{ConfigObject}->Get('Home') . "/var/tmp/CheckModules.log",
-        OutputPath => $Self->{ConfigObject}->Get('Home') . "/var/tmp/support/",
-        OutputName => 'CheckModules.log.tar',
-    );
-
-    # remove tmp file
-    unlink $Self->{ConfigObject}->Get('Home') . '/var/tmp/CheckModules.log';
-
-    if ($Filename) {
-        $ReturnHash = {
-            Key         => 'OTRSCheckSum',
-            Name        => 'OTRSCheckSum',
-            Comment     => 'The OTRS CheckSum.',
-            Description => $Filename,
-            Check       => 'Package',
-        };
-    }
-    return $ReturnHash;
 }
 
 # check if error log entries are available
@@ -319,7 +99,6 @@ sub _LogCheck {
     }
 
     $Data = {
-        Key         => 'LogCheck',
         Name        => 'LogCheck',
         Description => 'Check log for error log entries.',
         Comment     => $Message . $Error,
@@ -365,7 +144,6 @@ sub _TicketIndexModuleCheck {
         }
     }
     $Data = {
-        Key         => 'Ticket::IndexModule',
         Name        => 'Ticket::IndexModule',
         Description => 'Check Ticket::IndexModule setting.',
         Comment     => $Message,
@@ -411,7 +189,6 @@ sub _TicketFulltextIndexModuleCheck {
         }
     }
     $Data = {
-        Key         => 'Ticket::SearchIndexModule',
         Name        => 'Ticket::SearchIndexModule',
         Description => 'Check Ticket::SearchIndexModule setting.',
         Comment     => $Message,
@@ -459,7 +236,6 @@ sub _OpenTicketCheck {
         $Message = 'You have ' . $#TicketIDs . ' open tickets in your system.';
     }
     $Data = {
-        Key         => 'OpenTicketCheck',
         Name        => 'OpenTicketCheck',
         Description => 'Check open tickets in your system.',
         Comment     => $Message,
@@ -472,7 +248,6 @@ sub _OpenTicketCheck {
 sub _FQDNConfigCheck {
     my ( $Self, %Param ) = @_;
     my $Data = {
-        Key         => 'FQDNConfigCheck',
         Name        => 'FQDNConfigCheck',
         Description => 'Check if the configured fully qualified host name is valid.',
         Check       => 'Failed',
@@ -505,8 +280,8 @@ sub _FQDNConfigCheck {
 # Check if the SystemID contains only digits.
 sub _SystemIDConfigCheck {
     my ( $Self, %Param ) = @_;
+
     my $Data = {
-        Key         => 'SystemIDConfigCheck',
         Name        => 'SystemIDConfigCheck',
         Description => 'Check if the configured SystemID contains only digits.',
         Check       => 'Failed',
@@ -521,9 +296,80 @@ sub _SystemIDConfigCheck {
         $Data->{Check}   = 'OK';
     }
     else {
-        $Data->{Check}   = 'Failed';
         $Data->{Comment} = "The SystemID '$SystemID' must consist of digits exclusively.";
     }
     return $Data;
 }
+
+sub _FileSystemCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $Message = '';
+    my $Data = {
+        Name        => 'FileSystemCheck',
+        Description => 'Check if file system is writable.',
+        Check       => 'Failed',
+        Comment     => '',
+    };
+
+    my $Home = $Self->{ConfigObject}->Get('Home');
+    # check Home
+    if (! -e $Home) {
+        $Data->{Check}   = 'Failed';
+        $Data->{Comment} = "No such home directory: $Home!",
+        return $Data;
+    }
+    foreach (qw(/bin/ /Kernel/ /Kernel/System/ /Kernel/Output/ /Kernel/Output/HTML/ /Kernel/Modules/)) {
+        my $File = "$Home/$_/check_permissons.$$";
+        if (open(OUT, "> $File")) {
+            print OUT "test";
+            close (OUT);
+            unlink $File;
+        }
+        else {
+            $Message .= "$File($!);";
+        }
+    }
+
+    if ($Message) {
+        $Data->{Comment} = "Can't write file: $Message",
+        return $Data;
+    }
+
+    $Data->{Check}   = 'OK';
+
+    return $Data;
+}
+
+sub _PackageDeployCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $Message = '';
+    my $Data = {
+        Name        => 'PackageDeployCheck',
+        Description => 'Check deployment of all packages.',
+        Check       => 'Failed',
+        Comment     => '',
+    };
+
+    for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
+        my $DeployCheck = $Self->{PackageObject}->DeployCheck(
+            Name    => $Package->{Name}->{Content},
+            Version => $Package->{Version}->{Content},
+        );
+        if ( !$DeployCheck ) {
+            $Message .= $Package->{Name}->{Content} . ' ' . $Package->{Version}->{Content} . ';';
+        }
+    }
+
+    if ($Message) {
+        $Data->{Comment} = "Packages not correctly installed: $Message",
+        return $Data;
+    }
+
+    $Data->{Check}   = 'OK';
+
+    return $Data;
+}
+
 1;

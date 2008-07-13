@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.10 2008/07/10 23:54:48 martin Exp $
+# $Id: Support.pm,v 1.11 2008/07/13 23:25:41 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -18,11 +18,13 @@ use Kernel::System::XML;
 use Kernel::System::DB;
 use Kernel::System::Email;
 use Kernel::System::Time;
+use Digest::MD5 qw(md5_hex);
+
 use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.11 $) [1];
 
 =head1 NAME
 
@@ -84,135 +86,6 @@ sub new {
     );
 
     return $Self;
-}
-
-=item SupportConfigHashGet()
-
-get a hash reference with required config information.
-
-    $Support->SupportConfigHashGet(
-        ConfigHash => $HashRef,
-    );
-
-=cut
-
-sub SupportConfigHashGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(ConfigHash)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # check if $ConfigHash ne a HashRef
-    if ( ref( $Param{ConfigHash} ) ne 'HASH' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'ConfigHash must be a hash reference!',
-        );
-        return;
-    }
-
-    # get the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home') . '/Kernel/System/Support/';
-
-    # read all availible modules in @List
-    my @List = glob( $DirName . "/*.pm" );
-    for my $File (@List) {
-
-        # remove .pm
-        $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        my $GenericModule = "Kernel::System::Support::$File";
-
-        # load module $GenericModule and check if loadable
-        if ( $Self->{MainObject}->Require($GenericModule) ) {
-
-            # create new object
-            my $SupportObject = $GenericModule->new( %{$Self} );
-            if ($SupportObject) {
-                my $ArrayRef = $SupportObject->SupportConfigArrayGet();
-                if ( $ArrayRef && ref($ArrayRef) eq 'ARRAY' ) {
-                    $Param{ConfigHash}->{$File} = $ArrayRef;
-                }
-            }
-        }
-    }
-    return 1;
-}
-
-=item SupportInfoGet()
-
-get a hash reference with support information.
-
-    $Support->SupportInfoGet(
-        DataHash => $DataHash,
-        InputHash => $InputHash,
-    );
-
-=cut
-
-sub SupportInfoGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(DataHash InputHash)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # check if $DataHash and $InputHash ne a HashRef
-    if ( ref( $Param{DataHash} ) ne 'HASH' || ref( $Param{InputHash} ) ne 'HASH' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "DataHash and InputHash must be a hash reference!"
-        );
-        return;
-    }
-
-    # get the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home') . '/Kernel/System/Support/';
-
-    # read all availible modules in @List
-    my @List = glob( $DirName . "/*.pm" );
-    for my $File (@List) {
-
-        # remove .pm
-        $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        my $GenericModule = "Kernel::System::Support::$File";
-
-        # load module $GenericModule and check if loadable
-        if ( $Self->{MainObject}->Require($GenericModule) ) {
-
-            # create new object
-            my $SupportObject = $GenericModule->new( %{$Self} );
-            if ( $SupportObject && $Param{InputHash}->{$File} ) {
-                my $ArrayRef
-                    = $SupportObject->SupportInfoGet( ModuleInputHash => $Param{InputHash}->{$File},
-                    );
-
-                # check if return value is a valid arrayref
-                if ( @{$ArrayRef} ) {
-                    my $StructureOK = 1;
-
-                    # check if the arrayref includes only valid hashrefs
-                    for my $Element ( @{$ArrayRef} ) {
-                        if ( ref($Element) ne 'HASH' ) {
-                            $StructureOK = 0;
-                        }
-                    }
-                    if ( $StructureOK eq "1" ) {
-                        $Param{DataHash}->{$File} = $ArrayRef;
-                    }
-                }
-            }
-        }
-    }
-    return 1;
 }
 
 =item AdminChecksGet()
@@ -313,18 +186,124 @@ sub XMLStringCreate {
             $CountItem++;
             my $Data = {};
             for my $Element ( keys %{$DataHashRow} ) {
-                next if $Element eq 'Key';
                 next if $Element eq 'Name';
                 $Data->{$Element}->[1]->{Content} = $DataHashRow->{$Element};
             }
             $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem] = $Data;
-            $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem]->{Name} = $DataHashRow->{Key};
+            $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem]->{Name} = $DataHashRow->{Name};
         }
     }
 
     my $XMLString = $Self->{XMLObject}->XMLHash2XML( @{$XMLHash} );
 
     return $XMLString;
+}
+
+sub LogLast {
+    my ( $Self, %Param ) = @_;
+
+    my $LogString = $Self->{LogObject}->GetLog( Limit => 1000 );
+
+    return ( \$LogString, $Param{Type}.'.log' );
+}
+
+sub ModuleCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $Home = $Self->{ConfigObject}->Get('Home');
+    my $TmpSumString;
+    my $TmpLog;
+    open( $TmpSumString, "perl $Home/bin/otrs.checkModules |" );
+
+    while (<$TmpSumString>) {
+        $TmpLog .= $_;
+    }
+    close($TmpSumString);
+
+    return ( \$TmpLog, 'ModuleCheck.log' );
+}
+
+sub ARCHIVE {
+    my ( $Self, %Param ) = @_;
+
+    my $Home    = $Self->{ConfigObject}->Get('Home');
+    my $Archive = $Self->{ConfigObject}->Get('Home') . '/ARCHIVE';
+
+    my $Tar;
+    if ( !open( $Tar, '<', $Archive ) ) {
+        my $ARCHIVEEmpty = "Can't open $Archive: $!";
+        return ( \$ARCHIVEEmpty, 'ARCHIVE.log' );
+    }
+    binmode($Tar);
+    my %Compare;
+    while (<$Tar>) {
+        my @Row = split( /::/, $_ );
+        chomp( $Row[1] );
+        $Compare{ $Row[1] } = $Row[0];
+    }
+    close($Tar);
+
+    my %Result = $Self->_ARCHIVELookup(
+        In      => $Home,
+        Compare => \%Compare,
+        Home    => $Home,
+    );
+
+    my $ARCHIVEString = '';
+    for my $Key ( sort keys %Result ) {
+        $ARCHIVEString .= "$Key:$Result{$Key}\n";
+    }
+
+    return ( \$ARCHIVEString, 'ARCHIVE.log' );
+}
+
+sub _ARCHIVELookup {
+    my ( $Self, %Param ) = @_;
+
+    my @List = glob("$Param{In}/*");
+
+    for my $File (@List) {
+        $File =~ s/\/\//\//g;
+        if ( -d $File && $File !~ /CVS/ && $File !~ /^doc\// && $File !~ /^var\/tmp/ ) {
+            $Self->_ARCHIVELookup(
+                In      => $File,
+                Compare => $Param{Compare},
+                Home    => $Param{Home},
+            );
+            $File =~ s/\Q$Param{Home}\E//;
+#            print STDERR "Directory: $File\n";
+        }
+        else {
+            my $OrigFile = $File;
+            $File =~ s/\Q$Param{Home}\E//;
+            $File =~ s/^\/(.*)$/$1/;
+#            print STDERR "File: $File\n";
+            if (
+                $File !~ /Entries|Repository|Root|CVS|ARCHIVE/
+                && $File !~ /^doc\//
+                && $File !~ /^var\/tmp/
+                )
+            {
+                my $Content = '';
+                open( IN, '<', $OrigFile ) || die "ERROR: $OrigFile: $!";
+                while (<IN>) {
+                    $Content .= $_;
+                }
+                close(IN);
+                my $Digest = md5_hex($Content);
+                if ( !$Param{Compare}->{$File} ) {
+                    $Param{Compare}->{$File} = "New $File";
+                }
+                elsif ( $Param{Compare}->{$File} ne $Digest ) {
+                    $Param{Compare}->{$File} = "Dif $File";
+                }
+                elsif ( defined $Param{Compare}->{$File} ) {
+                    delete $Param{Compare}->{$File};
+                }
+            }
+        }
+    }
+    return %{ $Param{Compare} };
 }
 
 sub ArchiveApplication {
@@ -393,7 +372,7 @@ sub DirectoryFiles {
             if ( $File =~ /\/(article|tmp\/Cache)/ ) {
                 next;
             }
-            if ( -s $File > (1024*1024*1) ) {
+            if ( -s $File > (1024*1024*0.1) ) {
 #print STDERR "NO: $File\n";
                 next;
             }
@@ -407,11 +386,28 @@ sub DirectoryFiles {
 sub SendInfo {
     my ( $Self, %Param ) = @_;
 
+    # create log package
+    my ($LogPreContent, $LogPreFilename ) = $Self->LogLast( Type => 'log_pre' );
+
+    # create check package
     my $DataHash = $Self->AdminChecksGet();
     my $XMLCheck = $Self->XMLStringCreate( DataHash => $DataHash, );
+
+    # create application package
     my ($Content, $Filename ) = $Self->ArchiveApplication();
+
+    # create ARCHIVE package
+    my ($ARCHIVEContent, $ARCHIVEFilename ) = $Self->ARCHIVE();
+
+    # create module check package
+    my ($ModuleCheckContent, $ModuleCheckFilename ) = $Self->ModuleCheck();
+
+    # create log package
+    my ($LogPostContent, $LogPostFilename ) = $Self->LogLast( Type => 'log_post' );
+
+    # create mail body
     my $Body = '';
-    for my $Key (%Param) {
+    for my $Key ( keys %Param ) {
         $Body .= "$Key:$Param{$Key}\n";
     }
     $Body .= "FQDN:" . $Self->{ConfigObject}->Get('FQDN') . "\n";
@@ -426,15 +422,41 @@ sub SendInfo {
         Body       => $Body,
         Attachment => [
             {
+                Filename    => $LogPreFilename,
+                Content     => ${ $LogPreContent },
+                ContentType => 'text/plain',
+                Disposition => 'attachment',
+            },
+            {
                 Filename    => 'check.xml',
                 Content     => $XMLCheck,
-                ContentType => 'application/octet-stream',
+                ContentType => 'text/xml',
+                Disposition => 'attachment',
             },
             {
                 Filename    => $Filename,
                 Content     => ${ $Content },
                 ContentType => 'application/octet-stream',
-            }
+                Disposition => 'attachment',
+            },
+            {
+                Filename    => $ARCHIVEFilename,
+                Content     => ${ $ARCHIVEContent },
+                ContentType => 'text/plain',
+                Disposition => 'attachment',
+            },
+            {
+                Filename    => $ModuleCheckFilename,
+                Content     => ${ $ModuleCheckContent },
+                ContentType => 'text/plain',
+                Disposition => 'attachment',
+            },
+            {
+                Filename    => $LogPostFilename,
+                Content     => ${ $LogPostContent },
+                ContentType => 'text/plain',
+                Disposition => 'attachment',
+            },
         ],
     );
 
@@ -457,6 +479,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.10 $ $Date: 2008/07/10 23:54:48 $
+$Revision: 1.11 $ $Date: 2008/07/13 23:25:41 $
 
 =cut

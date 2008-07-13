@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/postgresql.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: postgresql.pm,v 1.7 2008/07/05 14:37:52 martin Exp $
+# $Id: postgresql.pm,v 1.8 2008/07/13 23:25:41 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.7 $) [1];
+$VERSION = qw($Revision: 1.8 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -34,58 +34,6 @@ sub new {
     $Self->{XMLObject} = Kernel::System::XML->new(%Param);
 
     return $Self;
-}
-
-sub SupportConfigArrayGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-}
-
-sub SupportInfoGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ModuleInputHash} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-        return;
-    }
-    if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'ModuleInputHash must be a hash reference!',
-        );
-        return;
-    }
-
-    # add new function name here
-    my @ModuleList = (
-        '_DatestyleCheck', '_UTF8ServerCheck',
-        '_TableCheck', '_UTF8ClientCheck',
-        '_VersionCheck',
-    );
-
-    my @DataArray;
-
-    FUNCTIONNAME:
-    for my $FunctionName (@ModuleList) {
-
-        # run function and get check data
-        my $Check = $Self->$FunctionName( Type => $Param{ModuleInputHash}->{Type} || '', );
-
-        next FUNCTIONNAME if !$Check;
-
-        # attach check data if valid
-        push @DataArray, $Check;
-    }
-
-    return \@DataArray;
 }
 
 sub AdminChecksGet {
@@ -155,7 +103,6 @@ sub _TableCheck {
                 $Message = "$Count Tables";
             }
             $Data = {
-                Key         => 'TableCheck',
                 Name        => 'Table Check',
                 Description => 'Check existing framework tables.',
                 Comment     => $Message,
@@ -164,7 +111,6 @@ sub _TableCheck {
         }
         else {
             $Data = {
-                Key         => 'TableCheck',
                 Name        => 'Table Check',
                 Description => 'Check existing framework tables.',
                 Comment     => "Can't open file $File: $!",
@@ -174,7 +120,6 @@ sub _TableCheck {
     }
     else {
         $Data = {
-            Key         => 'TableCheck',
             Name        => 'Table Check',
             Description => 'Check existing framework tables.',
             Comment     => "Can't find file $File!",
@@ -206,7 +151,6 @@ sub _DatestyleCheck {
         }
     }
     $Data = {
-        Key         => 'DateStyle',
         Name        => 'DateStyle',
         Description => 'Check DateStyle.',
         Comment     => $Message,
@@ -235,7 +179,6 @@ sub _UTF8ServerCheck {
             }
         }
         $Data = {
-            Key         => 'utf8 server connection',
             Name        => 'Server Connection (utf8)',
             Description => 'Check the utf8 server connection.',
             Comment     => $Message,
@@ -265,7 +208,6 @@ sub _UTF8ClientCheck {
             }
         }
         $Data = {
-            Key         => 'utf8 client connection',
             Name        => 'Client Connection (utf8)',
             Description => 'Check the utf8 client connection.',
             Comment     => $Message,
@@ -303,7 +245,6 @@ sub _VersionCheck {
         }
     }
     $Data = {
-        Key         => 'version',
         Name        => 'Version',
         Description => 'Check database version.',
         Comment     => $Message,

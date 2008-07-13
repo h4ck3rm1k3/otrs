@@ -1,12 +1,12 @@
 # --
-# Kernel/System/Support/Database.pm - all required system informations
-# Copyright (C) 2001-2007 OTRS GmbH, http://otrs.org/
+# Kernel/System/Support/Database.pm - all required system information
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Database.pm,v 1.7 2007/11/22 12:16:17 sr Exp $
+# $Id: Database.pm,v 1.9 2008/07/13 23:25:41 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Support::Database;
@@ -15,15 +15,15 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.7 $) [1];
+$VERSION = qw($Revision: 1.9 $) [1];
 
 =head1 NAME
 
-Kernel::System::Support::Database - global system informations
+Kernel::System::Support::Database - global system information
 
 =head1 SYNOPSIS
 
-All required system informations to a running OTRS host.
+All required system information to a running OTRS host.
 
 =head1 PUBLIC INTERFACE
 
@@ -64,224 +64,18 @@ sub new {
     return $Self;
 }
 
-=item SupportConfigArrayGet()
-
-return an array reference with required config information.
-
-    $ArrayRef = $Support->SupportConfigArrayGet();
-
-    my $ConfigArray = [
-        {
-            Key => 'TicketDump',
-            Name => 'Dump Tickets',
-            Description => 'Please tell me how many latest Tickets we shut dump?',
-            Input => {
-                Type => 'Select',
-                Data => {
-                    All => 'All',
-                    0 => '0',
-                    10 => 'Last 10',
-                    100 => 'Last 100',
-                    1000 => 'Last 1000',
-                },
-            },
-        },
-        {
-            Key => 'ApacheHome',
-            Name => 'Apache Home Directory',
-            Description => 'Please tell me the path to the Apache home directory (/etc/apache2)',
-            Input => {
-                Type => 'Text',
-                Size => 40,
-            },
-        },
-    ];
-
-=cut
-
-sub SupportConfigArrayGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # ------------------------------------------------------------ #
-    # Get information about all databases
-    # ------------------------------------------------------------ #
-
-    # create config array
-    my $ConfigArray = [];
-
-    #    my $ConfigArray = [
-    #        {
-    #            Key => 'TicketDump',
-    #            Name => 'Dump Tickets',
-    #            Description => 'Please tell me how many latest Tickets we shut dump?',
-    #           Input => {
-    #                Type => 'Select',
-    #                Data => {
-    #                  All => 'All',
-    #                   0 => '0',
-    #                    10 => 'Last 10',
-    #                    100 => 'Last 100',
-    #                   1000 => 'Last 1000',
-    #                },
-    #            },
-    #        },
-    #    ];
-
-    # ------------------------------------------------------------ #
-    # Get information about used database
-    # ------------------------------------------------------------ #
-
-    # try to find out which ticket database is configured
-    my $DatabaseType = $Self->{DBObject}->{'DB::Type'};
-
-    # try to get availible modules and the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home') . "/Kernel/System/Support/Database";
-
-    # read all availible modules in @List
-    my @List = glob( $DirName . "/*.pm" );
-    for my $File (@List) {
-
-        # remove .pm
-        $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        if ( $DatabaseType =~ /ODBC/i ) {
-            $DatabaseType = $Self->{ConfigObject}->Get('Database::Type');
-        }
-        if ( $DatabaseType eq $File ) {
-            my $GenericModule = "Kernel::System::Support::Database::$File";
-
-            # load module $GenericModule and check if loadable
-            if ( $Self->{MainObject}->Require($GenericModule) ) {
-
-                # create new object
-                my $SupportObject = $GenericModule->new( %{$Self} );
-                if ($SupportObject) {
-                    my $ArrayRef = $SupportObject->SupportConfigArrayGet();
-                    if ( $ArrayRef && ref($ArrayRef) eq 'ARRAY' ) {
-                        push( @{$ConfigArray}, @{$ArrayRef} );
-                    }
-                }
-            }
-        }
-    }
-
-    # return config array
-    return $ConfigArray;
-}
-
-=item SupportInfoGet()
-
-returns a array reference with support information.
-
-$DatabaseArray => [
-            {
-                Key => 'Plattform',
-                Name => 'Plattform',
-                Comment => 'Linux',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-            {
-                Key => 'Version',
-                Name => 'Version',
-                Comment => 'openSUSE 10.2',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            },
-        ];
-
-=cut
-
-sub SupportInfoGet {
-    my ( $Self, %Param ) = @_;
-
-    my $DataArray = [];
-
-    # check needed stuff
-    for (qw(ModuleInputHash)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-    if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
-        $Self->{LogObject}
-            ->Log( Priority => 'error', Message => "ModuleInputHash must be a hash reference!" );
-        return;
-    }
-
-    # ------------------------------------------------------------ #
-    # Get information about all databases
-    # ------------------------------------------------------------ #
-
-    # please add for each new check a part like this
-    #    my $OneCheck = $Self->Check(
-    #        Type => $Param{ModuleInputHash}->{Type} || '',
-    #    );
-    #    push (@{$DataArray}, $OneCheck);
-
-    # ------------------------------------------------------------ #
-    # Get information about used database
-    # ------------------------------------------------------------ #
-
-    # try to find out which ticket database is configured
-    my $DatabaseType = $Self->{DBObject}->{'DB::Type'};
-
-    # try to get availible modules and the directory name
-    my $DirName = $Self->{ConfigObject}->Get('Home') . "/Kernel/System/Support/Database";
-
-    # read all availible modules in @List
-    my @List = glob( $DirName . "/*.pm" );
-    for my $File (@List) {
-
-        # remove .pm
-        $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        if ( $DatabaseType =~ /ODBC/i ) {
-            $DatabaseType = $Self->{ConfigObject}->Get('Database::Type');
-        }
-        if ( $DatabaseType eq $File ) {
-            my $GenericModule = "Kernel::System::Support::Database::$File";
-
-            # load module $GenericModule and check if loadable
-            if ( $Self->{MainObject}->Require($GenericModule) ) {
-
-                # create new object
-                my $SupportObject = $GenericModule->new( %{$Self} );
-                if ($SupportObject) {
-                    my $ArrayRef = $SupportObject->SupportInfoGet(
-                        ModuleInputHash => $Param{ModuleInputHash}, );
-                    if ( $ArrayRef && ref($ArrayRef) eq 'ARRAY' ) {
-                        push( @{$DataArray}, @{$ArrayRef} );
-                    }
-                }
-            }
-        }
-    }
-
-    return $DataArray;
-}
-
 =item AdminChecksGet()
 
 returns a array reference with AdminChecks information.
 
 $DatabaseArray => [
             {
-                Key => 'Plattform',
                 Name => 'Plattform',
                 Comment => 'Linux',
                 Description => 'Please add more memory.',
                 Check => 'OK',
             },
             {
-                Key => 'Version',
                 Name => 'Version',
                 Comment => 'openSUSE 10.2',
                 Description => 'Please add more memory.',
@@ -359,7 +153,6 @@ returns a hash reference with Check information.
 
 $CheckHash =>
             {
-                Key => 'Plattform',
                 Name => 'Plattform',
                 Comment => 'Linux',
                 Description => 'Please add more memory.',
@@ -390,7 +183,7 @@ sub _Check {
     if ( $^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/ ) {
 
     }
-    elsif ( $^O =~ /win/i ) {    # TODO / Ausgabe unter Windows noch pruefen
+    elsif ( $^O =~ /win/i ) {
 
     }
     return $ReturnHash;
@@ -406,12 +199,12 @@ This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (GPL). If you
-did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.7 $ $Date: 2007/11/22 12:16:17 $
+$Revision: 1.9 $ $Date: 2008/07/13 23:25:41 $
 
 =cut

@@ -1,8 +1,8 @@
 # --
-# Kernel/System/Support/Webserver/IIS.pm - all required system informations
+# Kernel/System/Support/Webserver/IIS.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: IIS.pm,v 1.5 2008/04/19 20:51:15 martin Exp $
+# $Id: IIS.pm,v 1.6 2008/07/13 23:25:41 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.5 $) [1];
+$VERSION = qw($Revision: 1.6 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -30,54 +30,6 @@ sub new {
     }
 
     return $Self;
-}
-
-sub SupportConfigArrayGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-}
-
-sub SupportInfoGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ModuleInputHash} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-        return;
-    }
-    if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'ModuleInputHash must be a hash reference!',
-        );
-        return;
-    }
-
-    # add new function name here
-    my @ModuleList = ();
-
-    my @DataArray;
-
-    FUNCTIONNAME:
-    for my $FunctionName (@ModuleList) {
-
-        # run function and get check data
-        my $Check = $Self->$FunctionName( Type => $Param{ModuleInputHash}->{Type} || '', );
-
-        next FUNCTIONNAME if !$Check;
-
-        # attach check data if valid
-        push @DataArray, $Check;
-    }
-
-    return \@DataArray;
 }
 
 sub AdminChecksGet {
@@ -137,7 +89,6 @@ sub _PerlExCheck {
         $Message = 'You should use PerlEx to increase your performance (you really should do this).';
     }
     $Data = {
-        Key         => 'perlex',
         Name        => 'PerlEx',
         Description => 'Check if PerlEx is used.',
         Comment     => $Message,
@@ -147,21 +98,3 @@ sub _PerlExCheck {
 }
 
 1;
-
-=back
-
-=head1 TERMS AND CONDITIONS
-
-This software is part of the OTRS project (http://otrs.org/).
-
-This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (GPL). If you
-did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
-
-=cut
-
-=head1 VERSION
-
-$Revision: 1.5 $ $Date: 2008/04/19 20:51:15 $
-
-=cut

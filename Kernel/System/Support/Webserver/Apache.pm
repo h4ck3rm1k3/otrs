@@ -1,8 +1,8 @@
 # --
-# Kernel/System/Support/Webserver/Apache.pm - all required system informations
+# Kernel/System/Support/Webserver/Apache.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Apache.pm,v 1.8 2008/05/01 16:54:57 martin Exp $
+# $Id: Apache.pm,v 1.9 2008/07/13 23:25:41 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.8 $) [1];
+$VERSION = qw($Revision: 1.9 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -30,57 +30,6 @@ sub new {
     }
 
     return $Self;
-}
-
-sub SupportConfigArrayGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-}
-
-sub SupportInfoGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ModuleInputHash} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-        return;
-    }
-    if ( ref( $Param{ModuleInputHash} ) ne 'HASH' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'ModuleInputHash must be a hash reference!',
-        );
-        return;
-    }
-
-    # add new function name here
-    my @ModuleList = (
-        '_ApacheDBICheck', '_ApacheReloadCheck',
-        '_ModPerlVersionCheck',
-    );
-
-    my @DataArray;
-
-    FUNCTIONNAME:
-    for my $FunctionName (@ModuleList) {
-
-        # run function and get check data
-        my $Check = $Self->$FunctionName( Type => $Param{ModuleInputHash}->{Type} || '', );
-
-        next FUNCTIONNAME if !$Check;
-
-        # attach check data if valid
-        push @DataArray, $Check;
-    }
-
-    return \@DataArray;
 }
 
 sub AdminChecksGet {
@@ -134,7 +83,6 @@ sub _ApacheDBICheck {
         $Message = $ApacheDBI;
     }
     $Data = {
-        Key         => 'Apache::DBI',
         Name        => 'Apache::DBI',
         Description => 'Check used Apache::DBI.',
         Comment     => $Message,
@@ -181,7 +129,6 @@ sub _ApacheReloadCheck {
         $Message = 'You should use mod_perl to increase your performance very strong!';
     }
     $Data = {
-        Key         => 'Apache::Reload',
         Name        => 'Apache::Reload',
         Description => 'Check used Apache::Reload/Apache2::Reload.',
         Comment     => $Message,
@@ -217,7 +164,6 @@ sub _ModPerlVersionCheck {
         $Message = 'You should use mod_perl to increase your performance (you really should do this).';
     }
     $Data = {
-        Key         => 'mod_perl version',
         Name        => 'Version (mod_perl)',
         Description => 'Check used mod_perl version.',
         Comment     => $Message,
