@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.11 2008/07/10 23:53:15 martin Exp $
+# $Id: AdminSupport.pm,v 1.12 2008/07/13 23:23:15 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = qw($Revision: 1.12 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -43,94 +43,6 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    my $ConfigHash = {};
-
-    # create config hash reference
-    $Self->{SupportObject}->SupportConfigHashGet( ConfigHash => $ConfigHash, );
-
-    # ------------------------------------------------------------ #
-    # Get required information
-    # ------------------------------------------------------------ #
-
-    if ( $Self->{Subaction} eq 'GetRequiredInfo' ) {
-
-        # first level Hashref (each module name)
-        my $ContentCheck = '0';
-        for my $ConfigModule ( sort keys %{$ConfigHash} ) {
-            if ( !$ConfigHash->{$ConfigModule}->[0] ) {
-                next;
-            }
-            else {
-                $ContentCheck = '1';
-            }
-        }
-        if ( $ContentCheck eq '1' ) {
-
-            # create & return output
-            my $Output = $Self->{LayoutObject}->Header();
-            $Output .= $Self->{LayoutObject}->NavigationBar();
-
-            $Self->{LayoutObject}->Block( Name => 'Required', );
-
-            # first level Hashref (each module name)
-            for my $ConfigModule ( sort keys %{$ConfigHash} ) {
-                if ( !$ConfigHash->{$ConfigModule}->[0] ) {
-                    next;
-                }
-                $Self->{LayoutObject}->Block(
-                    Name => 'RequiredInfo',
-                    Data => { ConfigModule => $ConfigModule, },
-                );
-
-                # second level array reference (each module)
-                for my $ConfigHashRow ( @{ $ConfigHash->{$ConfigModule} } ) {
-                    $Self->{LayoutObject}->Block( Name => 'RequiredInfoRow', );
-
-                    # create a new textfield
-                    if ( $ConfigHashRow->{Input}->{Type} eq "Text" ) {
-                        $Self->{LayoutObject}->Block(
-                            Name => 'RequiredInfoRowText',
-                            Data => {
-                                Key         => $ConfigModule . '::' . $ConfigHashRow->{Key},
-                                Name        => $ConfigHashRow->{Name},
-                                Value       => $ConfigHashRow->{Value} || '',
-                                Size        => $ConfigHashRow->{Input}->{Size} || '40',
-                                Description => $ConfigHashRow->{Description} || '',
-                            },
-                        );
-                    }
-
-                    # create a new dropdown field
-                    elsif ( $ConfigHashRow->{Input}->{Type} eq "Select" ) {
-                        my $SelectStrg = $Self->{LayoutObject}->BuildSelection(
-                            Data => $ConfigHashRow->{Input}->{Data} || {},
-                            Name => $ConfigModule . '::' . $ConfigHashRow->{Key},
-                        );
-                        $Self->{LayoutObject}->Block(
-                            Name => 'RequiredInfoRowSelect',
-                            Data => {
-                                Name        => $ConfigHashRow->{Name},
-                                Description => $ConfigHashRow->{Description} || '',
-                                SelectStrg  => $SelectStrg,
-                            },
-                        );
-                    }
-                }
-            }
-            $Output .= $Self->{LayoutObject}->Output(
-                TemplateFile => 'AdminSupport',
-                Data         => {},
-            );
-            $Output .= $Self->{LayoutObject}->Footer();
-            return $Output;
-        }
-        else {
-
-            # next side...
-            $Self->{Subaction} = 'Confidential';
-        }
-    }
-
     # ------------------------------------------------------------ #
     # Confidential and SupportID
     # ------------------------------------------------------------ #
@@ -141,23 +53,10 @@ sub Run {
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
 
-        $Self->{LayoutObject}->Block( Name => 'Confidential', );
-
-        # create hidden fields, cause we need the information again.
-        for my $ConfigModule ( keys %{$ConfigHash} ) {
-            for my $ConfigHashRow ( @{ $ConfigHash->{$ConfigModule} } ) {
-                my $Value = $Self->{ParamObject}
-                    ->GetParam( Param => $ConfigModule . '::' . $ConfigHashRow->{Key} );
-
-                $Self->{LayoutObject}->Block(
-                    Name => 'ConfidentialHidden',
-                    Data => {
-                        Name  => $ConfigModule . '::' . $ConfigHashRow->{Key},
-                        Value => $Value || '',
-                    },
-                );
-            }
-        }
+        $Self->{LayoutObject}->Block(
+            Name => 'Confidential',
+            Data => {},
+        );
 
         $Output .= $Self->{LayoutObject}->Output(
             TemplateFile => 'AdminSupport',
@@ -171,32 +70,9 @@ sub Run {
     # UploadSupportInfo
     # ------------------------------------------------------------ #
 
-    elsif ( $Self->{Subaction} eq 'UploadSupportInfo' ) {
-        my $DataHash  = {};
-        my $InputHash = {};
+    elsif ( $Self->{Subaction} eq 'SendInfo' ) {
 
-        # create & return output
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-
-        $Self->{LayoutObject}->Block( Name => 'Confidential', );
-
-        # get hidden fields, cause we need the information again.
-        for my $ConfigModule ( keys %{$ConfigHash} ) {
-            my $ModuleInputData = {};
-            for my $ConfigHashRow ( @{ $ConfigHash->{$ConfigModule} } ) {
-                $ModuleInputData->{ $ConfigHashRow->{Key} } = $Self->{ParamObject}
-                    ->GetParam( Param => $ConfigModule . '::' . $ConfigHashRow->{Key} ) || '';
-            }
-            $InputHash->{$ConfigModule} = $ModuleInputData;
-        }
-
-        # create data hash reference
-#        $Self->{SupportObject}->SupportInfoGet(
-#            DataHash  => $DataHash,
-#            InputHash => $InputHash,
-#        );
-
+        # get params
         my %CustomerInfo;
         for my $Key (qw(Email Company Street Postcode City Phone SendInfo) ) {
             $CustomerInfo{$Key} = $Self->{ParamObject}->GetParam( Param => $Key );
@@ -204,6 +80,16 @@ sub Run {
 
         # if the button send becomes the submit
         if ( $Self->{ParamObject}->GetParam( Param => 'Send' ) ) {
+
+            # create & return output
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+
+            $Self->{LayoutObject}->Block(
+                Name => 'Confidential',
+                Data => {},
+            );
+
             my $SendMessage = $Self->{SupportObject}->SendInfo(
                 %CustomerInfo,
             );
@@ -224,6 +110,13 @@ sub Run {
                         . 'http://www.otrs.com/' . "\n\n",
                 );
             }
+
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminSupport',
+                Data         => {},
+            );
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
         }
 
         # if the button download becomes the submit
@@ -248,13 +141,6 @@ sub Run {
                 Type => 'attached',
             );
         }
-
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminSupport',
-            Data         => {},
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
     }
     # ------------------------------------------------------------ #
     # SQL bench
