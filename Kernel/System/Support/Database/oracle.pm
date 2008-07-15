@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/oracle.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.12 2008/07/13 23:25:41 martin Exp $
+# $Id: oracle.pm,v 1.13 2008/07/15 19:54:37 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.13 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -43,6 +43,7 @@ sub AdminChecksGet {
     my @ModuleList = (
         '_TableCheck', '_NLSDateFormatCheck',
         '_OracleHomeCheck', '_NLSLangCheck',
+        '_NLSDateFormatSelectCheck',
     );
 
     my @DataArray;
@@ -142,8 +143,41 @@ sub _NLSDateFormatCheck {
         Description => "Check NLS_DATE_FORMAT.",
         Comment     => $Message,
         Check       => $Check,
-        };
-        return $Data;
+    };
+    return $Data;
+}
+
+sub _NLSDateFormatSelectCheck {
+    my ( $Self, %Param ) = @_;
+
+    # check NLS_DATE_FORMAT
+    my $Check   = 'Failed';
+    my $Message = 'No NLS_DATE_FORMAT seems to be wrong!';
+    my $CreateTime;
+
+    $Self->{DBObject}->Prepare( SQL => "SELECT create_time FROM valid", Limit => 1 );
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        $CreateTime = $Row[0];
+    }
+
+    if ( $CreateTime ) {
+        if ( $CreateTime !~ /^\d\d\d\d-(\d|\d\d)-(\d|\d\d)\s(\d|\d\d):(\d|\d\d):(\d|\d\d)/ ) {
+            $Message
+                = "$CreateTime not in 'yyyy-mm-dd hh:mm::ss' format (please check \$ENV{NLS_DATE_FORMAT})";
+            $Check = 'Failed';
+        }
+        else {
+            $Message = "";
+            $Check   = 'OK';
+        }
+    }
+    my $Data = {
+        Name        => 'NLS_DATE_SELECT_FORMAT',
+        Description => "Check NLS_DATE_FORMAT by using SELECT ...",
+        Comment     => $Message,
+        Check       => $Check,
+    };
+    return $Data;
 }
 
 sub _TableCheck {
