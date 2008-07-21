@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.12 2008/07/14 07:22:12 martin Exp $
+# $Id: Support.pm,v 1.13 2008/07/21 05:31:29 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -24,7 +24,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.13 $) [1];
 
 =head1 NAME
 
@@ -411,6 +411,8 @@ sub SendInfo {
         $Body .= "$Key:$Param{$Key}\n";
     }
     $Body .= "FQDN:" . $Self->{ConfigObject}->Get('FQDN') . "\n";
+    $Body .= "Product:" . $Self->{ConfigObject}->Get('Product') . ' '
+        . $Self->{ConfigObject}->Get('Version') . "\n";
 
     my $Send = $Self->{EmailObject}->Send(
         From       => $Param{Email} || $Self->{ConfigObject}->Get('AdminEmail'),
@@ -479,6 +481,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.12 $ $Date: 2008/07/14 07:22:12 $
+$Revision: 1.13 $ $Date: 2008/07/21 05:31:29 $
 
 =cut
