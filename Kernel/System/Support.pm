@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.13 2008/07/21 05:31:29 martin Exp $
+# $Id: Support.pm,v 1.14 2008/07/21 22:24:12 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -24,7 +24,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.13 $) [1];
+$VERSION = qw($Revision: 1.14 $) [1];
 
 =head1 NAME
 
@@ -196,7 +196,7 @@ sub XMLStringCreate {
 
     my $XMLString = $Self->{XMLObject}->XMLHash2XML( @{$XMLHash} );
 
-    return $XMLString;
+    return \$XMLString;
 }
 
 sub LogLast {
@@ -431,7 +431,7 @@ sub SendInfo {
             },
             {
                 Filename    => 'check.xml',
-                Content     => $XMLCheck,
+                Content     => ${ $XMLCheck },
                 ContentType => 'text/xml',
                 Disposition => 'attachment',
             },
@@ -465,6 +465,101 @@ sub SendInfo {
     return 1;
 }
 
+sub Download {
+    my ( $Self, %Param ) = @_;
+
+    my ( $s, $m, $h, $D, $M, $Y, $wd, $yd, $dst ) = $Self->{TimeObject}->SystemTime2Date(
+        SystemTime => $Self->{TimeObject}->SystemTime(),
+    );
+    my $Filename = "SupportInfo_$Y-$M-$D" . '_' . "$h-$m";
+
+    # create log package
+    my %File;
+    ($File{LogPreContent}, $File{LogPreFilename}) = $Self->LogLast( Type => 'log_pre' );
+
+    # create check package
+    my $DataHash = $Self->AdminChecksGet();
+    $File{CheckContent}  = $Self->XMLStringCreate( DataHash => $DataHash, );
+    $File{CheckFilename} = 'check.xml',
+
+    # create application package
+    ($File{AppContent}, $File{AppFilename}) = $Self->ArchiveApplication();
+
+    # create ARCHIVE package
+    ($File{ArchContent}, $File{ArchFilename}) = $Self->ARCHIVE();
+
+    # create module check package
+    ($File{ModuleCheckContent}, $File{ModuleCheckFilename}) = $Self->ModuleCheck();
+
+    # create log package
+    ($File{LogPostContent}, $File{LogPostFilename}) = $Self->LogLast( Type => 'log_post' );
+
+    # create mail body
+    my $Body = '';
+    for my $Key ( keys %Param ) {
+        $Body .= "$Key:$Param{$Key}\n";
+    }
+    $Body .= "FQDN:" . $Self->{ConfigObject}->Get('FQDN') . "\n";
+    $Body .= "Product:" . $Self->{ConfigObject}->Get('Product') . ' '
+        . $Self->{ConfigObject}->Get('Version') . "\n";
+
+    $File{BodyContent} = \$Body;
+    $File{BodyFilename} = 'Body.txt';
+
+    # save and create archive
+    my $TempDir = $Self->{ConfigObject}->Get('TempDir') . '/supportinfo/';
+
+    if ( ! -d $TempDir ) {
+        mkdir $TempDir;
+    }
+
+    # remove all files
+    my @ListOld = glob( $TempDir . '/*' );
+    for my $File (@ListOld) {
+        unlink $File;
+    }
+
+    my @List;
+    for my $Key (qw(Body LogPre Check App Arch ModuleCheck LogPost) ) {
+        if ( $File{ $Key . 'Filename' } && $File{ $Key . 'Content' } ) {
+            my $Filename = $TempDir . '/' . $File{ $Key . 'Filename' };
+            open( my $Out, '>', $Filename );
+            binmode($Out);
+            print $Out ${ $File{ $Key . 'Content' } };
+            close $Out;
+            push @List, $Filename;
+        }
+    }
+
+    # add files to the tar archive
+    my $Archive = $TempDir . '/' . $Filename;
+    my $TarObject = Archive::Tar->new();
+    $TarObject->add_files(@List);
+    $TarObject->write( $Archive, 0 ) || die "Could not write: $_!";
+
+    # add files to the tar archive
+    open( my $Tar, '<', $Archive );
+    binmode($Tar);
+    my $TmpTar = '';
+    while (<$Tar>) {
+        $TmpTar .= $_;
+    }
+    close($Tar);
+
+    # remove all files
+    @ListOld = glob( $TempDir . '/*' );
+    for my $File (@ListOld) {
+        unlink $File;
+    }
+
+    if ( $Self->{MainObject}->Require("Compress::Zlib") ) {
+        my $GzTar = Compress::Zlib::memGzip($TmpTar);
+        return ( \$GzTar, $Filename . '.tar.gz');
+    }
+
+    return ( \$TmpTar, $Filename . '.tar' );
+}
+
 1;
 
 =back
@@ -481,6 +576,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.13 $ $Date: 2008/07/21 05:31:29 $
+$Revision: 1.14 $ $Date: 2008/07/21 22:24:12 $
 
 =cut

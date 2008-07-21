@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.12 2008/07/13 23:23:15 martin Exp $
+# $Id: AdminSupport.pm,v 1.13 2008/07/21 22:24:12 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.13 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -70,7 +70,7 @@ sub Run {
     # UploadSupportInfo
     # ------------------------------------------------------------ #
 
-    elsif ( $Self->{Subaction} eq 'SendInfo' ) {
+    elsif ( $Self->{Subaction} eq 'Submit' ) {
 
         # get params
         my %CustomerInfo;
@@ -120,25 +120,17 @@ sub Run {
         }
 
         # if the button download becomes the submit
-        elsif ( $Self->{ParamObject}->GetParam( Param => "Download" ) ) {
-            my ( $s, $m, $h, $D, $M, $Y, $wd, $yd, $dst ) = $Self->{TimeObject}->SystemTime2Date(
-                SystemTime => $Self->{TimeObject}->SystemTime(),
+        else {
+            my ($Content, $Filename) = $Self->{SupportObject}->Download(
+                %CustomerInfo,
             );
-            $M = sprintf( "%02d", $M );
-            $D = sprintf( "%02d", $D );
-            $h = sprintf( "%02d", $h );
-            $m = sprintf( "%02d", $m );
 
             # return file
             return $Self->{LayoutObject}->Attachment(
                 ContentType => 'application/octet-stream',
-#                Content     => $SupportString,
-                Filename    => "SupportInfo_"
-                    . "$Y-$M-$D"
-                    . "_$h-$m" . "_"
-                    . $Self->{ParamObject}->GetParam( Param => "SupportID" )
-                    . '.tar.gz',
-                Type => 'attached',
+                Content     => ${ $Content },
+                Filename    => $Filename,
+                Type        => 'attached',
             );
         }
     }

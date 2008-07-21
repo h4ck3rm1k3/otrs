@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.9 2008/07/13 23:23:15 martin Exp $
+# $Id: AdminSupport.dtl,v 1.10 2008/07/21 22:24:12 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -120,7 +120,7 @@
       <br>
       <form action="$Env{"CGIHandle"}" method="post">
         <input type="hidden" name="Action" value="$Env{"Action"}">
-        <input type="hidden" name="Subaction" value="SendInfo">
+        <input type="hidden" name="Subaction" value="Submit">
         <table border="0" width="800px" align="center" cellspacing="0" cellpadding="3">
           <tr>
             <td colspan="3" class="contenthead">$Text{"Confidential information"}</td>
@@ -181,7 +181,7 @@ Any and all information disclosed to OTRS will be kept strictly confidential and
           </tr>
           <tr>
             <td class="contentfooter">
-#              <input class="button" type="submit" name="Download" value="$Text{"Download"}">
+              <input class="button" type="submit" name="Download" value="$Text{"Download"}">
               <input class="button" type="submit" name="Send" value="$Text{"Send"}">
             </td>
           </tr>
