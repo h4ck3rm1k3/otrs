@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.10 2008/07/21 22:24:12 martin Exp $
+# $Id: AdminSupport.dtl,v 1.11 2008/07/22 08:36:40 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -146,7 +146,7 @@ Any and all information disclosed to OTRS will be kept strictly confidential and
                 </tr>
                 <tr>
                   <td class="contentkey" width="150">$Text{"Email"}:</td>
-                  <td class="contentvalue"><input type="Text" name="Email" value="$Env{"UserEmail"}" size="40"><font color="red" size="-2">* $Text{"Required"}</font></td>
+                  <td class="contentvalue"><input type="Text" name="Sender" value="$Env{"UserEmail"}" size="40"><font color="red" size="-2">* $Text{"Required"}</font></td>
                 </tr>
 #                <tr>
 #                  <td class="contentkey" width="150">$Text{"Commercial support ID"}:</td>
