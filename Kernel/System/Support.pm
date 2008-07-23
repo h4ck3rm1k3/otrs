@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.17 2008/07/23 08:54:26 martin Exp $
+# $Id: Support.pm,v 1.18 2008/07/23 09:17:08 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -24,7 +24,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.17 $) [1];
+$VERSION = qw($Revision: 1.18 $) [1];
 
 =head1 NAME
 
@@ -379,8 +379,14 @@ sub DirectoryFiles {
             if ( $File =~ /\/(var\/article|var\/tmp|supportinfo)/ ) {
                 next;
             }
+            # do only use files not over 0.5 MB
             if ( -s $File > (1024*1024*0.5) ) {
-#print STDERR "NO: $File\n";
+                my $Size = -s $File;
+                $Size = $Size / 1024;
+                $Self->{LogObject}->Log(
+                    Priority => 'notice',
+                    Message  => "Do not use this file ($File) for archive, because it's $Size!",
+                );
                 next;
             }
             push @Files, $File;
@@ -582,6 +588,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.17 $ $Date: 2008/07/23 08:54:26 $
+$Revision: 1.18 $ $Date: 2008/07/23 09:17:08 $
 
 =cut
