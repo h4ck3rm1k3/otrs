@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.19 2008/07/23 09:24:09 martin Exp $
+# $Id: Support.pm,v 1.20 2008/07/23 10:40:05 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -24,7 +24,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.19 $) [1];
+$VERSION = qw($Revision: 1.20 $) [1];
 
 =head1 NAME
 
@@ -274,6 +274,8 @@ sub _ARCHIVELookup {
 #            print STDERR "Directory: $File\n";
         }
         else {
+            # do no md5 sum on > 12MB files
+            next if ( -s $File > (1024*1024*12) );
             my $OrigFile = $File;
             $File =~ s/\Q$Param{Home}\E//;
             $File =~ s/^\/(.*)$/$1/;
@@ -284,7 +286,6 @@ sub _ARCHIVELookup {
                 && $File !~ /^var\/tmp/
                 )
             {
-                my $Content = '';
                 if (! open( IN, '<', $OrigFile ) ) {
                     $Self->{LogObject}->Log(
                         Priority => 'error',
@@ -292,11 +293,10 @@ sub _ARCHIVELookup {
                     );
                     next;
                 }
-                while (<IN>) {
-                    $Content .= $_;
-                }
+                my $ctx = Digest::MD5->new;
+                $ctx->addfile(*IN);
+                my $Digest = $ctx->hexdigest();
                 close(IN);
-                my $Digest = md5_hex($Content);
                 if ( !$Param{Compare}->{$File} ) {
                     $Param{Compare}->{$File} = "New $File";
                 }
@@ -339,6 +339,7 @@ sub ArchiveApplication {
     close($Tar);
     if ( $Self->{MainObject}->Require("Compress::Zlib") ) {
         my $GzTar = Compress::Zlib::memGzip($TmpTar);
+        $TmpTar = undef;
 #print STDERR "Compress\n";
         return ( \$GzTar, 'application.tar.gz');
     }
@@ -379,8 +380,15 @@ sub DirectoryFiles {
             if ( $File =~ /\/(var\/article|var\/tmp|supportinfo)/ ) {
                 next;
             }
-            # do only use files not over 0.5 MB
-            if ( -s $File > (1024*1024*0.5) ) {
+            # do only use files not over 1 MB in var/ dir
+            my $SizeMaxVar = 1024*1024*1;
+            # do only use files not over 2.5 MB in rest
+            my $SizeMax = 1024*1024*2.5;
+            if ( $File =~ /var\// ) {
+                $SizeMax = $SizeMaxVar;
+            }
+
+            if ( -s $File > $SizeMax ) {
                 my $Size = -s $File;
                 $Size = $Size / 1024;
                 $Self->{LogObject}->Log(
@@ -595,6 +603,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.19 $ $Date: 2008/07/23 09:24:09 $
+$Revision: 1.20 $ $Date: 2008/07/23 10:40:05 $
 
 =cut
