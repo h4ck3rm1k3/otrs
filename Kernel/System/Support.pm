@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.16 2008/07/22 08:36:40 martin Exp $
+# $Id: Support.pm,v 1.17 2008/07/23 08:54:26 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -24,7 +24,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.16 $) [1];
+$VERSION = qw($Revision: 1.17 $) [1];
 
 =head1 NAME
 
@@ -285,7 +285,13 @@ sub _ARCHIVELookup {
                 )
             {
                 my $Content = '';
-                open( IN, '<', $OrigFile ) || die "ERROR: $OrigFile: $!";
+                if (! open( IN, '<', $OrigFile ) ) {
+                    $Self->{LogObject}->Log(
+                        Priority => 'error',
+                        Message  => "Can't read: $OrigFile: $!",
+                    );
+                    next;
+                }
                 while (<IN>) {
                     $Content .= $_;
                 }
@@ -369,7 +375,8 @@ sub DirectoryFiles {
             if ( $File =~ /#/ ) {
                 next;
             }
-            if ( $File =~ /\/(var\/article|var\/tmp)/ ) {
+            # do not use /var/article, /var/tmp and /supportinfo directories
+            if ( $File =~ /\/(var\/article|var\/tmp|supportinfo)/ ) {
                 next;
             }
             if ( -s $File > (1024*1024*0.5) ) {
@@ -575,6 +582,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.16 $ $Date: 2008/07/22 08:36:40 $
+$Revision: 1.17 $ $Date: 2008/07/23 08:54:26 $
 
 =cut
