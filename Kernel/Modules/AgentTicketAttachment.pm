@@ -1,196 +1,144 @@
 # --
 # Kernel/Modules/AgentTicketAttachment.pm - to get the attachments
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketAttachment.pm,v 1.35 2011/09/20 22:02:42 cr Exp $
+# $Id: AgentTicketAttachment.pm,v 1.6.2.1 2008/07/24 10:09:13 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AgentTicketAttachment;
 
 use strict;
-use warnings;
-
 use Kernel::System::FileTemp;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.35 $) [1];
+$VERSION = '$Revision: 1.6.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
 
-    # check needed objects
-    for (qw(ParamObject DBObject TicketObject LayoutObject LogObject EncodeObject ConfigObject)) {
-        if ( !$Self->{$_} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
+
+    # check needed Objects
+    foreach (qw(ParamObject DBObject TicketObject LayoutObject LogObject ConfigObject)) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
 
+    $Self->{FileTempObject} = Kernel::System::FileTemp->new(%Param);
+
     # get ArticleID
-    $Self->{ArticleID}         = $Self->{ParamObject}->GetParam( Param => 'ArticleID' );
-    $Self->{FileID}            = $Self->{ParamObject}->GetParam( Param => 'FileID' );
-    $Self->{Viewer}            = $Self->{ParamObject}->GetParam( Param => 'Viewer' ) || 0;
-    $Self->{LoadInlineContent} = $Self->{ParamObject}->GetParam( Param => 'LoadInlineContent' )
-        || 0;
+    $Self->{ArticleID} = $Self->{ParamObject}->GetParam(Param => 'ArticleID');
+    $Self->{FileID} = $Self->{ParamObject}->GetParam(Param => 'FileID');
+    $Self->{Viewer} = $Self->{ParamObject}->GetParam(Param => 'Viewer') || 0;
 
     return $Self;
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
+    my $Output = '';
 
     # check params
-    if ( !$Self->{FileID} || !$Self->{ArticleID} ) {
+    if (!$Self->{FileID} || !$Self->{ArticleID}) {
         $Self->{LogObject}->Log(
-            Message  => 'FileID and ArticleID are needed!',
+            Message => 'FileID and ArticleID are needed!',
             Priority => 'error',
         );
         return $Self->{LayoutObject}->ErrorScreen();
     }
 
     # check permissions
-    my %Article = $Self->{TicketObject}->ArticleGet(
-        ArticleID     => $Self->{ArticleID},
-        DynamicFields => 0,
-        UserID        => $Self->{UserID},
-    );
-    if ( !$Article{TicketID} ) {
+    my %ArticleData = $Self->{TicketObject}->ArticleGet(ArticleID => $Self->{ArticleID});
+    if (!$ArticleData{TicketID}) {
         $Self->{LogObject}->Log(
-            Message  => "No TicketID for ArticleID ($Self->{ArticleID})!",
+            Message => "No TicketID for ArticleID ($Self->{ArticleID})!",
             Priority => 'error',
         );
         return $Self->{LayoutObject}->ErrorScreen();
     }
+    elsif ($Self->{TicketObject}->Permission(
+        Type => 'ro',
+        TicketID => $ArticleData{TicketID},
+        UserID => $Self->{UserID})) {
 
-    # check permissions
-    my $Access = $Self->{TicketObject}->TicketPermission(
-        Type     => 'ro',
-        TicketID => $Article{TicketID},
-        UserID   => $Self->{UserID}
-    );
-    if ( !$Access ) {
-        return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
-    }
-
-    # get a attachment
-    my %Data = $Self->{TicketObject}->ArticleAttachment(
-        ArticleID => $Self->{ArticleID},
-        FileID    => $Self->{FileID},
-        UserID    => $Self->{UserID},
-    );
-    if ( !%Data ) {
-        $Self->{LogObject}->Log(
-            Message  => "No such attacment ($Self->{FileID})! May be an attack!!!",
-            Priority => 'error',
-        );
-        return $Self->{LayoutObject}->ErrorScreen();
-    }
-
-    # find viewer for ContentType
-    my $Viewer = '';
-    if ( $Self->{Viewer} && $Self->{ConfigObject}->Get('MIME-Viewer') ) {
-        for ( keys %{ $Self->{ConfigObject}->Get('MIME-Viewer') } ) {
-            if ( $Data{ContentType} =~ /^$_/i ) {
-                $Viewer = $Self->{ConfigObject}->Get('MIME-Viewer')->{$_};
-                $Viewer =~ s/\<OTRS_CONFIG_(.+?)\>/$Self->{ConfigObject}->{$1}/g;
+        # geta attachment
+        if (my %Data = $Self->{TicketObject}->ArticleAttachment(
+            ArticleID => $Self->{ArticleID},
+            FileID => $Self->{FileID},
+        )) {
+            # check viewer
+            my $Viewer = '';
+            if ($Self->{ConfigObject}->Get('MIME-Viewer')) {
+                foreach (keys %{$Self->{ConfigObject}->Get('MIME-Viewer')}) {
+                    if ($Data{ContentType} =~ /^$_/i) {
+                        $Viewer = $Self->{ConfigObject}->Get('MIME-Viewer')->{$_};
+                        $Viewer =~ s/\<OTRS_CONFIG_(.+?)\>/$Self->{ConfigObject}->{$1}/g;
+                    }
+                }
+            }
+            # show with viewer
+            if ($Self->{Viewer} && $Viewer) {
+                # write tmp file
+                my ($FH, $Filename) = $Self->{FileTempObject}->TempFile();
+                if (open (DATA, "> $Filename")) {
+                    print DATA $Data{Content};
+                    close (DATA);
+                }
+                else {
+                    # log error
+                    $Self->{LogObject}->Log(
+                        Priority => 'error',
+                        Message => "Cant write $Filename: $!",
+                    );
+                    return $Self->{LayoutObject}->ErrorScreen();
+                }
+                # use viewer
+                my $Content = '';
+                if (open (DATA, "$Viewer $Filename |")) {
+                    while (<DATA>) {
+                        $Content .= $_;
+                    }
+                    close (DATA);
+                }
+                else {
+                    return $Self->{LayoutObject}->FatalError(
+                        Message => "Can't open: $Viewer $Filename: $!",
+                    );
+                }
+                # return new page
+                return $Self->{LayoutObject}->Attachment(%Data, ContentType => 'text/html', Content => $Content, Type => 'inline');
+            }
+            # download it
+            else {
+                return $Self->{LayoutObject}->Attachment(%Data);
             }
         }
-    }
-
-    # show with viewer
-    if ( $Self->{Viewer} && $Viewer ) {
-
-        # write tmp file
-        my $FileTempObject = Kernel::System::FileTemp->new( %{$Self} );
-        my ( $FH, $Filename ) = $FileTempObject->TempFile();
-        if ( open( my $ViewerDataFH, '>', $Filename ) ) {
-            print $ViewerDataFH $Data{Content};
-            close $ViewerDataFH;
-        }
         else {
-
-            # log error
             $Self->{LogObject}->Log(
+                Message => "No such attacment ($Self->{FileID})! May be an attack!!!",
                 Priority => 'error',
-                Message  => "Cant write $Filename: $!",
             );
             return $Self->{LayoutObject}->ErrorScreen();
         }
-
-        # use viewer
-        my $Content = '';
-        if ( open( my $ViewerFH, "$Viewer $Filename |" ) ) {
-            while (<$ViewerFH>) {
-                $Content .= $_;
-            }
-            close $ViewerFH;
-        }
-        else {
-            return $Self->{LayoutObject}->FatalError(
-                Message => "Can't open: $Viewer $Filename: $!",
-            );
-        }
-
-        # return new page
-        return $Self->{LayoutObject}->Attachment(
-            %Data,
-            ContentType => 'text/html',
-            Content     => $Content,
-            Type        => 'inline'
-        );
     }
-
-    # view attachment for html email
-    if ( $Self->{Subaction} eq 'HTMLView' ) {
-
-        # set download type to inline
-        $Self->{ConfigObject}->Set( Key => 'AttachmentDownloadType', Value => 'inline' );
-
-        # just return for non-html attachment (e. g. images)
-        if ( $Data{ContentType} !~ /text\/html/i ) {
-            return $Self->{LayoutObject}->Attachment(%Data);
-        }
-
-        # set filename for inline viewing
-        $Data{Filename} = "Ticket-$Article{TicketNumber}-ArticleID-$Article{ArticleID}.html";
-
-        # safety check only on customer article
-        if ( !$Self->{LoadInlineContent} && $Article{SenderType} ne 'customer' ) {
-            $Self->{LoadInlineContent} = 1;
-        }
-
-        # generate base url
-        my $URL = 'Action=AgentTicketAttachment;Subaction=HTMLView'
-            . ";ArticleID=$Self->{ArticleID};FileID=";
-
-        # replace links to inline images in html content
-        my %AtmBox = $Self->{TicketObject}->ArticleAttachmentIndex(
-            ArticleID => $Self->{ArticleID},
-            UserID    => $Self->{UserID},
-        );
-
-        # reformat rich text document to have correct charset and links to
-        # inline documents
-        %Data = $Self->{LayoutObject}->RichTextDocumentServe(
-            Data              => \%Data,
-            URL               => $URL,
-            Attachments       => \%AtmBox,
-            LoadInlineContent => $Self->{LoadInlineContent},
-        );
-
-        # return html attachment
-        return $Self->{LayoutObject}->Attachment(%Data);
+    else {
+        # error screen
+        return $Self->{LayoutObject}->NoPermission(WithHeader => 'yes');
     }
-
-    # download it AttachmentDownloadType is configured
-    return $Self->{LayoutObject}->Attachment(%Data);
 }
 
 1;

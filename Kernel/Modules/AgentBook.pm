@@ -1,104 +1,85 @@
 # --
-# Kernel/Modules/AgentBook.pm - addressbook module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Kernel/Modules/AgentBook.pm - spelling module
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentBook.pm,v 1.19 2011/11/10 08:55:39 mab Exp $
+# $Id: AgentBook.pm,v 1.10.2.1 2008/07/24 10:09:13 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AgentBook;
 
 use strict;
-use warnings;
-
 use Kernel::System::CustomerUser;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.19 $) [1];
+$VERSION = '$Revision: 1.10.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
+
+    # get common objects
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
 
     # check all needed objects
-    for (qw(TicketObject ParamObject DBObject QueueObject LayoutObject ConfigObject LogObject)) {
-        if ( !$Self->{$_} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
+    foreach (qw(TicketObject ParamObject DBObject QueueObject LayoutObject ConfigObject LogObject)) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
 
-    # create additional objects
     $Self->{CustomerUserObject} = Kernel::System::CustomerUser->new(%Param);
 
     return $Self;
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # get params
-    for (qw(To Cc Bcc)) {
-        $Param{$_} = $Self->{ParamObject}->GetParam( Param => $_ );
+    foreach (qw(To Cc Bcc)) {
+        $Param{$_} = $Self->{ParamObject}->GetParam(Param => $_);
     }
-
     # get list of users
-    my $Search = $Self->{ParamObject}->GetParam( Param => 'Search' );
-    my %CustomerUserList;
+    my $Search = $Self->{ParamObject}->GetParam(Param => 'Search');
+    my %CustomerUserList = ();
     if ($Search) {
-        %CustomerUserList = $Self->{CustomerUserObject}->CustomerSearch( Search => $Search, );
-    }
-    my %List;
-    for ( keys %CustomerUserList ) {
-        my %CustomerUserData = $Self->{CustomerUserObject}->CustomerUserDataGet( User => $_, );
-        if ( $CustomerUserData{UserEmail} ) {
-            $List{ $CustomerUserData{UserEmail} } = $CustomerUserList{$_};
-        }
-    }
-
-    # build customer search autocomplete field
-    my $AutoCompleteConfig
-        = $Self->{ConfigObject}->Get('Ticket::Frontend::CustomerSearchAutoComplete');
-    $Self->{LayoutObject}->Block(
-        Name => 'CustomerSearchAutoComplete',
-        Data => {
-            ActiveAutoComplete  => $AutoCompleteConfig->{Active},
-            minQueryLength      => $AutoCompleteConfig->{MinQueryLength} || 2,
-            queryDelay          => $AutoCompleteConfig->{QueryDelay} || 100,
-            typeAhead           => $AutoCompleteConfig->{TypeAhead} || 'false',
-            maxResultsDisplayed => $AutoCompleteConfig->{MaxResultsDisplayed} || 20,
-        },
-    );
-
-    if (%List) {
-        $Self->{LayoutObject}->Block(
-            Name => 'SearchResult',
+        %CustomerUserList = $Self->{CustomerUserObject}->CustomerSearch(
+            Search => $Search,
         );
-
-        my $Count = 1;
-        for ( reverse sort { $List{$b} cmp $List{$a} } keys %List ) {
-            $Self->{LayoutObject}->Block(
-                Name => 'Row',
-                Data => {
-                    Name  => $List{$_},
-                    Email => $_,
-                    Count => $Count,
-                },
-            );
-            $Count++;
+    }
+    my %List = ();
+    foreach (keys %CustomerUserList) {
+        my %CustomerUserData = $Self->{CustomerUserObject}->CustomerUserDataGet(
+            User => $_,
+        );
+        if ($CustomerUserData{UserEmail}) {
+            $List{$CustomerUserData{UserEmail}} = $CustomerUserList{$_};
         }
     }
-
+    foreach (reverse sort { $List{$b} cmp $List{$a} } keys %List) {
+        $Self->{LayoutObject}->Block(
+            Name => 'Row',
+            Data => {
+                Name => $List{$_},
+                Email => $_,
+            },
+        );
+    }
     # start with page ...
-    my $Output = $Self->{LayoutObject}->Header( Type => 'Small' );
-    $Output .= $Self->{LayoutObject}->Output( TemplateFile => 'AgentBook', Data => \%Param );
-    $Output .= $Self->{LayoutObject}->Footer( Type => 'Small' );
-
+    my $Output = $Self->{LayoutObject}->Header(Type => 'Small');
+    $Output .= $Self->{LayoutObject}->Output(TemplateFile => 'AgentBook', Data => \%Param);
+    $Output .= $Self->{LayoutObject}->Footer(Type => 'Small');
     return $Output;
 }
 

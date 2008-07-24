@@ -1,21 +1,22 @@
 # --
 # Kernel/System/Notification.pm - lib for notifications
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Notification.pm,v 1.38 2011/08/12 09:06:15 mg Exp $
+# $Id: Notification.pm,v 1.12.2.1 2008/07/24 10:09:14 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Notification;
 
 use strict;
-use warnings;
+use Kernel::System::Encode;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.38 $) [1];
+$VERSION = '$Revision: 1.12.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 =head1 NAME
 
@@ -36,54 +37,41 @@ This module is managing notifications.
 create a notification object
 
     use Kernel::Config;
-    use Kernel::System::Encode;
     use Kernel::System::Log;
-    use Kernel::System::Main;
     use Kernel::System::DB;
-    use Kernel::System::Notification;
 
     my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
+
     my $LogObject = Kernel::System::Log->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
     );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
+
     my $DBObject = Kernel::System::DB->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $NotificationObject = Kernel::System::Notification->new(
-        EncodeObject => $EncodeObject,
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-        DBObject     => $DBObject,
+        LogObject => $LogObject,
     );
 
 =cut
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
+    bless ($Self, $Type);
 
-    # get needed objects
-    for (qw(ConfigObject LogObject DBObject EncodeObject)) {
-        die "Got no $_!" if !$Param{$_};
-
+    # get common objects
+    foreach (keys %Param) {
         $Self->{$_} = $Param{$_};
     }
+
+    # check all needed objects
+    foreach (qw(DBObject ConfigObject LogObject)) {
+        die "Got no $_" if (!$Self->{$_});
+    }
+
+    $Self->{EncodeObject} = Kernel::System::Encode->new(%Param);
 
     return $Self;
 }
@@ -99,85 +87,85 @@ get notification attributes
 =cut
 
 sub NotificationGet {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    if ( !$Param{Name} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Name!' );
+    if (!$Param{Name}) {
+        $Self->{LogObject}->Log(Priority => 'error', Message => "Need Name!");
         return;
     }
-    my ( $Language, $Type );
-    if ( $Param{Name} =~ /^(.+?)::(.*)/ ) {
+    my ($Language, $Type);
+    if ($Param{Name} =~ /^(.+?)::(.*)/) {
         $Language = $Self->{DBObject}->Quote($1);
-        $Type     = $Self->{DBObject}->Quote($2);
+        $Type = $Self->{DBObject}->Quote($2);
     }
-
     # db quote
-    $Param{ID} = $Self->{DBObject}->Quote( $Param{ID}, 'Integer' );
-
+    foreach (qw(ID)) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_}, 'Integer');
+    }
     # sql
-    my $SQL = 'SELECT id, notification_type, notification_charset, '
-        . ' notification_language, subject, text, content_type '
-        . ' FROM notifications WHERE ';
-
-    if ( $Param{ID} ) {
+    my $SQL = "SELECT id, notification_type, notification_charset, ".
+        " notification_language, subject, text ".
+        " FROM ".
+        " notifications ".
+        " WHERE ";
+    if ($Param{ID}) {
         $SQL .= " id = $Param{ID}";
     }
     else {
-        $SQL .= " notification_type = '$Type' AND notification_language = '$Language'";
+        $SQL .= " notification_type = '$Type' AND ".
+            "notification_language = '$Language'";
     }
-
-    return if !$Self->{DBObject}->Prepare( SQL => $SQL );
-
-    my %Data;
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
-
-        # convert body
-        $Data[5] = $Self->{EncodeObject}->Convert(
-            Text  => $Data[5],
-            From  => $Data[2],
-            To    => 'utf-8',
-            Force => 1,
-        );
-
-        # convert subject
-        $Data[3] = $Self->{EncodeObject}->Convert(
-            Text  => $Data[3],
-            From  => $Data[2],
-            To    => 'utf-8',
-            Force => 1,
-        );
-
-        # set new charset
-        $Data[2] = 'utf-8';
-
+    if (!$Self->{DBObject}->Prepare(SQL => $SQL)) {
+        return;
+    }
+    my %Data = ();
+    while (my @Data = $Self->{DBObject}->FetchrowArray()) {
+        if ($Self->{EncodeObject}->EncodeInternalUsed()) {
+            # convert body
+            $Data[5] = $Self->{EncodeObject}->Convert(
+                Text => $Data[5],
+                From => $Data[2],
+                To => $Self->{EncodeObject}->EncodeInternalUsed(),
+                Force => 1,
+            );
+            # convert subject
+            $Data[3] = $Self->{EncodeObject}->Convert(
+                Text => $Data[3],
+                From => $Data[2],
+                To => $Self->{EncodeObject}->EncodeInternalUsed(),
+                Force => 1,
+            );
+            # set new charset
+            $Data[2] = $Self->{EncodeObject}->EncodeInternalUsed();
+        }
         # fix some bad stuff from some browsers (Opera)!
         $Data[5] =~ s/(\n\r|\r\r\n|\r\n|\r)/\n/g;
         %Data = (
-            Type        => $Data[1],
-            Charset     => $Data[2],
-            Language    => $Data[3],
-            Subject     => $Data[4],
-            Body        => $Data[5],
-            ContentType => $Data[6] || 'text/plain',
+            Type => $Data[1],
+            Charset => $Data[2],
+            Language => $Data[3],
+            Subject => $Data[4],
+            Body => $Data[5],
         );
     }
-    if ( !%Data && !$Param{Loop} ) {
-        return $Self->NotificationGet(
-            %Param,
-            Name => 'en::' . $Type,
-            Loop => $Language,
+    if (!%Data && !$Param{Loop}) {
+        $Self->{LogObject}->Log(
+            Priority => 'notice',
+            Message => "Can't find notification for $Type and $Language, try it again with en!",
         );
+        return $Self->NotificationGet(%Param, Name => "en::$Type", Loop => $Language);
     }
-    elsif ( !%Data && $Param{Loop} ) {
+    elsif (!%Data && $Param{Loop}) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "Can't find notification for $Type and $Language!",
+            Message => "Can't find notification for $Type and $Language!",
         );
         return;
     }
-
-    return ( %Data, Language => $Param{Loop} || $Language );
+    else {
+        return ( %Data, Language => $Param{Loop} || $Language );
+    }
 }
 
 =item NotificationList()
@@ -189,51 +177,39 @@ get notification list
 =cut
 
 sub NotificationList {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # sql
-    return if !$Self->{DBObject}->Prepare(
-        SQL => 'SELECT id, notification_type, notification_charset, '
-            . ' notification_language FROM notifications',
-    );
-
+    my $SQL = "SELECT id, notification_type, notification_charset, ".
+        " notification_language ".
+        " FROM ".
+        " notifications";
+    if (!$Self->{DBObject}->Prepare(SQL => $SQL)) {
+        return;
+    }
     # get languages
-    my %Languages = %{ $Self->{ConfigObject}->{DefaultUsedLanguages} };
-
+    my %Languages = %{$Self->{ConfigObject}->{DefaultUsedLanguages}};
     # get possible notification types
-    my %Types;
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
-
-        # do not use customer notifications this way anymore (done by notification event now)
-        next if $Data[1] =~ /Customer::(Owner|Queue|State)Update/;
-        $Types{ $Data[1] } = 1;
+    my %Types = ();
+    while (my @Data = $Self->{DBObject}->FetchrowArray()) {
+        $Types{$Data[1]} = 1;
     }
-    for (qw(NewTicket FollowUp LockTimeout OwnerUpdate AddNote Move PendingReminder Escalation)) {
-        $Types{ 'Agent::' . $_ } = 1;
+    foreach (qw(NewTicket FollowUp LockTimeout OwnerUpdate AddNote Move PendingReminder Escalation)) {
+        $Types{'Agent::'.$_} = 1;
     }
-
     # create list
-    my %List;
-    for my $Language ( keys %Languages ) {
-
-        for my $Type ( keys %Types ) {
-            $List{ $Language . '::' . $Type } = $Language . '::' . $Type;
+    my %List = ();
+    foreach my $Language (keys %Languages) {
+        foreach my $Type (keys %Types) {
+            $List{$Language.'::'.$Type} = $Language."::$Type";
         }
     }
-
     # get real list
-    return if !$Self->{DBObject}->Prepare(
-        SQL => 'SELECT id, notification_type, notification_charset, '
-            . ' notification_language FROM notifications',
-    );
-
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
-
-        # do not use customer notifications this way anymore (done by notification event now)
-        next if $Data[1] =~ /Customer::(Owner|Queue|State)Update/;
-
-        # remember list
-        $List{ $Data[3] . '::' . $Data[1] } = $Data[3] . '::' . $Data[1];
+    if (!$Self->{DBObject}->Prepare(SQL => $SQL)) {
+        return;
+    }
+    while (my @Data = $Self->{DBObject}->FetchrowArray()) {
+        $List{$Data[3].'::'.$Data[1]} = "$Data[3]::$Data[1]";
     }
     return %List;
 }
@@ -243,52 +219,53 @@ sub NotificationList {
 update notification attributes
 
     $NotificationObject->NotificationUpdate(
-        Type        => 'NewTicket',
-        Charset     => 'utf-8',
-        Language    => 'en',
-        Subject     => 'Some Subject with <OTRS_TAGS>',
-        Body        => 'Some Body with <OTRS_TAGS>',
-        ContentType => 'text/plain',
-        UserID      => 123,
+        Type => 'NewTicket',
+        Charset => 'utf-8',
+        Language => 'en',
+        Subject => 'Some Subject with <OTRS_TAGS>',
+        Body => 'Some Body with <OTRS_TAGS>',
+        UserID => 123,
     );
 
 =cut
 
 sub NotificationUpdate {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # check needed stuff
-    for (qw(Type Charset Language Subject Body ContentType UserID)) {
-        if ( !defined( $Param{$_} ) ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    foreach (qw(Type Charset Language Subject Body UserID)) {
+        if (!defined($Param{$_})) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
     # fix some bad stuff from some browsers (Opera)!
     $Param{Body} =~ s/(\n\r|\r\r\n|\r\n|\r)/\n/g;
-
+    # db quote
+    foreach (qw(Type Charset Language Subject Body)) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_}) || '';
+    }
+    foreach (qw(UserID)) {
+        $Param{$_} = $Self->{DBObject}->Quote($Param{$_}, 'Integer');
+    }
     # sql
-    $Self->{DBObject}->Do(
-        SQL => 'DELETE FROM notifications WHERE notification_type = ? '
-            . 'AND notification_language = ?',
-        Bind => [
-            \$Param{Type}, \$Param{Language},
-        ],
+    $Self->{DBObject}->Prepare(
+        SQL => "DELETE FROM notifications WHERE notification_type = '$Param{Type}' ".
+            "AND notification_language = '$Param{Language}'",
     );
-
     # sql
-    return if !$Self->{DBObject}->Prepare(
-        SQL => 'INSERT INTO notifications '
-            . '(notification_type, notification_charset, notification_language, subject, text, '
-            . 'content_type, create_time, create_by, change_time, change_by) '
-            . 'VALUES (?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
-        Bind => [
-            \$Param{Type}, \$Param{Charset},     \$Param{Language}, \$Param{Subject},
-            \$Param{Body}, \$Param{ContentType}, \$Param{UserID},   \$Param{UserID},
-        ],
-    );
-    return 1;
+    my $SQL = "INSERT INTO notifications ".
+        " (notification_type, notification_charset, notification_language, subject, text, ".
+        " create_time, create_by, change_time, change_by)".
+        " VALUES ".
+        " ('$Param{Type}', '$Param{Charset}', '$Param{Language}', '$Param{Subject}', '$Param{Body}', ".
+        " current_timestamp, $Param{UserID}, current_timestamp,  $Param{UserID})";
+    if ($Self->{DBObject}->Do(SQL => $SQL)) {
+        return 1;
+    }
+    else {
+        return;
+    }
 }
 
 1;
@@ -297,16 +274,16 @@ sub NotificationUpdate {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.38 $ $Date: 2011/08/12 09:06:15 $
+$Revision: 1.12.2.1 $ $Date: 2008/07/24 10:09:14 $
 
 =cut

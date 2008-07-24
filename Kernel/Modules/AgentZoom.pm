@@ -1,42 +1,39 @@
 # --
 # Kernel/Modules/AgentZoom.pm - to get a closer view
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentZoom.pm,v 1.98 2011/12/19 09:03:35 mg Exp $
+# $Id: AgentZoom.pm,v 1.87.2.1 2008/07/24 10:09:14 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
-
-#
-# LEGACY: This module redirects to AgentTicketZoom. It should be kept for a while
-#   because existing legacy/upgraded systems have it in their notifications.
-#   To drop it, existing notifications would have to be changed by the database
-#   upgrading script.
-#
 
 package Kernel::Modules::AgentZoom;
 
 use strict;
-use warnings;
-
 use Kernel::System::CustomerUser;
+use Kernel::System::LinkObject;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.98 $) [1];
+$VERSION = '$Revision: 1.87.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
 
-    # check needed objects
-    for (qw(ParamObject DBObject LayoutObject LogObject ConfigObject )) {
-        if ( !$Self->{$_} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
+    # check needed Objects
+    foreach (qw(ParamObject DBObject LayoutObject LogObject ConfigObject )) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
 
@@ -44,20 +41,12 @@ sub new {
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # compat link
     my $Redirect = $ENV{REQUEST_URI};
-    if ($Redirect) {
-        $Redirect =~ s/AgentZoom/AgentTicketZoom/;
-    }
-    else {
-        $Redirect
-            = $Self->{LayoutObject}->{Baselink}
-            . 'Action=AgentTicketZoom;TicketID='
-            . $Self->{TicketID};
-    }
-    return $Self->{LayoutObject}->Redirect( OP => $Redirect );
+    $Redirect =~ s/AgentZoom/AgentTicketZoom/;
+    return $Self->{LayoutObject}->Redirect(OP => $Redirect);
 }
 
 1;

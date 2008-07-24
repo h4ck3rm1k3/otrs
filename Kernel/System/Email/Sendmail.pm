@@ -1,123 +1,91 @@
 # --
 # Kernel/System/Email/Sendmail.pm - the global email send module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Sendmail.pm,v 1.33 2011/08/12 09:06:15 mg Exp $
+# $Id: Sendmail.pm,v 1.18.2.1 2008/07/24 10:09:14 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Email::Sendmail;
 
 use strict;
-use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.33 $) [1];
+$VERSION = '$Revision: 1.18.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
-
+    my $Type = shift;
+    my %Param = @_;
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
-
+    my $Self = {};
+    bless ($Self, $Type);
+    # get common objects
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
     # debug
     $Self->{Debug} = $Param{Debug} || 0;
-
     # check all needed objects
-    for (qw(ConfigObject LogObject)) {
-        die "Got no $_" if ( !$Self->{$_} );
+    foreach (qw(ConfigObject LogObject)) {
+        die "Got no $_" if (!$Self->{$_});
     }
+    # get config data
+    $Self->{Sendmail} = $Self->{ConfigObject}->Get('SendmailModule::CMD');
 
     return $Self;
 }
 
 sub Send {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    my $ToString = '';
     # check needed stuff
-    for (qw(Header Body ToArray)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+    foreach (qw(Header Body ToArray)) {
+        if (!$Param{$_}) {
+            $Self->{LogObject}->Log(Priority => 'error', Message => "Need $_!");
             return;
         }
     }
-
-    # from for arg
-    my $Arg = quotemeta( $Param{From} );
-    if ( !$Param{From} ) {
+    # from
+    my $Arg = quotemeta($Param{From});
+    if (!$Param{From}) {
         $Arg = "''";
     }
-
-    # get recipients
-    my $ToString = '';
-    for my $To ( @{ $Param{ToArray} } ) {
-        if ($ToString) {
-            $ToString .= ', ';
+    # recipient
+    foreach (@{$Param{ToArray}}) {
+        $ToString .= "$_,";
+        $Arg.= ' '.quotemeta($_);
+    }
+    # send mail
+    if (open( MAIL, "| $Self->{Sendmail} $Arg")) {
+        # set handle to binmode if utf-8 is used
+        if ($Self->{ConfigObject}->Get('DefaultCharset') =~ /^utf(-8|8)$/i) {
+            binmode MAIL, ":utf8";
         }
-        $ToString .= $To;
-        $Arg .= ' ' . quotemeta($To);
-    }
-
-    # check availability
-    my %Result = $Self->Check();
-    if ( !$Result{Successful} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => $Result{Message},
-        );
-        return;
-    }
-
-    # set sendmail binary
-    my $Sendmail = $Result{Sendmail};
-
-    # invoke sendmail in order to send off mail, catching errors in a temporary file
-    my $FH;
-    if ( !open( $FH, '|-', "$Sendmail $Arg " ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't send message: $!!",
-        );
-        return;
-    }
-
-    # switch filehandle to utf8 mode if utf-8 is used
-    binmode $FH, ':utf8';
-
-    print $FH ${ $Param{Header} };
-    print $FH "\n";
-    print $FH ${ $Param{Body} };
-    close($FH);
-
-    # debug
-    if ( $Self->{Debug} > 2 ) {
-        $Self->{LogObject}->Log(
-            Priority => 'notice',
-            Message  => "Sent email to '$ToString' from '$Param{From}'.",
-        );
-    }
-
-    return 1;
-}
-
-sub Check {
-    my ( $Self, %Param ) = @_;
-
-    # get config data
-    my $Sendmail = $Self->{ConfigObject}->Get('SendmailModule::CMD');
-
-    # check if sendmail binary is there (strip all args and check if file exists)
-    my $SendmailBinary = $Sendmail;
-    $SendmailBinary =~ s/^(.+?)\s.+?$/$1/;
-    if ( !-f $SendmailBinary ) {
-        return ( Successful => 0, Message => "No such binary: $SendmailBinary!" );
+        print MAIL ${$Param{Header}};
+        print MAIL "\n";
+        print MAIL ${$Param{Body}};
+        close(MAIL);
+        # debug
+        if ($Self->{Debug} > 2) {
+            $Self->{LogObject}->Log(
+                Priority => 'notice',
+                Message => "Sent email to '$ToString' from '$Param{From}'.",
+            );
+        }
+        return 1;
     }
     else {
-        return ( Successful => 1, Sendmail => $Sendmail );
+        # log error
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message => "Can't use $Self->{Sendmail}: $!!",
+        );
+        return;
     }
 }
 

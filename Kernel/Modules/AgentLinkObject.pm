@@ -1,654 +1,359 @@
 # --
 # Kernel/Modules/AgentLinkObject.pm - to link objects
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentLinkObject.pm,v 1.62 2012/01/06 13:00:04 mg Exp $
+# $Id: AgentLinkObject.pm,v 1.15.2.1 2008/07/24 10:09:13 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AgentLinkObject;
 
 use strict;
-use warnings;
-
 use Kernel::System::LinkObject;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.62 $) [1];
+$VERSION = '$Revision: 1.15.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
 
-    # check needed objects
-    for my $Needed (qw(ParamObject DBObject TicketObject LayoutObject LogObject ConfigObject)) {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
+
+    # check needed Objects
+    foreach (qw(ParamObject DBObject TicketObject LayoutObject LogObject ConfigObject)) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
-    $Self->{LinkObject} = Kernel::System::LinkObject->new( %{$Self} );
 
+    # load generic backend link object module
+    $Self->{LinkObject} = Kernel::System::LinkObject->new(%Param);
+    $Self->{ID} = $Self->{ParamObject}->GetParam(Param => 'ID') || '';
+    $Self->{PreviewID} = $Self->{ParamObject}->GetParam(Param => 'PreviewID') || '';
+    $Self->{StartHit} = $Self->{ParamObject}->GetParam(Param => 'StartHit') || 1;
+
+    foreach my $Key (qw(SourceID SourceObject DestinationObject)) {
+        my $Value = $Self->{ParamObject}->GetParam(Param => $Key) || '';
+        if ($Value) {
+            $Self->{$Key} = $Value;
+            $Self->{SessionObject}->UpdateSessionID(
+                SessionID => $Self->{SessionID},
+                Key => $Key,
+                Value => $Value,
+            );
+        }
+    }
+
+    # the following 12 lines check if how much destination objects are available
+    # if only one available this will be automatically selected
+    if (!$Self->{DestinationObject}) {
+        my %DestinationObjects = $Self->{LinkObject}->LinkObjects(SourceObject => $Self->{SourceObject});
+        my $Counter = 0;
+        my $PossibleDestinationObject = '';
+        foreach (keys %DestinationObjects) {
+            $Counter++;
+            $PossibleDestinationObject = $_;
+        }
+        if ($Counter && $Counter == 1) {
+            $Self->{DestinationObject} = $PossibleDestinationObject;
+        }
+    }
+
+    if ($Self->{DestinationObject}) {
+        $Param{Module} = $Self->{DestinationObject};
+        $Param{ID} = $Self->{ID};
+        $Self->{LinkObject}->LoadBackend(%Param);
+    }
     return $Self;
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
-    # ------------------------------------------------------------ #
-    # close
-    # ------------------------------------------------------------ #
-    if ( $Self->{Subaction} eq 'Close' ) {
-        return $Self->{LayoutObject}->PopupClose(
-            Reload => 1,
-        );
-    }
-
-    # get params
-    my %Form;
-    $Form{SourceObject} = $Self->{ParamObject}->GetParam( Param => 'SourceObject' );
-    $Form{SourceKey}    = $Self->{ParamObject}->GetParam( Param => 'SourceKey' );
-    $Form{Mode}         = $Self->{ParamObject}->GetParam( Param => 'Mode' ) || 'Normal';
+    my $Self = shift;
+    my %Param = @_;
+    # start application page
+    my $Output .= $Self->{LayoutObject}->Header();
+    $Output .= $Self->{LayoutObject}->NavigationBar();
 
     # check needed stuff
-    if ( !$Form{SourceObject} || !$Form{SourceKey} ) {
-        return $Self->{LayoutObject}->ErrorScreen(
-            Message => "Need SourceObject and SourceKey!",
-            Comment => 'Please contact the admin.',
-        );
-    }
-
-    # get form params
-    $Form{TargetIdentifier} = $Self->{ParamObject}->GetParam( Param => 'TargetIdentifier' )
-        || $Form{SourceObject};
-
-    # investigate the target object
-    if ( $Form{TargetIdentifier} =~ m{ \A ( .+? ) :: ( .+ ) \z }xms ) {
-        $Form{TargetObject}    = $1;
-        $Form{TargetSubObject} = $2;
-    }
-    else {
-        $Form{TargetObject} = $Form{TargetIdentifier};
-    }
-
-    # get possible objects list
-    my %PossibleObjectsList = $Self->{LinkObject}->PossibleObjectsList(
-        Object => $Form{SourceObject},
-        UserID => $Self->{UserID},
-    );
-
-    # check if target object is a possible object to link with the source object
-    if ( !$PossibleObjectsList{ $Form{TargetObject} } ) {
-        my @PossibleObjects = sort { lc $a cmp lc $b } keys %PossibleObjectsList;
-        $Form{TargetObject} = $PossibleObjects[0];
-    }
-
-    # set mode params
-    if ( $Form{Mode} eq 'Temporary' ) {
-        $Form{State} = 'Temporary';
-    }
-    else {
-        $Form{Mode}  = 'Normal';
-        $Form{State} = 'Valid';
-    }
-
-    # get source object description
-    my %SourceObjectDescription = $Self->{LinkObject}->ObjectDescriptionGet(
-        Object => $Form{SourceObject},
-        Key    => $Form{SourceKey},
-        Mode   => $Form{Mode},
-        UserID => $Self->{UserID},
-    );
-
-    # ------------------------------------------------------------ #
-    # link delete
-    # ------------------------------------------------------------ #
-    if ( $Self->{Subaction} eq 'LinkDelete' ) {
-
-        # output header
-        my $Output = $Self->{LayoutObject}->Header( Type => 'Small' );
-
-        if ( $Self->{ParamObject}->GetParam( Param => 'SubmitDelete' ) ) {
-
-            # challenge token check for write action
-            $Self->{LayoutObject}->ChallengeTokenCheck();
-
-            # delete all temporary links older than one day
-            $Self->{LinkObject}->LinkCleanup(
-                State  => 'Temporary',
-                Age    => ( 60 * 60 * 24 ),
-                UserID => $Self->{UserID},
-            );
-
-            # get the link delete keys and target object
-            my @LinkDeleteIdentifier = $Self->{ParamObject}->GetArray(
-                Param => 'LinkDeleteIdentifier',
-            );
-
-            # delete links from database
-            IDENTIFIER:
-            for my $Identifier (@LinkDeleteIdentifier) {
-
-                my @Target = $Identifier =~ m{^ ( [^:]+? ) :: (.+?) :: ( [^:]+? ) $}smx;
-
-                next IDENTIFIER if !$Target[0];    # TargetObject
-                next IDENTIFIER if !$Target[1];    # TargetKey
-                next IDENTIFIER if !$Target[2];    # LinkType
-
-                # delete link from database
-                my $Success = $Self->{LinkObject}->LinkDelete(
-                    Object1 => $Form{SourceObject},
-                    Key1    => $Form{SourceKey},
-                    Object2 => $Target[0],
-                    Key2    => $Target[1],
-                    Type    => $Target[2],
-                    UserID  => $Self->{UserID},
-                );
-
-                next IDENTIFIER if $Success;
-
-                # get target object description
-                my %TargetObjectDescription = $Self->{LinkObject}->ObjectDescriptionGet(
-                    Object => $Target[0],
-                    Key    => $Target[1],
-                    Mode   => $Form{Mode},
-                    UserID => $Self->{UserID},
-                );
-
-                # output an error notification
-                $Output .= $Self->{LayoutObject}->Notify(
-                    Priority => 'Error',
-                    Data     => '$Text{"Can not delete link with %s!", "'
-                        . $TargetObjectDescription{Normal}
-                        . '"}',
-                );
-            }
-        }
-
-        # output link block
-        $Self->{LayoutObject}->Block(
-            Name => 'Delete',
-            Data => {
-                %Form,
-                SourceObjectNormal => $SourceObjectDescription{Normal},
-            },
-        );
-
-        # get already linked objects
-        my $LinkListWithData = $Self->{LinkObject}->LinkListWithData(
-            Object => $Form{SourceObject},
-            Key    => $Form{SourceKey},
-            State  => $Form{State},
-            UserID => $Self->{UserID},
-        );
-
-        # redirect to overview if list is empty
-        if ( !$LinkListWithData || !%{$LinkListWithData} ) {
-            return $Self->{LayoutObject}->Redirect(
-                OP => "Action=$Self->{Action};Mode=$Form{Mode}"
-                    . ";SourceObject=$Form{SourceObject};SourceKey=$Form{SourceKey}"
-                    . ";TargetIdentifier=$Form{TargetIdentifier}",
-            );
-        }
-
-        # create the link table
-        my $LinkTableStrg = $Self->{LayoutObject}->LinkObjectTableCreateComplex(
-            LinkListWithData => $LinkListWithData,
-            ViewMode         => 'ComplexDelete',
-        );
-
-        # output the link table
-        $Self->{LayoutObject}->Block(
-            Name => 'DeleteTableComplex',
-            Data => {
-                LinkTableStrg => $LinkTableStrg,
-            },
-        );
-
-        # start template output
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AgentLinkObject',
-        );
-
-        $Output .= $Self->{LayoutObject}->Footer( Type => 'Small' );
-
-        return $Output;
-    }
-
-    # ------------------------------------------------------------ #
-    # overview
-    # ------------------------------------------------------------ #
-    else {
-
-        # get the type
-        my $TypeIdentifier = $Self->{ParamObject}->GetParam( Param => 'TypeIdentifier' );
-
-        # output header
-        my $Output = $Self->{LayoutObject}->Header( Type => 'Small' );
-
-        # add new links
-        if ( $Self->{ParamObject}->GetParam( Param => 'SubmitLink' ) ) {
-
-            # challenge token check for write action
-            $Self->{LayoutObject}->ChallengeTokenCheck();
-
-            # get the link target keys
-            my @LinkTargetKeys = $Self->{ParamObject}->GetArray( Param => 'LinkTargetKeys' );
-
-            # get all links that the source object already has
-            my $LinkList = $Self->{LinkObject}->LinkList(
-                Object => $Form{SourceObject},
-                Key    => $Form{SourceKey},
-                State  => $Form{State},
-                UserID => $Self->{UserID},
-            );
-
-            # split the identifier
-            my @Type = split q{::}, $TypeIdentifier;
-
-            if ( $Type[0] && $Type[1] && ( $Type[1] eq 'Source' || $Type[1] eq 'Target' ) ) {
-
-                # add links
-                TARGETKEYORG:
-                for my $TargetKeyOrg (@LinkTargetKeys) {
-
-                    TYPE:
-                    for my $LType ( keys %{ $LinkList->{ $Form{TargetObject} } } ) {
-
-                        # extract source and target
-                        my $Source = $LinkList->{ $Form{TargetObject} }->{$LType}->{Source} ||= {};
-                        my $Target = $LinkList->{ $Form{TargetObject} }->{$LType}->{Target} ||= {};
-
-                        # check if source and target object are already linked
-                        next TYPE
-                            if !$Source->{$TargetKeyOrg} && !$Target->{$TargetKeyOrg};
-
-                        # next type, if link already exists
-                        if ( $LType eq $Type[0] ) {
-                            next TYPE if $Type[1] eq 'Source' && $Source->{$TargetKeyOrg};
-                            next TYPE if $Type[1] eq 'Target' && $Target->{$TargetKeyOrg};
-                        }
-
-                        # check the type groups
-                        my $TypeGroupCheck = $Self->{LinkObject}->PossibleType(
-                            Type1  => $Type[0],
-                            Type2  => $LType,
-                            UserID => $Self->{UserID},
-                        );
-
-                        next TYPE if $TypeGroupCheck && $Type[0] ne $LType;
-
-                        # get target object description
-                        my %TargetObjectDescription = $Self->{LinkObject}->ObjectDescriptionGet(
-                            Object => $Form{TargetObject},
-                            Key    => $TargetKeyOrg,
-                            UserID => $Self->{UserID},
-                        );
-
-                        # lookup type id
-                        my $TypeID = $Self->{LinkObject}->TypeLookup(
-                            Name   => $LType,
-                            UserID => $Self->{UserID},
-                        );
-
-                        # get type data
-                        my %TypeData = $Self->{LinkObject}->TypeGet(
-                            TypeID => $TypeID,
-                            UserID => $Self->{UserID},
-                        );
-
-                        # investigate type name
-                        my $TypeName = $TypeData{SourceName};
-                        if ( $Target->{$TargetKeyOrg} ) {
-                            $TypeName = $TypeData{TargetName};
-                        }
-
-                        # translate the type name
-                        $TypeName = $Self->{LayoutObject}->{LanguageObject}->Get($TypeName);
-
-                        # output an error notification
-                        $Output .= $Self->{LayoutObject}->Notify(
-                            Priority => 'Error',
-                            Data     => '$Text{"Can not create link with %s!", "'
-                                . $TargetObjectDescription{Normal}
-                                . '"} $Text{"Object already linked as %s.", "'
-                                . $TypeName
-                                . '"}',
-                        );
-
-                        next TARGETKEYORG;
-                    }
-
-                    my $SourceObject = $Form{TargetObject};
-                    my $SourceKey    = $TargetKeyOrg;
-                    my $TargetObject = $Form{SourceObject};
-                    my $TargetKey    = $Form{SourceKey};
-
-                    if ( $Type[1] eq 'Target' ) {
-                        $SourceObject = $Form{SourceObject};
-                        $SourceKey    = $Form{SourceKey};
-                        $TargetObject = $Form{TargetObject};
-                        $TargetKey    = $TargetKeyOrg;
-                    }
-
-                    # add links to database
-                    my $Success = $Self->{LinkObject}->LinkAdd(
-                        SourceObject => $SourceObject,
-                        SourceKey    => $SourceKey,
-                        TargetObject => $TargetObject,
-                        TargetKey    => $TargetKey,
-                        Type         => $Type[0],
-                        State        => $Form{State},
-                        UserID       => $Self->{UserID},
-                    );
-
-                    next TARGETKEYORG if $Success;
-
-                    # get target object description
-                    my %TargetObjectDescription = $Self->{LinkObject}->ObjectDescriptionGet(
-                        Object => $Form{TargetObject},
-                        Key    => $TargetKeyOrg,
-                        UserID => $Self->{UserID},
-                    );
-
-                    # output an error notification
-                    $Output .= $Self->{LayoutObject}->Notify(
-                        Priority => 'Error',
-                        Data     => '$Text{"Can not create link with %s!", "'
-                            . $TargetObjectDescription{Normal}
-                            . '"}',
-                    );
-                }
-            }
-        }
-
-        # get the selectable object list
-        my $TargetObjectStrg = $Self->{LayoutObject}->LinkObjectSelectableObjectList(
-            Object   => $Form{SourceObject},
-            Selected => $Form{TargetIdentifier},
-        );
-
-        # check needed stuff
-        if ( !$TargetObjectStrg ) {
+    foreach (qw(SourceID SourceObject)) {
+        if (!$Self->{$_}) {
+            # error page
             return $Self->{LayoutObject}->ErrorScreen(
-                Message => "The Object $Form{SourceObject} cannot link with other object!",
-                Comment => 'Please contact the admin.',
+                Message => "Need $_ Param!",
             );
         }
+    }
 
-        # output link block
-        $Self->{LayoutObject}->Block(
-            Name => 'Link',
-            Data => {
-                %Form,
-                SourceObjectNormal => $SourceObjectDescription{Normal},
-                SourceObjectLong   => $SourceObjectDescription{Long},
-                TargetObjectStrg   => $TargetObjectStrg,
-            },
-        );
-
-        # output special block for temporary links
-        # to close the popup without reloading the parent window
-        if ( $Form{Mode} eq 'Temporary' ) {
-
-            $Self->{LayoutObject}->Block(
-                Name => 'TemporaryLink',
-                Data => {},
-            );
-        }
-
-        # get search option list
-        my @SearchOptionList = $Self->{LayoutObject}->LinkObjectSearchOptionList(
-            Object    => $Form{TargetObject},
-            SubObject => $Form{TargetSubObject},
-        );
-
-        # output search option fields
-        for my $Option (@SearchOptionList) {
-
-            # output link search row block
-            $Self->{LayoutObject}->Block(
-                Name => 'LinkSearchRow',
-                Data => $Option,
-            );
-        }
-
-        # create the search param hash
-        my %SearchParam;
-        OPTION:
-        for my $Option (@SearchOptionList) {
-
-            next OPTION if !$Option->{FormData};
-            next OPTION if $Option->{FormData}
-                    && ref $Option->{FormData} eq 'ARRAY' && !@{ $Option->{FormData} };
-
-            $SearchParam{ $Option->{Key} } = $Option->{FormData};
-        }
-
-        # start search
-        my $SearchList;
-        if (
-            %SearchParam
-            || $Self->{ConfigObject}->Get('Frontend::AgentLinkObject::WildcardSearch')
-            )
-        {
-
-            $SearchList = $Self->{LinkObject}->ObjectSearch(
-                Object       => $Form{TargetObject},
-                SubObject    => $Form{TargetSubObject},
-                SearchParams => \%SearchParam,
-                UserID       => $Self->{UserID},
-            );
-        }
-
-        # remove the source object from the search list
-        if ( $SearchList && $SearchList->{ $Form{SourceObject} } ) {
-
-            for my $LinkType ( keys %{ $SearchList->{ $Form{SourceObject} } } ) {
-
-                # extract link type List
-                my $LinkTypeList = $SearchList->{ $Form{SourceObject} }->{$LinkType};
-
-                for my $Direction ( keys %{$LinkTypeList} ) {
-
-                    # remove the source key
-                    delete $LinkTypeList->{$Direction}->{ $Form{SourceKey} };
-                }
-            }
-        }
-
-        # get already linked objects
-        my $LinkListWithData = $Self->{LinkObject}->LinkListWithData(
-            Object => $Form{SourceObject},
-            Key    => $Form{SourceKey},
-            State  => $Form{State},
+    # update action
+    if ($Self->{Subaction} eq 'LinkParent') {
+        $Self->{LinkObject}->LinkObject(
+            LinkType => 'Parent',
+            LinkID1 => $Self->{ID},
+            LinkObject1 => $Self->{DestinationObject},
+            LinkID2 => $Self->{SourceID},
+            LinkObject2 => $Self->{SourceObject},
             UserID => $Self->{UserID},
         );
+    }
+    elsif ($Self->{Subaction} eq 'LinkChild') {
+        $Self->{LinkObject}->LinkObject(
+            LinkType => 'Child',
+            LinkID1 => $Self->{SourceID},
+            LinkObject1 => $Self->{SourceObject},
+            LinkID2 => $Self->{ID},
+            LinkObject2 => $Self->{DestinationObject},
+            UserID => $Self->{UserID},
+        );
+    }
+    elsif ($Self->{Subaction} eq 'LinkNormal') {
+        $Self->{LinkObject}->LinkObject(
+            LinkType => 'Normal',
+            LinkID1 => $Self->{SourceID},
+            LinkObject1 => $Self->{SourceObject},
+            LinkID2 => $Self->{ID},
+            LinkObject2 => $Self->{DestinationObject},
+            UserID => $Self->{UserID},
+        );
+    }
+    elsif ($Self->{Subaction} eq 'UnlinkParent') {
+        $Self->{LinkObject}->UnlinkObject(
+            LinkType => 'Parent',
+            LinkID1 => $Self->{ID},
+            LinkObject1 => $Self->{DestinationObject},
+            LinkID2 => $Self->{SourceID},
+            LinkObject2 => $Self->{SourceObject},
+            UserID => $Self->{UserID},
+        );
+    }
+    elsif ($Self->{Subaction} eq 'UnlinkChild') {
+        $Self->{LinkObject}->UnlinkObject(
+            LinkType => 'Child',
+            LinkID1 => $Self->{SourceID},
+            LinkObject1 => $Self->{SourceObject},
+            LinkID2 => $Self->{ID},
+            LinkObject2 => $Self->{DestinationObject},
+            UserID => $Self->{UserID},
+        );
+    }
+    elsif ($Self->{Subaction} eq 'UnlinkNormal') {
+        $Self->{LinkObject}->UnlinkObject(
+            LinkType => 'Normal',
+            LinkID1 => $Self->{SourceID},
+            LinkObject1 => $Self->{SourceObject},
+            LinkID2 => $Self->{ID},
+            LinkObject2 => $Self->{DestinationObject},
+            UserID => $Self->{UserID},
+        );
+    }
 
-        if ( $LinkListWithData && $LinkListWithData->{ $Form{TargetObject} } ) {
+    # show link objects
+    $Param{'LinkToObject'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data => {$Self->{LinkObject}->LinkObjects(SourceObject => $Self->{SourceObject})},
+        Name => 'DestinationObject',
+        SelectedID => $Self->{DestinationObject},
+    );
+    $Self->{LayoutObject}->Block(
+        Name => 'LinkOption',
+        Data => {
+            %Param,
+            SourceObject => $Self->{SourceObject},
+        },
+    );
 
-            # build object id lookup hash from search list
-            my %SearchListObjectKeys;
-            for my $Key ( keys %{ $SearchList->{ $Form{TargetObject} }->{NOTLINKED}->{Source} } ) {
-                $SearchListObjectKeys{$Key} = 1;
+    # search mask
+    if ($Self->{DestinationObject}) {
+        # get backend module params
+        my %GetParams = ();
+        foreach my $Param ($Self->{LinkObject}->LinkSearchParams()) {
+            if (defined($Self->{ParamObject}->GetParam(Param => $Param->{Name}))) {
+                $GetParams{$Param->{Name}} = $Self->{ParamObject}->GetParam(Param => $Param->{Name});
+                $GetParams{$Param->{Name}} =~ s/\s+$//g;
+                $GetParams{$Param->{Name}} =~ s/^\s+//g;
             }
+            else {
+                $GetParams{$Param->{Name}} = $Self->{"ObjectLink_$Self->{DestinationObject}_$Param->{Name}"} || '';
+            }
+        }
+        if ($Self->{Subaction} eq 'Search') {
+            foreach (keys %GetParams) {
+                $Self->{SessionObject}->UpdateSessionID(
+                    SessionID => $Self->{SessionID},
+                    Key => "ObjectLink_$Self->{DestinationObject}_$_",
+                    Value => $GetParams{$_},
+                );
+            }
+        }
+        # get search mask
+        $Self->{LayoutObject}->Block(
+            Name => 'Search',
+            Data => {
+                %Param,
+            },
+        );
+        # get search item
+        foreach my $Data ($Self->{LinkObject}->LinkSearchParams()) {
+            if (defined($Data->{Select})) {
+                $Data->{Option} = $Self->{LayoutObject}->OptionStrgHashRef(
+                    SelectedID => $GetParams{$Data->{Name}},
+                    Data => $Data->{Select},
+                    Name => $Data->{Name},
+                );
+                $Self->{LayoutObject}->Block(
+                    Name => 'SearchItemSelect',
+                    Data => {
+                        %Param,
+                        Value => $GetParams{$Data->{Name}},
+                        %{$Data},
+                    },
+                );
+            }
+            else {
+                $Self->{LayoutObject}->Block(
+                    Name => 'SearchItem',
+                    Data => {
+                        %Param,
+                        Value => $GetParams{$Data->{Name}},
+                        %{$Data},
+                    },
+                );
+            }
+        }
+        # result
+        my $SearchPageShown = 15;
+        my $Limit = 100;
 
-            # check if linked objects are part of the search list
-            for my $LinkType ( keys %{ $LinkListWithData->{ $Form{TargetObject} } } ) {
+        my @DataResultRaw = $Self->{LinkObject}->LinkSearch(
+            %GetParams,
+            Limit => $Limit,
+            UserID => $Self->{UserID},
+        );
+        # show no own ticket
+        my @DataResult = ();
+        foreach my $Data (@DataResultRaw) {
+            if ($Self->{SourceObject} eq $Self->{DestinationObject} && $Self->{SourceID} eq $Data->{ID}) {
+                # no action
+            }
+            else {
+                push(@DataResult, $Data);
+            }
+        }
+        if (@DataResult) {
+            my %PageNav = $Self->{LayoutObject}->PageNavBar(
+                Limit => $Limit,
+                StartHit => $Self->{StartHit},
+                PageShown => $SearchPageShown,
+                AllHits => $#DataResult+1,
+                Action => "Action=AgentLinkObject&Subaction=Search",
+                Link => "",
+            );
+            $Self->{LayoutObject}->Block(
+                Name => 'SearchResult',
+                Data => {
+                    %Param, %PageNav
+                },
+            );
+            my $Counter = 0;
+            my %LinkedParent = $Self->{LinkObject}->LinkedObjects(
+                LinkType => 'Parent',
+                LinkObject1 => $Self->{DestinationObject},
+                LinkID2 => $Self->{SourceID},
+                LinkObject2 => $Self->{SourceObject},
+                UserID => $Self->{UserID},
+            );
+            my %LinkedChild = $Self->{LinkObject}->LinkedObjects(
+                LinkType => 'Child',
+                LinkID1 => $Self->{SourceID},
+                LinkObject1 => $Self->{SourceObject},
+                LinkObject2 => $Self->{DestinationObject},
+                UserID => $Self->{UserID},
+            );
+            my %LinkedNormal = $Self->{LinkObject}->LinkedObjects(
+                LinkType => 'Normal',
+                LinkID1 => $Self->{SourceID},
+                LinkObject1 => $Self->{SourceObject},
+                LinkObject2 => $Self->{DestinationObject},
+                UserID => $Self->{UserID},
+            );
 
-                # extract link type List
-                my $LinkTypeList = $LinkListWithData->{ $Form{TargetObject} }->{$LinkType};
-
-                for my $Direction ( keys %{$LinkTypeList} ) {
-
-                    # extract the keys
-                    KEY:
-                    for my $Key ( keys %{ $LinkTypeList->{$Direction} } ) {
-
-                        next KEY if $SearchListObjectKeys{$Key};
-
-                        # delete from linked objects list if key is not in search list
-                        delete $LinkTypeList->{$Direction}->{$Key};
+            foreach my $Data (@DataResult) {
+                $Counter++;
+                if ($Counter >= $Self->{StartHit} && $Counter < ($SearchPageShown+$Self->{StartHit}) ) {
+                    if ($LinkedParent{$Data->{ID}}) {
+                        $Param{LinkedParent} = 1;
                     }
+                    else {
+                        $Param{LinkedParent} = 0;
+                    }
+                    if ($LinkedChild{$Data->{ID}}) {
+                        $Param{LinkedChild} = 1;
+                    }
+                    else {
+                        $Param{LinkedChild} = 0;
+                    }
+                    if ($LinkedNormal{$Data->{ID}}) {
+                        $Param{LinkedNormal} = 1;
+                    }
+                    else {
+                        $Param{LinkedNormal} = 0;
+                    }
+
+                    if ($Param{LinkedNormal} == 1) {
+                        $Param{LinkedParent} = 2;
+                        $Param{LinkedChild} = 2;
+                    }
+                    if ($Param{LinkedParent} == 1) {
+                        $Param{LinkedNormal} = 2;
+                        $Param{LinkedChild} = 2;
+                    }
+                    if ($Param{LinkedChild} == 1) {
+                        $Param{LinkedParent} = 2;
+                        $Param{LinkedNormal} = 2;
+                    }
+
+                    if ($LinkedParent{$Data->{ID}}) {
+                        $Param{LinkedParent} = 1;
+                    }
+                    $Self->{LayoutObject}->Block(
+                        Name => 'SearchResultItem',
+                        Data => {
+                            %Param,
+                            %{$Data},
+                            StartHit => $Self->{StartHit},
+                        },
+                    );
                 }
             }
         }
 
-        my %LinkMenuOutput;
-        if ( $Form{Mode} eq 'Normal' ) {
-            $LinkMenuOutput{Back} = 1;
-        }
-        if ( $LinkListWithData && %{$LinkListWithData} ) {
-            $LinkMenuOutput{Delete} = 1;
-        }
-
-        # output link menu
-        if (%LinkMenuOutput) {
-
-            # output the link menu block
+        if ($Self->{PreviewID}) {
             $Self->{LayoutObject}->Block(
-                Name => 'LinkMenu',
+                Name => 'Preview',
+                Data => {
+                    %Param,
+                    $Self->{LinkObject}->LinkItemData(ID => $Self->{PreviewID}, UserID => $Self->{UserID}),
+                },
             );
         }
-
-        # output back link
-        if ( $LinkMenuOutput{Back} ) {
-
-            # output the link menu back block
-            $Self->{LayoutObject}->Block(
-                Name => 'LinkMenuBack',
-                Data => \%Form,
-            );
-        }
-
-        # output link seperator
-        if ( $LinkMenuOutput{Back} && $LinkMenuOutput{Delete} ) {
-
-            # output the link menu seperator block
-            $Self->{LayoutObject}->Block(
-                Name => 'LinkMenuSeperator',
-            );
-        }
-
-        # output delete link
-        if ( $LinkMenuOutput{Delete} ) {
-
-            # output the link menu delete block
-            $Self->{LayoutObject}->Block(
-                Name => 'LinkMenuDelete',
-                Data => \%Form,
-            );
-        }
-
-        # add search result to link list
-        if ( $SearchList && $SearchList->{ $Form{TargetObject} } ) {
-            $LinkListWithData->{ $Form{TargetObject} }->{NOTLINKED}
-                = $SearchList->{ $Form{TargetObject} }->{NOTLINKED};
-        }
-
-        # get possible types list
-        my %PossibleTypesList = $Self->{LinkObject}->PossibleTypesList(
-            Object1 => $Form{SourceObject},
-            Object2 => $Form{TargetObject},
-            UserID  => $Self->{UserID},
-        );
-
-        # define blank line entry
-        my %BlankLine = (
-            Key      => '-',
-            Value    => '-------------------------',
-            Disabled => 1,
-        );
-
-        # create the selectable type list
-        my $Counter = 0;
-        my @SelectableTypesList;
-        POSSIBLETYPE:
-        for my $PossibleType ( sort { lc $a cmp lc $b } keys %PossibleTypesList ) {
-
-            # lookup type id
-            my $TypeID = $Self->{LinkObject}->TypeLookup(
-                Name   => $PossibleType,
-                UserID => $Self->{UserID},
-            );
-
-            # get type
-            my %Type = $Self->{LinkObject}->TypeGet(
-                TypeID => $TypeID,
-                UserID => $Self->{UserID},
-            );
-
-            # create the source name
-            my %SourceName;
-            $SourceName{Key}   = $PossibleType . '::Source';
-            $SourceName{Value} = $Type{SourceName};
-
-            push @SelectableTypesList, \%SourceName;
-
-            next POSSIBLETYPE if !$Type{Pointed};
-
-            # create the source name
-            my %TargetName;
-            $TargetName{Key}   = $PossibleType . '::Target';
-            $TargetName{Value} = $Type{TargetName};
-
-            push @SelectableTypesList, \%TargetName;
-        }
-        continue {
-
-            # add blank line
-            push @SelectableTypesList, \%BlankLine;
-
-            $Counter++;
-        }
-
-        # removed last (empty) entry
-        pop @SelectableTypesList;
-
-        # add blank lines on top and bottom of the list if more then two linktypes
-        if ( $Counter > 2 ) {
-            unshift @SelectableTypesList, \%BlankLine;
-            push @SelectableTypesList, \%BlankLine;
-        }
-
-        # create link type string
-        my $LinkTypeStrg = $Self->{LayoutObject}->BuildSelection(
-            Data       => \@SelectableTypesList,
-            Name       => 'TypeIdentifier',
-            SelectedID => $TypeIdentifier || 'Normal::Source',
-        );
-
-        # create the link table
-        my $LinkTableStrg = $Self->{LayoutObject}->LinkObjectTableCreateComplex(
-            LinkListWithData => {
-                $Form{TargetObject} => $LinkListWithData->{ $Form{TargetObject} },
-            },
-            ViewMode     => 'ComplexAdd',
-            LinkTypeStrg => $LinkTypeStrg,
-        );
-
-        # output the link table
-        $Self->{LayoutObject}->Block(
-            Name => 'LinkTableComplex',
-            Data => {
-                LinkTableStrg => $LinkTableStrg,
-            },
-        );
-
-        # start template output
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AgentLinkObject',
-        );
-
-        $Output .= $Self->{LayoutObject}->Footer( Type => 'Small' );
-
-        return $Output;
     }
+    $Output .= $Self->{LayoutObject}->Output(
+        TemplateFile => 'AgentLinkObject',
+        Data => {
+            %Param,
+        },
+    );
+    $Output .= $Self->{LayoutObject}->Footer();
+    return $Output;
 }
 
 1;

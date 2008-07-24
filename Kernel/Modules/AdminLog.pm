@@ -1,33 +1,38 @@
 # --
 # Kernel/Modules/AdminLog.pm - provides a log view for admins
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminLog.pm,v 1.23 2010/04/12 21:33:24 mg Exp $
+# $Id: AdminLog.pm,v 1.17.4.1 2008/07/24 10:09:13 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AdminLog;
 
 use strict;
-use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.23 $) [1];
+$VERSION = '$Revision: 1.17.4.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
 
-    # check needed objects
-    for (qw(ParamObject LayoutObject LogObject ConfigObject)) {
-        if ( !$Self->{$_} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
+
+    # check needed Objects
+    foreach (qw(ParamObject LayoutObject LogObject ConfigObject)) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
 
@@ -35,36 +40,46 @@ sub new {
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     # print form
     my $Output = $Self->{LayoutObject}->Header();
     $Output .= $Self->{LayoutObject}->NavigationBar();
-
     # create table
-    my @Lines = split( /\n/, $Self->{LogObject}->GetLog( Limit => 400 ) );
-    for (@Lines) {
-        my @Row = split( /;;/, $_ );
-        if ( $Row[3] ) {
-            my $ErrorClass = ( $Row[1] =~ /error/ ) ? 'Error' : '';
-
-            $Self->{LayoutObject}->Block(
-                Name => 'Row',
-                Data => {
-                    ErrorClass => $ErrorClass,
-                    Time       => $Row[0],
-                    Priority   => $Row[1],
-                    Facility   => $Row[2],
-                    Message    => $Row[3],
-                },
-            );
+    my @Lines = split(/\n/, $Self->{LogObject}->GetLog(Limit => 400));
+    foreach (@Lines) {
+        my @Row = split(/;;/, $_);
+        if ($Row[3]) {
+            if ($Row[1] =~ /error/) {
+                $Self->{LayoutObject}->Block(
+                    Name => 'Row',
+                    Data => {
+                        StartFont => '<font color ="red">',
+                        StopFont => '</font>',
+                        Time => $Row[0],
+                        Priority => $Row[1],
+                        Facility => $Row[2],
+                        Message => $Row[3],
+                    },
+                );
+            }
+            else {
+                $Self->{LayoutObject}->Block(
+                    Name => 'Row',
+                    Data => {
+                        Time => $Row[0],
+                        Priority => $Row[1],
+                        Facility => $Row[2],
+                        Message => $Row[3],
+                    },
+                );
+            }
         }
     }
-
     # create & return output
     $Output .= $Self->{LayoutObject}->Output(
         TemplateFile => 'AdminLog',
-        Data         => \%Param,
+        Data => \%Param,
     );
     $Output .= $Self->{LayoutObject}->Footer();
     return $Output;

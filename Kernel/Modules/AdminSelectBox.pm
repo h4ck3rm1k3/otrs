@@ -1,223 +1,137 @@
 # --
 # Kernel/Modules/AdminSelectBox.pm - provides a SelectBox for admins
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSelectBox.pm,v 1.38 2011/01/21 22:47:21 en Exp $
+# $Id: AdminSelectBox.pm,v 1.22.2.1 2008/07/24 10:09:13 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AdminSelectBox;
 
 use strict;
-use warnings;
-
-use Kernel::System::CSV;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.38 $) [1];
+$VERSION = '$Revision: 1.22.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
 
-    # check needed objects
-    for my $Needed (qw(ParamObject DBObject LayoutObject LogObject ConfigObject)) {
-        $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" ) if !$Self->{$Needed};
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
     }
 
-    $Self->{CSVObject} = Kernel::System::CSV->new(%Param);
+    # check needed Objects
+    foreach (qw(ParamObject DBObject LayoutObject LogObject ConfigObject)) {
+        $Self->{LayoutObject}->FatalError(Message => "Got no $_!") if (!$Self->{$_});
+    }
 
     return $Self;
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
-    $Param{ResultFormatStrg} = $Self->{LayoutObject}->BuildSelection(
-        Name => 'ResultFormat',
-        Data => [ 'HTML', 'CSV' ],
-    );
-
+    my $Self = shift;
+    my %Param = @_;
     # ------------------------------------------------------------ #
-    # do select
+    # print form
     # ------------------------------------------------------------ #
-    if ( $Self->{Subaction} eq 'Select' ) {
-        my %Errors;
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
+    if ($Self->{Subaction} eq '' || !$Self->{Subaction}) {
         # get params
-        for my $Parameter (qw(SQL Max ResultFormat)) {
-            $Param{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+        foreach (qw(SQL Max)) {
+            $Param{SQL} = $Self->{ParamObject}->GetParam(Param => 'SQL') || 'SELECT * FROM ';
+            $Param{Max} = $Self->{ParamObject}->GetParam(Param => 'Max') || 40;
         }
-
-        # check needed data
-        if ( !$Param{SQL} ) {
-            $Errors{SQLInvalid} = 'ServerError';
-            $Errors{ErrorType}  = 'FieldRequired';
-        }
-
-        # if no errors occurred
-        if ( !%Errors ) {
-
-            # fetch database and add row blocks
-            if ( $Self->{DBObject}->Prepare( SQL => $Param{SQL}, Limit => $Param{Max} ) ) {
-                my $Count = 0;
-                my @Head;
-                my @Data;
-                my $TableOpened;
-
-                # add result block
-                $Self->{LayoutObject}->Block(
-                    Name => 'Result',
-                    Data => \%Param,
-                );
-
-                my $MatchesFound;
-
-                # if there are any matching rows, they are shown
-                while ( my @Row = $Self->{DBObject}->FetchrowArray( RowNames => 1 ) ) {
-
-                    $MatchesFound = 1;
-
-                    if ( !$TableOpened ) {
-                        $Self->{LayoutObject}->Block(
-                            Name => 'ResultTableStart',
-                        );
-                        $Self->{LayoutObject}->Block(
-                            Name => 'ResultTableEnd',
-                        );
-                        $TableOpened++;
-                    }
-
-                    # get csv data
-                    if ( $Param{ResultFormat} eq 'CSV' ) {
-                        $Count++;
-                        if ( $Count == 1 ) {
-                            @Head = @Row;
-                            next;
-                        }
-                        push @Data, \@Row;
-                        next;
-                        last if $Count > 2000;
-                    }
-
-                    $Self->{LayoutObject}->Block(
-                        Name => 'Row',
-                    );
-
-                    # get html data
-                    my $Row = '';
-                    for my $Item (@Row) {
-                        if ( !defined $Item ) {
-                            $Item = 'NULL';
-                        }
-
-                        $Self->{LayoutObject}->Block(
-                            Name => 'Cell',
-                            Data => {
-                                Content => $Item,
-                            },
-                        );
-                    }
-                }
-
-                # otherwise a no matches found msg is displayed
-                if ( !$MatchesFound ) {
-                    $Self->{LayoutObject}->Block(
-                        Name => 'NoMatches',
-                    );
-                }
-
-                # get Separator from language file
-                my $UserCSVSeparator = $Self->{LayoutObject}->{LanguageObject}->{Separator};
-
-                if ( $Self->{ConfigObject}->Get('PreferencesGroups')->{CSVSeparator}->{Active} ) {
-                    my %UserData = $Self->{UserObject}->GetUserData( UserID => $Self->{UserID} );
-                    $UserCSVSeparator = $UserData{UserCSVSeparator};
-                }
-
-                # generate csv output
-                if ( $Param{ResultFormat} eq 'CSV' ) {
-                    my $CSV = $Self->{CSVObject}->Array2CSV(
-                        Head      => \@Head,
-                        Data      => \@Data,
-                        Separator => $UserCSVSeparator,
-                    );
-                    return $Self->{LayoutObject}->Attachment(
-                        Filename    => 'admin-select.csv',
-                        ContentType => 'text/csv',
-                        Content     => $CSV,
-                        Type        => 'attachment'
-                    );
-                }
-
-                # generate html output
-                my $Output = $Self->{LayoutObject}->Header();
-                $Output .= $Self->{LayoutObject}->NavigationBar();
-                $Output .= $Self->{LayoutObject}->Output(
-                    TemplateFile => 'AdminSelectBox',
-                    Data         => \%Param,
-                );
-                $Output .= $Self->{LayoutObject}->Footer();
-                return $Output;
-            }
-            else {
-                $Errors{ErrorMessage} = $Self->{LogObject}->GetLogEntry(
-                    Type => 'Error',
-                    What => 'Message',
-                );
-                $Errors{ErrorType}
-                    = ( $Errors{ErrorMessage} =~ /bind/i ) ? 'BindParam' : 'SQLSyntax';
-                $Errors{SQLInvalid} = 'ServerError';
-            }
-        }
-
-        # add server error message block
-        $Self->{LayoutObject}->Block( Name => $Errors{ErrorType} . 'ServerError' );
-
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->{LayoutObject}->Notify(
-            Info     => $Errors{ErrorMessage},
-            Priority => 'Error'
-        );
         $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminSelectBox',
-            Data         => {
-                %Param,
-                %Errors,
-            },
+            TemplateFile => 'AdminSelectBoxForm',
+            Data => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
-
     # ------------------------------------------------------------ #
-    # print form
+    # do select
     # ------------------------------------------------------------ #
-    else {
-
+    elsif ($Self->{Subaction} eq 'Select') {
         # get params
-        for (qw(SQL Max)) {
-            $Param{SQL} = $Self->{ParamObject}->GetParam( Param => 'SQL' ) || 'SELECT * FROM ';
-            $Param{Max} = $Self->{ParamObject}->GetParam( Param => 'Max' ) || 40;
+        foreach (qw(SQL Max)) {
+            $Param{SQL} = $Self->{ParamObject}->GetParam(Param => 'SQL') || '';
+            $Param{Max} = $Self->{ParamObject}->GetParam(Param => 'Max') || '';
         }
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminSelectBox',
-            Data         => \%Param,
+        # add result block
+        $Self->{LayoutObject}->Block(
+            Name => 'Result',
+            Data => { %Param },
         );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
+        # fetch database and add row blocks
+        if ($Self->{DBObject}->Prepare(SQL => $Param{SQL}, Limit => $Param{Max})) {
+            while (my @Row = $Self->{DBObject}->FetchrowArray(RowNames => 1) ) {
+                my $Row = '';
+                foreach my $Item (@Row) {
+                    my $Item1 = '';
+                    my $Item2 = '';
+                    if (! defined $Item) {
+                        $Item1 = '<i>NULL</i>';
+                        $Item2 = 'NULL';
+                    }
+                    else {
+                        $Item1 = $Self->{LayoutObject}->Ascii2Html(
+                            Text => $Item,
+                            Max => 16,
+                        );
+                        $Item2 = $Self->{LayoutObject}->Ascii2Html(
+                            Text => $Item,
+                            Max => 80,
+                        );
+                    }
+                    $Item2 =~ s/\n|\r//g;
+                    $Row .= "<td class=\"small\"><div title=\"$Item2\">";
+                    $Row .= $Item1;
+                    $Row .= "</div></td>\n";
+                }
+                $Self->{LayoutObject}->Block(
+                    Name => 'Row',
+                    Data => {
+                        Result => $Row,
+                    },
+                );
+            }
+            # generate output
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminSelectBoxForm',
+                Data => \%Param,
+            );
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
+        }
+        else {
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminSelectBoxForm',
+                Data => \%Param,
+            );
+            $Output .= $Self->{LayoutObject}->Error();
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
+        }
+    }
+    else {
+        return $Self->{LayoutObject}->ErrorScreen(
+            Message => 'No Subaction!!',
+            Comment => 'Please contact your admin',
+        );
     }
 }
 

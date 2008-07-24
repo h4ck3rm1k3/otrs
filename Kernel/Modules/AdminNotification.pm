@@ -1,248 +1,128 @@
 # --
 # Kernel/Modules/AdminNotification.pm - provides admin notification translations
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminNotification.pm,v 1.36 2011/12/23 13:58:18 mg Exp $
+# $Id: AdminNotification.pm,v 1.8.4.1 2008/07/24 10:09:13 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AdminNotification;
 
 use strict;
-use warnings;
-
 use Kernel::System::Notification;
-use Kernel::System::HTMLUtils;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.36 $) [1];
+$VERSION = '$Revision: 1.8.4.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
+
+    # get common objects
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
 
     # check all needed objects
-    for my $Needed (qw(ParamObject DBObject LayoutObject ConfigObject LogObject)) {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    foreach (qw(ParamObject DBObject LayoutObject ConfigObject LogObject)) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
 
+    # lib object
     $Self->{NotificationObject} = Kernel::System::Notification->new(%Param);
-    $Self->{HTMLUtilsObject}    = Kernel::System::HTMLUtils->new(%Param);
 
     return $Self;
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
+    my $Output = '';
 
-    my @Params = (qw(Name Type Charset Language Subject Body UserID LanguageSelection));
+    my @Params = (qw(Name Type Charset Language Subject Body UserID));
     my %GetParam;
-    my $Note = '';
-    for my $Parameter (@Params) {
-        $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+    foreach (@Params) {
+        $GetParam{$_} = $Self->{ParamObject}->GetParam(Param => $_) || '';
     }
-    if ( !$GetParam{Language} && $GetParam{Name} ) {
-        if ( $GetParam{Name} =~ /^(.+?)(::.*)/ ) {
+    if (!$GetParam{Language} && $GetParam{Name}) {
+        if ($GetParam{Name} =~ /^(.+?)(::.*)/) {
             $GetParam{Language} = $1;
         }
     }
 
-    # get content type
-    my $ContentType = 'text/plain';
-    if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-        $ContentType = 'text/html';
-    }
-
-    # ------------------------------------------------------------ #
-    # Select language action
-    # ------------------------------------------------------------ #
-    if ( $Self->{Subaction} eq 'SelectLanguage' ) {
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->_MaskNotificationForm(
-            %GetParam,
-            %Param,
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
-
-    }
-
-    # ------------------------------------------------------------ #
     # get data 2 form
-    # ------------------------------------------------------------ #
-    if ( $Self->{Subaction} eq 'Change' ) {
+    if ($Self->{Subaction} eq 'Change') {
         my %Notification = $Self->{NotificationObject}->NotificationGet(%GetParam);
-        my $Output       = $Self->{LayoutObject}->Header();
+        $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Output .= $Self->_MaskNotificationForm(
-            %GetParam,
             %Param,
             %Notification,
         );
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
-
-    # ------------------------------------------------------------ #
     # update action
-    # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'ChangeAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        my %Errors;
-        my $Update;
-
-        # check for needed data
-        for my $Needed (qw(Subject Body)) {
-            if ( !$GetParam{$Needed} ) {
-                $Errors{ $Needed . 'Invalid' } = 'ServerError';
-            }
+    elsif ($Self->{Subaction} eq 'ChangeAction') {
+        if ($Self->{NotificationObject}->NotificationUpdate(%GetParam, UserID => $Self->{UserID})) {
+            return $Self->{LayoutObject}->Redirect(OP => "Action=AdminNotification");
         }
-
-        if ( !%Errors ) {
-            $Update = $Self->{NotificationObject}->NotificationUpdate(
-                %GetParam,
-                ContentType => $ContentType,
-                UserID      => $Self->{UserID},
-            );
-            if ($Update) {
-                $Note = $Self->{LayoutObject}->Notify( Info => 'Notification updated!' );
-            }
-        }
-
-        if ( %Errors || !$Update ) {
-            my %Notification = $Self->{NotificationObject}->NotificationGet(%GetParam);
-            my $Output       = $Self->{LayoutObject}->Header();
-            $Output .= $Self->{LayoutObject}->NavigationBar();
-            $Output .= $Self->_MaskNotificationForm(
-                %GetParam,
-                %Param,
-                %Notification,
-                %Errors,
-            );
-            $Output .= $Self->{LayoutObject}->Footer();
-            return $Output;
+        else {
+            return $Self->{LayoutObject}->Error();
         }
     }
-
-    # ------------------------------------------------------------ #
+    # add new response
+    elsif ($Self->{Subaction} eq 'AddAction') {
+        if (my $Id = $Self->{StdNotificationObject}->StdNotificationAdd(%GetParam, UserID => $Self->{UserID})) {
+            # add attachments to response
+            my @NewIDs = $Self->{ParamObject}->GetArray(Param => 'IDs');
+            $Self->{StdAttachmentObject}->SetStdAttachmentsOfNotificationID(
+                AttachmentIDsRef => \@NewIDs,
+                ID => $Id,
+                UserID => $Self->{UserID},
+            );
+            # show next page
+            return $Self->{LayoutObject}->Redirect(
+                OP => "Action=AdminNotifications",
+            );
+        }
+        else {
+            return $Self->{LayoutObject}->Error();
+        }
+    }
     # else ! print form
-    # ------------------------------------------------------------ #
-    my $Output = $Self->{LayoutObject}->Header();
-    $Output .= $Self->{LayoutObject}->NavigationBar();
-    $Output .= $Note;
-    $Self->{Action}    = 'AdminNotification';
-    $Self->{Subaction} = '';
-    $Output .= $Self->_MaskNotificationForm();
-    $Output .= $Self->{LayoutObject}->Footer();
-    return $Output;
+    else {
+        $Output = $Self->{LayoutObject}->Header();
+        $Output .= $Self->{LayoutObject}->NavigationBar();
+        $Output .= $Self->_MaskNotificationForm();
+        $Output .= $Self->{LayoutObject}->Footer();
+        return $Output;
+    }
 }
 
 sub _MaskNotificationForm {
-    my ( $Self, %Param ) = @_;
-
-    # get lenguages
-    my %Languages        = %{ $Self->{ConfigObject}->{DefaultUsedLanguages} };
-    my %UserData         = $Self->{UserObject}->GetUserData( UserID => $Self->{UserID} );
-    my $SelectedLanguage = $Param{LanguageSelection}
-        || $UserData{UserLanguage}
-        || $Self->{ConfigObject}->{DefaultLanguage};
-
-    # build LanguageOption string
-    $Param{LanguageOption} = $Self->{LayoutObject}->BuildSelection(
-        Data        => {%Languages},
-        Name        => 'LanguageSelection',
-        SelectedID  => $SelectedLanguage,
-        Translation => 0,
-        HTMLQuote   => 0,
+    my $Self = shift;
+    my %Param = @_;
+    # build NotificationOption string
+    $Param{'NotificationOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data => {$Self->{NotificationObject}->NotificationList()},
+        Name => 'Name',
+        Size => 15,
+        SelectedID => $Param{Name},
+        HTMLQuote => 1,
     );
 
-    $Self->{LayoutObject}->Block(
-        Name => 'ActionList',
-    );
-
-    #Show update form
-    if ( $Self->{Subaction} eq 'SelectLanguage' || !$Self->{Subaction} ) {
-
-        $Self->{LayoutObject}->Block(
-            Name => 'ActionLanguageOptions',
-            Data => \%Param,
-        );
-        $Self->{LayoutObject}->Block(
-            Name => 'NotificationFilter',
-        );
-        $Self->{LayoutObject}->Block(
-            Name => 'OverviewResult',
-        );
-
-        # get Notifications
-        my %NotificationList = $Self->{NotificationObject}->NotificationList();
-
-        for my $Notification ( sort { lc($a) cmp lc($b) } keys %NotificationList ) {
-            $Notification =~ /^(\w+)::(.*)$/;
-            my $LanguageKey      = $1;
-            my $NotificationType = $2;
-            next if $LanguageKey ne $SelectedLanguage;
-            $Self->{LayoutObject}->Block(
-                Name => 'OverviewResultRow',
-                Data => {
-                    Language => $Languages{$LanguageKey},
-                    Type     => $NotificationType,
-                    Name     => $Notification,
-                },
-            );
-        }
-    }
-    else {
-
-        $Self->{LayoutObject}->Block(
-            Name => 'ActionOverview',
-        );
-        $Self->{LayoutObject}->Block(
-            Name => 'OverviewUpdate',
-            Data => \%Param,
-        );
-
-        # add rich text editor
-        if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-            $Self->{LayoutObject}->Block(
-                Name => 'RichText',
-                Data => \%Param,
-            );
-
-            # reformat from plain to html
-            if ( $Param{ContentType} && $Param{ContentType} =~ /text\/plain/i ) {
-                $Param{Body} = $Self->{HTMLUtilsObject}->ToHTML(
-                    String => $Param{Body},
-                );
-            }
-        }
-        else {
-
-            # reformat from html to plain
-            if ( $Param{ContentType} && $Param{ContentType} =~ /text\/html/i ) {
-                $Param{Body} = $Self->{HTMLUtilsObject}->ToAscii(
-                    String => $Param{Body},
-                );
-            }
-        }
-    }
-
-    return $Self->{LayoutObject}->Output(
-        TemplateFile => 'AdminNotification',
-        Data         => \%Param
-    );
+    return $Self->{LayoutObject}->Output(TemplateFile => 'AdminNotificationForm', Data => \%Param);
 }
 
 1;

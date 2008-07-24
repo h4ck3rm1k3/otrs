@@ -1,60 +1,63 @@
 # --
 # Kernel/Modules/CustomerAccept.pm - to show an agent an login/changes info
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerAccept.pm,v 1.11 2009/02/16 11:20:53 tr Exp $
+# $Id: CustomerAccept.pm,v 1.4.4.1 2008/07/24 10:09:14 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::CustomerAccept;
 
 use strict;
-use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = '$Revision: 1.4.4.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
 
-    # check needed objects
-    for (qw(ParamObject DBObject LayoutObject LogObject ConfigObject)) {
-        if ( !$Self->{$_} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
+
+    # check needed Objects
+    foreach (qw(ParamObject DBObject LayoutObject LogObject ConfigObject)) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
 
-    $Self->{InfoKey}  = $Self->{ConfigObject}->Get('CustomerPanel::InfoKey');
+    $Self->{InfoKey} = $Self->{ConfigObject}->Get('CustomerPanel::InfoKey');
     $Self->{InfoFile} = $Self->{ConfigObject}->Get('CustomerPanel::InfoFile');
 
     return $Self;
 }
 
 sub PreRun {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     my $Output;
-    if ( !$Self->{RequestedURL} ) {
+    if (!$Self->{RequestedURL}) {
         $Self->{RequestedURL} = 'Action=';
     }
-
     # redirect if no primary group is selected
-    if ( !$Self->{ $Self->{InfoKey} } && $Self->{Action} ne 'CustomerAccept' ) {
-
-        # remove requested url from session storage
+    if (!$Self->{$Self->{InfoKey}} && $Self->{Action} ne 'CustomerAccept') {
+        # remove requested url from sesseion storage
         $Self->{SessionObject}->UpdateSessionID(
             SessionID => $Self->{SessionID},
-            Key       => 'UserRequestedURL',
-            Value     => $Self->{RequestedURL},
+            Key => 'UserRequestedURL',
+            Value => $Self->{RequestedURL},
         );
-        return $Self->{LayoutObject}->Redirect( OP => 'Action=CustomerAccept' );
+        return $Self->{LayoutObject}->Redirect(OP => 'Action=CustomerAccept');
     }
     else {
         return;
@@ -62,57 +65,49 @@ sub PreRun {
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
     my $Output;
-    if ( !$Self->{RequestedURL} ) {
+    if (!$Self->{RequestedURL}) {
         $Self->{RequestedURL} = 'Action=';
     }
-    my $Accept = $Self->{ParamObject}->GetParam( Param => 'Accept' ) || '';
-    if ( $Self->{ $Self->{InfoKey} } ) {
-
-        # remove requested url from session storage
+    my $Accept = $Self->{ParamObject}->GetParam(Param => 'Accept') || '';
+    if ($Self->{$Self->{InfoKey}}) {
+        # remove requested url from sesseion storage
         $Self->{SessionObject}->UpdateSessionID(
             SessionID => $Self->{SessionID},
-            Key       => 'UserRequestedURL',
-            Value     => '',
+            Key => 'UserRequestedURL',
+            Value => '',
         );
-
         # redirect
-        return $Self->{LayoutObject}->Redirect( OP => "$Self->{UserRequestedURL}" );
+        return $Self->{LayoutObject}->Redirect(OP => "$Self->{UserRequestedURL}");
     }
     elsif ($Accept) {
-
         # set session
         $Self->{SessionObject}->UpdateSessionID(
             SessionID => $Self->{SessionID},
-            Key       => $Self->{InfoKey},
-            Value     => 1,
+            Key => $Self->{InfoKey},
+            Value => 1,
         );
-
         # set preferences
         $Self->{UserObject}->SetPreferences(
             UserID => $Self->{UserID},
-            Key    => $Self->{InfoKey},
-            Value  => 1,
+            Key => $Self->{InfoKey},
+            Value => 1,
         );
-
-        # remove requested url from session storage
+        # remove requested url from sesseion storage
         $Self->{SessionObject}->UpdateSessionID(
             SessionID => $Self->{SessionID},
-            Key       => 'UserRequestedURL',
-            Value     => '',
+            Key => 'UserRequestedURL',
+            Value => '',
         );
-
         # redirect
-        return $Self->{LayoutObject}->Redirect( OP => "$Self->{UserRequestedURL}" );
+        return $Self->{LayoutObject}->Redirect(OP => "$Self->{UserRequestedURL}");
     }
     else {
-
         # show info
         $Output = $Self->{LayoutObject}->CustomerHeader();
-        $Output
-            .= $Self->{LayoutObject}->Output( TemplateFile => $Self->{InfoFile}, Data => \%Param );
+        $Output .= $Self->{LayoutObject}->Output(TemplateFile => $Self->{InfoFile}, Data => \%Param);
         $Output .= $Self->{LayoutObject}->CustomerFooter();
         return $Output;
     }

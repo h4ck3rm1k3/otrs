@@ -1,165 +1,117 @@
 # --
 # Kernel/Modules/AgentTicketHistory.pm - ticket history
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketHistory.pm,v 1.22 2012/01/24 00:08:45 cr Exp $
+# $Id: AgentTicketHistory.pm,v 1.7.2.1 2008/07/24 10:09:13 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AgentTicketHistory;
 
 use strict;
-use warnings;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.22 $) [1];
+$VERSION = '$Revision: 1.7.2.1 $';
+$VERSION =~ s/^\$.*:\W(.*)\W.+?$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
+    my $Self = {};
+    bless ($Self, $Type);
 
-    # check needed objects
-    for my $Needed (qw(DBObject TicketObject LayoutObject LogObject UserObject ConfigObject)) {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    foreach (keys %Param) {
+        $Self->{$_} = $Param{$_};
+    }
+
+    # check needed Objects
+    foreach (qw(DBObject TicketObject LayoutObject LogObject UserObject ConfigObject)) {
+        if (!$Self->{$_}) {
+            $Self->{LayoutObject}->FatalError(Message => "Got no $_!");
         }
     }
     return $Self;
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
-
+    my $Self = shift;
+    my %Param = @_;
+    my $Output;
     # check needed stuff
-    if ( !$Self->{TicketID} ) {
-
+    if (!$Self->{TicketID}) {
         # error page
         return $Self->{LayoutObject}->ErrorScreen(
-            Message => 'Can\'t show history, no TicketID is given!',
+            Message => "Can't show history, no TicketID is given!",
             Comment => 'Please contact the admin.',
         );
     }
-
     # check permissions
-    if (
-        !$Self->{TicketObject}->TicketPermission(
-            Type     => 'ro',
-            TicketID => $Self->{TicketID},
-            UserID   => $Self->{UserID},
-        )
-        )
-    {
-
+    if (!$Self->{TicketObject}->Permission(
+        Type => 'ro',
+        TicketID => $Self->{TicketID},
+        UserID => $Self->{UserID})) {
         # error screen, don't show ticket
-        return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
+        return $Self->{LayoutObject}->NoPermission(WithHeader => 'yes');
     }
-
-    # get ACL restrictions
-    $Self->{TicketObject}->TicketAcl(
-        Data          => '-',
-        TicketID      => $Self->{TicketID},
-        ReturnType    => 'Action',
-        ReturnSubType => '-',
-        UserID        => $Self->{UserID},
-    );
-    my %AclAction = $Self->{TicketObject}->TicketAclActionData();
-
-    # check if ACL resctictions if exist
-    if ( IsHashRefWithData( \%AclAction ) ) {
-
-        # show error screen if ACL prohibits this action
-        if ( defined $AclAction{ $Self->{Action} } && $AclAction{ $Self->{Action} } eq '0' ) {
-            return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
-        }
-    }
-
-    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Self->{TicketID} );
 
     my @Lines = $Self->{TicketObject}->HistoryGet(
         TicketID => $Self->{TicketID},
-        UserID   => $Self->{UserID},
+        UserID => $Self->{UserID},
     );
-    my $Tn = $Self->{TicketObject}->TicketNumberLookup( TicketID => $Self->{TicketID} );
-
+    my $Tn = $Self->{TicketObject}->TicketNumberLookup(TicketID => $Self->{TicketID});
     # get shown user info
     my @NewLines = ();
-    if ( $Self->{ConfigObject}->Get('Ticket::Frontend::HistoryOrder') eq 'reverse' ) {
-        @NewLines = reverse(@Lines);
+    if ($Self->{ConfigObject}->Get('Ticket::Frontend::HistoryOrder') eq 'reverse') {
+        @NewLines = reverse (@Lines);
     }
     else {
         @NewLines = @Lines;
     }
-    my $Table   = '';
-    my $Counter = 1;
-    for my $DataTmp (@NewLines) {
-        $Counter++;
+    my $Table = '';
+    foreach my $DataTmp (@NewLines) {
         my %Data = %{$DataTmp};
-
         # replace text
-        if ( $Data{Name} && $Data{Name} =~ m/^%%/x ) {
+        if ($Data{Name} && $Data{Name} =~ /^%%/) {
             my %Info = ();
-            $Data{Name} =~ s/^%%//xg;
-            my @Values = split( /%%/x, $Data{Name} );
+            $Data{Name} =~ s/^%%//g;
+            my @Values = split(/%%/, $Data{Name});
             $Data{Name} = '';
-            for my $Value (@Values) {
-                if ( $Data{Name} ) {
+            foreach (@Values) {
+                if ($Data{Name}) {
                     $Data{Name} .= "\", ";
                 }
-                $Data{Name} .= "\"$Value";
+                $Data{Name} .= "\"$_";
             }
-            if ( !$Data{Name} ) {
+            if (!$Data{Name}) {
                 $Data{Name} = '" ';
             }
-            $Data{Name} = $Self->{LayoutObject}->{LanguageObject}->Get(
-                'History::' . $Data{HistoryType} . '", ' . $Data{Name}
-            );
-
+            $Data{Name} = $Self->{LayoutObject}->{LanguageObject}->Get('History::'.$Data{HistoryType}.'", '.$Data{Name});
             # remove not needed place holder
-            $Data{Name} =~ s/\%s//xg;
+            $Data{Name} =~ s/\%s//g
         }
-
         $Self->{LayoutObject}->Block(
-            Name => 'Row',
+            Name => "Row",
             Data => {%Data},
         );
-
-        if ( $Data{ArticleID} ne "0" ) {
-            $Self->{LayoutObject}->Block(
-                Name => 'ShowLinkZoom',
-                Data => {%Data},
-            );
-        }
-        else {
-            $Self->{LayoutObject}->Block(
-                Name => 'NoLinkZoom',
-            );
-
-        }
     }
-
-    # build page
-    my $Output = $Self->{LayoutObject}->Header(
-        Value => $Tn,
-        Type  => 'Small',
-    );
+    # build header
+    $Output .= $Self->{LayoutObject}->Header(Value => $Tn);
+    $Output .= $Self->{LayoutObject}->NavigationBar();
+    # get output
     $Output .= $Self->{LayoutObject}->Output(
-        TemplateFile => 'AgentTicketHistory',
-        Data         => {
-            TicketNumber => $Tn,
-            TicketID     => $Self->{TicketID},
-            Title        => $Ticket{Title},
-        },
-    );
-    $Output .= $Self->{LayoutObject}->Footer(
-        Type => 'Small',
-    );
+            TemplateFile => 'AgentTicketHistory',
+            Data => {
+                TicketNumber => $Tn,
+                TicketID => $Self->{TicketID},
+            },
+        );
+    # add footer
+    $Output .= $Self->{LayoutObject}->Footer();
 
     return $Output;
 }
