@@ -1,35 +1,35 @@
 # --
 # Kernel/System/PostMaster/Filter/MatchDBSource.pm - sub part of PostMaster.pm
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: MatchDBSource.pm,v 1.21 2010/12/10 15:35:52 martin Exp $
+# $Id: MatchDBSource.pm,v 1.7.2.1 2008/08/11 22:52:55 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::PostMaster::Filter::MatchDBSource;
 
 use strict;
-use warnings;
-
 use Kernel::System::PostMaster::Filter;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.21 $) [1];
+$VERSION = '$Revision: 1.7.2.1 $';
+$VERSION =~ s/^.*:\s(\d+\.\d+)\s.*$/$1/;
 
 sub new {
-    my ( $Type, %Param ) = @_;
+    my $Type = shift;
+    my %Param = @_;
 
     # allocate new hash for object
     my $Self = {};
-    bless( $Self, $Type );
+    bless ($Self, $Type);
 
     $Self->{Debug} = $Param{Debug} || 0;
 
-    # get needed objects
-    for (qw(ConfigObject LogObject DBObject ParserObject)) {
+    # get needed opbjects
+    foreach (qw(ConfigObject LogObject DBObject ParseObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -39,58 +39,46 @@ sub new {
 }
 
 sub Run {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
+    my %Param = @_;
+    # get config options
+    my %Config = ();
+    my %Match = ();
+    my %Set = ();
 
-    # check needed stuff
-    for (qw(JobConfig GetParam)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # get all db filters
     my %JobList = $Self->{PostMasterFilter}->FilterList();
-    for ( sort keys %JobList ) {
-
-        # get config options
-        my %Config = $Self->{PostMasterFilter}->FilterGet( Name => $_ );
-        my %Match;
-        my %Set;
-        if ( $Config{Match} ) {
-            %Match = %{ $Config{Match} };
+    foreach (sort keys %JobList) {
+        %Config = $Self->{PostMasterFilter}->FilterGet(Name => $_);
+        if ($Config{Match}) {
+            %Match = %{$Config{Match}};
         }
-        if ( $Config{Set} ) {
-            %Set = %{ $Config{Set} };
+        if ($Config{Set}) {
+            %Set = %{$Config{Set}};
         }
-        my $StopAfterMatch = $Config{StopAfterMatch} || 0;
         my $Prefix = '';
-        if ( $Config{Name} ) {
+        if ($Config{Name}) {
             $Prefix = "Filter: '$Config{Name}' ";
         }
-
         # match 'Match => ???' stuff
-        my $Matched    = '';
+        my $Matched = '';
         my $MatchedNot = 0;
-        for ( keys %Match ) {
-
-            # match only email addresses
-            if ( $Param{GetParam}->{$_} && $Match{$_} =~ /^EMAILADDRESS:(.*)$/ ) {
-                my $SearchEmail    = $1;
-                my @EmailAddresses = $Self->{ParserObject}->SplitAddressLine(
+        foreach (keys %Match) {
+            if ($Param{GetParam}->{$_} && $Match{$_} =~ /^EMAILADDRESS:(.*)$/) {
+                my $SearchEmail = $1;
+                my @EmailAddresses = $Self->{ParseObject}->SplitAddressLine(
                     Line => $Param{GetParam}->{$_},
                 );
                 my $LocalMatched;
-                for my $Recipients (@EmailAddresses) {
-                    my $Email = $Self->{ParserObject}->GetEmailAddress( Email => $Recipients );
-                    next if !$Email;
-                    if ( $Email =~ /^$SearchEmail$/i ) {
+                foreach my $RawEmail (@EmailAddresses) {
+                    my $Email = $Self->{ParseObject}->GetEmailAddress(
+                        Email => $RawEmail,
+                    );
+                    if ($Email =~ /^$SearchEmail$/i) {
                         $LocalMatched = $SearchEmail || 1;
-                        if ( $Self->{Debug} > 1 ) {
+                        if ($Self->{Debug} > 1) {
                             $Self->{LogObject}->Log(
                                 Priority => 'debug',
-                                Message =>
-                                    "$Prefix'$Param{GetParam}->{$_}' =~ /$Match{$_}/i matched!",
+                                Message => "$Prefix'$Param{GetParam}->{$_}' =~ /$Match{$_}/i matched!",
                             );
                         }
                         last;
@@ -103,56 +91,34 @@ sub Run {
                     $Matched = $LocalMatched;
                 }
             }
-
-            # match string
-            elsif ( $Param{GetParam}->{$_} && $Param{GetParam}->{$_} =~ /$Match{$_}/i ) {
-
-                # don't lose older match values if more than one header is
-                # used for matching.
-                if ($1) {
-                    $Matched = $1;
-                }
-                else {
-                    $Matched = $Matched || '1';
-                }
-                if ( $Self->{Debug} > 1 ) {
+            elsif ($Param{GetParam}->{$_} && $Param{GetParam}->{$_} =~ /$Match{$_}/i) {
+                $Matched = $1 || '1';
+                if ($Self->{Debug} > 1) {
                     $Self->{LogObject}->Log(
                         Priority => 'debug',
-                        Message  => "$Prefix'$Param{GetParam}->{$_}' =~ /$Match{$_}/i matched!",
+                        Message => "$Prefix'$Param{GetParam}->{$_}' =~ /$Match{$_}/i matched!",
                     );
                 }
             }
             else {
                 $MatchedNot = 1;
-                if ( $Self->{Debug} > 1 ) {
+                if ($Self->{Debug} > 1) {
                     $Self->{LogObject}->Log(
                         Priority => 'debug',
-                        Message  => "$Prefix'$Param{GetParam}->{$_}' =~ /$Match{$_}/i matched NOT!",
+                        Message => "$Prefix'$Param{GetParam}->{$_}' =~ /$Match{$_}/i matched NOT!",
                     );
                 }
             }
         }
-
         # should I ignore the incoming mail?
-        if ( $Matched && !$MatchedNot ) {
-            for ( keys %Set ) {
+        if ($Matched && !$MatchedNot) {
+            foreach (keys %Set) {
                 $Set{$_} =~ s/\[\*\*\*\]/$Matched/;
                 $Param{GetParam}->{$_} = $Set{$_};
-                $Self->{LogObject}->Log(
-                    Priority => 'notice',
-                    Message  => $Prefix
-                        . "Set param '$_' to '$Set{$_}' (Message-ID: $Param{GetParam}->{'Message-ID'}) ",
+                    $Self->{LogObject}->Log(
+                        Priority => 'notice',
+                        Message => $Prefix."Set param '$_' to '$Set{$_}' (Message-ID: $Param{GetParam}->{'Message-ID'}) ",
                 );
-            }
-
-            # stop after match
-            if ($StopAfterMatch) {
-                $Self->{LogObject}->Log(
-                    Priority => 'notice',
-                    Message  => $Prefix
-                        . "Stopped filter processing because of used 'StopAfterMatch' (Message-ID: $Param{GetParam}->{'Message-ID'}) ",
-                );
-                return 1;
             }
         }
     }
