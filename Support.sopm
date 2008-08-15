@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-    <CVS>$Id: Support.sopm,v 1.13 2008/08/04 06:23:06 martin Exp $</CVS>
+    <CVS>$Id: Support.sopm,v 1.14 2008/08/15 08:03:27 ho Exp $</CVS>
     <Name>Support</Name>
     <Version>0.0.0</Version>
     <Framework>2.3.x</Framework>
@@ -9,7 +9,7 @@
     <Vendor>OTRS AG</Vendor>
     <URL>http://otrs.org/</URL>
     <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
-    <Description Lang="en">Is verifying System Settings and gives some perfocemance tips.</Description>
+    <Description Lang="en">Verifies System Settings and gives some performance tips.</Description>
     <Description Lang="de">Prüft fehlerhafte System Einstellungen und gibt Performance Tips.</Description>
     <IntroInstallPost Title="Notice - Introduction" Lang="en">The Support application will be found at the admin navigation bar in the fourth column and can be used for system checks to find setup errors.</IntroInstallPost>
     <IntroInstallPost Title="Hinweis - Einfuerhrung" Lang="de">Die Support Applikation ist in der Admin-Navigationsleiste, in der vierten Spalte zu finden. Mit ihr koennen System-Checks ausgeführt werden um Fehler im Setup zu finden.</IntroInstallPost>
