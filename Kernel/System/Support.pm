@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.21 2008/08/04 06:22:24 martin Exp $
+# $Id: Support.pm,v 1.22 2008/09/03 15:30:30 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -24,7 +24,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.21 $) [1];
+$VERSION = qw($Revision: 1.22 $) [1];
 
 =head1 NAME
 
@@ -274,8 +274,6 @@ sub _ARCHIVELookup {
 #            print STDERR "Directory: $File\n";
         }
         else {
-            # do no md5 sum on > 12MB files
-            next if ( -s $File > (1024*1024*12) );
             my $OrigFile = $File;
             $File =~ s/\Q$Param{Home}\E//;
             $File =~ s/^\/(.*)$/$1/;
@@ -286,17 +284,13 @@ sub _ARCHIVELookup {
                 && $File !~ /^var\/tmp/
                 )
             {
-                if (! open( IN, '<', $OrigFile ) ) {
-                    $Self->{LogObject}->Log(
-                        Priority => 'error',
-                        Message  => "Can't read: $OrigFile: $!",
-                    );
-                    next;
+                my $Content = '';
+                open( IN, '<', $OrigFile ) || die "ERROR: $OrigFile: $!";
+                while (<IN>) {
+                    $Content .= $_;
                 }
-                my $ctx = Digest::MD5->new;
-                $ctx->addfile(*IN);
-                my $Digest = $ctx->hexdigest();
                 close(IN);
+                my $Digest = md5_hex($Content);
                 if ( !$Param{Compare}->{$File} ) {
                     $Param{Compare}->{$File} = "New $File";
                 }
@@ -322,10 +316,35 @@ sub ArchiveApplication {
     }
 
     my @List = $Self->DirectoryFiles( Directory => $Home );
-#print STDERR "LIST\n";
+
     # add files to the tar archive
     my $TarObject = Archive::Tar->new();
     $TarObject->add_files(@List);
+
+    #Mask Passwords in Config.pm
+    my $HomeWithoutSlash = $Home;
+    $HomeWithoutSlash =~ s/^\///;
+    my $Config = $TarObject->get_content( "$HomeWithoutSlash/Kernel/Config.pm" );
+
+    my @TrimAction = (
+        'DatabasePw',
+        'SearchUserPw',
+        'UserPw',
+        'SendmailModule::AuthPassword',
+        'AuthModule::Radius::Password',
+        'PGP::Key::Password',
+        'Customer::AuthModule::DB::CustomerPassword',
+        'Customer::AuthModule::Radius::Password',
+    );
+
+    ACTION:
+    for ( @TrimAction ) {
+        next ACTION if !$_;
+        $Config =~ s/(^\s+\$Self.*?$_.*?=.*?)\'.*?\';/$1\'xxx\';/mg;
+    }
+    $Config =~ s/(^\s+Password.*?=>.*?)\'.*?\',/$1\'xxx\',/mg;
+
+    $TarObject->replace_content( "$HomeWithoutSlash/Kernel/Config.pm", $Config );
     $TarObject->write( $Archive, 0 ) || die "Could not write: $_!";
 
 #print STDERR "ARCHIVE\n";
@@ -337,9 +356,9 @@ sub ArchiveApplication {
         $TmpTar .= $_;
     }
     close($Tar);
+
     if ( $Self->{MainObject}->Require("Compress::Zlib") ) {
         my $GzTar = Compress::Zlib::memGzip($TmpTar);
-        $TmpTar = undef;
 #print STDERR "Compress\n";
         return ( \$GzTar, 'application.tar.gz');
     }
@@ -361,6 +380,7 @@ sub DirectoryFiles {
 
     my @Files = ();
     my @List = glob("$Param{Directory}/*");
+    my $Home = $Self->{ConfigObject}->Get('Home');
 
     for my $File (@List) {
         if (-d $File ) {
@@ -376,25 +396,11 @@ sub DirectoryFiles {
             if ( $File =~ /#/ ) {
                 next;
             }
-            # do not use /var/article, /var/tmp and /supportinfo directories
-            if ( $File =~ /\/(var\/article|var\/tmp|supportinfo)/ ) {
+            if ( $File =~ /\/(var\/article|var\/tmp)/ ) {
                 next;
             }
-            # do only use files not over 1 MB in var/ dir
-            my $SizeMaxVar = 1024*1024*1;
-            # do only use files not over 2.5 MB in rest
-            my $SizeMax = 1024*1024*2.5;
-            if ( $File =~ /var\// ) {
-                $SizeMax = $SizeMaxVar;
-            }
-
-            if ( -s $File > $SizeMax ) {
-                my $Size = -s $File;
-                $Size = $Size / 1024;
-                $Self->{LogObject}->Log(
-                    Priority => 'notice',
-                    Message  => "Do not use this file ($File) for archive, because it's $Size kb!",
-                );
+            if ( -s $File > (1024*1024*0.5) ) {
+#print STDERR "NO: $File\n";
                 next;
             }
             push @Files, $File;
@@ -407,11 +413,34 @@ sub DirectoryFiles {
 sub SendInfo {
     my ( $Self, %Param ) = @_;
 
+    # set default value
+    $Param{CustomerInfo} ||= {};
+
     # create log package
     my ($LogPreContent, $LogPreFilename ) = $Self->LogLast( Type => 'log_pre' );
 
     # create check package
     my $DataHash = $Self->AdminChecksGet();
+
+    my @CustomerInfo;
+    ROW:
+    for my $Row ( sort keys %{ $Param{CustomerInfo} } ) {
+
+        next ROW if !$Row;
+        next ROW if !$Param{CustomerInfo}->{$Row};
+
+        my %Check = (
+
+            Check       => 'OK',
+            Comment     => $Param{CustomerInfo}->{$Row},
+            Description => 'Customer Info',
+            Name        => $Row,
+        );
+        push @CustomerInfo, \%Check;
+    }
+
+    $DataHash->{CustomerInfo} = \@CustomerInfo;
+
     my $XMLCheck = $Self->XMLStringCreate( DataHash => $DataHash, );
 
     # create application package
@@ -482,13 +511,6 @@ sub SendInfo {
         ],
     );
 
-    if ( !$Send ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't send package to: support\@otrs.com!",
-        );
-        return;
-    }
     return 1;
 }
 
@@ -603,6 +625,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.21 $ $Date: 2008/08/04 06:22:24 $
+$Revision: 1.22 $ $Date: 2008/09/03 15:30:30 $
 
 =cut
