@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.14 2008/07/22 08:36:40 martin Exp $
+# $Id: AdminSupport.pm,v 1.15 2008/09/03 15:31:43 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.14 $) [1];
+$VERSION = qw($Revision: 1.15 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -74,7 +74,7 @@ sub Run {
 
         # get params
         my %CustomerInfo;
-        for my $Key (qw(Sender Company Street Postcode City Phone SendInfo) ) {
+        for my $Key (qw(Sender Company Street Postcode City Phone SendInfo BugzillaID) ) {
             $CustomerInfo{$Key} = $Self->{ParamObject}->GetParam( Param => $Key );
         };
 
@@ -91,7 +91,7 @@ sub Run {
             );
 
             my $SendMessage = $Self->{SupportObject}->SendInfo(
-                %CustomerInfo,
+                CustomerInfo => \%CustomerInfo,
             );
             if ( $SendMessage ) {
                 $Output .= $Self->{LayoutObject}->Notify(
