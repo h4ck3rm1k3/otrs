@@ -1,12 +1,12 @@
 # --
 # Kernel/Output/HTML/CustomerUserGenericTicket.pm
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerUserGenericTicket.pm,v 1.20 2012/01/23 14:43:21 mg Exp $
+# $Id: CustomerUserGenericTicket.pm,v 1.2.2.1 2008/10/04 14:50:18 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Output::HTML::CustomerUserGenericTicket;
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.20 $) [1];
+$VERSION = qw($Revision: 1.2.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -25,10 +25,7 @@ sub new {
     bless( $Self, $Type );
 
     # get needed objects
-    for (
-        qw(ConfigObject LogObject DBObject LayoutObject TicketObject MainObject EncodeObject UserID)
-        )
-    {
+    for (qw(ConfigObject LogObject DBObject LayoutObject TicketObject MainObject UserID)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -38,18 +35,13 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    # don't show ticket search links in the print views
-    if ( $Self->{LayoutObject}->{Action} =~ m{Print$}smx ) {
-        return;
-    }
-
     # lookup map
     my %Lookup = (
         Types => {
             Object => 'Kernel::System::Type',
             Return => 'TypeIDs',
             Input  => 'Type',
-            Method => 'TypeLookup',
+            Method => 'Lookup',
         },
         Queues => {
             Object => 'Kernel::System::Queue',
@@ -61,31 +53,31 @@ sub Run {
             Object => 'Kernel::System::State',
             Return => 'StateIDs',
             Input  => '',
-            Method => '',
+            Method => 'Lookup',
         },
         Priorities => {
             Object => 'Kernel::System::Priority',
             Return => 'PriorityIDs',
             Input  => 'Priority',
-            Method => 'PriorityLookup',
+            Method => 'Lookup',
         },
-        Locks => {
-            Object => 'Kernel::System::Lock',
-            Return => 'LockIDs',
+        Looks => {
+            Object => 'Kernel::System::Look',
+            Return => 'LookIDs',
             Input  => 'Lock',
-            Method => 'LockLookup',
+            Method => 'Lookup',
         },
         Services => {
             Object => 'Kernel::System::Service',
             Return => 'ServiceIDs',
             Input  => 'Name',
-            Method => 'ServiceLookup',
+            Method => 'Lookup',
         },
         SLAs => {
             Object => 'Kernel::System::SLA',
             Return => 'SLAIDs',
             Input  => 'Name',
-            Method => 'SLALookup',
+            Method => 'Lookup',
         },
     );
 
@@ -99,7 +91,7 @@ sub Run {
         # do lookups
         if ( $Lookup{$Key} ) {
             next if !$Self->{MainObject}->Require( $Lookup{$Key}->{Object} );
-            my $Object = $Lookup{$Key}->{Object}->new( %{$Self} );
+            my $Object = $Lookup{$Key}->{Object}->new( %{ $Self } );
             my $Method = $Lookup{$Key}->{Method};
             $Value = $Object->$Method( $Lookup{$Key}->{Input} => $Value );
             $Key = $Lookup{$Key}->{Return};
@@ -108,7 +100,7 @@ sub Run {
         # build link and search attributes
         if ( $Key =~ /IDs$/ ) {
             if ( !$TicketSearch{$Key} ) {
-                $TicketSearch{$Key} = [$Value];
+                $TicketSearch{$Key} = [ $Value ];
             }
             else {
                 push @{ $TicketSearch{$Key} }, $Value;
@@ -119,7 +111,7 @@ sub Run {
         }
         elsif ( !ref $TicketSearch{$Key} ) {
             my $ValueTmp = $TicketSearch{$Key};
-            $TicketSearch{$Key} = [$ValueTmp];
+            $TicketSearch{$Key} = [ $ValueTmp ];
         }
         else {
             push @{ $TicketSearch{$Key} }, $Value;
@@ -127,51 +119,42 @@ sub Run {
     }
 
     # build url
-
-    # note:
-    # "special characters" in customer id have to be escaped, so that DB::QueryCondition works
-    my $CustomerIDEscaped
-        = $Self->{DBObject}->QueryStringEscape( QueryString => $Param{Data}->{UserCustomerID} );
-
     my $Action    = $Param{Config}->{Action};
     my $Subaction = $Param{Config}->{Subaction};
-    my $URL       = $Self->{LayoutObject}->{Baselink} . "Action=$Action;Subaction=$Subaction";
-    $URL .= ';CustomerID=' . $Self->{LayoutObject}->LinkEncode($CustomerIDEscaped);
+    my $URL       = $Self->{LayoutObject}->{Baselink} . "Action=$Action&Subaction=$Subaction";
+    $URL .= "&CustomerID=" . $Self->{LayoutObject}->LinkQuote(
+        Text => $Param{Data}->{UserCustomerID},
+    );
     for my $Key ( sort keys %TicketSearch ) {
         if ( ref $TicketSearch{$Key} eq 'ARRAY' ) {
             for my $Value ( @{ $TicketSearch{$Key} } ) {
-                $URL .= ';' . $Key . '=' . $Self->{LayoutObject}->LinkEncode($Value);
+                $URL .= '&' . $Key . '=' . $Self->{LayoutObject}->LinkQuote(
+                    Text => $Value,
+                );
             }
         }
         else {
-            $URL .= ';' . $Key . '=' . $Self->{LayoutObject}->LinkEncode( $TicketSearch{$Key} );
+            $URL .= '&' . $Key . '=' . $Self->{LayoutObject}->LinkQuote(
+                Text => $TicketSearch{$Key},
+            );
         }
     }
 
-    if ( defined $Param{Config}->{CustomerUserLogin} && $Param{Config}->{CustomerUserLogin} ) {
-        my $CustomerUserLoginEscaped = $Self->{DBObject}->QueryStringEscape(
-            QueryString => $Param{Data}->{UserLogin},
-        );
-
-        $TicketSearch{CustomerUserLogin} = $CustomerUserLoginEscaped;
-        $URL .= ';CustomerUserLogin='
-            . $Self->{LayoutObject}->LinkEncode($CustomerUserLoginEscaped);
-    }
-
-    my $Count = $Self->{TicketObject}->TicketSearch(
+    my @TicketIDs = $Self->{TicketObject}->TicketSearch(
 
         # result (required)
         %TicketSearch,
-        CustomerID => $CustomerIDEscaped,
-        CacheTTL   => 60 * 2,
-        Result     => 'COUNT',
+        CustomerID => $Param{Data}->{UserCustomerID},
+        Result     => 'ARRAY',
         Permission => 'ro',
         UserID     => $Self->{UserID},
     );
 
-    my $CSSClass = $Param{Config}->{CSSClassNoOpenTicket};
+    my $Count = scalar @TicketIDs;
+
+    my $Image = $Param{Config}->{ImageNoOpenTicket};
     if ($Count) {
-        $CSSClass = $Param{Config}->{CSSClassOpenTicket};
+        $Image = $Param{Config}->{ImageOpenTicket};
     }
 
     # generate block
@@ -179,7 +162,7 @@ sub Run {
         Name => 'CustomerItemRow',
         Data => {
             %{ $Param{Config} },
-            CSSClass  => $CSSClass,
+            Image     => $Image,
             Extention => " ($Count)",
             URL       => $URL,
         },
