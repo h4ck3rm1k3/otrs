@@ -1,17 +1,16 @@
 # --
 # LinkObject.t - link object module testscript
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: LinkObject.t,v 1.20 2010/10/29 07:58:22 mg Exp $
+# $Id: LinkObject.t,v 1.14.2.1 2008/10/06 15:37:24 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 use strict;
 use warnings;
-use vars (qw($Self));
 use utf8;
 
 use vars qw($Self);
@@ -20,22 +19,10 @@ use Data::Dumper;
 use Kernel::System::Ticket;
 use Kernel::System::LinkObject;
 use Kernel::System::User;
-use Kernel::Config;
 
-# create local objects
-my $ConfigObject = Kernel::Config->new();
-my $TicketObject = Kernel::System::Ticket->new(
-    %{$Self},
-    ConfigObject => $ConfigObject,
-);
-my $LinkObject = Kernel::System::LinkObject->new(
-    %{$Self},
-    ConfigObject => $ConfigObject,
-);
-my $UserObject = Kernel::System::User->new(
-    %{$Self},
-    ConfigObject => $ConfigObject,
-);
+$Self->{TicketObject} = Kernel::System::Ticket->new( %{$Self} );
+$Self->{LinkObject}   = Kernel::System::LinkObject->new( %{$Self} );
+$Self->{UserObject}   = Kernel::System::User->new( %{$Self} );
 
 # ------------------------------------------------------------ #
 # make preparations
@@ -45,8 +32,8 @@ my $UserObject = Kernel::System::User->new(
 my @UserIDs;
 
 # disable email checks to create new user
-$ConfigObject->Get('CheckEmailAddresses') || 1;
-$ConfigObject->Set(
+my $CheckEmailAddressesOrg = $Self->{ConfigObject}->Get('CheckEmailAddresses') || 1;
+$Self->{ConfigObject}->Set(
     Key   => 'CheckEmailAddresses',
     Value => 0,
 );
@@ -54,7 +41,7 @@ $ConfigObject->Set(
 for my $Counter ( 1 .. 2 ) {
 
     # create new users for the tests
-    my $UserID = $UserObject->UserAdd(
+    my $UserID = $Self->{UserObject}->UserAdd(
         UserFirstname => 'LinkObject' . $Counter,
         UserLastname  => 'UnitTest',
         UserLogin     => 'UnitTest-LinkObject-' . $Counter . int rand 1_000_000,
@@ -66,6 +53,12 @@ for my $Counter ( 1 .. 2 ) {
     push @UserIDs, $UserID;
 }
 
+# restore original email check param
+$Self->{ConfigObject}->Set(
+    Key   => 'CheckEmailAddresses',
+    Value => $CheckEmailAddressesOrg,
+);
+
 # create needed random type names
 my @TypeNames;
 for my $Counter ( 1 .. 100 ) {
@@ -74,13 +67,12 @@ for my $Counter ( 1 .. 100 ) {
 
 # read ticket backend file
 my $TicketBackendContent = $Self->{MainObject}->FileRead(
-    Location => $ConfigObject->Get('Home')
-        . '/scripts/test/sample/LinkObject/LinkBackendDummy.pm',
-    Result => 'SCALAR',
+    Location => $Self->{ConfigObject}->Get('Home') . '/scripts/test/sample/LinkBackendDummy.pm',
+    Result   => 'SCALAR',
 );
 
 # get location of the backend modules
-my $BackendLocation = $ConfigObject->Get('Home') . '/Kernel/System/LinkObject/';
+my $BackendLocation = $Self->{ConfigObject}->Get('Home') . '/Kernel/System/LinkObject/';
 
 # create needed random object names
 my @ObjectNames;
@@ -106,13 +98,13 @@ for my $Counter ( 1 .. 100 ) {
 }
 
 # save original LinkObject::Type settings
-my %TypesOrg = %{ $ConfigObject->Get('LinkObject::Type') };
+my %TypesOrg = %{ $Self->{ConfigObject}->Get('LinkObject::Type') };
 
 # save original LinkObject::TypeGroup settings
-my %TypeGroupsOrg = %{ $ConfigObject->Get('LinkObject::TypeGroup') };
+my %TypeGroupsOrg = %{ $Self->{ConfigObject}->Get('LinkObject::TypeGroup') };
 
 # save original LinkObject::PossibleLink settings
-my %PossibleLinksOrg = %{ $ConfigObject->Get('LinkObject::PossibleLink') };
+my %PossibleLinksOrg = %{ $Self->{ConfigObject}->Get('LinkObject::PossibleLink') };
 
 my $TestCount = 1;
 
@@ -426,7 +418,7 @@ for my $Test ( @{$TypeData} ) {
     if ( $Source->{ConfigSet} && $Source->{ConfigSet}->{Name} ) {
 
         # get original option
-        my $ConfiguredOptions = $ConfigObject->Get('LinkObject::Type');
+        my $ConfiguredOptions = $Self->{ConfigObject}->Get('LinkObject::Type');
 
         # add new option
         $ConfiguredOptions->{ $Source->{ConfigSet}->{Name} } = {
@@ -435,7 +427,7 @@ for my $Test ( @{$TypeData} ) {
         };
 
         # add new type
-        $ConfigObject->Set(
+        $Self->{ConfigObject}->Set(
             Key   => 'LinkObject::Type',
             Value => $ConfiguredOptions,
         );
@@ -443,21 +435,21 @@ for my $Test ( @{$TypeData} ) {
     else {
 
         # get original option
-        my $ConfiguredOptions = $ConfigObject->Get('LinkObject::Type');
+        my $ConfiguredOptions = $Self->{ConfigObject}->Get('LinkObject::Type');
 
         # delete option
         $Source->{TypeGet}->{Name} ||= '';
         delete $ConfiguredOptions->{ $Source->{TypeGet}->{Name} };
 
         # add new type
-        $ConfigObject->Set(
+        $Self->{ConfigObject}->Set(
             Key   => 'LinkObject::Type',
             Value => $ConfiguredOptions,
         );
     }
 
     # lookup type id
-    my $TypeID = $LinkObject->TypeLookup(
+    my $TypeID = $Self->{LinkObject}->TypeLookup(
         Name   => $Source->{TypeGet}->{Name},
         UserID => $Source->{TypeGet}->{UserID},
     );
@@ -469,7 +461,7 @@ for my $Test ( @{$TypeData} ) {
             "Test $TestCount: TypeLookup() - return valid type id '$TypeID' for type name '$Source->{TypeGet}{Name}'",
         );
 
-        my $TypeName = $LinkObject->TypeLookup(
+        my $TypeName = $Self->{LinkObject}->TypeLookup(
             TypeID => $TypeID,
             UserID => 1,
         );
@@ -489,7 +481,7 @@ for my $Test ( @{$TypeData} ) {
     }
 
     # get type data
-    my %TypeGet = $LinkObject->TypeGet(
+    my %TypeGet = $Self->{LinkObject}->TypeGet(
         TypeID => $TypeID,
         UserID => $Source->{TypeGet}->{UserID},
     );
@@ -514,7 +506,7 @@ for my $Test ( @{$TypeData} ) {
         }
 
         # get type list
-        my %TypeList = $LinkObject->TypeList(
+        my %TypeList = $Self->{LinkObject}->TypeList(
             UserID => 1,
         );
 
@@ -568,7 +560,7 @@ continue {
 }
 
 # restore original LinkObject::Type settings
-$ConfigObject->Set(
+$Self->{ConfigObject}->Set(
     Key   => 'LinkObject::Type',
     Value => \%TypesOrg,
 );
@@ -580,7 +572,7 @@ $ConfigObject->Set(
 for my $Valid ( 0 .. 1 ) {
 
     # get state list
-    my %StateList = $LinkObject->StateList(
+    my %StateList = $Self->{LinkObject}->StateList(
         Valid  => $Valid,
         UserID => 1,
     );
@@ -603,7 +595,7 @@ for my $Valid ( 0 .. 1 ) {
         );
 
         # lookup the state name
-        my $LookupName = $LinkObject->StateLookup(
+        my $LookupName = $Self->{LinkObject}->StateLookup(
             StateID => $StateID,
             UserID  => 1,
         );
@@ -616,7 +608,7 @@ for my $Valid ( 0 .. 1 ) {
         );
 
         # lookup the state id
-        my $LookupStateID = $LinkObject->StateLookup(
+        my $LookupStateID = $Self->{LinkObject}->StateLookup(
             Name   => $StateList{$StateID},
             UserID => 1,
         );
@@ -695,7 +687,7 @@ for my $Test ( @{$ObjectData} ) {
     }
 
     # lookup the object id
-    my $ObjectID = $LinkObject->ObjectLookup(
+    my $ObjectID = $Self->{LinkObject}->ObjectLookup(
         Name   => $Test->{SourceName},
         UserID => 1,
     );
@@ -716,7 +708,7 @@ for my $Test ( @{$ObjectData} ) {
     next OBJECTTEST if !$ObjectID;
 
     # lookup the name
-    my $LookupName = $LinkObject->ObjectLookup(
+    my $LookupName = $Self->{LinkObject}->ObjectLookup(
         ObjectID => $ObjectID,
         UserID   => 1,
     );
@@ -729,7 +721,7 @@ for my $Test ( @{$ObjectData} ) {
     );
 
     # lookup the object id a second time
-    my $ObjectID2 = $LinkObject->ObjectLookup(
+    my $ObjectID2 = $Self->{LinkObject}->ObjectLookup(
         Name   => $Test->{SourceName},
         UserID => 1,
     );
@@ -760,7 +752,7 @@ continue {
     }
 
     # add new types to config
-    $ConfigObject->Set(
+    $Self->{ConfigObject}->Set(
         Key   => 'LinkObject::Type',
         Value => $Settings,
     );
@@ -815,7 +807,7 @@ continue {
     };
 
     # create above config settings for later tests
-    $ConfigObject->Set(
+    $Self->{ConfigObject}->Set(
         Key   => 'LinkObject::PossibleLink',
         Value => $PossibleLinksConfig,
     );
@@ -844,7 +836,7 @@ my %PossibleLinksReference = (
 # run possible links tests
 # ------------------------------------------------------------ #
 
-my %PossibleLinkList = $LinkObject->PossibleLinkList(
+my %PossibleLinkList = $Self->{LinkObject}->PossibleLinkList(
     UserID => 1,
 );
 
@@ -966,7 +958,7 @@ continue {
     };
 
     # create above config settings for later tests
-    $ConfigObject->Set(
+    $Self->{ConfigObject}->Set(
         Key   => 'LinkObject::PossibleLink',
         Value => $PossibleLinksConfig,
     );
@@ -1084,7 +1076,7 @@ for my $Test ( @{$PossibleObjectsReference} ) {
     }
 
     # get possible objects list
-    my %PossibleObjectsList = $LinkObject->PossibleObjectsList(
+    my %PossibleObjectsList = $Self->{LinkObject}->PossibleObjectsList(
         %{ $Test->{SourceData} },
     );
 
@@ -1220,7 +1212,7 @@ continue {
     };
 
     # create above config settings for later tests
-    $ConfigObject->Set(
+    $Self->{ConfigObject}->Set(
         Key   => 'LinkObject::PossibleLink',
         Value => $PossibleLinksConfig,
     );
@@ -1356,7 +1348,7 @@ for my $Test ( @{$PossibleTypesReference} ) {
     }
 
     # get possible objects list
-    my %PossibleTypesList = $LinkObject->PossibleTypesList(
+    my %PossibleTypesList = $Self->{LinkObject}->PossibleTypesList(
         %{ $Test->{SourceData} },
     );
 
@@ -1407,7 +1399,7 @@ continue {
     }
 
     # add new types to config
-    $ConfigObject->Set(
+    $Self->{ConfigObject}->Set(
         Key   => 'LinkObject::Type',
         Value => $Settings,
     );
@@ -1450,7 +1442,7 @@ continue {
     };
 
     # create above config settings for later tests
-    $ConfigObject->Set(
+    $Self->{ConfigObject}->Set(
         Key   => 'LinkObject::TypeGroup',
         Value => $TypeGroupConfig,
     );
@@ -1482,7 +1474,7 @@ my %TypeGroupReference = (
 # ------------------------------------------------------------ #
 
 # get type group list
-my %TypeGroupList = $LinkObject->TypeGroupList(
+my %TypeGroupList = $Self->{LinkObject}->TypeGroupList(
     UserID => 1,
 );
 
@@ -1549,7 +1541,7 @@ continue {
     }
 
     # add new types to config
-    $ConfigObject->Set(
+    $Self->{ConfigObject}->Set(
         Key   => 'LinkObject::Type',
         Value => $Settings,
     );
@@ -1578,7 +1570,7 @@ continue {
     };
 
     # create above config settings for later tests
-    $ConfigObject->Set(
+    $Self->{ConfigObject}->Set(
         Key   => 'LinkObject::TypeGroup',
         Value => $TypeGroupConfig,
     );
@@ -1688,7 +1680,7 @@ for my $Test ( @{$PossibleTypeReference} ) {
         next TEST;
     }
 
-    my $Result = $LinkObject->PossibleType(
+    my $Result = $Self->{LinkObject}->PossibleType(
         %{ $Test->{SourceData} },
         UserID => 1,
     );
@@ -1736,7 +1728,7 @@ continue {
     }
 
     # add new types to config
-    $ConfigObject->Set(
+    $Self->{ConfigObject}->Set(
         Key   => 'LinkObject::Type',
         Value => $Settings,
     );
@@ -1810,7 +1802,7 @@ continue {
     };
 
     # create above config settings for later tests
-    $ConfigObject->Set(
+    $Self->{ConfigObject}->Set(
         Key   => 'LinkObject::PossibleLink',
         Value => $PossibleLinksConfig,
     );
@@ -1839,7 +1831,7 @@ continue {
     };
 
     # create above config settings for later tests
-    $ConfigObject->Set(
+    $Self->{ConfigObject}->Set(
         Key   => 'LinkObject::TypeGroup',
         Value => $TypeGroupConfig,
     );
@@ -1849,7 +1841,7 @@ continue {
 # build ObjectID hash for later tests
 my %ObjectID;
 for my $Object (@ObjectNames) {
-    $ObjectID{$Object} = $LinkObject->ObjectLookup(
+    $ObjectID{$Object} = $Self->{LinkObject}->ObjectLookup(
         Name   => $Object,
         UserID => 1,
     );
@@ -2670,14 +2662,14 @@ for my $Test ( @{$LinkData} ) {
         # add link
         my $ActionResult;
         if ( $SourceData->{Action} eq 'LinkAdd' ) {
-            $ActionResult = $LinkObject->LinkAdd(
+            $ActionResult = $Self->{LinkObject}->LinkAdd(
                 %{$SourceData},
             );
         }
 
         # delete link
         elsif ( $SourceData->{Action} eq 'LinkDelete' ) {
-            $ActionResult = $LinkObject->LinkDelete(
+            $ActionResult = $Self->{LinkObject}->LinkDelete(
                 %{$SourceData}
             );
         }
@@ -2724,7 +2716,7 @@ for my $Test ( @{$LinkData} ) {
     }
 
     # get all links for ReferenceData
-    my $Links = $LinkObject->LinkList(
+    my $Links = $Self->{LinkObject}->LinkList(
         Object => $ReferenceData->{LinkList}->{Object},
         Key    => $ReferenceData->{LinkList}->{Key},
         Type   => $ReferenceData->{LinkList}->{Type},
@@ -2808,7 +2800,7 @@ continue {
 }
 
 $Self->True(
-    $LinkObject->LinkDeleteAll(
+    $Self->{LinkObject}->LinkDeleteAll(
         Object => $ObjectNames[1],
         Key    => '321',
         UserID => 1,
