@@ -1,19 +1,19 @@
 # --
 # AAAStats.dtl - $Text variable file
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AAAStats.dtl,v 1.15 2010/12/08 09:27:04 mb Exp $
+# $Id: AAAStats.dtl,v 1.7.2.1 2008/10/09 09:54:28 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 # Common
 $Text{"Stat"}
-$Text{"Sum"}
+$Text{""}
 
-# Error messages
+# Errorwarnings
 $Text{"Please fill out the required fields!"}
 $Text{"Please select a file!"}
 $Text{"Please select an object!"}
@@ -36,11 +36,11 @@ $Text{""}
 
 # HTMLHeader
 $Text{"Common Specification"}
-$Text{"X-axis"}
+$Text{"Xaxis"}
 $Text{"Value Series"}
 $Text{"Restrictions"}
 
-# Pull-down menus
+# Pulldownmenues
 $Text{"graph-lines"}
 $Text{"graph-bars"}
 $Text{"graph-hbars"}
@@ -61,31 +61,3 @@ $Text{"Created State"}
 $Text{"Create Time"}
 $Text{"CustomerUserLogin"}
 $Text{"Close Time"}
-$Text{"TicketAccumulation"}
-
-# Dynamic Object Ticketlist
-$Text{"Attributes to be printed"}
-$Text{"Sort sequence"}
-$Text{"Order by"}
-$Text{"Limit"}
-$Text{"Ticketlist"}
-$Text{"ascending"}
-$Text{"descending"}
-$Text{"First Lock"}
-
-# Dynamic Object TicketAccountedTime
-$Text{"Evaluation by"}
-$Text{"Total Time"}
-$Text{"Ticket Average"}
-$Text{"Ticket Min Time"}
-$Text{"Ticket Max Time"}
-$Text{"Number of Tickets"}
-$Text{"Article Average"}
-$Text{"Article Min Time"}
-$Text{"Article Max Time"}
-$Text{"Number of Articles"}
-$Text{"Accounted time by Agent"}
-$Text{"Ticket/Article Accounted Time"}
-$Text{"TicketAccountedTime"}
-$Text{"Ticket Create Time"}
-$Text{"Ticket Close Time"}
