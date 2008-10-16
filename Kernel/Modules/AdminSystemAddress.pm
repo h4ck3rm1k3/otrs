@@ -1,12 +1,12 @@
 # --
 # Kernel/Modules/AdminSystemAddress.pm - to add/update/delete system addresses
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSystemAddress.pm,v 1.42 2010/11/19 22:28:58 en Exp $
+# $Id: AdminSystemAddress.pm,v 1.27.2.1 2008/10/16 13:56:28 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AdminSystemAddress;
@@ -17,10 +17,9 @@ use warnings;
 use Kernel::System::Queue;
 use Kernel::System::SystemAddress;
 use Kernel::System::Valid;
-use Kernel::System::CheckItem;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.42 $) [1];
+$VERSION = qw($Revision: 1.27.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -30,9 +29,9 @@ sub new {
     bless( $Self, $Type );
 
     # check all needed objects
-    for my $Needed (qw(ParamObject DBObject LayoutObject ConfigObject LogObject)) {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    for (qw(ParamObject DBObject LayoutObject ConfigObject LogObject)) {
+        if ( !$Self->{$_} ) {
+            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
         }
     }
     $Self->{QueueObject}         = Kernel::System::Queue->new(%Param);
@@ -45,9 +44,6 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    #create local object
-    my $CheckItemObject = Kernel::System::CheckItem->new( %{$Self} );
-
     # ------------------------------------------------------------ #
     # change
     # ------------------------------------------------------------ #
@@ -57,11 +53,11 @@ sub Run {
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Self->_Edit(
-            Action => 'Change',
+            Action => "Change",
             %Data,
         );
         $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminSystemAddress',
+            TemplateFile => 'AdminSystemAddressForm',
             Data         => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
@@ -72,73 +68,45 @@ sub Run {
     # change action
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'ChangeAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Note = '';
-        my ( %GetParam, %Errors );
-        for my $Parameter (qw(ID Name Realname QueueID Comment ValidID)) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+        my %GetParam;
+        for (qw(ID Name Realname QueueID Comment ValidID)) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ ) || '';
         }
 
-        # check needed data
-        for my $Needed (qw(Name Realname QueueID ValidID)) {
-            if ( !$GetParam{$Needed} ) {
-                $Errors{ $Needed . 'Invalid' } = 'ServerError';
-            }
-        }
-
-        # check email address
+        # update group
         if (
-            $GetParam{Name}
-            && !$CheckItemObject->CheckEmail( Address => $GetParam{Name} )
+            $Self->{SystemAddressObject}->SystemAddressUpdate(
+                %GetParam, UserID => $Self->{UserID}
+            )
             )
         {
-            $Errors{NameInvalid} = 'ServerError';
-            $Errors{ErrorType}   = $CheckItemObject->CheckErrorType();
+            $Self->_Overview();
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Notify( Info => 'Updated!' );
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminSystemAddressForm',
+                Data         => \%Param,
+            );
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
         }
-
-        # if no errors occurred
-        if ( !%Errors ) {
-
-            # update email system address
-            if (
-                $Self->{SystemAddressObject}->SystemAddressUpdate(
-                    %GetParam,
-                    UserID => $Self->{UserID},
-                )
-                )
-            {
-                $Self->_Overview();
-                my $Output = $Self->{LayoutObject}->Header();
-                $Output .= $Self->{LayoutObject}->NavigationBar();
-                $Output
-                    .= $Self->{LayoutObject}->Notify( Info => 'System e-mail address updated!' );
-                $Output .= $Self->{LayoutObject}->Output(
-                    TemplateFile => 'AdminSystemAddress',
-                    Data         => \%Param,
-                );
-                $Output .= $Self->{LayoutObject}->Footer();
-                return $Output;
-            }
+        else {
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Notify( Priority => 'Error' );
+            $Self->_Edit(
+                Action => "Change",
+                %GetParam,
+            );
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminSystemAddressForm',
+                Data         => \%Param,
+            );
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
         }
-
-        # someting has gone wrong
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->{LayoutObject}->Notify( Priority => 'Error' );
-        $Self->_Edit(
-            Action => 'Change',
-            Errors => \%Errors,
-            %GetParam,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminSystemAddress',
-            Data         => \%Param,
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
     }
 
     # ------------------------------------------------------------ #
@@ -146,15 +114,17 @@ sub Run {
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Add' ) {
         my %GetParam = ();
-        $GetParam{Name} = $Self->{ParamObject}->GetParam( Param => 'Name' );
+        for (qw(Name)) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ );
+        }
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Self->_Edit(
-            Action => 'Add',
+            Action => "Add",
             %GetParam,
         );
         $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminSystemAddress',
+            TemplateFile => 'AdminSystemAddressForm',
             Data         => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
@@ -165,71 +135,44 @@ sub Run {
     # add action
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'AddAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Note = '';
-        my ( %GetParam, %Errors );
-        for my $Parameter (qw(ID Name Realname QueueID Comment ValidID)) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+        my %GetParam;
+        for (qw(ID Name Realname QueueID Comment ValidID)) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ ) || '';
         }
 
-        # check needed data
-        for my $Needed (qw(Name Realname QueueID ValidID)) {
-            if ( !$GetParam{$Needed} ) {
-                $Errors{ $Needed . 'Invalid' } = 'ServerError';
-            }
-        }
-
-        # check email address
+        # add user
         if (
-            $GetParam{Name}
-            && !$CheckItemObject->CheckEmail( Address => $GetParam{Name} )
+            my $AddressID
+            = $Self->{SystemAddressObject}->SystemAddressAdd( %GetParam, UserID => $Self->{UserID} )
             )
         {
-            $Errors{NameInvalid} = 'ServerError';
-            $Errors{ErrorType}   = $CheckItemObject->CheckErrorType();
-        }
-
-        # if no errors occurred
-        if ( !%Errors ) {
-
-            # add user
-            my $AddressID = $Self->{SystemAddressObject}->SystemAddressAdd(
-                %GetParam,
-                UserID => $Self->{UserID},
+            $Self->_Overview();
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Notify( Info => 'Added!' );
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminSystemAddressForm',
+                Data         => \%Param,
             );
-
-            if ($AddressID) {
-                $Self->_Overview();
-                my $Output = $Self->{LayoutObject}->Header();
-                $Output .= $Self->{LayoutObject}->NavigationBar();
-                $Output .= $Self->{LayoutObject}->Notify( Info => 'System e-mail address added!' );
-                $Output .= $Self->{LayoutObject}->Output(
-                    TemplateFile => 'AdminSystemAddress',
-                    Data         => \%Param,
-                );
-                $Output .= $Self->{LayoutObject}->Footer();
-                return $Output;
-            }
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
         }
-
-        # someting has gone wrong
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->{LayoutObject}->Notify( Priority => 'Error' );
-        $Self->_Edit(
-            Action => 'Add',
-            Errors => \%Errors,
-            %GetParam,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminSystemAddress',
-            Data         => \%Param,
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
+        else {
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Notify( Priority => 'Error' );
+            $Self->_Edit(
+                Action => "Add",
+                %GetParam,
+            );
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminSystemAddressForm',
+                Data         => \%Param,
+            );
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
+        }
     }
 
     # ------------------------------------------------------------
@@ -240,7 +183,7 @@ sub Run {
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminSystemAddress',
+            TemplateFile => 'AdminSystemAddressForm',
             Data         => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
@@ -256,58 +199,22 @@ sub _Edit {
         Name => 'Overview',
         Data => \%Param,
     );
-
-    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-    $Self->{LayoutObject}->Block( Name => 'ActionOverview' );
-
-    # get valid list
-    my %ValidList        = $Self->{ValidObject}->ValidList();
-    my %ValidListReverse = reverse %ValidList;
-
-    $Param{ValidOption} = $Self->{LayoutObject}->BuildSelection(
-        Data       => \%ValidList,
+    $Param{'ValidOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data       => { $Self->{ValidObject}->ValidList(), },
         Name       => 'ValidID',
-        SelectedID => $Param{ValidID} || $ValidListReverse{valid},
-        Class      => 'Validate_Required ' . ( $Param{Errors}->{'ValidIDInvalid'} || '' ),
+        SelectedID => $Param{ValidID},
     );
-    $Param{QueueOption} = $Self->{LayoutObject}->AgentQueueListOption(
+    $Param{'QueueOption'} = $Self->{LayoutObject}->AgentQueueListOption(
         Data => { $Self->{QueueObject}->QueueList( Valid => 1 ), },
         Name => 'QueueID',
         SelectedID     => $Param{QueueID},
-        Class          => 'Validate_Required ' . ( $Param{Errors}->{'QueueIDInvalid'} || '' ),
         OnChangeSubmit => 0,
     );
 
     $Self->{LayoutObject}->Block(
         Name => 'OverviewUpdate',
-        Data => {
-            %Param,
-            %{ $Param{Errors} },
-        },
+        Data => \%Param,
     );
-
-    # shows header
-    if ( $Param{Action} eq 'Change' ) {
-        $Self->{LayoutObject}->Block( Name => 'HeaderEdit' );
-    }
-    else {
-        $Self->{LayoutObject}->Block( Name => 'HeaderAdd' );
-    }
-
-    # add the correct server error msg for the system email address
-    if ( $Param{Name} && $Param{Errors}->{ErrorType} ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'Email' . $Param{Errors}->{ErrorType} . 'ServerErrorMsg',
-            Data => {},
-        );
-    }
-    else {
-        $Self->{LayoutObject}->Block(
-            Name => "RequiredFieldServerErrorMsg",
-            Data => {},
-        );
-    }
-
     return 1;
 }
 
@@ -320,10 +227,6 @@ sub _Overview {
         Name => 'Overview',
         Data => \%Param,
     );
-
-    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-    $Self->{LayoutObject}->Block( Name => 'ActionAdd' );
-
     $Self->{LayoutObject}->Block(
         Name => 'OverviewResult',
         Data => \%Param,
@@ -332,14 +235,22 @@ sub _Overview {
 
     # get valid list
     my %ValidList = $Self->{ValidObject}->ValidList();
+    my $CssClass  = '';
+    for ( sort { $List{$a} cmp $List{$b} } keys %List ) {
 
-    for my $ListKey ( sort { $List{$a} cmp $List{$b} } keys %List ) {
-
-        my %Data = $Self->{SystemAddressObject}->SystemAddressGet( ID => $ListKey );
+        # set output class
+        if ( $CssClass && $CssClass eq 'searchactive' ) {
+            $CssClass = 'searchpassive';
+        }
+        else {
+            $CssClass = 'searchactive';
+        }
+        my %Data = $Self->{SystemAddressObject}->SystemAddressGet( ID => $_, );
         $Self->{LayoutObject}->Block(
             Name => 'OverviewResultRow',
             Data => {
-                Valid => $ValidList{ $Data{ValidID} },
+                Valid    => $ValidList{ $Data{ValidID} },
+                CssClass => $CssClass,
                 %Data,
             },
         );

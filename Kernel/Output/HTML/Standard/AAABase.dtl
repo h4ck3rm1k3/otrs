@@ -1,12 +1,12 @@
 # --
 # AAABase.dtl - $Text variable file
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AAABase.dtl,v 1.110 2011/12/15 15:14:52 mg Exp $
+# $Id: AAABase.dtl,v 1.62.2.1 2008/10/16 13:56:28 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 $Text{"Yes"}
@@ -27,23 +27,15 @@ $Text{"Reset"}
 
 $Text{"last"}
 $Text{"before"}
-$Text{"Today"}
-$Text{"Tomorrow"}
-$Text{"Next week"}
 $Text{"day"}
 $Text{"days"}
 $Text{"day(s)"}
-$Text{"d"}
 $Text{"hour"}
 $Text{"hours"}
 $Text{"hour(s)"}
-$Text{"Hours"}
-$Text{"h"}
 $Text{"minute"}
 $Text{"minutes"}
 $Text{"minute(s)"}
-$Text{"Minutes"}
-$Text{"m"}
 $Text{"month"}
 $Text{"months"}
 $Text{"month(s)"}
@@ -55,7 +47,6 @@ $Text{"year(s)"}
 $Text{"second(s)"}
 $Text{"seconds"}
 $Text{"second"}
-$Text{"s"}
 
 $Text{"wrote"}
 $Text{"Message"}
@@ -67,14 +58,10 @@ $Text{"Module"}
 $Text{"Modulefile"}
 $Text{"Subfunction"}
 $Text{"Line"}
-$Text{"Setting"}
-$Text{"Settings"}
 $Text{"Example"}
 $Text{"Examples"}
 $Text{"valid"}
-$Text{"Valid"}
 $Text{"invalid"}
-$Text{"Invalid"}
 $Text{"* invalid"}
 $Text{"invalid-temporarily"}
 
@@ -95,7 +82,6 @@ $Text{"none"}
 $Text{"none!"}
 $Text{"none - answered"}
 $Text{"please do not edit!"}
-$Text{"Need Action"}
 $Text{"AddLink"}
 $Text{"Link"}
 $Text{"Unlink"}
@@ -109,7 +95,6 @@ $Text{"Child"}
 $Text{"Hit"}
 $Text{"Hits"}
 $Text{"Text"}
-$Text{"Standard"}
 $Text{"Lite"}
 
 $Text{"User"}
@@ -117,11 +102,8 @@ $Text{"Username"}
 $Text{"Language"}
 $Text{"Languages"}
 $Text{"Password"}
-$Text{"Preferences"}
 $Text{"Salutation"}
-$Text{"Salutations"}
 $Text{"Signature"}
-$Text{"Signatures"}
 $Text{"Customer"}
 $Text{"CustomerID"}
 $Text{"CustomerIDs"}
@@ -129,9 +111,7 @@ $Text{"customer"}
 $Text{"agent"}
 $Text{"system"}
 $Text{"Customer Info"}
-$Text{"Customer Information"}
 $Text{"Customer Company"}
-$Text{"Customer Companies"}
 $Text{"Company"}
 $Text{"go!"}
 $Text{"go"}
@@ -185,23 +165,21 @@ $Text{"Add"}
 $Text{"Added!"}
 $Text{"Category"}
 $Text{"Viewer"}
-$Text{"Expand"}
-$Text{"Small"}
-$Text{"Medium"}
-$Text{"Large"}
-$Text{"Date picker"}
 
 $Text{"New message"}
 $Text{"New message!"}
 
 $Text{"Please answer this ticket(s) to get back to the normal queue view!"}
 
+$Text{"You got new message!"}
 $Text{"You have %s new message(s)!"}
 $Text{"You have %s reminder ticket(s)!"}
 
 $Text{"The recommended charset for your language is %s!"}
-$Text{"Change your password."}
-$Text{"Please activate %s first!"}
+$Text{"Passwords doesn't match! Please try it again!"}
+$Text{"Password is already in use! Please use an other password!"}
+$Text{"Password is already used! Please use an other password!"}
+$Text{"You need to activate %s first to use it!"}
 
 $Text{"No suggestions"}
 $Text{"Word"}
@@ -209,29 +187,11 @@ $Text{"Ignore"}
 $Text{"replace with"}
 
 $Text{"There is no account with that login name."}
-$Text{"Login failed! Your user name or password was entered incorrectly."}
-$Text{"There is no acount with that user name."}
-$Text{"Please contact your administrator"}
-$Text{"Logout"}
+$Text{"Login failed! Your username or password was entered incorrectly."}
+$Text{"Please contact your admin"}
 $Text{"Logout successful. Thank you for using OTRS!"}
 $Text{"Invalid SessionID!"}
 $Text{"Feature not active!"}
-$Text{"Agent updated!"}
-$Text{"Create Database"}
-$Text{"System Settings"}
-$Text{"Mail Configuration"}
-$Text{"Finished"}
-$Text{"Install OTRS"}
-$Text{"Intro"}
-$Text{"License"}
-$Text{"Error"}
-$Text{"Create Database"}
-$Text{"Database"}
-$Text{"System Settings"}
-$Text{"Configure Mail"}
-$Text{"Finished"}
-$Text{"Database deleted."}
-$Text{"Database setup succesful!"}
 
 # misc
 $Text{"Login is needed!"}
@@ -243,9 +203,9 @@ $Text{"possible"}
 $Text{"reject"}
 $Text{"reverse"}
 $Text{"Facility"}
-$Text{"Time Zone"}
+$Text{"Timeover"}
 $Text{"Pending till"}
-$Text{"Don't use the Superuser account to work with OTRS! Create new Agents and work with these accounts instead."}
+$Text{"Don't work with UserID 1 (System account)! Create new users!"}
 $Text{"Dispatching by email To: field."}
 $Text{"Dispatching by selected Queue."}
 $Text{"No entry found!"}
@@ -256,34 +216,9 @@ $Text{"Cc: (%s) added database email!"}
 $Text{"(Click here to add)"}
 $Text{"Normal"}
 $Text{"Preview"}
-$Text{"Package not correctly deployed! Please reinstall the package."}
-$Text{"%s is not writable!"}
-$Text{"Cannot create %s!"}
-$Text{"Check to activate this date"}
-$Text{"You have Out of Office enabled, would you like to disable it?"}
+$Text{"Package not correctly deployed! You should reinstall the Package again!"}
 
-$Text{"Customer %s added"}
-$Text{"Role added!"}
-$Text{"Role updated!"}
-$Text{"Attachment added!"}
-$Text{"Attachment updated!"}
-$Text{"Response added!"}
-$Text{"Response updated!"}
-$Text{"Group updated!"}
-$Text{"Queue added!"}
-$Text{"Queue updated!"}
-$Text{"State added!"}
-$Text{"State updated!"}
-$Text{"Type added!"}
-$Text{"Type updated!"}
-$Text{"Customer updated!"}
-$Text{"Customer company added!"}
-$Text{"Customer company updated!"}
-$Text{"Mail account added!"}
-$Text{"Mail account updated!"}
-$Text{"System e-mail address added!"}
-$Text{"System e-mail address updated!"}
-
+$Text{"Added User "%s""}
 $Text{"Contract"}
 $Text{"Online Customer: %s"}
 $Text{"Online Agent: %s"}
@@ -301,13 +236,6 @@ $Text{"Sign"}
 $Text{"Crypted"}
 $Text{"Crypt"}
 
-$Text{"PGP"}
-$Text{"PGP Key"}
-$Text{"PGP Keys"}
-$Text{"S/MIME"}
-$Text{"S/MIME Certificate"}
-$Text{"S/MIME Certificates"}
-
 $Text{"Office"}
 $Text{"Phone"}
 $Text{"Fax"}
@@ -323,61 +251,21 @@ $Text{"uninstalled"}
 
 $Text{"Security Note: You should activate %s because application is already running!"}
 
-$Text{"Unable to parse repository index document."}
-$Text{"No packages for your framework version found in this repository, it only contains packages for other framework versions."}
-$Text{"No packages, or no new packages, found in selected repository."}
-$Text{"Edit the system configuration settings."}
+$Text{"Unable to parse Online Repository index document!"}
+$Text{"No Packages for requested Framework in this Online Repository, but Packages for other Frameworks!"}
+$Text{"No Packages or no new Packages in selected Online Repository!"}
 
 $Text{"printed at"}
-$Text{"Loading..."}
 
 $Text{"Dear Mr. %s,"}
 $Text{"Dear Mrs. %s,"}
 $Text{"Dear %s,"}
 $Text{"Hello %s,"}
-$Text{"This email address already exists. Please log in or reset your password."}
-$Text{"New account created. Sent login information to %s. Please check your email."}
+$Text{"This account exists."}
+$Text{"New account created. Sent Login-Account to %s."}
 $Text{"Please press Back and try again."}
-$Text{"Sent password reset instructions. Please check your email."}
-$Text{"Sent new password to %s. Please check your email."}
-$Text{"Upcoming Events"}
-$Text{"Event"}
-$Text{"Events"}
+$Text{"Sent password token to: %s"}
+$Text{"Sent new password to: %s"}
 $Text{"Invalid Token!"}
-$Text{"more"}
 $Text{"For more info see:"}
 $Text{"Package verification failed!"}
-$Text{"Collapse"}
-$Text{"Shown"}
-$Text{"News"}
-$Text{"Product News"}
-$Text{"OTRS News"}
-$Text{"7 Day Stats"}
-
-# richtext editor
-$Text{"Bold"}
-$Text{"Italic"}
-$Text{"Underline"}
-$Text{"Font Color"}
-$Text{"Background Color"}
-$Text{"Remove Formatting"}
-$Text{"Show/Hide Hidden Elements"}
-$Text{"Align Left"}
-$Text{"Align Center"}
-$Text{"Align Right"}
-$Text{"Justify"}
-$Text{"Header"}
-$Text{"Indent"}
-$Text{"Outdent"}
-$Text{"Create an Unordered List"}
-$Text{"Create an Ordered List"}
-$Text{"HTML Link"}
-$Text{"Insert Image"}
-$Text{"CTRL"}
-$Text{"SHIFT"}
-$Text{"Undo"}
-$Text{"Redo"}
-
-# scheduler
-$Text{"Scheduler process is registered but might not be running."}
-$Text{"Scheduler is not running."}
