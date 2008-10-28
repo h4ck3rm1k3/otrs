@@ -1,24 +1,23 @@
 #!/usr/bin/perl -w
 # --
 # scripts/restore.pl - the restore script
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: restore.pl,v 1.14 2011/05/17 14:48:36 mb Exp $
+# $Id: restore.pl,v 1.7.2.1 2008/10/28 19:06:17 tt Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU AFFERO General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# any later version.
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Affero General Public License
+# You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-# or see http://www.gnu.org/licenses/agpl.txt.
 # --
 
 # use ../ as lib location
@@ -31,56 +30,54 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.14 $) [1];
+$VERSION = qw($Revision: 1.7.2.1 $) [1];
 
 use Getopt::Std;
 
 # get options
-my %Opts;
+my %Opts   = ();
 my $DB     = '';
 my $DBDump = '';
 getopt( 'hbd', \%Opts );
-if ( exists $Opts{h} ) {
+if ( $Opts{'h'} ) {
     print "restore.pl <Revision $VERSION> - restore script\n";
-    print "Copyright (C) 2001-2011 OTRS AG, http://otrs.org/\n";
+    print "Copyright (c) 2001-2008 OTRS AG, http://otrs.org/\n";
     print "usage: restore.pl -b /data_backup/<TIME>/ -d /opt/otrs/\n";
     exit 1;
 }
-if ( !$Opts{b} ) {
+if ( !$Opts{'b'} ) {
     print STDERR "ERROR: Need -b for backup directory\n";
-    exit 1;
+    exit(1);
 }
-elsif ( !-d $Opts{b} ) {
-    print STDERR "ERROR: No such directory: $Opts{b}\n";
-    exit 1;
+elsif ( !-d $Opts{'b'} ) {
+    print STDERR "ERROR: No such directory: $Opts{'b'}\n";
+    exit(1);
 }
-if ( !$Opts{d} ) {
+if ( !$Opts{'d'} ) {
     print STDERR "ERROR: Need -d for destination directory\n";
-    exit 1;
+    exit(1);
 }
-elsif ( !-d $Opts{d} ) {
-    print STDERR "ERROR: No such directory: $Opts{d}\n";
-    exit 1;
+elsif ( !-d $Opts{'d'} ) {
+    print STDERR "ERROR: No such directory: $Opts{'d'}\n";
+    exit(1);
 }
 
 # restore config
-print "Restore $Opts{b}/Config.tar.gz ...\n";
-chdir( $Opts{d} );
-if ( -e "$Opts{b}/Config.tar.gz" ) {
-    system("tar -xzf $Opts{b}/Config.tar.gz");
+print "Restore $Opts{'b'}/Config.tar.gz ...\n";
+chdir( $Opts{'d'} );
+if ( -e "$Opts{'b'}/Config.tar.gz" ) {
+    system("tar -xzf $Opts{'b'}/Config.tar.gz");
 }
 
 require Kernel::Config;
-require Kernel::System::Encode;
 require Kernel::System::Time;
 require Kernel::System::Log;
 require Kernel::System::Main;
 require Kernel::System::DB;
 
 # create common objects
-my %CommonObject;
+my %CommonObject = ();
 $CommonObject{ConfigObject} = Kernel::Config->new();
-$CommonObject{EncodeObject} = Kernel::System::Encode->new(%CommonObject);
 $CommonObject{LogObject}    = Kernel::System::Log->new(
     LogPrefix => 'OTRS-Restore',
     %CommonObject,
@@ -96,17 +93,17 @@ my $DatabaseDSN  = $CommonObject{ConfigObject}->Get('DatabaseDSN');
 my $ArticleDir   = $CommonObject{ConfigObject}->Get('ArticleDir');
 
 # check db backup support
-if ( $DatabaseDSN =~ m/:mysql/i ) {
+if ( $DatabaseDSN =~ /:mysql/i ) {
     $DB     = 'MySQL';
     $DBDump = 'mysql';
 }
-elsif ( $DatabaseDSN =~ m/:pg/i ) {
+elsif ( $DatabaseDSN =~ /:pg/i ) {
     $DB     = 'PostgreSQL';
     $DBDump = 'psql';
 }
 else {
     print STDERR "ERROR: Can't backup, no database dump support!\n";
-    exit 1;
+    exit(1);
 }
 
 # check needed programs
@@ -116,16 +113,16 @@ for my $CMD ( 'cp', 'tar', $DBDump ) {
     while (<IN>) {
         $Installed = 1;
     }
-    close IN;
+    close(IN);
     if ( !$Installed ) {
         print STDERR "ERROR: Can't locate $CMD!\n";
-        exit 1;
+        exit(1);
     }
 }
 
 # check database env
 if ( $CommonObject{DBObject} ) {
-    if ( $DB =~ m/mysql/i ) {
+    if ( $DB =~ /mysql/i ) {
         $CommonObject{DBObject}->Prepare( SQL => "SHOW TABLES" );
         my $Check = 0;
         while ( my @RowTmp = $CommonObject{DBObject}->FetchrowArray() ) {
@@ -134,7 +131,7 @@ if ( $CommonObject{DBObject} ) {
         if ($Check) {
             print STDERR
                 "ERROR: Already existing tables in this database. A empty database is required for restore!\n";
-            exit 1;
+            exit(1);
         }
     }
     else {
@@ -149,7 +146,7 @@ if ( $CommonObject{DBObject} ) {
         if ($Check) {
             print STDERR
                 "ERROR: Already existing tables in this database. A empty database is required for restore!\n";
-            exit 1;
+            exit(1);
         }
     }
 }
@@ -158,70 +155,70 @@ if ( $CommonObject{DBObject} ) {
 my $Home = $CommonObject{ConfigObject}->Get('Home');
 chdir($Home);
 
-# extract application
-if ( -e "$Opts{b}/Application.tar.gz" ) {
-    print "Restore $Opts{b}/Application.tar.gz ...\n";
-    system("tar -xzf $Opts{b}/Application.tar.gz");
+# backup application
+if ( -e "$Opts{'b'}/Application.tar.gz" ) {
+    print "Restore $Opts{'b'}/Application.tar.gz ...\n";
+    system("tar -xzf $Opts{'b'}/Application.tar.gz");
 }
 
-# extract vardir
-if ( -e "$Opts{b}/VarDir.tar.gz" ) {
-    print "Restore $Opts{b}/VarDir.tar.gz ...\n";
-    system("tar -xzf $Opts{b}/VarDir.tar.gz");
+# backup vardir
+if ( -e "$Opts{'b'}/VarDir.tar.gz" ) {
+    print "Restore $Opts{'b'}/VarDir.tar.gz ...\n";
+    system("tar -xzf $Opts{'b'}/VarDir.tar.gz");
 }
 
-# extract datadir
-if ( -e "$Opts{b}/DataDir.tar.gz" ) {
-    print "Restore $Opts{b}/DataDir.tar.gz ...\n";
-    system("tar -xzf $Opts{b}/DataDir.tar.gz");
+# backup datadir
+if ( -e "$Opts{'b'}/DataDir.tar.gz" ) {
+    print "Restore $Opts{'b'}/DataDir.tar.gz ...\n";
+    system("tar -xzf $Opts{'b'}/DataDir.tar.gz");
 }
 
-# import database
-if ( $DB =~ m/mysql/i ) {
+# backup database
+if ( $DB =~ /mysql/i ) {
     print "create $DB\n";
     if ($DatabasePw) {
-        $DatabasePw = "-p'$DatabasePw'";
+        $DatabasePw = "-p$DatabasePw";
     }
-    if ( -e "$Opts{b}/DatabaseBackup.sql.gz" ) {
+    if ( -e "$Opts{'b'}/DatabaseBackup.sql.gz" ) {
         print "decompresses SQL-file ...\n";
-        system("gunzip $Opts{b}/DatabaseBackup.sql.gz");
+        system("gunzip $Opts{'b'}/DatabaseBackup.sql.gz");
         print "cat SQL-file into $DB database\n";
         system(
-            "mysql -f -u$DatabaseUser $DatabasePw -h$DatabaseHost $Database < $Opts{b}/DatabaseBackup.sql"
+            "mysql -f -u$DatabaseUser $DatabasePw -h$DatabaseHost $Database < $Opts{'b'}/DatabaseBackup.sql"
         );
         print "compress SQL-file...\n";
-        system("gzip $Opts{b}/DatabaseBackup.sql");
+        system("gzip $Opts{'b'}/DatabaseBackup.sql");
     }
-    elsif ( -e "$Opts{b}/DatabaseBackup.sql.bz2" ) {
+    elsif ( -e "$Opts{'b'}/DatabaseBackup.sql.bz2" ) {
         print "decompresses SQL-file ...\n";
-        system("bunzip2 $Opts{b}/DatabaseBackup.sql.bz2");
+        system("bunzip $Opts{'b'}/DatabaseBackup.sql.bz2");
         print "cat SQL-file into $DB database\n";
         system(
-            "mysql -f -u$DatabaseUser $DatabasePw -h$DatabaseHost $Database < $Opts{b}/DatabaseBackup.sql"
+            "mysql -f -u$DatabaseUser $DatabasePw -h$DatabaseHost $Database < $Opts{'b'}/DatabaseBackup.sql"
         );
         print "compress SQL-file...\n";
-        system("bzip2 $Opts{b}/DatabaseBackup.sql");
+        system("bzip $Opts{'b'}/DatabaseBackup.sql");
     }
 }
 else {
-    if ( -e "$Opts{b}/DatabaseBackup.sql.gz" ) {
+    if ( -e "$Opts{'b'}/DatabaseBackup.sql.gz" ) {
         print "decompresses SQL-file ...\n";
-        system("gunzip $Opts{b}/DatabaseBackup.sql.gz");
+        system("gunzip $Opts{'b'}/DatabaseBackup.sql.gz");
         print "cat SQL-file into $DB database\n";
         system(
-            "cat $Opts{b}/DatabaseBackup.sql | psql -U$DatabaseUser -W'$DatabasePw' -h$DatabaseHost $Database"
+            "cat $Opts{'b'}/DatabaseBackup.sql | psql -U$DatabaseUser -W$DatabasePw -h$DatabaseHost $Database"
         );
         print "compress SQL-file...\n";
-        system("gzip $Opts{b}/DatabaseBackup.sql");
+        system("gzip $Opts{'b'}/DatabaseBackup.sql");
     }
-    elsif ( -e "$Opts{b}/DatabaseBackup.sql.bz2" ) {
+    elsif ( -e "$Opts{'b'}/DatabaseBackup.sql.bz2" ) {
         print "decompresses SQL-file ...\n";
-        system("bunzip2 $Opts{b}/DatabaseBackup.sql.bz2");
+        system("bunzip $Opts{'b'}/DatabaseBackup.sql.bz2");
         print "cat SQL-file into $DB database\n";
         system(
-            "cat $Opts{b}/DatabaseBackup.sql | psql -U$DatabaseUser -W'$DatabasePw' -h$DatabaseHost $Database"
+            "cat $Opts{'b'}/DatabaseBackup.sql | psql -U$DatabaseUser -W$DatabasePw -h$DatabaseHost $Database"
         );
         print "compress SQL-file...\n";
-        system("bzip2 $Opts{b}/DatabaseBackup.sql");
+        system("bzip $Opts{'b'}/DatabaseBackup.sql");
     }
 }
