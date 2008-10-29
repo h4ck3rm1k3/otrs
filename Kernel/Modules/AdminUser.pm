@@ -1,12 +1,12 @@
 # --
 # Kernel/Modules/AdminUser.pm - to add/update/delete user and preferences
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminUser.pm,v 1.82 2011/12/23 13:47:18 mg Exp $
+# $Id: AdminUser.pm,v 1.48.2.1 2008/10/29 15:31:57 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AdminUser;
@@ -15,10 +15,9 @@ use strict;
 use warnings;
 
 use Kernel::System::Valid;
-use Kernel::System::CheckItem;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.82 $) [1];
+$VERSION = qw($Revision: 1.48.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -28,9 +27,9 @@ sub new {
     bless( $Self, $Type );
 
     # check all needed objects
-    for my $Needed (qw(ParamObject DBObject LayoutObject ConfigObject LogObject UserObject)) {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    for (qw(ParamObject DBObject LayoutObject ConfigObject LogObject UserObject)) {
+        if ( !$Self->{$_} ) {
+            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
         }
     }
     $Self->{ValidObject} = Kernel::System::Valid->new(%Param);
@@ -41,10 +40,7 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    my $Search = $Self->{ParamObject}->GetParam( Param => 'Search' ) || '';
-
-    #create local object
-    my $CheckItemObject = Kernel::System::CheckItem->new( %{$Self} );
+    my $Search = $Self->{ParamObject}->GetParam( Param => 'Search' );
 
     # ------------------------------------------------------------ #
     #  switch to user
@@ -54,15 +50,8 @@ sub Run {
         && $Self->{ConfigObject}->Get('SwitchToUser')
         )
     {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $UserID = $Self->{ParamObject}->GetParam( Param => 'UserID' ) || '';
-        my %UserData = $Self->{UserObject}->GetUserData(
-            UserID        => $UserID,
-            NoOutOfOffice => 1,
-        );
+        my %UserData = $Self->{UserObject}->GetUserData( UserID => $UserID );
 
         # get groups rw
         my %GroupData = $Self->{GroupObject}->GroupMemberList(
@@ -70,8 +59,8 @@ sub Run {
             Type   => 'rw',
             UserID => $UserData{UserID},
         );
-        for my $GroupKey ( keys %GroupData ) {
-            $UserData{"UserIsGroup[$GroupData{$GroupKey}]"} = 'Yes';
+        for ( keys %GroupData ) {
+            $UserData{"UserIsGroup[$GroupData{$_}]"} = 'Yes';
         }
 
         # get groups ro
@@ -80,8 +69,8 @@ sub Run {
             Type   => 'ro',
             UserID => $UserData{UserID},
         );
-        for my $GroupKey ( keys %GroupData ) {
-            $UserData{"UserIsGroupRo[$GroupData{$GroupKey}]"} = 'Yes';
+        for ( keys %GroupData ) {
+            $UserData{"UserIsGroupRo[$GroupData{$_}]"} = 'Yes';
         }
         my $NewSessionID = $Self->{SessionObject}->CreateSessionID(
             _UserLogin => $UserData{UserLogin},
@@ -116,7 +105,7 @@ sub Run {
         );
 
         # redirect with new session id
-        return $LayoutObject->Redirect( OP => '' );
+        return $LayoutObject->Redirect( OP => "" );
     }
 
     # ------------------------------------------------------------ #
@@ -127,19 +116,16 @@ sub Run {
             = $Self->{ParamObject}->GetParam( Param => 'UserID' )
             || $Self->{ParamObject}->GetParam( Param => 'ID' )
             || '';
-        my %UserData = $Self->{UserObject}->GetUserData(
-            UserID        => $UserID,
-            NoOutOfOffice => 1,
-        );
+        my %UserData = $Self->{UserObject}->GetUserData( UserID => $UserID, );
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Self->_Edit(
-            Action => 'Change',
+            Action => "Change",
             Search => $Search,
             %UserData,
         );
         $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminUser',
+            TemplateFile => 'AdminUserForm',
             Data         => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
@@ -150,61 +136,28 @@ sub Run {
     # change action
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'ChangeAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Note = '';
-        my ( %GetParam, %Errors );
-        for my $Parameter (
-            qw(UserID UserTitle UserLogin UserFirstname UserLastname UserEmail UserPw ValidID Search)
+        my %GetParam;
+        for (
+            qw(UserID UserSalutation UserLogin UserFirstname UserLastname UserEmail UserPw ValidID Search)
             )
         {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ ) || '';
         }
         $GetParam{Preferences} = $Self->{ParamObject}->GetParam( Param => 'Preferences' ) || '';
 
-        for my $Needed (qw(UserID UserFirstname UserLastname UserLogin ValidID)) {
-            if ( !$GetParam{$Needed} ) {
-                $Errors{ $Needed . 'Invalid' } = 'ServerError';
-            }
-        }
+        # update user
+        if ( $Self->{UserObject}->UserUpdate( %GetParam, ChangeUserID => $Self->{UserID} ) ) {
+            my %Preferences = %{ $Self->{ConfigObject}->Get('PreferencesGroups') };
+            for my $Group ( keys %Preferences ) {
+                if ( $Group eq 'Password' ) {
+                    next;
+                }
 
-        # check email address
-        if (
-            $GetParam{UserEmail}
-            && !$CheckItemObject->CheckEmail( Address => $GetParam{UserEmail} )
-            )
-        {
-            $Errors{UserEmailInvalid} = 'ServerError';
-            $Errors{ErrorType}        = $CheckItemObject->CheckErrorType();
-        }
-
-        # if no errors occurred
-        if ( !%Errors )
-        {
-
-            # update user
-            my $Update = $Self->{UserObject}->UserUpdate(
-                %GetParam,
-                ChangeUserID => $Self->{UserID},
-            );
-
-            if ($Update) {
-                my %Preferences = %{ $Self->{ConfigObject}->Get('PreferencesGroups') };
-                for my $Group ( keys %Preferences ) {
-                    next if $Group eq 'Password';
-
-                    # get user data
-                    my %UserData = $Self->{UserObject}->GetUserData(
-                        UserID        => $GetParam{UserID},
-                        NoOutOfOffice => 1,
-                    );
-                    my $Module = $Preferences{$Group}->{Module};
-                    if ( !$Self->{MainObject}->Require($Module) ) {
-                        return $Self->{LayoutObject}->FatalError();
-                    }
-
+                # get user data
+                my %UserData = $Self->{UserObject}->GetUserData( UserID => $GetParam{UserID} );
+                my $Module = $Preferences{$Group}->{Module};
+                if ( $Self->{MainObject}->Require($Module) ) {
                     my $Object = $Module->new(
                         %{$Self},
                         ConfigItem => $Preferences{$Group},
@@ -213,61 +166,50 @@ sub Run {
                     my @Params
                         = $Object->Param( %{ $Preferences{$Group} }, UserData => \%UserData );
                     if (@Params) {
-                        my %GetParam;
+                        my %GetParam = ();
                         for my $ParamItem (@Params) {
                             my @Array
                                 = $Self->{ParamObject}->GetArray( Param => $ParamItem->{Name} );
-                            if (@Array) {
-                                $GetParam{ $ParamItem->{Name} } = \@Array;
-                            }
+                            $GetParam{ $ParamItem->{Name} } = \@Array;
                         }
                         if ( !$Object->Run( GetParam => \%GetParam, UserData => \%UserData ) ) {
                             $Note .= $Self->{LayoutObject}->Notify( Info => $Object->Error() );
                         }
                     }
                 }
-
-                if ( !$Note ) {
-                    $Self->_Overview( Search => $Search );
-                    my $Output = $Self->{LayoutObject}->Header();
-                    $Output .= $Self->{LayoutObject}->NavigationBar();
-                    $Output .= $Self->{LayoutObject}->Notify( Info => 'Agent updated!' );
-                    $Output .= $Self->{LayoutObject}->Output(
-                        TemplateFile => 'AdminUser',
-                        Data         => \%Param,
-                    );
-                    $Output .= $Self->{LayoutObject}->Footer();
-                    return $Output;
+                else {
+                    return $Self->{LayoutObject}->FatalError();
                 }
             }
-            else {
-                $Note .= $Self->{LogObject}->GetLogEntry(
-                    Type => 'Error',
-                    What => 'Message',
+            if ( !$Note ) {
+                $Self->_Overview( Search => $Search, );
+                my $Output = $Self->{LayoutObject}->Header();
+                $Output .= $Self->{LayoutObject}->NavigationBar();
+                $Output .= $Self->{LayoutObject}->Notify( Info => 'Agent updated!' );
+                $Output .= $Self->{LayoutObject}->Output(
+                    TemplateFile => 'AdminUserForm',
+                    Data         => \%Param,
                 );
+                $Output .= $Self->{LayoutObject}->Footer();
+                return $Output;
             }
         }
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Note
-            ? $Self->{LayoutObject}->Notify(
-            Priority => 'Error',
-            Info     => $Note,
-            )
-            : '';
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Self->_Edit(
-            Action    => 'Change',
-            Search    => $Search,
-            ErrorType => $Errors{ErrorType} || '',
-            %GetParam,
-            %Errors,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminUser',
-            Data         => \%Param,
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
+        else {
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Notify( Priority => 'Error' ) . $Note;
+            $Self->_Edit(
+                Action => "Change",
+                Search => $Search,
+                %GetParam,
+            );
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminUserForm',
+                Data         => \%Param,
+            );
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
+        }
 
     }
 
@@ -276,18 +218,18 @@ sub Run {
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Add' ) {
         my %GetParam = ();
-
-        $GetParam{UserLogin} = $Self->{ParamObject}->GetParam( Param => 'UserLogin' );
-
+        for (qw(UserLogin)) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ );
+        }
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Self->_Edit(
-            Action => 'Add',
+            Action => "Add",
             Search => $Search,
             %GetParam,
         );
         $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminUser',
+            TemplateFile => 'AdminUserForm',
             Data         => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
@@ -298,145 +240,103 @@ sub Run {
     # add action
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'AddAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Note = '';
-        my ( %GetParam, %Errors );
-        for my $Parameter (
-            qw(UserTitle UserLogin UserFirstname UserLastname UserEmail UserPw ValidID Search)
+        my %GetParam;
+        for (
+            qw(UserSalutation UserLogin UserFirstname UserLastname UserEmail UserPw ValidID Search)
             )
         {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ ) || '';
         }
         $GetParam{Preferences} = $Self->{ParamObject}->GetParam( Param => 'Preferences' ) || '';
 
-        for my $Needed (qw(UserFirstname UserLastname UserLogin UserEmail ValidID UserPw)) {
-            if ( !$GetParam{$Needed} ) {
-                $Errors{ $Needed . 'Invalid' } = 'ServerError';
-            }
-        }
-
-        # check email address
+        # add user
         if (
-            $GetParam{UserEmail}
-            && !$CheckItemObject->CheckEmail( Address => $GetParam{UserEmail} )
+            my $UserID
+            = $Self->{UserObject}->UserAdd( %GetParam, ChangeUserID => $Self->{UserID} )
             )
         {
-            $Errors{UserEmailInvalid} = 'ServerError';
-            $Errors{ErrorType}        = $CheckItemObject->CheckErrorType();
-        }
 
-        # if no errors occurred
-        if ( !%Errors )
-        {
+            # update preferences
+            my %Preferences = %{ $Self->{ConfigObject}->Get('PreferencesGroups') };
+            for my $Group ( keys %Preferences ) {
+                if ( $Group eq 'Password' ) {
+                    next;
+                }
 
-            # add user
-            my $UserID = $Self->{UserObject}->UserAdd(
-                %GetParam,
-                ChangeUserID => $Self->{UserID}
-            );
-
-            if ($UserID) {
-
-                # update preferences
-                my %Preferences = %{ $Self->{ConfigObject}->Get('PreferencesGroups') };
-                for my $Group ( keys %Preferences ) {
-                    next if $Group eq 'Password';
-
-                    # get user data
-                    my %UserData = $Self->{UserObject}->GetUserData(
-                        UserID        => $UserID,
-                        NoOutOfOffice => 1,
+                # get user data
+                my %UserData = $Self->{UserObject}->GetUserData( UserID => $UserID );
+                my $Module = $Preferences{$Group}->{Module};
+                if ( $Self->{MainObject}->Require($Module) ) {
+                    my $Object = $Module->new(
+                        %{$Self},
+                        ConfigItem => $Preferences{$Group},
+                        Debug      => $Self->{Debug},
                     );
-                    my $Module = $Preferences{$Group}->{Module};
-                    if ( $Self->{MainObject}->Require($Module) ) {
-                        my $Object = $Module->new(
-                            %{$Self},
-                            ConfigItem => $Preferences{$Group},
-                            Debug      => $Self->{Debug},
-                        );
-                        my @Params = $Object->Param( UserData => \%UserData );
-
-                        if (@Params) {
-                            my %GetParam = ();
-                            PARAMITEM:
-                            for my $ParamItem (@Params) {
-                                next PARAMITEM if !$ParamItem->{Name};
-                                my @Array
-                                    = $Self->{ParamObject}->GetArray( Param => $ParamItem->{Name} );
-
-                                $GetParam{ $ParamItem->{Name} } = \@Array;
-                            }
-                            if ( !$Object->Run( GetParam => \%GetParam, UserData => \%UserData ) ) {
-                                $Note .= $Self->{LayoutObject}->Notify( Info => $Object->Error() );
-                            }
+                    my @Params = $Object->Param( UserData => \%UserData );
+                    if (@Params) {
+                        my %GetParam = ();
+                        for my $ParamItem (@Params) {
+                            my @Array
+                                = $Self->{ParamObject}->GetArray( Param => $ParamItem->{Name} );
+                            $GetParam{ $ParamItem->{Name} } = \@Array;
+                        }
+                        if ( !$Object->Run( GetParam => \%GetParam, UserData => \%UserData ) ) {
+                            $Note .= $Self->{LayoutObject}->Notify( Info => $Object->Error() );
                         }
                     }
-                    else {
-                        return $Self->{LayoutObject}->FatalError();
-                    }
-                }
-
-                # redirect
-                if (
-                    !$Self->{ConfigObject}->Get('Frontend::Module')->{AdminUserGroup}
-                    && $Self->{ConfigObject}->Get('Frontend::Module')->{AdminRoleUser}
-                    )
-                {
-                    return $Self->{LayoutObject}->Redirect(
-                        OP => "Action=AdminRoleUser;Subaction=User;ID=$UserID",
-                    );
-                }
-                if ( $Self->{ConfigObject}->Get('Frontend::Module')->{AdminUserGroup} ) {
-                    return $Self->{LayoutObject}->Redirect(
-                        OP => "Action=AdminUserGroup;Subaction=User;ID=$UserID",
-                    );
                 }
                 else {
-                    return $Self->{LayoutObject}->Redirect( OP => 'Action=AdminUser', );
+                    return $Self->{LayoutObject}->FatalError();
                 }
             }
-            else {
-                $Note .= $Self->{LogObject}->GetLogEntry(
-                    Type => 'Error',
-                    What => 'Message',
+
+            # redirect
+            if (
+                !$Self->{ConfigObject}->Get('Frontend::Module')->{AdminUserGroup}
+                && $Self->{ConfigObject}->Get('Frontend::Module')->{AdminRoleUser}
+                )
+            {
+                return $Self->{LayoutObject}->Redirect(
+                    OP => "Action=AdminRoleUser&Subaction=User&ID=$UserID",
                 );
             }
+            if ( $Self->{ConfigObject}->Get('Frontend::Module')->{AdminUserGroup} ) {
+                return $Self->{LayoutObject}->Redirect(
+                    OP => "Action=AdminUserGroup&Subaction=User&ID=$UserID",
+                );
+            }
+            else {
+                return $Self->{LayoutObject}->Redirect( OP => "Action=AdminUser", );
+            }
         }
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Note
-            ? $Self->{LayoutObject}->Notify(
-            Priority => 'Error',
-            Info     => $Note,
-            )
-            : '';
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Self->_Edit(
-            Action    => 'Add',
-            Search    => $Search,
-            ErrorType => $Errors{ErrorType} || '',
-            %GetParam,
-            %Errors,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminUser',
-            Data         => \%Param,
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
+        else {
+            my $Output = $Self->{LayoutObject}->Header();
+            $Output .= $Self->{LayoutObject}->NavigationBar();
+            $Output .= $Self->{LayoutObject}->Notify( Priority => 'Error' ) . $Note;
+            $Self->_Edit(
+                Action => "Add",
+                Search => $Search,
+                %GetParam,
+            );
+            $Output .= $Self->{LayoutObject}->Output(
+                TemplateFile => 'AdminUserForm',
+                Data         => \%Param,
+            );
+            $Output .= $Self->{LayoutObject}->Footer();
+            return $Output;
+        }
     }
 
     # ------------------------------------------------------------ #
     # overview
     # ------------------------------------------------------------ #
     else {
-        $Self->_Overview( Search => $Search );
+        $Self->_Overview( Search => $Search, );
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminUser',
+            TemplateFile => 'AdminUserForm',
             Data         => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
@@ -451,17 +351,11 @@ sub _Edit {
         Name => 'Overview',
         Data => \%Param,
     );
-    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-    $Self->{LayoutObject}->Block( Name => 'ActionOverview' );
 
-    # get valid list
-    my %ValidList        = $Self->{ValidObject}->ValidList();
-    my %ValidListReverse = reverse %ValidList;
-
-    $Param{ValidOption} = $Self->{LayoutObject}->BuildSelection(
-        Data       => \%ValidList,
+    $Param{ValidOption} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data       => { $Self->{ValidObject}->ValidList(), },
         Name       => 'ValidID',
-        SelectedID => $Param{ValidID} || $ValidListReverse{valid},
+        SelectedID => $Param{ValidID},
     );
 
     $Self->{LayoutObject}->Block(
@@ -469,53 +363,23 @@ sub _Edit {
         Data => \%Param,
     );
 
-    # shows header
-    if ( $Param{Action} eq 'Change' ) {
-        $Self->{LayoutObject}->Block( Name => 'HeaderEdit' );
-    }
-    else {
-        $Self->{LayoutObject}->Block( Name => 'HeaderAdd' );
-        $Self->{LayoutObject}->Block( Name => 'MarkerMandatory' );
-        $Param{ClassMandatory} = 'Mandatory';
-        $Param{UserPwRequired} = 'Validate_Required';
-
-    }
-
-    # add the correct server error msg
-    if ( $Param{UserEmail} && $Param{ErrorType} ) {
-
-        # display server error msg according with the occurred email error type
-        $Self->{LayoutObject}->Block(
-            Name => 'UserEmail' . $Param{ErrorType} . 'ServerErrorMsg',
-            Data => {},
-        );
-    }
-    else {
-        $Self->{LayoutObject}->Block(
-            Name => "UserEmailServerErrorMsg",
-            Data => {},
-        );
-    }
-
     my @Groups = @{ $Self->{ConfigObject}->Get('PreferencesView') };
-    for my $Column (@Groups) {
+    for my $Colum (@Groups) {
         my %Data        = ();
         my %Preferences = %{ $Self->{ConfigObject}->Get('PreferencesGroups') };
-
-        GROUP:
         for my $Group ( keys %Preferences ) {
-            next GROUP if $Preferences{$Group}->{Column} ne $Column;
-
-            if ( $Data{ $Preferences{$Group}->{Prio} } ) {
-                for ( 1 .. 151 ) {
-                    $Preferences{$Group}->{Prio}++;
-                    if ( !$Data{ $Preferences{$Group}->{Prio} } ) {
-                        $Data{ $Preferences{$Group}->{Prio} } = $Group;
-                        last;
+            if ( $Preferences{$Group}->{Colum} eq $Colum ) {
+                if ( $Data{ $Preferences{$Group}->{Prio} } ) {
+                    for ( 1 .. 151 ) {
+                        $Preferences{$Group}->{Prio}++;
+                        if ( !$Data{ $Preferences{$Group}->{Prio} } ) {
+                            $Data{ $Preferences{$Group}->{Prio} } = $Group;
+                            last;
+                        }
                     }
                 }
+                $Data{ $Preferences{$Group}->{Prio} } = $Group;
             }
-            $Data{ $Preferences{$Group}->{Prio} } = $Group;
         }
 
         # sort
@@ -555,7 +419,7 @@ sub _Edit {
                             || ref( $Preference{Data} ) eq 'HASH'
                             )
                         {
-                            $ParamItem->{'Option'} = $Self->{LayoutObject}->BuildSelection(
+                            $ParamItem->{'Option'} = $Self->{LayoutObject}->OptionStrgHashRef(
                                 %Preference, %{$ParamItem},
                             );
                         }
@@ -581,56 +445,48 @@ sub _Edit {
 sub _Overview {
     my ( $Self, %Param ) = @_;
 
-    # when there is no data to show, a message is displayed on the table with this colspan
-    my $ColSpan = 7;
+    my $Output = '';
 
     $Self->{LayoutObject}->Block(
         Name => 'Overview',
         Data => \%Param,
     );
-
-    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-    $Self->{LayoutObject}->Block( Name => 'ActionSearch' );
-    $Self->{LayoutObject}->Block( Name => 'ActionAdd' );
-
-    $Self->{LayoutObject}->Block(
-        Name => 'OverviewHeader',
-        Data => {},
-    );
-
     $Self->{LayoutObject}->Block(
         Name => 'OverviewResult',
         Data => \%Param,
     );
     if ( $Self->{ConfigObject}->Get('SwitchToUser') ) {
-        $ColSpan = 8;
         $Self->{LayoutObject}->Block(
             Name => 'OverviewResultSwitchToUser',
+            Data => {},
         );
     }
+    if ( $Param{Search} ) {
+        my %List = $Self->{UserObject}->UserSearch(
+            Search => $Param{Search} . '*',
+            Limit  => 400,
+            Valid  => 0,
+        );
 
-    my %List = $Self->{UserObject}->UserSearch(
-        Search => $Param{Search} . '*',
-        Limit  => 400,
-        Valid  => 0,
-    );
+        # get valid list
+        my %ValidList = $Self->{ValidObject}->ValidList();
+        my $CssClass  = '';
+        for ( sort { $List{$a} cmp $List{$b} } keys %List ) {
 
-    # get valid list
-    my %ValidList = $Self->{ValidObject}->ValidList();
-
-    # if there are results to show
-    if (%List) {
-        for my $ListKey ( sort { $List{$a} cmp $List{$b} } keys %List ) {
-
-            my %UserData = $Self->{UserObject}->GetUserData(
-                UserID        => $ListKey,
-                NoOutOfOffice => 1,
-            );
+            # set output class
+            if ( $CssClass && $CssClass eq 'searchactive' ) {
+                $CssClass = 'searchpassive';
+            }
+            else {
+                $CssClass = 'searchactive';
+            }
+            my %UserData = $Self->{UserObject}->GetUserData( UserID => $_, );
             $Self->{LayoutObject}->Block(
                 Name => 'OverviewResultRow',
                 Data => {
-                    Valid  => $ValidList{ $UserData{ValidID} },
-                    Search => $Param{Search},
+                    Valid    => $ValidList{ $UserData{ValidID} },
+                    CssClass => $CssClass,
+                    Search   => $Param{Search},
                     %UserData,
                 },
             );
@@ -638,23 +494,14 @@ sub _Overview {
                 $Self->{LayoutObject}->Block(
                     Name => 'OverviewResultRowSwitchToUser',
                     Data => {
-                        Search => $Param{Search},
+                        CssClass => $CssClass,
+                        Search   => $Param{Search},
                         %UserData,
                     },
                 );
             }
         }
     }
-
-    else {
-        $Self->{LayoutObject}->Block(
-            Name => 'NoDataFoundMsg',
-            Data => {
-                ColSpan => $ColSpan,
-            },
-        );
-    }
-
     return 1;
 }
 
