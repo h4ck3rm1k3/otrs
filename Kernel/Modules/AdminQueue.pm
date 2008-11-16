@@ -1,12 +1,12 @@
 # --
 # Kernel/Modules/AdminQueue.pm - to add/update/delete queues
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminQueue.pm,v 1.82 2011/09/08 20:51:33 en Exp $
+# $Id: AdminQueue.pm,v 1.43.2.1 2008/11/16 18:17:38 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::Modules::AdminQueue;
@@ -21,7 +21,7 @@ use Kernel::System::Signature;
 use Kernel::System::SystemAddress;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.82 $) [1];
+$VERSION = qw($Revision: 1.43.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -31,19 +31,15 @@ sub new {
     bless( $Self, $Type );
 
     # check all needed objects
-    for my $Needed (
-        qw(ParamObject DBObject QueueObject LayoutObject ConfigObject LogObject MainObject EncodeObject)
-        )
-    {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    for (qw(ParamObject DBObject QueueObject LayoutObject ConfigObject LogObject MainObject)) {
+        if ( !$Self->{$_} ) {
+            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
         }
     }
     $Self->{ValidObject}         = Kernel::System::Valid->new(%Param);
     $Self->{SalutationObject}    = Kernel::System::Salutation->new(%Param);
     $Self->{SignatureObject}     = Kernel::System::Signature->new(%Param);
     $Self->{SystemAddressObject} = Kernel::System::SystemAddress->new(%Param);
-    $Self->{GroupObject}         = Kernel::System::Group->new(%Param);
 
     return $Self;
 }
@@ -51,6 +47,8 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
+    my $Output = '';
+    $Param{NextScreen} = 'AdminQueue';
     my $QueueID = $Self->{ParamObject}->GetParam( Param => 'QueueID' ) || '';
 
     my @Params = (
@@ -60,15 +58,15 @@ sub Run {
             DefaultSignKey    SalutationID        SignatureID     FollowUpID
             FirstResponseTime FirstResponseNotify UpdateTime      UpdateNotify
             SolutionTime      SolutionNotify
+            MoveNotify        StateNotify         LockNotify      OwnerNotify
             Comment           ValidID
             )
     );
 
     # get possible sign keys
-    my %KeyList   = ();
-    my %QueueData = ();
+    my %KeyList = ();
     if ($QueueID) {
-        %QueueData = $Self->{QueueObject}->QueueGet( ID => $QueueID );
+        my %QueueData = $Self->{QueueObject}->QueueGet( ID => $QueueID );
         my $CryptObjectPGP = Kernel::System::Crypt->new( %{$Self}, CryptType => 'PGP' );
         if ($CryptObjectPGP) {
             my @PrivateKeys = $CryptObjectPGP->PrivateKeySearch( Search => $QueueData{Email}, );
@@ -83,50 +81,33 @@ sub Run {
         if ($CryptObjectSMIME) {
             my @PrivateKeys = $CryptObjectSMIME->PrivateSearch( Search => $QueueData{Email}, );
             for my $DataRef (@PrivateKeys) {
-                $KeyList{"SMIME::Detached::$DataRef->{Filename}"}
-                    = "SMIME-Detached: $DataRef->{Filename} [$DataRef->{EndDate}] $DataRef->{Email}";
+                $KeyList{"SMIME::Detached::$DataRef->{Hash}"}
+                    = "SMIME-Detached: $DataRef->{Hash} $DataRef->{Email}";
             }
         }
     }
 
-    # ------------------------------------------------------------ #
-    # change
-    # ------------------------------------------------------------ #
+    # get data
     if ( $Self->{Subaction} eq 'Change' ) {
-        my $Output = $Self->{LayoutObject}->Header();
+        my %QueueData = $Self->{QueueObject}->QueueGet( ID => $QueueID );
+        $Output .= $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Self->_Edit(
-            Action => 'Change',
-            %Param,
-            %QueueData,
-            DefaultSignKeyList => \%KeyList,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminQueue',
-            Data         => \%Param,
-
-        );
+        $Output .= $Self->_Mask( %Param, %QueueData, DefaultSignKeyList => \%KeyList );
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
 
-    # ------------------------------------------------------------ #
     # update action
-    # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'ChangeAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Note = '';
-        my ( %GetParam, %Errors );
-        for my $Parameter (@Params) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+        my %GetParam;
+        for (@Params) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ ) || '';
         }
 
         # check queue name
         if ( $GetParam{Name} =~ /::/ ) {
-            my $Output = $Self->{LayoutObject}->Header();
+            $Output = $Self->{LayoutObject}->Header();
             $Output .= $Self->{LayoutObject}->NavigationBar();
             $Output .= $Self->{LayoutObject}->Warning(
                 Message => 'Don\'t use :: in queue name!',
@@ -142,42 +123,20 @@ sub Run {
                 = $Self->{QueueObject}->QueueLookup( QueueID => $GetParam{ParentQueueID}, ) . '::'
                 . $GetParam{Name};
         }
+        if ( $Self->{QueueObject}->QueueUpdate( %GetParam, UserID => $Self->{UserID} ) ) {
 
-        # check needed data
-        for my $Needed (
-            qw(Name GroupID SystemAddressID SalutationID SignatureID ValidID FollowUpID)
-            )
-        {
-            if ( !$GetParam{$Needed} ) {
-                $Errors{ $Needed . 'Invalid' } = 'ServerError';
+            # update preferences
+            my %QueueData = $Self->{QueueObject}->QueueGet( ID => $GetParam{QueueID} );
+            my %Preferences = ();
+            if ( $Self->{ConfigObject}->Get('QueuePreferences') ) {
+                %Preferences = %{ $Self->{ConfigObject}->Get('QueuePreferences') };
             }
-        }
+            for my $Item ( sort keys %Preferences ) {
+                my $Module = $Preferences{$Item}->{Module}
+                    || 'Kernel::Output::HTML::QueuePreferencesGeneric';
 
-        # if no errors occurred
-        if ( !%Errors ) {
-
-            # update queue
-            my $QueueUpdate = $Self->{QueueObject}->QueueUpdate(
-                %GetParam,
-                UserID => $Self->{UserID}
-            );
-            if ($QueueUpdate) {
-
-                # update preferences
-                my %QueueData = $Self->{QueueObject}->QueueGet( ID => $GetParam{QueueID} );
-                my %Preferences = ();
-                if ( $Self->{ConfigObject}->Get('QueuePreferences') ) {
-                    %Preferences = %{ $Self->{ConfigObject}->Get('QueuePreferences') };
-                }
-
-                for my $Item ( sort keys %Preferences ) {
-                    my $Module = $Preferences{$Item}->{Module}
-                        || 'Kernel::Output::HTML::QueuePreferencesGeneric';
-
-                    # load module
-                    if ( !$Self->{MainObject}->Require($Module) ) {
-                        return $Self->{LayoutObject}->FatalError();
-                    }
+                # load module
+                if ( $Self->{MainObject}->Require($Module) ) {
                     my $Object = $Module->new(
                         %{$Self},
                         ConfigItem => $Preferences{$Item},
@@ -196,75 +155,28 @@ sub Run {
                         }
                     }
                 }
-                $Self->_Overview();
-                my $Output = $Self->{LayoutObject}->Header();
-                $Output .= $Self->{LayoutObject}->NavigationBar();
-                $Output .= $Self->{LayoutObject}->Notify( Info => 'Queue updated!' );
-                $Output .= $Self->{LayoutObject}->Output(
-                    TemplateFile => 'AdminQueue',
-                    Data         => \%Param,
-                );
-                $Output .= $Self->{LayoutObject}->Footer();
-                return $Output;
+                else {
+                    return $Self->{LayoutObject}->FatalError();
+                }
             }
+            return $Self->{LayoutObject}->Redirect( OP => "Action=$Param{NextScreen}" );
         }
-
-        # something has gone wrong
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->{LayoutObject}->Notify( Priority => 'Error' );
-        $Self->_Edit(
-            Action => 'Change',
-            Errors => \%Errors,
-            %GetParam,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminQueue',
-            Data         => \%Param,
-
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
-
+        else {
+            return $Self->{LayoutObject}->ErrorScreen();
+        }
     }
 
-    # ------------------------------------------------------------ #
-    # add
-    # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'Add' ) {
-        my %GetParam;
-        $GetParam{Name} = $Self->{ParamObject}->GetParam( Param => 'Name' );
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Self->_Edit(
-            Action => 'Add',
-            %GetParam,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminQueue',
-            Data         => \%Param,
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
-    }
-
-    # ------------------------------------------------------------ #
-    # add action
-    # ------------------------------------------------------------ #
+    # add new queue
     elsif ( $Self->{Subaction} eq 'AddAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Note = '';
-        my ( %GetParam, %Errors );
-        for my $Parameter (@Params) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+        my %GetParam;
+        for (@Params) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ ) || '';
         }
 
         # check queue name
         if ( $GetParam{Name} =~ /::/ ) {
-            my $Output = $Self->{LayoutObject}->Header();
+            $Output = $Self->{LayoutObject}->Header();
             $Output .= $Self->{LayoutObject}->NavigationBar();
             $Output .= $Self->{LayoutObject}->Warning(
                 Message => 'Don\'t use :: in queue name!',
@@ -281,53 +193,21 @@ sub Run {
             ) . '::' . $GetParam{Name};
         }
 
-        # check needed data
-        for my $Needed (
-            qw(Name GroupID SystemAddressID SalutationID SignatureID ValidID FollowUpID)
-            )
-        {
-            if ( !$GetParam{$Needed} ) {
-                $Errors{ $Needed . 'Invalid' } = 'ServerError';
+        # create new queue
+        if ( my $Id = $Self->{QueueObject}->QueueAdd( %GetParam, UserID => $Self->{UserID} ) ) {
+
+            # update preferences
+            my %QueueData = $Self->{QueueObject}->QueueGet( ID => $Id );
+            my %Preferences = ();
+            if ( $Self->{ConfigObject}->Get('QueuePreferences') ) {
+                %Preferences = %{ $Self->{ConfigObject}->Get('QueuePreferences') };
             }
-        }
+            for my $Item ( keys %Preferences ) {
+                my $Module = $Preferences{$Item}->{Module}
+                    || 'Kernel::Output::HTML::QueuePreferencesGeneric';
 
-        # check if some fields must be set with default values
-        for my $Optional (
-            qw(UnlockTimeout FirstResponseTime FirstResponseNotify UpdateTime UpdateNotify SolutionTime SolutionNotify FollowUpLock Calendar)
-            )
-        {
-
-            # add default values
-            if ( !$GetParam{$Optional} ) {
-                $GetParam{$Optional} = 0;
-            }
-        }
-
-        # if no errors occurred
-        if ( !%Errors ) {
-
-            # create new queue
-            my $Id = $Self->{QueueObject}->QueueAdd(
-                %GetParam,
-                UserID          => $Self->{UserID},
-                NoDefaultValues => 1,
-            );
-            if ($Id) {
-
-                # update preferences
-                my %QueueData = $Self->{QueueObject}->QueueGet( ID => $Id );
-                my %Preferences = ();
-                if ( $Self->{ConfigObject}->Get('QueuePreferences') ) {
-                    %Preferences = %{ $Self->{ConfigObject}->Get('QueuePreferences') };
-                }
-                for my $Item ( keys %Preferences ) {
-                    my $Module = $Preferences{$Item}->{Module}
-                        || 'Kernel::Output::HTML::QueuePreferencesGeneric';
-
-                    # load module
-                    if ( !$Self->{MainObject}->Require($Module) ) {
-                        return $Self->{LayoutObject}->FatalError();
-                    }
+                # load module
+                if ( $Self->{MainObject}->Require($Module) ) {
                     my $Object = $Module->new(
                         %{$Self},
                         ConfigItem => $Preferences{$Item},
@@ -346,68 +226,41 @@ sub Run {
                         }
                     }
                 }
-                return $Self->{LayoutObject}->Redirect(
-                    OP => "Action=AdminQueueResponses&Subaction=Queue&ID=$Id",
-                );
+                else {
+                    return $Self->{LayoutObject}->FatalError();
+                }
             }
+
+            return $Self->{LayoutObject}->Redirect(
+                OP => "Action=AdminQueueResponses&Subaction=Queue&ID=$Id",
+            );
         }
-
-        # something has gone wrong
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->{LayoutObject}->Notify( Priority => 'Error' );
-        $Self->_Edit(
-            Action => 'Add',
-            Errors => \%Errors,
-            %GetParam,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminQueue',
-            Data         => \%Param,
-
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
+        else {
+            return $Self->{LayoutObject}->ErrorScreen();
+        }
     }
 
-    # ------------------------------------------------------------ #
-    # overview
-    # ------------------------------------------------------------ #
+    # else ! print form
     else {
-        $Self->_Overview();
-        my $Output = $Self->{LayoutObject}->Header();
+        $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminQueue',
-            Data         => \%Param,
-        );
+        $Output .= $Self->_Mask();
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
 }
 
-sub _Edit {
+sub _Mask {
     my ( $Self, %Param ) = @_;
 
-    $Self->{LayoutObject}->Block(
-        Name => 'Overview',
-        Data => \%Param,
-    );
-    ${Self}->{LayoutObject}->Block( Name => 'ActionList' );
-    ${Self}->{LayoutObject}->Block( Name => 'ActionOverview' );
-
-    # get valid list
-    my %ValidList        = $Self->{ValidObject}->ValidList();
-    my %ValidListReverse = reverse %ValidList;
-
-    $Param{ValidOption} = $Self->{LayoutObject}->BuildSelection(
-        Data       => \%ValidList,
+    # build ValidID string
+    $Param{'ValidOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data       => { $Self->{ValidObject}->ValidList(), },
         Name       => 'ValidID',
-        SelectedID => $Param{ValidID} || $ValidListReverse{valid},
-        Class      => 'Validate_Required ' . ( $Param{Errors}->{'ValidIDInvalid'} || '' ),
+        SelectedID => $Param{ValidID},
     );
 
-    $Param{GroupOption} = $Self->{LayoutObject}->BuildSelection(
+    $Param{'GroupOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
         Data => {
             $Self->{DBObject}->GetTableData(
                 What  => 'id, name',
@@ -415,12 +268,10 @@ sub _Edit {
                 Valid => 1,
             ),
         },
-        Translation => 0,
-        Name        => 'GroupID',
-        SelectedID  => $Param{GroupID},
-        Class       => 'Validate_Required ' . ( $Param{Errors}->{'GroupIDInvalid'} || '' ),
+        LanguageTranslation => 0,
+        Name                => 'GroupID',
+        SelectedID          => $Param{GroupID},
     );
-
     my $ParentQueue = '';
     if ( $Param{Name} ) {
         my @Queue = split( /::/, $Param{Name} );
@@ -433,7 +284,7 @@ sub _Edit {
         $Param{Name} = $Queue[$#Queue];
     }
 
-    my %Data = $Self->{QueueObject}->QueueList( Valid => 0 );
+    my %Data = $Self->{QueueObject}->QueueList( Valid => 1 );
     my $QueueName = '';
     for my $Key ( keys %Data ) {
         if ( $Param{QueueID} && $Param{QueueID} eq $Key ) {
@@ -443,48 +294,18 @@ sub _Edit {
     }
     my %CleanHash = %Data;
     for my $Key ( keys %Data ) {
-        if ( $CleanHash{$Key} eq $QueueName || $CleanHash{$Key} =~ /^\Q$QueueName\E\:\:/ ) {
-            delete $CleanHash{$Key};
+        if ( $CleanHash{$Key} eq $QueueName || $CleanHash{$Key} =~ /^$QueueName\:\:/ ) {
+            delete( $CleanHash{$Key} );
         }
     }
-
-    # get list type
-    my $ListType = $Self->{ConfigObject}->Get('Ticket::Frontend::ListType');
-
-    # verify if queue list should be a list or a tree
-    if ( $ListType eq 'tree' ) {
-        $Param{QueueOption} = $Self->{LayoutObject}->AgentQueueListOption(
-            Data => { '' => ' -', %CleanHash, },
-            Name => 'ParentQueueID',
-            Selected       => $ParentQueue,
-            MaxLevel       => 3,
-            OnChangeSubmit => 0,
-        );
-    }
-    else {
-
-        # leave only queues with 3 levels, because max allowed level is 4:
-        # new queue + 3 levels of parent queue = 4 levels
-        for my $Key ( keys %CleanHash ) {
-            my $QueueName      = $CleanHash{$Key};
-            my @QueueNameLevel = split( ::, $QueueName );
-            my $QueueLevel     = $#QueueNameLevel + 1;
-            if ( $QueueLevel > 3 ) {
-                delete $CleanHash{$Key};
-            }
-        }
-
-        $Param{QueueOption} = $Self->{LayoutObject}->BuildSelection(
-            Data          => \%CleanHash,
-            Name          => 'ParentQueueID',
-            SelectedValue => $ParentQueue,
-            PossibleNone  => 1,
-            HTMLQuote     => 0,
-            Translation   => 0,
-        );
-    }
-
-    $Param{QueueLongOption} = $Self->{LayoutObject}->AgentQueueListOption(
+    $Param{'QueueOption'} = $Self->{LayoutObject}->AgentQueueListOption(
+        Data => { %CleanHash, '' => '-', },
+        Name => 'ParentQueueID',
+        Selected       => $ParentQueue,
+        MaxLevel       => 4,
+        OnChangeSubmit => 0,
+    );
+    $Param{'QueueLongOption'} = $Self->{LayoutObject}->AgentQueueListOption(
         Data => { $Self->{QueueObject}->QueueList( Valid => 0 ), },
         Name => 'QueueID',
         Size => 15,
@@ -504,52 +325,44 @@ sub _Edit {
     );
     $Param{FirstResponseNotifyOptionStrg} = $Self->{LayoutObject}->BuildSelection(
         Data         => \%NotifyLevelList,
-        Translation  => 0,
         Name         => 'FirstResponseNotify',
         SelectedID   => $Param{FirstResponseNotify},
         PossibleNone => 1,
     );
     $Param{UpdateNotifyOptionStrg} = $Self->{LayoutObject}->BuildSelection(
         Data         => \%NotifyLevelList,
-        Translation  => 0,
         Name         => 'UpdateNotify',
         SelectedID   => $Param{UpdateNotify},
         PossibleNone => 1,
     );
     $Param{SolutionNotifyOptionStrg} = $Self->{LayoutObject}->BuildSelection(
         Data         => \%NotifyLevelList,
-        Translation  => 0,
         Name         => 'SolutionNotify',
         SelectedID   => $Param{SolutionNotify},
         PossibleNone => 1,
     );
-    $Param{SignatureOption} = $Self->{LayoutObject}->BuildSelection(
+    $Param{'SignatureOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
         Data => { $Self->{SignatureObject}->SignatureList( Valid => 1 ), },
-        Translation => 0,
-        Name        => 'SignatureID',
-        SelectedID  => $Param{SignatureID},
-        Class       => 'Validate_Required ' . ( $Param{Errors}->{'SignatureIDInvalid'} || '' ),
+        Name => 'SignatureID',
+        SelectedID => $Param{SignatureID},
     );
-    $Param{FollowUpLockYesNoOption} = $Self->{LayoutObject}->BuildSelection(
+    $Param{'FollowUpLockYesNoOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
         Data       => $Self->{ConfigObject}->Get('YesNoOptions'),
         Name       => 'FollowUpLock',
-        SelectedID => $Param{FollowUpLock} || 0,
+        SelectedID => $Param{FollowUpLock},
     );
 
-    $Param{SystemAddressOption} = $Self->{LayoutObject}->BuildSelection(
+    $Param{'SystemAddressOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
         Data => { $Self->{SystemAddressObject}->SystemAddressList( Valid => 1 ), },
-        Translation => 0,
-        Name        => 'SystemAddressID',
-        SelectedID  => $Param{SystemAddressID},
-        Max         => 200,
-        Class       => 'Validate_Required ' . ( $Param{Errors}->{'SystemAddressIDInvalid'} || '' ),
+        Name => 'SystemAddressID',
+        SelectedID => $Param{SystemAddressID},
     );
 
     my %DefaultSignKeyList = ();
     if ( $Param{DefaultSignKeyList} ) {
         %DefaultSignKeyList = %{ $Param{DefaultSignKeyList} };
     }
-    $Param{DefaultSignKeyOption} = $Self->{LayoutObject}->BuildSelection(
+    $Param{'DefaultSignKeyOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
         Data => {
             '' => '-none-',
             %DefaultSignKeyList
@@ -558,14 +371,12 @@ sub _Edit {
         Max        => 50,
         SelectedID => $Param{DefaultSignKey},
     );
-    $Param{SalutationOption} = $Self->{LayoutObject}->BuildSelection(
+    $Param{'SalutationOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
         Data => { $Self->{SalutationObject}->SalutationList( Valid => 1 ), },
-        Translation => 0,
-        Name        => 'SalutationID',
-        SelectedID  => $Param{SalutationID},
-        Class       => 'Validate_Required ' . ( $Param{Errors}->{'SalutationIDInvalid'} || '' ),
+        Name => 'SalutationID',
+        SelectedID => $Param{SalutationID},
     );
-    $Param{FollowUpOption} = $Self->{LayoutObject}->BuildSelection(
+    $Param{'FollowUpOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
         Data => {
             $Self->{DBObject}->GetTableData(
                 What  => 'id, name',
@@ -577,45 +388,40 @@ sub _Edit {
         SelectedID => $Param{FollowUpID}
             || $Self->{ConfigObject}->Get('AdminDefaultFollowUpID')
             || 1,
-        Class => 'Validate_Required ' . ( $Param{Errors}->{'FollowUpIDInvalid'} || '' ),
+    );
+    $Param{'MoveOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data       => $Self->{ConfigObject}->Get('YesNoOptions'),
+        Name       => 'MoveNotify',
+        SelectedID => $Param{MoveNotify},
+    );
+    $Param{'StateOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data       => $Self->{ConfigObject}->Get('YesNoOptions'),
+        Name       => 'StateNotify',
+        SelectedID => $Param{StateNotify},
+    );
+    $Param{'OwnerOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data       => $Self->{ConfigObject}->Get('YesNoOptions'),
+        Name       => 'OwnerNotify',
+        SelectedID => $Param{OwnerNotify},
+    );
+    $Param{'LockOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data       => $Self->{ConfigObject}->Get('YesNoOptions'),
+        Name       => 'LockNotify',
+        SelectedID => $Param{LockNotify},
     );
     my %Calendar = ( '' => '-' );
 
-    for my $Number ( '', 1 .. 50 ) {
-        if ( $Self->{ConfigObject}->Get("TimeVacationDays::Calendar$Number") ) {
-            $Calendar{$Number} = "Calendar $Number - "
-                . $Self->{ConfigObject}->Get( "TimeZone::Calendar" . $Number . "Name" );
+    for ( '', 1 .. 50 ) {
+        if ( $Self->{ConfigObject}->Get("TimeVacationDays::Calendar$_") ) {
+            $Calendar{$_} = "Calendar $_ - "
+                . $Self->{ConfigObject}->Get( "TimeZone::Calendar" . $_ . "Name" );
         }
     }
-    $Param{CalendarOption} = $Self->{LayoutObject}->BuildSelection(
-        Data        => \%Calendar,
-        Translation => 0,
-        Name        => 'Calendar',
-        SelectedID  => $Param{Calendar},
+    $Param{'CalendarOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data       => \%Calendar,
+        Name       => 'Calendar',
+        SelectedID => $Param{Calendar},
     );
-
-    $Self->{LayoutObject}->Block(
-        Name => 'OverviewUpdate',
-        Data => {
-            %Param,
-            %{ $Param{Errors} },
-        },
-    );
-
-    # shows header
-    if ( $Param{Action} eq 'Change' ) {
-        $Self->{LayoutObject}->Block( Name => 'HeaderEdit' );
-    }
-    else {
-        $Self->{LayoutObject}->Block( Name => 'HeaderAdd' );
-    }
-
-    if ( $Param{DefaultSignKeyOption} ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'OptionalField',
-            Data => \%Param,
-        );
-    }
 
     # show each preferences setting
     my %Preferences = ();
@@ -627,91 +433,45 @@ sub _Edit {
             || 'Kernel::Output::HTML::QueuePreferencesGeneric';
 
         # load module
-        if ( !$Self->{MainObject}->Require($Module) ) {
-            return $Self->{LayoutObject}->FatalError();
-        }
-        my $Object = $Module->new(
-            %{$Self},
-            ConfigItem => $Preferences{$Item},
-            Debug      => $Self->{Debug},
-        );
-        my @Params = $Object->Param( QueueData => \%Param );
-        if (@Params) {
-            for my $ParamItem (@Params) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'Item',
-                    Data => { %Param, },
-                );
-                if (
-                    ref( $ParamItem->{Data} ) eq 'HASH'
-                    || ref( $Preferences{$Item}->{Data} ) eq 'HASH'
-                    )
-                {
-                    $ParamItem->{'Option'} = $Self->{LayoutObject}->BuildSelection(
-                        %{ $Preferences{$Item} },
-                        %{$ParamItem},
+        if ( $Self->{MainObject}->Require($Module) ) {
+            my $Object = $Module->new(
+                %{$Self},
+                ConfigItem => $Preferences{$Item},
+                Debug      => $Self->{Debug},
+            );
+            my @Params = $Object->Param( QueueData => \%Param );
+            if (@Params) {
+                for my $ParamItem (@Params) {
+                    $Self->{LayoutObject}->Block(
+                        Name => 'Item',
+                        Data => { %Param, },
+                    );
+                    if (
+                        ref( $ParamItem->{Data} ) eq 'HASH'
+                        || ref( $Preferences{$Item}->{Data} ) eq 'HASH'
+                        )
+                    {
+                        $ParamItem->{'Option'} = $Self->{LayoutObject}->OptionStrgHashRef(
+                            %{ $Preferences{$Item} },
+                            %{$ParamItem},
+                        );
+                    }
+                    $Self->{LayoutObject}->Block(
+                        Name => $ParamItem->{Block} || $Preferences{$Item}->{Block} || 'Option',
+                        Data => {
+                            %{ $Preferences{$Item} },
+                            %{$ParamItem},
+                        },
                     );
                 }
-                $Self->{LayoutObject}->Block(
-                    Name => $ParamItem->{Block} || $Preferences{$Item}->{Block} || 'Option',
-                    Data => {
-                        %{ $Preferences{$Item} },
-                        %{$ParamItem},
-                    },
-                );
             }
         }
-    }
-
-    # reformat from html to plain
-    if ( $Param{ContentType} && $Param{ContentType} =~ /text\/html/i ) {
-        $Param{Response} = $Self->{HTMLUtilsObject}->ToAscii(
-            String => $Param{Response},
-        );
-    }
-    return 1;
-}
-
-sub _Overview {
-    my ( $Self, %Param ) = @_;
-
-    $Self->{LayoutObject}->Block(
-        Name => 'Overview',
-        Data => \%Param,
-    );
-    ${Self}->{LayoutObject}->Block( Name => 'ActionList' );
-    ${Self}->{LayoutObject}->Block( Name => 'ActionAdd' );
-
-    $Self->{LayoutObject}->Block(
-        Name => 'OverviewResult',
-        Data => \%Param,
-    );
-    my %List = $Self->{QueueObject}->QueueList( Valid => 0 );
-
-    if (%List) {
-
-        # get valid list
-        my %ValidList = $Self->{ValidObject}->ValidList();
-        for my $QueueID ( sort { $List{$a} cmp $List{$b} } keys %List ) {
-
-            my %Data = $Self->{QueueObject}->QueueGet( ID => $QueueID, );
-            $Data{GroupName} = $Self->{GroupObject}->GroupLookup( GroupID => $Data{GroupID} );
-            $Self->{LayoutObject}->Block(
-                Name => 'OverviewResultRow',
-                Data => {
-                    Valid => $ValidList{ $Data{ValidID} },
-                    %Data,
-                },
-            );
+        else {
+            return $Self->{LayoutObject}->FatalError();
         }
     }
-    else {
-        $Self->{LayoutObject}->Block(
-            Name => 'NoDataFoundMsg',
-            Data => {},
-        );
-    }
-    return 1;
+
+    return $Self->{LayoutObject}->Output( TemplateFile => 'AdminQueueForm', Data => \%Param );
 }
 
 1;
