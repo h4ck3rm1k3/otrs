@@ -1,24 +1,24 @@
 # --
-# RPM spec file for SUSE Linux 10 of the OTRS package
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# RPM spec file for SUSE Linux 10.0 of the OTRS package
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: suse-otrs-10.0.spec,v 1.16 2011/09/08 14:26:47 mg Exp $
+# $Id: suse-otrs-10.0.spec,v 1.7.2.1 2008/11/25 01:54:50 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 #
 # please send bugfixes or comments to bugs+rpm@otrs.org
 #
 # --
-Summary:      OTRS Help Desk.
+Summary:      The Open Ticket Request System.
 Name:         otrs
 Version:      0.0
-Copyright:    GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
+Copyright:    GNU GENERAL PUBLIC LICENSE Version 2, June 1991
 Group:        Applications/Mail
 Provides:     otrs
-Requires:     perl perl-DBI perl-GD perl-GDGraph perl-GDTextUtil perl-Net-DNS perl-Digest-MD5 apache2 apache2-mod_perl procmail perl-libwww-perl
+Requires:     perl perl-DBI perl-GD perl-GDGraph perl-GDTextUtil perl-Net-DNS perl-Digest-MD5 apache2 apache2-mod_perl mysql mysql-client perl-Msql-Mysql-modules mysql-shared procmail perl-libwww-perl
 Autoreqprov:  on
 Release:      01
 Source0:      otrs-%{version}.tar.bz2
@@ -69,14 +69,14 @@ install -m 755 scripts/suse-rcotrs $RPM_BUILD_ROOT/etc/init.d/otrs
 rm -f $RPM_BUILD_ROOT/sbin/otrs
 ln -s ../../etc/init.d/otrs $RPM_BUILD_ROOT/usr/sbin/rcotrs
 
-install -m 644 scripts/apache2-httpd.include.conf $RPM_BUILD_ROOT/etc/apache2/conf.d/otrs.conf
+install -m 644 scripts/apache2-httpd-new.include.conf $RPM_BUILD_ROOT/etc/apache2/conf.d/otrs.conf
 
 # set permission
 export OTRSUSER=otrs
 useradd $OTRSUSER || :
 useradd wwwrun || :
 groupadd www || :
-$RPM_BUILD_ROOT/opt/otrs/bin/otrs.SetPermissions.pl --otrs-user=$OTRSUSER --web-user=wwwrun --otrs-group=www --web-group=www $RPM_BUILD_ROOT/opt/otrs
+$RPM_BUILD_ROOT/opt/otrs/bin/SetPermissions.sh $RPM_BUILD_ROOT/opt/otrs $OTRSUSER wwwrun www www
 
 %pre
 # remember about the installed version
@@ -93,7 +93,7 @@ if id $OTRSUSER >/dev/null 2>&1; then
     # update home dir
     usermod -d /opt/otrs $OTRSUSER
 else
-    useradd $OTRSUSER -d /opt/otrs/ -s /bin/false -g www -c 'OTRS System User' && echo "$OTRSUSER added."
+    useradd $OTRSUSER -d /opt/otrs/ -s /bin/false -g nogroup -c 'OTRS System User' && echo "$OTRSUSER added."
 fi
 
 
@@ -128,12 +128,6 @@ if test -e /opt/otrs/Kernel/Config/Files/FAQ.pm; then
     mv /opt/otrs/Kernel/Config/Files/FAQ.pm /opt/otrs/Kernel/Config/Files/FAQ.pm.not_longer_used;
 fi
 
-# run OTRS rebuild config, delete cache, if the system was already in use (i.e. upgrade).
-if test -e /opt/otrs/Kernel/Config/Files/ZZZAAuto.pm; then
-    /opt/otrs/bin/otrs.RebuildConfig.pl;
-    /opt/otrs/bin/otrs.DeleteCache.pl;
-fi
-
 # note
 HOST=`hostname -f`
 echo ""
@@ -142,8 +136,8 @@ echo ""
 echo "[SuSEconfig]"
 echo " Execute 'SuSEconfig' to configure the webserver."
 echo ""
-echo "[start database and Apache]"
-echo " Make sure your database is running and execute 'rcapache2 restart'."
+echo "[start Apache and MySQL]"
+echo " Execute 'rcapache2 restart' and 'rcmysql start' in case they don't run."
 echo ""
 echo "[install the OTRS database]"
 echo " Use a webbrowser and open this link:"
@@ -175,3 +169,4 @@ rm -rf $RPM_BUILD_ROOT
 - added rename of old /opt/otrs/Kernel/Config/Files/(Ticket|TicketPostMaster|FAQ).pm files
 * Sun Mar 25 2006 - martin+rpm@otrs.org
 - added SUSE 10.0 support
+
