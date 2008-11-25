@@ -1,8 +1,8 @@
 # --
-# RPM spec file for Fedora of the OTRS package
+# RPM spec file for RedHat Linux of the OTRS package
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: fedora-otrs-4.spec,v 1.4.2.1 2008/11/25 02:00:04 martin Exp $
+# $Id: redhat-otrs-7.3.spec,v 1.15.2.1 2008/11/25 02:00:04 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -18,7 +18,7 @@ Version:      0.0
 Copyright:    GNU GENERAL PUBLIC LICENSE Version 2, June 1991
 Group:        Applications/Mail
 Provides:     otrs
-Requires:     perl perl-DBI perl-DBD-MySQL perl-URI mod_perl httpd mysql mysql-server procmail perl-libwww-perl
+Requires:     perl perl-DBI perl-DBD-MySQL perl-Digest-MD5 perl-URI perl-MIME-Base64 mod_perl apache mysql mysqlclient9 mysql-server procmail perl-libwww-perl
 Autoreqprov:  no
 Release:      01
 Source0:      otrs-%{version}.tar.bz2
@@ -54,13 +54,9 @@ cp -R . $RPM_BUILD_ROOT/$DESTROOT
 # install init-Script
 install -d -m 755 $RPM_BUILD_ROOT/etc/rc.d/init.d
 install -d -m 755 $RPM_BUILD_ROOT/etc/sysconfig
-install -d -m 755 $RPM_BUILD_ROOT/etc/httpd/conf.d
 
 install -m 755 scripts/redhat-rcotrs $RPM_BUILD_ROOT/etc/rc.d/init.d/otrs
 install -m 644 scripts/redhat-rcotrs-config $RPM_BUILD_ROOT/etc/sysconfig/otrs
-
-# copy apache2-httpd.include.conf to /etc/httpd/conf.d/otrs.conf
-install -m 644 scripts/apache2-httpd-new.include.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/otrs.conf
 
 # set permission
 export OTRSUSER=otrs
@@ -77,7 +73,7 @@ fi
 # useradd
 export OTRSUSER=otrs
 echo -n "Check OTRS user ... "
-if id $OTRSUSER >/dev/null 2>&1; then
+if id $OTRSUSER >/dev/null 2>&1 ; then
     echo "$OTRSUSER exists."
     # update home dir
     usermod -d /opt/otrs $OTRSUSER
@@ -85,8 +81,14 @@ else
     useradd $OTRSUSER -d /opt/otrs/ -s /bin/false -g apache -c 'OTRS System User' && echo "$OTRSUSER added."
 fi
 
-
 %post
+# add httpd.include.conf to /etc/httpd/conf/httpd.conf
+APACHERC=/etc/httpd/conf/httpd.conf
+OTRSINCLUDE=/opt/otrs/scripts/apache-httpd.include.conf
+
+cat $APACHERC | grep -v "httpd.include.conf" > /tmp/httpd.conf.tmp && \
+echo "Include $OTRSINCLUDE" >> /tmp/httpd.conf.tmp && mv /tmp/httpd.conf.tmp $APACHERC
+
 # if it's a major-update backup old version templates (maybe not compatible!)
 if test -e /tmp/otrs-old.tmp; then
     TOINSTALL=`echo %{version}| sed 's/..$//'`
@@ -142,11 +144,41 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %config(noreplace) /etc/sysconfig/otrs
-%config /etc/httpd/conf.d/otrs.conf
+
 /etc/rc.d/init.d/otrs
+
 <FILES>
 
 %changelog
-* Thu Mar 07 2007 - martin+rpm@otrs.org
-- spec for Fedora created
+* Thu Oct 18 2006 - martin+rpm@otrs.org
+- added rename of old /opt/otrs/Kernel/Config/Files/(Ticket|TicketPostMaster|FAQ).pm files
+* Thu Jan 02 2003 - martin+rpm@otrs.org
+- moved from /opt/OpenTRS to /opt/otrs
+* Thu Nov 12 2002 - martin+rpm@otrs.org
+- moved %doc/install* to /opt/OpenTRS/ (installer problems!)
+  and added Kernel/cpan-lib*
+* Sun Sep 22 2002 - martin+rpm@otrs.org
+- added /etc/sysconfig/otrs for rc script (Thanks to Lars Müller)
+* Thu Sep 17 2002 - martin+rpm@otrs.org
+- port for Redhat 7.3
+* Fri Sep 06 2002 - martin+rpm@otrs.org
+- added Kernel/Config/*.pm
+* Sat Jun 16 2002 - martin+rpm@otrs.org
+- added new modules for 0.5 BETA6
+* Thu Jun 04 2002 - martin+rpm@otrs.org
+- added .fetchmailrc
+* Mon May 20 2002 - martin+rpm@otrs.org
+- moved all .dlt and all Kernel::Language::*.pm to %config(noreplace)
+* Sat May 05 2002 - martin+rpm@otrs.org
+- added Kernel/Output/HTML/Standard/Motd.dtl as config file
+* Thu Apr 16 2002 - martin+rpm@otrs.org
+- moved to SuSE 8.0 support
+* Sun Feb 03 2002 - martin+rpm@otrs.org
+- added SuSE-Apache support
+* Wed Jan 30 2002 - martin+rpm@otrs.org
+- added to useradd bash=/bin/false
+* Sat Jan 12 2002 - martin+rpm@otrs.org
+- added SuSE like rc scripts
+* Tue Jan 10 2002 - martin+rpm@otrs.org
+- new package created
 
