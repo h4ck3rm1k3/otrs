@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.22 2008/09/03 15:30:30 sr Exp $
+# $Id: Support.pm,v 1.23 2008/11/26 15:23:24 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -24,7 +24,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.22 $) [1];
+$VERSION = qw($Revision: 1.23 $) [1];
 
 =head1 NAME
 
@@ -259,7 +259,6 @@ sub ARCHIVE {
 
 sub _ARCHIVELookup {
     my ( $Self, %Param ) = @_;
-
     my @List = glob("$Param{In}/*");
 
     for my $File (@List) {
@@ -271,26 +270,29 @@ sub _ARCHIVELookup {
                 Home    => $Param{Home},
             );
             $File =~ s/\Q$Param{Home}\E//;
-#            print STDERR "Directory: $File\n";
         }
         else {
             my $OrigFile = $File;
             $File =~ s/\Q$Param{Home}\E//;
             $File =~ s/^\/(.*)$/$1/;
-#            print STDERR "File: $File\n";
+
             if (
                 $File !~ /Entries|Repository|Root|CVS|ARCHIVE/
                 && $File !~ /^doc\//
                 && $File !~ /^var\/tmp/
                 )
             {
-                my $Content = '';
-                open( IN, '<', $OrigFile ) || die "ERROR: $OrigFile: $!";
-                while (<IN>) {
-                    $Content .= $_;
+                if (! open( IN, '<', $OrigFile ) ) {
+                    $Self->{LogObject}->Log(
+                        Priority => 'error',
+                        Message  => "Can't read: $OrigFile: $!",
+                    );
+                    next;
                 }
+                my $ctx = Digest::MD5->new;
+                $ctx->addfile(*IN);
+                my $Digest = $ctx->hexdigest();
                 close(IN);
-                my $Digest = md5_hex($Content);
                 if ( !$Param{Compare}->{$File} ) {
                     $Param{Compare}->{$File} = "New $File";
                 }
@@ -319,6 +321,7 @@ sub ArchiveApplication {
 
     # add files to the tar archive
     my $TarObject = Archive::Tar->new();
+
     $TarObject->add_files(@List);
 
     #Mask Passwords in Config.pm
@@ -625,6 +628,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.22 $ $Date: 2008/09/03 15:30:30 $
+$Revision: 1.23 $ $Date: 2008/11/26 15:23:24 $
 
 =cut
