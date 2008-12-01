@@ -1,13 +1,13 @@
 # --
 # Kernel/System/Ticket/Acl/CloseParentAfterClosedChilds.pm - acl module
 # - allow no parent close till all clients are closed -
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
 # --
-# $Id: CloseParentAfterClosedChilds.pm,v 1.15 2011/11/25 09:55:58 mg Exp $
+# $Id: CloseParentAfterClosedChilds.pm,v 1.11.2.1 2008/12/01 15:28:08 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Ticket::Acl::CloseParentAfterClosedChilds;
@@ -18,7 +18,7 @@ use warnings;
 use Kernel::System::LinkObject;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.15 $) [1];
+$VERSION = qw($Revision: 1.11.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -29,7 +29,7 @@ sub new {
 
     # get needed objects
     for (
-        qw(ConfigObject DBObject TicketObject LogObject UserObject CustomerUserObject MainObject TimeObject EncodeObject)
+        qw(ConfigObject DBObject TicketObject LogObject UserObject CustomerUserObject MainObject TimeObject)
         )
     {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
@@ -51,6 +51,11 @@ sub Run {
 
     # check if child tickets are not closed
     return 1 if !$Param{TicketID} || !$Param{UserID};
+
+    # get ticket
+    my %Ticket = $Self->{TicketObject}->TicketGet(
+        TicketID => $Param{TicketID},
+    );
 
     # create new instance of the link object
     if ( !$Self->{LinkObject} ) {
@@ -84,8 +89,7 @@ sub Run {
 
         # get ticket
         my %Ticket = $Self->{TicketObject}->TicketGet(
-            TicketID      => $TicketID,
-            DynamicFields => 0,
+            TicketID => $TicketID,
         );
 
         if ( $Ticket{StateType} !~ m{ \A (close|merge|remove) }xms ) {
