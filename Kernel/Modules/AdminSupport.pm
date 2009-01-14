@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AdminSupport.pm - show support information
-# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.15 2008/09/03 15:31:43 sr Exp $
+# $Id: AdminSupport.pm,v 1.16 2009/01/14 23:23:15 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.15 $) [1];
+$VERSION = qw($Revision: 1.16 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -30,11 +30,20 @@ sub new {
     }
 
     # check needed Objects
-    for (qw(ParamObject LayoutObject LogObject ConfigObject TimeObject)) {
+    for (qw(ParamObject LayoutObject LogObject ConfigObject TimeObject MainObject DBObject)) {
         if ( !$Self->{$_} ) {
             $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
         }
     }
+
+    $Self->{UserObject} = Kernel::System::User->new(
+        ConfigObject => $Self->{ConfigObject},
+        LogObject    => $Self->{LogObject},
+        MainObject   => $Self->{MainObject},
+        TimeObject   => $Self->{TimeObject},
+        DBObject     => $Self->{DBObject},
+    );
+
     $Self->{SupportObject} = Kernel::System::Support->new(%Param);
 
     return $Self;
@@ -44,10 +53,15 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     # ------------------------------------------------------------ #
-    # Confidential and SupportID
+    # Confidential
     # ------------------------------------------------------------ #
 
     if ( $Self->{Subaction} eq 'Confidential' ) {
+
+        my %User = $Self->{UserObject}->GetUserData(
+            UserID => $Self->{UserID},
+            Cached => 1,
+        );
 
         # create & return output
         my $Output = $Self->{LayoutObject}->Header();
@@ -56,6 +70,60 @@ sub Run {
         $Self->{LayoutObject}->Block(
             Name => 'Confidential',
             Data => {},
+        );
+
+        if ($User{UserLanguage} =~ /de/) {
+            $Self->{LayoutObject}->Block(
+                Name => 'ConfidentialContentDE',
+                Data => {},
+            );
+        }
+        else {
+            $Self->{LayoutObject}->Block(
+                Name => 'ConfidentialContentEN',
+                Data => {},
+            );
+        }
+
+        $Output .= $Self->{LayoutObject}->Output(
+            TemplateFile => 'AdminSupport',
+            Data         => {},
+        );
+        $Output .= $Self->{LayoutObject}->Footer();
+        return $Output;
+    }
+
+    # ------------------------------------------------------------ #
+    # Sender Information
+    # ------------------------------------------------------------ #
+
+    elsif ( $Self->{Subaction} eq 'SenderInformation' ) {
+
+        # create & return output
+        my $Output = $Self->{LayoutObject}->Header();
+        $Output .= $Self->{LayoutObject}->NavigationBar();
+
+        my %User = $Self->{UserObject}->GetUserData(
+            UserID => $Self->{UserID},
+            Cached => 1,
+        );
+
+        my $SenderAdress = "";
+        if ($User{UserEmail} && $User{UserEmail} !~ /root\@localhost/ ) {
+            $SenderAdress = $User{UserEmail};
+        }
+        elsif ($Self->{ConfigObject}->Get('AdminEmail') && $Self->{ConfigObject}->Get('AdminEmail') !~ /root\@localhost/
+            && $Self->{ConfigObject}->Get('AdminEmail') !~ /admin\@example.com/ ) {
+            $SenderAdress = $Self->{ConfigObject}->Get('AdminEmail');
+        }
+
+        $Self->{LayoutObject}->Block(
+            Name => 'SenderInformation',
+            Data => {
+                SenderAdress => $SenderAdress,
+                SenderSalutation => $User{UserSalutation},
+                SenderName => $User{UserFirstname}.' '.$User{UserLastname},
+            },
         );
 
         $Output .= $Self->{LayoutObject}->Output(
@@ -74,7 +142,7 @@ sub Run {
 
         # get params
         my %CustomerInfo;
-        for my $Key (qw(Sender Company Street Postcode City Phone SendInfo BugzillaID) ) {
+        for my $Key (qw(Sender Company Salutation Name Street Postcode City Phone SendInfo BugzillaID) ) {
             $CustomerInfo{$Key} = $Self->{ParamObject}->GetParam( Param => $Key );
         };
 
@@ -139,129 +207,64 @@ sub Run {
     # ------------------------------------------------------------ #
 
     elsif ( $Self->{Subaction} eq 'BenchmarkSQL' ) {
+
         my $Insert = $Self->{ParamObject}->GetParam(Param => 'Insert') || 10000;
         my $Update = $Self->{ParamObject}->GetParam(Param => 'Update') || 10000;
         my $Select = $Self->{ParamObject}->GetParam(Param => 'Select') || 10000;
-        my $Mode = $Self->{ParamObject}->GetParam(Param => 'Mode');
-        foreach (1..$Mode) {
-            $Self->{"DBObject$_"} = Kernel::System::DB->new(%{$Self});
-        }
-        $Param{InsertTime} = 0;
-        $Param{UpdateTime} = 0;
-        $Param{SelectTime} = 0;
-        $Param{DeleteTime} = 0;
-        my $TimeStart = $Self->{TimeObject}->SystemTime();
-        $Self->_SQLInsert($Insert, $Mode);
-        my $Time1 = $Self->{TimeObject}->SystemTime();
-        $Self->_SQLUpdate($Update, $Mode);
-        my $Time2 = $Self->{TimeObject}->SystemTime();
-        $Self->_SQLSelect($Select, $Mode);
-        my $Time3 = $Self->{TimeObject}->SystemTime();
-        $Self->_SQLDelete($Insert, $Mode);
-        my $Time4 = $Self->{TimeObject}->SystemTime();
-        $Param{InsertTime} = $Param{InsertTime}+$Time1-$TimeStart;
-        $Param{UpdateTime} = $Param{UpdateTime}+$Time2-$Time1;
-        $Param{SelectTime} = $Param{SelectTime}+$Time3-$Time2;
-        $Param{DeleteTime} = $Param{DeleteTime}+$Time4-$Time3;
+        my $Mode   = $Self->{ParamObject}->GetParam(Param => 'Mode');
+
+        my %BenchTest = $Self->{SupportObject}->Benchmark (
+
+            Insert => $Insert,
+            Update => $Update,
+            Select => $Select,
+            Mode   => $Mode,
+        );
+
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResult',
             Data => {
-                %Param,
+                %BenchTest,
                 Head => 'SQL',
             },
         );
-        my $InsertTime = ($Param{InsertTime}/$Mode)*(10000/$Insert);
-        if ( $InsertTime <= 3 ) {
-            $Param{InsertMood} = ':-)';
-            $Param{Comment}    = '$Text{"Looks fine!"}',
-        }
-        elsif ( $InsertTime <= 5 ) {
-            $Param{InsertMood} = ':-|';
-            $Param{Comment}    = '$Text{"Ok"}';
-        }
-        else {
-            $Param{InsertMood} = ':-(';
-            my $ShouldTake  = int( $Mode * 5 );
-            $Param{Comment} = '$Text{"Should not take longer the %s on a normal system.", "' . $ShouldTake . 's"}',
-        }
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow',
             Data => {
                 Key     => 'Insert Time',
-                Time    => "$Param{InsertTime} s $Param{InsertMood}",
+                Time    => "$BenchTest{InsertTime} s $BenchTest{InsertMood}",
                 Value   => ($Insert*$Mode),
-                Comment => $Param{Comment} || '',
+                Comment => $BenchTest{InsertComment} || '',
             },
         );
-        my $UpdateTime = ($Param{UpdateTime}/$Mode)*(10000/$Update);
-        if ( $UpdateTime <= 5 ) {
-            $Param{UpdateMood} = ':-)';
-            $Param{Comment} = '$Text{"Looks fine!"}',
-        }
-        elsif ( $UpdateTime <= 9 ) {
-            $Param{UpdateMood} = ':-|';
-            $Param{Comment}    = '$Text{"Ok"}';
-        }
-        else {
-            $Param{UpdateMood} = ':-(';
-            my $ShouldTake  = int( $Mode * 9 );
-            $Param{Comment} = '$Text{"Should not take longer the %s on a normal system.", "' . $ShouldTake . 's"}',
-        }
+
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow',
             Data => {
                 Key     => 'Update Time',
-                Time    => "$Param{UpdateTime} s $Param{UpdateMood}",
+                Time    => "$BenchTest{UpdateTime} s $BenchTest{UpdateMood}",
                 Value   => ($Update*$Mode),
-                Comment => $Param{Comment} || '',
+                Comment => $BenchTest{UpdateComment} || '',
             },
         );
 
-        my $SelectTime = ($Param{SelectTime}/$Mode)*(10000/$Select);
-        if ( $SelectTime <= 5 ) {
-            $Param{SelectMood} = ':-)';
-            $Param{Comment} = '$Text{"Looks fine!"}',
-        }
-        elsif ( $SelectTime <= 6 ) {
-            $Param{SelectMood} = ':-|';
-            $Param{Comment}    = '$Text{"Ok"}';
-        }
-        else {
-            $Param{SelectMood} = ':-(';
-            my $ShouldTake  = int( $Mode * 6 );
-            $Param{Comment} = '$Text{"Should not take longer the %s on a normal system.", "' . $ShouldTake . 's"}',
-        }
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow',
             Data => {
                 Key     => 'Select Time',
-                Time    => "$Param{SelectTime} s $Param{SelectMood}",
+                Time    => "$BenchTest{SelectTime} s $BenchTest{SelectMood}",
                 Value   => ($Select*$Mode),
-                Comment => $Param{Comment} || '',
+                Comment => $BenchTest{SelectComment} || '',
             },
         );
 
-        my $DeleteTime = ($Param{DeleteTime}/$Mode);
-        if ( $DeleteTime <= 4 ) {
-            $Param{DeleteMood} = ':-)';
-            $Param{Comment} = '$Text{"Looks fine!"}',
-        }
-        elsif ( $DeleteTime <= 5 ) {
-            $Param{DeleteMood} = ':-|';
-            $Param{Comment}    = '$Text{"Ok"}';
-        }
-        else {
-            $Param{DeleteMood} = ':-(';
-            my $ShouldTake  = int( $Mode * 5 );
-            $Param{Comment} = '$Text{"Should not take longer the %s on a normal system.", "' . $ShouldTake . 's"}',
-        }
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow',
             Data => {
                 Key     => 'Delete Time',
-                Time    => "$Param{DeleteTime} s $Param{DeleteMood}",
+                Time    => "$BenchTest{DeleteTime} s $BenchTest{DeleteMood}",
                 Value   => ($Insert*$Mode),
-                Comment => $Param{Comment} || '',
+                Comment => $BenchTest{DeleteComment} || '',
             },
         );
         $Self->{LayoutObject}->Block(
@@ -275,7 +278,7 @@ sub Run {
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Output .= $Self->{LayoutObject}->Output(
             TemplateFile => 'AdminSupport',
-            Data         => \%Param,
+            Data         => \%BenchTest,
         );
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
@@ -327,6 +330,9 @@ sub Run {
                     if ( $RowHash->{Check} eq 'OK' ) {
                         $FontColor = 'green';
                     }
+                    elsif ( $RowHash->{Check} eq 'Info' ) {
+                        $FontColor = 'darkblue';
+                    }
                     elsif ( $RowHash->{Check} eq 'Critical' ) {
                         $FontColor = 'orange';
                     }
@@ -350,80 +356,6 @@ sub Run {
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
-}
-
-sub _SQLInsert {
-    my $Self = shift;
-    my $Count = shift;
-    my $Mode = shift;
-    foreach my $C (1..$Count) {
-        foreach my $M (1..$Mode) {
-            my $Value1  = "aaa$C-$M";
-            my $Value2  = 'bbb';
-            $Self->{"DBObject$M"}->Do(
-                SQL => 'INSERT INTO bench_test (name_a, name_b) values (?, ?)',
-                Bind => [ \$Value1, \$Value2, ],
-            );
-        }
-    }
-    return 1;
-}
-
-sub _SQLUpdate {
-    my $Self = shift;
-    my $Count = shift;
-    my $Mode = shift;
-    my $Value1 = '111';
-    my $Value2 = '222';
-    foreach my $C (1..$Count) {
-        foreach my $M (1..$Mode) {
-            my $Value  = "aaa$C-$M";
-            $Self->{"DBObject$M"}->Do(
-                SQL => 'UPDATE bench_test SET name_a = ?, name_b = ? WHERE name_a = ?',
-                Bind => [ \$Value1, \$Value2, \$Value ],
-            );
-        }
-    }
-    return 1;
-}
-
-sub _SQLSelect {
-    my $Self = shift;
-    my $Count = shift;
-    my $Mode = shift;
-    foreach my $C (1..$Count) {
-        foreach my $M (1..$Mode) {
-#            my $Value = "aaa$C-$M";
-#            $Self->{"DBObject$M"}->Prepare(
-#                SQL  => 'SELECT name_a, name_b FROM bench_test WHERE name_a = ?',
-#                Bind => [ \$Value ],
-#            );
-            my $Value = $Self->{DBObject}->Quote("aaa$C-$M");
-            $Self->{"DBObject$M"}->Prepare(
-                SQL  => "SELECT name_a, name_b FROM bench_test WHERE name_a = '$Value'",
-            );
-            while (my @Row = $Self->{"DBObject$M"}->FetchrowArray()) {
-                # do nothing
-            }
-        }
-    }
-    return 1;
-}
-
-sub _SQLDelete {
-    my $Self = shift;
-    my $Count = shift;
-    my $Mode = shift;
-    foreach my $C (1..$Count) {
-        foreach my $M (1..$Mode) {
-            my $Value  = "111$C-$M";
-            $Self->{"DBObject$M"}->Do(
-                SQL => 'DELETE FROM bench_test WHERE name_a = ?',
-                Bind => [ \$Value ],
-            );
-        }
-    }
-    return 1;
 }
 
 1;
