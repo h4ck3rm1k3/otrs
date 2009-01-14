@@ -1,13 +1,49 @@
 # --
 # AdminSupport.dtl - provides HTML form for AdminSupport
-# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.12 2008/09/03 15:32:21 sr Exp $
+# $Id: AdminSupport.dtl,v 1.13 2009/01/14 23:57:08 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
+
+<!-- start form -->
+
+# ---
+# -Java script functions
+# ---
+
+<script language="JavaScript" type="text/javascript">
+<!--
+function submit_compose() {
+    if (document.compose.Sender.value == "") {
+        alert('$JSText{"Please insert a valid email adress!"}');
+        document.compose.Sender.focus();
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+function submit_confidential() {
+    if (!document.composeconfidential.confidentialinfo.checked) {
+        alert('$JSText{"Please confirm the confidential information to continue."}');
+        document.composeconfidential.confidentialinfo.focus();
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+//-->
+</script>
+
+# ---
+# - Supportmodule overview page
+# ---
 
 <!-- dtl:block:Overview -->
 <table border="0" width="100%" cellspacing="0" cellpadding="3">
@@ -25,18 +61,18 @@
         <input type="hidden" name="Subaction" value="Confidential"/>
         <table width="100%" cellspacing="0" cellpadding="4">
           <tr>
-            <td class="contenthead">$Text{"Commercial Support"}:</td>
+            <td class="contenthead">$Text{"Support"}:</td>
           </tr>
           <tr>
             <td class="contentbody">
-              $Text{"For fast help submit your system info and create a commercial support ticket at vendors site."}
+              $Text{"For quick help please submit your system info and create a support ticket at the vendor's site."}
               <br/>
-              $Text{"For more info see:"} <a href="http://otrs.com/" target="_blank">http://otrs.com/</a>
+              $Text{"For more info please check"} <a href="http://otrs.com/" target="_blank">http://otrs.com/</a>
             </td>
           </tr>
           <tr>
             <td class="contentfooter">
-              <input class="button" type="submit" value="$Text{"Submit"}"/>
+              <input class="button" type="submit" value="$Text{"Start"}"/>
             </td>
           </tr>
         </table>
@@ -51,16 +87,16 @@
           </tr>
           <tr>
             <td class="contentbody">
-              $Text{"Execute and SQL Benchmark on you database to find our how fast your database is (done on dedicated benchmark table)."}
+              $Text{"Execute a SQL benchmark test on your database to find out how fast your database is (done on dedicated benchmark table)."}
               <br/>
-              $Text{"Note: This should not be done on productive systems!"}
+              $Text{"Note: This should not be done on production systems!"}
               <br/>
               Multiplier: $Data{"ModeStrg"}
             </td>
           </tr>
           <tr>
             <td class="contentfooter">
-              <input class="button" type="submit" value="$Text{"Submit"}"/>
+              <input class="button" type="submit" value="$Text{"Start"}"/>
             </td>
           </tr>
         </table>
@@ -84,7 +120,7 @@
               </tr>
 <!-- dtl:block:OverviewModuleRow -->
               <tr class="$QData{"CssClass"}">
-                <td><div title="$QData{"Description"}">$QData{"Name"}</div></td>
+                <td><div title="$QData{"Description"}">$QData{"Description"}</div></td>
                 <td>$QData{"Comment"}</td>
                 <td><font color="$QData{"FontColor"}">$QData{"Check"}</font></td>
               </tr>
@@ -105,6 +141,11 @@
   </tr>
 </table>
 <!-- dtl:block:Overview -->
+
+# ---
+# - Supportmodule confidential page
+# ---
+
 <!-- dtl:block:Confidential -->
 <table border="0" width="100%" cellspacing="0" cellpadding="3">
   <tr>
@@ -112,51 +153,101 @@
   </tr>
   <tr>
     <td class="menu">
-      <a href="$Env{"Baselink"}Action=$Env{"Action"}" onmouseover="window.status='$JSText{"Back"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Back"}</a>
+      <a href="$Env{"Baselink"}Action=AdminSupport" onmouseover="window.status='$JSText{"Back"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Back"}</a>
     </td>
   </tr>
   <tr>
     <td class="mainbody" align="center">
       <br>
-      <form action="$Env{"CGIHandle"}" method="post">
+      <table border="0" width="600px" align="center" cellspacing="0" cellpadding="4">
+        <tr>
+          <td colspan="2" class="contenthead">$Text{"Confidential information"}</td>
+        </tr>
+        <tr>
+          <td colspan="2" class="contentbody" align="center">
+<!-- dtl:block:ConfidentialContentDE -->
+          <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>$Include{"AdminSupportConfidentialDE"}</textarea>
+<!-- dtl:block:ConfidentialContentDE -->
+<!-- dtl:block:ConfidentialContentEN -->
+          <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>$Include{"AdminSupportConfidentialEN"}}</textarea>
+<!-- dtl:block:ConfidentialContentEN -->
+          </td>
+        </tr>
+        <tr>
+          <td class="contentfooter">
+            <table width="100%" border="0" cellspacing="0" cellpadding="1">
+              <tr>
+                <td class="contentfooter">
+                  <form action="$Env{"CGIHandle"}" method="post">
+                    <input type="hidden" name="Continue" value="Start"/>
+                    <input class="button" type="submit" value="$Text{"Accept license"}"/>
+                  </form>
+                </td>
+                <td width="10" class="contentfooter">
+                  <form action="$Env{"CGIHandle"}" method="post">
+                    <input class="button" type="submit" value="$Text{"Don't accept license"}"/>
+                  </form>
+                </td>
+                <td>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td class="mainbody">
+          &nbsp;
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- dtl:block:Confidential -->
+
+# ---
+# - Supportmodule sender and system information
+# ---
+
+<!-- dtl:block:SenderInformation -->
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+  <tr>
+    <td class="mainhead">$Env{"Box0"}$Text{"Admin Support Info"}$Env{"Box1"}</td>
+  </tr>
+  <tr>
+    <td class="menu">
+      <a href="$Env{"Baselink"}Action=AdminSupport&Subaction=Confidential" onmouseover="window.status='$JSText{"Back"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Back"}</a>
+    </td>
+  </tr>
+  <tr>
+    <td class="mainbody" align="center">
+      <br>
+      <form action="$Env{"CGIHandle"}" method="post" name="compose">
         <input type="hidden" name="Action" value="$Env{"Action"}">
         <input type="hidden" name="Subaction" value="Submit">
-        <table border="0" width="800px" align="center" cellspacing="0" cellpadding="3">
+        <table border="0" width="600px" align="center" cellspacing="0" cellpadding="3">
           <tr>
-            <td colspan="3" class="contenthead">$Text{"Confidential information"}</td>
+            <td colspan="3" class="contenthead">$Text{"Vendor Support"}</td>
           </tr>
           <tr>
             <td class="contentbody">
-
-<!-- dtl:block:ConfidentialHidden -->
+<!-- dtl:block:SenderInformationHidden -->
               <input type="hidden" name="$QData{"Name"}" value="$QData{"Value"}">
-<!-- dtl:block:ConfidentialHidden -->
-
-              <table width="800px" cellspacing="0" cellpadding="3">
+<!-- dtl:block:SenderInformationHidden -->
+              <table width="600px" cellspacing="5" cellpadding="0">
                 <tr>
-                  <td class="contentkey" width="150">$Text{"Confidential"}:</td>
-                  <td class="contentbody" colspan="2">
-                  <textarea name="Confidential" rows="4" cols="78">
-Any and all information disclosed to OTRS will be kept strictly confidential and are only used for providing better support services to our customers.
-                  </textarea>
-                  </td>
-                </tr>
-                <tr>
-                  <td colspan="3" class="contenthead">$Text{"Commercial support"}</td>
                 </tr>
                 <tr>
                   <td class="contentkey" width="150">$Text{"Email"}:</td>
-                  <td class="contentvalue"><input type="Text" name="Sender" value="$Env{"UserEmail"}" size="40"><font color="red" size="-2">* $Text{"Required"}</font></td>
+                  <td class="contentvalue"><input type="Text" name="Sender" value="$QData{"SenderAdress"}" size="40" readonly></td>
                 </tr>
-#                <tr>
-#                  <td class="contentkey" width="150">$Text{"Commercial support ID"}:</td>
-#                  <td class="contentvalue"><input type="Text" name="SupportID" value="" size="40"></td>
-#                  <td class="contentvalue"><font color="red" size="-2"> (* $Text{"if you are already a commercial support customer, please add your support id. (not required!)"})</font></td>
-#                </tr>
                 <tr>
-                  <td class="contentkey" width="150">$Text{"Bugzilla ID"}:</td>
-                  <td class="contentvalue"><input type="Text" name="BugzillaID" value="" size="40"></td>
-                  <td class="contentvalue"><font color="red" size="-2"> (* $Text{"if you add already a Bugzilla report, please add your Bugzilla id. (not required!)"})</font></td>
+                  <td class="contentkey" width="150">$Text{"Salutation"}:</td>
+                  <td class="contentvalue"><input type="Text" name="Salutation" value="$QData{"SenderSalutation"}" size="40" readonly></td>
+                </tr>
+                <tr>
+                  <td class="contentkey" width="150">$Text{"Name"}:</td>
+                  <td class="contentvalue"><input type="Text" name="Name" value="$QData{"SenderName"}" size="40"readonly></td>
                 </tr>
                 <tr>
                   <td class="contentkey" width="150">$Text{"Company"}:</td>
@@ -167,7 +258,7 @@ Any and all information disclosed to OTRS will be kept strictly confidential and
                   <td class="contentvalue"><input type="Text" name="Street" value="" size="40"></td>
                 </tr>
                 <tr>
-                  <td class="contentkey" width="150">$Text{"Postcode"}:</td>
+                  <td class="contentkey" width="150">$Text{"Post code"}:</td>
                   <td class="contentvalue"><input type="Text" name="Postcode" value="" size="40"></td>
                 </tr>
                 <tr>
@@ -179,15 +270,28 @@ Any and all information disclosed to OTRS will be kept strictly confidential and
                   <td class="contentvalue"><input type="Text" name="Phone" value="" size="40"></td>
                 </tr>
                 <tr>
-                  <td colspan="2" class="contentkey">$Text{"Please send me information about ((otrs)) support packages."}: <input type="checkbox" name="SendInfo" value="" size="10"></td>
+                  <td class="contentkey" width="150">$Text{"Bugzilla ID"}:</td>
+                  <td class="contentvalue"><input type="Text" name="BugzillaID" value="" size="40"></td>
+                  <td class="contentvalue"><font color="red" size="-2" align="justify">$Text{"If you've already added a Bugzilla report at bugs.otrs.org, please add your Bugzilla ID here."}</font></td>
+                </tr>
+                <tr>
+                  <td colspan="3" class="contenthead">$Text{"Enterprise Support and Enterprise Subscription information"}</td>
+                </tr>
+                <tr>
+                </tr>
+                <tr>
+                  <td colspan="2" class="contentbody" width="250" align="justify">$Text{"No, I'm not yet an ((otrs)) 'Enterprise Subscription' or 'Enterprise Support' customer. Please review my support package without any commitment and send me information only and without responsibility, about the different ((otrs)) Enterprise packages"}: </td>
+                  <td class="contentvalue" align="middle"><input type="checkbox" name="SendInfo" value="1" checked="checked"></td>
+                </tr>
+                <tr>
                 </tr>
               </table>
             </td>
           </tr>
           <tr>
             <td class="contentfooter">
-              <input class="button" type="submit" name="Download" value="$Text{"Download"}">
-              <input class="button" type="submit" name="Send" value="$Text{"Send"}">
+              <input class="button" type="submit" name="Download" value="$Text{"Download"}" onclick="return submit_compose();"/>
+              <input class="button" type="submit" name="Send" value="$Text{"Send"}" onclick="return submit_compose();"/>
             </td>
           </tr>
         </table>
@@ -196,7 +300,12 @@ Any and all information disclosed to OTRS will be kept strictly confidential and
     </td>
   </tr>
 </table>
-<!-- dtl:block:Confidential -->
+<!-- dtl:block:SenderInformation -->
+
+# ---
+# - Supportmodule benchmark result
+# ---
+
 <!-- dtl:block:BenchmarkResult -->
 <table border="0" width="100%" cellspacing="0" cellpadding="3">
   <tr>
@@ -245,3 +354,4 @@ Any and all information disclosed to OTRS will be kept strictly confidential and
   </tr>
 </table>
 <!-- dtl:block:BenchmarkResult -->
+<!-- end form -->
