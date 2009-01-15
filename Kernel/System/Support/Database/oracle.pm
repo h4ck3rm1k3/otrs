@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database/oracle.pm - all required system information
-# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.13 2008/07/15 19:54:37 martin Exp $
+# $Id: oracle.pm,v 1.14 2009/01/15 00:39:25 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.13 $) [1];
+$VERSION = qw($Revision: 1.14 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -70,20 +70,20 @@ sub _OracleHomeCheck {
 
     # check ORACLE_HOME
     my $Check   = 'Failed';
-    my $Message = 'No ORACLE_HOME found!';
+    my $Message = 'No ORACLE_HOME setting found.';
     if ( $ENV{ORACLE_HOME} ) {
         if ( !-e $ENV{ORACLE_HOME} ) {
-            $Message = "ORACLE_HOME don't exists ($ENV{ORACLE_HOME})";
+            $Message = "ORACLE_HOME don't exists ($ENV{ORACLE_HOME}).";
             $Check   = 'Failed';
         }
         else {
-            $Message = "$ENV{ORACLE_HOME}";
+            $Message = "Your ORACLE_Home configuration is $ENV{ORACLE_HOME}.";
             $Check   = 'OK';
         }
     }
     $Data = {
         Name        => 'ORACLE_HOME',
-        Description => "Check ORACLE_HOME.",
+        Description => "Check ORACLE_HOME configuration.",
         Comment     => $Message,
         Check       => $Check,
         };
@@ -95,20 +95,20 @@ sub _NLSLangCheck {
 
     # check NLS_LANG
     my $Check   = 'Failed';
-    my $Message = 'No NLS_LANG found!';
+    my $Message = 'No NLS_LANG configuration found.';
     if ( $ENV{NLS_LANG} ) {
         if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i ) {
             if ( $ENV{NLS_LANG} !~ /utf(\-8|8)/ ) {
-                $Message = "$ENV{NLS_LANG}, need .utf8 in NLS_LANG (e. g. german_germany.utf8)";
+                $Message = "$ENV{NLS_LANG}, need .utf8 in NLS_LANG (e. g. german_germany.utf8).";
                 $Check   = 'Failed';
             }
             else {
-                $Message = "$ENV{NLS_LANG}";
+                $Message = "Your NLS_LANG configuration is $ENV{NLS_LANG}.";
                 $Check   = 'OK';
             }
         }
         else {
-            $Message = "$ENV{NLS_LANG}";
+            $Message = "Your NLS_LANG configuration is $ENV{NLS_LANG}";
             $Check   = 'OK';
         }
     }
@@ -126,15 +126,15 @@ sub _NLSDateFormatCheck {
 
     # check NLS_DATE_FORMAT
     my $Check   = 'Failed';
-    my $Message = 'No NLS_DATE_FORMAT found!';
+    my $Message = 'No NLS_DATE_FORMAT setting found.';
     if ( $ENV{NLS_DATE_FORMAT} ) {
         if ( $ENV{NLS_DATE_FORMAT} ne "YYYY-MM-DD HH24:MI:SS" ) {
             $Message
-                = "$ENV{NLS_DATE_FORMAT}, need 'YYYY-MM-DD HH24:MI:SS' for NLS_DATE_FORMAT (not $ENV{NLS_DATE_FORMAT})";
+                = "Need format 'YYYY-MM-DD HH24:MI:SS' for NLS_DATE_FORMAT (not $ENV{NLS_DATE_FORMAT}).";
             $Check = 'Failed';
         }
         else {
-            $Message = "$ENV{NLS_DATE_FORMAT}";
+            $Message = "Your NLS_DATE_FORMAT setting is $ENV{NLS_DATE_FORMAT}.";
             $Check   = 'OK';
         }
     }
@@ -152,7 +152,7 @@ sub _NLSDateFormatSelectCheck {
 
     # check NLS_DATE_FORMAT
     my $Check   = 'Failed';
-    my $Message = 'No NLS_DATE_FORMAT seems to be wrong!';
+    my $Message = 'NLS_DATE_FORMAT seems to be wrong';
     my $CreateTime;
 
     $Self->{DBObject}->Prepare( SQL => "SELECT create_time FROM valid", Limit => 1 );
@@ -163,17 +163,17 @@ sub _NLSDateFormatSelectCheck {
     if ( $CreateTime ) {
         if ( $CreateTime !~ /^\d\d\d\d-(\d|\d\d)-(\d|\d\d)\s(\d|\d\d):(\d|\d\d):(\d|\d\d)/ ) {
             $Message
-                = "$CreateTime not in 'yyyy-mm-dd hh:mm::ss' format (please check \$ENV{NLS_DATE_FORMAT})";
+                = "$CreateTime is not the right format 'yyyy-mm-dd hh:mm::ss' (please check \$ENV{NLS_DATE_FORMAT}).";
             $Check = 'Failed';
         }
         else {
-            $Message = "";
+            $Message = "NLS_DATE_Format has the right format ($CreateTime).";
             $Check   = 'OK';
         }
     }
     my $Data = {
         Name        => 'NLS_DATE_SELECT_FORMAT',
-        Description => "Check NLS_DATE_FORMAT by using SELECT ...",
+        Description => "Check NLS_DATE_FORMAT by using SELECT statement.",
         Comment     => $Message,
         Check       => $Check,
     };
@@ -214,11 +214,11 @@ sub _TableCheck {
                 }
             }
             if ($Message) {
-                $Message = "Table dosn't exists: $Message";
+                $Message = "Table don't exists: $Message.";
             }
             else {
                 $Check   = 'OK';
-                $Message = "$Count Tables";
+                $Message = "$Count tables checked.";
             }
             $Data = {
                 Name        => 'Table Check',
@@ -232,7 +232,7 @@ sub _TableCheck {
                 Name        => 'Table Check',
                 Description => "Check existing framework tables.",
                 Comment     => "Can't open file $File: $!",
-                Check       => $Check,
+                Check       => 'Critical',
             };
         }
     }
@@ -241,7 +241,7 @@ sub _TableCheck {
             Name        => 'Table Check',
             Description => "Check existing framework tables.",
             Comment     => "Can't find file $File!",
-            Check       => 'Failed',
+            Check       => 'Critical',
         };
     }
     return $Data;

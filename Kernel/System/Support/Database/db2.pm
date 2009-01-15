@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database/db2.pm - all required system information
-# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: db2.pm,v 1.4 2008/07/13 23:25:41 martin Exp $
+# $Id: db2.pm,v 1.5 2009/01/15 00:38:53 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.4 $) [1];
+$VERSION = qw($Revision: 1.5 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -112,7 +112,7 @@ sub _TableCheck {
                 Name        => 'Table Check',
                 Description => 'Check existing framework tables.',
                 Comment     => "Can't open file $File: $!",
-                Check       => $Check,
+                Check       => 'Critical',
             };
         }
     }
@@ -121,7 +121,7 @@ sub _TableCheck {
             Name        => 'Table Check',
             Description => 'Check existing framework tables.',
             Comment     => "Can't find file $File!",
-            Check       => 'Failed',
+            Check       => 'Critical',
         };
     }
     return $Data;

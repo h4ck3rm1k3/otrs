@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/OS.pm - all required system information
-# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.10 2008/07/13 23:25:41 martin Exp $
+# $Id: OS.pm,v 1.11 2009/01/15 00:38:01 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.11 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -87,7 +87,7 @@ sub _DistributionCheck {
             $ReturnHash = {
                 Name        => 'Distribution',
                 Description => "Shows the used distribution.",
-                Comment     => "Can´\'t find /etc/issue...",
+                Comment     => "Can\'t find /etc/issue...",
                 Check       => 'Failed',
             };
         }
@@ -132,8 +132,8 @@ sub _KernelInfoCheck {
             $ReturnHash = {
                 Name        => 'Kernel Version',
                 Description => "Shows the used Kernel version.",
-                Comment     => "Can´\'t execute uname -a...",
-                Check       => 'Failed',
+                Comment     => "Can\'t execute uname -a...",
+                Check       => 'Critical',
             };
         }
     }
@@ -155,8 +155,8 @@ sub _PerlCheck {
         if ( $1 <= 5 && $2 <= 8 && $3 <= 7 ) {
             $ReturnHash = {
                 Name        => 'PerlCheck',
-                Description => "Check Perl Version.",
-                Comment     => "Perl $Version ($OS) is to old, you should upgrade to Perl 5.8.8 or higher.",
+                Description => "Check Perl version.",
+                Comment     => "Your Perl $Version ($OS) is to old, you should upgrade to Perl 5.8.8 or higher.",
                 Check       => 'Failed',
             };
 
@@ -174,8 +174,8 @@ sub _PerlCheck {
         $ReturnHash = {
             Name        => 'PerlCheck',
             Description => "Check Perl Version.",
-            Comment     => "Unable to parse versio string ($Version / $OS).",
-            Check       => 'Failed',
+            Comment     => "Unable to parse version string ($Version / $OS).",
+            Check       => 'Critical',
         };
     }
     return $ReturnHash;
@@ -234,7 +234,7 @@ sub _MemorySwapCheck {
                         . "SwapFree : SwapTotal < 60 % "
                         . " or if more than 200 MB Swap is used.",
                     Comment => "No Swap enabled!",
-                    Check   => 'Failed',
+                    Check   => 'Critical',
                 };
             }
             elsif (( ($SwapFree) / ($SwapTotal) < 60 )
@@ -315,7 +315,7 @@ sub _CPULoadCheck {
                 $ReturnHash = {
                     Name        => 'CPU Load',
                     Description => "A CPU load check. We try to find out if "
-                        . "the system load in the last 15 minutes < 1",
+                        . "the system load in the last 15 minutes < 1.",
                     Comment => "$Describtion",
                     Check   => 'Failed',
                 };
@@ -338,7 +338,7 @@ sub _DiskUsageCheck {
     # If used OS is a linux system
     if ( $^O =~ /(linux|unix|netbsd|freebsd|darwin)/i ) {
         my $In;
-        if ( open( $In, "df -l |" ) ) {
+        if ( open( $In, "df -lx tmpfs |" ) ) {
             while (<$In>) {
                 if ( $_ =~ /^(.+?)\s.*\s(\d\d\d|\d\d|\d)%.+?$/ ) {
                     if ( $2 > 90 ) {

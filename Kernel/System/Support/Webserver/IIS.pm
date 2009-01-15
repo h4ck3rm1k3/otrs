@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Webserver/IIS.pm - all required system information
-# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: IIS.pm,v 1.6 2008/07/13 23:25:41 martin Exp $
+# $Id: IIS.pm,v 1.7 2009/01/15 00:40:21 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.6 $) [1];
+$VERSION = qw($Revision: 1.7 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -57,21 +57,6 @@ sub AdminChecksGet {
     return \@DataArray;
 }
 
-sub _Check {
-    my ( $Self, %Param ) = @_;
-
-    my $ReturnHash = {};
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    return $ReturnHash;
-}
 sub _PerlExCheck {
     my ( $Self, %Param ) = @_;
 
@@ -85,8 +70,8 @@ sub _PerlExCheck {
         $Message = "PerlEx is in use ($ENV{'GATEWAY_INTERFACE'}).";
     }
     else {
-        $Check   = 'Critical';
-        $Message = 'You should use PerlEx to increase your performance (you really should do this).';
+        $Check   = 'Failed';
+        $Message = 'You should use PerlEx to increase your performance.';
     }
     $Data = {
         Name        => 'PerlEx',

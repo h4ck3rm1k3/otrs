@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database/postgresql.pm - all required system information
-# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: postgresql.pm,v 1.8 2008/07/13 23:25:41 martin Exp $
+# $Id: postgresql.pm,v 1.9 2009/01/15 00:39:37 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.8 $) [1];
+$VERSION = qw($Revision: 1.9 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -96,17 +96,17 @@ sub _TableCheck {
                 }
             }
             if ($Message) {
-                $Message = "Table dosn't exists: $Message";
+                $Message = "Table don't exists: $Message.";
             }
             else {
                 $Check   = 'OK';
-                $Message = "$Count Tables";
+                $Message = "$Count tables checked.";
             }
             $Data = {
                 Name        => 'Table Check',
                 Description => 'Check existing framework tables.',
                 Comment     => $Message,
-                Check       => $Check,
+                Check       => 'Critical',
             };
         }
         else {
@@ -114,7 +114,7 @@ sub _TableCheck {
                 Name        => 'Table Check',
                 Description => 'Check existing framework tables.',
                 Comment     => "Can't open file $File: $!",
-                Check       => $Check,
+                Check       => 'Critical',
             };
         }
     }
@@ -123,7 +123,7 @@ sub _TableCheck {
             Name        => 'Table Check',
             Description => 'Check existing framework tables.',
             Comment     => "Can't find file $File!",
-            Check       => 'Failed',
+            Check       => 'Critical',
         };
     }
     return $Data;
@@ -136,7 +136,7 @@ sub _DatestyleCheck {
 
     # Datestyle check
     my $Check   = 'Failed';
-    my $Message = 'No DateStyle found!';
+    my $Message = 'No DateStyle found.';
     $Self->{DBObject}->Prepare( SQL => 'show all' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         if ( $Row[0] =~ /^DateStyle/i ) {
@@ -146,7 +146,7 @@ sub _DatestyleCheck {
             }
             else {
                 $Check   = 'Failed';
-                $Message = "Unkown DateStyle ($Row[1]) need ISO.";
+                $Message = "Unknown DateStyle ($Row[1]) need ISO.";
             }
         }
     }
@@ -167,11 +167,11 @@ sub _UTF8ServerCheck {
     # utf-8 server check
     if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i ) {
         my $Check   = 'Failed';
-        my $Message = 'No server_encoding found!';
+        my $Message = 'No server_encoding found.';
         $Self->{DBObject}->Prepare( SQL => 'show all' );
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
             if ( $Row[0] =~ /^server_encoding/i ) {
-                $Message = "server_encoding found but it's set to '$Row[1]' (need to be UNICODE or UTF8)";
+                $Message = "Setting server_encoding found, but it's set to '$Row[1]' (need to be UNICODE or UTF8).";
                 if ( $Row[1] =~ /(UNICODE|utf(8|\-8))/i ) {
                     $Check   = 'OK';
                     $Message = "$Row[1]";
@@ -196,11 +196,11 @@ sub _UTF8ClientCheck {
     # utf-8 client check
     if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /utf(\-8|8)/i ) {
         my $Check   = 'Failed';
-        my $Message = 'No client_encoding found!';
+        my $Message = 'No client_encoding found.';
         $Self->{DBObject}->Prepare( SQL => 'show all' );
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
             if ( $Row[0] =~ /^client_encoding/i ) {
-                $Message = "client_encoding found but it's set to '$Row[1]' (need to be UNICODE or UTF8)";
+                $Message = "Setting client_encoding found, but it's set to '$Row[1]' (need to be UNICODE or UTF8)";
                 if ( $Row[1] =~ /(UNICODE|utf(8|\-8))/i ) {
                     $Check   = 'OK';
                     $Message = "$Row[1]";
@@ -224,7 +224,7 @@ sub _VersionCheck {
 
     # version check
     my $Check   = 'Failed';
-    my $Message = 'No version found!';
+    my $Message = 'No database version found.';
     $Self->{DBObject}->Prepare( SQL => 'show all' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         if ( $Row[0] =~ /^server_version/i ) {
@@ -235,12 +235,12 @@ sub _VersionCheck {
                 }
                 else {
                     $Check   = 'Failed';
-                    $Message = "Its version $Row[1], you should use 8.x or higner.";
+                    $Message = "You use database version $Row[1], you should use 8.x or higner.";
                 }
             }
             else {
                 $Check   = 'Failed';
-                $Message = "Unkown version $Row[1]";
+                $Message = "Unknown version $Row[1].";
             }
         }
     }

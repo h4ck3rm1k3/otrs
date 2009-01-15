@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-    <CVS>$Id: Support.sopm,v 1.14 2008/08/15 08:03:27 ho Exp $</CVS>
+    <CVS>$Id: Support.sopm,v 1.15 2009/01/15 00:41:02 sr Exp $</CVS>
     <Name>Support</Name>
     <Version>0.0.0</Version>
     <Framework>2.3.x</Framework>
@@ -15,6 +15,8 @@
     <IntroInstallPost Title="Hinweis - Einfuerhrung" Lang="de">Die Support Applikation ist in der Admin-Navigationsleiste, in der vierten Spalte zu finden. Mit ihr koennen System-Checks ausgeführt werden um Fehler im Setup zu finden.</IntroInstallPost>
     <Filelist>
         <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupport.dtl"/>
+        <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupportConfidentialDE.txt"/>
+        <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupportConfidentialEN.txt"/>
         <File Permission="644" Location="Kernel/System/Support.pm"/>
         <File Permission="644" Location="Kernel/System/Support/Database.pm"/>
         <File Permission="644" Location="Kernel/System/Support/OS.pm"/>
@@ -34,14 +36,23 @@
         <File Permission="644" Location="Kernel/Config/Files/Support.xml"/>
     </Filelist>
     <DatabaseInstall>
-        <TableCreate Name="bench_test">
+        <TableCreate Name="support_bench_test">
             <Column Name="name_a" Required="true" Size="60" Type="VARCHAR"/>
             <Column Name="name_b" Required="true" Size="60" Type="VARCHAR"/>
-            <Index Name="index_bench_test_name_a">
+            <Index Name="support_index_bench_test_name_a">
                 <IndexColumn Name="name_a"/>
             </Index>
         </TableCreate>
     </DatabaseInstall>
+    <DatabaseUpgrade>
+        <TableCreate Name="support_bench_test" Version="1.0.8">
+            <Column Name="name_a" Required="true" Size="60" Type="VARCHAR"/>
+            <Column Name="name_b" Required="true" Size="60" Type="VARCHAR"/>
+            <Index Name="support_index_bench_test_name_a">
+                <IndexColumn Name="name_a"/>
+            </Index>
+        </TableCreate>
+    </DatabaseUpgrade>
     <DatabaseUninstall>
         <TableDrop Name="bench_test"/>
     </DatabaseUninstall>

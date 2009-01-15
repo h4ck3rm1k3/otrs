@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support.pm - all required system information
-# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.23 2008/11/26 15:23:24 sr Exp $
+# $Id: Support.pm,v 1.24 2009/01/15 00:37:26 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -18,13 +18,14 @@ use Kernel::System::XML;
 use Kernel::System::DB;
 use Kernel::System::Email;
 use Kernel::System::Time;
+use Kernel::System::Package;
 use Digest::MD5 qw(md5_hex);
 
 use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.23 $) [1];
+$VERSION = qw($Revision: 1.24 $) [1];
 
 =head1 NAME
 
@@ -83,6 +84,13 @@ sub new {
         LogObject    => $Self->{LogObject},
         DBObject     => $Self->{DBObject},
         TimeObject   => $Self->{TimeObject},
+    );
+    $Self->{PackageObject} = Kernel::System::Package->new(
+        MainObject   => $Self->{MainObject},
+        LogObject    => $Self->{LogObject},
+        ConfigObject => $Self->{ConfigObject},
+        TimeObject   => $Self->{TimeObject},
+        DBObject     => $Self->{DBObject},
     );
 
     return $Self;
@@ -251,7 +259,7 @@ sub ARCHIVE {
 
     my $ARCHIVEString = '';
     for my $Key ( sort keys %Result ) {
-        $ARCHIVEString .= "$Key:$Result{$Key}\n";
+        $ARCHIVEString .= "$Result{$Key}\n";
     }
 
     return ( \$ARCHIVEString, 'ARCHIVE.log' );
@@ -294,7 +302,16 @@ sub _ARCHIVELookup {
                 my $Digest = $ctx->hexdigest();
                 close(IN);
                 if ( !$Param{Compare}->{$File} ) {
-                    $Param{Compare}->{$File} = "New $File";
+                    my $InPackage = $Self->OpmInfo (
+                        Mode => 'IsFileInPackageCheck',
+                        File => $OrigFile,
+                    );
+                    if ($InPackage == 1) {
+                        delete $Param{Compare}->{$File};
+                    }
+                    else {
+                        $Param{Compare}->{$File} = "New $File";
+                    }
                 }
                 elsif ( $Param{Compare}->{$File} ne $Digest ) {
                     $Param{Compare}->{$File} = "Dif $File";
@@ -306,6 +323,54 @@ sub _ARCHIVELookup {
         }
     }
     return %{ $Param{Compare} };
+}
+
+sub OpmInfo {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Mode)) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
+
+    if ($Param{Mode} eq "IsFileInPackageCheck" && !$Param{File}) {
+        $Self->{LogObject}->Log( Priority => 'error', Message => "Need Filename!" );
+        return;
+    }
+
+    if ($Param{Mode} eq "IsFileInPackageCheck") {
+        $Param{File} =~ s/\/\//\//g;
+        my $Hit = 0;
+        for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
+            for my $File ( @{ $Package->{Filelist} } ) {
+                if ( $Param{File} =~ /^\Q$File->{Location}\E$/ ) {
+                    $Hit = 1;
+                }
+            }
+        }
+        return $Hit;
+    }
+    elsif ($Param{Mode} eq "OPMInfo") {
+        my $OpmInfo;
+        for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
+            $OpmInfo .= "+----------------------------------------------------------------------------+\n";
+            $OpmInfo .= "| Name:        $Package->{Name}->{Content}\n";
+            $OpmInfo .= "| Version:     $Package->{Version}->{Content}\n";
+            $OpmInfo .= "| Vendor:      $Package->{Vendor}->{Content}\n";
+            $OpmInfo .= "| URL:         $Package->{URL}->{Content}\n";
+            $OpmInfo .= "| License:     $Package->{License}->{Content}\n";
+        }
+        $OpmInfo .= "+----------------------------------------------------------------------------+\n";
+
+        return ( \$OpmInfo, 'InstalledPackages.log' );
+    }
+    else {
+        $Self->{LogObject}->Log( Priority => 'error', Message => "Wrong mode in Function OpmInfo!" );
+        return;
+    }
 }
 
 sub ArchiveApplication {
@@ -350,7 +415,6 @@ sub ArchiveApplication {
     $TarObject->replace_content( "$HomeWithoutSlash/Kernel/Config.pm", $Config );
     $TarObject->write( $Archive, 0 ) || die "Could not write: $_!";
 
-#print STDERR "ARCHIVE\n";
     # add files to the tar archive
     open( my $Tar, '<', $Archive );
     binmode($Tar);
@@ -362,10 +426,9 @@ sub ArchiveApplication {
 
     if ( $Self->{MainObject}->Require("Compress::Zlib") ) {
         my $GzTar = Compress::Zlib::memGzip($TmpTar);
-#print STDERR "Compress\n";
+
         return ( \$GzTar, 'application.tar.gz');
     }
-#print STDERR "Compress\n";
 
     return ( \$TmpTar, 'application.tar' );
 }
@@ -452,6 +515,9 @@ sub SendInfo {
     # create ARCHIVE package
     my ($ARCHIVEContent, $ARCHIVEFilename ) = $Self->ARCHIVE();
 
+    # create OPM Info package like ./opm.pl -a list
+    my ($OPMInfoContent, $OPMInfoFilename ) = $Self->OpmInfo(Mode => "OPMInfo");
+
     # create module check package
     my ($ModuleCheckContent, $ModuleCheckFilename ) = $Self->ModuleCheck();
 
@@ -460,15 +526,18 @@ sub SendInfo {
 
     # create mail body
     my $Body = '';
-    for my $Key ( keys %Param ) {
-        $Body .= "$Key:$Param{$Key}\n";
+    for my $Key ( sort keys %{ $Param{CustomerInfo} } ) {
+        $Body .= "$Key:$Param{CustomerInfo}->{$Key}\n";
     }
+
+    #Get the FQDN
     $Body .= "FQDN:" . $Self->{ConfigObject}->Get('FQDN') . "\n";
-    $Body .= "Product:" . $Self->{ConfigObject}->Get('Product') . ' '
-        . $Self->{ConfigObject}->Get('Version') . "\n";
+
+    #Get the otrs version and if installed add other product info like SIRIOS or ITSM.
+    $Body .= $Self->GetInstalledProduct();
 
     my $Send = $Self->{EmailObject}->Send(
-        From       => $Param{Sender} || $Self->{ConfigObject}->Get('AdminEmail'),
+        From       => $Param{CustomerInfo}->{Sender},
         To         => 'support@otrs.com',
         Subject    => 'Support::Request::Auto::Email::CHECK',
         Type       => 'text/plain',
@@ -502,6 +571,12 @@ sub SendInfo {
             {
                 Filename    => $ModuleCheckFilename,
                 Content     => ${ $ModuleCheckContent },
+                ContentType => 'text/plain',
+                Disposition => 'attachment',
+            },
+            {
+                Filename    => $OPMInfoFilename,
+                Content     => ${ $OPMInfoContent },
                 ContentType => 'text/plain',
                 Disposition => 'attachment',
             },
@@ -540,6 +615,9 @@ sub Download {
     # create ARCHIVE package
     ($File{ArchContent}, $File{ArchFilename}) = $Self->ARCHIVE();
 
+    # create OPM Info package like ./opm.pl -a list
+    ($File{OPMInfoContent}, $File{OPMInfoFilename}) = $Self->OpmInfo(Mode => "OPMInfo");
+
     # create module check package
     ($File{ModuleCheckContent}, $File{ModuleCheckFilename}) = $Self->ModuleCheck();
 
@@ -552,8 +630,7 @@ sub Download {
         $Body .= "$Key:$Param{$Key}\n";
     }
     $Body .= "FQDN:" . $Self->{ConfigObject}->Get('FQDN') . "\n";
-    $Body .= "Product:" . $Self->{ConfigObject}->Get('Product') . ' '
-        . $Self->{ConfigObject}->Get('Version') . "\n";
+    $Body .= $Self->GetInstalledProduct();
 
     $File{BodyContent} = \$Body;
     $File{BodyFilename} = 'Body.txt';
@@ -572,7 +649,7 @@ sub Download {
     }
 
     my @List;
-    for my $Key (qw(Body LogPre Check App Arch ModuleCheck LogPost) ) {
+    for my $Key (qw(Body LogPre OPMInfo Check App Arch ModuleCheck LogPost) ) {
         if ( $File{ $Key . 'Filename' } && $File{ $Key . 'Content' } ) {
             my $Filename = $TempDir . '/' . $File{ $Key . 'Filename' };
             open( my $Out, '>', $Filename );
@@ -612,6 +689,199 @@ sub Download {
     return ( \$TmpTar, $Filename . '.tar' );
 }
 
+sub GetInstalledProduct {
+    my ( $Self, %Param ) = @_;
+    my $Product;
+    my %Tool = (
+        SIRIOS => 0,
+        ITSM   => 0,
+        WIDAuthoring    => 0,
+        WIDPublicationSystem    => 0,
+    );
+
+    $Product = "Product:" . $Self->{ConfigObject}->Get('Product') . ' '
+        . $Self->{ConfigObject}->Get('Version');
+
+    for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
+        for my $Tools (keys %Tool) {
+            if ( $Tools =~ /^\Q$Package->{Name}->{Content}\E$/ ) {
+                if ($Tool{$Tools} == 0) {
+                    $Product .= " / $Package->{Name}->{Content}";
+                }
+                $Tool{$Tools} = 1;
+            }
+        }
+    }
+    return $Product;
+}
+
+sub Benchmark {
+    my ( $Self, %Param ) = @_;
+
+    my $Insert = $Param{Insert};
+    my $Update = $Param{Update};
+    my $Select = $Param{Select};
+    my $Mode = $Param{Mode};
+
+    foreach (1..$Mode) {
+        $Self->{"DBObject$_"} = Kernel::System::DB->new(%{$Self});
+    }
+
+    $Param{InsertTime} = 0;
+    $Param{UpdateTime} = 0;
+    $Param{SelectTime} = 0;
+    $Param{DeleteTime} = 0;
+    my $TimeStart = $Self->{TimeObject}->SystemTime();
+    $Self->_SQLInsert($Insert, $Mode);
+    my $Time1 = $Self->{TimeObject}->SystemTime();
+    $Self->_SQLUpdate($Update, $Mode);
+    my $Time2 = $Self->{TimeObject}->SystemTime();
+    $Self->_SQLSelect($Select, $Mode);
+    my $Time3 = $Self->{TimeObject}->SystemTime();
+    $Self->_SQLDelete($Insert, $Mode);
+    my $Time4 = $Self->{TimeObject}->SystemTime();
+    $Param{InsertTime} = $Param{InsertTime}+$Time1-$TimeStart;
+    $Param{UpdateTime} = $Param{UpdateTime}+$Time2-$Time1;
+    $Param{SelectTime} = $Param{SelectTime}+$Time3-$Time2;
+    $Param{DeleteTime} = $Param{DeleteTime}+$Time4-$Time3;
+
+    my $InsertTime = ($Param{InsertTime}/$Mode)*(10000/$Insert);
+    if ( $InsertTime <= 3 ) {
+        $Param{InsertMood} = ':-)';
+        $Param{InsertComment}    = '$Text{"Looks fine!"}',
+    }
+    elsif ( $InsertTime <= 5 ) {
+        $Param{InsertMood} = ':-|';
+        $Param{InsertComment}    = '$Text{"Ok"}';
+    }
+    else {
+        $Param{InsertMood} = ':-(';
+        my $ShouldTake  = int( $Mode * 5 );
+        $Param{InsertComment} = '$Text{"Should not take longer the %s on a normal system.", "' . $ShouldTake . 's"}',
+    }
+
+    my $UpdateTime = ($Param{UpdateTime}/$Mode)*(10000/$Update);
+    if ( $UpdateTime <= 5 ) {
+        $Param{UpdateMood} = ':-)';
+        $Param{UpdateComment} = '$Text{"Looks fine!"}',
+    }
+    elsif ( $UpdateTime <= 9 ) {
+        $Param{UpdateMood} = ':-|';
+        $Param{UpdateComment}    = '$Text{"Ok"}';
+    }
+    else {
+        $Param{UpdateMood} = ':-(';
+        my $ShouldTake  = int( $Mode * 9 );
+        $Param{UpdateComment} = '$Text{"Should not take longer the %s on a normal system.", "' . $ShouldTake . 's"}',
+    }
+
+    my $SelectTime = ($Param{SelectTime}/$Mode)*(10000/$Select);
+    if ( $SelectTime <= 5 ) {
+        $Param{SelectMood} = ':-)';
+        $Param{SelectComment} = '$Text{"Looks fine!"}',
+    }
+    elsif ( $SelectTime <= 6 ) {
+        $Param{SelectMood} = ':-|';
+        $Param{SelectComment}    = '$Text{"Ok"}';
+    }
+    else {
+        $Param{SelectMood} = ':-(';
+        my $ShouldTake  = int( $Mode * 6 );
+        $Param{SelectComment} = '$Text{"Should not take longer the %s on a normal system.", "' . $ShouldTake . 's"}',
+    }
+
+    my $DeleteTime = ($Param{DeleteTime}/$Mode);
+    if ( $DeleteTime <= 4 ) {
+        $Param{DeleteMood} = ':-)';
+        $Param{DeleteComment} = '$Text{"Looks fine!"}',
+    }
+    elsif ( $DeleteTime <= 5 ) {
+        $Param{DeleteMood} = ':-|';
+        $Param{DeleteComment}    = '$Text{"Ok"}';
+    }
+    else {
+        $Param{DeleteMood} = ':-(';
+        my $ShouldTake  = int( $Mode * 5 );
+        $Param{DeleteComment} = '$Text{"Should not take longer then %s on a average system.", "' . $ShouldTake . 's"}',
+    }
+
+    return %Param;
+}
+
+sub _SQLInsert {
+    my $Self = shift;
+    my $Count = shift;
+    my $Mode = shift;
+    foreach my $C (1..$Count) {
+        foreach my $M (1..$Mode) {
+            my $Value1  = "aaa$C-$M";
+            my $Value2  = 'bbb';
+            $Self->{"DBObject$M"}->Do(
+                SQL => 'INSERT INTO support_bench_test (name_a, name_b) values (?, ?)',
+                Bind => [ \$Value1, \$Value2, ],
+            );
+        }
+    }
+    return 1;
+}
+
+sub _SQLUpdate {
+    my $Self = shift;
+    my $Count = shift;
+    my $Mode = shift;
+    my $Value1 = '111';
+    my $Value2 = '222';
+    foreach my $C (1..$Count) {
+        foreach my $M (1..$Mode) {
+            my $Value  = "aaa$C-$M";
+            $Self->{"DBObject$M"}->Do(
+                SQL => 'UPDATE support_bench_test SET name_a = ?, name_b = ? WHERE name_a = ?',
+                Bind => [ \$Value1, \$Value2, \$Value ],
+            );
+        }
+    }
+    return 1;
+}
+
+sub _SQLSelect {
+    my $Self = shift;
+    my $Count = shift;
+    my $Mode = shift;
+    foreach my $C (1..$Count) {
+        foreach my $M (1..$Mode) {
+#            my $Value = "aaa$C-$M";
+#            $Self->{"DBObject$M"}->Prepare(
+#                SQL  => 'SELECT name_a, name_b FROM support_bench_test WHERE name_a = ?',
+#                Bind => [ \$Value ],
+#            );
+            my $Value = $Self->{DBObject}->Quote("aaa$C-$M");
+            $Self->{"DBObject$M"}->Prepare(
+                SQL  => "SELECT name_a, name_b FROM support_bench_test WHERE name_a = '$Value'",
+            );
+            while (my @Row = $Self->{"DBObject$M"}->FetchrowArray()) {
+                # do nothing
+            }
+        }
+    }
+    return 1;
+}
+
+sub _SQLDelete {
+    my $Self = shift;
+    my $Count = shift;
+    my $Mode = shift;
+    foreach my $C (1..$Count) {
+        foreach my $M (1..$Mode) {
+            my $Value  = "111$C-$M";
+            $Self->{"DBObject$M"}->Do(
+                SQL => 'DELETE FROM support_bench_test WHERE name_a = ?',
+                Bind => [ \$Value ],
+            );
+        }
+    }
+    return 1;
+}
+
 1;
 
 =back
@@ -628,6 +898,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.23 $ $Date: 2008/11/26 15:23:24 $
+$Revision: 1.24 $ $Date: 2009/01/15 00:37:26 $
 
 =cut

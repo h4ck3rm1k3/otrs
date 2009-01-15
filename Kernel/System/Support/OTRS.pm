@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/OTRS.pm - all required otrs information
-# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.15 2008/07/13 23:25:41 martin Exp $
+# $Id: OTRS.pm,v 1.16 2009/01/15 00:38:24 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::Ticket;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.15 $) [1];
+$VERSION = qw($Revision: 1.16 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -46,7 +46,7 @@ sub AdminChecksGet {
     # add new function name here
     my @ModuleList = (
         '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketFulltextIndexModuleCheck',
-        '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
+        '_FQDNConfigCheck', '_SystemIDConfigCheck',
         '_FileSystemCheck', '_PackageDeployCheck',
     );
 
@@ -249,7 +249,7 @@ sub _FQDNConfigCheck {
     my ( $Self, %Param ) = @_;
     my $Data = {
         Name        => 'FQDNConfigCheck',
-        Description => 'Check if the configured fully qualified host name is valid.',
+        Description => 'Check if the configured FQDN is valid.',
         Check       => 'Failed',
         Comment     => '',
     };
@@ -260,7 +260,7 @@ sub _FQDNConfigCheck {
     # Do we have set our FQDN?
     if ( $FQDN eq 'yourhost.example.com' ) {
         $Data->{Check}   = 'Failed';
-        $Data->{Comment} = "Please configure your FQDN (it's currently default setting '$FQDN').";
+        $Data->{Comment} = "Please configure your FQDN inside the SysConfig module. (currently is the default setting '$FQDN' enabled).";
     }
 
     # FQDN syntax check.
@@ -294,6 +294,7 @@ sub _SystemIDConfigCheck {
     # Does the SystemID contain non-digits?
     if ( $SystemID =~ /^\d+$/ ) {
         $Data->{Check}   = 'OK';
+        $Data->{Comment} = " Your SystemID setting is $SystemID."
     }
     else {
         $Data->{Comment} = "The SystemID '$SystemID' must consist of digits exclusively.";
@@ -309,7 +310,7 @@ sub _FileSystemCheck {
         Name        => 'FileSystemCheck',
         Description => 'Check if file system is writable.',
         Check       => 'Failed',
-        Comment     => '',
+        Comment     => 'The file system is writable.',
     };
 
     my $Home = $Self->{ConfigObject}->Get('Home');
@@ -348,8 +349,8 @@ sub _PackageDeployCheck {
     my $Data = {
         Name        => 'PackageDeployCheck',
         Description => 'Check deployment of all packages.',
-        Check       => 'Failed',
-        Comment     => '',
+        Check       => 'Critical',
+        Comment     => 'All packages are correctly installed.',
     };
 
     for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
@@ -358,12 +359,12 @@ sub _PackageDeployCheck {
             Version => $Package->{Version}->{Content},
         );
         if ( !$DeployCheck ) {
-            $Message .= $Package->{Name}->{Content} . ' ' . $Package->{Version}->{Content} . ';';
+            $Message .= $Package->{Name}->{Content} . ' ' . $Package->{Version}->{Content} . '; ';
         }
     }
 
     if ($Message) {
-        $Data->{Comment} = "Packages not correctly installed: $Message",
+        $Data->{Comment} = "Packages not correctly installed: $Message.",
         return $Data;
     }
 
