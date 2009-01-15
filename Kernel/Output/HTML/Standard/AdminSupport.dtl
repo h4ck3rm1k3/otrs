@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.13 2009/01/14 23:57:08 sr Exp $
+# $Id: AdminSupport.dtl,v 1.14 2009/01/15 00:32:10 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -166,10 +166,34 @@ function submit_confidential() {
         <tr>
           <td colspan="2" class="contentbody" align="center">
 <!-- dtl:block:ConfidentialContentDE -->
-          <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>$Include{"AdminSupportConfidentialDE"}</textarea>
+          <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>Datenschutz
+
+Wir, die Firma OTRS AG nehmen den Schutz Ihrer pers&ouml;nlichen Daten sehr ernst und halten uns strikt an die Regeln der Datenschutzgesetze. Alle Passw&ouml;rter werden vor dem Versenden des 'Supportpakets' automatisiert unkenntlich gemacht. In keinem Fall werden die erhobenen Daten verkauft oder aus anderen Gr&uuml;nden an Dritte weitergegeben.
+
+Die nachfolgende Erkl&auml;rung gibt Ihnen einen &Uuml;berblick dar&uuml;ber, wie wir diesen Schutz gew&auml;hrleisten und welche Art von Daten zu welchem Zweck &uuml;bermittelt werden.
+
+Daten&uuml;bermittlung durch das 'Support Modul'
+Die Firma OTRS AG &uuml;bermittelt und speichert Informationen,  nachdem sie durch das 'Support Modul' an die Firma OTRS AG versendet werden. Dabei handelt es sich um ausschlie&szlig;lich um Daten, die die Firma OTRS AG ben&ouml;tigt um den betroffenen OTRS Server auf seine Funktionsf&auml;higkeit und Leistungsf&auml;higkeit zu analysieren, oder um eine Kontaktaufnahme zu erm&ouml;glichen.
+
+Sicherheit Ihrer pers&ouml;nlichen Daten
+Die Firma OTRS AG sch&uuml;tzt Ihre pers&ouml;nlichen Daten vor unerlaubten Zugriff, Verwendung oder Ver&ouml;ffentlichung. Die Firma OTRS AG sorgt daf&uuml;r, dass ihre pers&ouml;nlichen Informationen die Sie auf dem Server speichern, sich in einer kontrollierten sicheren Umgebung, in der unerlaubter Zugriff und Ver&ouml;ffentlichung verhindert wird, befinden
+
+Weitergabe Ihrer Daten
+Die Firma OTRS AG gibt Ihre Daten nicht an Dritte weiter, au&szlig;er Sie wird zur Abwicklung des Gesch&auml;ftsverkehres ben&ouml;tigt
+Soweit  die Firma OTRS AG aber gesetzlich oder per Gerichtsbeschluss dazu verpflichtet wird, geben wir Ihre Daten nur an auskunftsberechtigte staatliche Institutionen und Beh&ouml;rden weiter.
+
+&Auml;nderung dieser Datenschutzbestimmungen
+Die Firma OTRS AG beh&auml;lt sich das Recht vor, diese Sicherheits- und Datenschutzma&szlig;nahmen zu ver&auml;ndern, soweit dies wegen der technischen Entwicklung erforderlich wird. In diesen F&auml;llen werden wir auch unsere Hinweise zum Datenschutz entsprechend anpassen. Bitte beachten Sie daher die jeweils aktuelle Version unserer Datenschutzerkl&auml;rung.
+
+Auskunftsrecht
+Sie haben jederzeit das Recht auf Auskunft &uuml;ber die bez&uuml;glich Ihrer Person gespeicherten Daten, deren Herkunft und Empf&auml;nger sowie den Zweck der Datenverarbeitung. Auskunft &uuml;ber die gespeicherten Daten k&ouml;nnen Sie unter info@otrs.com anfordern.
+
+Weitere Informationen
+Ihr Vertrauen ist uns wichtig. Daher m&ouml;chten wir Ihnen jederzeit Rede und Antwort bez&uuml;glich der Verarbeitung Ihrer personenbezogenen Daten stehen. Wenn Sie Fragen haben, die Ihnen diese Datenschutzerkl&auml;rung nicht beantworten konnte oder wenn Sie zu einem Punkt vertiefte Informationen w&uuml;nschen, wenden Sie sich bitte mit einer E-Mail an info@otrs.com .
+          </textarea>
 <!-- dtl:block:ConfidentialContentDE -->
 <!-- dtl:block:ConfidentialContentEN -->
-          <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>$Include{"AdminSupportConfidentialEN"}}</textarea>
+          <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>Any and all information disclosed to OTRS will be kept strictly confidential and are only used for providing better support services to our customers.</textarea>
 <!-- dtl:block:ConfidentialContentEN -->
           </td>
         </tr>
