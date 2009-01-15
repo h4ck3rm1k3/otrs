@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Time.pm - time functions
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Time.pm,v 1.57 2010/12/01 13:41:07 bes Exp $
+# $Id: Time.pm,v 1.44.2.1 2009/01/15 17:20:17 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Time;
@@ -18,7 +18,7 @@ use Time::Local;
 
 use vars qw(@ISA $VERSION);
 
-$VERSION = qw($Revision: 1.57 $) [1];
+$VERSION = qw($Revision: 1.44.2.1 $) [1];
 
 =head1 NAME
 
@@ -39,18 +39,15 @@ This module is managing time functions.
 create a time object
 
     use Kernel::Config;
-    use Kernel::System::Encode;
     use Kernel::System::Log;
     use Kernel::System::Time;
 
     my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
+
     my $LogObject = Kernel::System::Log->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
     );
+
     my $TimeObject = Kernel::System::Time->new(
         ConfigObject => $ConfigObject,
         LogObject    => $LogObject,
@@ -62,17 +59,12 @@ sub new {
     my ( $Type, %Param ) = @_;
 
     # allocate new hash for object
-    my $Self = {};
+    my $Self = {%Param};
     bless( $Self, $Type );
 
-    # get needed objects
+    # check needed objects
     for (qw(ConfigObject LogObject)) {
-        if ( $Param{$_} ) {
-            $Self->{$_} = $Param{$_};
-        }
-        else {
-            die "Got no $_!";
-        }
+        die "Got no $_!" if ( !$Self->{$_} );
     }
 
     # 0=off; 1=on;
@@ -111,8 +103,7 @@ returns a time stamp in "yyyy-mm-dd 23:59:59" format.
         SystemTime => $SystemTime,
     );
 
-If you need the short format "23:59:59" for dates that are "today",
-pass the Type parameter like this:
+If you need the short format "23:59:59" if the date is today (if needed).
 
     my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
         SystemTime => $SystemTime,
@@ -161,11 +152,9 @@ sub CurrentTimestamp {
 
 returns a array of time params.
 
-    my ($Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay) = $TimeObject->SystemTime2Date(
+    my ($Sec, $Min, $Hour, $Day, $Month, $Year) = $TimeObject->SystemTime2Date(
         SystemTime => $TimeObject->SystemTime(),
     );
-
-$WeekDay is the day of the week, with 0 indicating Sunday and 3 indicating Wednesday.
 
 =cut
 
@@ -215,23 +204,11 @@ sub TimeStamp2SystemTime {
     my $SytemTime = 0;
 
     # match iso date format
-    if ( $Param{String} =~ /(\d\d\d\d)-(\d\d|\d)-(\d\d|\d)\s(\d\d|\d):(\d\d|\d):(\d\d|\d)/ ) {
+    if ( $Param{String} =~ /(\d\d\d\d)-(\d\d|\d)-(\d\d|\d) (\d\d|\d):(\d\d|\d):(\d\d|\d)/ ) {
         $SytemTime = $Self->Date2SystemTime(
             Year   => $1,
             Month  => $2,
             Day    => $3,
-            Hour   => $4,
-            Minute => $5,
-            Second => $6,
-        );
-    }
-
-    # match iso date format (wrong format)
-    elsif ( $Param{String} =~ /(\d\d|\d)-(\d\d|\d)-(\d\d\d\d)\s(\d\d|\d):(\d\d|\d):(\d\d|\d)/ ) {
-        $SytemTime = $Self->Date2SystemTime(
-            Year   => $3,
-            Month  => $2,
-            Day    => $1,
             Hour   => $4,
             Minute => $5,
             Second => $6,
@@ -239,27 +216,11 @@ sub TimeStamp2SystemTime {
     }
 
     # match euro time format
-    elsif ( $Param{String} =~ /(\d\d|\d)\.(\d\d|\d)\.(\d\d\d\d)\s(\d\d|\d):(\d\d|\d):(\d\d|\d)/ ) {
+    elsif ( $Param{String} =~ /(\d\d|\d)\.(\d\d|\d)\.(\d\d\d\d) (\d\d|\d):(\d\d|\d):(\d\d|\d)/ ) {
         $SytemTime = $Self->Date2SystemTime(
             Year   => $3,
             Month  => $2,
             Day    => $1,
-            Hour   => $4,
-            Minute => $5,
-            Second => $6,
-        );
-    }
-
-    # match yyyy-mm-ddThh:mm:ss+tt:zz time format
-    elsif (
-        $Param{String}
-        =~ /(\d\d\d\d)-(\d\d|\d)-(\d\d|\d)T(\d\d|\d):(\d\d|\d):(\d\d|\d)(\+|\-)((\d\d|\d):(\d\d|\d))/i
-        )
-    {
-        $SytemTime = $Self->Date2SystemTime(
-            Year   => $1,
-            Month  => $2,
-            Day    => $3,
             Hour   => $4,
             Minute => $5,
             Second => $6,
@@ -273,12 +234,12 @@ sub TimeStamp2SystemTime {
         )
     {
         my $DiffTime = 0;
-        if ( $10 && $10 eq '+' ) {
+        if ( $10 eq '+' ) {
 
             #            $DiffTime = $DiffTime - ($11 * 60 * 60);
             #            $DiffTime = $DiffTime - ($12 * 60);
         }
-        elsif ( $10 && $10 eq '-' ) {
+        elsif ( $10 eq '-' ) {
 
             #            $DiffTime = $DiffTime + ($11 * 60 * 60);
             #            $DiffTime = $DiffTime + ($12 * 60);
@@ -299,19 +260,6 @@ sub TimeStamp2SystemTime {
             Minute => $7,
             Second => $8,
         ) + $DiffTime + $Self->{TimeSecDiff};
-    }
-    elsif (    # match yyyy-mm-ddThh:mm:ssZ
-        $Param{String} =~ /(\d\d\d\d)-(\d\d|\d)-(\d\d|\d)T(\d\d|\d):(\d\d|\d):(\d\d|\d)Z$/
-        )
-    {
-        $SytemTime = $Self->Date2SystemTime(
-            Year   => $1,
-            Month  => $2,
-            Day    => $3,
-            Hour   => $4,
-            Minute => $5,
-            Second => $6,
-        );
     }
 
     # return error
@@ -435,7 +383,7 @@ sub MailTimeStamp {
 
 =item WorkingTime()
 
-get the working time in seconds between these times
+get the working time in secondes between this times
 
     my $WorkingTime = $TimeObject->WorkingTime(
         StartTime => $Created,
@@ -512,14 +460,14 @@ sub WorkingTime {
             0 => 'Sun',
         );
 
-        # count nothing because of vacation
+        # count noting because of vacation
         if (
             $TimeVacationDays->{$Month}->{$Day}
             || $TimeVacationDaysOneTime->{$Year}->{$Month}->{$Day}
             )
         {
 
-            # do nothing
+            # do noting
         }
         else {
             if ( $TimeWorkingHours->{ $LDay{$WDay} } ) {
@@ -566,7 +514,7 @@ sub WorkingTime {
 
 =item DestinationTime()
 
-get the destination time (working time cal.) from start plus some time in seconds
+get the destination time (working time cal.) from start plus some time in secondes
 
     my $DestinationTime = $TimeObject->DestinationTime(
         StartTime => $Created,
@@ -645,14 +593,14 @@ sub DestinationTime {
             0 => 'Sun',
         );
 
-        # count nothing because of vacation
+        # count noting becouse of vacation
         if (
             $TimeVacationDays->{$Month}->{$Day}
             || $TimeVacationDaysOneTime->{$Year}->{$Month}->{$Day}
             )
         {
 
-            # do nothing
+            # do noting
             if ($FirstTurn) {
                 $First           = 1;
                 $DestinationTime = $Self->Date2SystemTime(
@@ -794,7 +742,7 @@ vacation day
         Year     => 2005,
         Month    => 7 || '07',
         Day      => 13,
-        Calendar => 3, # '' is default; 0 is handled like ''
+        Calendar => 3, # '' is default
     );
 
 =cut
@@ -855,16 +803,16 @@ sub VacationCheck {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.57 $ $Date: 2010/12/01 13:41:07 $
+$Revision: 1.44.2.1 $ $Date: 2009/01/15 17:20:17 $
 
 =cut
