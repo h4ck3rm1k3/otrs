@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.17 2009/01/15 01:48:11 sr Exp $
+# $Id: AdminSupport.pm,v 1.18 2009/01/15 20:36:48 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.17 $) [1];
+$VERSION = qw($Revision: 1.18 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -57,14 +57,18 @@ sub Run {
         Cached => 1,
     );
     my $SenderAdress = "";
-    if ($User{UserEmail} && $User{UserEmail} !~ /root\@localhost/ ) {
+
+    if ($Self->{ConfigObject}->Get('Support::SenderEmail')) {
+        $SenderAdress = $Self->{ConfigObject}->Get('Support::SenderEmail');
+    }
+    elsif ($User{UserEmail} && $User{UserEmail} !~ /root\@localhost/ ) {
         $SenderAdress = $User{UserEmail};
     }
     elsif ($Self->{ConfigObject}->Get('AdminEmail') && $Self->{ConfigObject}->Get('AdminEmail') !~ /root\@localhost/
         && $Self->{ConfigObject}->Get('AdminEmail') !~ /admin\@example.com/ ) {
         $SenderAdress = $Self->{ConfigObject}->Get('AdminEmail');
     }
-
+    print STDERR "SenderAdress: $SenderAdress";
     # ------------------------------------------------------------ #
     # Confidential
     # ------------------------------------------------------------ #
@@ -80,7 +84,7 @@ sub Run {
             Data => {},
         );
 
-        if ($User{UserLanguage} =~ /de/) {
+        if ($User{UserLanguage} && $User{UserLanguage} =~ /de/) {
             $Self->{LayoutObject}->Block(
                 Name => 'ConfidentialContentDE',
                 Data => {},

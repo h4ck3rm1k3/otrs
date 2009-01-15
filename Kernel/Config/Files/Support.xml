@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: Support.xml,v 1.2 2008/08/04 06:22:45 martin Exp $</CVS>
+    <CVS>$Id: Support.xml,v 1.3 2009/01/15 20:35:15 sr Exp $</CVS>
     <ConfigItem Name="Frontend::Module###AdminSupport" Required="1" Valid="1">
         <Description Lang="en">Frontend module registration for the AdminSystemStatus object  in the admin area.</Description>Description>
         <Description Lang="de">Frontendmodul-Registration des AdminSystemStatus-Objekts im Admin-Bereich.</Description>Description>
@@ -19,6 +19,15 @@
                     <Prio>2000</Prio>
                 </NavBarModule>
             </FrontendModuleReg>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Support::SenderEmail" Required="0" Valid="0">
+        <Description Lang="en">The used sender mail address.</Description>
+        <Description Lang="de">Die verwendete Absenderadresse.</Description>
+        <Group>Support</Group>
+        <SubGroup>Core::Support</SubGroup>
+        <Setting>
+            <String Regex=""></String>
         </Setting>
     </ConfigItem>
 </otrs_config>
