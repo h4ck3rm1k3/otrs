@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.25 2009/01/15 01:47:45 sr Exp $
+# $Id: Support.pm,v 1.26 2009/01/15 20:41:03 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.25 $) [1];
+$VERSION = qw($Revision: 1.26 $) [1];
 
 =head1 NAME
 
@@ -269,6 +269,7 @@ sub _ARCHIVELookup {
     my ( $Self, %Param ) = @_;
     my @List = glob("$Param{In}/*");
 
+    FILE:
     for my $File (@List) {
         $File =~ s/\/\//\//g;
         if ( -d $File && $File !~ /CVS/ && $File !~ /^doc\// && $File !~ /^var\/tmp/ ) {
@@ -284,18 +285,19 @@ sub _ARCHIVELookup {
             $File =~ s/\Q$Param{Home}\E//;
             $File =~ s/^\/(.*)$/$1/;
 
-            if (
-                $File !~ /Entries|Repository|Root|CVS|ARCHIVE/
+            if ( $File !~ /Entries|Repository|Root|CVS|ARCHIVE/
                 && $File !~ /^doc\//
-                && $File !~ /^var\/tmp/
-                )
-            {
+                && $File !~ /^var\/tmp/) {
+
+                if (! -r $OrigFile) {
+                    next FILE;
+                }
                 if (! open( IN, '<', $OrigFile ) ) {
                     $Self->{LogObject}->Log(
                         Priority => 'error',
                         Message  => "Can't read: $OrigFile: $!",
                     );
-                    next;
+                    next FILE;
                 }
                 my $ctx = Digest::MD5->new;
                 $ctx->addfile(*IN);
@@ -382,8 +384,12 @@ sub ArchiveApplication {
         unlink $Archive || die "Can't unlink $Archive: $!";
     }
 
-    my @List = $Self->DirectoryFiles( Directory => $Home );
-
+    my @List;
+    for my $ListElement ($Self->DirectoryFiles( Directory => $Home )) {
+        if (-r $ListElement) {
+            push (@List, $ListElement)
+        }
+    }
     # add files to the tar archive
     my $TarObject = Archive::Tar->new();
 
@@ -466,6 +472,9 @@ sub DirectoryFiles {
                 next;
             }
             if ( -s $File > (1024*1024*0.5) ) {
+                next;
+            }
+            if (! -r $File ) {
                 next;
             }
             push @Files, $File;
@@ -897,6 +906,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.25 $ $Date: 2009/01/15 01:47:45 $
+$Revision: 1.26 $ $Date: 2009/01/15 20:41:03 $
 
 =cut
