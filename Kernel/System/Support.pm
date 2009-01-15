@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.24 2009/01/15 00:37:26 sr Exp $
+# $Id: Support.pm,v 1.25 2009/01/15 01:47:45 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.24 $) [1];
+$VERSION = qw($Revision: 1.25 $) [1];
 
 =head1 NAME
 
@@ -466,7 +466,6 @@ sub DirectoryFiles {
                 next;
             }
             if ( -s $File > (1024*1024*0.5) ) {
-#print STDERR "NO: $File\n";
                 next;
             }
             push @Files, $File;
@@ -898,6 +897,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.24 $ $Date: 2009/01/15 00:37:26 $
+$Revision: 1.25 $ $Date: 2009/01/15 01:47:45 $
 
 =cut

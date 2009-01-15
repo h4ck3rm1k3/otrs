@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.14 2009/01/15 00:32:10 sr Exp $
+# $Id: AdminSupport.dtl,v 1.15 2009/01/15 01:48:34 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -203,12 +203,14 @@ Ihr Vertrauen ist uns wichtig. Daher m&ouml;chten wir Ihnen jederzeit Rede und A
               <tr>
                 <td class="contentfooter">
                   <form action="$Env{"CGIHandle"}" method="post">
-                    <input type="hidden" name="Continue" value="Start"/>
+                    <input type="hidden" name="Action" value="$Env{"Action"}"/>
+                    <input type="hidden" name="Subaction" value="SenderInformation"/>
                     <input class="button" type="submit" value="$Text{"Accept license"}"/>
                   </form>
                 </td>
                 <td width="10" class="contentfooter">
                   <form action="$Env{"CGIHandle"}" method="post">
+                     <input type="hidden" name="Action" value="$Env{"Action"}"/>
                     <input class="button" type="submit" value="$Text{"Don't accept license"}"/>
                   </form>
                 </td>

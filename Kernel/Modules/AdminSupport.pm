@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.16 2009/01/14 23:23:15 sr Exp $
+# $Id: AdminSupport.pm,v 1.17 2009/01/15 01:48:11 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.16 $) [1];
+$VERSION = qw($Revision: 1.17 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -52,16 +52,24 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
+    my %User = $Self->{UserObject}->GetUserData(
+        UserID => $Self->{UserID},
+        Cached => 1,
+    );
+    my $SenderAdress = "";
+    if ($User{UserEmail} && $User{UserEmail} !~ /root\@localhost/ ) {
+        $SenderAdress = $User{UserEmail};
+    }
+    elsif ($Self->{ConfigObject}->Get('AdminEmail') && $Self->{ConfigObject}->Get('AdminEmail') !~ /root\@localhost/
+        && $Self->{ConfigObject}->Get('AdminEmail') !~ /admin\@example.com/ ) {
+        $SenderAdress = $Self->{ConfigObject}->Get('AdminEmail');
+    }
+
     # ------------------------------------------------------------ #
     # Confidential
     # ------------------------------------------------------------ #
 
     if ( $Self->{Subaction} eq 'Confidential' ) {
-
-        my %User = $Self->{UserObject}->GetUserData(
-            UserID => $Self->{UserID},
-            Cached => 1,
-        );
 
         # create & return output
         my $Output = $Self->{LayoutObject}->Header();
@@ -103,20 +111,6 @@ sub Run {
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
 
-        my %User = $Self->{UserObject}->GetUserData(
-            UserID => $Self->{UserID},
-            Cached => 1,
-        );
-
-        my $SenderAdress = "";
-        if ($User{UserEmail} && $User{UserEmail} !~ /root\@localhost/ ) {
-            $SenderAdress = $User{UserEmail};
-        }
-        elsif ($Self->{ConfigObject}->Get('AdminEmail') && $Self->{ConfigObject}->Get('AdminEmail') !~ /root\@localhost/
-            && $Self->{ConfigObject}->Get('AdminEmail') !~ /admin\@example.com/ ) {
-            $SenderAdress = $Self->{ConfigObject}->Get('AdminEmail');
-        }
-
         $Self->{LayoutObject}->Block(
             Name => 'SenderInformation',
             Data => {
@@ -154,8 +148,12 @@ sub Run {
             $Output .= $Self->{LayoutObject}->NavigationBar();
 
             $Self->{LayoutObject}->Block(
-                Name => 'Confidential',
-                Data => {},
+                Name => 'SenderInformation',
+                Data => {
+                    SenderAdress => $SenderAdress,
+                    SenderSalutation => $User{UserSalutation},
+                    SenderName => $User{UserFirstname}.' '.$User{UserLastname},
+                },
             );
 
             my $SendMessage = $Self->{SupportObject}->SendInfo(
