@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-    <CVS>$Id: Support.sopm,v 1.17 2009/01/15 20:21:35 sr Exp $</CVS>
+    <CVS>$Id: Support.sopm,v 1.18 2009/01/19 09:11:29 sr Exp $</CVS>
     <Name>Support</Name>
     <Version>0.0.0</Version>
     <Framework>2.3.x</Framework>
@@ -12,7 +12,7 @@
     <Description Lang="en">Verifies System Settings and gives some performance tips.</Description>
     <Description Lang="de">Das Support Assessment Modul prüft fehlerhafte System Einstellungen und gibt Performance Tips.</Description>
     <IntroInstallPost Title="Notice - Introduction" Lang="en">The Support assassment modul will be found at the admin navigation bar in the fourth column and can be used for system checks to find setup errors.</IntroInstallPost>
-    <IntroInstallPost Title="Hinweis - Einfürhrung" Lang="de">Die Verknüpfung zum Support Assessment Modul ist in der vierten Spalte des Administrations-Bereichs hinterlegt. Mit ihr können System-Checks ausgeführt werden, um Fehler im Setup zu finden.</IntroInstallPost>
+    <IntroInstallPost Title="Hinweis - Einführung" Lang="de">Die Verknüpfung zum Support Assessment Modul ist in der vierten Spalte des Administrations-Bereichs hinterlegt. Mit ihr können System-Checks ausgeführt werden, um Fehler im Setup zu finden.</IntroInstallPost>
     <Filelist>
         <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupport.dtl"/>
         <File Permission="644" Location="Kernel/System/Support.pm"/>
