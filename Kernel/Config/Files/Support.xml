@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: Support.xml,v 1.3 2009/01/15 20:35:15 sr Exp $</CVS>
+    <CVS>$Id: Support.xml,v 1.4 2009/01/19 09:12:13 sr Exp $</CVS>
     <ConfigItem Name="Frontend::Module###AdminSupport" Required="1" Valid="1">
         <Description Lang="en">Frontend module registration for the AdminSystemStatus object  in the admin area.</Description>Description>
         <Description Lang="de">Frontendmodul-Registration des AdminSystemStatus-Objekts im Admin-Bereich.</Description>Description>
@@ -14,7 +14,7 @@
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
-                    <Name>Support</Name>
+                    <Name>Support Assassment</Name>
                     <Block>Block4</Block>
                     <Prio>2000</Prio>
                 </NavBarModule>
