@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.26 2009/01/15 20:41:03 sr Exp $
+# $Id: Support.pm,v 1.27 2009/01/19 08:58:41 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.26 $) [1];
+$VERSION = qw($Revision: 1.27 $) [1];
 
 =head1 NAME
 
@@ -304,16 +304,7 @@ sub _ARCHIVELookup {
                 my $Digest = $ctx->hexdigest();
                 close(IN);
                 if ( !$Param{Compare}->{$File} ) {
-                    my $InPackage = $Self->OpmInfo (
-                        Mode => 'IsFileInPackageCheck',
-                        File => $OrigFile,
-                    );
-                    if ($InPackage == 1) {
-                        delete $Param{Compare}->{$File};
-                    }
-                    else {
-                        $Param{Compare}->{$File} = "New $File";
-                    }
+                    $Param{Compare}->{$File} = "New $File";
                 }
                 elsif ( $Param{Compare}->{$File} ne $Digest ) {
                     $Param{Compare}->{$File} = "Dif $File";
@@ -657,7 +648,7 @@ sub Download {
     }
 
     my @List;
-    for my $Key (qw(Body LogPre OPMInfo Check App Arch ModuleCheck LogPost) ) {
+    for my $Key (qw(Body LogPre Check App Arch ModuleCheck LogPost OPMInfo) ) {
         if ( $File{ $Key . 'Filename' } && $File{ $Key . 'Content' } ) {
             my $Filename = $TempDir . '/' . $File{ $Key . 'Filename' };
             open( my $Out, '>', $Filename );
@@ -906,6 +897,6 @@ did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =head1 VERSION
 
-$Revision: 1.26 $ $Date: 2009/01/15 20:41:03 $
+$Revision: 1.27 $ $Date: 2009/01/19 08:58:41 $
 
 =cut
