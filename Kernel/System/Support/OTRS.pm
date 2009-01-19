@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.16 2009/01/15 00:38:24 sr Exp $
+# $Id: OTRS.pm,v 1.17 2009/01/19 13:20:35 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::Ticket;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.16 $) [1];
+$VERSION = qw($Revision: 1.17 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -46,7 +46,7 @@ sub AdminChecksGet {
     # add new function name here
     my @ModuleList = (
         '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketFulltextIndexModuleCheck',
-        '_FQDNConfigCheck', '_SystemIDConfigCheck',
+        '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
         '_FileSystemCheck', '_PackageDeployCheck',
     );
 
