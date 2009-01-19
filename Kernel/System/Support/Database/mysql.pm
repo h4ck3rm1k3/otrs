@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.18 2009/01/15 00:39:15 sr Exp $
+# $Id: mysql.pm,v 1.19 2009/01/19 13:21:45 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.18 $) [1];
+$VERSION = qw($Revision: 1.19 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -79,13 +79,13 @@ sub _VersionCheck {
         }
 
         if ( $Row[1] =~ /^(\d{1,3})\.(\d{1,3}).*$/ ) {
-            if ( $1 > 4 || ( $1 > 3 && $2 > 0 ) ) {
+            if ( $1 >= 4 ) {
                 $Check   = 'OK';
                 $Message = "MySQL $Row[1]";
             }
             else {
                 $Check   = 'Failed';
-                $Message = "Version $Row[1], you should use 4.1 or higner.";
+                $Message = "Version $Row[1], you should use 4.1 or higher.";
             }
         }
         else {
