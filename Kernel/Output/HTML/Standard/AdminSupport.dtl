@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.16 2009/01/15 20:41:32 sr Exp $
+# $Id: AdminSupport.dtl,v 1.17 2009/01/19 08:59:42 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -168,32 +168,56 @@ function submit_confidential() {
 <!-- dtl:block:ConfidentialContentDE -->
           <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>Datenschutz
 
-Wir, die Firma OTRS AG nehmen den Schutz Ihrer pers&ouml;nlichen Daten sehr ernst und halten uns strikt an die Regeln der Datenschutzgesetze. Alle Passw&ouml;rter werden vor dem Versenden des 'Supportpakets' automatisiert unkenntlich gemacht. In keinem Fall werden die erhobenen Daten verkauft oder aus anderen Gr&uuml;nden an Dritte weitergegeben.
+Wir, die Firma OTRS AG, nehmen den Schutz Ihrer pers&ouml;nlichen Daten sehr ernst und halten uns strikt an die Regeln der Datenschutzgesetze. Alle Passw&ouml;rter werden vor dem Versenden der Informationen automatisiert unkenntlich gemacht. In keinem Fall werden die erhobenen Daten verkauft oder aus anderen Gr&uuml;nden an unautorisierte Dritte weitergegeben.
 
 Die nachfolgende Erkl&auml;rung gibt Ihnen einen &Uuml;berblick dar&uuml;ber, wie wir diesen Schutz gew&auml;hrleisten und welche Art von Daten zu welchem Zweck &uuml;bermittelt werden.
 
-Daten&uuml;bermittlung durch das 'Support Modul'
-Die Firma OTRS AG &uuml;bermittelt und speichert Informationen,  nachdem sie durch das 'Support Modul' an die Firma OTRS AG versendet werden. Dabei handelt es sich um ausschlie&szlig;lich um Daten, die die Firma OTRS AG ben&ouml;tigt um den betroffenen OTRS Server auf seine Funktionsf&auml;higkeit und Leistungsf&auml;higkeit zu analysieren, oder um eine Kontaktaufnahme zu erm&ouml;glichen.
+Daten&uuml;bermittlung durch das 'Supportmodul'
+Die Firma OTRS AG &uuml;bermittelt und speichert Informationen, die durch das 'Supportmodul' an die Firma OTRS AG versendet werden. Dabei handelt es sich um ausschlie&szlig;lich um Daten, die die Firma OTRS AG ben&ouml;tigt, um Funktionsf&auml;higkeit und Leistungsf&auml;higkeit des betroffenen OTRS-Servers zu analysieren, oder um eine Kontaktaufnahme zu erm&ouml;glichen.
 
 Sicherheit Ihrer pers&ouml;nlichen Daten
-Die Firma OTRS AG sch&uuml;tzt Ihre pers&ouml;nlichen Daten vor unerlaubten Zugriff, Verwendung oder Ver&ouml;ffentlichung. Die Firma OTRS AG sorgt daf&uuml;r, dass ihre pers&ouml;nlichen Informationen die Sie auf dem Server speichern, sich in einer kontrollierten sicheren Umgebung, in der unerlaubter Zugriff und Ver&ouml;ffentlichung verhindert wird, befinden
+Die Firma OTRS AG sch&uuml;tzt Ihre pers&ouml;nlichen Daten vor unerlaubten Zugriff, Verwendung oder Ver&ouml;ffentlichung. Die Firma OTRS AG sorgt daf&uuml;r, dass von Ihnen auf dem Server gespeicherte pers&ouml;nliche Informationen in einer kontrollierten, sicheren Umgebung vor unerlaubtem Zugriff und Ver&ouml;ffentlichung gesch&Uuml;tzt sind.
 
 Weitergabe Ihrer Daten
-Die Firma OTRS AG gibt Ihre Daten nicht an Dritte weiter, au&szlig;er Sie wird zur Abwicklung des Gesch&auml;ftsverkehres ben&ouml;tigt
-Soweit  die Firma OTRS AG aber gesetzlich oder per Gerichtsbeschluss dazu verpflichtet wird, geben wir Ihre Daten nur an auskunftsberechtigte staatliche Institutionen und Beh&ouml;rden weiter.
+Die Firma OTRS AG gibt Ihre Daten nicht an Dritte weiter, sofern dies nicht zur Abwicklung des Gesch&auml;ftsverkehres n&ouml;tig ist.
+Soweit die Firma OTRS AG gesetzlich oder per Gerichtsbeschluss dazu verpflichtet ist, geben wir Ihre Daten nur an auskunftsberechtigte staatliche Institutionen und Beh&ouml;rden weiter.
 
 &Auml;nderung dieser Datenschutzbestimmungen
-Die Firma OTRS AG beh&auml;lt sich das Recht vor, diese Sicherheits- und Datenschutzma&szlig;nahmen zu ver&auml;ndern, soweit dies wegen der technischen Entwicklung erforderlich wird. In diesen F&auml;llen werden wir auch unsere Hinweise zum Datenschutz entsprechend anpassen. Bitte beachten Sie daher die jeweils aktuelle Version unserer Datenschutzerkl&auml;rung.
+Die Firma OTRS AG beh&auml;lt sich das Recht vor, diese Sicherheits- und Datenschutzma&szlig;nahmen zu ver&auml;ndern, soweit dies wegen der technischen Entwicklung erforderlich wird. In solchen F&auml;llen werden wir auch unsere Hinweise zum Datenschutz entsprechend anpassen. Bitte beachten Sie daher die jeweils aktuelle Version unserer Datenschutzerkl&auml;rung.
 
 Auskunftsrecht
 Sie haben jederzeit das Recht auf Auskunft &uuml;ber die bez&uuml;glich Ihrer Person gespeicherten Daten, deren Herkunft und Empf&auml;nger sowie den Zweck der Datenverarbeitung. Auskunft &uuml;ber die gespeicherten Daten k&ouml;nnen Sie unter info@otrs.com anfordern.
 
 Weitere Informationen
-Ihr Vertrauen ist uns wichtig. Daher m&ouml;chten wir Ihnen jederzeit Rede und Antwort bez&uuml;glich der Verarbeitung Ihrer personenbezogenen Daten stehen. Wenn Sie Fragen haben, die Ihnen diese Datenschutzerkl&auml;rung nicht beantworten konnte oder wenn Sie zu einem Punkt vertiefte Informationen w&uuml;nschen, wenden Sie sich bitte mit einer E-Mail an info@otrs.com .
+Ihr Vertrauen ist uns wichtig. Daher geben wir Ihnen gerne jederzeit Auskunft &uuml;ber die Verarbeitung Ihrer personenbezogenen Daten. Wenn Sie Fragen haben, die Ihnen diese Datenschutzerkl&auml;rung nicht beantworten konnte oder wenn Sie weitere Informationen zu einem Punkt w&uuml;nschen, wenden Sie sich bitte mit einer E-Mail an info@otrs.com.
           </textarea>
 <!-- dtl:block:ConfidentialContentDE -->
 <!-- dtl:block:ConfidentialContentEN -->
-          <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>Any and all information disclosed to OTRS will be kept strictly confidential and are only used for providing better support services to our customers.</textarea>
+          <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>Data Protection
+
+Here at OTRS AG we take the protection of your personal details very seriously and strictly adhere to data protection laws. All passwords are automatically made unrecognizable before the information is sent. Under no circumstances will any data we obtain be sold or passed on to unauthorized third parties.
+The following explanation provides you with an overview of how we guarantee this protection and which type of data is collected for which purpose.
+
+Data Handling with 'Support Module'
+Information received through the 'Support Module' is saved by OTRS AG. This only applies to data that OTRS AG requires to analyze the performance and function of the OTRS server or to establish contact.
+
+Safety of Personal Details
+OTRS AG protects your personal data from unauthorized access, use or publication. OTRS AG ensures that the personal information you store on the server is protected from unauthorized access and publication.
+
+Disclosure of Details
+OTRS AG will not pass on your details to third parties unless required for business transactions.
+OTRS AG will only pass on your details to entitled public institutions and authorities if required by law or court order.
+
+Amendment of Data Protection Policy
+OTRS AG reserves the right to amend this security and data protection policy if required by technical developments. In this case we will also adapt our information regarding data protection accordingly. Please regularly refer to the latest version of our Data Protection Policy.
+
+Right to Information
+You have the right to demand information concerning the data saved about you, its origin and recipients, as well as the purpose of the data processing at any time. You can request information about the saved data by sending an e-mail to info@otrs.com.
+
+Further Information
+Your trust is very important to us. We are willing to inform you about the processing of your personal details at any time. If you have any questions that have not been answered by this Data Protection Policy or if you require more detailed information about a specific topic, please contact info@otrs.com.
+
+          </textarea>
 <!-- dtl:block:ConfidentialContentEN -->
           </td>
         </tr>
@@ -210,7 +234,7 @@ Ihr Vertrauen ist uns wichtig. Daher m&ouml;chten wir Ihnen jederzeit Rede und A
                 </td>
                 <td width="10" class="contentfooter">
                   <form action="$Env{"CGIHandle"}" method="post">
-                     <input type="hidden" name="Action" value="$Env{"Action"}"/>
+                    <input type="hidden" name="Action" value="$Env{"Action"}"/>
                     <input class="button" type="submit" value="$Text{"Don't accept license"}"/>
                   </form>
                 </td>
@@ -222,7 +246,7 @@ Ihr Vertrauen ist uns wichtig. Daher m&ouml;chten wir Ihnen jederzeit Rede und A
         </tr>
         <tr>
           <td class="mainbody">
-          &nbsp;
+            &nbsp;
           </td>
         </tr>
       </table>
