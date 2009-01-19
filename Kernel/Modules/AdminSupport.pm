@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.18 2009/01/15 20:36:48 sr Exp $
+# $Id: AdminSupport.pm,v 1.19 2009/01/19 08:59:13 sr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (GPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.18 $) [1];
+$VERSION = qw($Revision: 1.19 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -68,7 +68,7 @@ sub Run {
         && $Self->{ConfigObject}->Get('AdminEmail') !~ /admin\@example.com/ ) {
         $SenderAdress = $Self->{ConfigObject}->Get('AdminEmail');
     }
-    print STDERR "SenderAdress: $SenderAdress";
+
     # ------------------------------------------------------------ #
     # Confidential
     # ------------------------------------------------------------ #
