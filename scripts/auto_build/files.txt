@@ -6,6 +6,7 @@
 %config(noreplace) /opt/otrs/.fetchmailrc
 %config(noreplace) /opt/otrs/.mailfilter
 %config(noreplace) /opt/otrs/Kernel/Output/HTML/Standard/*.dtl
+%config(noreplace) /opt/otrs/Kernel/Output/HTML/Lite/*.dtl
 %config(noreplace) /opt/otrs/Kernel/Language/*.pm
 %config(noreplace) /opt/otrs/var/cron/*
 %config(noreplace) /opt/otrs/var/logo-otrs.png
@@ -16,8 +17,6 @@
 /opt/otrs/.procmailrc.dist
 /opt/otrs/.fetchmailrc.dist
 /opt/otrs/.mailfilter.dist
-%dir /opt/otrs/Custom/
-/opt/otrs/Custom/README
 %dir /opt/otrs/Kernel/
 %dir /opt/otrs/Kernel/Config/
 /opt/otrs/Kernel/Config.pm.dist
@@ -25,15 +24,14 @@
 /opt/otrs/Kernel/Config/GenericAgent.pm.dist
 /opt/otrs/Kernel/Config/GenericAgent.pm.examples
 /opt/otrs/Kernel/Config/Defaults.pm
-/opt/otrs/Kernel/GenericInterface*
 /opt/otrs/Kernel/Language.pm
 %dir /opt/otrs/Kernel/Language/
 /opt/otrs/Kernel/Modules*
 %dir /opt/otrs/Kernel/Output/
 %dir /opt/otrs/Kernel/Output/HTML/
 %dir /opt/otrs/Kernel/Output/HTML/Standard/
+%dir /opt/otrs/Kernel/Output/HTML/Lite/
 /opt/otrs/Kernel/Output/HTML/*.pm
-/opt/otrs/Kernel/Scheduler*
 /opt/otrs/Kernel/System*
 /opt/otrs/bin*
 /opt/otrs/scripts*
@@ -41,22 +39,20 @@
 %dir /opt/otrs/var/packages/*.opm
 %dir /opt/otrs/var/article/
 /opt/otrs/var/httpd/
-/opt/otrs/var/fonts/
 %dir /opt/otrs/var/log/
 %dir /opt/otrs/var/sessions/
 %dir /opt/otrs/var/spool/
 %dir /opt/otrs/var/cron/
 %dir /opt/otrs/var/tmp/
-%dir /opt/otrs/var/stats/
-/opt/otrs/var/stats/*.xml
 %dir /opt/otrs/var/tmp/Cache
+%dir /opt/otrs/var/pics/stats/
 
 /opt/otrs/Kernel/cpan-lib*
 
 %doc /opt/otrs/INSTAL*
 %doc /opt/otrs/UPGRADING
+%doc /opt/otrs/TODO
 %doc /opt/otrs/COPYING
-%doc /opt/otrs/COPYING-Third-Party
 %doc /opt/otrs/CHANGES
 %doc /opt/otrs/READM*
 %doc /opt/otrs/doc*
