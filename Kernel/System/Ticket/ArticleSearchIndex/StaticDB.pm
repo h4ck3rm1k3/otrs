@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Ticket/ArticleSearchIndex/StaticDB.pm - article search index backend static
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: StaticDB.pm,v 1.21 2011/12/08 14:06:42 mg Exp $
+# $Id: StaticDB.pm,v 1.5.2.1 2009/01/22 20:15:02 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Ticket::ArticleSearchIndex::StaticDB;
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.21 $) [1];
+$VERSION = qw($Revision: 1.5.2.1 $) [1];
 
 sub ArticleIndexBuild {
     my ( $Self, %Param ) = @_;
@@ -29,9 +29,8 @@ sub ArticleIndexBuild {
     }
 
     my %Article = $Self->ArticleGet(
-        ArticleID     => $Param{ArticleID},
-        UserID        => $Param{UserID},
-        DynamicFields => 0,
+        ArticleID => $Param{ArticleID},
+        UserID    => $Param{UserID},
     );
 
     for my $Key (qw(From To Cc Subject)) {
@@ -96,26 +95,6 @@ sub ArticleIndexDelete {
     return 1;
 }
 
-sub ArticleIndexDeleteTicket {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(TicketID UserID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # delete articles
-    return if !$Self->{DBObject}->Do(
-        SQL  => 'DELETE FROM article_search WHERE ticket_id = ?',
-        Bind => [ \$Param{TicketID} ],
-    );
-
-    return 1;
-}
-
 sub _ArticleIndexQuerySQL {
     my ( $Self, %Param ) = @_;
 
@@ -128,20 +107,17 @@ sub _ArticleIndexQuerySQL {
     }
 
     # use also article table if required
-    for (
-        qw(
-        From To Cc Subject Body
-        ArticleCreateTimeOlderMinutes ArticleCreateTimeNewerMinutes
-        ArticleCreateTimeOlderDate ArticleCreateTimeNewerDate
-        )
-        )
-    {
+    my $SQL    = '';
+    my $SQLExt = '';
+    for (qw(From To Cc Subject Body)) {
         if ( $Param{Data}->{$_} ) {
-            return ' INNER JOIN article_search art ON st.id = art.ticket_id ';
+            $SQL    = ', article_search art ';
+            $SQLExt = ' AND st.id = art.ticket_id';
+            last;
         }
     }
 
-    return '';
+    return $SQL, $SQLExt;
 }
 
 sub _ArticleIndexQuerySQLExt {
@@ -165,51 +141,44 @@ sub _ArticleIndexQuerySQLExt {
     my $SQLExt      = '';
     my $FullTextSQL = '';
     for my $Key ( keys %FieldSQLMapFullText ) {
-        next if !$Param{Data}->{$Key};
+        if ( $Param{Data}->{$Key} ) {
+            $Param{Data}->{$Key} =~ s/\*/%/gi;
 
-        # replace * by % for SQL like
-        $Param{Data}->{$Key} =~ s/\*/%/gi;
+            # check search attribute, we do not need to search for *
+            next if $Param{Data}->{$Key} =~ /^\%{1,3}$/;
 
-        # check search attribute, we do not need to search for *
-        next if $Param{Data}->{$Key} =~ /^\%{1,3}$/;
-
-        if ($FullTextSQL) {
-            $FullTextSQL .= ' ' . $Param{Data}->{ContentSearch} . ' ';
-        }
-
-        # check if search condition extension is used
-        if ( $Param{Data}->{ConditionInline} ) {
-            $FullTextSQL .= $Self->{DBObject}->QueryCondition(
-                Key          => $FieldSQLMapFullText{$Key},
-                Value        => $Param{Data}->{$Key},
-                SearchPrefix => $Param{Data}->{ContentSearchPrefix},
-                SearchSuffix => $Param{Data}->{ContentSearchSuffix},
-                Extended     => 1,
-            );
-        }
-        else {
-
-            my $Field = $FieldSQLMapFullText{$Key};
-            my $Value = $Param{Data}->{$Key};
-
-            if ( $Param{Data}->{ContentSearchPrefix} ) {
-                $Value = $Param{Data}->{ContentSearchPrefix} . $Value;
-            }
-            if ( $Param{Data}->{ContentSearchSuffix} ) {
-                $Value .= $Param{Data}->{ContentSearchSuffix};
+            if ($FullTextSQL) {
+                $FullTextSQL .= ' ' . $Param{Data}->{ContentSearch} . ' ';
             }
 
-            # replace %% by % for SQL
-            $Param{Data}->{$Key} =~ s/%%/%/gi;
-
-            # db quote
-            $Value = lc $Self->{DBObject}->Quote( $Value, 'Like' );
-
-            if ( $Self->{DBObject}->GetDatabaseFunction('LcaseLikeInLargeText') ) {
-                $FullTextSQL .= " LCASE($Field) LIKE LCASE('$Value')";
+            # check if search condition extention is used
+            if (
+                $Param{Data}->{ConditionInline}
+                && $Param{Data}->{$Key} =~ /(&&|\|\||\!|\+|AND|OR)/
+                )
+            {
+                $FullTextSQL .= $Self->{DBObject}->QueryCondition(
+                    Key          => $FieldSQLMapFullText{$Key},
+                    Value        => $Param{Data}->{$Key},
+                    SearchPrefix => '*',
+                    SearchSuffix => '*',
+                );
             }
             else {
-                $FullTextSQL .= " $Field LIKE '$Value'";
+
+                # check if database supports LIKE in large text types (in this case for body)
+                if ( $Self->{DBObject}->GetDatabaseFunction('NoLowerInLargeText') ) {
+                    $FullTextSQL .= " $FieldSQLMapFullText{$Key} LIKE '"
+                        . $Self->{DBObject}->Quote( $Param{Data}->{$Key}, 'Like' ) . "'";
+                }
+                elsif ( $Self->{DBObject}->GetDatabaseFunction('LcaseLikeInLargeText') ) {
+                    $FullTextSQL .= " LCASE($FieldSQLMapFullText{$Key}) LIKE LCASE('"
+                        . $Self->{DBObject}->Quote( $Param{Data}->{$Key}, 'Like' ) . "')";
+                }
+                else {
+                    $FullTextSQL .= " LOWER($FieldSQLMapFullText{$Key}) LIKE LOWER('"
+                        . $Self->{DBObject}->Quote( $Param{Data}->{$Key}, 'Like' ) . "')";
+                }
             }
         }
     }
@@ -234,15 +203,13 @@ sub _ArticleIndexString {
     my $Config = $Self->{ConfigObject}->Get('Ticket::SearchIndex::Attribute');
     my $WordCountMax = $Config->{WordCountMax} || 1000;
 
-    # get words (use eval to prevend exits on damaged utf8 signs)
-    my $ListOfWords = eval {
-        $Self->_ArticleIndexStringToWord(
-            String        => \$Param{String},
-            WordLengthMin => $Param{WordLengthMin},
-            WordLengthMax => $Param{WordLengthMax},
-        );
-    };
-    return if !$ListOfWords;
+    # get words
+    my $ListOfWords = $Self->_ArticleIndexStringToWord(
+        String        => \$Param{String},
+        WordLengthMin => $Param{WordLengthMin},
+        WordLengthMax => $Param{WordLengthMax},
+    );
+    next if !$ListOfWords;
 
     # find ranking of words
     my %List;
@@ -282,32 +249,32 @@ sub _ArticleIndexStringToWord {
     my $Config = $Self->{ConfigObject}->Get('Ticket::SearchIndex::Attribute');
 
     my %StopWord = (
-        'der' => 1,
-        'die' => 1,
-        'und' => 1,
-        'in'  => 1,
-        'vom' => 1,
-        'zu'  => 1,
-        'im'  => 1,
-        'den' => 1,
-        'auf' => 1,
-        'als' => 1,
+        'der'  => 1,
+        'die'  => 1,
+        'und'  => 1,
+        'in'   => 1,
+        'vom'  => 1,
+        'zu'   => 1,
+        'im'   => 1,
+        'den'  => 1,
+        'auf'  => 1,
+        'als'  => 1,
 
-        'the' => 1,
-        'of'  => 1,
-        'and' => 1,
-        'in'  => 1,
-        'to'  => 1,
-        'a'   => 1,
-        'is'  => 1,
-        'for' => 1,
+        'the'  => 1,
+        'of'   => 1,
+        'and'  => 1,
+        'in'   => 1,
+        'to'   => 1,
+        'a'    => 1,
+        'is'   => 1,
+        'for'  => 1,
     );
 
     # get words
     my $LengthMin = $Param{WordLengthMin} || $Config->{WordLengthMin} || 3;
     my $LengthMax = $Param{WordLengthMax} || $Config->{WordLengthMax} || 30;
     my @ListOfWords = split /\s+/, ${ $Param{String} };
-    my @ListOfWordsNew;
+    my @ListOfWordsNew = ();
     for my $Word (@ListOfWords) {
 
         # remove some not needed chars
@@ -323,7 +290,7 @@ sub _ArticleIndexStringToWord {
             next;
         }
 
-        # do not index words/strings longer then x chars
+        # do not index words/strings longer the x chars
         if ( $Length > $LengthMax ) {
             next;
         }
