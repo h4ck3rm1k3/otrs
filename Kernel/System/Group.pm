@@ -1,12 +1,12 @@
 # --
-# Kernel/System/Group.pm - All Groups and Roles related functions should be here eventually
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Kernel/System/Group.pm - All Groups related function should be here eventually
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Group.pm,v 1.91 2010/11/30 13:11:11 mg Exp $
+# $Id: Group.pm,v 1.58.2.1 2009/01/23 08:51:30 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Group;
@@ -15,18 +15,17 @@ use strict;
 use warnings;
 
 use Kernel::System::Valid;
-use Kernel::System::CacheInternal;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.91 $) [1];
+$VERSION = qw($Revision: 1.58.2.1 $) [1];
 
 =head1 NAME
 
-Kernel::System::Group - group and roles lib
+Kernel::System::Group - group lib
 
 =head1 SYNOPSIS
 
-All group and roles functions. E. g. to add groups or to get a member list of a group.
+All group functions. E. g. to add groups or to get a member list of a group.
 
 =head1 PUBLIC INTERFACE
 
@@ -39,37 +38,28 @@ All group and roles functions. E. g. to add groups or to get a member list of a 
 create an object
 
     use Kernel::Config;
-    use Kernel::System::Encode;
     use Kernel::System::Log;
     use Kernel::System::Main;
     use Kernel::System::DB;
     use Kernel::System::Group;
 
     my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
+    my $LogObject    = Kernel::System::Log->new(
         ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
     );
     my $MainObject = Kernel::System::Main->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
         LogObject    => $LogObject,
     );
     my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
         MainObject   => $MainObject,
+        ConfigObject => $ConfigObject,
+        LogObject    => $LogObject,
     );
     my $GroupObject = Kernel::System::Group->new(
         ConfigObject => $ConfigObject,
         LogObject    => $LogObject,
         DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
     );
 
 =cut
@@ -82,16 +72,10 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for (qw(DBObject ConfigObject MainObject LogObject EncodeObject)) {
+    for (qw(DBObject ConfigObject LogObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
     $Self->{ValidObject} = Kernel::System::Valid->new(%Param);
-
-    $Self->{CacheInternalObject} = Kernel::System::CacheInternal->new(
-        %{$Self},
-        Type => 'Group',
-        TTL  => 60 * 60 * 3,
-    );
 
     return $Self;
 }
@@ -100,9 +84,9 @@ sub new {
 
 get id or name for group
 
-    my $Group = $GroupObject->GroupLookup( GroupID => $GroupID );
+    my $Group = $GroupObject->GroupLookup(GroupID => $GroupID);
 
-    my $GroupID = $GroupObject->GroupLookup( Group => $Group );
+    my $GroupID = $GroupObject->GroupLookup(Group => $Group);
 
 =cut
 
@@ -111,20 +95,17 @@ sub GroupLookup {
 
     # check needed stuff
     if ( !$Param{Group} && !$Param{GroupID} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Group or GroupID!' );
+        $Self->{LogObject}->Log( Priority => 'error', Message => 'Got no Group or GroupID!' );
         return;
     }
 
-    # check if result is cached
-    my $CacheKey;
-    if ( $Param{GroupID} ) {
-        $CacheKey = "GroupLookup::ID::$Param{GroupID}";
+    # check if we can answer from our cache
+    if ( $Param{GroupID} && $Self->{"GL::Group$Param{GroupID}"} ) {
+        return $Self->{"GL::Group$Param{GroupID}"};
     }
-    elsif ( $Param{Group} ) {
-        $CacheKey = "GroupLookup::Name::$Param{Group}";
+    if ( $Param{Group} && $Self->{"GL::GroupID$Param{Group}"} ) {
+        return $Self->{"GL::GroupID$Param{Group}"};
     }
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-    return $Cache if $Cache;
 
     # get data
     my $SQL;
@@ -146,13 +127,14 @@ sub GroupLookup {
         SQL  => $SQL,
         Bind => \@Bind,
     );
-    my $Result;
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        $Result = $Row[0];
+
+        # store result
+        $Self->{"GL::$Suffix$Param{What}"} = $Row[0];
     }
 
     # check if data exists
-    if ( !$Result ) {
+    if ( !exists $Self->{"GL::$Suffix$Param{What}"} ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Found no \$$Suffix for $Param{What}!",
@@ -160,11 +142,175 @@ sub GroupLookup {
         return;
     }
 
-    # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => $Result );
+    # return result
+    return $Self->{"GL::$Suffix$Param{What}"};
+}
+
+=item RoleLookup()
+
+get id or name for role
+
+    my $Role = $RoleObject->RoleLookup(RoleID => $RoleID);
+
+    my $RoleID = $RoleObject->RoleLookup(Role => $Role);
+
+=cut
+
+sub RoleLookup {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Role} && !$Param{RoleID} ) {
+        $Self->{LogObject}->Log( Priority => 'error', Message => 'Got no Role or RoleID!' );
+        return;
+    }
+
+    # check if we can answer from our cache
+    if ( $Param{RoleID} && $Self->{"RL::Role$Param{RoleID}"} ) {
+        return $Self->{"RL::Role$Param{RoleID}"};
+    }
+    if ( $Param{Role} && $Self->{"RL::RoleID$Param{Role}"} ) {
+        return $Self->{"RL::RoleID$Param{Role}"};
+    }
+
+    # get data
+    my $SQL;
+    my @Bind;
+    my $Suffix;
+    if ( $Param{Role} ) {
+        $Param{What} = $Param{Role};
+        $Suffix      = 'RoleID';
+        $SQL         = 'SELECT id FROM roles WHERE name = ?';
+        push @Bind, \$Param{Role};
+    }
+    else {
+        $Param{What} = $Param{RoleID};
+        $Suffix      = 'Role';
+        $SQL         = 'SELECT name FROM roles WHERE id = ?';
+        push @Bind, \$Param{RoleID};
+    }
+    return if !$Self->{DBObject}->Prepare(
+        SQL  => $SQL,
+        Bind => \@Bind,
+    );
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+
+        # store result
+        $Self->{"RL::$Suffix$Param{What}"} = $Row[0];
+    }
+
+    # check if data exists
+    if ( !exists $Self->{"RL::$Suffix$Param{What}"} ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Found no \$$Suffix for $Param{What}!",
+        );
+        return;
+    }
 
     # return result
-    return $Result;
+    return $Self->{"RL::$Suffix$Param{What}"};
+}
+
+=item GroupMemberAdd()
+
+to add a member to a group
+
+    Permission: ro,move_into,priority,create,rw
+
+    $GroupObject->GroupMemberAdd(
+        GID => 12,
+        UID => 6,
+        Permission => {
+            ro        => 1,
+            move_into => 1,
+            create    => 1,
+            owner     => 1,
+            priority  => 0,
+            rw        => 0,
+        },
+        UserID => 123,
+    );
+
+=cut
+
+sub GroupMemberAdd {
+    my ( $Self, %Param ) = @_;
+
+    my $Count;
+
+    # check needed stuff
+    for (qw(UID GID UserID Permission)) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
+
+    # check if update is needed
+    my %Value = ();
+    if ( !$Self->{"GroupMemberAdd::GID::$Param{GID}"} ) {
+        return if !$Self->{DBObject}->Prepare(
+            SQL => 'SELECT group_id, user_id, permission_key, permission_value FROM '
+                . 'group_user WHERE group_id = ?',
+            Bind => [ \$Param{GID} ],
+        );
+        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+            $Value{ $Row[0] }->{ $Row[1] }->{ $Row[2] } = $Row[3];
+        }
+        $Self->{"GroupMemberAdd::GID::$Param{GID}"} = \%Value;
+    }
+    else {
+        %Value = %{ $Self->{"GroupMemberAdd::GID::$Param{GID}"} };
+    }
+
+    # update permission
+    for my $Type ( keys %{ $Param{Permission} } ) {
+
+        # check if update is needed
+        if (
+            ( !$Value{ $Param{GID} }->{ $Param{UID} }->{$Type} && !$Param{Permission}->{$Type} )
+            || ( $Value{ $Param{GID} }->{ $Param{UID} }->{$Type} && $Param{Permission}->{$Type} )
+            )
+        {
+
+#            print STDERR "No updated neede! UID:$Param{UID} to GID:$Param{GID}, $Type:$Param{Permission}->{$Type}!\n";
+        }
+        else {
+            $Self->{"GroupMemberAdd::GID::$Param{GID}"} = undef;
+
+#            print STDERR "Updated needed! UID:$Param{UID} to GID:$Param{GID}, $Type:$Param{Permission}->{$Type}!\n";
+# delete existing permission
+            $Self->{DBObject}->Do(
+                SQL => 'DELETE FROM group_user WHERE '
+                    . ' group_id = ? AND user_id = ? AND permission_key = ?',
+                Bind => [ \$Param{GID}, \$Param{UID}, \$Type ],
+            );
+
+            # debug
+            if ( $Self->{Debug} ) {
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message =>
+                        "Add UID:$Param{UID} to GID:$Param{GID}, $Type:$Param{Permission}->{$Type}!",
+                );
+            }
+
+            # insert new permission
+            $Self->{DBObject}->Do(
+                SQL => 'INSERT INTO group_user '
+                    . '(user_id, group_id, permission_key, permission_value, '
+                    . 'create_time, create_by, change_time, change_by) '
+                    . 'VALUES '
+                    . '(?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+                Bind => [
+                    \$Param{UID}, \$Param{GID}, \$Type, \$Param{Permission}->{$Type},
+                    \$Param{UserID}, \$Param{UserID},
+                ],
+            );
+        }
+    }
+    return 1;
 }
 
 =item GroupAdd()
@@ -173,7 +319,6 @@ to add a group
 
     my $ID = $GroupObject->GroupAdd(
         Name    => 'example-group',
-        Comment => 'comment describing the group',   # optional
         ValidID => 1,
         UserID  => 123,
     );
@@ -216,16 +361,6 @@ sub GroupAdd {
         Priority => 'notice',
         Message  => "Group: '$Param{Name}' ID: '$GroupID' created successfully ($Param{UserID})!",
     );
-
-    # delete cache
-    my @CacheKeys = (
-        'GroupLookup::ID::' . $GroupID,
-        'GroupLookup::Name::' . $Param{Name},
-    );
-    for my $CacheKey (@CacheKeys) {
-        $Self->{CacheInternalObject}->Delete( Key => $CacheKey );
-    }
-
     return $GroupID;
 }
 
@@ -233,18 +368,7 @@ sub GroupAdd {
 
 returns a hash with group data
 
-    my %GroupData = $GroupObject->GroupGet( ID => 2 );
-
-This returns something like:
-
-    %GroupData = (
-        'Name'       => 'admin',
-        'ID'         => 2,
-        'ValidID'    => '1',
-        'CreateTime' => '2010-04-07 15:41:15',
-        'ChangeTime' => '2010-04-07 15:41:15',
-        'Comment'    => 'Group of all admins.',
-    );
+    %GroupData = $GroupObject->GroupGet(ID => 2);
 
 =cut
 
@@ -253,7 +377,7 @@ sub GroupGet {
 
     # check needed stuff
     if ( !$Param{ID} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need ID!' );
+        $Self->{LogObject}->Log( Priority => 'error', Message => "Need ID!" );
         return;
     }
 
@@ -263,9 +387,9 @@ sub GroupGet {
             . 'FROM groups WHERE id = ?',
         Bind => [ \$Param{ID} ],
     );
-    my %Group;
+    my %GroupData = ();
     while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
-        %Group = (
+        %GroupData = (
             ID         => $Param{ID},
             Name       => $Data[0],
             Comment    => $Data[2],
@@ -274,17 +398,16 @@ sub GroupGet {
             CreateTime => $Data[4],
         );
     }
-    return %Group;
+    return %GroupData;
 }
 
 =item GroupUpdate()
 
 update of a group
 
-    my $Success = $GroupObject->GroupUpdate(
+    $GroupObject->GroupUpdate(
         ID      => 123,
         Name    => 'example-group',
-        Comment => 'comment describing the group',   # optional
         ValidID => 1,
         UserID  => 123,
     );
@@ -302,45 +425,21 @@ sub GroupUpdate {
         }
     }
 
-    # get the old group name to delete the cache
-    my $OldGroupName = $Self->GroupLookup( GroupID => $Param{ID} );
-
     # sql
-    return if !$Self->{DBObject}->Do(
+    return $Self->{DBObject}->Do(
         SQL => 'UPDATE groups SET name = ?, comments = ?, valid_id = ?, '
             . 'change_time = current_timestamp, change_by = ? WHERE id = ?',
         Bind => [
             \$Param{Name}, \$Param{Comment}, \$Param{ValidID}, \$Param{UserID}, \$Param{ID}
         ],
     );
-
-    # delete cache
-    my @CacheKeys = (
-        'GroupLookup::ID::' . $Param{ID},
-        'GroupLookup::Name::' . $Param{Name},
-        'GroupLookup::Name::' . $OldGroupName,
-    );
-    for my $CacheKey (@CacheKeys) {
-        $Self->{CacheInternalObject}->Delete( Key => $CacheKey );
-    }
-
-    return 1;
 }
 
 =item GroupList()
 
 returns a hash of all groups
 
-    my %Groups = $GroupObject->GroupList( Valid => 1 );
-
-the result looks like
-
-    %Groups = (
-        '1' => 'users',
-        '2' => 'admin',
-        '3' => 'stats',
-        '4' => 'secret',
-    );
+    my %Groups = $GroupObject->GroupList(Valid => 1);
 
 =cut
 
@@ -356,117 +455,12 @@ sub GroupList {
     return %Groups;
 }
 
-=item GroupMemberAdd()
-
-to add a member to a group
-
-    Permission: ro,move_into,priority,create,rw
-
-    my $Success = $GroupObject->GroupMemberAdd(
-        GID => 12,
-        UID => 6,
-        Permission => {
-            ro        => 1,
-            move_into => 1,
-            create    => 1,
-            owner     => 1,
-            priority  => 0,
-            rw        => 0,
-        },
-        UserID => 123,
-    );
-
-=cut
-
-sub GroupMemberAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(UID GID UserID Permission)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # check if update is needed (fetch current values)
-    my %Value;
-    if ( !$Self->{"GroupMemberAdd::GID::$Param{GID}"} ) {
-        return if !$Self->{DBObject}->Prepare(
-            SQL => 'SELECT group_id, user_id, permission_key, permission_value FROM '
-                . 'group_user WHERE group_id = ?',
-            Bind => [ \$Param{GID} ],
-        );
-        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-            $Value{ $Row[0] }->{ $Row[1] }->{ $Row[2] } = $Row[3];
-        }
-        $Self->{"GroupMemberAdd::GID::$Param{GID}"} = \%Value;
-    }
-    else {
-        %Value = %{ $Self->{"GroupMemberAdd::GID::$Param{GID}"} };
-    }
-
-    # check rw rule (set only rw and remove rest, because it's including all in rw)
-    if ( $Param{Permission}->{rw} ) {
-        %{ $Param{Permission} } = ( rw => 1 );
-    }
-
-    # update permission
-    TYPE:
-    for my $Type ( keys %{ $Param{Permission} } ) {
-
-        # check if update is needed
-        my $ValueCurrent = $Value{ $Param{GID} }->{ $Param{UID} }->{$Type};
-        my $ValueNew     = $Param{Permission}->{$Type};
-
-        # No updated needed!
-        next TYPE if !$ValueCurrent && !$ValueNew;
-        next TYPE if $ValueCurrent  && $ValueNew;
-
-        # update done, reset current values of this group
-        $Self->{"GroupMemberAdd::GID::$Param{GID}"} = undef;
-
-        # delete existing permission
-        $Self->{DBObject}->Do(
-            SQL => 'DELETE FROM group_user WHERE '
-                . ' group_id = ? AND user_id = ? AND permission_key = ?',
-            Bind => [ \$Param{GID}, \$Param{UID}, \$Type ],
-        );
-
-        # debug
-        if ( $Self->{Debug} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Add UID:$Param{UID} to GID:$Param{GID}, $Type:$ValueNew!",
-            );
-        }
-
-        # insert new permission (if needed)
-        next TYPE if !$ValueNew;
-        $Self->{DBObject}->Do(
-            SQL => 'INSERT INTO group_user '
-                . '(user_id, group_id, permission_key, permission_value, '
-                . 'create_time, create_by, change_time, change_by) '
-                . 'VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
-            Bind => [
-                \$Param{UID}, \$Param{GID}, \$Type, \$ValueNew,
-                \$Param{UserID}, \$Param{UserID},
-            ],
-        );
-    }
-
-    # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
-
-    return 1;
-}
-
 =item GroupMemberList()
 
 returns a list of users/groups with ro/move_into/create/owner/priority/rw permissions
 based on GroupGroupMemberList() and GroupRoleMemberList().
 
-    UserID:  user id
+    UserID: user id
     GroupID: group id
 
     Type: ro|move_into|priority|create|rw
@@ -492,7 +486,7 @@ based on GroupGroupMemberList() and GroupRoleMemberList().
     );
 
     Attention: The user ids (keys) in the hash returned from this function
-        are correct, however the values do not correspond to the user ids.
+        are correct, however the values are not correspond to the user ids.
         This does not affect the correct operation of otrs, this is just a
         note to inform you not to use the values in this hash.
 
@@ -516,17 +510,24 @@ sub GroupMemberList {
     # create cache key
     my $CacheKey = 'GroupMemberList::' . $Param{Type} . '::' . $Param{Result} . '::';
     if ( $Param{UserID} ) {
-        $CacheKey .= "UserID::$Param{UserID}";
+        $CacheKey .= 'UserID::' . $Param{UserID};
     }
     else {
-        $CacheKey .= "GroupID::$Param{GroupID}";
+        $CacheKey .= 'GroupID::' . $Param{GroupID};
     }
 
     # check cache
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-    if ($Cache) {
-        return @{$Cache} if ref $Cache eq 'ARRAY';
-        return %{$Cache} if ref $Cache eq 'HASH';
+    if ( $Self->{ForceCache} ) {
+        $Param{Cached} = $Self->{ForceCache};
+    }
+    if ( $Param{Cached} && exists( $Self->{$CacheKey} ) ) {
+
+        if ( ref( $Self->{$CacheKey} ) eq 'ARRAY' ) {
+            return @{ $Self->{$CacheKey} };
+        }
+        elsif ( ref( $Self->{$CacheKey} ) eq 'HASH' ) {
+            return %{ $Self->{$CacheKey} };
+        }
     }
 
     # return result
@@ -565,57 +566,53 @@ sub GroupMemberList {
             }
         }
 
-        # set cache
-        $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@Result );
-
+        # cache result
+        $Self->{$CacheKey} = \@Result;
         return @Result;
     }
+    else {
+        my %Result = $Self->GroupGroupMemberList(%Param);
 
-    # get group member list as hash
-    my %Result = $Self->GroupGroupMemberList(%Param);
-
-    # get roles of user
-    if ( $Param{UserID} ) {
-        my @Member = $Self->GroupUserRoleMemberList(
-            UserID => $Param{UserID},
-            Result => 'ID',
-        );
-
-        if (@Member) {
-            my %ResultGroupRole = $Self->GroupRoleMemberList( %Param, RoleIDs => \@Member );
-            %Result = ( %Result, %ResultGroupRole );
-        }
-    }
-
-    # get roles of group
-    elsif ( $Param{GroupID} ) {
-        my @Roles = $Self->GroupRoleMemberList(
-            GroupID => $Param{GroupID},
-            Type    => $Param{Type},
-            Result  => 'ID',
-        );
-        if (@Roles) {
-
-            my %ResultGroupUserRole = $Self->GroupUserRoleMemberList(
-                %Param,
-                RoleIDs => \@Roles,
+        # get roles of user
+        if ( $Param{UserID} ) {
+            my @Member = $Self->GroupUserRoleMemberList(
+                UserID => $Param{UserID},
+                Result => 'ID',
             );
-            %Result = ( %Result, %ResultGroupUserRole );
+
+            if (@Member) {
+                my %ResultGroupRole = $Self->GroupRoleMemberList( %Param, RoleIDs => \@Member );
+                %Result = ( %Result, %ResultGroupRole );
+            }
         }
+
+        # get roles of group
+        elsif ( $Param{GroupID} ) {
+            my @Roles = $Self->GroupRoleMemberList(
+                GroupID => $Param{GroupID},
+                Type    => $Param{Type},
+                Result  => 'ID',
+            );
+            if (@Roles) {
+
+                my %ResultGroupUserRole = $Self->GroupUserRoleMemberList(
+                    %Param,
+                    RoleIDs => \@Roles,
+                );
+                %Result = ( %Result, %ResultGroupUserRole );
+            }
+        }
+
+        $Self->{$CacheKey} = \%Result;
+        return %Result;
     }
-
-    # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Result );
-
-    return %Result;
-
 }
 
 =item GroupMemberInvolvedList()
 
 returns a list of users/groups with ro/move_into/create/owner/priority/rw permissions
 
-    my %Users = $GroupObject->GroupMemberInvolvedList(
+    %Users = $GroupObject->GroupMemberInvolvedList(
         UserID => $ID,
         Type   => 'move_into',
     );
@@ -633,55 +630,54 @@ sub GroupMemberInvolvedList {
         }
     }
 
-    # create cache key
-    my $CacheKey = 'GroupMemberInvolvedList::' . $Param{Type} . '::' . $Param{UserID};
-
-    # check cache
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-    return %{$Cache} if $Cache;
+    # quote
+    for (qw(Type)) {
+        $Param{$_} = $Self->{DBObject}->Quote( $Param{$_} );
+    }
+    for (qw(UserID)) {
+        $Param{$_} = $Self->{DBObject}->Quote( $Param{$_}, 'Integer' );
+    }
 
     # only allow valid system permissions as Type
-    my $TypeString = $Self->_GetTypeString( Type => $Param{Type} );
+    my $TypeString = $Self->_GetTypeString(Type => $Param{Type});
 
     # get valid ids
     my $ValidID = join( ', ', $Self->{ValidObject}->ValidIDsGet() );
 
     # get all groups of the given user
-    return if !$Self->{DBObject}->Prepare(
-        SQL => "SELECT DISTINCT(g.id) FROM groups g, group_user gu WHERE "
-            . "g.valid_id IN ($ValidID) AND "
-            . "g.id = gu.group_id AND gu.permission_value = 1 AND "
-            . "gu.permission_key IN ( $TypeString ) AND gu.user_id = ?",
-        Bind => [
-            \$Param{UserID},
-        ],
-    );
     my %Groups;
+    my $SQL = "SELECT DISTINCT(g.id) FROM groups g, group_user gu "
+        . "WHERE g.valid_id IN ($ValidID) AND "
+        . "g.id = gu.group_id AND "
+        . "gu.permission_value = 1 AND "
+        . "gu.permission_key IN ( $TypeString ) AND "
+        . "gu.user_id = $Param{UserID}";
+    $Self->{DBObject}->Prepare( SQL => $SQL );
+
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         $Groups{ $Row[0] } = 1;
     }
 
     # get all roles of the given user
-    return if !$Self->{DBObject}->Prepare(
-        SQL => "SELECT DISTINCT(ru.role_id) FROM role_user ru, roles r WHERE "
-            . "r.valid_id in ($ValidID) AND r.id = ru.role_id AND ru.user_id = ?",
-        Bind => [
-            \$Param{UserID},
-        ],
-    );
+    $SQL = "SELECT DISTINCT(ru.role_id) FROM role_user ru, roles r "
+        . "WHERE r.valid_id in ($ValidID) AND "
+        . "r.id = ru.role_id AND "
+        . "ru.user_id = $Param{UserID}";
+    $Self->{DBObject}->Prepare( SQL => $SQL );
     my @Roles;
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        push @Roles, $Row[0];
+        push( @Roles, $Row[0] );
     }
 
     # get groups of roles of given user
     if (@Roles) {
-        return if !$Self->{DBObject}->Prepare(
-            SQL => "SELECT DISTINCT(g.id) FROM groups g, group_role gu WHERE "
-                . "g.valid_id in ($ValidID) AND g.id = gu.group_id AND "
-                . "gu.permission_value = 1 AND gu.permission_key IN ( $TypeString ) AND "
-                . "gu.role_id IN (" . join( ',', @Roles ) . ")",
-        );
+        my $SQL = "SELECT DISTINCT(g.id) FROM groups g, group_role gu "
+            . "WHERE g.valid_id in ($ValidID) AND "
+            . " g.id = gu.group_id AND "
+            . " gu.permission_value = 1 AND "
+            . "gu.permission_key IN ( $TypeString ) AND "
+            . "gu.role_id IN (" . join( ',', @Roles ) . ")";
+        $Self->{DBObject}->Prepare( SQL => $SQL );
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
             $Groups{ $Row[0] } = 1;
         }
@@ -691,43 +687,43 @@ sub GroupMemberInvolvedList {
     my @ArrayGroups = keys %Groups;
     my %AllUsers;
     if (@ArrayGroups) {
-        return if !$Self->{DBObject}->Prepare(
-            SQL => "SELECT DISTINCT(gu.user_id) FROM groups g, group_user gu WHERE "
-                . "g.valid_id in ($ValidID) AND g.id = gu.group_id AND "
-                . "gu.permission_value = 1 AND gu.permission_key IN ( $TypeString ) AND "
-                . "gu.group_id IN (" . join( ',', @ArrayGroups ) . ")",
-        );
+        my $SQL = "SELECT DISTINCT(gu.user_id) FROM groups g, group_user gu WHERE "
+            . "g.valid_id in ($ValidID) AND "
+            . "g.id = gu.group_id AND "
+            . "gu.permission_value = 1 AND "
+            . "gu.permission_key IN ( $TypeString ) AND "
+            . "gu.group_id IN (" . join( ',', @ArrayGroups ) . ")";
+        $Self->{DBObject}->Prepare( SQL => $SQL );
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
             $AllUsers{ $Row[0] } = 1;
         }
 
         # get all roles of the groups
-        return if !$Self->{DBObject}->Prepare(
-            SQL => "SELECT DISTINCT(gu.role_id) FROM groups g, group_role gu WHERE "
-                . "g.valid_id in ($ValidID) AND g.id = gu.group_id AND "
-                . "gu.permission_value = 1 AND gu.permission_key IN ( $TypeString ) AND "
-                . "gu.group_id IN (" . join( ',', @ArrayGroups ) . ")",
-        );
+        $SQL = "SELECT DISTINCT(gu.role_id) FROM groups g, group_role gu WHERE "
+            . "g.valid_id in ($ValidID) AND "
+            . "g.id = gu.group_id AND "
+            . "gu.permission_value = 1 AND "
+            . "gu.permission_key IN ( $TypeString ) AND "
+            . "gu.group_id IN (" . join( ',', @ArrayGroups ) . ")";
+        $Self->{DBObject}->Prepare( SQL => $SQL );
         my @AllRoles;
+
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-            push @AllRoles, $Row[0];
+            push( @AllRoles, $Row[0] );
         }
 
         # get all users of the roles
         if (@AllRoles) {
-            return if !$Self->{DBObject}->Prepare(
-                SQL => "SELECT DISTINCT(ru.user_id) FROM role_user ru, roles r WHERE "
-                    . "r.valid_id in ($ValidID) AND r.id = ru.role_id AND "
-                    . "ru.role_id IN (" . join( ',', @AllRoles ) . ")",
-            );
+            $SQL = "SELECT DISTINCT(ru.user_id) FROM role_user ru, roles r WHERE "
+                . "r.valid_id in ($ValidID) AND "
+                . "r.id = ru.role_id AND "
+                . " ru.role_id IN (" . join( ',', @AllRoles ) . ")";
+            $Self->{DBObject}->Prepare( SQL => $SQL );
             while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
                 $AllUsers{ $Row[0] } = 1;
             }
         }
     }
-
-    # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%AllUsers );
 
     return %AllUsers;
 }
@@ -736,9 +732,9 @@ sub GroupMemberInvolvedList {
 
 returns a list of users/groups with ro/move_into/create/owner/priority/rw permissions
 
-    UserID:   user id
-    GroupID:  group id
-    UserIDs:  user ids (array ref)
+    UserID: user id
+    GroupID: group id
+    UserIDs: user ids (array ref)
     GroupIDs: group ids (array ref)
 
     Type: ro|move_into|priority|create|rw
@@ -768,6 +764,9 @@ returns a list of users/groups with ro/move_into/create/owner/priority/rw permis
 sub GroupGroupMemberList {
     my ( $Self, %Param ) = @_;
 
+    my @UserIDs;
+    my @GroupIDs;
+
     # check needed stuff
     for (qw(Result Type)) {
         if ( !$Param{$_} ) {
@@ -785,8 +784,6 @@ sub GroupGroupMemberList {
 
     # create cache key
     my $CacheKey = 'GroupGroupMemberList::' . $Param{Type} . '::' . $Param{Result} . '::';
-    my @UserIDs;
-    my @GroupIDs;
     if ( $Param{UserID} ) {
         $CacheKey .= 'UserID::' . $Param{UserID};
     }
@@ -802,28 +799,36 @@ sub GroupGroupMemberList {
 
     # check cache
     if ( $Param{UserID} || $Param{GroupID} ) {
-        my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-        if ($Cache) {
-            return @{$Cache} if ref $Cache eq 'ARRAY';
-            return %{$Cache} if ref $Cache eq 'HASH';
+        if ( $Self->{ForceCache} ) {
+            $Param{Cached} = $Self->{ForceCache};
+        }
+        if ( $Param{Cached} && $Self->{$CacheKey} ) {
+            if ( ref( $Self->{$CacheKey} ) eq 'ARRAY' ) {
+                return @{ $Self->{$CacheKey} };
+            }
+            elsif ( ref( $Self->{$CacheKey} ) eq 'HASH' ) {
+                return %{ $Self->{$CacheKey} };
+            }
         }
     }
 
-    # only allow valid system permissions as Type
-    my $TypeString = $Self->_GetTypeString( Type => $Param{Type} );
+    # db quote
+    $Param{Type} = $Self->{DBObject}->Quote( $Param{Type} );
 
-    my $ValidIDs = join( ', ', $Self->{ValidObject}->ValidIDsGet() );
+    # only allow valid system permissions as Type
+    my $TypeString = $Self->_GetTypeString(Type => $Param{Type});
 
     # sql
-    my $SQL = "SELECT g.id, g.name, gu.permission_key, gu.permission_value, gu.user_id
-        FROM groups g, group_user gu, users u
-        WHERE g.valid_id IN ($ValidIDs)
-            AND g.id = gu.group_id
-            AND gu.permission_value = 1
-            AND gu.permission_key IN ( $TypeString )
-            AND gu.user_id = u.id
-            AND u.valid_id IN ( $ValidIDs )
-            AND ";
+    my %Data = ();
+    my @Name = ();
+    my @ID   = ();
+    my $SQL  = "SELECT g.id, g.name, gu.permission_key, gu.permission_value, "
+        . " gu.user_id FROM groups g, group_user gu"
+        . " WHERE "
+        . " g.valid_id IN (" . join( ', ', $Self->{ValidObject}->ValidIDsGet() ) . ") AND "
+        . " g.id = gu.group_id AND "
+        . " gu.permission_value = 1 AND "
+        . " gu.permission_key IN ( $TypeString ) AND ";
 
     if ( $Param{UserID} ) {
         $SQL .= 'gu.user_id = ' . $Self->{DBObject}->Quote( $Param{UserID}, 'Integer' );
@@ -844,10 +849,7 @@ sub GroupGroupMemberList {
         $SQL .= ' gu.group_id IN (' . join( ',', @GroupIDs ) . ')';
     }
 
-    my %Data;
-    my @Name;
-    my @ID;
-    return if !$Self->{DBObject}->Prepare( SQL => $SQL );
+    $Self->{DBObject}->Prepare( SQL => $SQL );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         my $Key   = '';
         my $Value = '';
@@ -861,7 +863,7 @@ sub GroupGroupMemberList {
         }
 
         # remember permissions
-        if ( !defined $Data{$Key} ) {
+        if ( !defined( $Data{$Key} ) ) {
             $Data{$Key} = $Value;
             push @Name, $Value;
             push @ID,   $Key;
@@ -871,26 +873,27 @@ sub GroupGroupMemberList {
     # role lookup base on UserID or GroupID
 
     # return result
-    if ( $Param{Result} eq 'ID' ) {
-
-        # set cache
+    if ( $Param{Result} && $Param{Result} eq 'ID' ) {
         if ( $Param{UserID} || $Param{GroupID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@ID );
+
+            # cache result
+            $Self->{$CacheKey} = \@ID;
         }
         return @ID;
     }
-    if ( $Param{Result} eq 'Name' ) {
-
-        # set cache
+    if ( $Param{Result} && $Param{Result} eq 'Name' ) {
         if ( $Param{UserID} || $Param{GroupID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@Name );
+
+            # cache result
+            $Self->{$CacheKey} = \@Name;
         }
         return @Name;
     }
 
-    # set cache
     if ( $Param{UserID} || $Param{GroupID} ) {
-        $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Data );
+
+        # cache result
+        $Self->{$CacheKey} = \%Data;
     }
     return %Data;
 }
@@ -899,18 +902,18 @@ sub GroupGroupMemberList {
 
 returns a list of role/groups with ro/move_into/create/owner/priority/rw permissions
 
-    RoleID:   role id
-    GroupID:  group id
-    RoleIDs:  role id (array ref)
+    RoleID: role id
+    GroupID: group id
+    RoleIDs: role id (array ref)
     GroupIDs: group id (array ref)
 
     Type: ro|move_into|priority|create|rw
 
-    Result: HASH -> returns a hash of key => group or role id, value => group name
-            Name -> returns an array of group names
-            ID   -> returns an array of role or group ids
+    Result: HASH -> returns a hash of key => group id, value => group name
+            Name -> returns an array of user names
+            ID   -> returns an array of user ids
 
-Example: Get the groups for which the Role $ID provides 'move_into' access.
+    Example (get groups of role):
 
     $GroupObject->GroupRoleMemberList(
         RoleID => $ID,
@@ -918,21 +921,21 @@ Example: Get the groups for which the Role $ID provides 'move_into' access.
         Result => 'HASH',
     );
 
-Example: Get the role ids with 'move_into' access to the group $ID.
+    Example (get roles of group):
 
-Passing HASH or Name as the wanted result is discouraged. The returned name is
-is a group name, not a role name.
-
-    my $GroupObject->GroupRoleMemberList(
+    $GroupObject->GroupRoleMemberList(
         GroupID => $ID,
         Type   => 'move_into',
-        Result => 'ID',
+        Result => 'HASH',
     );
 
 =cut
 
 sub GroupRoleMemberList {
     my ( $Self, %Param ) = @_;
+
+    my @RoleIDs;
+    my @GroupIDs;
 
     # check needed stuff
     for (qw(Result Type)) {
@@ -951,8 +954,6 @@ sub GroupRoleMemberList {
 
     # create cache key
     my $CacheKey = 'GroupRoleMemberList::' . $Param{Type} . '::' . $Param{Result} . '::';
-    my @RoleIDs;
-    my @GroupIDs;
     if ( $Param{RoleID} ) {
         $CacheKey .= 'RoleID::' . $Param{RoleID};
     }
@@ -968,71 +969,71 @@ sub GroupRoleMemberList {
 
     # check cache
     if ( $Param{RoleID} || $Param{GroupID} ) {
-
-        my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-        if ($Cache) {
-            return @{$Cache} if ref $Cache eq 'ARRAY';
-            return %{$Cache} if ref $Cache eq 'HASH';
+        if ( $Self->{ForceCache} ) {
+            $Param{Cached} = $Self->{ForceCache};
+        }
+        if ( $Param{Cached} && $Self->{$CacheKey} ) {
+            if ( ref( $Self->{$CacheKey} ) eq 'ARRAY' ) {
+                return @{ $Self->{$CacheKey} };
+            }
+            elsif ( ref( $Self->{$CacheKey} ) eq 'HASH' ) {
+                return %{ $Self->{$CacheKey} };
+            }
         }
     }
 
-    # only allow valid system permissions as Type
-    my $TypeString = $Self->_GetTypeString( Type => $Param{Type} );
+    # db quote
+    $Param{Type} = $Self->{DBObject}->Quote( $Param{Type} );
 
-    # assemble the query
-    my $SQL = ''
-        . 'SELECT g.id, g.name, gr.permission_key, gr.permission_value, gr.role_id'
-        . ' FROM groups g, group_role gr'
-        . ' WHERE g.valid_id IN (' . join( ', ', $Self->{ValidObject}->ValidIDsGet() ) . ')'
-        . ' AND g.id = gr.group_id'
-        . ' AND gr.permission_value = 1'
-        . " AND gr.permission_key IN ( $TypeString )"
-        . ' AND ';
+    # only allow valid system permissions as Type
+    my $TypeString = $Self->_GetTypeString(Type => $Param{Type});
+
+    # sql
+    my %Data = ();
+    my @Name = ();
+    my @ID   = ();
+    my $SQL  = "SELECT g.id, g.name, gu.permission_key, gu.permission_value, "
+        . " gu.role_id FROM groups g, group_role gu"
+        . " WHERE "
+        . " g.valid_id IN (" . join( ', ', $Self->{ValidObject}->ValidIDsGet() ) . ") AND "
+        . " g.id = gu.group_id AND "
+        . " gu.permission_value = 1 AND "
+        . " gu.permission_key IN ( $TypeString ) AND ";
 
     if ( $Param{RoleID} ) {
-        $SQL .= ' gr.role_id = ' . $Self->{DBObject}->Quote( $Param{RoleID}, 'Integer' );
+        $SQL .= ' gu.role_id = ' . $Self->{DBObject}->Quote( $Param{RoleID}, 'Integer' );
     }
     elsif ( $Param{GroupID} ) {
-        $SQL .= ' gr.group_id = ' . $Self->{DBObject}->Quote( $Param{GroupID}, 'Integer' );
+        $SQL .= ' gu.group_id = ' . $Self->{DBObject}->Quote( $Param{GroupID}, 'Integer' );
     }
     elsif ( $Param{RoleIDs} ) {
         for my $RoleID (@RoleIDs) {
             $RoleID = $Self->{DBObject}->Quote( $RoleID, 'Integer' );
         }
-        $SQL .= ' gr.role_id IN (' . join( ',', @RoleIDs ) . ')';
+        $SQL .= ' gu.role_id IN (' . join( ',', @RoleIDs ) . ')';
     }
     elsif ( $Param{GroupIDs} ) {
         for my $GroupID (@GroupIDs) {
             $GroupID = $Self->{DBObject}->Quote( $GroupID, 'Integer' );
         }
-        $SQL .= ' gr.group_id IN (' . join( ',', @GroupIDs ) . ')';
+        $SQL .= ' gu.group_id IN (' . join( ',', @GroupIDs ) . ')';
     }
 
-    # run the query
-    return if !$Self->{DBObject}->Prepare( SQL => $SQL );
-
-    # fetch the data
-    my %Data;
-    my @Name;
-    my @ID;
+    $Self->{DBObject}->Prepare( SQL => $SQL );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        my ( $Key, $Value ) = ( '', '' );
+        my $Key   = '';
+        my $Value = '';
         if ( $Param{RoleID} || $Param{RoleIDs} ) {
-
-            # map group ID to group name
             $Key   = $Row[0];
             $Value = $Row[1];
         }
         else {
-
-            # map role ID to a group name
-            # DANGER: this is fairly non-intuitive
             $Key   = $Row[4];
             $Value = $Row[1];
         }
 
         # remember permissions
-        if ( !defined $Data{$Key} ) {
+        if ( !defined( $Data{$Key} ) ) {
             $Data{$Key} = $Value;
             push @Name, $Value;
             push @ID,   $Key;
@@ -1042,26 +1043,27 @@ sub GroupRoleMemberList {
     # role lookup base on UserID or GroupID
 
     # return result
-    if ( $Param{Result} eq 'ID' ) {
-
-        # set cache
+    if ( $Param{Result} && $Param{Result} eq 'ID' ) {
         if ( $Param{RoleID} || $Param{GroupID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@ID );
+
+            # cache result
+            $Self->{$CacheKey} = \@ID;
         }
         return @ID;
     }
-    if ( $Param{Result} eq 'Name' ) {
-
-        # set cache
+    if ( $Param{Result} && $Param{Result} eq 'Name' ) {
         if ( $Param{RoleID} || $Param{GroupID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@Name );
+
+            # cache result
+            $Self->{$CacheKey} = \@Name;
         }
         return @Name;
     }
 
-    # set cache
     if ( $Param{RoleID} || $Param{GroupID} ) {
-        $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Data );
+
+        # cache result
+        $Self->{$CacheKey} = \%Data;
     }
     return %Data;
 }
@@ -1099,8 +1101,8 @@ sub GroupRoleMemberAdd {
         }
     }
 
-    # check if update is needed (fetch current values)
-    my %Value;
+    # check if update is needed
+    my %Value = ();
     if ( !$Self->{"GroupRoleMemberAdd::GID::$Param{GID}"} ) {
         $Self->{DBObject}->Prepare(
             SQL => 'SELECT group_id, role_id, permission_key, permission_value FROM '
@@ -1116,55 +1118,50 @@ sub GroupRoleMemberAdd {
         %Value = %{ $Self->{"GroupRoleMemberAdd::GID::$Param{GID}"} };
     }
 
-    # check rw rule (set only rw and remove rest, because it's including all in rw)
-    if ( $Param{Permission}->{rw} ) {
-        %{ $Param{Permission} } = ( rw => 1 );
-    }
-
     # update permission
-    TYPE:
     for my $Type ( keys %{ $Param{Permission} } ) {
 
         # check if update is needed
-        my $ValueCurrent = $Value{ $Param{GID} }->{ $Param{RID} }->{$Type};
-        my $ValueNew     = $Param{Permission}->{$Type};
+        if (
+            ( !$Value{ $Param{GID} }->{ $Param{RID} }->{$Type} && !$Param{Permission}->{$Type} )
+            || ( $Value{ $Param{GID} }->{ $Param{RID} }->{$Type} && $Param{Permission}->{$Type} )
+            )
+        {
 
-        # no updated needed!
-        next TYPE if !$ValueCurrent && !$ValueNew;
-        next TYPE if $ValueCurrent  && $ValueNew;
+#            print STDERR "No updated neede! UID:$Param{UID} to GID:$Param{GID}, $Type:$Param{Permission}->{$Type}!\n";
+        }
+        else {
 
-        # delete existing permission
-        $Self->{DBObject}->Do(
-            SQL => 'DELETE FROM group_role WHERE '
-                . 'group_id = ? AND role_id = ? AND permission_key = ?',
-            Bind => [ \$Param{GID}, \$Param{RID}, \$Type ],
-        );
+#            print STDERR "Updated neede! UID:$Param{UID} to GID:$Param{GID}, $Type:$Param{Permission}->{$Type}!\n";
+# delete existing permission
+            $Self->{DBObject}->Do(
+                SQL => 'DELETE FROM group_role WHERE '
+                    . 'group_id = ? AND role_id = ? AND permission_key = ?',
+                Bind => [ \$Param{GID}, \$Param{RID}, \$Type ],
+            );
 
-        # debug
-        if ( $Self->{Debug} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Add RID:$Param{RID} to GID:$Param{GID}, $Type:$ValueNew!",
+            # debug
+            if ( $Self->{Debug} ) {
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message =>
+                        "Add RID:$Param{RID} to GID:$Param{GID}, $Type:$Param{Permission}->{$Type}!",
+                );
+            }
+
+            # insert new permission
+            $Self->{DBObject}->Do(
+                SQL => 'INSERT INTO group_role '
+                    . '(role_id, group_id, permission_key, permission_value, '
+                    . 'create_time, create_by, change_time, change_by) '
+                    . 'VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+                Bind => [
+                    \$Param{RID}, \$Param{GID}, \$Type, \$Param{Permission}->{$Type},
+                    \$Param{UserID}, \$Param{UserID},
+                ],
             );
         }
-
-        # insert new permission (if needed)
-        next TYPE if !$ValueNew;
-        $Self->{DBObject}->Do(
-            SQL => 'INSERT INTO group_role '
-                . '(role_id, group_id, permission_key, permission_value, '
-                . 'create_time, create_by, change_time, change_by) '
-                . 'VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
-            Bind => [
-                \$Param{RID}, \$Param{GID}, \$Type, \$ValueNew,
-                \$Param{UserID}, \$Param{UserID},
-            ],
-        );
     }
-
-    # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
-
     return 1;
 }
 
@@ -1172,8 +1169,8 @@ sub GroupRoleMemberAdd {
 
 returns a list of role/user members
 
-    RoleID:  role id
-    UserID:  user id
+    RoleID: role id
+    UserID: user id
     RoleIDs: role ids (array ref)
     UserIDs: user ids (array ref)
 
@@ -1200,12 +1197,16 @@ returns a list of role/user members
 sub GroupUserRoleMemberList {
     my ( $Self, %Param ) = @_;
 
-    # check needed stuff
-    if ( !$Param{Result} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Result!' );
-        return;
-    }
+    my @RoleIDs;
+    my @UserIDs;
 
+    # check needed stuff
+    for (qw(Result)) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Param{RoleID} && !$Param{UserID} && !$Param{RoleIDs} && !$Param{UserIDs} ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
@@ -1214,10 +1215,13 @@ sub GroupUserRoleMemberList {
         return;
     }
 
+    # db quote
+    for (qw(RoleID UserID)) {
+        $Param{$_} = $Self->{DBObject}->Quote( $Param{$_}, 'Integer' );
+    }
+
     # create cache key
     my $CacheKey = 'GroupUserRoleMemberList::' . $Param{Result} . '::';
-    my @RoleIDs;
-    my @UserIDs;
     if ( $Param{RoleID} ) {
         $CacheKey .= 'RoleID::' . $Param{RoleID};
     }
@@ -1233,27 +1237,27 @@ sub GroupUserRoleMemberList {
 
     # check cache
     if ( $Param{RoleID} || $Param{UserID} ) {
-        my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-        if ($Cache) {
-            return @{$Cache} if ref $Cache eq 'ARRAY';
-            return %{$Cache} if ref $Cache eq 'HASH';
+        if ( $Self->{ForceCache} ) {
+            $Param{Cached} = $Self->{ForceCache};
+        }
+        if ( $Param{Cached} && $Self->{$CacheKey} ) {
+            if ( ref( $Self->{$CacheKey} ) eq 'ARRAY' ) {
+                return @{ $Self->{$CacheKey} };
+            }
+            elsif ( ref( $Self->{$CacheKey} ) eq 'HASH' ) {
+                return %{ $Self->{$CacheKey} };
+            }
         }
     }
 
-    my $ValidIDs = join( ', ', $Self->{ValidObject}->ValidIDsGet() );
-
     # sql
-    my $SQL = "SELECT ru.role_id, ru.user_id, r.name FROM role_user ru, roles r, users u
-        WHERE r.valid_id IN ($ValidIDs)
-            AND r.id = ru.role_id
-            AND ru.user_id = u.id
-            AND u.valid_id IN ($ValidIDs)
-            AND ";
-
-    # db quote
-    for (qw(RoleID UserID)) {
-        $Param{$_} = $Self->{DBObject}->Quote( $Param{$_}, 'Integer' );
-    }
+    my %Data = ();
+    my @Name = ();
+    my @ID   = ();
+    my $SQL  = "SELECT ru.role_id, ru.user_id, r.name "
+        . " FROM role_user ru, roles r WHERE "
+        . " r.valid_id IN (" . join( ', ', $Self->{ValidObject}->ValidIDsGet() ) . ") AND "
+        . " r.id = ru.role_id AND ";
 
     if ( $Param{RoleID} ) {
         $SQL .= " ru.role_id = $Param{RoleID}";
@@ -1274,10 +1278,7 @@ sub GroupUserRoleMemberList {
         $SQL .= ' ru.user_id IN (' . join( ',', @UserIDs ) . ')';
     }
 
-    my %Data;
-    my @Name;
-    my @ID;
-    return if !$Self->{DBObject}->Prepare( SQL => $SQL );
+    $Self->{DBObject}->Prepare( SQL => $SQL );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         my $Key   = '';
         my $Value = '';
@@ -1302,34 +1303,36 @@ sub GroupUserRoleMemberList {
 
     # return result
     if ( $Param{Result} && $Param{Result} eq 'ID' ) {
-
-        # set cache
         if ( $Param{RoleID} || $Param{UserID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@ID );
+
+            # cache result
+            $Self->{$CacheKey} = \@ID;
         }
         return @ID;
     }
     if ( $Param{Result} && $Param{Result} eq 'Name' ) {
-
-        # set cache
         if ( $Param{RoleID} || $Param{UserID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@Name );
+
+            # cache result
+            $Self->{$CacheKey} = \@Name;
         }
         return @Name;
     }
+    else {
+        if ( $Param{RoleID} || $Param{UserID} ) {
 
-    # set cache
-    if ( $Param{RoleID} || $Param{UserID} ) {
-        $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Data );
+            # cache result
+            $Self->{$CacheKey} = \%Data;
+        }
+        return %Data;
     }
-    return %Data;
 }
 
 =item GroupUserRoleMemberAdd()
 
 to add a member to a role
 
-    my $Success = $GroupObject->GroupUserRoleMemberAdd(
+    $GroupObject->GroupUserRoleMemberAdd(
         UID    => 12,
         RID    => 6,
         Active => 1,
@@ -1354,13 +1357,7 @@ sub GroupUserRoleMemberAdd {
         SQL => 'DELETE FROM role_user WHERE user_id = ? AND role_id = ?',
         Bind => [ \$Param{UID}, \$Param{RID} ],
     );
-
-    # return if user is not longer in role
     if ( !$Param{Active} ) {
-
-        # reset cache
-        $Self->{CacheInternalObject}->CleanUp();
-
         return;
     }
 
@@ -1373,144 +1370,20 @@ sub GroupUserRoleMemberAdd {
     }
 
     # insert new permission
-    return if !$Self->{DBObject}->Do(
+    return $Self->{DBObject}->Do(
         SQL => 'INSERT INTO role_user '
             . '(role_id, user_id, create_time, create_by, change_time, change_by) '
             . 'VALUES (?, ?, current_timestamp, ?, current_timestamp, ?)',
         Bind => [ \$Param{RID}, \$Param{UID}, \$Param{UserID}, \$Param{UserID} ],
     );
-
-    # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
-
-    return 1;
-}
-
-=item RoleLookup()
-
-get id or name for role
-
-    my $Role = $RoleObject->RoleLookup( RoleID => $RoleID );
-
-    my $RoleID = $RoleObject->RoleLookup( Role => $Role );
-
-=cut
-
-sub RoleLookup {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{Role} && !$Param{RoleID} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Got no Role or RoleID!' );
-        return;
-    }
-
-    # check if result is cached
-    my $CacheKey;
-    if ( $Param{RoleID} ) {
-        $CacheKey = "RoleLookup::ID::$Param{RoleID}";
-    }
-    elsif ( $Param{Role} ) {
-        $CacheKey = "RoleLookup::Name::$Param{Role}";
-    }
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-    return $Cache if $Cache;
-
-    # get data
-    my $SQL;
-    my @Bind;
-    my $Suffix;
-    if ( $Param{Role} ) {
-        $Param{What} = $Param{Role};
-        $Suffix      = 'RoleID';
-        $SQL         = 'SELECT id FROM roles WHERE name = ?';
-        push @Bind, \$Param{Role};
-    }
-    else {
-        $Param{What} = $Param{RoleID};
-        $Suffix      = 'Role';
-        $SQL         = 'SELECT name FROM roles WHERE id = ?';
-        push @Bind, \$Param{RoleID};
-    }
-    return if !$Self->{DBObject}->Prepare(
-        SQL  => $SQL,
-        Bind => \@Bind,
-    );
-    my $Result;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        $Result = $Row[0];
-    }
-
-    # check if data exists
-    if ( !$Result ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Found no \$$Suffix for $Param{What}!",
-        );
-        return;
-    }
-
-    # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => $Result );
-
-    # return result
-    return $Result;
-}
-
-=item RoleGet()
-
-returns a hash with role data
-
-    my %RoleData = $GroupObject->RoleGet( ID => 2 );
-
-This returns something like:
-
-    %RoleData = (
-        'Name'       => 'role_helpdesk_agent',
-        'ID'         => 2,
-        'ValidID'    => '1',
-        'CreateTime' => '2010-04-07 15:41:15',
-        'ChangeTime' => '2010-04-07 15:41:15',
-        'Comment'    => 'Role for helpdesk people.',
-    );
-
-=cut
-
-sub RoleGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ID} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need ID!' );
-        return;
-    }
-
-    # sql
-    return if !$Self->{DBObject}->Prepare(
-        SQL  => 'SELECT name, valid_id, comments, change_time, create_time FROM roles WHERE id = ?',
-        Bind => [ \$Param{ID} ],
-    );
-    my %Role;
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
-        %Role = (
-            ID         => $Param{ID},
-            Name       => $Data[0],
-            Comment    => $Data[2],
-            ValidID    => $Data[1],
-            ChangeTime => $Data[3],
-            CreateTime => $Data[4],
-        );
-    }
-    return %Role;
 }
 
 =item RoleAdd()
 
 to add a new role
 
-    my $RoleID = $GroupObject->RoleAdd(
-        Name    => 'example-role',
-        Comment => 'comment describing the role',   # optional
+    my $ID = $GroupObject->RoleAdd(
+        Name    => 'example-group',
         ValidID => 1,
         UserID  => 123,
     );
@@ -1553,27 +1426,53 @@ sub RoleAdd {
         Priority => 'notice',
         Message  => "Role: '$Param{Name}' ID: '$RoleID' created successfully ($Param{UserID})!",
     );
+    return $RoleID;
+}
 
-    # delete cache
-    my @CacheKeys = (
-        'RoleLookup::ID::' . $RoleID,
-        'RoleLookup::Name::' . $Param{Name},
-    );
-    for my $CacheKey (@CacheKeys) {
-        $Self->{CacheInternalObject}->Delete( Key => $CacheKey );
+=item RoleGet()
+
+returns a hash with role data
+
+    %RoleData = $GroupObject->RoleGet(ID => 2);
+
+=cut
+
+sub RoleGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ID} ) {
+        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need ID!' );
+        return;
     }
 
-    return $RoleID;
+    # sql
+    return if !$Self->{DBObject}->Prepare(
+        SQL => 'SELECT name, valid_id, comments, change_time, create_time '
+            . 'FROM roles WHERE id = ?',
+        Bind => [ \$Param{ID} ],
+    );
+    my %Role = ();
+    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+        %Role = (
+            ID         => $Param{ID},
+            Name       => $Data[0],
+            Comment    => $Data[2],
+            ValidID    => $Data[1],
+            ChangeTime => $Data[3],
+            CreateTime => $Data[4],
+        );
+    }
+    return %Role;
 }
 
 =item RoleUpdate()
 
 update of a role
 
-    my $Success = $GroupObject->RoleUpdate(
+    $GroupObject->RoleUpdate(
         ID      => 123,
         Name    => 'example-group',
-        Comment => 'comment describing the role',   # optional
         ValidID => 1,
         UserID  => 123,
     );
@@ -1591,45 +1490,21 @@ sub RoleUpdate {
         }
     }
 
-    # get the old role name to delete the cache
-    my $OldRoleName = $Self->RoleLookup( RoleID => $Param{ID} );
-
     # sql
-    return if !$Self->{DBObject}->Do(
+    return $Self->{DBObject}->Do(
         SQL => 'UPDATE roles SET name = ?, comments = ?, valid_id = ?, '
             . 'change_time = current_timestamp, change_by = ? WHERE id = ?',
         Bind => [
             \$Param{Name}, \$Param{Comment}, \$Param{ValidID}, \$Param{UserID}, \$Param{ID}
         ],
     );
-
-    # delete cache
-    my @CacheKeys = (
-        'RoleLookup::ID::' . $Param{ID},
-        'RoleLookup::Name::' . $Param{Name},
-        'RoleLookup::Name::' . $OldRoleName,
-    );
-    for my $CacheKey (@CacheKeys) {
-        $Self->{CacheInternalObject}->Delete( Key => $CacheKey );
-    }
-
-    return 1;
 }
 
 =item RoleList()
 
 returns a hash of all roles
 
-    my %Roles = $GroupObject->RoleList( Valid => 1 );
-
-the result looks like
-
-    %Roles = (
-        '1' => 'role_helpdesk_agent',
-        '2' => 'role_systemsmanagement_agent',
-        '3' => 'role_otrs_admin',
-        '4' => 'role_faq_manager',
-    );
+    my %Roles = $GroupObject->RoleList(Valid => 1);
 
 =cut
 
@@ -1645,10 +1520,6 @@ sub RoleList {
     return %Roles;
 }
 
-=begin Internal:
-
-=cut
-
 =item _GetTypeString()
 
 returns a string for a sql IN elements which contains a comma separted list of system permissions.
@@ -1658,10 +1529,10 @@ returns a string for a sql IN elements which contains a comma separted list of s
 =cut
 
 sub _GetTypeString {
-    my ( $Self, %Param ) = @_;
+    my ($Self, %Param) = @_;
 
-    # only allow valid system permissions as Type
-    my @Types = grep $_ eq $Param{Type}, @{ $Self->{ConfigObject}->Get('System::Permission') };
+    # only allow valid system permissions as Type; see bug 3499
+    my @Types = grep $_ eq $Param{Type}, @{$Self->{ConfigObject}->Get('System::Permission')};
     push @Types, 'rw';
     my $TypeString = join ',', map "'$_'", @Types;
 
@@ -1670,22 +1541,20 @@ sub _GetTypeString {
 
 1;
 
-=end Internal:
-
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+the enclosed file COPYING for license information (GPL). If you
+did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.91 $ $Date: 2010/11/30 13:11:11 $
+$Revision: 1.58.2.1 $ $Date: 2009/01/23 08:51:30 $
 
 =cut
