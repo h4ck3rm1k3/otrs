@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-    <CVS>$Id: Support.sopm,v 1.18 2009/01/19 09:11:29 sr Exp $</CVS>
+    <CVS>$Id: Support.sopm,v 1.19 2009/01/27 13:53:39 tr Exp $</CVS>
     <Name>Support</Name>
     <Version>0.0.0</Version>
     <Framework>2.3.x</Framework>
@@ -52,6 +52,6 @@
         </TableCreate>
     </DatabaseUpgrade>
     <DatabaseUninstall>
-        <TableDrop Name="bench_test"/>
+        <TableDrop Name="support_bench_test"/>
     </DatabaseUninstall>
 </otrs_package>
