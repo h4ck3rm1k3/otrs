@@ -4,22 +4,21 @@
 # X-OTRS-Queue header for an OTRS system (x-headers for dispatching!).
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: webform.pl,v 1.14 2009/02/20 12:05:54 mh Exp $
+# $Id: webform.pl,v 1.11.2.1 2009/01/31 17:54:42 martin Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU AFFERO General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# any later version.
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Affero General Public License
+# You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-# or see http://www.gnu.org/licenses/agpl.txt.
 # --
 
 use strict;
@@ -31,7 +30,7 @@ use CGI::Carp qw(fatalsToBrowser);
 # Simple Common Gateway Interface Class
 use CGI;
 
-my $VERSION = qw($Revision: 1.14 $) [1];
+my $VERSION = qw($Revision: 1.11.2.1 $) [1];
 
 # --------------------------
 # web form options
@@ -64,11 +63,11 @@ sub Header {
     my (%Param) = @_;
 
     # html quote
-    for my $Value (qw(Title)) {
+    for my $Value ( qw(Title) ) {
         $Param{$Value} = _Ascii2Html( $Param{$Value} );
     }
 
-    my $Output = <<EOF;
+    ( my $Output = <<EOF);
 Content-Type: text/html
 
 <html>
@@ -88,7 +87,7 @@ EOF
 # -------------------------
 
 sub Footer {
-    my $Output = <<EOF;
+    ( my $Output = <<EOF);
 <hr>
 
 </body>
@@ -105,11 +104,11 @@ sub Thanks {
     my (%Param) = @_;
 
     # html quote
-    for my $Value (qw(From)) {
+    for my $Value ( qw(From) ) {
         $Param{$Value} = _Ascii2Html( $Param{$Value} );
     }
 
-    my $Output = <<EOF;
+    ( my $Output = <<EOF);
 Thanks <b>$Param{From}</b>! Your request is forwarded to us. <br>
 We will answer ASAP.<br>
 EOF
@@ -124,11 +123,11 @@ sub Error {
     my (%Param) = @_;
 
     # html quote
-    for my $Value (qw(Message)) {
+    for my $Value ( qw(Message) ) {
         $Param{$Value} = _Ascii2Html( $Param{$Value} );
     }
 
-    my $Output = <<EOF;
+    ( my $Output = <<EOF);
 <font color="red">$Param{Message}</font><br>
 EOF
     return $Output;
@@ -165,7 +164,7 @@ sub WebForm {
                 <td>
 ';
     for my $Key ( sort keys %Topics ) {
-        my $HTMLKey   = _Ascii2Html($Key);
+        my $HTMLKey   = _Ascii2Html( $Key );
         my $HTMLValue = _Ascii2Html( $Topics{$Key} );
         print $HTMLKey . '<input type="radio" name="Topic" value="' . $HTMLValue . '">';
     }
@@ -264,7 +263,7 @@ sub SendMail {
     my $FromEmail = $Param{FromEmail};
     $FromEmail =~ s/"|;|'|<|>|\||\s|\r|\n|\t|`//ig;
     $FromEmail = quotemeta $FromEmail;
-    if ( open my $Mail, '|-', "$Sendmail $FromEmail" ) {
+    if ( open( my $Mail, '|-', "$Sendmail $FromEmail" ) ) {
         print $Mail @Mail;
         close $Mail;
 
