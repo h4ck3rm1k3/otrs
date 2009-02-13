@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Stats/Dynamic/Ticket.pm - all advice functions
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Ticket.pm,v 1.37 2012/01/11 17:28:26 jh Exp $
+# $Id: Ticket.pm,v 1.21.2.1 2009/02/13 15:38:27 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (AGPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
 # --
 
 package Kernel::System::Stats::Dynamic::Ticket;
@@ -19,12 +19,9 @@ use Kernel::System::Service;
 use Kernel::System::SLA;
 use Kernel::System::Ticket;
 use Kernel::System::Type;
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.37 $) [1];
+$VERSION = qw($Revision: 1.21.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -34,29 +31,18 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for my $Object (
-        qw(DBObject ConfigObject LogObject UserObject TimeObject MainObject EncodeObject)
-        )
-    {
+    for my $Object (qw(DBObject ConfigObject LogObject UserObject TimeObject MainObject)) {
         $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
     }
-    $Self->{QueueObject}        = Kernel::System::Queue->new( %{$Self} );
-    $Self->{TicketObject}       = Kernel::System::Ticket->new( %{$Self} );
-    $Self->{StateObject}        = Kernel::System::State->new( %{$Self} );
-    $Self->{PriorityObject}     = Kernel::System::Priority->new( %{$Self} );
-    $Self->{LockObject}         = Kernel::System::Lock->new( %{$Self} );
-    $Self->{CustomerUser}       = Kernel::System::CustomerUser->new( %{$Self} );
-    $Self->{ServiceObject}      = Kernel::System::Service->new( %{$Self} );
-    $Self->{SLAObject}          = Kernel::System::SLA->new( %{$Self} );
-    $Self->{TypeObject}         = Kernel::System::Type->new( %{$Self} );
-    $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new(%Param);
-    $Self->{BackendObject}      = Kernel::System::DynamicField::Backend->new(%Param);
-
-    # get the dynamic fields for ticket object
-    $Self->{DynamicField} = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid      => 1,
-        ObjectType => ['Ticket'],
-    );
+    $Self->{QueueObject}    = Kernel::System::Queue->new( %{$Self} );
+    $Self->{TicketObject}   = Kernel::System::Ticket->new( %{$Self} );
+    $Self->{StateObject}    = Kernel::System::State->new( %{$Self} );
+    $Self->{PriorityObject} = Kernel::System::Priority->new( %{$Self} );
+    $Self->{LockObject}     = Kernel::System::Lock->new( %{$Self} );
+    $Self->{CustomerUser}   = Kernel::System::CustomerUser->new( %{$Self} );
+    $Self->{ServiceObject}  = Kernel::System::Service->new( %{$Self} );
+    $Self->{SLAObject}      = Kernel::System::SLA->new( %{$Self} );
+    $Self->{TypeObject}     = Kernel::System::Type->new( %{$Self} );
 
     return $Self;
 }
@@ -64,7 +50,7 @@ sub new {
 sub GetObjectName {
     my ( $Self, %Param ) = @_;
 
-    return 'TicketAccumulation';
+    return 'Ticket';
 }
 
 sub GetObjectAttributes {
@@ -99,21 +85,16 @@ sub GetObjectAttributes {
         UserID => 1,
     );
 
-    # get current time to fix bug#3830
-    my $TimeStamp = $Self->{TimeObject}->CurrentTimestamp();
-    my ($Date) = split /\s+/, $TimeStamp;
-    my $Today = sprintf "%s 23:59:59", $Date;
-
     my @ObjectAttributes = (
         {
-            Name             => 'Queue',
-            UseAsXvalue      => 1,
-            UseAsValueSeries => 1,
-            UseAsRestriction => 1,
-            Element          => 'QueueIDs',
-            Block            => 'MultiSelectField',
-            Translation      => 0,
-            Values           => \%QueueList,
+            Name                => 'Queue',
+            UseAsXvalue         => 1,
+            UseAsValueSeries    => 1,
+            UseAsRestriction    => 1,
+            Element             => 'QueueIDs',
+            Block               => 'MultiSelectField',
+            LanguageTranslation => 0,
+            Values              => \%QueueList,
         },
         {
             Name             => 'State',
@@ -143,14 +124,14 @@ sub GetObjectAttributes {
             Values           => \%PriorityList,
         },
         {
-            Name             => 'Created in Queue',
-            UseAsXvalue      => 1,
-            UseAsValueSeries => 1,
-            UseAsRestriction => 1,
-            Element          => 'CreatedQueueIDs',
-            Block            => 'MultiSelectField',
-            Translation      => 0,
-            Values           => \%QueueList,
+            Name                => 'Created in Queue',
+            UseAsXvalue         => 1,
+            UseAsValueSeries    => 1,
+            UseAsRestriction    => 1,
+            Element             => 'CreatedQueueIDs',
+            Block               => 'MultiSelectField',
+            LanguageTranslation => 0,
+            Values              => \%QueueList,
         },
         {
             Name             => 'Created Priority',
@@ -243,7 +224,6 @@ sub GetObjectAttributes {
             Element          => 'CreateTime',
             TimePeriodFormat => 'DateInputFormat',    # 'DateInputFormatLong',
             Block            => 'Time',
-            TimeStop         => $Today,
             Values           => {
                 TimeStart => 'TicketCreateTimeNewerDate',
                 TimeStop  => 'TicketCreateTimeOlderDate',
@@ -257,7 +237,6 @@ sub GetObjectAttributes {
             Element          => 'CloseTime2',
             TimePeriodFormat => 'DateInputFormat',    # 'DateInputFormatLong',
             Block            => 'Time',
-            TimeStop         => $Today,
             Values           => {
                 TimeStart => 'TicketCloseTimeNewerDate',
                 TimeStop  => 'TicketCloseTimeOlderDate',
@@ -271,7 +250,6 @@ sub GetObjectAttributes {
             Element          => 'EscalationTime',
             TimePeriodFormat => 'DateInputFormatLong',    # 'DateInputFormat',
             Block            => 'Time',
-            TimeStop         => $Today,
             Values           => {
                 TimeStart => 'TicketEscalationTimeNewerDate',
                 TimeStop  => 'TicketEscalationTimeOlderDate',
@@ -285,7 +263,6 @@ sub GetObjectAttributes {
             Element          => 'EscalationResponseTime',
             TimePeriodFormat => 'DateInputFormatLong',                # 'DateInputFormat',
             Block            => 'Time',
-            TimeStop         => $Today,
             Values           => {
                 TimeStart => 'TicketEscalationResponseTimeNewerDate',
                 TimeStop  => 'TicketEscalationResponseTimeOlderDate',
@@ -299,7 +276,6 @@ sub GetObjectAttributes {
             Element          => 'EscalationUpdateTime',
             TimePeriodFormat => 'DateInputFormatLong',        # 'DateInputFormat',
             Block            => 'Time',
-            TimeStop         => $Today,
             Values           => {
                 TimeStart => 'TicketEscalationUpdateTimeNewerDate',
                 TimeStop  => 'TicketEscalationUpdateTimeOlderDate',
@@ -313,7 +289,6 @@ sub GetObjectAttributes {
             Element          => 'EscalationSolutionTime',
             TimePeriodFormat => 'DateInputFormatLong',          # 'DateInputFormat',
             Block            => 'Time',
-            TimeStop         => $Today,
             Values           => {
                 TimeStart => 'TicketEscalationSolutionTimeNewerDate',
                 TimeStop  => 'TicketEscalationSolutionTimeOlderDate',
@@ -335,24 +310,24 @@ sub GetObjectAttributes {
 
         my @ObjectAttributeAdd = (
             {
-                Name             => 'Service',
-                UseAsXvalue      => 1,
-                UseAsValueSeries => 1,
-                UseAsRestriction => 1,
-                Element          => 'ServiceIDs',
-                Block            => 'MultiSelectField',
-                Translation      => 0,
-                Values           => \%Service,
+                Name                => 'Service',
+                UseAsXvalue         => 1,
+                UseAsValueSeries    => 1,
+                UseAsRestriction    => 1,
+                Element             => 'ServiceIDs',
+                Block               => 'MultiSelectField',
+                LanguageTranslation => 0,
+                Values              => \%Service,
             },
             {
-                Name             => 'SLA',
-                UseAsXvalue      => 1,
-                UseAsValueSeries => 1,
-                UseAsRestriction => 1,
-                Element          => 'SLAIDs',
-                Block            => 'MultiSelectField',
-                Translation      => 0,
-                Values           => \%SLA,
+                Name                => 'SLA',
+                UseAsXvalue         => 1,
+                UseAsValueSeries    => 1,
+                UseAsRestriction    => 1,
+                Element             => 'SLAIDs',
+                Block               => 'MultiSelectField',
+                LanguageTranslation => 0,
+                Values              => \%SLA,
             },
         );
 
@@ -367,14 +342,14 @@ sub GetObjectAttributes {
         );
 
         my %ObjectAttribute1 = (
-            Name             => 'Type',
-            UseAsXvalue      => 1,
-            UseAsValueSeries => 1,
-            UseAsRestriction => 1,
-            Element          => 'TypeIDs',
-            Block            => 'MultiSelectField',
-            Translation      => 0,
-            Values           => \%Type,
+            Name                => 'Type',
+            UseAsXvalue         => 1,
+            UseAsValueSeries    => 1,
+            UseAsRestriction    => 1,
+            Element             => 'TypeIDs',
+            Block               => 'MultiSelectField',
+            LanguageTranslation => 0,
+            Values              => \%Type,
         );
 
         unshift @ObjectAttributes, \%ObjectAttribute1;
@@ -384,34 +359,34 @@ sub GetObjectAttributes {
 
         my @ObjectAttributeAdd = (
             {
-                Name             => 'Agent/Owner',
-                UseAsXvalue      => 1,
-                UseAsValueSeries => 1,
-                UseAsRestriction => 1,
-                Element          => 'OwnerIDs',
-                Block            => 'MultiSelectField',
-                Translation      => 0,
-                Values           => \%UserList,
+                Name                => 'Agent/Owner',
+                UseAsXvalue         => 1,
+                UseAsValueSeries    => 1,
+                UseAsRestriction    => 1,
+                Element             => 'OwnerIDs',
+                Block               => 'MultiSelectField',
+                LanguageTranslation => 0,
+                Values              => \%UserList,
             },
             {
-                Name             => 'Created by Agent/Owner',
-                UseAsXvalue      => 1,
-                UseAsValueSeries => 1,
-                UseAsRestriction => 1,
-                Element          => 'CreatedUserIDs',
-                Block            => 'MultiSelectField',
-                Translation      => 0,
-                Values           => \%UserList,
+                Name                => 'Created by Agent/Owner',
+                UseAsXvalue         => 1,
+                UseAsValueSeries    => 1,
+                UseAsRestriction    => 1,
+                Element             => 'CreatedUserIDs',
+                Block               => 'MultiSelectField',
+                LanguageTranslation => 0,
+                Values              => \%UserList,
             },
             {
-                Name             => 'Responsible',
-                UseAsXvalue      => 1,
-                UseAsValueSeries => 1,
-                UseAsRestriction => 1,
-                Element          => 'ResponsibleIDs',
-                Block            => 'MultiSelectField',
-                Translation      => 0,
-                Values           => \%UserList,
+                Name                => 'Responsible',
+                UseAsXvalue         => 1,
+                UseAsValueSeries    => 1,
+                UseAsRestriction    => 1,
+                Element             => 'ResponsibleIDs',
+                Block               => 'MultiSelectField',
+                LanguageTranslation => 0,
+                Values              => \%UserList,
             },
         );
 
@@ -460,59 +435,72 @@ sub GetObjectAttributes {
         push @ObjectAttributes, \%ObjectAttribute;
     }
 
-    # cycle trough the activated Dynamic Fields for this screen
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+    FREEKEY:
+    for my $FreeKey ( 1 .. 16 ) {
 
-        my $PossibleValuesFilter;
+        # get ticket free key config
+        my $TicketFreeKey = $Self->{ConfigObject}->Get( 'TicketFreeKey' . $FreeKey );
 
-        # set possible values filter from ACLs
-        my $ACL = $Self->{TicketObject}->TicketAcl(
-            Action        => 'AgentStats',
-            Type          => 'DynamicField_' . $DynamicFieldConfig->{Name},
-            ReturnType    => 'Ticket',
-            ReturnSubType => 'DynamicField_' . $DynamicFieldConfig->{Name},
-            Data          => $DynamicFieldConfig->{Config}->{PossibleValues} || {},
-            UserID        => 1,
-        );
-        if ($ACL) {
-            my %Filter = $Self->{TicketObject}->TicketAclData();
-            $PossibleValuesFilter = \%Filter;
+        next FREEKEY if ref $TicketFreeKey ne 'HASH';
+
+        my @FreeKey = keys %{$TicketFreeKey};
+        my $Name    = '';
+
+        if ( scalar @FreeKey == 1 ) {
+            $Name = $TicketFreeKey->{ $FreeKey[0] };
+        }
+        else {
+            $Name = 'TicketFreeText' . $FreeKey;
+
+            my %ObjectAttribute = (
+                Name                => 'TicketFreeKey' . $FreeKey,
+                UseAsXvalue         => 1,
+                UseAsValueSeries    => 1,
+                UseAsRestriction    => 1,
+                Element             => 'TicketFreeKey' . $FreeKey,
+                Block               => 'MultiSelectField',
+                Values              => $TicketFreeKey,
+                LanguageTranslation => 0,
+            );
+
+            push @ObjectAttributes, \%ObjectAttribute;
         }
 
-        # get field html
-        my $DynamicFieldStatsParameter = $Self->{BackendObject}->StatsFieldParameterBuild(
-            DynamicFieldConfig   => $DynamicFieldConfig,
-            PossibleValuesFilter => $PossibleValuesFilter,
+        # get ticket free text
+        my $TicketFreeText = $Self->{TicketObject}->TicketFreeTextGet(
+            Type   => 'TicketFreeText' . $FreeKey,
+            Action => 'AgentStats',
+            FillUp => 1,
+            UserID => 1,
         );
 
-        if ( IsHashRefWithData($DynamicFieldStatsParameter) ) {
-            if ( IsHashRefWithData( $DynamicFieldStatsParameter->{Values} ) ) {
+        if ($TicketFreeText) {
 
-                my %ObjectAttribute = (
-                    Name             => $DynamicFieldStatsParameter->{Name},
-                    UseAsXvalue      => 1,
-                    UseAsValueSeries => 1,
-                    UseAsRestriction => 1,
-                    Element          => $DynamicFieldStatsParameter->{Element},
-                    Block            => 'MultiSelectField',
-                    Values           => $DynamicFieldStatsParameter->{Values},
-                    Translation      => 0,
-                );
-                push @ObjectAttributes, \%ObjectAttribute;
-            }
-            else {
-                my %ObjectAttribute = (
-                    Name             => $DynamicFieldStatsParameter->{Name},
-                    UseAsXvalue      => 0,
-                    UseAsValueSeries => 0,
-                    UseAsRestriction => 1,
-                    Element          => $DynamicFieldStatsParameter->{Element},
-                    Block            => 'InputField',
-                );
-                push @ObjectAttributes, \%ObjectAttribute;
-            }
+            my %ObjectAttribute = (
+                Name                => $Name,
+                UseAsXvalue         => 1,
+                UseAsValueSeries    => 1,
+                UseAsRestriction    => 1,
+                Element             => 'TicketFreeText' . $FreeKey,
+                Block               => 'MultiSelectField',
+                Values              => $TicketFreeText,
+                LanguageTranslation => 0,
+            );
+
+            push @ObjectAttributes, \%ObjectAttribute;
+        }
+        else {
+
+            my %ObjectAttribute = (
+                Name             => $Name,
+                UseAsXvalue      => 0,
+                UseAsValueSeries => 0,
+                UseAsRestriction => 1,
+                Element          => 'TicketFreeText' . $FreeKey,,
+                Block            => 'InputField',
+            );
+
+            push @ObjectAttributes, \%ObjectAttribute;
         }
     }
 
@@ -522,40 +510,16 @@ sub GetObjectAttributes {
 sub GetStatElement {
     my ( $Self, %Param ) = @_;
 
-    for my $ParameterName ( keys %Param ) {
-        if ( $ParameterName =~ m{\A DynamicField_ ( [a-zA-Z\d]+ ) \z}xms ) {
-
-            # loop over the dynamic fields configured
-            DYNAMICFIELD:
-            for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-                next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-                next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
-
-                # skip all fields that does not match with current field name ($1)
-                # without the 'DynamicField_' prefix
-                next DYNAMICFIELD if $DynamicFieldConfig->{Name} ne $1;
-
-                # get new search parameter
-                my $DynamicFieldStatsSearchParameter
-                    = $Self->{BackendObject}->CommonSearchFieldParameterBuild(
-                    DynamicFieldConfig => $DynamicFieldConfig,
-                    Value              => $Param{$ParameterName},
-                    );
-
-                # add new search parameter
-                $Param{$ParameterName} = $DynamicFieldStatsSearchParameter;
-            }
-        }
-    }
-
     # search tickets
-    return $Self->{TicketObject}->TicketSearch(
+    my @TicketIDs = $Self->{TicketObject}->TicketSearch(
         UserID     => 1,
-        Result     => 'COUNT',
+        Result     => 'ARRAY',
         Permission => 'ro',
         Limit      => 100_000_000,
         %Param,
     );
+
+    return scalar @TicketIDs;
 }
 
 sub ExportWrapper {
@@ -563,51 +527,60 @@ sub ExportWrapper {
 
     # wrap ids to used spelling
     for my $Use (qw(UseAsValueSeries UseAsRestriction UseAsXvalue)) {
-        ELEMENT:
         for my $Element ( @{ $Param{$Use} } ) {
-            next ELEMENT if !$Element || !$Element->{SelectedValues};
-            my $ElementName = $Element->{Element};
-            my $Values      = $Element->{SelectedValues};
+            if ( $Element && $Element->{SelectedValues} ) {
+                if ( $Element->{Element} eq 'QueueIDs' || $Element->{Element} eq 'CreatedQueueIDs' )
+                {
+                    for my $ID ( @{ $Element->{SelectedValues} } ) {
+                        if ($ID) {
+                            $ID->{Content}
+                                = $Self->{QueueObject}->QueueLookup( QueueID => $ID->{Content} );
+                        }
+                    }
+                }
+                elsif (
+                    $Element->{Element} eq 'StateIDs'
+                    || $Element->{Element} eq 'CreatedStateIDs'
+                    )
+                {
+                    my %StateList = $Self->{StateObject}->StateList( UserID => 1 );
+                    for my $ID ( @{ $Element->{SelectedValues} } ) {
+                        if ($ID) {
+                            $ID->{Content} = $StateList{ $ID->{Content} };
+                        }
+                    }
+                }
+                elsif (
+                    $Element->{Element} eq 'PriorityIDs'
+                    || $Element->{Element} eq 'CreatedPriorityIDs'
+                    )
+                {
+                    my %PriorityList = $Self->{PriorityObject}->PriorityList( UserID => 1 );
+                    for my $ID ( @{ $Element->{SelectedValues} } ) {
+                        if ($ID) {
+                            $ID->{Content} = $PriorityList{ $ID->{Content} };
+                        }
+                    }
+                }
+                elsif (
+                    $Element->{Element}    eq 'OwnerIDs'
+                    || $Element->{Element} eq 'CreatedUserIDs'
+                    || $Element->{Element} eq 'ResponsibleIDs'
+                    )
+                {
+                    for my $ID ( @{ $Element->{SelectedValues} } ) {
+                        if ($ID) {
+                            $ID->{Content}
+                                = $Self->{UserObject}->UserLookup( UserID => $ID->{Content} );
+                        }
+                    }
+                }
 
-            if ( $ElementName eq 'QueueIDs' || $ElementName eq 'CreatedQueueIDs' ) {
-                ID:
-                for my $ID ( @{$Values} ) {
-                    next ID if !$ID;
-                    $ID->{Content} = $Self->{QueueObject}->QueueLookup( QueueID => $ID->{Content} );
-                }
+                # Locks and statustype don't have to wrap because they are never different
             }
-            elsif ( $ElementName eq 'StateIDs' || $ElementName eq 'CreatedStateIDs' ) {
-                my %StateList = $Self->{StateObject}->StateList( UserID => 1 );
-                ID:
-                for my $ID ( @{$Values} ) {
-                    next ID if !$ID;
-                    $ID->{Content} = $StateList{ $ID->{Content} };
-                }
-            }
-            elsif ( $ElementName eq 'PriorityIDs' || $ElementName eq 'CreatedPriorityIDs' ) {
-                my %PriorityList = $Self->{PriorityObject}->PriorityList( UserID => 1 );
-                ID:
-                for my $ID ( @{$Values} ) {
-                    next ID if !$ID;
-                    $ID->{Content} = $PriorityList{ $ID->{Content} };
-                }
-            }
-            elsif (
-                $ElementName    eq 'OwnerIDs'
-                || $ElementName eq 'CreatedUserIDs'
-                || $ElementName eq 'ResponsibleIDs'
-                )
-            {
-                ID:
-                for my $ID ( @{$Values} ) {
-                    next ID if !$ID;
-                    $ID->{Content} = $Self->{UserObject}->UserLookup( UserID => $ID->{Content} );
-                }
-            }
-
-            # Locks and statustype don't have to wrap because they are never different
         }
     }
+
     return \%Param;
 }
 
@@ -616,100 +589,104 @@ sub ImportWrapper {
 
     # wrap used spelling to ids
     for my $Use (qw(UseAsValueSeries UseAsRestriction UseAsXvalue)) {
-        ELEMENT:
         for my $Element ( @{ $Param{$Use} } ) {
-            next ELEMENT if !$Element || !$Element->{SelectedValues};
-            my $ElementName = $Element->{Element};
-            my $Values      = $Element->{SelectedValues};
-
-            if ( $ElementName eq 'QueueIDs' || $ElementName eq 'CreatedQueueIDs' ) {
-                ID:
-                for my $ID ( @{$Values} ) {
-                    next ID if !$ID;
-                    if ( $Self->{QueueObject}->QueueLookup( Queue => $ID->{Content} ) ) {
-                        $ID->{Content}
-                            = $Self->{QueueObject}->QueueLookup( Queue => $ID->{Content} );
-                    }
-                    else {
-                        $Self->{LogObject}->Log(
-                            Priority => 'error',
-                            Message  => "Import: Can' find the queue $ID->{Content}!"
-                        );
-                        $ID = undef;
+            if ( $Element && $Element->{SelectedValues} ) {
+                if ( $Element->{Element} eq 'QueueIDs' || $Element->{Element} eq 'CreatedQueueIDs' )
+                {
+                    for my $ID ( @{ $Element->{SelectedValues} } ) {
+                        if ($ID) {
+                            if ( $Self->{QueueObject}->QueueLookup( Queue => $ID->{Content} ) ) {
+                                $ID->{Content}
+                                    = $Self->{QueueObject}->QueueLookup( Queue => $ID->{Content} );
+                            }
+                            else {
+                                $Self->{LogObject}->Log(
+                                    Priority => 'error',
+                                    Message  => "Import: Can' find the queue $ID->{Content}!"
+                                );
+                                $ID = undef;
+                            }
+                        }
                     }
                 }
+                elsif (
+                    $Element->{Element} eq 'StateIDs'
+                    || $Element->{Element} eq 'CreatedStateIDs'
+                    )
+                {
+                    for my $ID ( @{ $Element->{SelectedValues} } ) {
+                        if ($ID) {
+                            my %State = $Self->{StateObject}->StateGet(
+                                Name  => $ID->{Content},
+                                Cache => 1,
+                            );
+                            if ( $State{ID} ) {
+                                $ID->{Content} = $State{ID};
+                            }
+                            else {
+                                $Self->{LogObject}->Log(
+                                    Priority => 'error',
+                                    Message  => "Import: Can' find state $ID->{Content}!"
+                                );
+                                $ID = undef;
+                            }
+                        }
+                    }
+                }
+                elsif (
+                    $Element->{Element} eq 'PriorityIDs'
+                    || $Element->{Element} eq 'CreatedPriorityIDs'
+                    )
+                {
+                    my %PriorityList = $Self->{PriorityObject}->PriorityList( UserID => 1 );
+                    my %PriorityIDs = ();
+                    for my $Key ( keys %PriorityList ) {
+                        $PriorityIDs{ $PriorityList{$Key} } = $Key;
+                    }
+                    for my $ID ( @{ $Element->{SelectedValues} } ) {
+                        if ($ID) {
+                            if ( $PriorityIDs{ $ID->{Content} } ) {
+                                $ID->{Content} = $PriorityIDs{ $ID->{Content} };
+                            }
+                            else {
+                                $Self->{LogObject}->Log(
+                                    Priority => 'error',
+                                    Message  => "Import: Can' find priority $ID->{Content}!"
+                                );
+                                $ID = undef;
+                            }
+                        }
+                    }
+                }
+                elsif (
+                    $Element->{Element}    eq 'OwnerIDs'
+                    || $Element->{Element} eq 'CreatedUserIDs'
+                    || $Element->{Element} eq 'ResponsibleIDs'
+                    )
+                {
+                    for my $ID ( @{ $Element->{SelectedValues} } ) {
+                        if ($ID) {
+                            if ( $Self->{UserObject}->UserLookup( UserLogin => $ID->{Content} ) ) {
+                                $ID->{Content} = $Self->{UserObject}->UserLookup(
+                                    UserLogin => $ID->{Content}
+                                );
+                            }
+                            else {
+                                $Self->{LogObject}->Log(
+                                    Priority => 'error',
+                                    Message  => "Import: Can' find user $ID->{Content}!"
+                                );
+                                $ID = undef;
+                            }
+                        }
+                    }
+                }
+
+                # Locks and statustype don't have to wrap because they are never different
             }
-            elsif ( $ElementName eq 'StateIDs' || $ElementName eq 'CreatedStateIDs' ) {
-                ID:
-                for my $ID ( @{$Values} ) {
-                    next ID if !$ID;
-
-                    my %State = $Self->{StateObject}->StateGet(
-                        Name  => $ID->{Content},
-                        Cache => 1,
-                    );
-                    if ( $State{ID} ) {
-                        $ID->{Content} = $State{ID};
-                    }
-                    else {
-                        $Self->{LogObject}->Log(
-                            Priority => 'error',
-                            Message  => "Import: Can' find state $ID->{Content}!"
-                        );
-                        $ID = undef;
-                    }
-                }
-            }
-            elsif ( $ElementName eq 'PriorityIDs' || $ElementName eq 'CreatedPriorityIDs' ) {
-                my %PriorityList = $Self->{PriorityObject}->PriorityList( UserID => 1 );
-                my %PriorityIDs;
-                for my $Key ( keys %PriorityList ) {
-                    $PriorityIDs{ $PriorityList{$Key} } = $Key;
-                }
-                ID:
-                for my $ID ( @{$Values} ) {
-                    next ID if !$ID;
-
-                    if ( $PriorityIDs{ $ID->{Content} } ) {
-                        $ID->{Content} = $PriorityIDs{ $ID->{Content} };
-                    }
-                    else {
-                        $Self->{LogObject}->Log(
-                            Priority => 'error',
-                            Message  => "Import: Can' find priority $ID->{Content}!"
-                        );
-                        $ID = undef;
-                    }
-                }
-            }
-            elsif (
-                $ElementName    eq 'OwnerIDs'
-                || $ElementName eq 'CreatedUserIDs'
-                || $ElementName eq 'ResponsibleIDs'
-                )
-            {
-                ID:
-                for my $ID ( @{$Values} ) {
-                    next ID if !$ID;
-
-                    if ( $Self->{UserObject}->UserLookup( UserLogin => $ID->{Content} ) ) {
-                        $ID->{Content} = $Self->{UserObject}->UserLookup(
-                            UserLogin => $ID->{Content}
-                        );
-                    }
-                    else {
-                        $Self->{LogObject}->Log(
-                            Priority => 'error',
-                            Message  => "Import: Can' find user $ID->{Content}!"
-                        );
-                        $ID = undef;
-                    }
-                }
-            }
-
-            # Locks and statustype don't have to wrap because they are never different
         }
     }
+
     return \%Param;
 }
 
