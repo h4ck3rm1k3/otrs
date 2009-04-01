@@ -1,8 +1,8 @@
 # --
-# Kernel/System/CustomerAuth/DB.pm - provides the db authentication
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Kernel/System/CustomerAuth/DB.pm - provides the db authentification
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: DB.pm,v 1.34 2012/01/05 17:15:32 cg Exp $
+# $Id: DB.pm,v 1.24.2.1 2009/04/01 08:55:48 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,10 +15,9 @@ use strict;
 use warnings;
 
 use Crypt::PasswdMD5 qw(unix_md5_crypt);
-use Digest::SHA::PurePerl qw(sha1_hex sha256_hex);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.34 $) [1];
+$VERSION = qw($Revision: 1.24.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -53,7 +52,6 @@ sub new {
             LogObject    => $Param{LogObject},
             ConfigObject => $Param{ConfigObject},
             MainObject   => $Param{MainObject},
-            EncodeObject => $Param{EncodeObject},
             DatabaseDSN =>
                 $Self->{ConfigObject}->Get( 'Customer::AuthModule::DB::DSN' . $Param{Count} ),
             DatabaseUser =>
@@ -106,7 +104,10 @@ sub Auth {
     my $GetPw      = '';
 
     # sql query
-    my $SQL = "SELECT $Self->{Pw}, $Self->{Key} FROM $Self->{Table} WHERE "
+    my $SQL = "SELECT $Self->{Pw}, $Self->{Key}"
+        . " FROM "
+        . " $Self->{Table} "
+        . " WHERE "
         . " $Self->{Key} = '" . $Self->{DBObject}->Quote($User) . "'";
     $Self->{DBObject}->Prepare( SQL => $SQL );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
@@ -128,47 +129,21 @@ sub Auth {
     my $CryptedPw = '';
     my $Salt      = $GetPw;
 
+    # md5 pw
     if ( $Self->{CryptType} eq 'plain' ) {
         $CryptedPw = $Pw;
     }
-
-    # md5 or sha pw
     elsif ( $GetPw !~ /^.{13}$/ ) {
 
-        # md5 pw
-        if ( $GetPw =~ m{\A \$.+? \$.+? \$.* \z}xms ) {
+        # strip salt
+        $Salt =~ s/^\$.+?\$(.+?)\$.*$/$1/;
 
-            # strip Salt
-            $Salt =~ s/^\$.+?\$(.+?)\$.*$/$1/;
+        # encode output, needed by unix_md5_crypt() only non utf8 signs
+        $Self->{EncodeObject}->EncodeOutput( \$Pw );
+        $Self->{EncodeObject}->EncodeOutput( \$Salt );
 
-            # encode output, needed by unix_md5_crypt() only non utf8 signs
-            $Self->{EncodeObject}->EncodeOutput( \$Pw );
-            $Self->{EncodeObject}->EncodeOutput( \$Salt );
-
-            $CryptedPw = unix_md5_crypt( $Pw, $Salt );
-            $Self->{EncodeObject}->EncodeInput( \$CryptedPw );
-        }
-
-        # sha2 pw
-        elsif ( $GetPw =~ m{\A .{64} \z}xms ) {
-
-            # encode output, needed by sha256_hex() only non utf8 signs
-            $Self->{EncodeObject}->EncodeOutput( \$Pw );
-
-            $CryptedPw = sha256_hex($Pw);
-            $Self->{EncodeObject}->EncodeInput( \$CryptedPw );
-        }
-
-        # sha1 pw
-        else {
-
-            # encode output, needed by sha1_hex() only non utf8 signs
-            $Self->{EncodeObject}->EncodeOutput( \$Pw );
-
-            $CryptedPw = sha1_hex($Pw);
-            $Self->{EncodeObject}->EncodeInput( \$CryptedPw );
-
-        }
+        $CryptedPw = unix_md5_crypt( $Pw, $Salt );
+        $Self->{EncodeObject}->Encode( \$CryptedPw );
     }
 
     # crypt pw
@@ -179,19 +154,39 @@ sub Auth {
             $Salt =~ s/^(..).*/$1/;
         }
 
-        $Self->{EncodeObject}->EncodeOutput( \$Pw );
-        $Self->{EncodeObject}->EncodeOutput( \$Salt );
+        # and do this check only in such case (unfortunately there is a mod_perl2
+        # bug on RH8 - check if crypt() is working correctly) :-/
+        if ( ( $Salt =~ /^\$\d\$/ ) || ( crypt( 'root', 'root@localhost' ) eq 'roK20XGbWEsSM' ) ) {
+            $Self->{EncodeObject}->EncodeOutput( \$Pw );
+            $Self->{EncodeObject}->EncodeOutput( \$Salt );
 
-        # encode output, needed by crypt() only non utf8 signs
-        $CryptedPw = crypt( $Pw, $Salt );
-        $Self->{EncodeObject}->EncodeInput( \$CryptedPw );
+            # encode output, needed by crypt() only non utf8 signs
+            $CryptedPw = crypt( $Pw, $Salt );
+            $Self->{EncodeObject}->Encode( \$CryptedPw );
+        }
+        else {
+            $Self->{LogObject}->Log(
+                Priority => 'notice',
+                Message =>
+                    "The crypt() of your mod_perl(2) is not working correctly! Update mod_perl!",
+            );
+            my $TempSalt = quotemeta($Salt);
+            my $TempPw   = quotemeta($Pw);
+            my $CMD      = "perl -e \"print crypt('$TempPw', '$TempSalt');\"";
+            open( IO, " $CMD | " ) || print STDERR "Can't open $CMD: $!";
+            while (<IO>) {
+                $CryptedPw .= $_;
+            }
+            close(IO);
+            chomp $CryptedPw;
+        }
     }
 
     # just in case!
     if ( $Self->{Debug} > 0 ) {
         $Self->{LogObject}->Log(
             Priority => 'notice',
-            Message  => "CustomerUser: '$User' tried to authenticate with Pw: '$Pw' "
+            Message  => "CustomerUser: '$User' tried to authentificate with Pw: '$Pw' "
                 . "($UserID/$CryptedPw/$GetPw/$Salt/$RemoteAddr)",
         );
     }
@@ -201,26 +196,26 @@ sub Auth {
         $Self->{LogObject}->Log(
             Priority => 'notice',
             Message =>
-                "CustomerUser: $User authentication without Pw!!! (REMOTE_ADDR: $RemoteAddr)",
+                "CustomerUser: $User authentification without Pw!!! (REMOTE_ADDR: $RemoteAddr)",
         );
         return;
     }
 
     # login note
-    elsif ( ( $GetPw && $User && $UserID ) && $CryptedPw eq $GetPw ) {
+    elsif ( ( ($GetPw) && ($User) && ($UserID) ) && $CryptedPw eq $GetPw ) {
         $Self->{LogObject}->Log(
             Priority => 'notice',
-            Message  => "CustomerUser: $User Authentication ok (REMOTE_ADDR: $RemoteAddr).",
+            Message  => "CustomerUser: $User authentification ok (REMOTE_ADDR: $RemoteAddr).",
         );
         return $User;
     }
 
     # just a note
-    elsif ( $UserID && $GetPw ) {
+    elsif ( ($UserID) && ($GetPw) ) {
         $Self->{LogObject}->Log(
             Priority => 'notice',
             Message =>
-                "CustomerUser: $User Authentication with wrong Pw!!! (REMOTE_ADDR: $RemoteAddr)"
+                "CustomerUser: $User authentification with wrong Pw!!! (REMOTE_ADDR: $RemoteAddr)"
         );
         return;
     }
