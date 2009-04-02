@@ -2,11 +2,11 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.17 2009/01/19 13:20:35 sr Exp $
+# $Id: OTRS.pm,v 1.18 2009/04/02 08:22:06 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
 package Kernel::System::Support::OTRS;
@@ -15,11 +15,12 @@ use strict;
 use warnings;
 
 use Kernel::System::Support;
+use Kernel::System::User;
 use Kernel::System::Ticket;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.17 $) [1];
+$VERSION = qw($Revision: 1.18 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -34,6 +35,7 @@ sub new {
     }
 
     $Self->{SupportObject} = Kernel::System::Support->new(%Param);
+    $Self->{UserObject}    = Kernel::System::User->new(%Param);
     $Self->{TicketObject}  = Kernel::System::Ticket->new(%Param);
     $Self->{PackageObject} = Kernel::System::Package->new(%Param);
 
@@ -47,7 +49,7 @@ sub AdminChecksGet {
     my @ModuleList = (
         '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketFulltextIndexModuleCheck',
         '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
-        '_FileSystemCheck', '_PackageDeployCheck',
+        '_FileSystemCheck', '_PackageDeployCheck', '_InvalidUserLockedTicketSearch'
     );
 
     my @DataArray;
@@ -345,14 +347,14 @@ sub _FileSystemCheck {
 sub _PackageDeployCheck {
     my ( $Self, %Param ) = @_;
 
-    my $Message = '';
     my $Data = {
         Name        => 'PackageDeployCheck',
         Description => 'Check deployment of all packages.',
-        Check       => 'Critical',
+        Check       => 'OK',
         Comment     => 'All packages are correctly installed.',
     };
 
+    my $Message = '';
     for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
         my $DeployCheck = $Self->{PackageObject}->DeployCheck(
             Name    => $Package->{Name}->{Content},
@@ -364,13 +366,66 @@ sub _PackageDeployCheck {
     }
 
     if ($Message) {
+        $Data->{Check}   = 'Critical';
         $Data->{Comment} = "Packages not correctly installed: $Message.",
-        return $Data;
     }
-
-    $Data->{Check}   = 'OK';
 
     return $Data;
 }
 
+sub _InvalidUserLockedTicketSearch {
+    my ( $Self, %Param ) = @_;
+
+    # set the default message
+    my $Data = {
+        Name        => 'InvalidUserLockedTicketSearch',
+        Description => 'Search after invalid user with locked tickets.',
+        Check       => 'OK',
+        Comment     => 'There is no invalid user with locked tickets.',
+    };
+
+    # get all user (because there is no function to get all invalid user)
+    my %UserList = $Self->{UserObject}->UserList(
+        Type => 'Long',
+        Valid => 0
+    );
+
+    # create the list of invalid user
+    my @InvalidUser = ();
+    for my $UserID (sort keys %UserList) {
+        my %User = $Self->{UserObject}->GetUserData(
+            UserID => $UserID,
+            Cached => 1,
+        );
+        if ( $User{ValidID} == 2 ) {
+            push @InvalidUser, $UserID;
+        }
+    }
+
+    return $Data if !@InvalidUser;
+
+    my @TicketIDs = $Self->{TicketObject}->TicketSearch(
+        Result => 'ARRAY',
+        LockIDs => [2],
+        OwnerIDs => \@InvalidUser,
+        UserID => 1,
+    );
+
+    return $Data if !@TicketIDs;
+
+    my %LockedTicketUser = ();
+    for my $TicketID (@TicketIDs) {
+        my %Ticket = $Self->{TicketObject}->TicketGet(
+            TicketID => $TicketID,
+            UserID   => 1,
+        );
+        $LockedTicketUser{$Ticket{OwnerID}} = $UserList{$Ticket{OwnerID}};
+    }
+
+    my $UserString = join ', ', values %LockedTicketUser;
+    $Data->{Comment} = "This invalid users have locked tickets: $UserString",
+    $Data->{Check}   = 'Critical';
+
+    return $Data;
+}
 1;
