@@ -1,24 +1,19 @@
 # --
 # CSV.t - CSV tests
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: CSV.t,v 1.15 2010/10/29 05:03:20 en Exp $
+# $Id: CSV.t,v 1.11.2.1 2009/04/15 14:34:01 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-use strict;
-use warnings;
-use vars (qw($Self));
-
 use Kernel::System::CSV;
 
-# create local object
-my $CSVObject = Kernel::System::CSV->new( %{$Self} );
+$Self->{CSVObject} = Kernel::System::CSV->new( %{$Self} );
 
-my $CSV = $CSVObject->Array2CSV(
+my $CSV = $Self->{CSVObject}->Array2CSV(
     Head => [ 'RowA', 'RowB', ],
     Data => [
         [ 1,  4 ],
@@ -40,7 +35,7 @@ $Self->Is(
     '#0 Array2CSV()',
 );
 
-my $Array = $CSVObject->CSV2Array(
+my $Array = $Self->{CSVObject}->CSV2Array(
     String    => '"field1";"field2";"field3"' . "\n" . '"2";"3";"4"' . "\n",
     Separator => ';',
     Quote     => '"',
@@ -72,7 +67,7 @@ $Self->Is(
     '#1 CSV2Array() - with quote "',
 );
 
-$Array = $CSVObject->CSV2Array(
+$Array = $Self->{CSVObject}->CSV2Array(
     String    => "field1;field2;field3\n2;3;4\n",
     Separator => ';',
     Quote     => '',
@@ -109,7 +104,7 @@ my $String
     = '"field1";"field2";"field3"' . "\n" . '"a' . "\n"
     . 'b";"FirstLine' . "\n"
     . 'SecondLine";"4"' . "\n";
-$Array = $CSVObject->CSV2Array(
+$Array = $Self->{CSVObject}->CSV2Array(
     String    => $String,
     Separator => ';',
     Quote     => '"',
@@ -146,7 +141,7 @@ $String
     = '"field1";"field2";"field3"' . "\r" . '"a' . "\r"
     . 'b";"FirstLine' . "\r"
     . 'SecondLine";"4"' . "\r";
-$Array = $CSVObject->CSV2Array(
+$Array = $Self->{CSVObject}->CSV2Array(
     String    => $String,
     Separator => ';',
     Quote     => '"',
@@ -184,7 +179,7 @@ $Self->Is(
 my $TextWithNewLine = "Hallo guys,\nhere was a newline. And again.\n";
 my @TableData       = (
     [
-        '<a href="/sirios-cvs-utf8/index.pl?Action=AgentStats&Subaction=Overview" class="navitem">ï¿½bersicht</a>',
+        '<a href="/sirios-cvs-utf8/index.pl?Action=AgentStats&Subaction=Overview" class="navitem">Übersicht</a>',
         '"'
     ],
     [ '4""4', 'asdf"SDF' ],
@@ -192,13 +187,13 @@ my @TableData       = (
     [ 34,     $TextWithNewLine ],
 );
 
-$CSV = $CSVObject->Array2CSV(
+$CSV = $Self->{CSVObject}->Array2CSV(
     Head => [ 'RowA', 'RowB', ],
     Data => \@TableData,
 );
 
 $CSVReference = qq{"RowA";"RowB"\n}
-    . qq{"<a href=""/sirios-cvs-utf8/index.pl?Action=AgentStats&Subaction=Overview"" class=""navitem"">ï¿½bersicht</a>";""""\n}
+    . qq{"<a href=""/sirios-cvs-utf8/index.pl?Action=AgentStats&Subaction=Overview"" class=""navitem"">Übersicht</a>";""""\n}
     . qq{"4""""4";"asdf""SDF"\n}
     . qq{"""a""";"xxx"\n}
     . qq{"34";"} . $TextWithNewLine . qq{"\n};
@@ -209,7 +204,7 @@ $Self->Is(
     'Array2CSV() with ""',
 );
 
-my $ArrayRef = $CSVObject->CSV2Array(
+my $ArrayRef = $Self->{CSVObject}->CSV2Array(
     String    => $CSV,
     Separator => ';',
     Quote     => '"',
