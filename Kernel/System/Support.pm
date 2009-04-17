@@ -2,11 +2,11 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.27 2009/01/19 08:58:41 sr Exp $
+# $Id: Support.pm,v 1.28 2009/04/17 14:23:30 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
 package Kernel::System::Support;
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.27 $) [1];
+$VERSION = qw($Revision: 1.28 $) [1];
 
 =head1 NAME
 
@@ -45,17 +45,31 @@ All required support information to a running OTRS system.
 
 create Support object
 
-use Kernel::Config;
-use Kernel::System::Log;
-my $ConfigObject = Kernel::Config->new();
-my $LogObject = Kernel::System::Log->new(
-    ConfigObject => $ConfigObject,
-);
+    use Kernel::Config;
+    use Kernel::System::Encode;
+    use Kernel::System::Log;
+    use Kernel::System::Main;
+    use Kernel::System::Support;
 
-$SupportObject = Kernel::System::Support->new(
-    ConfigObject => $ConfigObject,
-    LogObject => $LogObject,
-);
+    my $ConfigObject = Kernel::Config->new();
+    my $EncodeObject = Kernel::System::Encode->new(
+        ConfigObject => $ConfigObject,
+    );
+    my $LogObject = Kernel::System::Log->new(
+        ConfigObject => $ConfigObject,
+        EncodeObject => $EncodeObject,
+    );
+    my $MainObject = Kernel::System::Main->new(
+        ConfigObject => $ConfigObject,
+        EncodeObject => $EncodeObject,
+        LogObject    => $LogObject,
+    );
+    my $SupportObject = Kernel::System::Support->new(
+        ConfigObject => $ConfigObject,
+        LogObject    => $LogObject,
+        EncodeObject => $EncodeObject,
+        MainObject   => $MainObject,
+    );
 
 =cut
 
@@ -67,14 +81,16 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for (qw(ConfigObject LogObject MainObject)) {
+    for (qw(ConfigObject LogObject MainObject EncodeObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
+
     $Self->{XMLObject} = Kernel::System::XML->new(%Param);
     $Self->{DBObject}  = Kernel::System::DB->new(
         ConfigObject => $Self->{ConfigObject},
         MainObject   => $Self->{MainObject},
         LogObject    => $Self->{LogObject},
+        EncodeObject => $Self->{EncodeObject},
 
     );
     $Self->{TimeObject}  = Kernel::System::Time->new(%Param);
@@ -84,6 +100,7 @@ sub new {
         LogObject    => $Self->{LogObject},
         DBObject     => $Self->{DBObject},
         TimeObject   => $Self->{TimeObject},
+        EncodeObject => $Self->{EncodeObject},
     );
     $Self->{PackageObject} = Kernel::System::Package->new(
         MainObject   => $Self->{MainObject},
@@ -91,6 +108,7 @@ sub new {
         ConfigObject => $Self->{ConfigObject},
         TimeObject   => $Self->{TimeObject},
         DBObject     => $Self->{DBObject},
+        EncodeObject => $Self->{EncodeObject},
     );
 
     return $Self;
@@ -890,13 +908,13 @@ sub _SQLDelete {
 This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (GPL). If you
-did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.27 $ $Date: 2009/01/19 08:58:41 $
+$Revision: 1.28 $ $Date: 2009/04/17 14:23:30 $
 
 =cut
