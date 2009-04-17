@@ -2,11 +2,11 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.19 2009/01/19 08:59:13 sr Exp $
+# $Id: AdminSupport.pm,v 1.20 2009/04/17 14:17:07 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
 package Kernel::Modules::AdminSupport;
@@ -17,20 +17,17 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.19 $) [1];
+$VERSION = qw($Revision: 1.20 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
 
     # allocate new hash for object
-    my $Self = {};
+    my $Self = {%Param};
     bless( $Self, $Type );
-    for ( keys %Param ) {
-        $Self->{$_} = $Param{$_};
-    }
 
     # check needed Objects
-    for (qw(ParamObject LayoutObject LogObject ConfigObject TimeObject MainObject DBObject)) {
+    for (qw(ParamObject LayoutObject LogObject ConfigObject TimeObject MainObject DBObject EncodeObject)) {
         if ( !$Self->{$_} ) {
             $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
         }
@@ -38,6 +35,7 @@ sub new {
 
     $Self->{UserObject} = Kernel::System::User->new(
         ConfigObject => $Self->{ConfigObject},
+        EncodeObject => $Self->{EncodeObject},
         LogObject    => $Self->{LogObject},
         MainObject   => $Self->{MainObject},
         TimeObject   => $Self->{TimeObject},
@@ -293,7 +291,7 @@ sub Run {
 
         # create data hash reference
         my $DataHash = $Self->{SupportObject}->AdminChecksGet();
-        $Param{'ModeStrg'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        $Param{ModeStrg} = $Self->{LayoutObject}->OptionStrgHashRef(
             Data => {
                 1 => '1 * Normal (ca. 25 sec)',
                 3 => '3 * High   (ca. 75 sec)',

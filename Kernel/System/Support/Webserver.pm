@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Support/Webserver.pm - all required system information
-# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Webserver.pm,v 1.7 2008/07/13 23:25:41 martin Exp $
+# $Id: Webserver.pm,v 1.8 2009/04/17 14:17:07 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
 package Kernel::System::Support::Webserver;
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.7 $) [1];
+$VERSION = qw($Revision: 1.8 $) [1];
 
 =head1 NAME
 
@@ -36,15 +36,28 @@ All required system information to a running OTRS host.
 create Webserver info object
 
     use Kernel::Config;
+    use Kernel::System::Encode;
     use Kernel::System::Log;
+    use Kernel::System::Main;
+    use Kernel::System::Support::Webserver;
+
     my $ConfigObject = Kernel::Config->new();
-    my $LogObject = Kernel::System::Log->new(
+    my $EncodeObject = Kernel::System::Encode->new(
         ConfigObject => $ConfigObject,
     );
-
-    $SystemInfoObject = Kernel::System::Support::Webserver->new(
+    my $LogObject = Kernel::System::Log->new(
         ConfigObject => $ConfigObject,
-        LogObject => $LogObject,
+        EncodeObject => $EncodeObject,
+    );
+    my $MainObject = Kernel::System::Main->new(
+        ConfigObject => $ConfigObject,
+        EncodeObject => $EncodeObject,
+        LogObject    => $LogObject,
+    );
+    my $SystemInfoObject = Kernel::System::Support::Webserver->new(
+        ConfigObject => $ConfigObject,
+        LogObject    => $LogObject,
+        MainObject   => $MainObject,
     );
 
 =cut
@@ -201,13 +214,13 @@ sub _Check {
 This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (GPL). If you
-did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.7 $ $Date: 2008/07/13 23:25:41 $
+$Revision: 1.8 $ $Date: 2009/04/17 14:17:07 $
 
 =cut
