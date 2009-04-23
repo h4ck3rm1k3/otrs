@@ -1,8 +1,8 @@
 # --
-# Kernel/System/CustomerAuth/LDAP.pm - provides the ldap authentication
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Kernel/System/CustomerAuth/LDAP.pm - provides the ldap authentification
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: LDAP.pm,v 1.38 2011/08/12 09:06:16 mg Exp $
+# $Id: LDAP.pm,v 1.28.2.1 2009/04/23 15:03:12 tt Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,9 +15,10 @@ use strict;
 use warnings;
 
 use Net::LDAP;
+use Kernel::System::Encode;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.38 $) [1];
+$VERSION = qw($Revision: 1.28.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -27,9 +28,12 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for (qw(LogObject ConfigObject DBObject EncodeObject)) {
+    for (qw(LogObject ConfigObject DBObject)) {
         $Self->{$_} = $Param{$_} || die "No $_!";
     }
+
+    # encode object
+    $Self->{EncodeObject} = Kernel::System::Encode->new(%Param);
 
     # Debug 0=off 1=on
     $Self->{Debug} = 0;
@@ -138,8 +142,8 @@ sub Auth {
             return;
         }
     }
-    $Param{User} = $Self->_ConvertTo( $Param{User}, 'utf-8' );
-    $Param{Pw}   = $Self->_ConvertTo( $Param{Pw},   'utf-8' );
+    $Param{User} = $Self->_ConvertTo( $Param{User}, $Self->{ConfigObject}->Get('DefaultCharset') );
+    $Param{Pw}   = $Self->_ConvertTo( $Param{Pw},   $Self->{ConfigObject}->Get('DefaultCharset') );
 
     # get params
     my $RemoteAddr = $ENV{REMOTE_ADDR} || 'Got no REMOTE_ADDR env!';
@@ -176,11 +180,13 @@ sub Auth {
         if ( $Self->{Die} ) {
             die "Can't connect to $Self->{Host}: $@";
         }
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't connect to $Self->{Host}: $@",
-        );
-        return;
+        else {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Can't connect to $Self->{Host}: $@",
+            );
+            return;
+        }
     }
     my $Result = '';
     if ( $Self->{SearchUserDN} && $Self->{SearchUserPw} ) {
@@ -192,8 +198,9 @@ sub Auth {
     if ( $Result->code ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'First bind failed! ' . $Result->error(),
+            Message  => "First bind failed! " . $Result->error(),
         );
+        $LDAP->disconnect;
         return;
     }
 
@@ -215,13 +222,13 @@ sub Auth {
     $Result = $LDAP->search(
         base   => $Self->{BaseDN},
         filter => $Filter,
-        attrs  => ['1.1'],
     );
     if ( $Result->code ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Search failed! ' . $Result->error,
+            Message  => "Search failed! " . $Result->error,
         );
+        $LDAP->unbind;
         $LDAP->disconnect;
         return;
     }
@@ -238,7 +245,7 @@ sub Auth {
         # failed login note
         $Self->{LogObject}->Log(
             Priority => 'notice',
-            Message  => "CustomerUser: $Param{User} authentication failed, no LDAP entry found!"
+            Message  => "CustomerUser: $Param{User} authentification failed, no LDAP entry found!"
                 . "BaseDN='$Self->{BaseDN}', Filter='$Filter', (REMOTE_ADDR: $RemoteAddr).",
         );
 
@@ -261,7 +268,7 @@ sub Auth {
         if ( $Self->{Debug} > 0 ) {
             $Self->{LogObject}->Log(
                 Priority => 'notice',
-                Message  => 'check for groupdn!',
+                Message  => "check for groupdn!",
             );
         }
 
@@ -275,13 +282,15 @@ sub Auth {
         }
         my $Result2 = $LDAP->search(
             base   => $Self->{GroupDN},
-            filter => $Filter2,
-            attrs  => ['1.1'],
+            filter => $Filter2
         );
         if ( $Result2->code ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => "Search failed! base='$Self->{GroupDN}', filter='$Filter2', "
+                Message  => "Search failed! base='"
+                    . $Self->{GroupDN}
+                    . "', filter='"
+                    . $Filter2 . "', "
                     . $Result->error,
             );
             $LDAP->unbind;
@@ -302,7 +311,7 @@ sub Auth {
             $Self->{LogObject}->Log(
                 Priority => 'notice',
                 Message =>
-                    "CustomerUser: $Param{User} authentication failed, no LDAP group entry found"
+                    "CustomerUser: $Param{User} authentification failed, no LDAP group entry found"
                     . "GroupDN='$Self->{GroupDN}', Filter='$Filter2'! (REMOTE_ADDR: $RemoteAddr).",
             );
 
@@ -320,7 +329,7 @@ sub Auth {
         # failed login note
         $Self->{LogObject}->Log(
             Priority => 'notice',
-            Message  => "CustomerUser: $Param{User} ($UserDN) authentication failed: '"
+            Message  => "CustomerUser: $Param{User} ($UserDN) authentification failed: '"
                 . $Result->error . "' (REMOTE_ADDR: $RemoteAddr).",
         );
 
@@ -329,36 +338,39 @@ sub Auth {
         $LDAP->disconnect;
         return;
     }
+    else {
 
-    # login note
-    $Self->{LogObject}->Log(
-        Priority => 'notice',
-        Message =>
-            "CustomerUser: $Param{User} ($UserDN) authentication ok (REMOTE_ADDR: $RemoteAddr).",
-    );
+        # login note
+        $Self->{LogObject}->Log(
+            Priority => 'notice',
+            Message =>
+                "CustomerUser: $Param{User} ($UserDN) authentification ok (REMOTE_ADDR: $RemoteAddr).",
+        );
 
-    # take down session
-    $LDAP->unbind;
-    $LDAP->disconnect;
-    return $Param{User};
+        # take down session
+        $LDAP->unbind;
+        $LDAP->disconnect;
+        return $Param{User};
+    }
 }
 
 sub _ConvertTo {
     my ( $Self, $Text, $Charset ) = @_;
 
-    return if !defined $Text;
-
     if ( !$Charset || !$Self->{DestCharset} ) {
-        $Self->{EncodeObject}->EncodeInput( \$Text );
+        $Self->{EncodeObject}->Encode( \$Text );
         return $Text;
     }
-
-    # convert from input charset ($Charset) to directory charset ($Self->{DestCharset})
-    return $Self->{EncodeObject}->Convert(
-        Text => $Text,
-        From => $Charset,
-        To   => $Self->{DestCharset},
-    );
+    if ( !defined($Text) ) {
+        return;
+    }
+    else {
+        return $Self->{EncodeObject}->Convert(
+            Text => $Text,
+            From => $Charset,
+            To   => $Self->{DestCharset},
+        );
+    }
 }
 
 1;
