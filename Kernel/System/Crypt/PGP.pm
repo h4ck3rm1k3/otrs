@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Crypt/PGP.pm - the main crypt module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: PGP.pm,v 1.51 2011/01/25 23:26:10 dz Exp $
+# $Id: PGP.pm,v 1.26.2.1 2009/05/27 13:06:53 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.51 $) [1];
+$VERSION = qw($Revision: 1.26.2.1 $) [1];
 
 =head1 NAME
 
@@ -30,6 +30,27 @@ This is a sub module of Kernel::System::Crypt and contains all pgp functions.
 =over 4
 
 =cut
+
+# just for internal
+sub _Init {
+    my ( $Self, %Param ) = @_;
+
+    $Self->{GPGBin}  = $Self->{ConfigObject}->Get('PGP::Bin')     || '/usr/bin/gpg';
+    $Self->{Options} = $Self->{ConfigObject}->Get('PGP::Options') || '--batch --no-tty --yes';
+
+    if ( $^O =~ m{Win}i ) {
+
+        # take care to deal properly with paths containing whitespace
+        $Self->{GPGBin} = qq{"$Self->{GPGBin}" $Self->{Options}};
+    }
+    else {
+
+        # make sure that we are getting POSIX (i.e. english) messages from gpg
+        $Self->{GPGBin} = "LC_MESSAGES=POSIX $Self->{GPGBin} $Self->{Options}";
+    }
+
+    return $Self;
+}
 
 =item Check()
 
@@ -66,7 +87,7 @@ crypt a message
 
     my $Message = $CryptObject->Crypt(
         Message => $Message,
-        Key     => $PGPPublicKeyID,
+        Key => $PGPPublicKeyID,
     );
 
 =cut
@@ -84,10 +105,9 @@ sub Crypt {
 
     # since the following write would auto-convert utf8-characters into iso-characters, we
     # avoid that by explicitly encoding utf8-strings:
-    #    if ( utf8::is_utf8( $Param{Message} ) ) {
-    #        utf8::encode( $Param{Message} );
-    #    }
-    $Self->{EncodeObject}->EncodeOutput( \$Param{Message} );
+    if ( utf8::is_utf8( $Param{Message} ) ) {
+        utf8::encode( $Param{Message} );
+    }
 
     my ( $FH, $Filename ) = $Self->{FileTempObject}->TempFile();
     print $FH $Param{Message};
@@ -98,6 +118,15 @@ sub Crypt {
     my $GPGOptions
         = "--always-trust --yes --encrypt --armor -o $FilenameCrypt -r $Param{Key} $Filename";
     my $LogMessage = qx{$Self->{GPGBin} $GPGOptions 2>&1};
+
+    # error
+    if ($LogMessage) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't crypt with Key $Param{Key}: $LogMessage!"
+        );
+        return;
+    }
 
     # get crypted content
     my $CryptedDataRef = $Self->{MainObject}->FileRead( Location => $FilenameCrypt );
@@ -114,15 +143,17 @@ Decrypt a message and returns a hash (Successful, Message, Data)
 
 The returned hash %Result has the following keys:
 
-    Successful => '1',        # could the given data be decrypted at all (0 or 1)
-    Data       => '...',      # the decrypted data
-    KeyID      => 'FA23FB24'  # hex ID of PGP-(secret-)key that was used for decryption
-    Message    => '...'       # descriptive text containing the result status
+    'Successful' => '1',        # could the given data be decrypted at all (0 or 1)
+    'Data'       => '...',      # the decrypted data
+    'KeyID'      => 'FA23FB24'  # hex ID of PGP-(secret-)key that was used for decryption
+    'Message'    => '...'       # descriptive text containing the result status
 
 =cut
 
 sub Decrypt {
     my ( $Self, %Param ) = @_;
+
+    my %Return;
 
     # check needed stuff
     for (qw(Message)) {
@@ -138,7 +169,6 @@ sub Decrypt {
 
     my %PasswordHash = %{ $Self->{ConfigObject}->Get('PGP::Key::Password') };
     my @Keys = $Self->_CryptedWithKey( File => $Filename );
-    my %Return;
 
     KEY:
     for my $Key (@Keys) {
@@ -159,14 +189,51 @@ sub Decrypt {
     return %Return;
 }
 
+sub _DecryptPart {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Key Password Filename)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
+
+    my ( $FHDecrypt, $FileDecrypt ) = $Self->{FileTempObject}->TempFile();
+    close $FHDecrypt;
+    my ( $FHPhrase, $FilePhrase ) = $Self->{FileTempObject}->TempFile();
+    print $FHPhrase $Param{Password};
+    close $FHPhrase;
+    my $GPGOptions
+        = qq{--batch --passphrase-fd 0 --always-trust --yes --decrypt -o $FileDecrypt $Param{Filename}};
+    my $LogMessage = qx{$Self->{GPGBin} $GPGOptions <$FilePhrase 2>&1};
+    if ( $LogMessage =~ /failed/i ) {
+        $Self->{LogObject}->Log( Priority => 'notice', Message => "$LogMessage!" );
+        return (
+            Successful => 0,
+            Message    => $LogMessage,
+        );
+    }
+    else {
+        my $DecryptedDataRef = $Self->{MainObject}->FileRead( Location => $FileDecrypt );
+        return (
+            Successful => 1,
+            Message    => $LogMessage,
+            Data       => $$DecryptedDataRef,
+            KeyID      => $Param{Key},
+        );
+    }
+}
+
 =item Sign()
 
 sign a message
 
     my $Sign = $CryptObject->Sign(
         Message => $Message,
-        Key     => $PGPPrivateKeyID,
-        Type    => 'Detached'  # Detached|Inline
+        Key => $PGPPrivateKeyID,
+        Type => 'Detached'  # Detached|Inline
     );
 
 =cut
@@ -237,26 +304,28 @@ Attached sign:
 
     my %Result = $CryptObject->Verify(
         Message => $Message,
-        Sign    => $Sign,
+        Sign => $Sign,
     );
 
 The returned hash %Result has the following keys:
 
-    SignatureFound => 1,        # was a signature found at all (0 or 1)
-    Successful     => 1,        # could the signature be verified (0 or 1)
-    KeyID          => 'FA23FB24'  # hex ID of PGP-key that was used for signing
-    KeyUserID      => 'username <user@test.org>'  # PGP-User-ID (e-mail address) used for signing
-    Message        => '...'       # descriptive text containing the result status
-    MessageLong    => '...'       # full output of GPG binary
+    'SignatureFound' => '1',        # was a signature found at all (0 or 1)
+    'Successful'     => '1',        # could the signature be verified (0 or 1)
+    'KeyID'          => 'FA23FB24'  # hex ID of PGP-key that was used for signing
+    'KeyUserID'      => 'username <user@test.org>'  # PGP-User-ID (e-mail adress) used for signing
+    'Message'        => '...'       # descriptive text containing the result status
+    'MessageLong'    => '...'       # full output of GPG binary
 
 =cut
 
 sub Verify {
     my ( $Self, %Param ) = @_;
 
+    my %Return;
+
     # check needed stuff
     if ( !$Param{Message} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Message!' );
+        $Self->{LogObject}->Log( Priority => 'error', Message => "Need Message!" );
         return;
     }
 
@@ -265,7 +334,7 @@ sub Verify {
     print $FH $Param{Message};
     close $FH;
 
-    my $GPGOptions = '--verify --status-fd 1';
+    my $GPGOptions = "--verify";
     if ( $Param{Sign} ) {
         my ( $FHSign, $FilenameSign ) = $Self->{FileTempObject}->TempFile();
         binmode($FHSign);
@@ -273,268 +342,45 @@ sub Verify {
         close $FHSign;
         $GPGOptions .= " $FilenameSign";
     }
-
-    my %Return;
     my $Message = qx{$Self->{GPGBin} $GPGOptions $File 2>&1};
-
-    my %LogMessage = $Self->_HandleLog( LogString => $Message );
-    if ( $LogMessage{GOODSIG} ) {
-        my $KeyID = '';
-
-        if (
-            $LogMessage{GOODSIG}->{MessageLong}
-            =~ m{\Q[GNUPG:] GOODSIG \E (?: [0-9A-F]{8}) ([0-9A-F]{8}) }xms
-            )
-        {
+    if ( $Message =~ m{(Good signature from ".+?")}i ) {
+        my $GPGMessage = $1;
+        my $KeyID      = '';
+        if ( $Message =~ m{\s+ID\s+([0-9A-F]{8})}i ) {
             $KeyID = $1;
         }
         else {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => 'Unable to fetch key-ID from gpg output!'
+                Message  => "Unable to fetch key-ID from gpg output!"
             );
         }
-
         my $KeyUserID = '';
-        if (
-            $LogMessage{GOODSIG}->{MessageLong}
-            =~ m{\Q[GNUPG:] GOODSIG \E (?:[0-9A-F]{16}) \s (.*) }xms
-            )
-        {
+        if ( $Message =~ m{Good signature from "(.+?)"}i ) {
             $KeyUserID = $1;
         }
         else {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => 'Unable to fetch key-user-ID from gpg output!'
+                Message  => "Unable to fetch key-user-ID from gpg output!"
             );
         }
-
         %Return = (
             SignatureFound => 1,
             Successful     => 1,
-            Message        => $LogMessage{GOODSIG}->{Log} . " : $KeyID $KeyUserID",
-            MessageLong    => $LogMessage{GOODSIG}->{MessageLong},
+            Message        => "gpg: $GPGMessage",
+            MessageLong    => $Message,
             KeyID          => $KeyID,
             KeyUserID      => $KeyUserID,
-        );
-
-    }
-    elsif ( $LogMessage{ERRSIG} ) {
-        my $KeyID = '';
-
-        # key id
-        if (
-            $LogMessage{ERRSIG}->{MessageLong}
-            =~ m{ \Q[GNUPG:] ERRSIG \E (?:[0-9A-F]{8}) ([0-9A-F]{8}) }xms
-            )
-        {
-            $KeyID = $1;
-        }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Unable to fetch key-ID from gpg output!'
-            );
-        }
-
-        my $InternalMessage;
-        if ( $LogMessage{NO_PUBKEY}->{Log} ) {
-            $InternalMessage = $LogMessage{NO_PUBKEY}->{Log} . ": $KeyID";
-        }
-
-        %Return = (
-            SignatureFound => 1,
-            Successful     => 0,
-            Message        => $InternalMessage || $LogMessage{ERRSIG}->{Log},
-        );
-
-    }
-    elsif ( $LogMessage{KEYREVOKED} && $LogMessage{EXPKEYSIG} ) {
-
-        # revoked has the preference but also expired can be shown, is it?
-        my $KeyID;
-        if (
-            $LogMessage{EXPKEYSIG}->{MessageLong}
-            =~ m{\Q[GNUPG:] EXPKEYSIG \E (?:[0-9A-F]{8}) ([0-9A-F]{8})}xms
-            )
-        {
-            $KeyID = $1;
-        }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Unable to fetch key-ID from gpg output!'
-            );
-        }
-
-        my $KeyUserID = '';
-        if (
-            $LogMessage{EXPKEYSIG}->{MessageLong}
-            =~ m{\Q[GNUPG:] EXPKEYSIG \E (?:[0-9A-F]{16}) \s (.*) }xms
-            )
-        {
-            $KeyUserID = $1;
-        }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Unable to fetch key-user-ID from gpg output!'
-            );
-        }
-
-        my $ComposedMessage = '';
-        if ( $LogMessage{KEYREVOKED}->{Log} ) {
-            $ComposedMessage = $LogMessage{KEYREVOKED}->{Log}
-                . " and the key is also expired. : $KeyID $KeyUserID";
-        }
-
-        %Return = (
-            SignatureFound => 1,
-            Successful     => 0,
-            Message        => $ComposedMessage || $Message,
-        );
-    }
-    elsif ( $LogMessage{REVKEYSIG} ) {
-
-        my $KeyID;
-        if (
-            $LogMessage{REVKEYSIG}->{MessageLong}
-            =~ m{\Q[GNUPG:] REVKEYSIG \E (?:[0-9A-F]{8}) ([0-9A-F]{8}) }xms
-            )
-        {
-            $KeyID = $1;
-        }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Unable to fetch key-ID from gpg output!'
-            );
-        }
-
-        my $KeyUserID = '';
-        if (
-            $LogMessage{REVKEYSIG}->{MessageLong}
-            =~ m{\Q[GNUPG:] REVKEYSIG \E (?:[0-9A-F]{16}) \s (.*) }xms
-            )
-        {
-            $KeyUserID = $1;
-        }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Unable to fetch key-user-ID from gpg output!'
-            );
-        }
-
-        my $ComposedMessage = '';
-        if ( $LogMessage{REVKEYSIG}->{Log} ) {
-            $ComposedMessage = $LogMessage{REVKEYSIG}->{Log} . ": $KeyID $KeyUserID";
-        }
-
-        %Return = (
-            SignatureFound => 1,
-            Successful     => 0,
-            Message        => $ComposedMessage || $Message,
-        );
-
-    }
-    elsif ( $LogMessage{EXPKEYSIG} ) {
-
-        my $KeyID;
-        if (
-            $LogMessage{EXPKEYSIG}->{MessageLong}
-            =~ m{\Q[GNUPG:] EXPKEYSIG \E (?:[0-9A-F]{8}) ([0-9A-F]{8}) }xms
-            )
-        {
-            $KeyID = $1;
-        }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Unable to fetch key-ID from gpg output!'
-            );
-        }
-
-        my $KeyUserID = '';
-        if (
-            $LogMessage{EXPKEYSIG}->{MessageLong}
-            =~ m{\Q[GNUPG:] EXPKEYSIG \E (?:[0-9A-F]{16}) \s (.*) }xms
-            )
-        {
-            $KeyUserID = $1;
-        }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Unable to fetch key-user-ID from gpg output!'
-            );
-        }
-
-        my $ComposedMessage = '';
-        if ( $LogMessage{EXPKEYSIG}->{Log} ) {
-            $ComposedMessage = $LogMessage{EXPKEYSIG}->{Log} . ": $KeyID $KeyUserID";
-        }
-        %Return = (
-            SignatureFound => 1,
-            Successful     => 0,
-            Message        => ($ComposedMessage) || $Message,
-        );
-
-    }
-    elsif ( $LogMessage{NODATA} ) {
-        %Return = (
-            SignatureFound => 0,
-            Successful     => 0,
-            Message        => $LogMessage{NODATA}->{Log} || $Message,
         );
     }
     else {
         %Return = (
             SignatureFound => 1,
             Successful     => 0,
-            Message        => $LogMessage{CleanLog} || $Message,
+            Message        => $Message,
         );
     }
-
-    my @WarningTags;
-
-    my $Trusted = $Self->{ConfigObject}->Get('PGP::TrustedNetwork');
-    if ( !$Trusted ) {
-        push @WarningTags, 'TRUST_UNDEFINED';
-    }
-
-    # get needed warnings
-    my @Warnings;
-    for my $Tag (@WarningTags) {
-        if ( $LogMessage{$Tag}->{Log} ) {
-            push @Warnings, {
-                Result => 'Error',
-                Key    => 'Sign Warning',
-                Value  => $LogMessage{$Tag}->{Log},
-            };
-        }
-    }
-
-    # looks for text before and after the signature
-    if (
-        $Param{Message} =~ m{ \s* \S+ \s* \Q-----BEGIN PGP SIGNED MESSAGE-----\E }xmsg
-        ||
-        $Param{Message} =~ m{ \Q-----END PGP SIGNATURE-----\E \s* \S+ \s* }xmsg
-        )
-    {
-        push @Warnings, {
-            Result => 'Error',
-            Key    => 'Sign Warning',
-            Value =>
-                'Just a part of the message is signed, for info please see \'Plain Format\' view of article.',
-        };
-    }
-
-    if ( scalar @Warnings ) {
-        $Return{Warnings} = \@Warnings;
-    }
-
     return %Return;
 }
 
@@ -552,8 +398,8 @@ sub KeySearch {
     my ( $Self, %Param ) = @_;
 
     my @Result;
-    push @Result, $Self->PublicKeySearch(%Param);
-    push @Result, $Self->PrivateKeySearch(%Param);
+    push( @Result, $Self->PublicKeySearch(%Param) );
+    push( @Result, $Self->PrivateKeySearch(%Param) );
 
     return @Result;
 }
@@ -598,347 +444,6 @@ sub PublicKeySearch {
     return $Self->_ParseGPGKeyList( GPGOutputLines => \@GPGOutputLines );
 }
 
-=item PublicKeyGet()
-
-returns public key in ascii
-
-    my $Key = $CryptObject->PublicKeyGet(
-        Key => $KeyID,
-    );
-
-=cut
-
-sub PublicKeyGet {
-    my ( $Self, %Param ) = @_;
-
-    my $Key = quotemeta( $Param{Key} || '' );
-    my $LogMessage = qx{$Self->{GPGBin} --export --armor $Key 2>&1};
-    my $PublicKey;
-    if ( $LogMessage =~ /nothing exported/i ) {
-        $LogMessage =~ s/\n//g;
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't export key: $LogMessage!",
-        );
-        return;
-    }
-    elsif ( $LogMessage =~ /-----BEGIN PGP PUBLIC KEY BLOCK-----/i ) {
-
-        # filter the key
-        $PublicKey = $LogMessage;
-
-        # delete text before
-        $PublicKey =~ s{
-            .* ( \Q-----BEGIN PGP PUBLIC KEY BLOCK-----\E .*
-                 \Q-----END PGP PUBLIC KEY BLOCK-----\E ) .*
-        }{$1}xmsg;
-
-        return $PublicKey;
-    }
-
-    return $LogMessage;
-}
-
-=item SecretKeyGet()
-
-returns secret key in ascii
-
-    my $Key = $CryptObject->SecretKeyGet(
-        Key => $KeyID,
-    );
-
-=cut
-
-sub SecretKeyGet {
-    my ( $Self, %Param ) = @_;
-
-    my $Key = quotemeta( $Param{Key} || '' );
-
-    my $LogMessage = qx{$Self->{GPGBin} --export-secret-keys --armor $Key 2>&1};
-    my $SecretKey  = '';
-
-    if ( $LogMessage =~ /nothing exported/i ) {
-        $LogMessage =~ s/\n//g;
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't export key: $LogMessage!",
-        );
-        return;
-    }
-    elsif ( $LogMessage =~ /-----BEGIN PGP PRIVATE KEY BLOCK-----/i ) {
-
-        # filter the key
-        $SecretKey = $LogMessage;
-        $SecretKey =~ s{
-            .* ( \Q-----BEGIN PGP PRIVATE KEY BLOCK-----\E .*
-                 \Q-----END PGP PRIVATE KEY BLOCK-----\E ) .*
-        }{$1}xmsg;
-
-        return $SecretKey;
-    }
-
-    return $LogMessage;
-}
-
-=item PublicKeyDelete()
-
-remove public key from key ring
-
-    $CryptObject->PublicKeyDelete(
-        Key => $KeyID,
-    );
-
-=cut
-
-sub PublicKeyDelete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{Key} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need Key!',
-        );
-        return;
-    }
-
-    my $Key        = quotemeta( $Param{Key} || '' );
-    my $GPGOptions = '--status-fd 1';
-    my $Message    = qx{$Self->{GPGBin} $GPGOptions --delete-key $Key 2>&1};
-
-    my %LogMessage = $Self->_HandleLog( LogString => $Message );
-
-    if ( $LogMessage{DELETE_PROBLEM} ) {
-        $LogMessage{CleanLog} =~ s/\n//g;
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't delete key: $LogMessage{CleanLog}!",
-        );
-        return;
-    }
-
-    return 1;
-}
-
-=item SecretKeyDelete()
-
-remove secret key from key ring
-
-    $CryptObject->SecretKeyDelete(
-        Key => $KeyID,
-    );
-
-=cut
-
-sub SecretKeyDelete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{Key} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need Key!',
-        );
-        return;
-    }
-
-    my @Keys = $Self->PrivateKeySearch( Search => $Param{Key} );
-    if ( @Keys > 1 ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't delete key, multiple key for $Param{Key}!",
-        );
-        return;
-    }
-    if ( !$Keys[0]->{FingerprintShort} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't delete key, found no fingerprint for $Param{Key}!",
-        );
-        return;
-    }
-    my $GPGOptions
-        = '--status-fd 1 --delete-secret-key ' . quotemeta( $Keys[0]->{FingerprintShort} );
-    my $Message = qx{$Self->{GPGBin} $GPGOptions 2>&1};
-
-    my %LogMessage = $Self->_HandleLog( LogString => $Message );
-
-    # waiting for better solution, some times gpg returns just enviroment warnings and
-    # with next code lines is wrong detected like an error
-    #    if ($Message) {
-    #        $Message =~ s/\n//g;
-    #        $Self->{LogObject}->Log(
-    #            Priority => 'error',
-    #            Message  => "Can't delete private key: $Message!",
-    #        );
-    #        return;
-    #    }
-
-    return 1;
-}
-
-=item KeyAdd()
-
-add key to key ring
-
-    my $Message = $CryptObject->KeyAdd(
-        Key => $KeyString,
-    );
-
-=cut
-
-sub KeyAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{Key} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need Key!',
-        );
-        return;
-    }
-    my ( $FH, $Filename ) = $Self->{FileTempObject}->TempFile();
-    print $FH $Param{Key};
-    my $GPGOptions = "--status-fd 1 --import $Filename";
-    my $Message    = qx{$Self->{GPGBin} $GPGOptions 2>&1};
-
-    my %LogMessage = $Self->_HandleLog( LogString => $Message );
-
-    if ( !$LogMessage{IMPORT_OK} ) {
-        $Message =~ s/\n//g;
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't add key: $LogMessage{CleanLog}!",
-        );
-        return;
-    }
-
-    return $LogMessage{CleanLog};
-}
-
-=begin Internal:
-
-=cut
-
-sub _Init {
-    my ( $Self, %Param ) = @_;
-
-    $Self->{GPGBin}  = $Self->{ConfigObject}->Get('PGP::Bin')     || '/usr/bin/gpg';
-    $Self->{Options} = $Self->{ConfigObject}->Get('PGP::Options') || '--batch --no-tty --yes';
-
-    if ( $^O =~ m/Win/i ) {
-
-        # take care to deal properly with paths containing whitespace
-        $Self->{GPGBin} = "\"$Self->{GPGBin}\" $Self->{Options}";
-    }
-    else {
-
-        # make sure that we are getting POSIX (i.e. english) messages from gpg
-        $Self->{GPGBin} = "LC_MESSAGES=POSIX $Self->{GPGBin} $Self->{Options}";
-    }
-
-    return $Self;
-}
-
-sub _DecryptPart {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Key Password Filename)) {
-        if ( !defined( $Param{$_} ) ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    my ( $FHDecrypt, $FileDecrypt ) = $Self->{FileTempObject}->TempFile();
-    close $FHDecrypt;
-    my ( $FHPhrase, $FilePhrase ) = $Self->{FileTempObject}->TempFile();
-    print $FHPhrase $Param{Password};
-    close $FHPhrase;
-    my $GPGOptions
-        = qq{--batch --passphrase-fd 0 --yes --decrypt -o $FileDecrypt $Param{Filename}};
-    my $LogMessage = qx{$Self->{GPGBin} $GPGOptions <$FilePhrase 2>&1};
-    if ( $LogMessage =~ /failed/i ) {
-        $Self->{LogObject}->Log(
-            Priority => 'notice',
-            Message  => "$LogMessage!",
-        );
-        return (
-            Successful => 0,
-            Message    => $LogMessage,
-        );
-    }
-    else {
-        my $DecryptedDataRef = $Self->{MainObject}->FileRead( Location => $FileDecrypt );
-        return (
-            Successful => 1,
-            Message    => $LogMessage,
-            Data       => $$DecryptedDataRef,
-            KeyID      => $Param{Key},
-        );
-    }
-}
-
-=item _HandleLog()
-
-Clean and build the log
-
-    my %Log = $PGPObject->_HandleLog(
-        LogString => $LogMessage,
-    );
-
-=cut
-
-sub _HandleLog {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(LogString)) {
-        if ( !defined( $Param{$_} ) ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    my %Log;
-    $Log{OriginalLog} = $Param{LogString};
-
-    # get computable log lines
-    my @ComputableLines;
-    while ( $Log{OriginalLog} =~ m{(\[GNUPG\:\]\s.*)}g ) {
-        push @ComputableLines, $1;
-    }
-
-    # get the hash of messages
-    my $LogDictionary = $Self->{ConfigObject}->Get('PGP::Log');
-
-    my %ComputableLog;
-    for my $Line (@ComputableLines) {
-
-        # get tag
-        $Line =~ m{(:?\[GNUPG\:\]\s)(\w*)(:?\s.*)?}xms;
-        my $Tag     = $2;
-        my $Message = $Line;
-
-        $ComputableLog{$Tag} = {
-            Log => $LogDictionary->{$Tag} || $Line,
-            MessageLong => $Line || $LogDictionary->{$Tag},
-            }
-    }
-
-    # get clean log lines
-    my $CleanLog = '';
-    while ( $Param{LogString} =~ m{(gpg\:\s.*)}g ) {
-        $CleanLog .= ' ' . $1;
-    }
-
-    $ComputableLog{CleanLog} = $CleanLog;
-
-    return %ComputableLog;
-}
-
 =item _ParseGPGKeyList()
 
 parses given key list (as received from gpg) and returns an array with key infos
@@ -968,26 +473,14 @@ sub _ParseGPGKeyList {
                 push( @Result, {%Key} );
                 %Key = ();
             }
-            $InKey = 1;
+            $InKey     = 1;
             $Key{Type} = $Type;
-
-            # is the key expired, revoked or good?
-            if ( $Fields[1] eq 'e' ) {
-                $Key{Status} = 'expired';
-            }
-            elsif ( $Fields[1] eq 'r' ) {
-                $Key{Status} = 'revoked';
-            }
-            else {
-                $Key{Status} = 'good';
-            }
-
-            $Key{Bit}              = $Fields[2];
-            $Key{Key}              = substr( $Fields[4], -8, 8 );  # only use last 8 chars of key-ID
-                                                                   # in order to be compatible with
-                                                                   # previous parser
+            $Key{Bit}  = $Fields[2];
+            $Key{Key} = substr( $Fields[4], -8, 8 );    # only use last 8 chars of key-ID
+                                                        # in order to be compatible with
+                                                        # previous parser
             $Key{Created}          = $Fields[5];
-            $Key{Expires}          = $Fields[6] || 'never';
+            $Key{Expires}          = $Fields[6];
             $Key{Identifier}       = $Fields[9];
             $Key{IdentifierMaster} = $Fields[9];
         }
@@ -997,24 +490,19 @@ sub _ParseGPGKeyList {
 
         # add any additional info to the current key
         if ( $Type eq 'uid' ) {
-            if ( $Key{Identifier} ) {
-                $Key{Identifier} .= ', ' . $Fields[9];
-            }
-            else {
-                $Key{Identifier} .= $Fields[9];
-            }
+            $Key{Identifier} .= ', ' . $Fields[9];
         }
         elsif ( $Type eq 'ssb' ) {
-            $Key{Bit} = $Fields[2];
-
-            # only use last 8 chars of key-ID in order to be compatible with previous parser
-            $Key{Key} = substr( $Fields[4], -8, 8 );
+            $Key{Bit}     = $Fields[2];
+            $Key{Key}     = substr( $Fields[4], -8, 8 );    # only use last 8 chars of key-ID
+                                                            # in order to be compatible with
+                                                            # previous parser
             $Key{Created} = $Fields[5];
         }
         elsif ( $Type eq 'sub' ) {
-
-            # only use last 8 chars of key-ID in order to be compatible with previous parser
-            $Key{KeyPrivate} = substr( $Fields[4], -8, 8 );
+            $Key{KeyPrivate} = substr( $Fields[4], -8, 8 );     # only use last 8 chars of key-ID
+                                                                # in order to be compatible with
+                                                                # previous parser
         }
         elsif ( $Type eq 'fpr' ) {
             $Key{FingerprintShort} = $Fields[9];
@@ -1030,28 +518,192 @@ sub _ParseGPGKeyList {
                 $Key{Fingerprint} = "$1 $2 $3 $4 $5  $6 $7 $8 $9 $10";
             }
         }
-
-        # convert system time to timestamp
-        if ( $Key{Created} !~ /-/ ) {
-            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
-                = $Self->{TimeObject}->SystemTime2Date(
-                SystemTime => $Key{Created},
-                );
-            $Key{Created} = "$Year-$Month-$Day";
-        }
-
-        # expires
-        if ( $Key{Expires} =~ /^\d*$/ ) {
-            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
-                = $Self->{TimeObject}->SystemTime2Date(
-                SystemTime => $Key{Expires},
-                );
-            $Key{Expires} = "$Year-$Month-$Day";
-        }
     }
     push( @Result, {%Key} ) if (%Key);
 
     return @Result;
+}
+
+=item PublicKeyGet()
+
+returns public key in ascii
+
+    my $Key = $CryptObject->PublicKeyGet(
+        Key => $KeyID,
+    );
+
+=cut
+
+sub PublicKeyGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Key = quotemeta( $Param{Key} || '' );
+    my $KeyString = qx{$Self->{GPGBin} --export --armor $Key 2>&1};
+
+    if ( $KeyString =~ /nothing exported/i ) {
+        $KeyString =~ s/\n//g;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't export key: $KeyString!",
+        );
+        return;
+    }
+
+    return $KeyString;
+}
+
+=item SecretKeyGet()
+
+returns secret key in ascii
+
+    my $Key = $CryptObject->SecretKeyGet(
+        Key => $KeyID,
+    );
+
+=cut
+
+sub SecretKeyGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Key = quotemeta( $Param{Key} || '' );
+    my $KeyString = qx{$Self->{GPGBin} --export-secret-keys --armor $Key 2>&1};
+
+    if ( $KeyString =~ /nothing exported/i ) {
+        $KeyString =~ s/\n//g;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't export key: $KeyString!",
+        );
+        return;
+    }
+
+    return $KeyString;
+}
+
+=item PublicKeyDelete()
+
+remove public key from key ring
+
+    $CryptObject->PublicKeyDelete(
+        Key => $KeyID,
+    );
+
+=cut
+
+sub PublicKeyDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Key} ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Need Key!",
+        );
+        return;
+    }
+
+    my $Key = quotemeta( $Param{Key} || '' );
+    my $LogMessage = qx{$Self->{GPGBin} --delete-key $Key 2>&1};
+
+    if ($LogMessage) {
+        $LogMessage =~ s/\n//g;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't delete key: $LogMessage!",
+        );
+        return;
+    }
+
+    return 1;
+}
+
+=item SecretKeyDelete()
+
+remove secret key from key ring
+
+    $CryptObject->SecretKeyDelete(
+        Key => $KeyID,
+    );
+
+=cut
+
+sub SecretKeyDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Key} ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Need Key!",
+        );
+        return;
+    }
+
+    my @Keys = $Self->PrivateKeySearch( Search => $Param{Key} );
+    if ( @Keys > 1 ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't delete key, multiple key for $Param{Key}!",
+        );
+        return;
+    }
+    if ( !$Keys[0]->{FingerprintShort} ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't delete key, found no fingerprint for $Param{Key}!",
+        );
+        return;
+    }
+    my $GPGOptions = '--delete-secret-key ' . quotemeta( $Keys[0]->{FingerprintShort} );
+    my $LogMessage = qx{$Self->{GPGBin} $GPGOptions 2>&1};
+
+    if ($LogMessage) {
+        $LogMessage =~ s/\n//g;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't delete private key: $LogMessage!",
+        );
+        return;
+    }
+
+    return 1;
+}
+
+=item KeyAdd()
+
+add key to key ring
+
+    my $Message = $CryptObject->KeyAdd(
+        Key => $KeyString,
+    );
+
+=cut
+
+sub KeyAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Key} ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Need Key!",
+        );
+        return;
+    }
+    my ( $FH, $Filename ) = $Self->{FileTempObject}->TempFile();
+    print $FH $Param{Key};
+    close $FH;
+    my $GPGOptions = "--import $Filename";
+    my $LogMessage = qx{$Self->{GPGBin} $GPGOptions 2>&1};
+    if ( $LogMessage =~ /failed/i ) {
+        $LogMessage =~ s/\n//g;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't add key: $LogMessage!",
+        );
+        return;
+    }
+    return $LogMessage;
 }
 
 sub _CryptedWithKey {
@@ -1090,22 +742,20 @@ sub _CryptedWithKey {
 
 1;
 
-=end Internal:
-
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.51 $ $Date: 2011/01/25 23:26:10 $
+$Revision: 1.26.2.1 $ $Date: 2009/05/27 13:06:53 $
 
 =cut
