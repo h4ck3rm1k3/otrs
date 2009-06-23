@@ -2,11 +2,11 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.17 2009/01/19 08:59:42 sr Exp $
+# $Id: AdminSupport.dtl,v 1.18 2009/06/23 05:55:11 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
 <!-- start form -->
@@ -19,7 +19,7 @@
 <!--
 function submit_compose() {
     if (document.compose.Sender.value == "") {
-        alert('$JSText{"Can't create support package, cause you work currently with the system user root@localhost and your admin email is already not configured. Please change the admin email setting in the SysConfig Modul and don't use the user root@localhost for working with OTRS.'"}');
+        alert('$JSText{"Can't create support package, cause you work currently with the system user root@localhost and your admin email is not yet configured. Please change the admin email setting in the SysConfig module and don't use the user root@localhost for working with OTRS."}');
         document.compose.Sender.focus();
         return false;
     }
@@ -83,7 +83,7 @@ function submit_confidential() {
         <input type="hidden" name="Subaction" value="BenchmarkSQL"/>
         <table width="100%" cellspacing="0" cellpadding="4">
           <tr>
-            <td class="contenthead">$Text{"SQL Benmark"}:</td>
+            <td class="contenthead">$Text{"SQL Benchmark"}:</td>
           </tr>
           <tr>
             <td class="contentbody">
