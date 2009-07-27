@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Log.pm - log wapper
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Log.pm,v 1.65 2011/08/15 13:43:12 mb Exp $
+# $Id: Log.pm,v 1.48.2.1 2009/07/27 12:21:42 tr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Encode;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.65 $) [1];
+$VERSION = qw($Revision: 1.48.2.1 $) [1];
 
 =head1 NAME
 
@@ -38,16 +38,11 @@ All log functions.
 create a log object
 
     use Kernel::Config;
-    use Kernel::System::Encode;
     use Kernel::System::Log;
 
     my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
     my $LogObject    = Kernel::System::Log->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
         LogPrefix    => 'InstallScriptX',  # not required, but highly recommend
     );
 
@@ -68,9 +63,8 @@ sub new {
     # get system id
     my $SystemID = $Param{ConfigObject}->Get('SystemID');
 
-    # get or create encode object
-    $Self->{EncodeObject} = $Param{EncodeObject};
-    $Self->{EncodeObject} ||= Kernel::System::Encode->new(%Param);
+    # create encode object
+    $Self->{EncodeObject} = Kernel::System::Encode->new(%Param);
 
     # check log prefix
     $Self->{LogPrefix} = $Param{LogPrefix} || '?LogPrefix?';
@@ -83,24 +77,21 @@ sub new {
     }
 
     # create backend handle
-    $Self->{Backend} = $GenericModule->new(
-        %Param,
-        EncodeObject => $Self->{EncodeObject},
-    );
+    $Self->{Backend} = $GenericModule->new(%Param);
 
     return $Self if !eval "require IPC::SysV";
 
     # create the IPC options
     $Self->{IPC}     = 1;
     $Self->{IPCKey}  = '444423' . $SystemID;
-    $Self->{IPCSize} = $Param{ConfigObject}->Get('LogSystemCacheSize') || 32 * 1024;
+    $Self->{IPCSize} = $Param{ConfigObject}->Get('LogSystemCacheSize') || 4 * 1024;
 
-    # init session data mem
-    if ( !eval { $Self->{Key} = shmget( $Self->{IPCKey}, $Self->{IPCSize}, oct(1777) ) } ) {
-        $Self->{Key} = shmget( $Self->{IPCKey}, 1, oct(1777) );
-        $Self->CleanUp();
-        $Self->{Key} = shmget( $Self->{IPCKey}, $Self->{IPCSize}, oct(1777) );
-    }
+    # init session data mem (at first a dummy for RH8 workaround)
+    my $DummyIPCKey = '444424' . $SystemID;
+    shmget( $DummyIPCKey, 1, oct(1777) );
+
+    # init session data mem (the real one)
+    $Self->{Key} = shmget( $Self->{IPCKey}, $Self->{IPCSize}, oct(1777) ) || die $!;
 
     return $Self;
 }
@@ -157,11 +148,10 @@ sub Log {
 
             # print line if upper caller module exists
             if ($Line1) {
-                my $VersionString;
-                eval { $VersionString = 'v' . ($Package1->VERSION || "UNKNOWN VERSION") };
-                if ( !$VersionString || $VersionString eq 'v' ) {
-                    $VersionString = 'unknown version';
-                }
+                my $VersionString
+                    = defined $Package1->VERSION
+                    ? 'v' . $Package1->VERSION
+                    : 'unknown version';
                 $Error .= "   Module: $Subroutine2 ($VersionString) Line: $Line1\n";
             }
 
@@ -179,12 +169,12 @@ sub Log {
     }
 
     # remember to info and notice messages
-    elsif ( lc $Priority eq 'info' || lc $Priority eq 'notice' ) {
+    elsif ( $Priority =~ /^(info|notice)/i ) {
         $Self->{ lc($Priority) }->{Message} = $Message;
     }
 
     # write shm cache log
-    if ( lc $Priority ne 'debug' && $Self->{IPC} ) {
+    if ( $Priority !~ /^debug/i && $Self->{IPC} ) {
         $Priority = lc($Priority);
         my $Data   = localtime() . ";;$Priority;;$Self->{LogPrefix};;$Message\n";
         my $String = $Self->GetLog();
@@ -228,7 +218,7 @@ sub GetLog {
     }
 
     # encode the string
-    $Self->{EncodeObject}->EncodeInput( \$String );
+    $Self->{EncodeObject}->Encode( \$String );
 
     return $String;
 }
@@ -300,14 +290,14 @@ sub Dumper {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.65 $ $Date: 2011/08/15 13:43:12 $
+$Revision: 1.48.2.1 $ $Date: 2009/07/27 12:21:42 $
 
 =cut
