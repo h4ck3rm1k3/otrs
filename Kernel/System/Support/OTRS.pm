@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.18 2009/04/02 08:22:06 tr Exp $
+# $Id: OTRS.pm,v 1.19 2009/07/30 23:11:23 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,7 +20,7 @@ use Kernel::System::Ticket;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.18 $) [1];
+$VERSION = qw($Revision: 1.19 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -49,7 +49,8 @@ sub AdminChecksGet {
     my @ModuleList = (
         '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketFulltextIndexModuleCheck',
         '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
-        '_FileSystemCheck', '_PackageDeployCheck', '_InvalidUserLockedTicketSearch'
+        '_FileSystemCheck', '_PackageDeployCheck', '_InvalidUserLockedTicketSearch',
+        '_ConfigCheckTicketFrontendResponseFormat',
     );
 
     my @DataArray;
@@ -300,6 +301,31 @@ sub _SystemIDConfigCheck {
     }
     else {
         $Data->{Comment} = "The SystemID '$SystemID' must consist of digits exclusively.";
+    }
+    return $Data;
+}
+
+# Check if Ticket::Frontend::ResponseFormat is valid
+sub _ConfigCheckTicketFrontendResponseFormat {
+    my ( $Self, %Param ) = @_;
+
+    my $Data = {
+        Name        => 'ResponseFormatCheck',
+        Description => 'Check if Ticket::Frontend::ResponseFormat contains no $Data{""}.',
+        Check       => 'Failed',
+        Comment     => '',
+    };
+
+    # Get the config
+    my $Config = $Self->{ConfigObject}->Get('Ticket::Frontend::ResponseFormat');
+
+    # Does the SystemID contain non-digits?
+    if ( $Config !~ /\$Data{"/ ) {
+        $Data->{Check}   = 'OK';
+        $Data->{Comment} = " No \$Data{\"\"} found."
+    }
+    else {
+        $Data->{Comment} = "Config option Ticket::Frontend::ResponseFormat cointains \$Data{\"\"}, use \$QData{\"\"} instand (seed default setting).";
     }
     return $Data;
 }
