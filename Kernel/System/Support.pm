@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.28 2009/04/17 14:23:30 tr Exp $
+# $Id: Support.pm,v 1.29 2009/08/01 11:45:08 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.28 $) [1];
+$VERSION = qw($Revision: 1.29 $) [1];
 
 =head1 NAME
 
@@ -459,33 +459,56 @@ sub DirectoryFiles {
         }
     }
 
+    # article directory
+    my $ArticleDir = $Self->{ConfigObject}->Get('ArticleDir');
+
+    # cleanup file name
+    $ArticleDir =~ s/\/\//\//g;
+
+    # temp directory
+    my $TempDir = $Self->{ConfigObject}->Get('TempDir');
+
+    # cleanup file name
+    $TempDir =~ s/\/\//\//g;
+
+    # check all $Param{Directory}/* in home directory
     my @Files = ();
     my @List = glob("$Param{Directory}/*");
-    my $Home = $Self->{ConfigObject}->Get('Home');
-
     for my $File (@List) {
+
+        # cleanup file name
+        $File =~ s/\/\//\//g;
+
+        # check if directory
         if (-d $File ) {
-            if ( $File =~ /\/CVS/ ) {
-                next;
-            }
+
+            # do not include CVS directories
+            next if $File =~ /\/CVS/;
+
+            # do not include article in file system
+            next if $File =~ /\Q$ArticleDir\E/i;
+
+            # do not include tmp in file system
+            next if $File =~ /\Q$TempDir\E/i;
+
+            # add directory to list
             push @Files, $Self->DirectoryFiles( Directory => $File );
         }
         else {
-            if ( $File =~ /^\./ ) {
-                next;
-            }
-            if ( $File =~ /#/ ) {
-                next;
-            }
-            if ( $File =~ /\/(var\/article|var\/tmp)/ ) {
-                next;
-            }
-            if ( -s $File > (1024*1024*0.5) ) {
-                next;
-            }
-            if (! -r $File ) {
-                next;
-            }
+
+            # do not include hidden files
+            next if $File =~ /^\./;
+
+            # do not include files with # in file name
+            next if $File =~ /#/;
+
+            # do not include if file is bigger the 0.5 MB
+            next if ( -s $File > (1024*1024*0.5) );
+
+            # do not include if file is not readable
+            next if ! -r $File;
+
+            # add file to list
             push @Files, $File;
         }
     }
@@ -915,6 +938,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.28 $ $Date: 2009/04/17 14:23:30 $
+$Revision: 1.29 $ $Date: 2009/08/01 11:45:08 $
 
 =cut
