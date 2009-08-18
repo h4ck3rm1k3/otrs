@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.30 2009/08/18 09:02:24 mb Exp $
+# $Id: Support.pm,v 1.31 2009/08/18 09:57:30 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.30 $) [1];
+$VERSION = qw($Revision: 1.31 $) [1];
 
 =head1 NAME
 
@@ -797,7 +797,7 @@ sub Benchmark {
     else {
         $Param{InsertMood} = ':-(';
         my $ShouldTake  = int( $Mode * 5 );
-        $Param{InsertComment} = '$Text{"Should not take more then %s on an average system.", "' . $ShouldTake . 's"}',
+        $Param{InsertComment} = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
     }
 
     my $UpdateTime = ($Param{UpdateTime}/$Mode)*(10000/$Update);
@@ -812,7 +812,7 @@ sub Benchmark {
     else {
         $Param{UpdateMood} = ':-(';
         my $ShouldTake  = int( $Mode * 9 );
-        $Param{UpdateComment} = '$Text{"Should not take more then %s on an average system.", "' . $ShouldTake . 's"}',
+        $Param{UpdateComment} = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
     }
 
     my $SelectTime = ($Param{SelectTime}/$Mode)*(10000/$Select);
@@ -827,7 +827,7 @@ sub Benchmark {
     else {
         $Param{SelectMood} = ':-(';
         my $ShouldTake  = int( $Mode * 6 );
-        $Param{SelectComment} = '$Text{"Should not take more then %s on an average system.", "' . $ShouldTake . 's"}',
+        $Param{SelectComment} = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
     }
 
     my $DeleteTime = ($Param{DeleteTime}/$Mode);
@@ -842,7 +842,7 @@ sub Benchmark {
     else {
         $Param{DeleteMood} = ':-(';
         my $ShouldTake  = int( $Mode * 5 );
-        $Param{DeleteComment} = '$Text{"Should not take more then %s on an average system.", "' . $ShouldTake . 's"}',
+        $Param{DeleteComment} = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
     }
 
     return %Param;
@@ -938,6 +938,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.30 $ $Date: 2009/08/18 09:02:24 $
+$Revision: 1.31 $ $Date: 2009/08/18 09:57:30 $
 
 =cut
