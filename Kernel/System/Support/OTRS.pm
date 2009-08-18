@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.19 2009/07/30 23:11:23 martin Exp $
+# $Id: OTRS.pm,v 1.20 2009/08/18 09:07:13 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,7 +20,7 @@ use Kernel::System::Ticket;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.19 $) [1];
+$VERSION = qw($Revision: 1.20 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -188,7 +188,7 @@ sub _TicketFulltextIndexModuleCheck {
         }
         else {
             $Check   = 'OK';
-            $Message = "You are using \"$Module\", that's fine for $Row[0] article in your system.";
+            $Message = "You are using \"$Module\", that's fine for $Row[0] articles in your system.";
         }
     }
     $Data = {
@@ -263,7 +263,7 @@ sub _FQDNConfigCheck {
     # Do we have set our FQDN?
     if ( $FQDN eq 'yourhost.example.com' ) {
         $Data->{Check}   = 'Failed';
-        $Data->{Comment} = "Please configure your FQDN inside the SysConfig module. (currently is the default setting '$FQDN' enabled).";
+        $Data->{Comment} = "Please configure your FQDN inside the SysConfig module. (currently the default setting '$FQDN' is enabled).";
     }
 
     # FQDN syntax check.
@@ -449,7 +449,7 @@ sub _InvalidUserLockedTicketSearch {
     }
 
     my $UserString = join ', ', values %LockedTicketUser;
-    $Data->{Comment} = "This invalid users have locked tickets: $UserString",
+    $Data->{Comment} = "These invalid users have locked tickets: $UserString",
     $Data->{Check}   = 'Critical';
 
     return $Data;
