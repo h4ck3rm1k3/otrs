@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Database.pm,v 1.10 2009/04/17 14:17:07 tr Exp $
+# $Id: Database.pm,v 1.11 2009/08/26 22:45:42 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.11 $) [1];
 
 =head1 NAME
 
@@ -135,10 +135,10 @@ sub AdminChecksGet {
     # try to find out which ticket database is configured
     my $DatabaseType = $Self->{DBObject}->{'DB::Type'};
 
-    # try to get availible modules and the directory name
+    # try to get available modules and the directory name
     my $DirName = $Self->{ConfigObject}->Get('Home') . "/Kernel/System/Support/Database";
 
-    # read all availible modules in @List
+    # read all available modules in @List
     my @List = glob( $DirName . "/*.pm" );
     for my $File (@List) {
 
@@ -181,7 +181,7 @@ $CheckHash =>
                 Check => 'OK',
             };
 
-# check if config value availible
+# check if config value is available
 if ($Param{Type}) {
     print STDERR "TYPE: " . $Param{Type};
 }
@@ -227,6 +227,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.10 $ $Date: 2009/04/17 14:17:07 $
+$Revision: 1.11 $ $Date: 2009/08/26 22:45:42 $
 
 =cut

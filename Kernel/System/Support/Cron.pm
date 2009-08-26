@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Support/Cron.pm - all required system information
-# Copyright (C) 2001-2008 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Cron.pm,v 1.3 2008/07/13 23:25:41 martin Exp $
+# $Id: Cron.pm,v 1.4 2009/08/26 22:45:42 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
 package Kernel::System::Support::Cron;
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.3 $';
+$VERSION = '$Revision: 1.4 $';
 
 =head1 NAME
 
@@ -120,7 +120,7 @@ $CheckHash =>
                 Check => 'OK',
             };
 
-# check if config value availible
+# check if config value is available
 if ($Param{Type}) {
     print STDERR "TYPE: " . $Param{Type};
 }
