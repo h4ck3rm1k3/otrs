@@ -2,11 +2,11 @@
 # Kernel/System/Support/Webserver/Apache.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Apache.pm,v 1.10 2009/01/15 00:40:11 sr Exp $
+# $Id: Apache.pm,v 1.11 2009/08/26 22:11:50 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
 package Kernel::System::Support::Webserver::Apache;
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.11 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -76,7 +76,8 @@ sub _ApacheDBICheck {
     }
     if ( !$ApacheDBI ) {
         $Check = 'Critical';
-        $Message = 'Apache::DBI should be used to get a better performance (pre establish database connections).';
+        $Message
+            = 'Apache::DBI should be used to get a better performance (pre establish database connections).';
     }
     else {
         $Check   = 'OK';
@@ -84,7 +85,7 @@ sub _ApacheDBICheck {
     }
     $Data = {
         Name        => 'Apache::DBI',
-        Description => 'Check if the system use Apache::DBI.',
+        Description => 'Check if the system uses Apache::DBI.',
         Comment     => $Message,
         Check       => $Check,
     };
@@ -115,7 +116,8 @@ sub _ApacheReloadCheck {
                 }
                 if ( !$ApacheReload ) {
                     $Check = 'Critical';
-                    $Message = 'Apache::Reload or Apache2::Reload should be used as PerlModule and PerlInitHandler.';
+                    $Message
+                        = 'Apache::Reload or Apache2::Reload should be used as PerlModule and PerlInitHandler.';
                 }
                 else {
                     $Check   = 'OK';
@@ -130,7 +132,7 @@ sub _ApacheReloadCheck {
     }
     $Data = {
         Name        => 'Apache::Reload',
-        Description => 'Check if the system use Apache::Reload/Apache2::Reload.',
+        Description => 'Check if the system uses Apache::Reload/Apache2::Reload.',
         Comment     => $Message,
         Check       => $Check,
     };
@@ -148,7 +150,8 @@ sub _ModPerlVersionCheck {
     if ( $ENV{MOD_PERL} ) {
         if ( $ENV{MOD_PERL} =~ /\/1.99/ ) {
             $Check = 'Critical';
-            $Message = "You use a beta version of mod_perl ($ENV{MOD_PERL}), you should upgrade to a stable version.";
+            $Message
+                = "You use a beta version of mod_perl ($ENV{MOD_PERL}), you should upgrade to a stable version.";
         }
         elsif ( $ENV{MOD_PERL} =~ /\/1/ ) {
             $Check   = 'Critical';

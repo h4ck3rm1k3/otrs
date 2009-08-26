@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.20 2009/04/17 14:17:07 tr Exp $
+# $Id: mysql.pm,v 1.21 2009/08/26 22:11:49 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.20 $) [1];
+$VERSION = qw($Revision: 1.21 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -128,7 +128,7 @@ sub _UTF8SupportCheck {
 
         # find the version number
         if ( $Row[1] =~ /^(4\.(1|2|3|4|5)|5\.|6\.|7\.)/ ) {
-            $Data->{Comment} = 'Your database version support utf8.';
+            $Data->{Comment} = 'Your database version supports utf8.';
             $Data->{Check}   = 'OK';
 
             next;
@@ -147,6 +147,7 @@ sub _UTF8ClientCheck {
 
     my $Check   = 'Failed';
     my $Message = 'No character_set_client setting found.';
+
     # utf-8 client check
     if ( $Self->{ConfigObject}->Get('DefaultCharset') !~ /utf(\-8|8)/i ) {
         return;
@@ -165,12 +166,12 @@ sub _UTF8ClientCheck {
 
             next;
         }
-        $Message = "Found character_set_client, but it's set to $Row[1] (need to be utf8).";
+        $Message = "Found character_set_client, but it's set to $Row[1] (needs to be utf8).";
     }
 
     $Data = {
         Name        => 'Client Connection (utf8)',
-        Description => 'Check if the client use utf8 for the connection.',
+        Description => 'Check if the client uses utf8 for the connection.',
         Check       => $Check,
         Comment     => $Message,
     };
@@ -190,7 +191,8 @@ sub _UTF8DatabaseCheck {
     $Self->{DBObject}->Prepare( SQL => 'show variables' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         if ( $Row[0] =~ /^character_set_database/i ) {
-            $Message = "Character_set_database setting found, but it's set to $Row[1] (need to be utf8).";
+            $Message
+                = "Character_set_database setting found, but it's set to $Row[1] (needs to be utf8).";
             if ( $Row[1] =~ /utf8/ ) {
                 $Check   = 'OK';
                 $Message = "Your database character setting is $Row[1].";
@@ -200,7 +202,7 @@ sub _UTF8DatabaseCheck {
 
     my $Data = {
         Name        => 'Database Character (utf8)',
-        Description => 'Check if the database use utf8 as charset.',
+        Description => 'Check if the database uses utf8 as charset.',
         Comment     => $Message,
         Check       => $Check,
     };
@@ -219,7 +221,7 @@ sub _UTF8TableCheck {
         $Self->{DBObject}->Prepare( SQL => 'show table status' );
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
             if ( $Row[14] !~ /^utf8/i ) {
-                if ( $Message ) {
+                if ($Message) {
                     $Message .= ', ';
                 }
                 $Message .= "$Row[0]\[$Row[14]\]";
@@ -290,12 +292,14 @@ sub _QueryCacheSizeCheck {
         if ( $Row[0] =~ /^query_cache_size/i ) {
             if ( !$Row[1] ) {
                 $Check = 'Critical';
-                $Message = 'The setting "query_cache_size" should be used, you will get improvements up to 30 % of speed.';
+                $Message
+                    = 'The setting "query_cache_size" should be used, you will get improvements up to 30 % of speed.';
             }
             elsif ( $Row[1] < 1024 * 1024 * 10 ) {
-                $Row[1]  = int( $Row[1] / 1024 / 1024 );
-                $Check   = 'Critical';
-                $Message = "The setting \"query_cache_size\" should be higher then 10 MB (it's $Row[1] MB).";
+                $Row[1] = int( $Row[1] / 1024 / 1024 );
+                $Check = 'Critical';
+                $Message
+                    = "The setting \"query_cache_size\" should be higher than 10 MB (it's $Row[1] MB).";
             }
             else {
                 $Row[1]  = int( $Row[1] / 1024 / 1024 );
@@ -340,12 +344,15 @@ sub _TableCheck {
                     # use 'CHECK TABLE'-statement to determine state of each table
                     # (which may yield several lines per table, the last of which will
                     # contain the overall state of that table)
-                    # Do quick checks on tables, other way it tags over 420 sek
+                    # Do quick checks on tables, other way it takes over 420 sec
                     # or longer to check it.
-                    if ( $Self->{DBObject}->Prepare( SQL => "CHECK TABLE $Table->{Name} FAST QUICK" ) ) {
+                    if (
+                        $Self->{DBObject}->Prepare( SQL => "CHECK TABLE $Table->{Name} FAST QUICK" )
+                        )
+                    {
                         my $Status;
                         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-                            $Status = $Row[3]; # look at field 'Msg_text'
+                            $Status = $Row[3];    # look at field 'Msg_text'
                         }
                         next if $Status =~ /^(OK|Table\sis\salready\sup\sto\sdate)/i;
                         push @Problems, "$Table->{Name}\[$Status\]";
