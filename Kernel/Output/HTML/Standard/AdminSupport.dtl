@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.18 2009/06/23 05:55:11 tr Exp $
+# $Id: AdminSupport.dtl,v 1.19 2009/08/26 22:21:04 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -308,7 +308,7 @@ Your trust is very important to us. We are willing to inform you about the proce
                   <td class="contentvalue"><input type="Text" name="Street" value="" size="40"></td>
                 </tr>
                 <tr>
-                  <td class="contentkey" width="150">$Text{"Post code"}:</td>
+                  <td class="contentkey" width="150">$Text{"Zip"}:</td>
                   <td class="contentvalue"><input type="Text" name="Postcode" value="" size="40"></td>
                 </tr>
                 <tr>
