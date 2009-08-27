@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.20 2009/04/17 14:17:07 tr Exp $
+# $Id: AdminSupport.pm,v 1.21 2009/08/27 19:45:11 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.20 $) [1];
+$VERSION = qw($Revision: 1.21 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -27,7 +27,10 @@ sub new {
     bless( $Self, $Type );
 
     # check needed Objects
-    for (qw(ParamObject LayoutObject LogObject ConfigObject TimeObject MainObject DBObject EncodeObject)) {
+    for (
+        qw(ParamObject LayoutObject LogObject ConfigObject TimeObject MainObject DBObject EncodeObject)
+        )
+    {
         if ( !$Self->{$_} ) {
             $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
         }
@@ -56,14 +59,19 @@ sub Run {
     );
     my $SenderAdress = "";
 
-    if ($Self->{ConfigObject}->Get('Support::SenderEmail')) {
+    if ( $Self->{ConfigObject}->Get('Support::SenderEmail') ) {
         $SenderAdress = $Self->{ConfigObject}->Get('Support::SenderEmail');
     }
-    elsif ($User{UserEmail} && $User{UserEmail} !~ /root\@localhost/ ) {
+    elsif ( $User{UserEmail} && $User{UserEmail} !~ /root\@localhost/ ) {
         $SenderAdress = $User{UserEmail};
     }
-    elsif ($Self->{ConfigObject}->Get('AdminEmail') && $Self->{ConfigObject}->Get('AdminEmail') !~ /root\@localhost/
-        && $Self->{ConfigObject}->Get('AdminEmail') !~ /admin\@example.com/ ) {
+    elsif (
+        $Self->{ConfigObject}->Get('AdminEmail')
+        && $Self->{ConfigObject}->Get('AdminEmail')
+        !~ /root\@localhost/
+        && $Self->{ConfigObject}->Get('AdminEmail') !~ /admin\@example.com/
+        )
+    {
         $SenderAdress = $Self->{ConfigObject}->Get('AdminEmail');
     }
 
@@ -82,7 +90,7 @@ sub Run {
             Data => {},
         );
 
-        if ($User{UserLanguage} && $User{UserLanguage} =~ /de/) {
+        if ( $User{UserLanguage} && $User{UserLanguage} =~ /de/ ) {
             $Self->{LayoutObject}->Block(
                 Name => 'ConfidentialContentDE',
                 Data => {},
@@ -116,9 +124,9 @@ sub Run {
         $Self->{LayoutObject}->Block(
             Name => 'SenderInformation',
             Data => {
-                SenderAdress => $SenderAdress,
+                SenderAdress     => $SenderAdress,
                 SenderSalutation => $User{UserSalutation},
-                SenderName => $User{UserFirstname}.' '.$User{UserLastname},
+                SenderName       => $User{UserFirstname} . ' ' . $User{UserLastname},
             },
         );
 
@@ -138,9 +146,9 @@ sub Run {
 
         # get params
         my %CustomerInfo;
-        for my $Key (qw(Sender Company Salutation Name Street Postcode City Phone SendInfo BugzillaID) ) {
+        for my $Key (qw(Sender Company Salutation Name Street Zip City Phone SendInfo BugzillaID)) {
             $CustomerInfo{$Key} = $Self->{ParamObject}->GetParam( Param => $Key );
-        };
+        }
 
         # if the button send becomes the submit
         if ( $Self->{ParamObject}->GetParam( Param => 'Send' ) ) {
@@ -152,16 +160,16 @@ sub Run {
             $Self->{LayoutObject}->Block(
                 Name => 'SenderInformation',
                 Data => {
-                    SenderAdress => $SenderAdress,
+                    SenderAdress     => $SenderAdress,
                     SenderSalutation => $User{UserSalutation},
-                    SenderName => $User{UserFirstname}.' '.$User{UserLastname},
+                    SenderName       => $User{UserFirstname} . ' ' . $User{UserLastname},
                 },
             );
 
             my $SendMessage = $Self->{SupportObject}->SendInfo(
                 CustomerInfo => \%CustomerInfo,
             );
-            if ( $SendMessage ) {
+            if ($SendMessage) {
                 $Output .= $Self->{LayoutObject}->Notify(
                     Priority => 'warning',
                     Info     => "Sent to ((otrs))!",
@@ -189,31 +197,32 @@ sub Run {
 
         # if the button download becomes the submit
         else {
-            my ($Content, $Filename) = $Self->{SupportObject}->Download(
+            my ( $Content, $Filename ) = $Self->{SupportObject}->Download(
                 %CustomerInfo,
             );
 
             # return file
             return $Self->{LayoutObject}->Attachment(
                 ContentType => 'application/octet-stream',
-                Content     => ${ $Content },
+                Content     => ${$Content},
                 Filename    => $Filename,
                 Type        => 'attached',
             );
         }
     }
+
     # ------------------------------------------------------------ #
     # SQL bench
     # ------------------------------------------------------------ #
 
     elsif ( $Self->{Subaction} eq 'BenchmarkSQL' ) {
 
-        my $Insert = $Self->{ParamObject}->GetParam(Param => 'Insert') || 10000;
-        my $Update = $Self->{ParamObject}->GetParam(Param => 'Update') || 10000;
-        my $Select = $Self->{ParamObject}->GetParam(Param => 'Select') || 10000;
-        my $Mode   = $Self->{ParamObject}->GetParam(Param => 'Mode');
+        my $Insert = $Self->{ParamObject}->GetParam( Param => 'Insert' ) || 10000;
+        my $Update = $Self->{ParamObject}->GetParam( Param => 'Update' ) || 10000;
+        my $Select = $Self->{ParamObject}->GetParam( Param => 'Select' ) || 10000;
+        my $Mode   = $Self->{ParamObject}->GetParam( Param => 'Mode' );
 
-        my %BenchTest = $Self->{SupportObject}->Benchmark (
+        my %BenchTest = $Self->{SupportObject}->Benchmark(
 
             Insert => $Insert,
             Update => $Update,
@@ -233,7 +242,7 @@ sub Run {
             Data => {
                 Key     => 'Insert Time',
                 Time    => "$BenchTest{InsertTime} s $BenchTest{InsertMood}",
-                Value   => ($Insert*$Mode),
+                Value   => ( $Insert * $Mode ),
                 Comment => $BenchTest{InsertComment} || '',
             },
         );
@@ -243,7 +252,7 @@ sub Run {
             Data => {
                 Key     => 'Update Time',
                 Time    => "$BenchTest{UpdateTime} s $BenchTest{UpdateMood}",
-                Value   => ($Update*$Mode),
+                Value   => ( $Update * $Mode ),
                 Comment => $BenchTest{UpdateComment} || '',
             },
         );
@@ -253,7 +262,7 @@ sub Run {
             Data => {
                 Key     => 'Select Time',
                 Time    => "$BenchTest{SelectTime} s $BenchTest{SelectMood}",
-                Value   => ($Select*$Mode),
+                Value   => ( $Select * $Mode ),
                 Comment => $BenchTest{SelectComment} || '',
             },
         );
@@ -263,7 +272,7 @@ sub Run {
             Data => {
                 Key     => 'Delete Time',
                 Time    => "$BenchTest{DeleteTime} s $BenchTest{DeleteMood}",
-                Value   => ($Insert*$Mode),
+                Value   => ( $Insert * $Mode ),
                 Comment => $BenchTest{DeleteComment} || '',
             },
         );
@@ -283,6 +292,7 @@ sub Run {
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
+
     # ------------------------------------------------------------ #
     # overview
     # ------------------------------------------------------------ #

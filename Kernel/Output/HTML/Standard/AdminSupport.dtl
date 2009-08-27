@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.19 2009/08/26 22:21:04 mb Exp $
+# $Id: AdminSupport.dtl,v 1.20 2009/08/27 19:45:11 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -19,7 +19,7 @@
 <!--
 function submit_compose() {
     if (document.compose.Sender.value == "") {
-        alert('$JSText{"Can't create support package, cause you work currently with the system user root@localhost and your admin email is not yet configured. Please change the admin email setting in the SysConfig module and don't use the user root@localhost for working with OTRS."}');
+        alert('$JSText{"Can't create support package, because you work currently with the system user root@localhost and your admin email address is not yet configured. Please define the admin email setting in the SysConfig module and don't use the user root@localhost for working with OTRS."}');
         document.compose.Sender.focus();
         return false;
     }
@@ -65,7 +65,7 @@ function submit_confidential() {
           </tr>
           <tr>
             <td class="contentbody">
-              $Text{"For quick help please submit your system info and create a support ticket at the vendor's site."}
+              $Text{"For quick help please submit your system information and create a support ticket at the vendor's site."}
               <br/>
               $Text{"For more info please check"} <a href="http://otrs.com/" target="_blank">http://otrs.com/</a>
             </td>
@@ -309,7 +309,7 @@ Your trust is very important to us. We are willing to inform you about the proce
                 </tr>
                 <tr>
                   <td class="contentkey" width="150">$Text{"Zip"}:</td>
-                  <td class="contentvalue"><input type="Text" name="Postcode" value="" size="40"></td>
+                  <td class="contentvalue"><input type="Text" name="Zip" value="" size="40"></td>
                 </tr>
                 <tr>
                   <td class="contentkey" width="150">$Text{"City"}:</td>
