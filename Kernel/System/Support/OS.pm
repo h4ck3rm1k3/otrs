@@ -2,11 +2,11 @@
 # Kernel/System/Support/OS.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.11 2009/01/15 00:38:01 sr Exp $
+# $Id: OS.pm,v 1.12 2009/09/04 12:23:43 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
 package Kernel::System::Support::OS;
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = qw($Revision: 1.12 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -37,7 +37,7 @@ sub AdminChecksGet {
 
     # add new function name here
     my @ModuleList = (
-        '_CPULoadCheck', '_DiskUsageCheck', '_MemorySwapCheck',
+        '_CPULoadCheck',      '_DiskUsageCheck',  '_MemorySwapCheck',
         '_DistributionCheck', '_KernelInfoCheck', '_PerlCheck',
     );
 
@@ -92,7 +92,17 @@ sub _DistributionCheck {
             };
         }
     }
-    elsif ( $^O =~ /(win|freebsd)/i ) {
+    elsif ( $^O =~ /win/i ) {
+        require Win32;
+        my $WinVersion = Win32::GetOSName();
+        $ReturnHash = {
+            Name        => 'Distribution',
+            Description => "Shows the used distribution.",
+            Comment     => "$WinVersion is used.",
+            Check       => 'OK',
+        };
+    }
+    elsif ( $^O =~ /freebsd/i ) {
         $ReturnHash = {
             Name        => 'Distribution',
             Description => "Shows the used distribution.",
@@ -156,8 +166,9 @@ sub _PerlCheck {
             $ReturnHash = {
                 Name        => 'PerlCheck',
                 Description => "Check Perl version.",
-                Comment     => "Your Perl $Version ($OS) is to old, you should upgrade to Perl 5.8.8 or higher.",
-                Check       => 'Failed',
+                Comment =>
+                    "Your Perl $Version ($OS) is to old, you should upgrade to Perl 5.8.8 or higher.",
+                Check => 'Failed',
             };
 
         }
@@ -237,8 +248,10 @@ sub _MemorySwapCheck {
                     Check   => 'Critical',
                 };
             }
-            elsif (( ($SwapFree) / ($SwapTotal) < 60 )
-                || ( ($SwapTotal) - ($SwapFree) > 20000 ) )
+            elsif (
+                ( ($SwapFree) / ($SwapTotal) < 60 )
+                || ( ($SwapTotal) - ($SwapFree) > 20000 )
+                )
             {
                 $ReturnHash = {
                     Name        => 'Memory Swap Check',
