@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AgentCustomerSearch.pm - a module used for the autocomplete feature
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentCustomerSearch.pm,v 1.29 2011/12/12 16:23:14 jp Exp $
+# $Id: AgentCustomerSearch.pm,v 1.15.2.1 2009/09/21 16:19:38 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::CustomerUser;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.29 $) [1];
+$VERSION = qw($Revision: 1.15.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -51,8 +51,7 @@ sub Run {
     if ( !$Self->{Subaction} ) {
 
         # get needed params
-        my $Search = $Self->{ParamObject}->GetParam( Param => 'Term' ) || '';
-        my $MaxResults = int( $Self->{ParamObject}->GetParam( Param => 'MaxResults' ) || 20 );
+        my $Search = $Self->{ParamObject}->GetParam( Param => 'Search' ) || '';
 
         # workaround, all auto completion requests get posted by utf8 anyway
         # convert any to 8bit string if application is not running in utf8
@@ -71,26 +70,32 @@ sub Run {
 
         # build data
         my @Data;
-        my $MaxResultCount = $MaxResults;
-        CUSTOMERUSERID:
         for my $CustomerUserID (
             sort { $CustomerUserList{$a} cmp $CustomerUserList{$b} }
             keys %CustomerUserList
             )
         {
 
-            push @Data, {
-                CustomerKey   => $CustomerUserID,
-                CustomerValue => $CustomerUserList{$CustomerUserID},
-            };
+            # html quote characters like <>
+            my $CustomerValuePlain = $CustomerUserList{$CustomerUserID};
+            $CustomerUserList{$CustomerUserID} = $Self->{LayoutObject}->Ascii2Html(
+                Text => $CustomerUserList{$CustomerUserID},
+            );
 
-            $MaxResultCount--;
-            last CUSTOMERUSERID if $MaxResultCount <= 0;
+            push @Data, {
+                CustomerKey        => $CustomerUserID,
+                CustomerValue      => $CustomerUserList{$CustomerUserID},
+                CustomerValuePlain => $CustomerValuePlain,
+            };
         }
 
         # build JSON output
-        $JSON = $Self->{LayoutObject}->JSONEncode(
-            Data => \@Data,
+        $JSON = $Self->{LayoutObject}->JSON(
+            Data => {
+                Response => {
+                    Results => \@Data,
+                },
+            },
         );
     }
 
@@ -123,7 +128,7 @@ sub Run {
         }
 
         # build JSON output
-        $JSON = $Self->{LayoutObject}->JSONEncode(
+        $JSON = $Self->{LayoutObject}->JSON(
             Data => {
                 CustomerID              => $CustomerID,
                 CustomerTableHTMLString => $CustomerTableHTMLString,
@@ -138,58 +143,60 @@ sub Run {
         my $CustomerUserID = $Self->{ParamObject}->GetParam( Param => 'CustomerUserID' ) || '';
         my $CustomerID     = $Self->{ParamObject}->GetParam( Param => 'CustomerID' )     || '';
 
-        # get secondary customer ids
-        my @CustomerIDs = $Self->{CustomerUserObject}->CustomerIDs(
+        my $CustomerTicketsHTMLString = '';
+
+        # get customer data
+        my %CustomerData = $Self->{CustomerUserObject}->CustomerUserDataGet(
             User => $CustomerUserID,
         );
 
-        # add own customer id
-        if ($CustomerID) {
-            push @CustomerIDs, $CustomerID;
-        }
+        # show customer tickets
+        if ($CustomerUserID) {
 
-        my $View    = $Self->{ParamObject}->GetParam( Param => 'View' )    || '';
-        my $SortBy  = $Self->{ParamObject}->GetParam( Param => 'SortBy' )  || 'Age';
-        my $OrderBy = $Self->{ParamObject}->GetParam( Param => 'OrderBy' ) || 'Down';
+            # get secondary customer ids
+            my @CustomerIDs = $Self->{CustomerUserObject}->CustomerIDs(
+                User => $CustomerUserID,
+            );
 
-        my @ViewableTickets;
-        if (@CustomerIDs) {
-            my @CustomerIDsEscaped;
-            foreach my $CustomerID (@CustomerIDs) {
-                push @CustomerIDsEscaped,
-                    $Self->{DBObject}->QueryStringEscape( QueryString => $CustomerID );
+            # get own customer id
+            if ($CustomerID) {
+                push @CustomerIDs, $CustomerID;
             }
 
-            @ViewableTickets = $Self->{TicketObject}->TicketSearch(
-                Result     => 'ARRAY',
-                Limit      => 250,
-                SortBy     => [$SortBy],
-                OrderBy    => [$OrderBy],
-                CustomerID => \@CustomerIDsEscaped,
-                UserID     => $Self->{UserID},
-                Permission => 'ro',
-            );
-        }
+            my $View    = $Self->{ParamObject}->GetParam( Param => 'View' )    || '';
+            my $SortBy  = $Self->{ParamObject}->GetParam( Param => 'SortBy' )  || 'Age';
+            my $OrderBy = $Self->{ParamObject}->GetParam( Param => 'OrderBy' ) || 'Down';
 
-        my $LinkSort = 'Subaction=' . $Self->{Subaction}
-            . ';View=' . $Self->{LayoutObject}->Ascii2Html( Text => $View )
-            . ';CustomerUserID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerUserID )
-            . ';CustomerID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerID )
-            . '&';
-        my $LinkPage = 'Subaction=' . $Self->{Subaction}
-            . ';View=' . $Self->{LayoutObject}->Ascii2Html( Text => $View )
-            . ';SortBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $SortBy )
-            . ';OrderBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $OrderBy )
-            . ';CustomerUserID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerUserID )
-            . ';CustomerID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerID )
-            . '&';
-        my $LinkFilter = 'Subaction=' . $Self->{Subaction}
-            . ';CustomerUserID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerUserID )
-            . ';CustomerID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerID )
-            . '&';
+            my @ViewableTickets = ();
+            if (@CustomerIDs) {
+                @ViewableTickets = $Self->{TicketObject}->TicketSearch(
+                    Result     => 'ARRAY',
+                    Limit      => 250,
+                    SortBy     => [$SortBy],
+                    OrderBy    => [$OrderBy],
+                    CustomerID => \@CustomerIDs,
+                    UserID     => $Self->{UserID},
+                    Permission => 'ro',
+                );
+            }
 
-        my $CustomerTicketsHTMLString = '';
-        if (@ViewableTickets) {
+            my $LinkSort = 'Subaction=' . $Self->{Subaction}
+                . '&View=' . $Self->{LayoutObject}->Ascii2Html( Text => $View )
+                . '&CustomerUserID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerUserID )
+                . '&CustomerID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerID )
+                . '&';
+            my $LinkPage = 'Subaction=' . $Self->{Subaction}
+                . '&View=' . $Self->{LayoutObject}->Ascii2Html( Text => $View )
+                . '&SortBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $SortBy )
+                . '&OrderBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $OrderBy )
+                . '&CustomerUserID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerUserID )
+                . '&CustomerID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerID )
+                . '&';
+            my $LinkFilter = 'Subaction=' . $Self->{Subaction}
+                . '&CustomerUserID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerUserID )
+                . '&CustomerID=' . $Self->{LayoutObject}->Ascii2Html( Text => $CustomerID )
+                . '&';
+
             $CustomerTicketsHTMLString .= $Self->{LayoutObject}->TicketListShow(
                 TicketIDs  => \@ViewableTickets,
                 Total      => scalar @ViewableTickets,
@@ -200,15 +207,12 @@ sub Run {
                 LinkSort   => $LinkSort,
                 LinkFilter => $LinkFilter,
                 Output     => 'raw',
-
-                OrderBy => $OrderBy,
-                SortBy  => $SortBy,
-                AJAX    => 1,
             );
+
         }
 
         # build JSON output
-        $JSON = $Self->{LayoutObject}->JSONEncode(
+        $JSON = $Self->{LayoutObject}->JSON(
             Data => {
                 CustomerTicketsHTMLString => $CustomerTicketsHTMLString,
             },
@@ -217,7 +221,7 @@ sub Run {
 
     # send JSON response
     return $Self->{LayoutObject}->Attachment(
-        ContentType => 'application/json; charset=' . $Self->{LayoutObject}->{Charset},
+        ContentType => 'text/plain; charset=' . $Self->{LayoutObject}->{Charset},
         Content     => $JSON || '',
         Type        => 'inline',
         NoCache     => 1,
