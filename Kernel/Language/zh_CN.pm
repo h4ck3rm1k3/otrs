@@ -1,13 +1,12 @@
 # --
 # Kernel/Language/zh_CN.pm -  provides Chinese Simple language translation
 # Copyright (C) 2005 zuowei <j2ee at hirain-sh.com>
-# Copyright (C) 2008-2010 Never Min <never at qnofae.org>
+# Copyright (C) 2008-2009 Never Min <never at qnofae.org>
 # Copyright (C) 2009 Bin Du <bindu2008 at gmail.com>,
 # Copyright (C) 2009 Yiye Huang <yiyehuang at gmail.com>
 # Copyright (C) 2009 Qingjiu Jia <jiaqj at yahoo.com>
-# Copyright (C) 2011 Martin Liu <liuzh66 at gmail.com> http://martinliu.cn
 # --
-# $Id: zh_CN.pm,v 1.106 2012/01/13 06:46:49 mg Exp $
+# $Id: zh_CN.pm,v 1.69.2.1 2009/09/22 13:04:55 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,2425 +19,1549 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.106 $) [1];
+$VERSION = qw($Revision: 1.69.2.1 $) [1];
 
 sub Data {
     my $Self = shift;
 
     # $$START$$
-    # Last translation file sync: 2012-01-13 07:44:53
+    # Last translation file sync: Sun Jul 19 12:24:20 2009
 
     # possible charsets
-    $Self->{Charset} = ['utf-8', ];
-    # date formats (%A=WeekDay;%B=LongMonth;%T=Time;%D=Day;%M=Month;%Y=Year;)
+    $Self->{Charset} = ['GBK', 'GB2312', ];
+    # date formats (%A=WeekDay;%B=LongMonth;%T=Time;%D=Day;%M=Month;%Y=Jear;)
     $Self->{DateFormat}          = '%Y.%M.%D %T';
     $Self->{DateFormatLong}      = ' %A %Y/%M/%D %T';
     $Self->{DateFormatShort}     = '%Y.%M.%D';
     $Self->{DateInputFormat}     = '%Y.%M.%D';
     $Self->{DateInputFormatLong} = '%Y.%M.%D - %T';
 
-    # csv separator
-    $Self->{Separator} = '';
-
     $Self->{Translation} = {
-
         # Template: AAABase
-        'Yes' => 'æ˜¯',
-        'No' => 'å¦',
-        'yes' => 'æ˜¯',
-        'no' => 'æœªè®¾ç½®',
-        'Off' => 'å…³',
-        'off' => 'å…³',
-        'On' => 'å¼€',
-        'on' => 'å¼€',
-        'top' => 'é¡¶ç«¯',
-        'end' => 'åº•éƒ¨',
-        'Done' => 'ç¡®è®¤',
-        'Cancel' => 'å–æ¶ˆ',
-        'Reset' => 'é‡ç½®',
-        'last' => 'æœ€å',
-        'before' => 'æ—©äº',
-        'Today' => 'ä»Šå¤©',
-        'Tomorrow' => 'æ˜å¤©',
-        'Next week' => '',
-        'day' => 'å¤©',
-        'days' => 'å¤©',
-        'day(s)' => 'å¤©',
-        'd' => 'å¤©',
-        'hour' => 'å°æ—¶',
-        'hours' => 'å°æ—¶',
-        'hour(s)' => 'å°æ—¶',
-        'Hours' => 'å°æ—¶',
-        'h' => 'æ—¶',
-        'minute' => 'åˆ†é’Ÿ',
-        'minutes' => 'åˆ†é’Ÿ',
-        'minute(s)' => 'åˆ†é’Ÿ',
-        'Minutes' => 'åˆ†é’Ÿ',
-        'm' => 'åˆ†',
-        'month' => 'æœˆ',
-        'months' => 'æœˆ',
-        'month(s)' => 'æœˆ',
-        'week' => 'æ˜ŸæœŸ',
-        'week(s)' => 'æ˜ŸæœŸ',
-        'year' => 'å¹´',
-        'years' => 'å¹´',
-        'year(s)' => 'å¹´',
-        'second(s)' => 'ç§’',
-        'seconds' => 'ç§’',
-        'second' => 'ç§’',
-        's' => 'ç§’',
-        'wrote' => 'å†™é“',
-        'Message' => 'æ¶ˆæ¯',
-        'Error' => 'é”™è¯¯',
-        'Bug Report' => 'Bug æŠ¥å‘Š',
-        'Attention' => 'æ³¨æ„',
-        'Warning' => 'è­¦å‘Š',
-        'Module' => 'æ¨¡å—',
-        'Modulefile' => 'æ¨¡å—æ–‡ä»¶',
-        'Subfunction' => 'å­åŠŸèƒ½',
-        'Line' => 'è¡Œ',
-        'Setting' => 'è®¾ç½®',
-        'Settings' => 'è®¾ç½®',
-        'Example' => 'èŒƒä¾‹',
-        'Examples' => 'èŒƒä¾‹',
-        'valid' => 'æœ‰æ•ˆ',
-        'Valid' => 'æœ‰æ•ˆ',
-        'invalid' => 'æ— æ•ˆ',
-        'Invalid' => '',
-        '* invalid' => '* æ— æ•ˆ',
-        'invalid-temporarily' => 'æš‚æ—¶æ— æ•ˆ',
-        ' 2 minutes' => ' 2 åˆ†é’Ÿ',
-        ' 5 minutes' => ' 5 åˆ†é’Ÿ',
-        ' 7 minutes' => ' 7 åˆ†é’Ÿ',
-        '10 minutes' => '10 åˆ†é’Ÿ',
-        '15 minutes' => '15 åˆ†é’Ÿ',
-        'Mr.' => 'å…ˆç”Ÿ',
-        'Mrs.' => 'å¤«äºº',
-        'Next' => 'ä¸‹ä¸€ä¸ª',
-        'Back' => 'åé€€',
-        'Next...' => 'ä¸‹ä¸€ä¸ª...',
-        '...Back' => '...åé€€',
-        '-none-' => '-æ— -',
-        'none' => 'æ— ',
-        'none!' => 'æ— !',
-        'none - answered' => 'æ—  - å·²ç­”å¤çš„',
-        'please do not edit!' => 'ä¸è¦ç¼–è¾‘!',
-        'Need Action' => 'éœ€è¦åŠ¨ä½œ',
-        'AddLink' => 'å¢åŠ é“¾æ¥',
-        'Link' => 'é“¾æ¥',
-        'Unlink' => 'æœªé“¾æ¥',
-        'Linked' => 'å·²é“¾æ¥',
-        'Link (Normal)' => 'é“¾æ¥ (æ­£å¸¸)',
-        'Link (Parent)' => 'é“¾æ¥ (çˆ¶)',
-        'Link (Child)' => 'é“¾æ¥ (å­)',
-        'Normal' => 'æ­£å¸¸',
-        'Parent' => 'çˆ¶',
-        'Child' => 'å­',
-        'Hit' => 'ç‚¹å‡»',
-        'Hits' => 'ç‚¹å‡»æ•°',
-        'Text' => 'æ­£æ–‡',
-        'Standard' => 'æ ‡å‡†',
-        'Lite' => 'ç®€æ´',
-        'User' => 'ç”¨æˆ·',
-        'Username' => 'ç”¨æˆ·åç§°',
-        'Language' => 'è¯­è¨€',
-        'Languages' => 'è¯­è¨€',
-        'Password' => 'å¯†ç ',
-        'Preferences' => 'è®¾ç½®',
-        'Salutation' => 'ç§°è°“',
-        'Salutations' => 'ç§°è°“',
-        'Signature' => 'ç­¾å',
-        'Signatures' => 'ç­¾å',
-        'Customer' => 'å®¢æˆ·',
-        'CustomerID' => 'å®¢æˆ·ç¼–å·',
-        'CustomerIDs' => 'å®¢æˆ·ç¼–å·',
-        'customer' => 'å®¢æˆ·',
-        'agent' => 'æœåŠ¡äººå‘˜',
-        'system' => 'ç³»ç»Ÿ',
-        'Customer Info' => 'å®¢æˆ·ä¿¡æ¯',
-        'Customer Information' => 'å®¢æˆ·ä¿¡æ¯',
-        'Customer Company' => 'å®¢æˆ·å•ä½',
-        'Customer Companies' => 'å®¢æˆ·å•ä½',
-        'Company' => 'å•ä½',
-        'go!' => 'å¼€å§‹!',
-        'go' => 'å¼€å§‹',
-        'All' => 'å…¨éƒ¨',
-        'all' => 'å…¨éƒ¨',
-        'Sorry' => 'å¯¹ä¸èµ·',
-        'update!' => 'æ›´æ–°!',
-        'update' => 'æ›´æ–°',
-        'Update' => 'æ›´æ–°',
-        'Updated!' => 'å·²æ›´æ–°',
-        'submit!' => 'æäº¤!',
-        'submit' => 'æäº¤',
-        'Submit' => 'æäº¤',
-        'change!' => 'ä¿®æ”¹!',
-        'Change' => 'ä¿®æ”¹',
-        'change' => 'ä¿®æ”¹',
-        'click here' => 'ç‚¹å‡»è¿™é‡Œ',
-        'Comment' => 'æ³¨é‡Š',
-        'Invalid Option!' => 'æ— æ•ˆé€‰é¡¹!',
-        'Invalid time!' => 'æ— æ•ˆæ—¶é—´!',
-        'Invalid date!' => 'æ— æ•ˆæ—¥æœŸ!',
-        'Name' => 'åç§°',
-        'Group' => 'ç»„å',
-        'Description' => 'æè¿°',
-        'description' => 'æè¿°',
-        'Theme' => 'ä¸»é¢˜',
-        'Created' => 'åˆ›å»º',
-        'Created by' => 'åˆ›å»ºäºº',
-        'Changed' => 'ä¿®æ”¹äº',
-        'Changed by' => 'ä¿®æ”¹äºº',
-        'Search' => 'æœç´¢',
-        'and' => 'åˆ°',
-        'between' => 'åœ¨',
-        'Fulltext Search' => 'å…¨æ–‡æœç´¢',
-        'Data' => 'æ—¥æœŸ',
-        'Options' => 'é€‰é¡¹',
-        'Title' => 'ç§°è°“',
-        'Item' => 'æ¡ç›®',
-        'Delete' => 'åˆ é™¤',
-        'Edit' => 'ä¿®æ”¹',
-        'View' => 'æŸ¥çœ‹',
-        'Number' => 'ç¼–å·',
-        'System' => 'ç³»ç»Ÿ',
-        'Contact' => 'è”ç³»äºº',
-        'Contacts' => 'è”ç³»äºº',
-        'Export' => 'å¯¼å‡º',
-        'Up' => 'ä¸Š',
-        'Down' => 'ä¸‹',
-        'Add' => 'å¢åŠ ',
-        'Added!' => 'å·²å¢åŠ !',
-        'Category' => 'ç›®å½•',
-        'Viewer' => 'æŸ¥çœ‹å™¨',
-        'Expand' => 'å±•å¼€',
-        'Small' => 'ç®€æ´',
-        'Medium' => 'åŸºæœ¬',
-        'Large' => 'è¯¦ç»†',
-        'Date picker' => 'æ—¥æœŸé€‰æ‹©å™¨',
-        'New message' => 'æ–°æ¶ˆæ¯',
-        'New message!' => 'æ–°æ¶ˆæ¯!',
-        'Please answer this ticket(s) to get back to the normal queue view!' =>
-            'è¯·å…ˆå›å¤è¯¥ç¥¨å•ï¼Œç„¶åå›åˆ°æ­£å¸¸é˜Ÿåˆ—è§†å›¾!',
-        'You have %s new message(s)!' => 'æ‚¨æœ‰ %s æ¡æ–°æ¶ˆæ¯!',
-        'You have %s reminder ticket(s)!' => 'æ‚¨æœ‰ %s ä¸ªæé†’!',
-        'The recommended charset for your language is %s!' => 'å»ºè®®æ‚¨æ‰€ç”¨è¯­è¨€çš„å­—ç¬¦é›† %s!',
-        'Change your password.' => 'æ”¹å˜ä½ çš„å¯†ç .',
-        'Please activate %s first!' => 'è¯·é¦–å…ˆæ¿€æ´» %s',
-        'No suggestions' => 'æ— å»ºè®®',
-        'Word' => 'å­—',
-        'Ignore' => 'å¿½ç•¥',
-        'replace with' => 'æ›¿æ¢',
-        'There is no account with that login name.' => 'è¯¥ç”¨æˆ·åæ²¡æœ‰å¸æˆ·ä¿¡æ¯.',
-        'Login failed! Your user name or password was entered incorrectly.' =>
-            'ç™»å½•å¤±è´¥ï¼ç”¨æˆ·åæˆ–å¯†ç é”™è¯¯ã€‚',
-        'There is no acount with that user name.' => 'æ²¡æœ‰æ­¤ç”¨æˆ·ã€‚',
-        'Please contact your administrator' => 'è¯·è”ç³»ç®¡ç†å‘˜',
-        'Logout' => 'æ³¨é”€',
-        'Logout successful. Thank you for using OTRS!' => 'æˆåŠŸæ³¨é”€ï¼Œè°¢è°¢ä½¿ç”¨!',
-        'Invalid SessionID!' => 'æ— æ•ˆçš„ä¼šè¯æ ‡è¯†ç¬¦!',
-        'Feature not active!' => 'è¯¥ç‰¹æ€§å°šæœªæ¿€æ´»!',
-        'Agent updated!' => 'æœåŠ¡äººå‘˜å·²è¢«æ›´æ–°ï¼',
-        'Create Database' => 'åˆ›å»ºæ•°æ®åº“',
-        'System Settings' => 'æ•°æ®åº“è®¾ç½® ',
-        'Mail Configuration' => 'é‚®ä»¶é…ç½®',
-        'Finished' => 'å®Œæˆ',
-        'Install OTRS' => '',
-        'Intro' => '',
-        'License' => 'è®¸å¯è¯',
-        'Database' => 'æ•°æ®åº“',
-        'Configure Mail' => '',
-        'Database deleted.' => '',
-        'Database setup succesful!' => '',
-        'Login is needed!' => 'éœ€è¦å…ˆç™»å½•!',
-        'Password is needed!' => 'éœ€è¦å¯†ç !',
-        'Take this Customer' => 'å–å¾—è¿™ä¸ªå®¢æˆ·',
-        'Take this User' => 'å–å¾—è¿™ä¸ªç”¨æˆ·',
-        'possible' => 'å¯èƒ½',
-        'reject' => 'æ‹’ç»',
-        'reverse' => 'åé€€',
-        'Facility' => 'ç±»åˆ«',
-        'Time Zone' => 'æ—¶åŒº',
-        'Pending till' => 'ç­‰å¾…è‡³',
-        'Don\'t use the Superuser account to work with OTRS! Create new Agents and work with these accounts instead.' =>
-            '',
-        'Dispatching by email To: field.' => 'åˆ†æ´¾é‚®ä»¶åˆ°: åŸŸ.',
-        'Dispatching by selected Queue.' => 'åˆ†æ´¾é‚®ä»¶åˆ°æ‰€é€‰é˜Ÿåˆ—.',
-        'No entry found!' => 'æ— å†…å®¹!',
-        'Session has timed out. Please log in again.' => 'ä¼šè¯è¶…æ—¶ï¼Œè¯·é‡æ–°ç™»å½•.',
-        'No Permission!' => 'æ— æƒé™!',
-        'To: (%s) replaced with database email!' => 'To: (%s) è¢«æ•°æ®åº“é‚®ä»¶åœ°å€æ‰€æ›¿ä»£',
-        'Cc: (%s) added database email!' => 'Cc: (%s) å¢åŠ æ•°æ®åº“é‚®ä»¶åœ°å€!',
-        '(Click here to add)' => '(ç‚¹å‡»æ­¤å¤„å¢åŠ )',
-        'Preview' => 'é¢„è§ˆ',
-        'Package not correctly deployed! Please reinstall the package.' =>
-            '',
-        '%s is not writable!' => '%s æ˜¯ä¸å¯å†™çš„!',
-        'Cannot create %s!' => 'æ— æ³•åˆ›å»º %s!',
-        'Check to activate this date' => '',
-        'You have Out of Office enabled, would you like to disable it?' =>
-            '',
-        'Customer %s added' => 'å®¢æˆ· %s å·²å¢åŠ ',
-        'Role added!' => 'è§’è‰²å·²å¢åŠ !',
-        'Role updated!' => 'è§’è‰²å·²æ›´æ–°',
-        'Attachment added!' => 'é™„ä»¶å·²å¢åŠ ',
-        'Attachment updated!' => 'é™„ä»¶å·²æ›´æ–°',
-        'Response added!' => 'å›å¤å·²å¢åŠ ',
-        'Response updated!' => 'å›å¤å·²æ›´æ–°',
-        'Group updated!' => 'ç¾¤ç»„å·²æ›´æ–°',
-        'Queue added!' => 'é˜Ÿåˆ—å·²å¢åŠ ',
-        'Queue updated!' => 'é˜Ÿåˆ—å·²æ›´æ–°',
-        'State added!' => 'çŠ¶æ€å·²å¢åŠ ',
-        'State updated!' => 'çŠ¶æ€å·²æ›´æ–°',
-        'Type added!' => 'ç±»å‹å·²å¢åŠ ',
-        'Type updated!' => 'ç±»å‹å·²æ›´æ–°',
-        'Customer updated!' => 'å®¢æˆ·å·²æ›´æ–°',
-        'Customer company added!' => '',
-        'Customer company updated!' => '',
-        'Mail account added!' => '',
-        'Mail account updated!' => '',
-        'System e-mail address added!' => '',
-        'System e-mail address updated!' => '',
-        'Contract' => 'åˆåŒ',
-        'Online Customer: %s' => 'åœ¨çº¿å®¢æˆ·: %s',
-        'Online Agent: %s' => 'åœ¨çº¿æœåŠ¡äººå‘˜ï¼š%s',
-        'Calendar' => 'æ—¥å†',
-        'File' => 'æ–‡ä»¶',
-        'Filename' => 'æ–‡ä»¶å',
-        'Type' => 'ç±»å‹',
-        'Size' => 'å¤§å°',
-        'Upload' => 'ä¸Šä¼ ',
-        'Directory' => 'ç›®å½•',
-        'Signed' => 'å·²ç­¾å',
-        'Sign' => 'ç­¾ç½²',
-        'Crypted' => 'å·²åŠ å¯†',
-        'Crypt' => 'åŠ å¯†',
-        'PGP' => 'PGP',
-        'PGP Key' => 'PGPå¯†é’¥',
-        'PGP Keys' => 'PGPå¯†é’¥',
-        'S/MIME' => 'S/MIME',
-        'S/MIME Certificate' => 'S/MIME è¯ä¹¦',
-        'S/MIME Certificates' => 'S/MIME è¯ä¹¦',
-        'Office' => 'åŠå…¬å®¤',
-        'Phone' => 'ç”µè¯',
-        'Fax' => 'ä¼ çœŸ',
-        'Mobile' => 'æ‰‹æœº',
-        'Zip' => 'é‚®ç¼–',
-        'City' => 'åŸå¸‚',
-        'Street' => 'è¡—é“',
-        'Country' => 'å›½å®¶',
-        'Location' => 'åŒºåŸŸ',
-        'installed' => 'å·²å®‰è£…',
-        'uninstalled' => 'æœªå®‰è£…',
-        'Security Note: You should activate %s because application is already running!' =>
-            'å®‰å…¨æç¤º: æ‚¨ä¸èƒ½æ¿€æ´» %s, å› ä¸ºæ­¤åº”ç”¨å·²ç»åœ¨è¿è¡Œ!',
-        'Unable to parse repository index document.' => 'æ— æ³•è§£æè½¯ä»¶ä»“åº“ç´¢å¼•æ–‡æ¡£',
-        'No packages for your framework version found in this repository, it only contains packages for other framework versions.' =>
-            'è½¯ä»¶ä»“åº“ä¸­æ²¡æœ‰å½“å‰ç³»ç»Ÿç‰ˆæœ¬å¯ç”¨çš„è½¯ä»¶åŒ…ã€‚',
-        'No packages, or no new packages, found in selected repository.' =>
-            'é€‰ä¸­çš„è½¯ä»¶ä»“åº“ä¸­æ²¡æœ‰éœ€è¦å®‰è£…çš„è½¯ä»¶åŒ…ã€‚',
-        'Edit the system configuration settings.' => 'ç¼–è¾‘ç³»ç»Ÿé…ç½®',
-        'printed at' => 'æ‰“å°æ—¥æœŸ',
-        'Loading...' => 'åŠ è½½ä¸­...',
-        'Dear Mr. %s,' => 'å°Šæ•¬çš„ %s å…ˆç”Ÿ:',
-        'Dear Mrs. %s,' => 'å°Šæ•¬çš„ %s å¥³å£«:',
-        'Dear %s,' => 'å°Šæ•¬çš„ %s:',
-        'Hello %s,' => 'æ‚¨å¥½, %s:',
-        'This email address already exists. Please log in or reset your password.' =>
-            'é‚®ä»¶åœ°å€å·²å­˜åœ¨ï¼Œè¯·ç™»å½•æˆ–é‡æ–°åˆå§‹åŒ–å¯†ç ã€‚',
-        'New account created. Sent login information to %s. Please check your email.' =>
-            'å¸æˆ·åˆ›å»ºæˆåŠŸã€‚ç™»å½•ä¿¡æ¯å‘é€åˆ° %s ï¼Œè¯·æŸ¥æ”¶é‚®ä»¶ã€‚',
-        'Please press Back and try again.' => 'è¯·è¿”å›å†è¯•ä¸€æ¬¡.',
-        'Sent password reset instructions. Please check your email.' => 'å¯†ç åˆå§‹åŒ–è¯´æ˜å·²å‘é€ï¼Œè¯·æ£€æŸ¥é‚®ä»¶ã€‚',
-        'Sent new password to %s. Please check your email.' => 'æ–°å¯†ç å·²å‘é€åˆ° %s ï¼Œè¯·æ£€æŸ¥é‚®ä»¶ã€‚',
-        'Upcoming Events' => 'å³å°†åˆ°æ¥çš„äº‹ä»¶',
-        'Event' => 'äº‹ä»¶',
-        'Events' => 'äº‹ä»¶',
-        'Invalid Token!' => 'éæ³•çš„æ ‡è®°',
-        'more' => 'æ›´å¤š',
-        'For more info see:' => 'æ›´å¤šä¿¡æ¯è¯·çœ‹',
-        'Package verification failed!' => 'è½¯ä»¶åŒ…éªŒè¯å¤±è´¥',
-        'Collapse' => 'æ”¶èµ·',
-        'Shown' => 'æ˜¾ç¤º',
-        'News' => 'æ–°é—»',
-        'Product News' => 'äº§å“æ–°é—»',
-        'OTRS News' => 'OTRS æ–°é—»',
-        '7 Day Stats' => 'æœ€è¿‘ 7 å¤©ç»Ÿè®¡',
-        'Bold' => 'é»‘ä½“',
-        'Italic' => 'æ–œä½“',
-        'Underline' => 'åº•çº¿',
-        'Font Color' => 'å­—å‹é¢œè‰²',
-        'Background Color' => 'èƒŒæ™¯è‰²',
-        'Remove Formatting' => 'åˆ é™¤æ ¼å¼',
-        'Show/Hide Hidden Elements' => 'æ˜¾ç¤º/éšè— éšè—è¦ç´ ',
-        'Align Left' => 'å·¦å¯¹é½',
-        'Align Center' => 'å±…ä¸­å¯¹é½',
-        'Align Right' => 'å³å¯¹é½',
-        'Justify' => 'å¯¹é½',
-        'Header' => 'ä¿¡æ¯å¤´',
-        'Indent' => 'ç¼©',
-        'Outdent' => 'å¤–çª',
-        'Create an Unordered List' => 'åˆ›å»ºä¸€ä¸ªæ— åºåˆ—è¡¨',
-        'Create an Ordered List' => 'åˆ›å»ºä¸€ä¸ªæœ‰åºåˆ—è¡¨',
-        'HTML Link' => 'HTMLé“¾æ¥',
-        'Insert Image' => 'æ’å…¥å›¾åƒ',
-        'CTRL' => 'æŒ‰CTRL',
-        'SHIFT' => 'æŒ‰SHIFT',
-        'Undo' => 'å¤åŸ',
-        'Redo' => 'é‡åš',
-        'Scheduler process is registered but might not be running.' => '',
-        'Scheduler is not running.' => '',
-
-        # Template: AAACalendar
-        'New Year\'s Day' => '',
-        'International Workers\' Day' => '',
-        'Christmas Eve' => '',
-        'First Christmas Day' => '',
-        'Second Christmas Day' => '',
-        'New Year\'s Eve' => '',
-
-        # Template: AAAGenericInterface
-        'OTRS as requester' => '',
-        'OTRS as provider' => '',
-        'Webservice "%s" created!' => '',
-        'Webservice "%s" updated!' => '',
+        'Yes' => 'ÊÇ',
+        'No' => '·ñ',
+        'yes' => 'ÊÇ',
+        'no' => 'Î´ÉèÖÃ',
+        'Off' => '¹Ø',
+        'off' => '¹Ø',
+        'On' => '¿ª',
+        'on' => '¿ª',
+        'top' => '¶¥¶Ë',
+        'end' => 'µ×²¿',
+        'Done' => 'È·ÈÏ',
+        'Cancel' => 'È¡Ïû',
+        'Reset' => 'ÖØÖÃ',
+        'last' => '×îºó',
+        'before' => 'ÔçÓÚ',
+        'day' => 'Ìì',
+        'days' => 'Ìì',
+        'day(s)' => 'Ìì',
+        'hour' => 'Ğ¡Ê±',
+        'hours' => 'Ğ¡Ê±',
+        'hour(s)' => 'Ğ¡Ê±',
+        'minute' => '·ÖÖÓ',
+        'minutes' => '·ÖÖÓ',
+        'minute(s)' => '·ÖÖÓ',
+        'month' => 'ÔÂ',
+        'months' => 'ÔÂ',
+        'month(s)' => 'ÔÂ',
+        'week' => 'ĞÇÆÚ',
+        'week(s)' => 'ĞÇÆÚ',
+        'year' => 'Äê',
+        'years' => 'Äê',
+        'year(s)' => 'Äê',
+        'second(s)' => 'Ãë',
+        'seconds' => 'Ãë',
+        'second' => 'Ãë',
+        'wrote' => 'Ğ´µÀ',
+        'Message' => 'ÏûÏ¢',
+        'Error' => '´íÎó',
+        'Bug Report' => 'Bug ±¨¸æ',
+        'Attention' => '×¢Òâ',
+        'Warning' => '¾¯¸æ',
+        'Module' => 'Ä£¿é',
+        'Modulefile' => 'Ä£¿éÎÄ¼ş',
+        'Subfunction' => '×Ó¹¦ÄÜ',
+        'Line' => 'ĞĞ',
+        'Setting' => 'ÉèÖÃ',
+        'Settings' => 'ÉèÖÃ',
+        'Example' => 'Ê¾Àı',
+        'Examples' => 'Ê¾Àı',
+        'valid' => 'ÓĞĞ§',
+        'invalid' => 'ÎŞĞ§',
+        '* invalid' => '* ÎŞĞ§',
+        'invalid-temporarily' => 'ÔİÊ±ÎŞĞ§',
+        ' 2 minutes' => ' 2 ·ÖÖÓ',
+        ' 5 minutes' => ' 5 ·ÖÖÓ',
+        ' 7 minutes' => ' 7 ·ÖÖÓ',
+        '10 minutes' => '10 ·ÖÖÓ',
+        '15 minutes' => '15 ·ÖÖÓ',
+        'Mr.' => 'ÏÈÉú',
+        'Mrs.' => '·òÈË',
+        'Next' => 'ÏÂÒ»¸ö',
+        'Back' => 'ºóÍË',
+        'Next...' => 'ÏÂÒ»¸ö...',
+        '...Back' => '...ºóÍË',
+        '-none-' => '-ÎŞ-',
+        'none' => 'ÎŞ',
+        'none!' => 'ÎŞ!',
+        'none - answered' => 'ÎŞ - ÒÑ´ğ¸´µÄ',
+        'please do not edit!' => '²»Òª±à¼­!',
+        'AddLink' => 'Ôö¼ÓÁ´½Ó',
+        'Link' => 'Á´½Ó',
+        'Unlink' => 'Î´Á´½Ó',
+        'Linked' => 'ÒÑÁ´½Ó',
+        'Link (Normal)' => 'Á´½Ó (Õı³£)',
+        'Link (Parent)' => 'Á´½Ó (¸¸)',
+        'Link (Child)' => 'Á´½Ó (×Ó)',
+        'Normal' => 'Õı³£',
+        'Parent' => '¸¸',
+        'Child' => '×Ó',
+        'Hit' => 'µã»÷',
+        'Hits' => 'µã»÷Êı',
+        'Text' => 'ÕıÎÄ',
+        'Standard' => '±ê×¼',
+        'Lite' => '¼ò½à',
+        'User' => 'ÓÃ»§',
+        'Username' => 'ÓÃ»§Ãû³Æ',
+        'Language' => 'ÓïÑÔ',
+        'Languages' => 'ÓïÑÔ',
+        'Password' => 'ÃÜÂë',
+        'Salutation' => '³ÆÎ½',
+        'Signature' => 'Ç©Ãû',
+        'Customer' => '¿Í»§',
+        'CustomerID' => '¿Í»§±àºÅ',
+        'CustomerIDs' => '¿Í»§±àºÅ',
+        'customer' => '¿Í»§',
+        'agent' => '¼¼ÊõÖ§³ÖÈËÔ±',
+        'system' => 'ÏµÍ³',
+        'Customer Info' => '¿Í»§ĞÅÏ¢',
+        'Customer Company' => '¿Í»§µ¥Î»',
+        'Company' => 'µ¥Î»',
+        'go!' => '¿ªÊ¼!',
+        'go' => '¿ªÊ¼',
+        'All' => 'È«²¿',
+        'all' => 'È«²¿',
+        'Sorry' => '¶Ô²»Æğ',
+        'update!' => '¸üĞÂ!',
+        'update' => '¸üĞÂ',
+        'Update' => '¸üĞÂ',
+        'Updated!' => 'ÒÑ¸üĞÂ',
+        'submit!' => 'Ìá½»!',
+        'submit' => 'Ìá½»',
+        'Submit' => 'Ìá½»',
+        'change!' => 'ĞŞ¸Ä!',
+        'Change' => 'ĞŞ¸Ä',
+        'change' => 'ĞŞ¸Ä',
+        'click here' => 'µã»÷ÕâÀï',
+        'Comment' => '×¢ÊÍ',
+        'Valid' => 'ÓĞĞ§',
+        'Invalid Option!' => 'ÎŞĞ§Ñ¡Ïî!',
+        'Invalid time!' => 'ÎŞĞ§Ê±¼ä!',
+        'Invalid date!' => 'ÎŞĞ§ÈÕÆÚ!',
+        'Name' => 'Ãû³Æ',
+        'Group' => '×éÃû',
+        'Description' => 'ÃèÊö',
+        'description' => 'ÃèÊö',
+        'Theme' => 'Ö÷Ìâ',
+        'Created' => '´´½¨',
+        'Created by' => '´´½¨ÓÉ',
+        'Changed' => 'ÒÑĞŞ¸Ä',
+        'Changed by' => 'ĞŞ¸ÄÓÉ',
+        'Search' => 'ËÑË÷',
+        'and' => 'ºÍ',
+        'between' => 'ÔÚ',
+        'Fulltext Search' => 'È«ÎÄËÑË÷',
+        'Data' => 'ÈÕÆÚ',
+        'Options' => 'Ñ¡Ïî',
+        'Title' => '±êÌâ',
+        'Item' => 'ÌõÄ¿',
+        'Delete' => 'É¾³ı',
+        'Edit' => '±à¼­',
+        'View' => '²é¿´',
+        'Number' => '±àºÅ',
+        'System' => 'ÏµÍ³',
+        'Contact' => 'ÁªÏµÈË',
+        'Contacts' => 'ÁªÏµÈË',
+        'Export' => 'µ¼³ö',
+        'Up' => 'ÉÏ',
+        'Down' => 'ÏÂ',
+        'Add' => 'Ôö¼Ó',
+        'Added!' => 'ÒÑÔö¼Ó!',
+        'Category' => 'Ä¿Â¼',
+        'Viewer' => '²é¿´Æ÷',
+        'Expand' => 'À©Õ¹',
+        'New message' => 'ĞÂÏûÏ¢',
+        'New message!' => 'ĞÂÏûÏ¢!',
+        'Please answer this ticket(s) to get back to the normal queue view!' => 'ÇëÏÈ»Ø¸´¸Ã Ticket£¬È»ºó»Øµ½Õı³£¶ÓÁĞÊÓÍ¼!',
+        'You got new message!' => 'ÄúÓĞĞÂÏûÏ¢!',
+        'You have %s new message(s)!' => 'ÄúÓĞ %s ÌõĞÂÏûÏ¢!',
+        'You have %s reminder ticket(s)!' => 'ÄúÓĞ %s ¸öÌáĞÑ!',
+        'The recommended charset for your language is %s!' => '½¨ÒéÄúËùÓÃÓïÑÔµÄ×Ö·û¼¯ %s!',
+        'Passwords doesn\'t match! Please try it again!' => 'ÃÜÂë²»·û£¬ÇëÖØÊÔ!',
+        'Password is already in use! Please use an other password!' => '¸ÃÃÜÂë±»Ê¹ÓÃ£¬ÇëÊ¹ÓÃÆäËûÃÜÂë!',
+        'Password is already used! Please use an other password!' => '¸ÃÃÜÂë±»Ê¹ÓÃ£¬ÇëÊ¹ÓÃÆäËûÃÜÂë!',
+        'You need to activate %s first to use it!' => '%s ÔÚÊ¹ÓÃÖ®Ç°ÇëÏÈ¼¤»î!',
+        'No suggestions' => 'ÎŞ½¨Òé',
+        'Word' => '×Ö',
+        'Ignore' => 'ºöÂÔ',
+        'replace with' => 'Ìæ»»',
+        'There is no account with that login name.' => '¸ÃÓÃ»§ÃûÃ»ÓĞÕÊ»§ĞÅÏ¢.',
+        'Login failed! Your username or password was entered incorrectly.' => 'µÇÂ¼Ê§°Ü£¬ÄúµÄÓÃ»§Ãû»òÃÜÂë²»ÕıÈ·.',
+        'Please contact your admin' => 'ÇëÁªÏµÏµÍ³¹ÜÀíÔ±',
+        'Logout successful. Thank you for using OTRS!' => '³É¹¦×¢Ïú£¬Ğ»Ğ»Ê¹ÓÃ!',
+        'Invalid SessionID!' => 'ÎŞĞ§µÄ»á»°±êÊ¶·û!',
+        'Feature not active!' => '¸ÃÌØĞÔÉĞÎ´¼¤»î!',
+        'Notification (Event)' => 'Í¨Öª£¨ÊÂ¼ş£©',
+        'Login is needed!' => 'ĞèÒªÏÈµÇÂ¼!',
+        'Password is needed!' => 'ĞèÒªÃÜÂë!',
+        'License' => 'Ğí¿ÉÖ¤',
+        'Take this Customer' => 'È¡µÃÕâ¸ö¿Í»§',
+        'Take this User' => 'È¡µÃÕâ¸öÓÃ»§',
+        'possible' => '¿ÉÄÜ',
+        'reject' => '¾Ü¾ø',
+        'reverse' => 'ºóÍË',
+        'Facility' => 'Àà±ğ',
+        'Timeover' => '½áÊø',
+        'Pending till' => 'µÈ´ıÖÁ',
+        'Don\'t work with UserID 1 (System account)! Create new users!' => '²»ÒªÊ¹ÓÃ UserID 1 (ÏµÍ³ÕËºÅ)! Çë´´½¨Ò»¸öĞÂµÄÓÃ»§!',
+        'Dispatching by email To: field.' => '·ÖÅÉÓÊ¼şµ½: Óò.',
+        'Dispatching by selected Queue.' => '·ÖÅÉÓÊ¼şµ½ËùÑ¡¶ÓÁĞ.',
+        'No entry found!' => 'ÎŞÄÚÈİ!',
+        'Session has timed out. Please log in again.' => '»á»°³¬Ê±£¬ÇëÖØĞÂµÇÂ¼.',
+        'No Permission!' => 'ÎŞÈ¨ÏŞ!',
+        'To: (%s) replaced with database email!' => 'To: (%s) ±»Êı¾İ¿âÓÊ¼şµØÖ·ËùÌæ´ú',
+        'Cc: (%s) added database email!' => 'Cc: (%s) Ôö¼ÓÊı¾İ¿âÓÊ¼şµØÖ·!',
+        '(Click here to add)' => '(µã»÷´Ë´¦Ôö¼Ó)',
+        'Preview' => 'Ô¤ÀÀ',
+        'Package not correctly deployed! You should reinstall the Package again!' => 'Èí¼ş°üÕ¹¿ª²»Õı³£! ÄúĞèÒªÔÙÒ»´ÎÖØĞÂ°²×°Õâ¸öÈí¼ş°ü',
+        'Added User "%s"' => 'Ôö¼ÓÓÃ»§ "%s".',
+        'Contract' => 'ºÏÍ¬',
+        'Online Customer: %s' => 'ÔÚÏß¿Í»§: %s',
+        'Online Agent: %s' => 'ÔÚÏß¼¼ÊõÖ§³ÖÈËÔ±£º%s',
+        'Calendar' => 'ÈÕÀú',
+        'File' => 'ÎÄ¼ş',
+        'Filename' => 'ÎÄ¼şÃû',
+        'Type' => 'ÀàĞÍ',
+        'Size' => '´óĞ¡',
+        'Upload' => 'ÉÏ´«',
+        'Directory' => 'Ä¿Â¼',
+        'Signed' => 'ÒÑÇ©Ãû',
+        'Sign' => 'Ç©Êğ',
+        'Crypted' => 'ÒÑ¼ÓÃÜ',
+        'Crypt' => '¼ÓÃÜ',
+        'Office' => '°ì¹«ÊÒ',
+        'Phone' => 'µç»°',
+        'Fax' => '´«Õæ',
+        'Mobile' => 'ÊÖ»ú',
+        'Zip' => 'ÓÊ±à',
+        'City' => '³ÇÊĞ',
+        'Street' => '½ÖµÀ',
+        'Country' => '¹ú¼Ò',
+        'Location' => 'Çø',
+        'installed' => 'ÒÑ°²×°',
+        'uninstalled' => 'Î´°²×°',
+        'Security Note: You should activate %s because application is already running!' => '°²È«ÌáÊ¾: Äú²»ÄÜ¼¤»îµÄ %s, ÒòÎª´ËÓ¦ÓÃÒÑ¾­ÔÚÔËĞĞ!',
+        'Unable to parse Online Repository index document!' => '²»ÄÜ·ÖÁĞÔÚÏß×ÊÔ´Ë÷ÒıÎÄµµ',
+        'No Packages for requested Framework in this Online Repository, but Packages for other Frameworks!' => 'ÔÚÏß×ÊÔ´ÖĞÃ»ÓĞÈí¼ş°ü¶ÔÓ¦ĞèÒªµÄ¿ò¼Ü£¬µ«ÓĞÆäËûµÄ¿ò¼ÜËùĞèÈí¼ş°ü',
+        'No Packages or no new Packages in selected Online Repository!' => 'ÔÚËùÑ¡µÄÔÚÏß×ÊÔ´ÖĞ£¬Ã»ÓĞÏÖ´æ»òĞÂµÄÈí¼ş°ü',
+        'printed at' => '´òÓ¡ÈÕÆÚ',
+        'Loading...' => '',
+        'Dear Mr. %s,' => '×ğ¾´µÄ %s ÏÈÉú:',
+        'Dear Mrs. %s,' => '×ğ¾´µÄ %s Å®Ê¿:',
+        'Dear %s,' => '×ğ¾´µÄ %s:',
+        'Hello %s,' => 'ÄúºÃ, %s:',
+        'This account exists.' => 'Õâ¸öÕÊ»§ÒÑ´æÔÚ',
+        'New account created. Sent Login-Account to %s.' => 'ĞÂµÄÕÊºÅÒÑ´´½¨, ²¢¼ÄËÍÍ¨Öª¸ø %s.',
+        'Please press Back and try again.' => 'Çë·µ»ØÔÙÊÔÒ»´Î.',
+        'Sent password token to: %s' => '·¢ËÍÃÜÂëµ½: %s',
+        'Sent new password to: %s' => '·¢ËÍĞÂµÄÃÜÂëµ½: %s',
+        'Upcoming Events' => '¼´½«µ½À´µÄÊÂ¼ş',
+        'Event' => 'ÊÂ¼ş',
+        'Events' => 'ÊÂ¼ş',
+        'Invalid Token!' => '·Ç·¨µÄ±ê¼Ç',
+        'more' => '¸ü¶à',
+        'For more info see:' => '¸ü¶àĞÅÏ¢Çë¿´',
+        'Package verification failed!' => 'Èí¼ş°üÑéÖ¤Ê§°Ü',
+        'Collapse' => 'ÊÕÆğ',
+        'Shown' => 'ÏÔÊ¾',
+        'News' => 'ĞÂÎÅ',
+        'Product News' => '²úÆ·ĞÂÎÅ',
+        'OTRS News' => 'OTRS ĞÂÎÅ',
+        '7 Day Stats' => '×î½ü 7 ÌìÍ³¼Æ',
+        'Bold' => 'ºÚÌå',
+        'Italic' => 'Ğ±Ìå',
+        'Underline' => 'µ×Ïß',
+        'Font Color' => '×ÖĞÍÑÕÉ«',
+        'Background Color' => '±³¾°É«',
+        'Remove Formatting' => 'É¾³ı¸ñÊ½',
+        'Show/Hide Hidden Elements' => 'ÏÔÊ¾/Òş²Ø Òş²ØÒªËØ',
+        'Align Left' => '×ó¶ÔÆë',
+        'Align Center' => '¾ÓÖĞ¶ÔÆë',
+        'Align Right' => 'ÓÒ¶ÔÆë',
+        'Justify' => '¶ÔÆë',
+        'Header' => 'ĞÅÏ¢Í·',
+        'Indent' => 'Ëõ',
+        'Outdent' => 'ÍâÍ»',
+        'Create an Unordered List' => '´´½¨Ò»¸öÎŞĞòÁĞ±í',
+        'Create an Ordered List' => '´´½¨Ò»¸öÓĞĞòÁĞ±í',
+        'HTML Link' => 'HTMLÁ´½Ó',
+        'Insert Image' => '²åÈëÍ¼Ïñ',
+        'CTRL' => '°´CTRL',
+        'SHIFT' => '°´SHIFT',
+        'Undo' => '¸´Ô­',
+        'Redo' => 'ÖØ×ö',
 
         # Template: AAAMonth
-        'Jan' => 'ä¸€æœˆ',
-        'Feb' => 'äºŒæœˆ',
-        'Mar' => 'ä¸‰æœˆ',
-        'Apr' => 'å››æœˆ',
-        'May' => 'äº”æœˆ',
-        'Jun' => 'å…­æœˆ',
-        'Jul' => 'ä¸ƒæœˆ',
-        'Aug' => 'å…«æœˆ',
-        'Sep' => 'ä¹æœˆ',
-        'Oct' => 'åæœˆ',
-        'Nov' => 'åä¸€æœˆ',
-        'Dec' => 'åäºŒæœˆ',
-        'January' => 'ä¸€æœˆ',
-        'February' => 'äºŒæœˆ',
-        'March' => 'ä¸‰æœˆ',
-        'April' => 'å››æœˆ',
-        'May_long' => 'äº”æœˆ',
-        'June' => 'å…­æœˆ',
-        'July' => 'ä¸ƒæœˆ',
-        'August' => 'å…«æœˆ',
-        'September' => 'ä¹æœˆ',
-        'October' => 'åæœˆ',
-        'November' => 'åä¸€æœˆ',
-        'December' => 'åäºŒæœˆ',
+        'Jan' => 'Ò»ÔÂ',
+        'Feb' => '¶şÔÂ',
+        'Mar' => 'ÈıÔÂ',
+        'Apr' => 'ËÄÔÂ',
+        'May' => 'ÎåÔÂ',
+        'Jun' => 'ÁùÔÂ',
+        'Jul' => 'ÆßÔÂ',
+        'Aug' => '°ËÔÂ',
+        'Sep' => '¾ÅÔÂ',
+        'Oct' => 'Ê®ÔÂ',
+        'Nov' => 'Ê®Ò»ÔÂ',
+        'Dec' => 'Ê®¶şÔÂ',
+        'January' => 'Ò»ÔÂ',
+        'February' => '¶şÔÂ',
+        'March' => 'ÈıÔÂ',
+        'April' => 'ËÄÔÂ',
+        'May_long' => 'ÎåÔÂ',
+        'June' => 'ÁùÔÂ',
+        'July' => 'ÆßÔÂ',
+        'August' => '°ËÔÂ',
+        'September' => '¾ÅÔÂ',
+        'October' => 'Ê®ÔÂ',
+        'November' => 'Ê®Ò»ÔÂ',
+        'December' => 'Ê®¶şÔÂ',
+
+        # Template: AAANavBar
+        'Admin-Area' => '¹ÜÀíÇøÓò',
+        'Agent-Area' => '¼¼ÊõÖ§³ÖÈËÔ±Çø',
+        'Ticket-Area' => 'TicketÇø',
+        'Logout' => '×¢Ïú',
+        'Agent Preferences' => '¸öÈËÉèÖÃ',
+        'Preferences' => 'ÉèÖÃ',
+        'Agent Mailbox' => '¼¼ÊõÖ§³ÖÈËÔ±ÓÊÏä',
+        'Stats' => 'Í³¼Æ',
+        'Stats-Area' => 'Í³¼ÆÇø',
+        'Admin' => '¹ÜÀí',
+        'Customer Users' => '¿Í»§ÓÃ»§',
+        'Customer Users <-> Groups' => '¿Í»§ÓÃ»§ <-> ×é',
+        'Users <-> Groups' => 'ÓÃ»§ <-> ×é',
+        'Roles' => '½ÇÉ«',
+        'Roles <-> Users' => '½ÇÉ« <-> ÓÃ»§',
+        'Roles <-> Groups' => '½ÇÉ« <-> ×é',
+        'Salutations' => '³ÆÎ½',
+        'Signatures' => 'Ç©Ãû',
+        'Email Addresses' => 'Email µØÖ·',
+        'Notifications' => 'ÏµÍ³Í¨Öª',
+        'Category Tree' => 'Ä¿Â¼Ê÷',
+        'Admin Notification' => '¹ÜÀíÔ±Í¨Öª',
 
         # Template: AAAPreferences
-        'Preferences updated successfully!' => 'è®¾ç½®æ›´æ–°æˆåŠŸï¼',
-        'User Profile' => 'åå¥½è®¾ç½®',
-        'Email Settings' => 'é€šçŸ¥é‚®ä»¶è®¾ç½®',
-        'Other Settings' => 'å…¶å®ƒè®¾ç½®',
-        'Change Password' => 'ä¿®æ”¹å¯†ç ',
-        'Current password' => 'å½“å‰å¯†ç ',
-        'New password' => 'æ–°å¯†ç ',
-        'Verify password' => 'é‡å¤æ–°å¯†ç ',
-        'Spelling Dictionary' => 'æ‹¼å†™æ£€æŸ¥å­—å…¸',
-        'Default spelling dictionary' => 'é»˜è®¤å­—å…¸',
-        'Max. shown Tickets a page in Overview.' => 'å•é¡µæœ€å¤§ç¥¨å•æ•°ã€‚',
-        'The current password is not correct. Please try again!' => 'å½“å‰å¯†ç ä¸æ­£ç¡®ï¼Œè¯·é‡æ–°è¾“å…¥ï¼',
-        'Can\'t update password, your new passwords do not match. Please try again!' =>
-            'æ— æ³•æ›´æ”¹å¯†ç ã€‚æ–°å¯†ç ä¸ä¸€è‡´ï¼Œè¯·é‡æ–°è¾“å…¥ï¼',
-        'Can\'t update password, it contains invalid characters!' => 'æ— æ³•æ›´æ”¹å¯†ç ï¼Œå¯†ç ä¸èƒ½åŒ…å«éæ³•å­—ç¬¦ï¼',
-        'Can\'t update password, it must be at least %s characters long!' =>
-            'æ— æ³•æ›´æ”¹å¯†ç ï¼Œå¯†ç è‡³å°‘ %s ä¸ªå­—ç¬¦é•¿åº¦ï¼',
-        'Can\'t update password, it must contain at least 2 lowercase  and 2 uppercase characters!' =>
-            'æ— æ³•æ›´æ”¹å¯†ç ï¼Œå¯†ç å¿…é¡»åŒ…å«è‡³å°‘2ä¸ªå°å†™å’Œ2ä¸ªå¤§å†™å­—ç¬¦ï¼',
-        'Can\'t update password, it must contain at least 1 digit!' => 'æ— æ³•æ›´æ”¹å¯†ç ï¼Œå¯†ç å¿…é¡»åŒ…å«è‡³å°‘1ä¸ªæ•°å­—ï¼',
-        'Can\'t update password, it must contain at least 2 characters!' =>
-            'æ— æ³•æ›´æ”¹å¯†ç ï¼Œå¯†ç å¿…é¡»åŒ…å«è‡³å°‘2ä¸ªå­—ç¬¦ï¼',
-        'Can\'t update password, this password has already been used. Please choose a new one!' =>
-            'æ— æ³•æ›´æ”¹å¯†ç ï¼Œè¯¥å¯†ç å·²è¢«ä½¿ç”¨ã€‚ è¯·é€‰æ‹©ä¸€ä¸ªæ–°å¯†ç ï¼',
-        'Select the separator character used in CSV files (stats and searches). If you don\'t select a separator here, the default separator for your language will be used.' =>
-            'é€‰æ‹©CSVæ–‡ä»¶ï¼ˆç»Ÿè®¡å’Œæœç´¢ï¼‰ä¸­ä½¿ç”¨çš„åˆ†éš”ç¬¦ã€‚å¦‚æœä¸æŒ‡å®šï¼Œç³»ç»Ÿå°†ä½¿ç”¨é»˜è®¤åˆ†éš”ç¬¦ã€‚',
-        'CSV Separator' => 'CSVåˆ†éš”ç¬¦',
+        'Preferences updated successfully!' => 'ÉèÖÃ¸üĞÂ³É¹¦!',
+        'Mail Management' => 'ÓÊ¼şÏà¹ØÉèÖÃ',
+        'Frontend' => 'Ç°¶Ë½çÃæ',
+        'Other Options' => 'ÆäËûÑ¡Ïî',
+        'Change Password' => 'ĞŞ¸ÄÃÜÂë',
+        'New password' => 'ĞÂÃÜÂë',
+        'New password again' => 'ÖØ¸´ĞÂÃÜÂë',
+        'Select your QueueView refresh time.' => '¶ÓÁĞÊÓÍ¼Ë¢ĞÂÊ±¼ä.',
+        'Select your frontend language.' => '½çÃæÓïÑÔ',
+        'Select your frontend Charset.' => '½çÃæ×Ö·û¼¯.',
+        'Select your frontend Theme.' => '½çÃæÖ÷Ìâ.',
+        'Select your frontend QueueView.' => '¶ÓÁĞÊÓÍ¼.',
+        'Spelling Dictionary' => 'Æ´Ğ´¼ì²é×Öµä',
+        'Select your default spelling dictionary.' => 'È±Ê¡Æ´Ğ´¼ì²é×Öµä.',
+        'Max. shown Tickets a page in Overview.' => 'Ã¿Ò»Ò³ÏÔÊ¾µÄ×î´ó Tickets ÊıÄ¿.',
+        'Can\'t update password, your new passwords do not match! Please try again!' => 'ÃÜÂëÁ½´Î²»·û£¬ÎŞ·¨¸üĞÂ£¬ÇëÖØĞÂÊäÈë',
+        'Can\'t update password, invalid characters!' => 'ÎŞ·¨¸üĞÂÃÜÂë£¬°üº¬ÎŞĞ§×Ö·û.',
+        'Can\'t update password, must be at least %s characters!' => 'ÎŞ·¨¸üĞÂÃÜÂë£¬ÃÜÂë³¤¶ÈÖÁÉÙ%sÎ».',
+        'Can\'t update password, must contain 2 lower and 2 upper characters!' => 'ÎŞ·¨¸üĞÂÃÜÂë£¬ÖÁÉÙ°üº¬2¸ö´óĞ´×Ö·ûºÍ2¸öĞ¡Ğ´×Ö·û.',
+        'Can\'t update password, needs at least 1 digit!' => 'ÎŞ·¨¸üĞÂÃÜÂë£¬ÖÁÉÙ°üº¬1Î»Êı×Ö',
+        'Can\'t update password, needs at least 2 characters!' => 'ÎŞ·¨¸üĞÂÃÜÂë£¬ÖÁÉÙ°üº¬2¸ö×ÖÄ¸!',
 
         # Template: AAAStats
-        'Stat' => 'ç»Ÿè®¡',
-        'Sum' => 'æ€»å’Œ',
-        'Please fill out the required fields!' => 'è¯·å¡«å†™å¿…å¡«å­—æ®µ',
-        'Please select a file!' => 'è¯·é€‰æ‹©ä¸€ä¸ªæ–‡ä»¶ï¼',
-        'Please select an object!' => 'è¯·é€‰æ‹©ä¸€ä¸ªå¯¹è±¡ï¼',
-        'Please select a graph size!' => 'è¯·é€‰æ‹©å›¾ç‰‡å°ºå¯¸ï¼',
-        'Please select one element for the X-axis!' => 'è¯·ä¸ºXè½´é€‰æ‹©ä¸€ä¸ªå…ƒç´ ',
-        'Please select only one element or turn off the button \'Fixed\' where the select field is marked!' =>
-            'è¯·åªé€‰æ‹©ä¸€ä¸ªå…ƒç´ æˆ–å…³é—­è¢«é€‰å­—æ®µçš„\'Fixed\'æŒ‰é’®',
-        'If you use a checkbox you have to select some attributes of the select field!' =>
-            'å¦‚æœä½¿ç”¨å¤é€‰æ¡†ï¼Œå¿…é¡»é€‰æ‹©è¢«é€‰å­—æ®µçš„éƒ¨åˆ†å±æ€§ï¼',
-        'Please insert a value in the selected input field or turn off the \'Fixed\' checkbox!' =>
-            'åœ¨é€‰å®šçš„è¾“å…¥æ¡†ä¸­è¯·æ’å…¥ä¸€ä¸ªå€¼ï¼Œæˆ–å…³é—­\'Fixed\'å¤é€‰æ¡†ï¼',
-        'The selected end time is before the start time!' => 'é€‰å®šçš„ç»“æŸæ—¶é—´æ—©äºå¼€å§‹æ—¶é—´ï¼',
-        'You have to select one or more attributes from the select field!' =>
-            'å¿…é¡»ä»è¢«é€‰å­—æ®µä¸­é€‰æ‹©ä¸€ä¸ªæˆ–å¤šä¸ªå±æ€§ï¼',
-        'The selected Date isn\'t valid!' => 'æ‰€é€‰æ—¥æœŸæ— æ•ˆ',
-        'Please select only one or two elements via the checkbox!' => 'è¯·é€šè¿‡å¤é€‰æ¡†é€‰æ‹©ä¸€ä¸ªæˆ–ä¸¤ä¸ªè¦ç´ ï¼',
-        'If you use a time scale element you can only select one element!' =>
-            'å¦‚æœä½¿ç”¨æ—¶é—´å°ºåº¦è¦ç´ ï¼Œåªèƒ½é€‰æ‹©å…¶ä¸­ä¸€ä¸ª',
-        'You have an error in your time selection!' => 'é€‰æ‹©æ—¶é—´é”™è¯¯ï¼',
-        'Your reporting time interval is too small, please use a larger time scale!' =>
-            'æŠ¥å‘Šæ—¶é—´é—´éš”å¤ªçŸ­ï¼Œè¯·ä½¿ç”¨æ›´é•¿çš„é—´éš”ï¼',
-        'The selected start time is before the allowed start time!' => 'é€‰å®šçš„å¼€å§‹æ—¶é—´æ—©äºå…è®¸çš„å¼€å§‹æ—¶é—´ï¼',
-        'The selected end time is after the allowed end time!' => 'é€‰å®šçš„ç»“æŸæ—¶é—´æ™šäºå…è®¸çš„ç»“æŸæ—¶é—´ï¼',
-        'The selected time period is larger than the allowed time period!' =>
-            'é€‰å®šæ—¶é—´æ®µå¤§äºå…è®¸çš„æ—¶é—´æ®µï¼',
-        'Common Specification' => 'å…±åŒè§„èŒƒ',
-        'X-axis' => 'Xè½´',
-        'Value Series' => 'å€¼åˆ—',
-        'Restrictions' => 'é™åˆ¶',
-        'graph-lines' => 'çº¿å›¾',
-        'graph-bars' => 'æŸ±çŠ¶å›¾',
-        'graph-hbars' => 'HæŸ±çŠ¶å›¾',
-        'graph-points' => 'å›¾ç‚¹',
-        'graph-lines-points' => 'å›¾çº¿ç‚¹',
-        'graph-area' => 'åŒºå›¾',
-        'graph-pie' => 'é¥¼å›¾',
-        'extended' => 'æ‰©å±•',
-        'Agent/Owner' => 'æœåŠ¡äººå‘˜',
-        'Created by Agent/Owner' => 'åˆ›å»ºäºº',
-        'Created Priority' => 'åˆ›å»ºä¼˜å…ˆçº§',
-        'Created State' => 'åˆ›å»ºçŠ¶æ€',
-        'Create Time' => 'åˆ›å»ºæ—¶é—´',
-        'CustomerUserLogin' => 'å®¢æˆ·ç™»é™†',
-        'Close Time' => 'å…³é—­æ—¶é—´',
-        'TicketAccumulation' => 'ç¥¨å•ç§¯ç´¯',
-        'Attributes to be printed' => 'æ‰“å°çš„å±æ€§',
-        'Sort sequence' => 'æ’åº',
-        'Order by' => 'æ’åº',
-        'Limit' => 'é™åˆ¶',
-        'Ticketlist' => 'ç¥¨å•æ¸…å•',
-        'ascending' => 'å‡åº',
-        'descending' => 'é™åº',
-        'First Lock' => 'é¦–å…ˆé”å®š',
-        'Evaluation by' => 'è¯„ä»·äºº',
-        'Total Time' => 'æ€»æ—¶é—´',
-        'Ticket Average' => 'ç¥¨å•å¹³å‡å¤„ç†æ—¶é—´',
-        'Ticket Min Time' => 'ç¥¨å•æœ€å°å¤„ç†æ—¶é—´',
-        'Ticket Max Time' => 'ç¥¨å•æœ€å¤§å¤„ç†æ—¶é—´',
-        'Number of Tickets' => 'ç¥¨å•æ•°',
-        'Article Average' => 'æ–‡ç« å¹³å‡å¤„ç†æ—¶é—´',
-        'Article Min Time' => 'æ–‡ç« æœ€å°å¤„ç†æ—¶é—´',
-        'Article Max Time' => 'æ–‡ç« æœ€å¤§å¤„ç†æ—¶é—´',
-        'Number of Articles' => 'æ–‡ç« æ•°',
-        'Accounted time by Agent' => 'æœåŠ¡äººå‘˜å¤„ç†ç¥¨å•æ‰€ç”¨çš„æ—¶é—´',
-        'Ticket/Article Accounted Time' => 'ç¥¨å•/æ–‡ç« æ‰€å ç”¨çš„æ—¶é—´',
-        'TicketAccountedTime' => 'ç¥¨å•æ‰€å ç”¨çš„æ—¶é—´',
-        'Ticket Create Time' => 'ç¥¨å•åˆ›å»ºæ—¶é—´',
-        'Ticket Close Time' => 'ç¥¨å•å…³é—­æ—¶é—´',
+        'Stat' => 'Í³¼Æ',
+        'Please fill out the required fields!' => 'ÇëÌîĞ´±ØÌî×Ö¶Î',
+        'Please select a file!' => 'ÇëÑ¡ÔñÒ»¸öÎÄ¼ş!',
+        'Please select an object!' => 'ÇëÑ¡ÔñÒ»¸ö¶ÔÏó!',
+        'Please select a graph size!' => 'ÇëÑ¡ÔñÍ¼Æ¬³ß´ç!',
+        'Please select one element for the X-axis!' => 'ÇëÑ¡ÔñÒ»¸öÔªËØµÄX-Öá',
+        'Please select only one element or turn off the button \'Fixed\' where the select field is marked!' => 'ÇëÖ»Ñ¡ÔñÒ»¸öÔªËØ»ò¹Ø±Õ±»Ñ¡ÓòµÄ\'Fixed\'°´Å¥',
+        'If you use a checkbox you have to select some attributes of the select field!' => 'Èç¹ûÄãÊ¹ÓÃ¸´Ñ¡¿òÄã±ØĞëÑ¡Ôñ±»Ñ¡ÓòµÄÒ»Ğ©ÊôĞÔ!',
+        'Please insert a value in the selected input field or turn off the \'Fixed\' checkbox!' => 'ÔÚÑ¡¶¨µÄÊäÈëÀ¸Çë²åÈëÒ»¸öÖµ£¬»ò¹Ø±Õ\'Fixed\'¸´Ñ¡¿ò£¡',
+        'The selected end time is before the start time!' => 'Ñ¡¶¨µÄ½áÊøÊ±¼äÔçÓÚ¿ªÊ¼Ê±¼ä£¡',
+        'You have to select one or more attributes from the select field!' => '´Ó±»Ñ¡ÓòÖĞÄã±ØĞëÑ¡ÔñÒ»¸ö»ò¶à¸öÊôĞÔ£¡',
+        'The selected Date isn\'t valid!' => 'ËùÑ¡ÈÕÆÚ²»ÓĞĞ§',
+        'Please select only one or two elements via the checkbox!' => 'Í¨¹ı¸´Ñ¡¿ò£¬ÇëÖ»Ñ¡ÔñÒ»¸ö»òÁ½¸öÒªËØ£¡',
+        'If you use a time scale element you can only select one element!' => 'Èç¹ûÄúÊ¹ÓÃµÄÊÇÊ±¼ä³ß¶ÈÒªËØÄãÖ»ÄÜÑ¡ÔñÆäÖĞÒ»¸ö×é³É²¿·Ö',
+        'You have an error in your time selection!' => 'ÄãÓĞÒ»¸ö´íÎóµÄÊ±¼äÑ¡Ôñ£¡',
+        'Your reporting time interval is too small, please use a larger time scale!' => 'ÄúµÄ±¨¸æÊ±¼ä¼ä¸ôÌ«Ğ¡£¬ÇëÊ¹ÓÃ¸ü´óµÄ¼ä¸ô',
+        'The selected start time is before the allowed start time!' => 'Ñ¡¶¨µÄ¿ªÊ¼Ê±¼äÔçÓÚÔÊĞíµÄ¿ªÊ¼Ê±¼ä',
+        'The selected end time is after the allowed end time!' => 'Ñ¡¶¨µÄ½áÊøÊ±¼äÍíÓÚÔÊĞíµÄ½áÊøÊ±¼ä',
+        'The selected time period is larger than the allowed time period!' => 'ÔÚÑ¡¶¨Ê±¼ä¶Î´óÓÚÔÊĞíµÄÊ±¼ä¶Î',
+        'Common Specification' => '¹²Í¬¹æ·¶',
+        'Xaxis' => 'XÖá',
+        'Value Series' => '¼ÛÖµÏµÁĞ',
+        'Restrictions' => 'ÏŞÖÆ',
+        'graph-lines' => 'ÏßÍ¼',
+        'graph-bars' => 'Öù×´Í¼',
+        'graph-hbars' => 'HÖù×´Í¼',
+        'graph-points' => 'Í¼µã',
+        'graph-lines-points' => 'Í¼Ïßµã',
+        'graph-area' => 'Í¼Çø',
+        'graph-pie' => '±ıÍ¼',
+        'extended' => 'À©Õ¹',
+        'Agent/Owner' => 'ËùÓĞÕß',
+        'Created by Agent/Owner' => '¼¼ÊõÖ§³ÖÈËÔ±´´½¨µÄ',
+        'Created Priority' => '´´½¨µÄÓÅÏÈ¼¶',
+        'Created State' => '´´½¨µÄ×´Ì¬',
+        'Create Time' => '´´½¨Ê±¼ä',
+        'CustomerUserLogin' => '¿Í»§µÇÂ½',
+        'Close Time' => '¹Ø±ÕÊ±¼ä',
+        'TicketAccumulation' => 'Ticket»ıÀÛ',
+        'Attributes to be printed' => 'Òª´òÓ¡µÄÊôĞÔ',
+        'Sort sequence' => 'ÅÅĞòĞòÁĞ',
+        'Order by' => '°´Ë³ĞòÅÅ',
+        'Limit' => '¼«ÏŞ',
+        'Ticketlist' => 'TicketÇåµ¥',
+        'ascending' => 'ÉıĞò',
+        'descending' => '½µĞò',
+        'First Lock' => 'Ê×ÏÈËø¶¨',
+        'Evaluation by' => 'ÆÀ¼ÛµÄÈË',
+        'Total Time' => '×ÜÊ±¼ä',
+        'Ticket Average' => 'Ticket´¦ÀíÆ½¾ùÊ±¼ä',
+        'Ticket Min Time' => 'Ticket´¦Àí×îĞ¡Ê±¼ä',
+        'Ticket Max Time' => 'Ticket´¦Àí×î´óÊ±¼ä',
+        'Number of Tickets' => 'TicketÊıÄ¿',
+        'Article Average' => 'Article´¦ÀíÆ½¾ùÊ±¼ä',
+        'Article Min Time' => 'Article´¦Àí×îĞ¡Ê±¼ä',
+        'Article Max Time' => 'Article´¦Àí×î´óÊ±¼ä',
+        'Number of Articles' => 'ArticleÊıÁ¿',
+        'Accounted time by Agent' => '¼¼ÊõÖ§³ÖÈËÔ±´¦ÀíTicketËùÓÃµÄÊ±¼ä',
+        'Ticket/Article Accounted Time' => 'Ticket/ArticleËùÕ¼ÓÃµÄÊ±¼ä',
+        'TicketAccountedTime' => 'TicketËùÕ¼ÓÃµÄÊ±¼ä',
+        'Ticket Create Time' => 'Ticket´´½¨Ê±¼ä',
+        'Ticket Close Time' => 'Ticket¹Ø±ÕÊ±¼ä',
 
         # Template: AAATicket
-        'Status View' => 'çŠ¶æ€è§†å›¾',
-        'Bulk' => 'æ‰¹é‡',
-        'Lock' => 'é”å®š',
-        'Unlock' => 'è§£é”',
-        'History' => 'å†å²',
-        'Zoom' => 'å±•å¼€',
-        'Age' => 'æ€»æ—¶é•¿',
-        'Bounce' => 'é€€å›',
-        'Forward' => 'è½¬å‘',
-        'From' => 'å‘ä»¶äºº',
-        'To' => 'æ”¶ä»¶äºº',
-        'Cc' => 'æŠ„é€',
-        'Bcc' => 'æš—é€',
-        'Subject' => 'æ ‡é¢˜',
-        'Move' => 'ç§»åŠ¨',
-        'Queue' => 'é˜Ÿåˆ—',
-        'Queues' => 'é˜Ÿåˆ—',
-        'Priority' => 'ä¼˜å…ˆçº§',
-        'Priorities' => 'ä¼˜å…ˆçº§',
-        'Priority Update' => 'æ›´æ–°ä¼˜å…ˆçº§',
-        'Priority added!' => '',
-        'Priority updated!' => '',
-        'Signature added!' => '',
-        'Signature updated!' => '',
-        'SLA' => 'SLA',
-        'Service Level Agreement' => 'æœåŠ¡çº§åˆ«åè®®',
-        'Service Level Agreements' => 'æœåŠ¡çº§åˆ«åè®®',
-        'Service' => 'æœåŠ¡',
-        'Services' => 'æœåŠ¡',
-        'State' => 'çŠ¶æ€',
-        'States' => 'çŠ¶æ€',
-        'Status' => 'çŠ¶æ€',
-        'Statuses' => 'çŠ¶æ€',
-        'Ticket Type' => 'ç¥¨å•ç±»å‹',
-        'Ticket Types' => 'ç¥¨å•ç±»å‹',
-        'Compose' => 'æ’°å†™',
-        'Pending' => 'ç­‰å¾…',
-        'Owner' => 'æ‰€æœ‰è€…',
-        'Owner Update' => 'æ›´æ–°æ‰€æœ‰è€…',
-        'Responsible' => 'è´Ÿè´£äºº',
-        'Responsible Update' => 'æ›´æ–°è´Ÿè´£äºº',
-        'Sender' => 'å‘ä»¶äºº',
-        'Article' => 'æ–‡ç« ',
-        'Ticket' => 'ç¥¨å•',
-        'Createtime' => 'åˆ›å»ºæ—¶é—´',
-        'plain' => 'çº¯æ–‡æœ¬',
-        'Email' => 'é‚®ä»¶åœ°å€',
+        'Lock' => 'Ëø¶¨',
+        'Unlock' => '½âËø',
+        'History' => 'ÀúÊ·',
+        'Zoom' => 'ÓÊ¼şÕ¹¿ª',
+        'Age' => '×ÜÊ±¼ä',
+        'Bounce' => '»ØÍË',
+        'Forward' => '×ª·¢',
+        'From' => '·¢¼şÈË',
+        'To' => 'ÊÕ¼şÈË',
+        'Cc' => '³­ËÍ',
+        'Bcc' => '°µËÍ',
+        'Subject' => '±êÌâ',
+        'Move' => 'ÒÆ¶¯',
+        'Queue' => '¶ÓÁĞ',
+        'Priority' => 'ÓÅÏÈ¼¶',
+        'Priority Update' => '¸üĞÂÓÅÏÈ¼¶',
+        'State' => '×´Ì¬',
+        'Compose' => '×«Ğ´',
+        'Pending' => 'µÈ´ı',
+        'Owner' => 'ËùÓĞÕß',
+        'Owner Update' => '¸üĞÂËùÓĞÕß',
+        'Responsible' => '¸ºÔğÈË',
+        'Responsible Update' => '¸üĞÂ¸ºÔğÈË',
+        'Sender' => '·¢¼şÈË',
+        'Article' => 'ĞÅ¼ş',
+        'Ticket' => 'Ticket',
+        'Createtime' => '´´½¨Ê±¼ä',
+        'plain' => '´¿ÎÄ±¾',
+        'Email' => 'ÓÊ¼şµØÖ·',
         'email' => 'E-Mail',
-        'Close' => 'å…³é—­',
-        'Action' => 'åŠ¨ä½œ',
-        'Attachment' => 'é™„ä»¶',
-        'Attachments' => 'é™„ä»¶',
-        'This message was written in a character set other than your own.' =>
-            'è¿™å°é‚®ä»¶æ‰€ç”¨å­—ç¬¦é›†ä¸æ‚¨çš„ç³»ç»Ÿå­—ç¬¦é›†ä¸ç¬¦',
-        'If it is not displayed correctly,' => 'å¦‚æœæ²¡æœ‰ç»™æ­£ç¡®åœ°æ˜¾ç¤º,',
-        'This is a' => 'è¿™æ˜¯ä¸€ä¸ª',
-        'to open it in a new window.' => 'åœ¨æ–°çª—å£ä¸­æ‰“å¼€å®ƒ',
-        'This is a HTML email. Click here to show it.' => 'è¿™æ˜¯ä¸€å°HTMLæ ¼å¼é‚®ä»¶ï¼Œç‚¹å‡»è¿™é‡Œæ˜¾ç¤º.',
-        'Free Fields' => 'è‡ªå®šä¹‰å­—æ®µ',
-        'Merge' => 'åˆå¹¶',
-        'merged' => 'å·²åˆå¹¶',
-        'closed successful' => 'æˆåŠŸå…³é—­',
-        'closed unsuccessful' => 'å¤±è´¥å…³é—­',
-        'Locked Tickets Total' => 'é”å®šç¥¨å•æ€»æ•°',
-        'Locked Tickets Reminder Reached' => 'é”å®šç¥¨å•æé†’',
-        'Locked Tickets New' => 'é”å®šçš„æ–°ç¥¨å•',
-        'Responsible Tickets Total' => 'è´Ÿè´£ç¥¨å•æ€»æ•°',
-        'Responsible Tickets New' => 'è´Ÿè´£çš„æ–°ç¥¨å•',
-        'Responsible Tickets Reminder Reached' => 'è´Ÿè´£æ–°ç¥¨å•æé†’',
-        'Watched Tickets Total' => 'å…³æ³¨ç¥¨å•æ€»æ•°',
-        'Watched Tickets New' => 'å…³æ³¨çš„æ–°ç¥¨å•',
-        'Watched Tickets Reminder Reached' => 'å…³æ³¨æ–°ç¥¨å•æé†’',
-        'All tickets' => 'æ‰€æœ‰ç¥¨å•',
-        'Available tickets' => '',
-        'Escalation' => 'å‡çº§',
-        'last-search' => 'ä¸Šæ¬¡æœç´¢',
-        'QueueView' => 'é˜Ÿåˆ—è§†å›¾',
-        'Ticket Escalation View' => 'ç¥¨å•å‡çº§è§†å›¾',
-        'Message from' => '',
-        'End message' => '',
-        'Forwarded message from' => '',
-        'End forwarded message' => '',
-        'new' => 'æ–°å»º',
-        'open' => 'æ‰“å¼€',
-        'Open' => 'æ‰“å¼€',
-        'Open tickets' => '',
-        'closed' => 'å·²å…³é—­',
-        'Closed' => 'å·²å…³é—­',
-        'Closed tickets' => '',
-        'removed' => 'å·²åˆ é™¤',
-        'pending reminder' => 'ç­‰å¾…æé†’',
-        'pending auto' => 'è‡ªåŠ¨ç­‰å¾…',
-        'pending auto close+' => 'ç­‰å¾…è‡ªåŠ¨å…³é—­+',
-        'pending auto close-' => 'ç­‰å¾…è‡ªåŠ¨å…³é—­-',
-        'email-external' => 'å¤–éƒ¨é‚®ä»¶',
-        'email-internal' => 'å†…éƒ¨é‚®ä»¶',
-        'note-external' => 'å¤–éƒ¨æ³¨è§£',
-        'note-internal' => 'å†…éƒ¨æ³¨è§£',
-        'note-report' => 'æ³¨è§£æŠ¥å‘Š',
-        'phone' => 'ç”µè¯',
-        'sms' => 'çŸ­ä¿¡',
-        'webrequest' => 'Webè¯·æ±‚',
-        'lock' => 'é”å®š',
-        'unlock' => 'æœªé”å®š',
-        'very low' => 'éå¸¸ä½',
-        'low' => 'ä½',
-        'normal' => 'æ­£å¸¸',
-        'high' => 'é«˜',
-        'very high' => 'éå¸¸é«˜',
-        '1 very low' => '1-éå¸¸ä½',
-        '2 low' => '2-ä½',
-        '3 normal' => '3-æ­£å¸¸',
-        '4 high' => '4-é«˜',
-        '5 very high' => '5-éå¸¸é«˜',
-        'auto follow up' => '',
-        'auto reject' => '',
-        'auto remove' => '',
-        'auto reply' => '',
-        'auto reply/new ticket' => '',
-        'Ticket "%s" created!' => 'æœ‰"%s"ä¸ªç¥¨å•åˆ›å»º!',
-        'Ticket Number' => 'ç¥¨å•ç¼–å·',
-        'Ticket Object' => 'ç¥¨å•å¯¹è±¡',
-        'No such Ticket Number "%s"! Can\'t link it!' => 'ç¼–å·ä¸º"%s"çš„ç¥¨å•ä¸å­˜åœ¨ï¼Œä¸èƒ½é“¾æ¥!',
-        'You don\'t have write access to this ticket.' => '',
-        'Sorry, you need to be the ticket owner to perform this action.' =>
-            '',
-        'Ticket selected.' => '',
-        'Ticket is locked by another agent.' => '',
-        'Ticket locked.' => '',
-        'Don\'t show closed Tickets' => 'ä¸æ˜¾ç¤ºå·²å…³é—­çš„ç¥¨å•',
-        'Show closed Tickets' => 'æ˜¾ç¤ºå·²å…³é—­çš„ç¥¨å•',
-        'New Article' => 'æ–°æ–‡ç« ',
-        'Unread article(s) available' => 'æœªè¯»æ–‡ç« ',
-        'Remove from list of watched tickets' => 'ä»å…³æ³¨ç¥¨å•ä¸­åˆ é™¤',
-        'Add to list of watched tickets' => 'æ·»åŠ åˆ°å…³æ³¨ç¥¨å•æ¸…å•',
-        'Email-Ticket' => 'é‚®ä»¶ç¥¨å•',
-        'Create new Email Ticket' => 'åˆ›å»ºé‚®ä»¶ç¥¨å•',
-        'Phone-Ticket' => 'ç”µè¯ç¥¨å•',
-        'Search Tickets' => 'æœç´¢ç¥¨å•',
-        'Edit Customer Users' => 'ä¿®æ”¹å®¢æˆ·å¸æˆ·',
-        'Edit Customer Company' => 'ä¿®æ”¹å®¢æˆ·å…¬å¸',
-        'Bulk Action' => 'æ‰¹é‡å¤„ç†',
-        'Bulk Actions on Tickets' => 'æ‰¹é‡å¤„ç†ç¥¨å•',
-        'Send Email and create a new Ticket' => 'å‘é€é‚®ä»¶å¹¶åˆ›å»ºæ–°ç¥¨å•',
-        'Create new Email Ticket and send this out (Outbound)' => 'åˆ›å»ºé‚®ä»¶ç¥¨å•ï¼ˆå‡ºæ ˆï¼‰',
-        'Create new Phone Ticket (Inbound)' => 'åˆ›å»ºç”µè¯ç¥¨å•ï¼ˆå…¥æ ˆï¼‰',
-        'Overview of all open Tickets' => 'æ‰€æœ‰å¼€æ”¾ç¥¨å•æ¦‚å†µ',
-        'Locked Tickets' => 'é”å®šçš„ç¥¨å•',
-        'My Locked Tickets' => 'æˆ‘çš„é”å®šç¥¨å•',
-        'My Watched Tickets' => 'æˆ‘çš„å…³æ³¨ç¥¨å•',
-        'My Responsible Tickets' => 'æˆ‘è´Ÿè´£çš„ç¥¨å•',
-        'Watched Tickets' => 'å…³æ³¨çš„ç¥¨å•',
-        'Watched' => 'å·²å…³æ³¨',
-        'Watch' => 'å…³æ³¨',
-        'Unwatch' => 'ä¸å…³æ³¨',
-        'Lock it to work on it' => '',
-        'Unlock to give it back to the queue' => '',
-        'Shows the ticket history!' => 'æ˜¾ç¤ºå¤„ç†å†å²!',
-        'Print this ticket!' => 'æ‰“å°ç¥¨å•!',
-        'Change the ticket priority!' => 'ä¿®æ”¹ä¼˜å…ˆçº§',
-        'Change the ticket free fields!' => 'ä¿®æ”¹è‡ªå®šä¹‰å­—æ®µ',
-        'Link this ticket to an other objects!' => 'é“¾æ¥åˆ°å…¶ä»–å¯¹è±¡!',
-        'Change the ticket owner!' => 'å˜æ›´æ‰€æœ‰è€…!',
-        'Change the ticket customer!' => 'ä¿®æ”¹å®¢æˆ·!',
-        'Add a note to this ticket!' => 'æ·»åŠ æ³¨è§£!',
-        'Merge this ticket!' => 'åˆå¹¶ç¥¨å•!',
-        'Set this ticket to pending!' => 'è½¬å…¥ç­‰å¾…çŠ¶æ€',
-        'Close this ticket!' => 'å…³é—­ç¥¨å•!',
-        'Look into a ticket!' => 'æŸ¥çœ‹ç¥¨å•å†…å®¹',
-        'Delete this ticket!' => 'åˆ é™¤ç¥¨å•!',
-        'Mark as Spam!' => 'æ ‡è®°ä¸ºåƒåœ¾!',
-        'My Queues' => 'æˆ‘çš„é˜Ÿåˆ—',
-        'Shown Tickets' => 'æ˜¾ç¤ºç¥¨å•',
-        'Your email with ticket number "<OTRS_TICKET>" is merged to "<OTRS_MERGE_TO_TICKET>".' =>
-            'æ‚¨çš„å•å·ä¸º"<OTRS_TICKET>"çš„é‚®ä»¶ç¥¨å• è¢«åˆå¹¶åˆ°å•å·"<OTRS_MERGE_TO_TICKET>" !',
-        'Ticket %s: first response time is over (%s)!' => 'ç¥¨å•%sï¼šé¦–æ¬¡å“åº”æ—¶é—´å·²è¶…è¿‡(%s)!',
-        'Ticket %s: first response time will be over in %s!' => 'ç¥¨å•%s: é¦–æ¬¡å“åº”æ—¶é—´å°†åœ¨(%s)å†…è¶…æ—¶!',
-        'Ticket %s: update time is over (%s)!' => 'ç¥¨å•%s: æ›´æ–°æ—¶é—´å·²è¶…è¿‡(%s)!',
-        'Ticket %s: update time will be over in %s!' => 'ç¥¨å•%s: æ›´æ–°æ—¶é—´å°†åœ¨(%s)å†…è¶…æ—¶!',
-        'Ticket %s: solution time is over (%s)!' => 'ç¥¨å•%s: è§£å†³æ—¶é—´å·²è¶…è¿‡(%s)!',
-        'Ticket %s: solution time will be over in %s!' => 'è§£å†³æ—¶é—´å°†åœ¨(%s)å†…è¶…æ—¶!',
-        'There are more escalated tickets!' => 'æœ‰æ›´å¤šå‡çº§çš„ç¥¨å•',
-        'Plain Format' => 'çº¯æ–‡æœ¬æ ¼å¼',
-        'Reply All' => 'å›å¤æ‰€æœ‰',
-        'Direction' => 'æ–¹å‘',
-        'Agent (All with write permissions)' => 'æœåŠ¡äººå‘˜ï¼ˆæ‰€æœ‰å†™æƒé™ï¼‰',
-        'Agent (Owner)' => 'æœåŠ¡äººå‘˜ï¼ˆæ‰€æœ‰äººï¼‰',
-        'Agent (Responsible)' => 'æœåŠ¡äººå‘˜ï¼ˆè´Ÿè´£äººï¼‰',
-        'New ticket notification' => 'æ–°ç¥¨å•é€šçŸ¥',
-        'Send me a notification if there is a new ticket in "My Queues".' =>
-            'å¦‚æœæˆ‘çš„é˜Ÿåˆ—ä¸­æœ‰æ–°çš„ç¥¨å•ï¼Œå‘é€šçŸ¥ç»™æˆ‘.',
-        'Send new ticket notifications' => 'å‘é€æ–°ç¥¨å•é€šçŸ¥',
-        'Ticket follow up notification' => 'ç¥¨å•è·Ÿè¿›é€šçŸ¥',
-        'Ticket lock timeout notification' => 'ç¥¨å•é”å®šè¶…æ—¶é€šçŸ¥',
-        'Send me a notification if a ticket is unlocked by the system.' =>
-            'å¦‚æœç¥¨å•è¢«ç³»ç»Ÿè§£é”ï¼Œè¯·é€šçŸ¥æˆ‘.',
-        'Send ticket lock timeout notifications' => 'å‘é€ç¥¨å•é”å®šè¶…æ—¶é—´é€šçŸ¥',
-        'Ticket move notification' => 'ç¥¨å•ç§»åŠ¨é€šçŸ¥',
-        'Send me a notification if a ticket is moved into one of "My Queues".' =>
-            'å¦‚æœæœ‰ç¥¨å•è¢«è½¬å…¥æˆ‘çš„é˜Ÿåˆ—ï¼Œè¯·é€šçŸ¥æˆ‘.',
-        'Send ticket move notifications' => 'å‘é€ç¥¨å•ç§»åŠ¨é€šçŸ¥',
-        'Your queue selection of your favourite queues. You also get notified about those queues via email if enabled.' =>
-            '',
-        'Custom Queue' => 'å®¢æˆ·é˜Ÿåˆ—',
-        'QueueView refresh time' => 'é˜Ÿåˆ—è§†å›¾åˆ·æ–°é¢‘ç‡',
-        'If enabled, the QueueView will automatically refresh after the specified time.' =>
-            'å¦‚æœå¯ç”¨æ­¤åŠŸèƒ½, é˜Ÿåˆ—è§†å›¾ä¼šè‡ªåŠ¨åœ¨æŒ‡å®šæ—¶é—´å†…è‡ªåŠ¨åˆ·æ–°.',
-        'Refresh QueueView after' => 'é˜Ÿåˆ—è§†å›¾å¤šä¹…ååˆ·æ–°',
-        'Screen after new ticket' => 'åˆ›å»ºæ–°åçš„è§†å›¾',
-        'Show this screen after I created a new ticket' => 'åˆ›å»ºå®Œæ–°çš„ç¥¨å•ä¹‹åè¿”å›åˆ›å»ºç¥¨å•é¡µé¢è¿˜æ˜¯æ˜¾ç¤ºè¯¥ç¥¨å•',
-        'Closed Tickets' => 'å…³é—­çš„ç¥¨å•',
-        'Show closed tickets.' => 'æ˜¾ç¤ºå·²å…³é—­ç¥¨å•',
-        'Max. shown Tickets a page in QueueView.' => 'é˜Ÿåˆ—è§†å›¾æ¯é¡µæœ€å¤§æ˜¾ç¤ºæ•°',
-        'Ticket Overview "Small" Limit' => 'ç¥¨å•æ¦‚è§ˆâ€œå°â€æ¨¡å¼é™åˆ¶',
-        'Ticket limit per page for Ticket Overview "Small"' => 'ç¥¨å•æ¦‚è§ˆâ€œå°â€æ¨¡å¼æ¯é¡µæ•°é‡',
-        'Ticket Overview "Medium" Limit' => 'ç¥¨å•æ¦‚è§ˆâ€œä¸­â€æ¨¡å¼é™åˆ¶',
-        'Ticket limit per page for Ticket Overview "Medium"' => 'ç¥¨å•æ¦‚è§ˆâ€œä¸­â€æ¨¡å¼æ¯é¡µæ•°é‡',
-        'Ticket Overview "Preview" Limit' => 'ç¥¨å•æ¦‚è§ˆâ€œé¢„è§ˆâ€æ¨¡å¼é™åˆ¶',
-        'Ticket limit per page for Ticket Overview "Preview"' => 'ç¥¨å•æ¦‚è§ˆâ€œé¢„è§ˆâ€æ¨¡å¼æ¯é¡µæ•°é‡',
-        'Ticket watch notification' => 'ç¥¨å•å…³æ³¨é€šçŸ¥',
-        'Send me the same notifications for my watched tickets that the ticket owners will get.' =>
-            'å¯¹æˆ‘æ‰€å…³æ³¨çš„ç¥¨å•ï¼Œç»™æ‰€æœ‰è€…å‘é€é€šçŸ¥æ—¶ï¼Œä¹Ÿç»™æˆ‘å‘é€ç›¸åŒçš„é€šçŸ¥',
-        'Send ticket watch notifications' => 'å‘é€ç¥¨å•å…³æ³¨é€šçŸ¥',
-        'Out Of Office Time' => 'ä¸åœ¨åŠå…¬å®¤çš„æ—¶é—´',
-        'New Ticket' => 'æ–°çš„ç¥¨å•',
-        'Create new Ticket' => 'åˆ›å»ºç¥¨å•',
-        'Customer called' => 'å®¢æˆ·è‡´ç”µ',
-        'phone call' => 'ç”µè¯å‘¼å«',
-        'Phone Call Outbound' => 'ç”µè¯å‘¼å«å‡ºæ ˆ',
-        'Phone Call Inbound' => '',
-        'Reminder Reached' => 'æé†’å·²è¾¾',
-        'Reminder Tickets' => 'æé†’ç¥¨å•',
-        'Escalated Tickets' => 'å‡çº§çš„ç¥¨å•',
-        'New Tickets' => 'æ–°çš„ç¥¨å•',
-        'Open Tickets / Need to be answered' => 'æ‰“å¼€çš„/éœ€è¦å›ç­”çš„ç¥¨å•',
-        'All open tickets, these tickets have already been worked on, but need a response' =>
-            'æ‰€æœ‰æ‰“å¼€ç¥¨å•ï¼Œè¿™äº›ç¥¨å•å·²ç»åœ¨å¤„ç†ä¸­ï¼Œä½†æ˜¯éœ€è¦ä¸€ä¸ªå›å¤',
-        'All new tickets, these tickets have not been worked on yet' => 'æ‰€æœ‰æ–°å»ºç¥¨å•ï¼Œè¿™äº›ç¥¨å•ç›®å‰è¿˜æ²¡æœ‰è¢«å¤„ç†',
-        'All escalated tickets' => 'æ‰€æœ‰å‡çº§çš„ç¥¨å•',
-        'All tickets with a reminder set where the reminder date has been reached' =>
-            'æ‰€æœ‰è®¾ç½®æé†’æ—¥æœŸå·²ç»åˆ°è¾¾çš„ç¥¨å•',
-        'Archived tickets' => 'å½’æ¡£çš„ç¥¨å•',
-        'Unarchived tickets' => 'æœªå½’æ¡£çš„ç¥¨å•',
-        'History::Move' => 'å†å²ï¼šç§»åŠ¨ã€‚ç¥¨å•ç§»åˆ°é˜Ÿåˆ— "%s" (%s)ï¼Œ ä»é˜Ÿåˆ— "%s" (%s).',
-        'History::TypeUpdate' => 'å†å²ï¼šç±»å‹æ›´æ–°ã€‚æ›´æ–°ç±»å‹ä¸º %s (ID=%s).',
-        'History::ServiceUpdate' => 'å†å²ï¼šæœåŠ¡æ›´æ–°ã€‚æœåŠ¡æ›´æ–°ä¸º %s (ID=%s).',
-        'History::SLAUpdate' => 'å†å²ï¼šSLAæ›´æ–°ã€‚æ›´æ–°SLAä¸º %s (ID=%s).',
-        'History::NewTicket' => 'å†å²ï¼šæ–°å»ºç¥¨å•ã€‚æ–°ç¥¨å• [%s] è¢«åˆ›å»º (Q=%s;P=%s;S=%s).',
-        'History::FollowUp' => 'å†å²ï¼šåç»­ã€‚åç»­ä¸º[%s]. %s',
-        'History::SendAutoReject' => 'å†å²ï¼šè‡ªåŠ¨æ‹’ç»å‘é€ç»™ "%s".',
-        'History::SendAutoReply' => 'å†å²ï¼šè‡ªåŠ¨å›å¤å‘é€ç»™ "%s".',
-        'History::SendAutoFollowUp' => 'å†å²ï¼šè‡ªåŠ¨è·Ÿè¸ªå‘é€ç»™ "%s".',
-        'History::Forward' => 'å†å²ï¼šè½¬å‘ç»™ "%s".',
-        'History::Bounce' => 'å†å²ï¼šé€€å›ç»™ "%s".',
-        'History::SendAnswer' => 'å†å²ï¼šå‘é€å›å¤ç»™ "%s".',
-        'History::SendAgentNotification' => 'å†å²ï¼šå‘é€é€šçŸ¥"%s" ç»™æœåŠ¡äººå‘˜"%s".',
-        'History::SendCustomerNotification' => 'å†å²ï¼šå‘é€å®¢æˆ·é€šçŸ¥ç»™ "%s".',
-        'History::EmailAgent' => 'å†å²ï¼šå‘é‚®ä»¶ç»™æœåŠ¡äººå‘˜.',
-        'History::EmailCustomer' => 'å†å²ï¼šå‘é‚®ä»¶ç»™å®¢æˆ· %s',
-        'History::PhoneCallAgent' => 'å†å²ï¼šæ‰“ç”µè¯ç»™å®¢æˆ·',
-        'History::PhoneCallCustomer' => 'å†å²ï¼šå®¢æˆ·å·²æ‰“è¿‡ç”µè¯',
-        'History::AddNote' => 'å†å²ï¼šæ·»åŠ æ³¨é‡Š (%s)',
-        'History::Lock' => 'å†å²ï¼šç¥¨å•é”å®š.',
-        'History::Unlock' => 'å†å²ï¼šç¥¨å•è§£é”.',
-        'History::TimeAccounting' => 'å†å²ï¼šå·¥æ—¶ç®¡ç†ï¼Œ %s æ—¶é—´å•ä½(å¤©)è¢«è®°å½•ã€‚ æ€»å…± %s æ—¶é—´å•ä½è¢«è®°å½•.',
-        'History::Remove' => 'å†å²ï¼šç§»åŠ¨ %s',
-        'History::CustomerUpdate' => 'å†å²ï¼šå®¢æˆ·æ›´æ–° %s',
-        'History::PriorityUpdate' => 'å†å²ï¼šä¼˜å…ˆåº¦æ›´æ–°ï¼Œä» "%s" (%s) æ›´æ–°åˆ° "%s" (%s).',
-        'History::OwnerUpdate' => 'å†å²ï¼šæ‰€æœ‰äººæ›´æ–°ï¼Œæ–°æ‰€æœ‰äººæ˜¯ "%s" (ID=%s).',
-        'History::LoopProtection' => 'å†å²ï¼šå¾ªç¯ä¿æŠ¤! æœªå‘ç”Ÿè‡ªåŠ¨å›å¤ "%s".',
-        'History::Misc' => 'å†å²ï¼šå…¶ä»– %s',
-        'History::SetPendingTime' => 'å†å²ï¼šåˆ·æ–°%s',
-        'History::StateUpdate' => 'å†å²ï¼šçŠ¶æ€ä»"%s" æ›´æ–°ä¸º "%s"',
-        'History::TicketDynamicFieldUpdate' => 'å†å²ï¼šç¥¨å•è‡ªå®šä¹‰æ–‡æœ¬æ›´æ–°ï¼Œ %s=%s;%s=%s;',
-        'History::WebRequestCustomer' => 'å†å²ï¼šå®¢æˆ·è¿›è¡Œç½‘ä¸Šè¯·æ±‚.',
-        'History::TicketLinkAdd' => 'å†å²ï¼šåˆ°ç¥¨å•"%s" çš„é“¾æ¥è¢«å»ºç«‹',
-        'History::TicketLinkDelete' => 'å†å²ï¼šç¥¨å•"%s" çš„é“¾æ¥è¢«åˆ é™¤',
-        'History::Subscribe' => 'å†å²ï¼šä¸º"%s" ç”¨æˆ·æ·»åŠ è®¢é˜….',
-        'History::Unsubscribe' => 'å†å²ï¼šä¸ºç”¨æˆ· "%s" å–æ¶ˆè®¢é˜…',
-        'History::SystemRequest' => 'å†å²ï¼šç³»ç»Ÿè¯·æ±‚',
-        'History::ResponsibleUpdate' => 'å†å²ï¼šè´Ÿè´£äººæ›´æ–°',
-        'History::ArchiveFlagUpdate' => '',
+        'Close' => '¹Ø±Õ',
+        'Action' => '¶¯×÷',
+        'Attachment' => '¸½¼ş',
+        'Attachments' => '¸½¼ş',
+        'This message was written in a character set other than your own.' => 'Õâ·âÓÊ¼şËùÓÃ×Ö·û¼¯Óë±¾ÏµÍ³×Ö·û¼¯²»·û',
+        'If it is not displayed correctly,' => 'Èç¹ûÏÔÊ¾²»ÕıÈ·,',
+        'This is a' => 'ÕâÊÇÒ»¸ö',
+        'to open it in a new window.' => 'ÔÚĞÂ´°¿ÚÖĞ´ò¿ª',
+        'This is a HTML email. Click here to show it.' => 'ÕâÊÇÒ»·âHTML¸ñÊ½ÓÊ¼ş£¬µã»÷ÕâÀïÏÔÊ¾.',
+        'Free Fields' => '¶îÍâĞÅÏ¢',
+        'Merge' => 'ºÏ²¢',
+        'merged' => 'ÒÑºÏ²¢',
+        'closed successful' => '³É¹¦¹Ø±Õ',
+        'closed unsuccessful' => '¹Ø±ÕÊ§°Ü',
+        'new' => 'ĞÂ½¨',
+        'open' => '´ò¿ª',
+        'Open' => '´ò¿ª',
+        'closed' => '¹Ø±Õ',
+        'Closed' => '¹Ø±Õ',
+        'removed' => 'É¾³ı',
+        'pending reminder' => 'µÈ´ıÌáĞÑ',
+        'pending auto' => '×Ô¶¯µÈ´ı',
+        'pending auto close+' => 'µÈ´ı×Ô¶¯¹Ø±Õ+',
+        'pending auto close-' => 'µÈ´ı×Ô¶¯¹Ø±Õ-',
+        'email-external' => 'Íâ²¿ E-Mail ',
+        'email-internal' => 'ÄÚ²¿ E-Mail ',
+        'note-external' => 'Íâ²¿×¢½â',
+        'note-internal' => 'ÄÚ²¿×¢½â',
+        'note-report' => '×¢½â±¨¸æ',
+        'phone' => 'µç»°',
+        'sms' => '¶ÌĞÅ',
+        'webrequest' => 'WebÇëÇó',
+        'lock' => 'Ëø¶¨',
+        'unlock' => 'Î´Ëø¶¨',
+        'very low' => '·Ç³£µÍ',
+        'low' => 'µÍ',
+        'normal' => 'Õı³£',
+        'high' => '¸ß',
+        'very high' => '·Ç³£¸ß',
+        '1 very low' => '1 ·Ç³£µÍ',
+        '2 low' => '2 µÍ',
+        '3 normal' => '3 Õı³£',
+        '4 high' => '4 ¸ß',
+        '5 very high' => '5 ·Ç³£¸ß',
+        'Ticket "%s" created!' => 'Ticket "%s" ÒÑ´´½¨!',
+        'Ticket Number' => 'Ticket ±àºÅ',
+        'Ticket Object' => 'Ticket ¶ÔÏó',
+        'No such Ticket Number "%s"! Can\'t link it!' => 'Ticket "%s" ²»´æÔÚ£¬²»ÄÜ´´½¨µ½ÆäµÄÁ´½Ó!',
+        'Don\'t show closed Tickets' => '²»ÏÔÊ¾ÒÑ¹Ø±ÕµÄ Tickets',
+        'Show closed Tickets' => 'ÏÔÊ¾ÒÑ¹Ø±ÕµÄ Tickets',
+        'New Article' => 'ĞÂÎÄÕÂ',
+        'Email-Ticket' => 'ÓÊ¼ş Ticket',
+        'Create new Email Ticket' => '´´½¨ĞÂµÄÓÊ¼ş Ticket',
+        'Phone-Ticket' => 'µç»° Ticket',
+        'Search Tickets' => 'ËÑË÷ Tickets',
+        'Edit Customer Users' => '±à¼­¿Í»§ÕÊ»§',
+        'Edit Customer Company' => '±à¼­¿Í»§µ¥Î»',
+        'Bulk Action' => 'ÅúÁ¿´¦Àí',
+        'Bulk Actions on Tickets' => 'ÅúÁ¿´¦Àí Tickets',
+        'Send Email and create a new Ticket' => '·¢ËÍ Email ²¢´´½¨Ò»¸öĞÂµÄ Ticket',
+        'Create new Email Ticket and send this out (Outbound)' => '´´½¨ĞÂµÄ Ticket²¢·¢ËÍ³öÈ¥',
+        'Create new Phone Ticket (Inbound)' => '´´½¨ĞÂµÄµç»°Ticket£¨½øÀ´µÄTicket£©',
+        'Overview of all open Tickets' => 'ËùÓĞ¿ª·Å Tickets ¸Å¿ö',
+        'Locked Tickets' => 'ÒÑËø¶¨ Ticket',
+        'Watched Tickets' => '¶©ÔÄ Tickets',
+        'Watched' => '¶©ÔÄ',
+        'Subscribe' => '¶©ÔÄ',
+        'Unsubscribe' => 'ÍË¶©',
+        'Lock it to work on it!' => 'Ëø¶¨²¢¿ªÊ¼¹¤×÷ !',
+        'Unlock to give it back to the queue!' => '½âËø²¢ËÍ»Ø¶ÓÁĞ!',
+        'Shows the ticket history!' => 'ÏÔÊ¾ Ticket ÀúÊ·×´¿ö!',
+        'Print this ticket!' => '´òÓ¡ Ticket !',
+        'Change the ticket priority!' => 'ĞŞ¸Ä Ticket ÓÅÏÈ¼¶',
+        'Change the ticket free fields!' => 'ĞŞ¸Ä Ticket ¶îÍâĞÅÏ¢',
+        'Link this ticket to an other objects!' => 'Á´½Ó¸Ã Ticket µ½ÆäËû¶ÔÏó!',
+        'Change the ticket owner!' => 'ĞŞ¸Ä Ticket ËùÓĞÕß!',
+        'Change the ticket customer!' => 'ĞŞ¸Ä Ticket ËùÊô¿Í»§!',
+        'Add a note to this ticket!' => '¸ø Ticket Ôö¼Ó×¢½â!',
+        'Merge this ticket!' => 'ºÏ²¢¸Ã Ticket!',
+        'Set this ticket to pending!' => '½«¸Ã Ticket ×ªÈëµÈ´ı×´Ì¬',
+        'Close this ticket!' => '¹Ø±Õ¸Ã Ticket!',
+        'Look into a ticket!' => '²é¿´ Ticket ÄÚÈİ',
+        'Delete this ticket!' => 'É¾³ı¸Ã Ticket!',
+        'Mark as Spam!' => '±ê¼ÇÎªÀ¬»ø!',
+        'My Queues' => 'ÎÒµÄ¶ÓÁĞ',
+        'Shown Tickets' => 'ÏÔÊ¾ Tickets',
+        'Your email with ticket number "<OTRS_TICKET>" is merged to "<OTRS_MERGE_TO_TICKET>".' => 'ÄúµÄÓÊ¼ş "<OTRS_TICKET>" ±»ºÏ²¢µ½ "<OTRS_MERGE_TO_TICKET>" !',
+        'Ticket %s: first response time is over (%s)!' => 'Ticket %s: µÚÒ»ÏìÓ¦Ê±¼äÒÑºÄÊ±(%s)!',
+        'Ticket %s: first response time will be over in %s!' => 'Ticket %s: µÚÒ»ÏìÓ¦Ê±¼ä½«ºÄÊ±(%s)!',
+        'Ticket %s: update time is over (%s)!' => 'Ticket %s: ¸üĞÂÊ±¼äÒÑºÄÊ±(%s)!',
+        'Ticket %s: update time will be over in %s!' => 'Ticket %s: ¸üĞÂÊ±¼ä½«ºÄÊ±(%s)!',
+        'Ticket %s: solution time is over (%s)!' => 'Ticket %s: ´¦Àí½â¾öÒÑºÄÊ±(%s)!',
+        'Ticket %s: solution time will be over in %s!' => '´¦Àí½â¾ö½«ºÄÊ±(%s)!',
+        'There are more escalated tickets!' => 'ÓĞ¸ü¶àÉı¼¶µÄtickets',
+        'New ticket notification' => 'ĞÂ Ticket Í¨Öª',
+        'Send me a notification if there is a new ticket in "My Queues".' => 'Èç¹ûÎÒµÄ¶ÓÁĞÖĞÓĞĞÂµÄ Ticket£¬ÇëÍ¨ÖªÎÒ.',
+        'Follow up notification' => '¸ú×ÙÍ¨Öª',
+        'Send me a notification if a customer sends a follow up and I\'m the owner of this ticket.' => 'Èç¹û¿Í»§·¢ËÍÁË Ticket »Ø¸´£¬²¢ÇÒÎÒÊÇ¸Ã Ticket µÄËùÓĞÕß.',
+        'Ticket lock timeout notification' => 'Ticket Ëø¶¨³¬Ê±Í¨Öª ',
+        'Send me a notification if a ticket is unlocked by the system.' => 'Èç¹û Ticket ±»ÏµÍ³½âËø£¬ÇëÍ¨ÖªÎÒ.',
+        'Move notification' => 'ÒÆ¶¯Í¨Öª',
+        'Send me a notification if a ticket is moved into one of "My Queues".' => 'Èç¹ûÓĞ Ticket ±»×ªÈëÎÒµÄ¶ÓÁĞ£¬ÇëÍ¨ÖªÎÒ.',
+        'Your queue selection of your favourite queues. You also get notified about those queues via email if enabled.' => 'ÄúµÄ×î³£ÓÃ¶ÓÁĞ£¬Èç¹ûÄúµÄÓÊ¼şÉèÖÃ¼¤»î£¬Äú½«»áµÃµ½¸Ã¶ÓÁĞµÄ×´Ì¬Í¨Öª.',
+        'Custom Queue' => '¿Í»§¶ÓÁĞ',
+        'QueueView refresh time' => '¶ÓÁĞÊÓÍ¼Ë¢ĞÂÊ±¼ä',
+        'Screen after new ticket' => '´´½¨ĞÂ Ticket ºóµÄÊÓÍ¼',
+        'Select your screen after creating a new ticket.' => 'Ñ¡ÔñÄú´´½¨ĞÂ Ticket ºó£¬ËùÏÔÊ¾µÄÊÓÍ¼.',
+        'Closed Tickets' => '¹Ø±Õ Tickets',
+        'Show closed tickets.' => 'ÏÔÊ¾ÒÑ¹Ø±Õ Tickets.',
+        'Max. shown Tickets a page in QueueView.' => '¶ÓÁĞÊÓÍ¼Ã¿Ò³ÏÔÊ¾ Ticket Êı.',
+        'Watch notification' => '¹Ø×¢Í¨Öª',
+        'Send me a notification of an watched ticket like an owner of an ticket.' => '¶ÔÎÒËù¹Ø×¢µÄticket£¬Ïñ¸ÃticketµÄÓµÓĞÈËÒ»Ñù£¬¸øÎÒÒ²·¢Ò»·İÍ¨Öª',
+        'Out Of Office' => '²»ÔÚ°ì¹«ÊÒ',
+        'Select your out of office time.' => 'Ñ¡ÔñÄã²»ÔÚ°ì¹«ÊÒµÄÊ±¼ä',
+        'CompanyTickets' => '¹«Ë¾Tickets',
+        'MyTickets' => 'ÎÒµÄ Tickets',
+        'New Ticket' => 'ĞÂµÄ Ticket',
+        'Create new Ticket' => '´´½¨ĞÂµÄ Ticket',
+        'Customer called' => '¿Í»§ÖÂµç',
+        'phone call' => 'µç»°ºô½Ğ',
+        'Reminder Reached' => 'ÌáĞÑÒÑ´ï',
+        'Reminder Tickets' => 'ÌáĞÑµÄ Ticket',
+        'Escalated Tickets' => 'Éı¼¶µÄTicket',
+        'New Tickets' => 'ĞÂµÄTicket',
+        'Open Tickets / Need to be answered' => '´ò¿ªµÄTickets/ĞèÒª»Ø´ğ',
+        'Tickets which need to be answered!' => 'ĞèÒª»Ø´ğµÄ Ticket',
+        'All new tickets!' => 'ËùÓĞĞÂµÄtickets',
+        'All tickets which are escalated!' => 'ËùÓĞÉı¼¶µÄtickets',
+        'All tickets where the reminder date has reached!' => 'ËùÓĞÒÑµ½ÌáĞÑÈÕÆÚµÄTicket',
+        'Responses' => '»Ø¸´',
+        'Responses <-> Queue' => '»Ø¸´ <-> ¶ÓÁĞ',
+        'Auto Responses' => '×Ô¶¯»Ø¸´¹¦ÄÜ',
+        'Auto Responses <-> Queue' => '×Ô¶¯»Ø¸´ <-> ¶ÓÁĞ',
+        'Attachments <-> Responses' => '¸½¼ş <-> »Ø¸´',
+        'History::Move' => 'Ticket ÒÆµ½¶ÓÁĞ "%s" (%s) ´Ó¶ÓÁĞ "%s" (%s).',
+        'History::TypeUpdate' => 'Updated Type to %s (ID=%s).',
+        'History::ServiceUpdate' => 'Updated Service to %s (ID=%s).',
+        'History::SLAUpdate' => '¸üĞÂ·şÎñ¼¶±ğĞ­Òé to %s (ID=%s).',
+        'History::NewTicket' => 'New ticket [%s] created (Q=%s;P=%s;S=%s).',
+        'History::FollowUp' => 'FollowUp for [%s]. %s',
+        'History::SendAutoReject' => '×Ô¶¯¾Ü¾ø·¢ËÍ¸ø "%s".',
+        'History::SendAutoReply' => '×Ô¶¯»Ø¸´·¢ËÍ¸ø "%s".',
+        'History::SendAutoFollowUp' => '×Ô¶¯¸ú×Ù·¢ËÍ¸ø "%s".',
+        'History::Forward' => '×ª·¢¸ø "%s".',
+        'History::Bounce' => '»ØÍËµ½ "%s".',
+        'History::SendAnswer' => 'ĞÅ¼ş·¢ËÍ¸ø "%s".',
+        'History::SendAgentNotification' => '"%s"-Benachrichtigung versand an "%s".',
+        'History::SendCustomerNotification' => 'Í¨Öª·¢ËÍ¸ø "%s".',
+        'History::EmailAgent' => '·¢ÓÊ¼ş¸ø¿Í»§.',
+        'History::EmailCustomer' => 'Add mail. %s',
+        'History::PhoneCallAgent' => 'Called customer',
+        'History::PhoneCallCustomer' => '¿Í»§ÒÑ´ò¹ıµç»°',
+        'History::AddNote' => '¼Ó×¢ÊÍ (%s)',
+        'History::Lock' => 'Ticket Ëø¶¨.',
+        'History::Unlock' => 'Ticket ½âËø.',
+        'History::TimeAccounting' => '%s time unit(d) counted. Totaly %s time unit(s) counted.',
+        'History::Remove' => '%s',
+        'History::CustomerUpdate' => 'Refreshed: %s',
+        'History::PriorityUpdate' => 'ÓÅÏÈ¼¶±»¸üĞÂ£¬´Ó  "%s" (%s) µ½ "%s" (%s).',
+        'History::OwnerUpdate' => 'New owner is "%s" (ID=%s).',
+        'History::LoopProtection' => 'Loop protection! sent no auto answer to "%s".',
+        'History::Misc' => '%s',
+        'History::SetPendingTime' => 'Refreshed: %s',
+        'History::StateUpdate' => 'Before "%s" ĞÂ: "%s"',
+        'History::TicketFreeTextUpdate' => 'Refreshed: %s=%s;%s=%s;',
+        'History::WebRequestCustomer' => '¿Í»§½øĞĞÍøÉÏÇëÇó.',
+        'History::TicketLinkAdd' => 'Link to "%s" established.',
+        'History::TicketLinkDelete' => 'Link to "%s" removed.',
+        'History::Subscribe' => 'Added subscription for user "%s".',
+        'History::Unsubscribe' => 'Removed subscription for user "%s".',
 
         # Template: AAAWeekDay
-        'Sun' => 'æ—¥',
-        'Mon' => 'ä¸€',
-        'Tue' => 'äºŒ',
-        'Wed' => 'ä¸‰',
-        'Thu' => 'å››',
-        'Fri' => 'äº”',
-        'Sat' => 'å…­',
+        'Sun' => 'ĞÇÆÚÈÕ',
+        'Mon' => 'ĞÇÆÚÒ»',
+        'Tue' => 'ĞÇÆÚ¶ş',
+        'Wed' => 'ĞÇÆÚÈı',
+        'Thu' => 'ĞÇÆÚËÄ',
+        'Fri' => 'ĞÇÆÚÎå',
+        'Sat' => 'ĞÇÆÚÁù',
 
-        # Template: AdminAttachment
-        'Attachment Management' => 'é™„ä»¶ç®¡ç†',
-        'Actions' => 'åŠ¨ä½œ',
-        'Go to overview' => 'è¿”å›æ¦‚è§ˆ',
-        'Add attachment' => 'æ–°å¢é™„ä»¶',
-        'List' => 'åˆ—è¡¨',
-        'Validity' => '',
-        'No data found.' => 'æ²¡æœ‰æ‰¾åˆ°æ•°æ®ã€‚',
-        'Download file' => 'ä¸‹è½½æ–‡ä»¶',
-        'Delete this attachment' => 'åˆ é™¤è¯¥é™„ä»¶',
-        'Add Attachment' => 'æ–°å¢é™„ä»¶',
-        'Edit Attachment' => 'ä¿®æ”¹é™„ä»¶',
-        'This field is required.' => 'è¯¥å­—æ®µæ˜¯å¿…é¡»çš„ã€‚',
-        'or' => 'æˆ–è€…',
+        # Template: AdminAttachmentForm
+        'Attachment Management' => '¸½¼ş¹ÜÀí',
 
-        # Template: AdminAutoResponse
-        'Auto Response Management' => 'è‡ªåŠ¨å›å¤ç®¡ç†',
-        'Add auto response' => 'æ–°å¢è‡ªåŠ¨å›å¤',
-        'Add Auto Response' => 'æ–°å¢è‡ªåŠ¨å›å¤',
-        'Edit Auto Response' => 'ä¿®æ”¹è‡ªåŠ¨å›å¤',
-        'Response' => 'å›å¤',
-        'Auto response from' => 'è‡ªåŠ¨å›å¤çš„å‘ä»¶äºº',
-        'Reference' => 'ç›¸å…³å‚è€ƒ',
-        'You can use the following tags' => 'ä½ å¯ä»¥ä½¿ç”¨ä»¥ä¸‹çš„æ ‡è®°',
-        'To get the first 20 character of the subject.' => 'æ˜¾ç¤ºæ ‡é¢˜çš„å‰20ä¸ªå­—èŠ‚',
-        'To get the first 5 lines of the email.' => 'æ˜¾ç¤ºé‚®ä»¶çš„å‰äº”è¡Œ',
-        'To get the realname of the sender (if given).' => 'æ˜¾ç¤ºå‘ä»¶äººçš„çœŸå®åå­—',
-        'To get the article attribute' => 'å–å¾—ä¿¡ä»¶çš„ä¸€äº›å±æ€§',
-        ' e. g.' => 'ä¾‹å¦‚',
-        'Options of the current customer user data' => 'å®¢æˆ·ç›¸å…³çš„ä¸€äº›æ•°æ®',
-        'Ticket owner options' => 'ç¥¨å•æ‰€æœ‰è€…ç›¸å…³çš„ä¸€äº›æ•°æ®',
-        'Ticket responsible options' => 'ç¥¨å•è´Ÿè´£äººç›¸å…³çš„ä¸€äº›æ•°æ®',
-        'Options of the current user who requested this action' => 'å½“æ—¶æ“ä½œäººç›¸å…³çš„ä¸€äº›æ•°æ®',
-        'Options of the ticket data' => 'ç¥¨å•ç›¸å…³çš„ä¸€äº›æ•°æ®',
-        'Config options' => 'ç³»ç»Ÿé…ç½®æ•°æ®',
-        'Example response' => 'è¿™é‡Œæœ‰ä¸€ä¸ªèŒƒä¾‹',
+        # Template: AdminAutoResponseForm
+        'Auto Response Management' => '×Ô¶¯»Ø¸´¹ÜÀí',
+        'Response' => '»Ø¸´',
+        'Auto Response From' => '×Ô¶¯»Ø¸´À´×Ô',
+        'Note' => '×¢½â',
+        'Useable options' => '¿ÉÓÃºê±äÁ¿',
+        'To get the first 20 character of the subject.' => 'ÏÔÊ¾±êÌâµÄÇ°20¸ö×Ö½Ú',
+        'To get the first 5 lines of the email.' => 'ÏÔÊ¾µçÓÊµÄÇ°ÎåĞĞ',
+        'To get the realname of the sender (if given).' => 'ÏÔÊ¾·¢¼şÈËµÄÕæÊµÃû×Ö',
+        'To get the article attribute (e. g. (<OTRS_CUSTOMER_From>, <OTRS_CUSTOMER_To>, <OTRS_CUSTOMER_Cc>, <OTRS_CUSTOMER_Subject> and <OTRS_CUSTOMER_Body>).' => '',
+        'Options of the current customer user data (e. g. <OTRS_CUSTOMER_DATA_UserFirstname>).' => 'µ±Ç°¿Í»§ĞÅÏ¢µÄ¿ÉÑ¡Ïî (e. g. <OTRS_CUSTOMER_DATA_UserFirstname>)',
+        'Ticket owner options (e. g. <OTRS_OWNER_UserFirstname>).' => 'TicketÓµÓĞÕßµÄ¿ÉÑ¡Ïî e. g. <OTRS_OWNER_UserFirstname>).',
+        'Ticket responsible options (e. g. <OTRS_RESPONSIBLE_UserFirstname>).' => 'TicketÔğÈÎÑ¡Ïî (e. g. <OTRS_RESPONSIBLE_UserFirstname>).',
+        'Options of the current user who requested this action (e. g. <OTRS_CURRENT_UserFirstname>).' => '',
+        'Options of the ticket data (e. g. <OTRS_TICKET_TicketNumber>, <OTRS_TICKET_TicketID>, <OTRS_TICKET_Queue>, <OTRS_TICKET_State>).' => '¿ÉÑ¡µÄ ticket Êı¾İ (ÀıÈç: <OTRS_TICKET_TicketNumber>, <OTRS_TICKET_TicketID>, <OTRS_TICKET_Queue>, <OTRS_TICKET_State>)',
 
-        # Template: AdminCustomerCompany
-        'Customer Company Management' => 'ç®¡ç†å®¢æˆ·å•ä½',
-        'Wildcards like \'*\' are allowed.' => '',
-        'Add customer company' => 'æ–°å¢å®¢æˆ·å•ä½',
-        'Please enter a search term to look for customer companies.' => 'è¯·è¾“å…¥ä¸€ä¸ªæœç´¢æ¡ä»¶ä»¥æŸ¥æ‰¾å®¢æˆ·å•ä½ã€‚',
-        'Add Customer Company' => 'æ–°å¢å®¢æˆ·å•ä½',
+        'Config options (e. g. <OTRS_CONFIG_HttpType>).' => '',
 
-        # Template: AdminCustomerUser
-        'Customer Management' => 'å®¢æˆ·ç®¡ç†',
-        'Add customer' => 'æ–°å¢å®¢æˆ·',
-        'Select' => 'é€‰æ‹©',
-        'Hint' => 'æç¤º',
-        'Customer will be needed to have a customer history and to login via customer panel.' =>
-            'éœ€è¦å»ºç«‹å®¢æˆ·æ¡£æ¡ˆä»¥è®°å½•æœåŠ¡è¿‡ç¨‹ï¼Œå¹¶å¯è®©å®¢æˆ·ä»è‡ªåŠ©æœåŠ¡ç•Œé¢ç™»å½•ã€‚',
-        'Please enter a search term to look for customers.' => 'è¯·è¾“å…¥ä¸€ä¸ªæœç´¢æ¡ä»¶ä»¥å¯»æ‰¾å®¢æˆ·çš„èµ„æ–™.',
-        'Last Login' => 'æœ€åä¸€æ¬¡ç™»å½•',
-        'Add Customer' => 'æ–°å¢å®¢æˆ·',
-        'Edit Customer' => 'ä¿®æ”¹å®¢æˆ·',
-        'This field is required and needs to be a valid email address.' =>
-            'è¯¥æ ä½å¿…é¡»è¾“å…¥æœ‰æ•ˆçš„é‚®ä»¶åœ°å€ã€‚',
-        'This email address is not allowed due to the system configuration.' =>
-            'è¯¥é‚®ä»¶åœ°å€ä¸ç¬¦åˆç³»ç»Ÿé…ç½®è¦æ±‚ã€‚',
-        'This email address failed MX check.' => 'è¯¥é‚®ä»¶åœ°å€MXæ£€æŸ¥æ— æ•ˆã€‚',
-        'DNS problem, please check your configuration and the error log.' =>
-            '',
-        'The syntax of this email address is incorrect.' => 'è¯¥é‚®ä»¶åœ°å€è¯­æ³•é”™è¯¯ã€‚',
+        # Template: AdminCustomerCompanyForm
+        'Customer Company Management' => '¹ÜÀí¿ÍÈËµ¥Î»',
+        'Search for' => 'ËÑË÷',
+        'Add Customer Company' => 'Ôö¼Ó¿ÍÈËµ¥Î»',
+        'Add a new Customer Company.' => 'Ôö¼Ó¿ÍÈËµ½µ¥Î»Àï',
+        'List' => 'ÁĞ±í',
+        'This values are required.' => '¸ÃÌõÄ¿±ØĞëÌîĞ´.',
+        'This values are read only.' => '¸ÃÊı¾İÖ»¶Á.',
 
-        # Template: AdminCustomerUserGroup
-        'Manage Customer-Group Relations' => 'ç®¡ç†å®¢æˆ·ä¸ç¾¤ç»„çš„å¯¹åº”å…³ç³»',
-        'Notice' => 'æ³¨æ„',
-        'This feature is disabled!' => 'è¯¥åŠŸèƒ½å·²å…³é—­',
-        'Just use this feature if you want to define group permissions for customers.' =>
-            'è¯¥åŠŸèƒ½ç”¨äºä¸ºå®¢æˆ·å®šä¹‰æƒé™ç»„ã€‚',
-        'Enable it here!' => 'æ‰“å¼€è¯¥åŠŸèƒ½',
-        'Search for customers.' => '',
-        'Edit Customer Default Groups' => 'ä¿®æ”¹å®¢æˆ·é»˜è®¤ç¾¤ç»„',
-        'These groups are automatically assigned to all customers.' => 'å…¨éƒ¨å®¢æˆ·å°†è¢«è‡ªåŠ¨åŠ å…¥è¯¥ç¾¤ç»„ã€‚',
-        'You can manage these groups via the configuration setting "CustomerGroupAlwaysGroups".' =>
-            'å¯ä»¥é€šè¿‡ç³»ç»Ÿé…ç½®é¡¹ "CustomerGroupAlwaysGroups"ä¿®æ”¹é»˜è®¤ç¾¤ç»„ã€‚',
-        'Filter for Groups' => 'ç¾¤ç»„è¿‡æ»¤',
-        'Select the customer:group permissions.' => 'é€‰æ‹©å®¢æˆ·:ç¾¤ç»„è®¾å®šæƒé™ã€‚',
-        'If nothing is selected, then there are no permissions in this group (tickets will not be available for the customer).' =>
-            'å¦‚æœæ²¡æœ‰é€‰æ‹©ï¼Œå°†æ— æ³•ç»™å®¢æˆ·è®¾å®šç¾¤ç»„æƒé™ï¼ˆç¥¨å•å°†å¯¹è¯¥å®¢æˆ·ä¸å¯ç”¨ï¼‰ã€‚',
-        'Search Result:' => 'æœç´¢ç»“æœ',
-        'Customers' => 'å®¢æˆ·',
-        'Groups' => 'ç¾¤ç»„',
-        'No matches found.' => 'æ²¡æœ‰æ‰¾åˆ°ç›¸åŒ¹é…çš„.',
-        'Change Group Relations for Customer' => 'ä¸ºå®¢æˆ·ä¿®æ”¹ç¾¤ç»„',
-        'Change Customer Relations for Group' => 'ä¸ºç¾¤ç»„ä¿®æ”¹å®¢æˆ·',
-        'Toggle %s Permission for all' => 'åˆ‡æ¢ %s æƒé™ç»™å…¨éƒ¨',
-        'Toggle %s permission for %s' => 'åˆ‡æ¢ %s æƒé™ç»™ %s',
-        'Customer Default Groups:' => 'å®¢æˆ·é»˜è®¤ç¾¤ç»„ï¼š',
-        'No changes can be made to these groups.' => 'è¯¥ç¾¤ç»„æ— æ³•ä¿®æ”¹ã€‚',
-        'ro' => 'åªè¯»',
-        'Read only access to the ticket in this group/queue.' => 'ç¾¤ç»„/é˜Ÿåˆ—ä¸­çš„ç¥¨å•åªè¯»ã€‚',
-        'rw' => 'è¯»å†™',
-        'Full read and write access to the tickets in this group/queue.' =>
-            'ç¾¤ç»„/é˜Ÿåˆ—ä¸­çš„ç¥¨å•å¯è¯»å†™.',
+        # Template: AdminCustomerUserForm
+        'The message being composed has been closed.  Exiting.' => '½øĞĞÏûÏ¢×«Ğ´µÄ´°¿ÚÒÑ¾­±»¹Ø±Õ,ÍË³ö.',
+        'This window must be called from compose window' => '¸Ã´°¿Ú±ØĞëÓÉ×«Ğ´´°¿Úµ÷ÓÃ',
+        'Customer User Management' => '¿Í»§ÓÃ»§¹ÜÀí',
+        'Add Customer User' => 'Ôö¼Ó¿ÍÈË',
+        'Source' => 'Êı¾İÔ´',
+        'Create' => '´´½¨',
+        'Customer user will be needed to have a customer history and to login via customer panel.' => '¿Í»§ÓÃ»§±ØĞëÓĞÒ»¸öÕËºÅ´Ó¿Í»§µÇÂ¼Ò³ÃæµÇÂ¼ÏµÍ³.',
+
+        # Template: AdminCustomerUserGroupChangeForm
+        'Customer Users <-> Groups Management' => '¿Í»§ÓÃ»§ <-> ×é ¹ÜÀí',
+        'Change %s settings' => 'ĞŞ¸Ä %s ÉèÖÃ',
+        'Select the user:group permissions.' => 'Ñ¡Ôñ ÓÃ»§:×é È¨ÏŞ.',
+        'If nothing is selected, then there are no permissions in this group (tickets will not be available for the user).' => 'Èç¹û²»Ñ¡Ôñ£¬Ôò¸Ã×éÃ»ÓĞÈ¨ÏŞ (¸Ã×éÎŞ·¨´¦Àí Ticket)',
+        'Permission' => 'È¨ÏŞ',
+        'ro' => 'Ö»¶Á',
+        'Read only access to the ticket in this group/queue.' => '¶ÓÁĞÖĞµÄ Ticket Ö»¶Á.',
+        'rw' => '¶ÁĞ´',
+        'Full read and write access to the tickets in this group/queue.' => '¶ÓÁĞÖĞµÄ Ticket ¶Á/Ğ´.',
+
+        # Template: AdminCustomerUserGroupForm
 
         # Template: AdminCustomerUserService
-        'Manage Customer-Services Relations' => 'ç®¡ç†å®¢æˆ·ä¸æœåŠ¡çš„å¯¹åº”å…³ç³»',
-        'Edit default services' => 'ä¿®æ”¹é»˜è®¤æœåŠ¡',
-        'Filter for Services' => 'è¿‡æ»¤æœåŠ¡',
-        'Allocate Services to Customer' => 'ä¸ºå®¢æˆ·æŒ‡å®šæœåŠ¡',
-        'Allocate Customers to Service' => 'ä¸ºæœåŠ¡æŒ‡å®šå®¢æˆ·',
-        'Toggle active state for all' => 'åˆ‡æ¢æ¿€æ´»çŠ¶æ€ç»™å…¨éƒ¨',
-        'Active' => 'æ¿€æ´»',
-        'Toggle active state for %s' => 'åˆ‡æ¢æ¿€æ´»çŠ¶æ€ç»™ %s',
-
-        # Template: AdminDynamicField
-        'Dynamic Fields Management' => '',
-        'Add new field for object' => '',
-        'To add a new field, select the field type form one of the object\'s list, the object defines the boundary of the field and it can\'t be changed after the field creation.' =>
-            '',
-        'Dynamic Fields List' => '',
-        'Dynamic fields per page' => '',
-        'Label' => '',
-        'Order' => 'æ¬¡åº',
-        'Object' => 'å¯¹è±¡',
-
-        # Template: AdminDynamicFieldCheckbox
-        'Dynamic Fields' => '',
-        'Field' => '',
-        'Go back to overview' => '',
-        'General' => '',
-        'This field is required, and the value should be alphabetic and numeric characters only.' =>
-            '',
-        'Must be unique and only accept alphabetic and numeric characters.' =>
-            '',
-        'Changing this value will require manual changes in the system.' =>
-            '',
-        'This is the name to be shown on the screens where the field is active.' =>
-            '',
-        'Field order' => '',
-        'This field is required and must be numeric.' => '',
-        'This is the order in which this field will be shown on the screens where is active.' =>
-            '',
-        'Field type' => '',
-        'Object type' => '',
-        'Field Settings' => '',
-        'Default value' => 'é»˜è®¤å€¼',
-        'This is the default value for this field.' => '',
-        'Save' => 'ä¿å­˜',
-
-        # Template: AdminDynamicFieldDateTime
-        'Default date difference' => '',
-        'This field must be numeric.' => '',
-        'The difference from NOW (in seconds) to calculate the field default value (e.g. 3600 or -60).' =>
-            '',
-        'Define years period' => '',
-        'Activate this feature to define a fixed range of years (in the future and in the past) to be displayed on the year part of the field.' =>
-            '',
-        'Years in the past' => '',
-        'Years in the past to display (default: 5 years).' => '',
-        'Years in the future' => '',
-        'Years in the future to display (default: 5 years).' => '',
-        'Show link' => '',
-        'Here you can specify an optional HTTP link for the field value in Overviews and Zoom screens.' =>
-            '',
-
-        # Template: AdminDynamicFieldDropdown
-        'Possible values' => '',
-        'Key' => 'å­—æ®µ',
-        'Value' => 'å€¼',
-        'Remove value' => '',
-        'Add value' => '',
-        'Add Value' => '',
-        'Add empty value' => '',
-        'Activate this option to create an empty selectable value.' => '',
-        'Translatable values' => '',
-        'If you activate this option the values will be translated to the user defined language.' =>
-            '',
-        'Note' => 'æ³¨è§£',
-        'You need to add the translations manually into the language translation files.' =>
-            '',
-
-        # Template: AdminDynamicFieldMultiselect
-
-        # Template: AdminDynamicFieldText
-        'Number of rows' => '',
-        'Specify the height (in lines) for this field in the edit mode.' =>
-            '',
-        'Number of cols' => '',
-        'Specify the width (in characters) for this field in the edit mode.' =>
-            '',
+        'Customer Users <-> Services Management' => '¿Í»§ÕÊºÅ <-> ·şÎñ¹ÜÀí',
+        'CustomerUser' => '¿Í»§ÓÃ»§',
+        'Service' => '·şÎñ',
+        'Edit default services.' => '±à¼­Ä¬ÈÏ·şÎñ',
+        'Search Result' => 'ËÑË÷½á¹û',
+        'Allocate services to CustomerUser' => '·ÖÅä·şÎñ¸ø¿Í»§',
+        'Active' => '¼¤»î',
+        'Allocate CustomerUser to service' => 'Ö¸ÅÉ¿Í»§µ½·şÎñ',
 
         # Template: AdminEmail
-        'Admin Notification' => 'ç®¡ç†å‘˜é€šçŸ¥',
-        'With this module, administrators can send messages to agents, group or role members.' =>
-            'é€šè¿‡æ­¤æ¨¡å—ï¼Œç®¡ç†å‘˜å®¢æˆ·å‘é€æ¶ˆæ¯ç»™æœåŠ¡äººå‘˜/ç¾¤ç»„/è§’è‰²æˆå‘˜ã€‚',
-        'Create Administrative Message' => 'åˆ›å»ºç®¡ç†å‘˜é€šçŸ¥',
-        'Your message was sent to' => 'ä½ çš„ä¿¡æ¯å·²è¢«å‘é€åˆ°',
-        'Send message to users' => 'å‘é€ä¿¡æ¯ç»™æ³¨å†Œç”¨æˆ·',
-        'Send message to group members' => 'å‘é€ä¿¡æ¯åˆ°ç»„æˆå‘˜',
-        'Group members need to have permission' => 'ç»„æˆå‘˜éœ€è¦æƒé™',
-        'Send message to role members' => 'å‘é€ä¿¡æ¯åˆ°è§’è‰²æˆå‘˜',
-        'Also send to customers in groups' => 'åŒæ ·å‘é€åˆ°è¯¥ç»„çš„å®¢æˆ·',
-        'Body' => 'å†…å®¹',
-        'Send' => 'å‘é€',
+        'Message sent to' => 'ÏûÏ¢·¢ËÍ¸ø',
+        'A message should have a subject!' => 'ÓÊ¼ş±ØĞëÓĞ±êÌâ!',
+        'Recipients' => 'ÊÕ¼şÈË',
+        'Body' => 'ÄÚÈİ',
+        'Send' => '·¢ËÍ',
 
         # Template: AdminGenericAgent
-        'Generic Agent' => 'è®¡åˆ’ä»»åŠ¡',
-        'Add job' => 'æ–°å¢ä»»åŠ¡',
-        'Last run' => 'æœ€åè¿è¡Œ',
-        'Run Now!' => 'ç°åœ¨è¿è¡Œ!',
-        'Delete this task' => 'åˆ é™¤è¿™ä¸ªä»»åŠ¡',
-        'Run this task' => 'æ‰§è¡Œè¿™ä¸ªä»»åŠ¡',
-        'Job Settings' => 'ä»»åŠ¡è®¾ç½®',
-        'Job name' => 'ä»»åŠ¡åç§°',
-        'Currently this generic agent job will not run automatically.' =>
-            'ç›®å‰è¿™ä¸€é€šç”¨Agentä½œä¸šå°†ä¸ä¼šè‡ªåŠ¨è¿è¡Œ',
-        'To enable automatic execution select at least one value from minutes, hours and days!' =>
-            'å¯ç”¨è‡ªåŠ¨æ‰§è¡Œè‡³å°‘é€‰æ‹©ä¸€ä¸ªå€¼åˆ†é’Ÿï¼Œæ—¶é—´å’Œæ—¥æœŸ',
-        'Schedule minutes' => 'åˆ†',
-        'Schedule hours' => 'æ—¶',
-        'Schedule days' => 'æ—¥',
-        'Toggle this widget' => 'æ”¶èµ·/å±•å¼€Widget',
-        'Ticket Filter' => 'ç¥¨å•è¿‡æ»¤',
-        '(e. g. 10*5155 or 105658*)' => '  ä¾‹å¦‚: 10*5144 æˆ–è€… 105658*',
-        '(e. g. 234321)' => 'ä¾‹å¦‚: 234321',
-        'Customer login' => 'å®¢æˆ·ç™»å½•',
-        '(e. g. U5150)' => 'ä¾‹å¦‚: U5150',
-        'Fulltext-search in article (e. g. "Mar*in" or "Baue*").' => 'åœ¨æ–‡ç« ä¸­å…¨æ–‡æ£€ç´¢ï¼ˆä¾‹å¦‚ï¼š"Mar*in" or "Baue*"ï¼‰',
-        'Agent' => 'æœåŠ¡äººå‘˜',
-        'Ticket lock' => 'ç¥¨å•é”å®š',
-        'Create times' => 'åˆ›å»ºæ—¶é—´',
-        'No create time settings.' => 'æ²¡æœ‰åˆ›å»ºæ—¶é—´ã€‚',
-        'Ticket created' => 'ç¥¨å•åˆ›å»ºåœ¨',
-        'Ticket created between' => 'ç¥¨å•åˆ›å»ºæ—¶é—´è‡ª',
-        'Change times' => '',
-        'No change time settings.' => 'ä¸æ”¹å˜æ—¶é—´è®¾ç½®',
-        'Ticket changed' => '',
-        'Ticket changed between' => '',
-        'Close times' => 'å…³é—­æ—¶é—´',
-        'No close time settings.' => 'æ²¡æœ‰å…³é—­æ—¶é—´ã€‚',
-        'Ticket closed' => 'ç¥¨å•å…³é—­åœ¨',
-        'Ticket closed between' => 'ç¥¨å•å…³é—­æ—¶é—´è‡ª',
-        'Pending times' => 'ç­‰å¾…æ—¶é—´',
-        'No pending time settings.' => 'æ²¡æœ‰å¾…å®šæ—¶é—´',
-        'Ticket pending time reached' => 'ç¥¨å•å¾…å®šæ—¶é—´åœ¨',
-        'Ticket pending time reached between' => 'ç¥¨å•å¾…å®šæ—¶é—´è‡ª',
-        'Escalation times' => 'å‡çº§æ—¶é—´',
-        'No escalation time settings.' => 'æ²¡æœ‰å‡çº§æ—¶é—´',
-        'Ticket escalation time reached' => 'ç¥¨å•å‡çº§æ—¶é—´åœ¨',
-        'Ticket escalation time reached between' => 'ç¥¨å•å‡çº§æ—¶é—´è‡ª',
-        'Escalation - first response time' => 'å‡çº§ - é¦–æ¬¡å›å¤æ—¶é—´',
-        'Ticket first response time reached' => 'ç¥¨å•é¦–æ¬¡å›å¤æ—¶é—´åœ¨',
-        'Ticket first response time reached between' => 'ç¥¨å•é¦–æ¬¡å›å¤æ—¶é—´è‡ª',
-        'Escalation - update time' => 'å‡çº§ - æ›´æ–°æ—¶é—´',
-        'Ticket update time reached' => 'ç¥¨å•æ›´æ–°æ—¶é—´åœ¨',
-        'Ticket update time reached between' => 'ç¥¨å•æ›´æ–°æ—¶é—´è‡ª',
-        'Escalation - solution time' => 'å‡çº§ - è§£å†³æ—¶é—´',
-        'Ticket solution time reached' => 'ç¥¨å•è§£å†³æ—¶é—´åœ¨',
-        'Ticket solution time reached between' => 'ç¥¨å•è§£å†³æ—¶é—´è‡ª',
-        'Archive search option' => 'å½’æ¡£æŸ¥è¯¢é€‰é¡¹',
-        'Ticket Action' => 'ç¥¨å•å¤„ç†',
-        'Set new service' => 'è®¾ç½®æ–°æœåŠ¡',
-        'Set new Service Level Agreement' => 'æŒ‡å®šæœåŠ¡çº§åˆ«åè®®',
-        'Set new priority' => 'æŒ‡å®šä¼˜å…ˆçº§',
-        'Set new queue' => 'æŒ‡å®šé˜Ÿåˆ—',
-        'Set new state' => 'æŒ‡å®šçŠ¶æ€',
-        'Set new agent' => 'æŒ‡å®šæœåŠ¡äººå‘˜',
-        'new owner' => 'æŒ‡å®šæ‰€æœ‰è€…',
-        'new responsible' => '',
-        'Set new ticket lock' => 'ç¥¨å•é”å®š',
-        'New customer' => 'æŒ‡å®šå®¢æˆ·',
-        'New customer ID' => 'æŒ‡å®šå®¢æˆ·ID',
-        'New title' => 'æŒ‡å®šç§°è°“',
-        'New type' => 'æŒ‡å®šç±»å‹',
-        'New Dynamic Field Values' => '',
-        'Archive selected tickets' => 'å½’æ¡£é€‰ä¸­çš„ç¥¨å•',
-        'Add Note' => 'æ·»åŠ æ³¨è§£',
-        'Time units' => 'æ—¶é—´å•å…ƒ',
-        ' (work units)' => 'å·¥ä½œå•å…ƒ',
-        'Ticket Commands' => 'ç¥¨å•å‘½ä»¤',
-        'Send agent/customer notifications on changes' => 'å‘é€ä»£ç†/å®¢æˆ·é€šçŸ¥å˜æ›´',
-        'CMD' => 'å‘½ä»¤',
-        'This command will be executed. ARG[0] will be the ticket number. ARG[1] the ticket id.' =>
-            'å°†æ‰§è¡Œè¿™ä¸ªå‘½ä»¤, ç¬¬ä¸€ä¸ªå‚æ•°æ˜¯ç¥¨å• ç¼–å·ï¼Œç¬¬äºŒä¸ªå‚æ•°æ˜¯ç¥¨å•çš„æ ‡è¯†ç¬¦.',
-        'Delete tickets' => 'åˆ é™¤ç¥¨å•',
-        'Warning: All affected tickets will be removed from the database and cannot be restored!' =>
-            'è­¦å‘Šï¼šæ‰€æœ‰å½±å“çš„ç¥¨å•ä»æ•°æ®åº“åˆ é™¤ï¼Œå°†æ— æ³•æ¢å¤ï¼',
-        'Execute Custom Module' => 'æ‰§è¡Œå®¢æˆ·æ¨¡å—',
-        'Param %s key' => 'å‚æ•° %s key',
-        'Param %s value' => 'å‚æ•° %s value',
-        'Save Changes' => 'ä¿®æ”¹ä¿å­˜',
-        'Results' => 'ç»“æœ',
-        '%s Tickets affected! What do you want to do?' => '%s ä¸ªç¥¨å•å°†è¢«å½±å“ï¼ä½ ç¡®å®šè¦è¿™ä¹ˆåš?',
-        'Warning: You used the DELETE option. All deleted tickets will be lost!' =>
-            'è­¦å‘Šï¼šä½ é€‰æ‹©äº†"åˆ é™¤"æŒ‡ä»¤ã€‚æ‰€æœ‰åˆ é™¤çš„ç¥¨å•æ•°æ®å°†æ— æ³•æ¢å¤ã€‚',
-        'Edit job' => 'ä¿®æ”¹ä»»åŠ¡',
-        'Run job' => 'æ‰§è¡Œä»»åŠ¡',
-        'Affected Tickets' => 'å—å½±å“çš„ç¥¨å•',
+        'GenericAgent' => '¼Æ»®ÈÎÎñ',
+        'Job-List' => '¹¤×÷ÁĞ±í',
+        'Last run' => '×îºóÔËĞĞ',
+        'Run Now!' => 'ÏÖÔÚÔËĞĞ!',
+        'x' => 'x',
+        'Save Job as?' => '±£´æ¹¤×÷Îª?',
+        'Is Job Valid?' => '¹¤×÷ÊÇ·ñÓĞĞ§?',
+        'Is Job Valid' => '¹¤×÷ÓĞĞ§',
+        'Schedule' => '°²ÅÅ',
+        'Currently this generic agent job will not run automatically.' => 'Ä¿Ç°ÕâÒ»Í¨ÓÃAgent×÷Òµ½«²»»á×Ô¶¯ÔËĞĞ',
+        'To enable automatic execution select at least one value from minutes, hours and days!' => 'ÆôÓÃ×Ô¶¯Ö´ĞĞÖÁÉÙÑ¡ÔñÒ»¸öÖµ·ÖÖÓ£¬Ê±¼äºÍÈÕÆÚ',
+        'Fulltext-Search in Article (e. g. "Mar*in" or "Baue*")' => 'ÎÄÕÂÈ«ÎÄËÑË÷ (ÀıÈç: "Mar*in" »òÕß "Baue*")',
+        '(e. g. 10*5155 or 105658*)' => '  ÀıÈç: 10*5144 »òÕß 105658*',
+        '(e. g. 234321)' => 'ÀıÈç: 234321',
+        'Customer User Login' => '¿Í»§ÓÃ»§µÇÂ¼ĞÅÏ¢',
+        '(e. g. U5150)' => 'ÀıÈç: U5150',
+        'SLA' => '·şÎñ¼¶±ğĞ­Òé(SLA)',
+        'Agent' => '¼¼ÊõÖ§³ÖÈËÔ±',
+        'Ticket Lock' => 'Ticket Ëø×´Ì¬',
+        'TicketFreeFields' => 'Ticket ×ÔÓÉÇøÓò',
+        'Create Times' => '´´½¨Ê±¼ä',
+        'No create time settings.' => 'Ã»ÓĞ´´½¨Ê±¼äÉèÖÃ',
+        'Ticket created' => '´´½¨Ê±¼ä',
+        'Ticket created between' => ' ´´½¨Ê±¼äÔÚ',
+        'Close Times' => '¹Ø±ÕÊ±¼ä',
+        'No close time settings.' => 'Ã»ÓĞÉè¶¨¹Ø±ÕÊ±¼ä.',
+        'Ticket closed' => '¹Ø±ÕµÄ Ticket',
+        'Ticket closed between' => 'Ticket ¹Ø±ÕÊ±¼äÔÚ',
+        'Pending Times' => '´ı¶¨Ê±¼ä',
+        'No pending time settings.' => 'Ã»ÓĞÉèÖÃ´ı¶¨Ê±¼ä',
+        'Ticket pending time reached' => '´ı¶¨Ê±¼äÒÑµ½µÄTicket',
+        'Ticket pending time reached between' => 'ÔÚ´ı¶¨Ê±¼äÄÚµÄTicket ',
+        'Escalation Times' => 'Éı¼¶Ê±¼ä',
+        'No escalation time settings.' => 'Ã»ÓĞÉı¼¶Ê±¼äÉèÖÃ',
+        'Ticket escalation time reached' => 'ÒÑµ½Éı¼¶Ê±¼äTicket',
+        'Ticket escalation time reached between' => 'ÔÚÉı¼¶Ê±¼äÄÚµÄTicket',
+        'Escalation - First Response Time' => 'ÈÎÎñµ÷Éı - Ê×´Î»Ø¸´µÄÊ±¼ä',
+        'Ticket first response time reached' => 'Ê×´Î»Ø¸´Ê±¼äÒÑµ½µÄTicket',
+        'Ticket first response time reached between' => 'ÔÚÊ×´Î»Ø¸´Ê±¼äÄÚµÄTicket',
+        'Escalation - Update Time' => 'ÈÎÎñµ÷Éı - ¸üĞÂµÄÊ±¼ä',
+        'Ticket update time reached' => '¸üĞÂÊ±¼äÒÑµ½µÄTicket',
+        'Ticket update time reached between' => 'ÔÚ¸üĞÂÊ±¼äÄÚµÄTicket',
+        'Escalation - Solution Time' => 'ÈÎÎñµ÷Éı - ½â¾öµÄÊ±¼ä',
+        'Ticket solution time reached' => '·½°¸½â¾öÊ±¼äÒÑµ½µÄTicket',
+        'Ticket solution time reached between' => 'ÔÚ·½°¸½â¾öÊ±¼äÄÚÒÑµ½µÄTicket',
+        'New Service' => 'ĞÂµÄ·şÎñ¼¶±ğ',
+        'New SLA' => 'ĞÂµÄ·şÎñ¼¶±ğĞ­Òé(SLA)',
+        'New Priority' => 'ĞÂÓÅÏÈ¼¶',
+        'New Queue' => 'ĞÂ¶ÓÁĞ',
+        'New State' => 'ĞÂ×´Ì¬',
+        'New Agent' => 'ĞÂ¼¼ÊõÖ§³ÖÈËÔ±',
+        'New Owner' => 'ĞÂËùÓĞÕß',
+        'New Customer' => 'ĞÂ¿Í»§',
+        'New Ticket Lock' => 'ĞÂ Ticket Ëø',
+        'New Type' => 'ĞÂµÄÀàĞÍ',
+        'New Title' => 'ĞÂµÄ±êÌâ',
+        'New TicketFreeFields' => 'ĞÂµÄ Ticket ×ÔÓÉÇøÓò',
+        'Add Note' => 'Ôö¼Ó×¢½â',
+        'Time units' => 'Ê±¼äµ¥Ôª',
+        'CMD' => 'ÃüÁî',
+        'This command will be executed. ARG[0] will be the ticket number. ARG[1] the ticket id.' => '½«Ö´ĞĞÕâ¸öÃüÁî, µÚÒ»¸ö²ÎÊıÊÇ Ticket ±àºÅ£¬µÚ¶ş¸ö²ÎÊıÊÇ Ticket µÄ±êÊ¶·û.',
+        'Delete tickets' => 'É¾³ı Tickets',
+        'Warning! This tickets will be removed from the database! This tickets are lost!' => '¾¯¸æ! ¸Ã Ticket ½«»á´ÓÊı¾İ¿âÉ¾³ı£¬ÎŞ·¨»Ö¸´!',
+        'Send Notification' => '·¢ËÍÍ¨Öª',
+        'Param 1' => '²ÎÊı 1',
+        'Param 2' => '²ÎÊı 2',
+        'Param 3' => '²ÎÊı 3',
+        'Param 4' => '²ÎÊı 4',
+        'Param 5' => '²ÎÊı 5',
+        'Param 6' => '²ÎÊı 6',
+        'Send agent/customer notifications on changes' => '·¢ËÍ´úÀí/¿Í»§Í¨Öª±ä¸ü',
+        'Save' => '±£´æ',
+        '%s Tickets affected! Do you really want to use this job?' => '%s Tickets ÊÜµ½Ó°Ïì! ÄúÈ·¶¨ÒªÊ¹ÓÃÕâ¸ö¼Æ»®ÈÎÎñ?',
 
-        # Template: AdminGenericInterfaceDebugger
-        'GenericInterface Debugger for Web Service %s' => '',
-        'Web Services' => '',
-        'Debugger' => '',
-        'Go back to web service' => '',
-        'Clear' => '',
-        'Do you really want to clear the debug log of this web service?' =>
-            '',
-        'Request List' => '',
-        'Time' => 'æ—¶é—´',
-        'Remote IP' => '',
-        'Loading' => 'è£…è½½',
-        'Select a single request to see its details.' => '',
-        'Filter by type' => '',
-        'Filter from' => '',
-        'Filter to' => '',
-        'Filter by remote IP' => '',
-        'Refresh' => 'åˆ·æ–°',
-        'Request Details' => '',
-        'An error occurred during communication.' => '',
-        'Show or hide the content' => 'æ˜¾ç¤ºæˆ–éšè—å†…å®¹',
-        'Clear debug log' => '',
-
-        # Template: AdminGenericInterfaceInvokerDefault
-        'Add new Invoker to Web Service %s' => '',
-        'Change Invoker %s of Web Service %s' => '',
-        'Add new invoker' => '',
-        'Change invoker %s' => '',
-        'Do you really want to delete this invoker?' => '',
-        'All configuration data will be lost.' => '',
-        'Invoker Details' => '',
-        'The name is typically used to call up an operation of a remote web service.' =>
-            '',
-        'Please provide a unique name for this web service invoker.' => '',
-        'The name you entered already exists.' => '',
-        'Invoker backend' => '',
-        'This OTRS invoker backend module will be called to prepare the data to be sent to the remote system, and to process its response data.' =>
-            '',
-        'Mapping for outgoing request data' => '',
-        'Configure' => '',
-        'The data from the invoker of OTRS will be processed by this mapping, to transform it to the kind of data the remote system expects.' =>
-            '',
-        'Mapping for incoming response data' => '',
-        'The response data will be processed by this mapping, to transform it to the kind of data the invoker of OTRS expects.' =>
-            '',
-        'Event Triggers' => '',
-        'Asynchronous' => '',
-        'Delete this event' => '',
-        'This invoker will be triggered by the configured events.' => '',
-        'Do you really want to delete this event trigger?' => '',
-        'Add Event Trigger' => '',
-        'To add a new event select the event object and event name and click on the "+" button' =>
-            '',
-        'Asynchronous event triggers are handled by the OTRS Scheduler in background (recommended).' =>
-            '',
-        'Synchronous event triggers would be processed directly during the web request.' =>
-            '',
-        'Save and continue' => '',
-        'Save and finish' => '',
-        'Delete this Invoker' => '',
-        'Delete this Event Trigger' => '',
-
-        # Template: AdminGenericInterfaceMappingSimple
-        'GenericInterface Mapping Simple for Web Service %s' => '',
-        'Go back to' => '',
-        'Mapping Simple' => '',
-        'Default rule for unmapped keys' => '',
-        'This rule will apply for all keys with no mapping rule.' => '',
-        'Default rule for unmapped values' => '',
-        'This rule will apply for all values with no mapping rule.' => '',
-        'New key map' => '',
-        'Add key mapping' => '',
-        'Mapping for Key ' => '',
-        'Remove key mapping' => '',
-        'Key mapping' => '',
-        'Map key' => '',
-        'matching the' => '',
-        'to new key' => '',
-        'Value mapping' => '',
-        'Map value' => '',
-        'to new value' => '',
-        'Remove value mapping' => '',
-        'New value map' => '',
-        'Add value mapping' => '',
-        'Do you really want to delete this key mapping?' => '',
-        'Delete this Key Mapping' => '',
-
-        # Template: AdminGenericInterfaceOperationDefault
-        'Add new Operation to Web Service %s' => '',
-        'Change Operation %s of Web Service %s' => '',
-        'Add new operation' => '',
-        'Change operation %s' => '',
-        'Do you really want to delete this operation?' => '',
-        'Operation Details' => '',
-        'The name is typically used to call up this web service operation from a remote system.' =>
-            '',
-        'Please provide a unique name for this web service.' => '',
-        'Mapping for incoming request data' => '',
-        'The request data will be processed by this mapping, to transform it to the kind of data OTRS expects.' =>
-            '',
-        'Operation backend' => '',
-        'This OTRS operation backend module will be called internally to process the request, generating data for the response.' =>
-            '',
-        'Mapping for outgoing response data' => '',
-        'The response data will be processed by this mapping, to transform it to the kind of data the remote system expects.' =>
-            '',
-        'Delete this Operation' => '',
-
-        # Template: AdminGenericInterfaceTransportHTTPSOAP
-        'GenericInterface Transport HTTP::SOAP for Web Service %s' => '',
-        'Network transport' => '',
-        'Properties' => '',
-        'Endpoint' => '',
-        'URI to indicate a specific location for accessing a service.' =>
-            '',
-        'e.g. http://local.otrs.com:8000/Webservice/Example' => '',
-        'Namespace' => '',
-        'URI to give SOAP methods a context, reducing ambiguities.' => '',
-        'e.g urn:otrs-com:soap:functions or http://www.otrs.com/GenericInterface/actions' =>
-            '',
-        'Maximum message length' => '',
-        'This field should be an integer number.' => '',
-        'Here you can specify the maximum size (in bytes) of SOAP messages that OTRS will process.' =>
-            '',
-        'Encoding' => '',
-        'The character encoding for the SOAP message contents.' => '',
-        'e.g utf-8, latin1, iso-8859-1, cp1250, Etc.' => '',
-        'SOAPAction' => '',
-        'Set to "Yes" to send a filled SOAPAction header.' => '',
-        'Set to "No" to send an empty SOAPAction header.' => '',
-        'SOAPAction separator' => '',
-        'Character to use as separator between name space and SOAP method.' =>
-            '',
-        'Usually .Net web services uses a "/" as separator.' => '',
-        'Authentication' => '',
-        'The authentication mechanism to access the remote system.' => '',
-        'A "-" value means no authentication.' => '',
-        'The user name to be used to access the remote system.' => '',
-        'The password for the privileged user.' => '',
-
-        # Template: AdminGenericInterfaceWebservice
-        'GenericInterface Web Service Management' => '',
-        'Add web service' => '',
-        'Clone web service' => '',
-        'The name must be unique.' => '',
-        'Clone' => '',
-        'Export web service' => '',
-        'Import web service' => '',
-        'Configuration File' => '',
-        'The file must be a valid web service configuration YAML file.' =>
-            '',
-        'Import' => 'å¯¼å…¥',
-        'Configuration history' => '',
-        'Delete web service' => '',
-        'Do you really want to delete this web service?' => '',
-        'After you save the configuration you will be redirected again to the edit screen.' =>
-            '',
-        'If you want to return to overview please click the "Go to overview" button.' =>
-            '',
-        'Web Service List' => '',
-        'Remote system' => '',
-        'Provider transport' => '',
-        'Requester transport' => '',
-        'Details' => '',
-        'Debug threshold' => '',
-        'In provider mode, OTRS offers web services which are used by remote systems.' =>
-            '',
-        'In requester mode, OTRS uses web services of remote systems.' =>
-            '',
-        'Operations are individual system functions which remote systems can request.' =>
-            '',
-        'Invokers prepare data for a request to a remote web service, and process its response data.' =>
-            '',
-        'Controller' => '',
-        'Inbound mapping' => '',
-        'Outbound mapping' => '',
-        'Delete this action' => '',
-        'At least one %s has a controller that is either not active or not present, please check the controller registration or delete the %s' =>
-            '',
-        'Delete webservice' => '',
-        'Delete operation' => '',
-        'Delete invoker' => '',
-        'Clone webservice' => '',
-        'Import webservice' => '',
-
-        # Template: AdminGenericInterfaceWebserviceHistory
-        'GenericInterface Configuration History for Web Service %s' => '',
-        'Go back to Web Service' => '',
-        'Here you can view older versions of the current web service\'s configuration, export or even restore them.' =>
-            '',
-        'Configuration History List' => '',
-        'Version' => 'ç‰ˆæœ¬',
-        'Create time' => '',
-        'Select a single configuration version to see its details.' => '',
-        'Export web service configuration' => '',
-        'Restore web service configuration' => '',
-        'Do you really want to restore this version of the web service configuration?' =>
-            '',
-        'Your current web service configuration will be overwritten.' => '',
-        'Show or hide the content.' => 'æ˜¾ç¤ºæˆ–éšè—è¯¥å†…å®¹.',
-        'Restore' => '',
-
-        # Template: AdminGroup
-        'WARNING: When you change the name of the group \'admin\', before making the appropriate changes in the SysConfig, you will be locked out of the administrations panel! If this happens, please rename the group back to admin per SQL statement.' =>
-            'è­¦å‘Šï¼šå½“æ‚¨æ›´æ”¹\'ç®¡ç†\'ç»„çš„åç§°æ—¶ï¼Œåœ¨SysConfigä½œå‡ºç›¸åº”çš„å˜åŒ–ä¹‹å‰ï¼Œä½ å°†è¢«ç®¡ç†é¢æ¿é”ä½ï¼å¦‚æœå‘ç”Ÿè¿™ç§æƒ…å†µï¼Œè¯·ç”¨SQLè¯­å¥æŠŠç»„åæ”¹å›åˆ°\'admin\'',
-        'Group Management' => 'ç¾¤ç»„ç®¡ç†',
-        'Add group' => 'æ–°å¢ç¾¤ç»„',
-        'The admin group is to get in the admin area and the stats group to get stats area.' =>
-            'Admin ç»„å¯ä»¥è¿›å…¥ç³»ç»Ÿç®¡ç†åŒºåŸŸ, Stats ç»„å¯ä»¥è¿›å…¥ç»Ÿè®¡ç®¡ç†åŒº',
-        'Create new groups to handle access permissions for different groups of agent (e. g. purchasing department, support department, sales department, ...). ' =>
-            'é€šè¿‡åˆ›å»ºç¾¤ç»„æ¥ä¸ºä¸åŒéƒ¨é—¨ï¼ˆæ¯”å¦‚é‡‡è´­éƒ¨é—¨ï¼Œæ”¯æŒéƒ¨é—¨ï¼Œé”€å”®éƒ¨é—¨ç­‰ï¼‰çš„æœåŠ¡äººå‘˜è®¾å®šæƒé™ã€‚',
-        'It\'s useful for ASP solutions. ' => 'å¸¸ç”¨ä½œASPæ–¹æ¡ˆã€‚',
-        'Add Group' => 'æ–°å¢ç¾¤ç»„',
-        'Edit Group' => 'ä¿®æ”¹ç¾¤ç»„',
+        # Template: AdminGroupForm
+        'WARNING: When you change the name of the group \'admin\', before making the appropriate changes in the SysConfig, you will be locked out of the administrations panel! If this happens, please rename the group back to admin per SQL statement.' => '¾¯¸æ£ºµ±Äú¸ü¸Ä\'¹ÜÀí\'×éµÄÃû³ÆÊ±£¬ÔÚSysConfig×÷³öÏàÓ¦µÄ±ä»¯Ö®Ç°£¬Äã½«±»¹ÜÀíÃæ°åËø×¡£¡Èç¹û·¢ÉúÕâÖÖÇé¿ö£¬ÇëÓÃSQLÓï¾ä°Ñ×éÃû¸Ä»Øµ½\'admin\'',
+        'Group Management' => '×é¹ÜÀí',
+        'Add Group' => 'Ôö¼ÓĞÂµÄ×é',
+        'Add a new Group.' => 'Ôö¼ÓÒ»¸öĞÂ×é',
+        'The admin group is to get in the admin area and the stats group to get stats area.' => 'Admin ×é¿ÉÒÔ½øÈëÏµÍ³¹ÜÀíÇøÓò, Stats ×é¿ÉÒÔ½øÈëÍ³¼Æ¹ÜÀíÇø',
+        'Create new groups to handle access permissions for different groups of agent (e. g. purchasing department, support department, sales department, ...).' => '´´½¨ĞÂµÄ×éÀ´¿ØÖÆ²»Í¬µÄ´æÈ¡È¨ÏŞ',
+        'It\'s useful for ASP solutions.' => 'ÕâÊÇÒ»¸öÓĞĞ§µÄÓ¦ÓÃ·şÎñÌá¹©ÉÌ(ASP)½â¾ö·½°¸.',
 
         # Template: AdminLog
-        'System Log' => 'ç³»ç»Ÿæ—¥å¿—',
-        'Here you will find log information about your system.' => 'æŸ¥çœ‹ç³»ç»Ÿæ—¥å¿—ä¿¡æ¯ã€‚',
-        'Hide this message' => 'éšè—æ­¤æ¶ˆæ¯',
-        'Recent Log Entries' => 'æœ€è¿‘çš„æ—¥å¿—',
+        'System Log' => 'ÏµÍ³ÈÕÖ¾',
+        'Time' => 'Ê±¼ä',
 
         # Template: AdminMailAccount
-        'Mail Account Management' => 'é‚®ä»¶å¸å·ç®¡ç†',
-        'Add mail account' => 'æ–°å¢é‚®ä»¶å¸å·',
-        'All incoming emails with one account will be dispatched in the selected queue!' =>
-            'æ‰€æœ‰æ¥è‡ªä¸€ä¸ªé‚®ä»¶è´¦å·çš„é‚®ä»¶å°†ä¼šè¢«åˆ†å‘åˆ°æ‰€é€‰é˜Ÿåˆ—!',
-        'If your account is trusted, the already existing X-OTRS header at arrival time (for priority, ...) will be used! PostMaster filter will be used anyway.' =>
-            'å¦‚æœæ‚¨çš„å¸æˆ·æ˜¯å€¼å¾—ä¿¡èµ–çš„ï¼Œç°æœ‰çš„X-OTRSæ ‡é¢˜åˆ°è¾¾æ—¶é—´ï¼ˆä¼˜å…ˆï¼Œ ... ï¼‰å°†è¢«ä½¿ç”¨ï¼é‚®ä»¶è¿‡æ»¤å™¨å°†è¢«ä½¿ç”¨',
-        'Host' => 'ä¸»æœº',
-        'Delete account' => 'åˆ é™¤å¸å·',
-        'Fetch mail' => 'æŸ¥æ”¶é‚®ä»¶',
-        'Add Mail Account' => 'æ–°å¢é‚®ä»¶å¸å·',
-        'Example: mail.example.com' => 'èŒƒä¾‹ï¼šmail.example.com',
-        'IMAP Folder' => '',
-        'Only modify this if you need to fetch mail from a different folder than INBOX.' =>
-            '',
-        'Trusted' => 'æ˜¯å¦ä¿¡ä»»',
-        'Dispatching' => 'åˆ†æ´¾',
-        'Edit Mail Account' => 'ä¿®æ”¹é‚®ä»¶å¸å·',
+        'Mail Account Management' => 'ÓÊ¼şÕÊºÅ¹ÜÀí',
+        'Host' => 'Ö÷»ú',
+        'Trusted' => 'ÊÇ·ñĞÅÈÎ',
+        'Dispatching' => '·ÖÅÉ',
+        'All incoming emails with one account will be dispatched in the selected queue!' => 'ËùÓĞÀ´×ÔÒ»¸öÓÊ¼şÕËºÅµÄÓÊ¼ş½«»á±»·Ö·¢µ½ËùÑ¡¶ÓÁĞ!',
+        'If your account is trusted, the already existing X-OTRS header at arrival time (for priority, ...) will be used! PostMaster filter will be used anyway.' => 'Èç¹ûÄúµÄÕÊ»§ÊÇÖµµÃĞÅÀµµÄ£¬ÏÖÓĞµÄX-OTRS±êÌâµ½´ïÊ±¼ä£¨ÓÅÏÈ£¬ ... £©½«±»Ê¹ÓÃ£¡ÓÊÕş¹ıÂËÆ÷½«±»Ê¹ÓÃ',
 
         # Template: AdminNavigationBar
-        'Admin' => 'ç³»ç»Ÿç®¡ç†',
-        'Agent Management' => 'æœåŠ¡äººå‘˜ç®¡ç†',
-        'Queue Settings' => 'é˜Ÿåˆ—è®¾ç½®',
-        'Ticket Settings' => 'ç¥¨å•è®¾ç½®',
-        'System Administration' => 'ç³»ç»Ÿç®¡ç†å‘˜',
+        'Users' => 'ÓÃ»§',
+        'Groups' => '×é',
+        'Misc' => '×ÛºÏ',
 
-        # Template: AdminNotification
-        'Notification Management' => 'é€šçŸ¥ç®¡ç†',
-        'Select a different language' => 'é€‰æ‹©ä¸åŒçš„è¯­è¨€',
-        'Filter for Notification' => 'è¿‡æ»¤ç‰¹å®šçš„é€šçŸ¥',
-        'Notifications are sent to an agent or a customer.' => 'é€šçŸ¥è¢«å‘é€åˆ°æœåŠ¡äººå‘˜æˆ–è€…å®¢æˆ·ã€‚',
-        'Notification' => 'ç³»ç»Ÿé€šçŸ¥',
-        'Edit Notification' => 'ä¿®æ”¹é€šçŸ¥',
-        'e. g.' => 'ä¾‹å¦‚',
-        'Options of the current customer data' => 'å½“å‰å®¢æˆ·æ•°æ®é€‰é¡¹',
+        # Template: AdminNotificationEventForm
+        'Notification Management' => 'Í¨Öª¹ÜÀí',
+        'Add Notification' => 'Ôö¼ÓÍ¨Öª',
+        'Add a new Notification.' => 'ĞÂÔöÒ»¸öÍ¨Öª.',
+        'Name is required!' => 'ĞèÒªÃû³Æ!',
+        'Event is required!' => 'ĞèÒªÊÂ¼ş',
+        'A message should have a body!' => 'ÓÊ¼ş±ØĞë°üº¬ÄÚÈİ!',
+        'Recipient' => 'ÊÕ¼şÈË',
+        'Group based' => '»ùÓÚ×éµÄ',
+        'Agent based' => '»ùÓÚ¼¼ÊõÖ§³Ö´ú±íµÄ',
+        'Email based' => '»ùÓÚµçÓÊµÄ',
+        'Article Type' => 'ArticleÀà±ğ ',
+        'Only for ArticleCreate Event.' => '½öÊÊÓÃÓÚ ArticleCreate ÊÂ¼ş',
+        'Subject match' => '±êÌâÆ¥Åä',
+        'Body match' => 'ÄÚÈİÆ¥Åä',
+        'Notifications are sent to an agent or a customer.' => 'Í¨Öª±»·¢ËÍµ½¼¼ÊõÖ§³ÖÈËÔ±»òÕß¿Í»§.',
+        'To get the first 20 character of the subject (of the latest agent article).' => '½ØÈ¡·şÎñÈËÔ±ĞÂÓÊ¼şÖ÷ÌâµÄÇ° 20 ¸ö×Ö·û.',
+        'To get the first 5 lines of the body (of the latest agent article).' => '½ØÈ¡·şÎñÈËÔ±ĞÂÓÊ¼şÕıÎÄÄÚÈİÇ° 5 ĞĞ.',
+        'To get the article attribute (e. g. (<OTRS_AGENT_From>, <OTRS_AGENT_To>, <OTRS_AGENT_Cc>, <OTRS_AGENT_Subject> and <OTRS_AGENT_Body>).' => 'È¡µÃĞÅ¼şµÄÊôĞÔ (ÀıÈç: <OTRS_AGENT_From>, <OTRS_AGENT_To>, <OTRS_AGENT_Cc>, <OTRS_AGENT_Subject> and <OTRS_AGENT_Body>).',
+        'To get the first 20 character of the subject (of the latest customer article).' => '½ØÈ¡¿Í»§×îĞÂÓÊ¼şÖ÷ÌâµÄÇ° 20 ¸ö×Ö·û.',
+        'To get the first 5 lines of the body (of the latest customer article).' => '½ØÈ¡¿ÍÈË×îĞÂÓÊ¼şÕıÎÄÄÚÈİÇ° 5 ĞĞ.',
 
-        # Template: AdminNotificationEvent
-        'Add notification' => 'æ–°å¢é€šçŸ¥',
-        'Delete this notification' => 'åˆ é™¤é€šçŸ¥',
-        'Add Notification' => 'æ–°å¢é€šçŸ¥',
-        'Recipient groups' => 'æ”¶ä»¶äººç¾¤ç»„',
-        'Recipient agents' => 'æ”¶ä»¶æœåŠ¡äººå‘˜',
-        'Recipient roles' => 'æ”¶ä»¶äººè§’è‰²',
-        'Recipient email addresses' => 'æ”¶ä»¶äººé‚®ä»¶åœ°å€',
-        'Article type' => 'æ–‡ç« ç±»å‹',
-        'Only for ArticleCreate event' => 'ä»…å¯¹ArticleCreateäº‹ä»¶æœ‰æ•ˆ',
-        'Subject match' => 'æ ‡é¢˜åŒ¹é…',
-        'Body match' => 'å†…å®¹åŒ¹é…',
-        'Include attachments to notification' => 'é€šçŸ¥åŒ…å«é™„ä»¶',
-        'Notification article type' => 'æ–‡ç« ç±»å‹',
-        'Only for notifications to specified email addresses' => 'ä»…å¯¹æŒ‡å®šé‚®ä»¶åœ°å€å‘é€é€šçŸ¥',
-        'To get the first 20 character of the subject (of the latest agent article).' =>
-            'æˆªå–æœåŠ¡äººå‘˜æ–°é‚®ä»¶ä¸»é¢˜çš„å‰ 20 ä¸ªå­—ç¬¦.',
-        'To get the first 5 lines of the body (of the latest agent article).' =>
-            'æˆªå–æœåŠ¡äººå‘˜æ–°é‚®ä»¶æ­£æ–‡å†…å®¹å‰ 5 è¡Œ.',
-        'To get the first 20 character of the subject (of the latest customer article).' =>
-            'æˆªå–å®¢æˆ·æœ€æ–°é‚®ä»¶ä¸»é¢˜çš„å‰ 20 ä¸ªå­—ç¬¦.',
-        'To get the first 5 lines of the body (of the latest customer article).' =>
-            'æˆªå–å®¢æˆ·æœ€æ–°é‚®ä»¶æ­£æ–‡å†…å®¹å‰ 5 è¡Œ.',
-
-        # Template: AdminPGP
-        'PGP Management' => 'PGP ç®¡ç†',
-        'Use this feature if you want to work with PGP keys.' => 'è¯¥åŠŸèƒ½ç”¨äºç®¡ç†PGPå¯†é’¥',
-        'Add PGP key' => 'æ–°å¢PGPå¯†é’¥',
-        'In this way you can directly edit the keyring configured in SysConfig.' =>
-            'é€šè¿‡æ­¤æ¨¡å—å¯ä»¥ç›´æ¥ç¼–è¾‘åœ¨SysConfigä¸­è®¾ç½®çš„å¯†é’¥ç¯ã€‚',
-        'Introduction to PGP' => 'PGPä»‹ç»',
-        'Result' => 'ç»“æœ',
-        'Identifier' => 'æ ‡è¯†ç¬¦',
-        'Bit' => 'ä½',
-        'Fingerprint' => 'æŒ‡çº¹',
-        'Expires' => 'è¿‡æœŸ',
-        'Delete this key' => 'åˆ é™¤å¯†é’¥',
-        'Add PGP Key' => 'æ–°å¢PGPå¯†é’¥',
-        'PGP key' => 'PGPå¯†é’¥',
+        # Template: AdminNotificationForm
+        'Notification' => 'ÏµÍ³Í¨Öª',
 
         # Template: AdminPackageManager
-        'Package Manager' => 'è½¯ä»¶åŒ…ç®¡ç†',
-        'Uninstall package' => 'å¸è½½è½¯ä»¶åŒ…',
-        'Do you really want to uninstall this package?' => 'æ˜¯å¦ç¡®è®¤å¸è½½è¯¥è½¯ä»¶åŒ…?',
-        'Reinstall package' => 'é‡æ–°å®‰è£…è½¯ä»¶åŒ…',
-        'Do you really want to reinstall this package? Any manual changes will be lost.' =>
-            'ä½ ç¡®å®šè¦é‡æ–°å®‰è£…è¯¥è½¯åŒ…å—? æ‰€æœ‰è¯¥æ¨¡å—çš„æ‰‹å·¥è®¾ç½®å°†ä¸¢å¤±.',
-        'Continue' => 'ç»§ç»­',
-        'Install' => 'å®‰è£…',
-        'Install Package' => 'å®‰è£…è½¯ä»¶åŒ…',
-        'Update repository information' => 'æ›´æ–°è½¯ä»¶ä»“åº“ä¿¡æ¯',
-        'Did not find a required feature? OTRS Group provides their subscription customers with exclusive Add-Ons:' =>
-            '',
-        'Online Repository' => 'åœ¨çº¿è½¯ä»¶ä»“åº“',
-        'Vendor' => 'æä¾›è€…',
-        'Module documentation' => 'æ¨¡å—æ–‡æ¡£',
-        'Upgrade' => 'å‡çº§',
-        'Local Repository' => 'æœ¬åœ°è½¯ä»¶ä»“åº“',
-        'Uninstall' => 'å¸è½½',
-        'Reinstall' => 'é‡æ–°å®‰è£…',
-        'Download package' => 'ä¸‹è½½è¯¥è½¯ä»¶åŒ…',
-        'Rebuild package' => 'é‡æ–°ç¼–è¯‘',
-        'Metadata' => 'å…ƒæ•°æ®',
-        'Change Log' => 'æ›´æ–°è®°å½•',
-        'Date' => 'æ—¥æœŸ',
-        'List of Files' => 'æ–‡ä»¶æ¸…å•',
-        'Permission' => 'æƒé™',
-        'Download' => 'ä¸‹è½½',
-        'Download file from package!' => 'ä»è½¯ä»¶åŒ…ä¸­ä¸‹è½½è¿™ä¸ªæ–‡ä»¶',
-        'Required' => 'å¿…éœ€çš„',
-        'PrimaryKey' => 'å…³é”®çš„Key',
-        'AutoIncrement' => 'è‡ªåŠ¨é€’å¢',
+        'Package Manager' => 'Èí¼ş°ü¹ÜÀí',
+        'Uninstall' => 'Ğ¶ÔØ',
+        'Version' => '°æ±¾',
+        'Do you really want to uninstall this package?' => 'ÊÇ·ñÈ·ÈÏĞ¶ÔØ¸ÃÈí¼ş°ü?',
+        'Reinstall' => 'ÖØĞÂ°²×°',
+        'Do you really want to reinstall this package (all manual changes get lost)?' => 'ÄúÊÇ·ñ×¼±¸ºÃÖØĞÂ°²×°ÕâĞ©Èí¼ş°ü (ËùÓĞÊÖ¹¤ÉèÖÃ½«»á²»¼û)?',
+        'Continue' => '¼ÌĞø',
+        'Install' => '°²×°',
+        'Package' => 'Èí¼ş°ü',
+        'Online Repository' => 'ÔÚÏßÖªÊ¶¿â',
+        'Vendor' => 'Ìá¹©Õß',
+        'Module documentation' => 'Ä£¿éÎÄµµ',
+        'Upgrade' => 'Éı¼¶',
+        'Local Repository' => '±¾µØÖªÊ¶¿â',
+        'Status' => '×´Ì¬',
+        'Overview' => '¸Å¿ö',
+        'Download' => 'ÏÂÔØ',
+        'Rebuild' => 'ÖØĞÂ¹¹½¨',
+        'ChangeLog' => '¸Ä±ä¼ÇÂ¼',
+        'Date' => 'ÈÕÆÚ',
+        'Filelist' => 'ÎÄ¼şÇåµ¥',
+        'Download file from package!' => '´ÓÈí¼ş°üÖĞÏÂÔØÕâ¸öÎÄ¼ş',
+        'Required' => '±ØĞèµÄ',
+        'PrimaryKey' => '¹Ø¼üµÄKey',
+        'AutoIncrement' => '×Ô¶¯µİÔö',
         'SQL' => 'SQL',
-        'File differences for file %s' => 'æ–‡ä»¶è·Ÿ %s æ–‡ä»¶ä¸ç›¸ç¬¦',
+        'Diff' => '±È½Ï',
 
         # Template: AdminPerformanceLog
-        'Performance Log' => 'ç³»ç»Ÿç›‘è§†å™¨',
-        'This feature is enabled!' => 'è¯¥åŠŸèƒ½å·²å¯ç”¨',
-        'Just use this feature if you want to log each request.' => 'å¦‚æœæ‚¨æƒ³è¯¦ç»†è®°å½•æ¯ä¸ªè¯·æ±‚, æ‚¨å¯ä»¥ä½¿ç”¨è¯¥åŠŸèƒ½.',
-        'Activating this feature might affect your system performance!' =>
-            'å¯åŠ¨è¯¥åŠŸèƒ½å¯èƒ½å½±å“æ‚¨çš„ç³»ç»Ÿæ€§èƒ½',
-        'Disable it here!' => 'å…³é—­è¯¥åŠŸèƒ½',
-        'Logfile too large!' => 'æ—¥å¿—æ–‡ä»¶è¿‡å¤§',
-        'The logfile is too large, you need to reset it' => 'æ—¥å¿—æ–‡ä»¶å¤ªå¤§ï¼Œè¯·é‡æ–°åˆå§‹åŒ–ã€‚',
-        'Overview' => 'æ¦‚å†µ',
-        'Range' => 'èŒƒå›´',
-        'Interface' => 'ç•Œé¢',
-        'Requests' => 'è¯·æ±‚',
-        'Min Response' => 'æœ€å°å›åº”',
-        'Max Response' => 'æœ€å¤§å›åº”',
-        'Average Response' => 'å¹³å‡å›åº”',
-        'Period' => 'å‘¨æœŸ',
-        'Min' => 'æœ€å°',
-        'Max' => 'æœ€å¤§',
-        'Average' => 'å¹³å‡',
+        'Performance Log' => 'ÏµÍ³¼àÊÓÆ÷',
+        'This feature is enabled!' => '¸Ã¹¦ÄÜÒÑÆôÓÃ',
+        'Just use this feature if you want to log each request.' => 'Èç¹ûÄúÏëÏêÏ¸¼ÇÂ¼Ã¿¸öÇëÇó, Äú¿ÉÒÔÊ¹ÓÃ¸Ã¹¦ÄÜ.',
+        'Activating this feature might affect your system performance!' => 'Æô¶¯¸Ã¹¦ÄÜ¿ÉÄÜÓ°ÏìÄúµÄÏµÍ³ĞÔÄÜ',
+        'Disable it here!' => '¹Ø±Õ¸Ã¹¦ÄÜ',
+        'This feature is disabled!' => '¸Ã¹¦ÄÜÒÑ¹Ø±Õ',
+        'Enable it here!' => '´ò¿ª¸Ã¹¦ÄÜ',
+        'Logfile too large!' => 'ÈÕÖ¾ÎÄ¼ş¹ı´ó',
+        'Logfile too large, you need to reset it!' => 'ÈÕÖ¾ÎÄ¼ş¹ı´ó, ÄãĞèÒªÖØÖÃËü',
+        'Range' => '·¶Î§',
+        'Interface' => '½çÃæ',
+        'Requests' => 'ÇëÇó',
+        'Min Response' => '×îĞ¡»ØÓ¦',
+        'Max Response' => '×î´ó»ØÓ¦',
+        'Average Response' => 'Æ½¾ù»ØÓ¦',
+        'Period' => 'ÖÜÆÚ',
+        'Min' => '×îĞ¡',
+        'Max' => '×î´ó',
+        'Average' => 'Æ½¾ù',
+
+        # Template: AdminPGPForm
+        'PGP Management' => 'PGP ¹ÜÀí',
+        'Result' => '½á¹û',
+        'Identifier' => '±êÊ¶·û',
+        'Bit' => 'Î»',
+        'Key' => 'ÃÜ³×',
+        'Fingerprint' => 'Ö¸Ó¡',
+        'Expires' => '¹ıÆÚ',
+        'In this way you can directly edit the keyring configured in SysConfig.' => 'ÕâÖÖ·½Ê½£¬Äú¿ÉÒÔÖ±½Ó±à¼­ÔÚSysConfigÉèÖÃµÄ¼ü',
 
         # Template: AdminPostMasterFilter
-        'PostMaster Filter Management' => 'é‚®ä»¶è¿‡æ»¤å™¨ç®¡ç†',
-        'Add filter' => 'æ–°å¢è¿‡æ»¤å™¨',
-        'To dispatch or filter incoming emails based on email headers. Matching using Regular Expressions is also possible.' =>
-            'æ ¹æ®emailçš„å¤´éƒ¨ä¿¡æ¯åˆ†å‘å’Œè¿‡æ»¤é‚®ä»¶ï¼Œå¯ä»¥ä½¿ç”¨æ­£åˆ™è¡¨è¾¾å¼åŒ¹é…',
-        'If you want to match only the email address, use EMAILADDRESS:info@example.com in From, To or Cc.' =>
-            '',
-        'If you use Regular Expressions, you also can use the matched value in () as [***] in the \'Set\' action.' =>
-            '',
-        'Delete this filter' => 'åˆ é™¤æ­¤è¿‡æ»¤å™¨',
-        'Add PostMaster Filter' => 'æ–°å¢é‚®ä»¶è¿‡æ»¤å™¨',
-        'Edit PostMaster Filter' => 'ä¿®æ”¹é‚®ä»¶è¿‡æ»¤å™¨',
-        'Filter name' => 'è¿‡æ»¤å™¨åç§°',
-        'The name is required.' => 'è¿‡æ»¤å™¨åç§°æ˜¯å¿…è¾“é¡¹ã€‚',
-        'Stop after match' => 'åŒ¹é…ååœæ­¢',
-        'Filter Condition' => 'è¿‡æ»¤æ¡ä»¶',
-        'The field needs to be a valid regular expression or a literal word.' =>
-            'è¯¥æ ä½éœ€ä½¿ç”¨æœ‰æ•ˆçš„æ­£åˆ™è¡¨è¾¾å¼æˆ–æ–‡å­—ã€‚',
-        'Set Email Headers' => 'è®¾ç½®é‚®ä»¶å¤´',
-        'The field needs to be a literal word.' => 'è¯¥æ ä½éœ€ä¸ºæ–‡å­—ã€‚',
+        'PostMaster Filter Management' => 'ÓÊ¼ş¹ıÂË¹ÜÀí',
+        'Filtername' => '¹ıÂËÆ÷Ãû³Æ',
+        'Stop after match' => '',
+        'Match' => 'Æ¥Åä',
+        'Value' => 'Öµ',
+        'Set' => 'ÉèÖÃ',
+        'Do dispatch or filter incoming emails based on email X-Headers! RegExp is also possible.' => 'Èç¹ûÄúÏë¸ù¾İ X-Headers ÄÚÈİÀ´¹ıÂË£¬¿ÉÒÔÊ¹ÓÃÕı¹æÔò±í´ïÊ½.',
+        'If you want to match only the email address, use EMAILADDRESS:info@example.com in From, To or Cc.' => 'Èç¹ûÄúÏë½öÆ¥Åäemail µØÖ·£¬ ÇëÊ¹ÓÃEMAILADDRESS:info@example.com in From, To or Cc.',
+        'If you use RegExp, you also can use the matched value in () as [***] in \'Set\'.' => 'Èç¹ûÄúÓÃRegExp£¬ÄúÒ²ÄÜÊ¹ÓÃÆ¥ÅäÖµin () as [***] in \'Set\'',
 
         # Template: AdminPriority
-        'Priority Management' => 'ä¼˜å…ˆçº§ç®¡ç†',
-        'Add priority' => 'æ–°å¢ä¼˜å…ˆçº§',
-        'Add Priority' => 'æ–°å¢ä¼˜å…ˆçº§',
-        'Edit Priority' => 'ä¿®æ”¹ä¼˜å…ˆçº§',
+        'Priority Management' => 'ÓÅÏÈÈ¨¹ÜÀí',
+        'Add Priority' => 'Ìí¼ÓÓÅÏÈÈ¨',
+        'Add a new Priority.' => 'Ôö¼ÓÒ»¸öĞÂµÄÓÅÏÈÈ¨',
 
-        # Template: AdminQueue
-        'Manage Queues' => 'é˜Ÿåˆ—ç®¡ç†',
-        'Add queue' => 'æ–°å¢é˜Ÿåˆ—',
-        'Add Queue' => 'æ–°å¢é˜Ÿåˆ—',
-        'Edit Queue' => 'ä¿®æ”¹é˜Ÿåˆ—',
-        'Sub-queue of' => 'å­é˜Ÿåˆ—',
-        'Unlock timeout' => 'è‡ªåŠ¨è§£é”è¶…æ—¶æœŸé™',
-        '0 = no unlock' => '0 = ä¸è‡ªåŠ¨è§£é”  ',
-        'Only business hours are counted.' => 'ä»…ä»¥ä¸Šç­æ—¶é—´è®¡ç®—',
-        'If an agent locks a ticket and does not close it before the unlock timeout has passed, the ticket will unlock and will become available for other agents.' =>
-            'å¦‚æœæœåŠ¡äººå‘˜åœ¨è‡ªåŠ¨è§£é”è¶…æ—¶æœŸé™å†…æ²¡æœ‰å…³é—­ç¥¨å•ï¼Œè¯¥ç¥¨å•å°†è¢«è‡ªåŠ¨è§£é”ã€‚',
-        'Notify by' => 'è¿›åº¦é€šçŸ¥',
-        '0 = no escalation' => '0 = æ— é™æ—¶  ',
-        'If there is not added a customer contact, either email-external or phone, to a new ticket before the time defined here expires, the ticket is escalated.' =>
-            '',
-        'If there is an article added, such as a follow-up via email or the customer portal, the escalation update time is reset. If there is no customer contact, either email-external or phone, added to a ticket before the time defined here expires, the ticket is escalated.' =>
-            '',
-        'If the ticket is not set to closed before the time defined here expires, the ticket is escalated.' =>
-            '',
-        'Follow up Option' => 'è·Ÿè¿›é€‰é¡¹',
-        'Specifies if follow up to closed tickets would re-open the ticket, be rejected or lead to a new ticket.' =>
-            '',
-        'Ticket lock after a follow up' => 'è·Ÿè¿›ç¡®è®¤ä»¥åï¼Œç¥¨å•å°†è¢«è‡ªåŠ¨é”å®š',
-        'If a ticket is closed and the customer sends a follow up the ticket will be locked to the old owner.' =>
-            'å®¢æˆ·å¯¹å·²å…³é—­çš„ç¥¨å•æäº¤è·Ÿè¿›åï¼Œè¯¥ç¥¨å•å°†è‡ªåŠ¨è¢«å‰ä¸€ä¸ªæ‰€æœ‰è€…é”å®šã€‚',
-        'System address' => 'ç³»ç»Ÿé‚®ä»¶åœ°å€',
-        'Will be the sender address of this queue for email answers.' => 'å›å¤é‚®ä»¶æ‰€ç”¨çš„å‘é€è€…åœ°å€',
-        'Default sign key' => 'é»˜è®¤ç­¾åå¯†é’¥',
-        'The salutation for email answers.' => 'å›å¤é‚®ä»¶æ‰€ç”¨ç§°è°“.',
-        'The signature for email answers.' => 'å›å¤é‚®ä»¶æ‰€ç”¨ç­¾å.',
+        # Template: AdminQueueAutoResponseForm
+        'Queue <-> Auto Responses Management' => '¶ÓÁĞ <-> ×Ô¶¯»Ø¸´¹ÜÀí',
+        'settings' => 'ÉèÖÃ',
 
-        # Template: AdminQueueAutoResponse
-        'Manage Queue-Auto Response Relations' => 'ç®¡ç†é˜Ÿåˆ—ä¸è‡ªåŠ¨å›å¤çš„å¯¹åº”å…³ç³»',
-        'Filter for Queues' => 'å®šä½é˜Ÿåˆ—',
-        'Filter for Auto Responses' => 'å®šä½è‡ªåŠ¨å›å¤',
-        'Auto Responses' => 'è‡ªåŠ¨å›å¤åŠŸèƒ½',
-        'Change Auto Response Relations for Queue' => 'æ”¹å˜è¯¥é˜Ÿåˆ—çš„è‡ªåŠ¨å›å¤',
-        'settings' => 'è®¾ç½®',
+        # Template: AdminQueueForm
+        'Queue Management' => '¶ÓÁĞ¹ÜÀí',
+        'Sub-Queue of' => '×Ó¶ÓÁĞ',
+        'Unlock timeout' => '×Ô¶¯½âËø³¬Ê±ÆÚÏŞ',
+        '0 = no unlock' => '0 = ²»×Ô¶¯½âËø  ',
+        'Only business hours are counted.' => '½öÒÔÉÏ°àÊ±¼ä¼ÆËã',
+        '0 = no escalation' => '0 = ÎŞÏŞÊ±  ',
+        'Notify by' => '½ø¶ÈÍ¨Öª',
+        'Follow up Option' => '¸ú½øÑ¡Ïî',
+        'Ticket lock after a follow up' => '¸ú½øÈ·ÈÏÒÔºó£¬Ticket ½«±»×Ô¶¯ÉÏËø',
+        'Systemaddress' => 'ÏµÍ³ÓÊ¼şµØÖ·',
+        'If an agent locks a ticket and he/she will not send an answer within this time, the ticket will be unlock automatically. So the ticket is viewable for all other agents.' => 'Èç¹û¼¼ÊõÖ§³ÖÈËÔ±Ëø¶¨ÁË Ticket,µ«ÊÇÔÚÒ»¶¨µÄÊ±¼äÄÚÃ»ÓĞ»Ø¸´£¬¸Ã Ticket ½«»á±»×Ô¶¯½âËø£¬¶ø¶ÔËùÓĞµÄ¼¼ÊõÖ§³ÖÈËÔ±¿ÉÊÓ.',
+        'Escalation time' => 'ÏŞÊ±´ğ¸´Ê±¼ä',
+        'If a ticket will not be answered in this time, just only this ticket will be shown.' => '¸Ã¶ÓÁĞÖ»ÏÔÊ¾¹æ¶¨Ê±¼äÄÚÃ»ÓĞ±»´¦ÀíµÄ Ticket',
+        'If a ticket is closed and the customer sends a follow up the ticket will be locked for the old owner.' => 'Èç¹û Ticket ÒÑ¾­´¦ÓÚ¹Ø±Õ×´Ì¬£¬¶ø¿Í»§¾Í·¢ËÍÁËÒ»¸ö¸ú½ø Ticket£¬ÄÇÃ´Õâ¸ö Ticket ½«»á±»Ö±½Ó¼ÓËø£¬¶øËùÓĞÕß±»¶¨ÒåÎªÔ­À´ËùÓĞÕß',
+        'Will be the sender address of this queue for email answers.' => '»Ø¸´ÓÊ¼şËùÓÃµÄ·¢ËÍÕßµØÖ·',
+        'The salutation for email answers.' => '»Ø¸´ÓÊ¼şËùÓÃ³ÆÎ½.',
+        'The signature for email answers.' => '»Ø¸´ÓÊ¼şËùÓÃÇ©Ãû.',
+        'Customer Move Notify' => 'Ticket ÒÆ¶¯¿Í»§Í¨Öª',
+        'OTRS sends an notification email to the customer if the ticket is moved.' => 'Èç¹û Ticket ±»ÒÆ¶¯£¬ÏµÍ³½«»á·¢ËÍÒ»¸öÍ¨ÖªÓÊ¼ş¸ø¿Í»§',
+        'Customer State Notify' => 'Ticket ×´Ì¬¿Í»§Í¨Öª',
+        'OTRS sends an notification email to the customer if the ticket state has changed.' => 'Èç¹û Ticket ×´Ì¬¸Ä±ä£¬ÏµÍ³½«»á·¢ËÍÍ¨ÖªÓÊ¼ş¸ø¿Í»§',
+        'Customer Owner Notify' => '¿Í»§ËùÓĞÕßÍ¨¸æ',
+        'OTRS sends an notification email to the customer if the ticket owner has changed.' => 'Èç¹û Ticket ËùÓĞÕß¸Ä±ä£¬ÏµÍ³½«»á·¢ËÍÍ¨ÖªÓÊ¼ş¸ø¿Í»§.',
 
-        # Template: AdminQueueResponses
-        'Manage Response-Queue Relations' => 'ç®¡ç†å›å¤ä¸é˜Ÿåˆ—çš„å¯¹åº”å…³ç³»',
-        'Filter' => 'è¿‡æ»¤å™¨',
-        'Filter for Responses' => 'å¿«é€Ÿå®šä½',
-        'Responses' => 'å›å¤',
-        'Change Queue Relations for Response' => 'ä¸ºå›å¤ä¿®æ”¹é˜Ÿåˆ—',
-        'Change Response Relations for Queue' => 'ä¸ºé˜Ÿåˆ—ä¿®æ”¹å›å¤',
+        # Template: AdminQueueResponsesChangeForm
+        'Responses <-> Queue Management' => '»Ø¸´ <-> ¶ÓÁĞ¹ÜÀí',
 
-        # Template: AdminResponse
-        'Manage Responses' => 'ç®¡ç†å›å¤',
-        'Add response' => 'æ–°å¢å›å¤',
-        'A response is default text to write faster answer (with default text) to customers.' =>
-            'ä¸ºäº†å¿«é€Ÿå›å¤ï¼Œå›å¤å†…å®¹å®šä¹‰äº†æ¯ä¸ªå›å¤ä¸­é‡å¤çš„å†…å®¹.',
-        'Don\'t forget to add a new response a queue!' => 'ä¸è¦å¿˜è®°å¢åŠ ä¸€ä¸ªæ–°çš„å›å¤å†…å®¹åˆ°é˜Ÿåˆ—!',
-        'Delete this entry' => 'åˆ é™¤è¯¥æ¡ç›®',
-        'Add Response' => 'æ–°å¢å›å¤',
-        'Edit Response' => 'ä¿®æ”¹å›å¤',
-        'The current ticket state is' => 'å½“å‰ç¥¨å•çŠ¶æ€æ˜¯',
-        'Your email address is' => 'ä½ çš„é‚®ä»¶åœ°å€æ˜¯',
+        # Template: AdminQueueResponsesForm
+        'Answer' => '»Ø¸´',
 
-        # Template: AdminResponseAttachment
-        'Manage Responses <-> Attachments Relations' => 'ç®¡ç†å›å¤ä¸é™„ä»¶çš„å¯¹åº”å…³ç³»',
-        'Filter for Attachments' => 'é™„ä»¶è¿‡æ»¤',
-        'Change Response Relations for Attachment' => 'ä¸ºé™„ä»¶ä¿®æ”¹å›å¤',
-        'Change Attachment Relations for Response' => 'ä¸ºå›å¤ä¿®æ”¹é™„ä»¶',
-        'Toggle active for all' => 'åˆ‡æ¢æ¿€æ´»ç»™å…¨éƒ¨',
-        'Link %s to selected %s' => 'é“¾æ¥ %s åˆ°é€‰ä¸­çš„ %s',
+        # Template: AdminResponseAttachmentChangeForm
+        'Responses <-> Attachments Management' => '»Ø¸´ <-> ¸½¼ş¹ÜÀí',
 
-        # Template: AdminRole
-        'Role Management' => 'è§’è‰²ç®¡ç†',
-        'Add role' => 'æ–°å¢è§’è‰²',
-        'Create a role and put groups in it. Then add the role to the users.' =>
-            'åˆ›å»ºä¸€ä¸ªè§’è‰²å¹¶å°†ç»„åŠ å…¥è§’è‰²,ç„¶åå°†è§’è‰²èµ‹ç»™ç”¨æˆ·.',
-        'There are no roles defined. Please use the \'Add\' button to create a new role.' =>
-            'æœ‰æ²¡æœ‰è§’è‰²å®šä¹‰. è¯·ä½¿ç”¨ \'æ·»åŠ \' æŒ‰é’®æ¥åˆ›å»ºä¸€ä¸ªæ–°çš„è§’è‰²',
-        'Add Role' => 'æ–°å¢è§’è‰²',
-        'Edit Role' => 'ä¿®æ”¹è§’è‰²',
+        # Template: AdminResponseAttachmentForm
 
-        # Template: AdminRoleGroup
-        'Manage Role-Group Relations' => 'ç®¡ç†è§’è‰²ä¸ç¾¤ç»„çš„å¯¹åº”å…³ç³»',
-        'Filter for Roles' => 'å¿«é€Ÿå®šä½è§’è‰²',
-        'Roles' => 'è§’è‰²',
-        'Select the role:group permissions.' => 'é€‰æ‹©è§’è‰²:ç¾¤ç»„è®¸å¯ã€‚',
-        'If nothing is selected, then there are no permissions in this group (tickets will not be available for the role).' =>
-            '',
-        'Change Role Relations for Group' => 'ä¸ºç¾¤ç»„ä¿®æ”¹è§’è‰²',
-        'Change Group Relations for Role' => 'ä¸ºè§’è‰²ä¿®æ”¹ç¾¤ç»„',
-        'Toggle %s permission for all' => 'åˆ‡æ¢ %s æƒé™ç»™å…¨éƒ¨',
-        'move_into' => 'ç§»åŠ¨åˆ°',
-        'Permissions to move tickets into this group/queue.' => 'å…è®¸ç§»åŠ¨ç¥¨å•åˆ°ç¾¤ç»„/é˜Ÿåˆ—ã€‚',
-        'create' => 'åˆ›å»º',
-        'Permissions to create tickets in this group/queue.' => 'å…è®¸åœ¨ç¾¤ç»„/é˜Ÿåˆ—ä¸­åˆ›å»ºç¥¨å•ã€‚',
-        'priority' => 'ä¼˜å…ˆçº§',
-        'Permissions to change the ticket priority in this group/queue.' =>
-            'å…è®¸åœ¨ç¾¤ç»„/é˜Ÿåˆ—ä¸­ä¿®æ”¹ç¥¨å•ä¼˜å…ˆçº§ã€‚',
+        # Template: AdminResponseForm
+        'Response Management' => '»Ø¸´ÄÚÈİ¹ÜÀí',
+        'A response is default text to write faster answer (with default text) to customers.' => 'ÎªÁË¿ìËÙ»Ø¸´£¬»Ø¸´ÄÚÈİ¶¨ÒåÁËÃ¿¸ö»Ø¸´ÖĞÖØ¸´µÄÄÚÈİ.',
+        'Don\'t forget to add a new response a queue!' => '²»ÒªÍü¼ÇÔö¼ÓÒ»¸öĞÂµÄ»Ø¸´ÄÚÈİµ½¶ÓÁĞ!',
+        'The current ticket state is' => 'µ±Ç° Ticket ×´Ì¬ÊÇ',
+        'Your email address is new' => 'ÄúµÄÓÊ¼şµØÖ·ÊÇĞÂµÄ',
 
-        # Template: AdminRoleUser
-        'Manage Agent-Role Relations' => 'ç®¡ç†æœåŠ¡äººå‘˜ä¸è§’è‰²çš„å¯¹åº”å…³ç³»',
-        'Filter for Agents' => 'æŸ¥æ‰¾æœåŠ¡äººå‘˜',
-        'Agents' => 'æœåŠ¡äººå‘˜',
-        'Manage Role-Agent Relations' => 'ç®¡ç†æœåŠ¡äººå‘˜ä¸è§’è‰²çš„å¯¹åº”å…³ç³»',
-        'Change Role Relations for Agent' => 'ä¸ºæœåŠ¡äººå‘˜ä¿®æ”¹è§’è‰²',
-        'Change Agent Relations for Role' => 'ä¸ºè§’è‰²ä¿®æ”¹æœåŠ¡äººå‘˜',
+        # Template: AdminRoleForm
+        'Role Management' => '½ÇÉ«¹ÜÀí',
+        'Add Role' => 'Ôö¼Ó½ÇÉ«',
+        'Add a new Role.' => 'ĞÂÔöÒ»¸ö½ÇÉ«',
+        'Create a role and put groups in it. Then add the role to the users.' => '´´½¨Ò»¸ö½ÇÉ«²¢½«×é¼ÓÈë½ÇÉ«,È»ºó½«½ÇÉ«¸³¸øÓÃ»§.',
+        'It\'s useful for a lot of users and groups.' => 'µ±ÓĞ´óÁ¿µÄÓÃ»§ºÍ×éµÄÊ±ºò£¬½ÇÉ«·Ç³£ÊÊºÏ.',
 
-        # Template: AdminSLA
-        'SLA Management' => 'SLAç®¡ç†',
-        'Add SLA' => 'æ–°å¢SLA',
-        'Edit SLA' => 'ä¿®æ”¹SLA',
-        'Please write only numbers!' => 'ä»…å¯å¡«å†™æ•°å­—ï¼',
+        # Template: AdminRoleGroupChangeForm
+        'Roles <-> Groups Management' => '½ÇÉ« <-> ×é¹ÜÀí',
+        'move_into' => 'ÒÆ¶¯µ½',
+        'Permissions to move tickets into this group/queue.' => 'ÔÊĞíÒÆ¶¯ Tickets µ½¸Ã×é/¶ÓÁĞ.',
+        'create' => '´´½¨',
+        'Permissions to create tickets in this group/queue.' => 'ÔÚ¸Ã×é/¶ÓÁĞÖĞ´´½¨ Tickets µÄÈ¨ÏŞ.',
+        'owner' => 'ËùÓĞÕß',
+        'Permissions to change the ticket owner in this group/queue.' => 'ÔÚ¸Ã×é/¶ÓÁĞÖĞĞŞ¸Ä Tickets ËùÓĞÕßµÄÈ¨ÏŞ.',
+        'priority' => 'ÓÅÏÈ¼¶',
+        'Permissions to change the ticket priority in this group/queue.' => 'ÔÚ¸Ã×é/¶ÓÁĞÖĞĞŞ¸Ä Tickets ÓÅÏÈ¼¶µÄÈ¨ÏŞ.',
 
-        # Template: AdminSMIME
-        'S/MIME Management' => 'S/MIME ç®¡ç†',
-        'Add certificate' => 'æ–°å¢è¯ä¹¦',
-        'Add private key' => 'æ–°å¢ç§åŒ™',
-        'Filter for certificates' => '',
-        'Filter for SMIME certs' => '',
-        'Here you can add relations to your private certificate, these will be embedded to the SMIME signature every time you use this certificate to sign an email.' =>
-            '',
-        'See also' => 'å‚è§',
-        'In this way you can directly edit the certification and private keys in file system.' =>
-            'è¯¥åŠŸèƒ½å¯ç”¨äºç›´æ¥ç¼–è¾‘è¯ä¹¦å’Œç§åŒ™ã€‚',
-        'Hash' => 'Hash',
-        'Create' => 'åˆ›å»º',
-        'Handle related certificates' => '',
-        'Delete this certificate' => 'åˆ é™¤è¯ä¹¦',
-        'Add Certificate' => 'æ–°å¢è¯ä¹¦',
-        'Add Private Key' => 'æ–°å¢ç§åŒ™',
-        'Secret' => 'å¯†ç ',
-        'Related Certificates for' => '',
-        'Delete this relation' => '',
-        'Available Certificates' => '',
-        'Relate this certificate' => '',
+        # Template: AdminRoleGroupForm
+        'Role' => '½ÇÉ«',
 
-        # Template: AdminSalutation
-        'Salutation Management' => 'ç§°è°“ç®¡ç†',
-        'Add salutation' => 'æ–°å¢ç§°è°“',
-        'Add Salutation' => 'æ–°å¢ç§°è°“',
-        'Edit Salutation' => 'ä¿®æ”¹ç§°è°“',
-        'Example salutation' => 'è¿™é‡Œæœ‰ä¸€ä¸ªèŒƒä¾‹',
+        # Template: AdminRoleUserChangeForm
+        'Roles <-> Users Management' => '½ÇÉ« <-> ÓÃ»§¹ÜÀí',
+        'Select the role:user relations.' => 'Ñ¡Ôñ ½ÇÉ«:ÓÃ»§ ¹ØÁª.',
 
-        # Template: AdminScheduler
-        'This option will force Scheduler to start even if the process is still registered in the database' =>
-            '',
-        'Start scheduler' => '',
-        'Scheduler could not be started. Check if scheduler is not running and try it again with Force Start option' =>
-            '',
+        # Template: AdminRoleUserForm
+
+        # Template: AdminSalutationForm
+        'Salutation Management' => '³ÆºôÓï¹ÜÀí',
+        'Add Salutation' => 'Ôö¼Ó³ÆºôÓï',
+        'Add a new Salutation.' => 'Ôö¼ÓÒ»¸öĞÂµÄ³ÆºôÓï',
 
         # Template: AdminSecureMode
-        'Secure mode needs to be enabled!' => 'å®‰å…¨æ¨¡å¼éœ€è¦è¢«å¯ç”¨ï¼',
-        'Secure mode will (normally) be set after the initial installation is completed.' =>
-            'åœ¨åˆå§‹å®‰è£…ç»“æŸåï¼Œå®‰å…¨æ¨¡å¼é€šå¸¸å°†è¢«è®¾ç½®',
-        'Secure mode must be disabled in order to reinstall using the web-installer.' =>
-            'ä¸ºäº†é‡æ–°ç”¨Web ç•Œé¢å®‰è£…ï¼Œå®‰å…¨æ¨¡å¼å¿…é¡»ç¦ç”¨',
-        'If secure mode is not activated, activate it via SysConfig because your application is already running.' =>
-            'ç³»ç»Ÿå·²å¯ç”¨ï¼Œè¯·é€šè¿‡SysConfigå¯ç”¨å®‰å…¨æ¨¡å¼ã€‚',
+        'Secure Mode need to be enabled!' => '°²È«Ä£Ê½ĞèÒªÆô¶¯',
+        'Secure mode will (normally) be set after the initial installation is completed.' => 'ÔÚ³õÊ¼°²×°½áÊøºó£¬°²È«Ä£Ê½Í¨³£½«±»ÉèÖÃ',
+        'Secure mode must be disabled in order to reinstall using the web-installer.' => 'ÎªÁËÖØĞÂÓÃWeb ½çÃæ°²×°£¬°²È«Ä£Ê½±ØĞëdisabled',
+        'If Secure Mode is not activated, activate it via SysConfig because your application is already running.' => 'Èç¹ûÆô¶¯Ä£Ê½Ã»ÓĞ±»Æô¶¯£¬ÇëÍ¨¹ıÏµÍ³ÉèÖÃÆô¶¯ËüÒòÎªÄúµÄOTRS³ÌĞòÒÑ¾­ÔËĞĞ',
 
-        # Template: AdminSelectBox
-        'SQL Box' => 'SQLæŸ¥è¯¢çª—å£',
-        'Here you can enter SQL to send it directly to the application database.' =>
-            'å¯ä»¥æäº¤SQLåˆ°åº”ç”¨æ•°æ®åº“æ‰§è¡Œã€‚',
-        'The syntax of your SQL query has a mistake. Please check it.' =>
-            'SQLæŸ¥è¯¢çš„è¯­æ³•æœ‰ä¸€ä¸ªé”™è¯¯ï¼Œè¯·æ ¸å¯¹ã€‚',
-        'There is at least one parameter missing for the binding. Please check it.' =>
-            'è‡³å°‘æœ‰ä¸€ä¸ªå‚æ•°ä¸¢å¤±ï¼Œè¯·æ ¸å¯¹ã€‚',
-        'Result format' => 'ç»“æœæ ¼å¼',
-        'Run Query' => 'æ‰§è¡ŒæŸ¥è¯¢',
+        # Template: AdminSelectBoxForm
+        'SQL Box' => 'SQL²éÑ¯´°¿Ú',
+        'CSV' => '',
+        'HTML' => '',
+        'Select Box Result' => '²éÑ¯½á¹û',
 
         # Template: AdminService
-        'Service Management' => 'æœåŠ¡ç®¡ç†',
-        'Add service' => 'æ–°å¢æœåŠ¡',
-        'Add Service' => 'æ–°å¢æœåŠ¡',
-        'Edit Service' => 'ä¿®æ”¹æœåŠ¡',
-        'Sub-service of' => 'å­æœåŠ¡',
+        'Service Management' => '·şÎñ¹ÜÀí',
+        'Add Service' => 'Ôö¼Ó·şÎñ',
+        'Add a new Service.' => 'ĞÂÔöÒ»¸ö·şÎñ',
+        'Sub-Service of' => '×Ó·şÎñÁ¥ÊôÓÚ',
 
         # Template: AdminSession
-        'Session Management' => 'ä¼šè¯ç®¡ç†',
-        'All sessions' => 'æ‰€æœ‰ä¼šè¯',
-        'Agent sessions' => 'æœåŠ¡äººå‘˜ä¼šè¯',
-        'Customer sessions' => 'å®¢æˆ·ä¼šè¯',
-        'Unique agents' => 'å®é™…æœåŠ¡äººå‘˜',
-        'Unique customers' => 'å®é™…åœ¨çº¿å®¢æˆ·',
-        'Kill all sessions' => 'ç»ˆæ­¢æ‰€æœ‰ä¼šè¯',
-        'Kill this session' => 'ç»ˆæ­¢è¯¥ä¼šè¯',
-        'Session' => 'ä¼šè¯',
-        'Kill' => 'ç»ˆæ­¢',
-        'Detail View for SessionID' => 'è¯¥ä¼šè¯çš„è¯¦ç»†è®°å½•',
+        'Session Management' => '»á»°¹ÜÀí',
+        'Sessions' => '»á»°',
+        'Uniq' => 'µ¥Ò»',
+        'Kill all sessions' => 'ÖÕÖ¹ËùÓĞ»á»°',
+        'Session' => '»á»°',
+        'Content' => 'ÄÚÈİ',
+        'kill session' => 'ÖÕÖ¹»á»°',
 
-        # Template: AdminSignature
-        'Signature Management' => 'ç­¾åç®¡ç†',
-        'Add signature' => 'æ–°å¢ç­¾å',
-        'Add Signature' => 'æ–°å¢ç­¾å',
-        'Edit Signature' => 'ä¿®æ”¹ç­¾å',
-        'Example signature' => 'è¿™é‡Œæœ‰ä¸€ä¸ªèŒƒä¾‹',
+        # Template: AdminSignatureForm
+        'Signature Management' => 'Ç©Ãû¹ÜÀí',
+        'Add Signature' => 'Ôö¼ÓÇ©Ãû',
+        'Add a new Signature.' => 'ĞÂÔöÒ»¸öÇ©Ãû',
 
-        # Template: AdminState
-        'State Management' => 'çŠ¶æ€ç®¡ç†',
-        'Add state' => 'æ–°å¢çŠ¶æ€',
-        'Please also update the states in SysConfig where needed.' => '',
-        'Add State' => 'æ–°å¢çŠ¶æ€',
-        'Edit State' => 'ä¿®æ”¹çŠ¶æ€',
-        'State type' => 'çŠ¶æ€ç±»å‹',
+        # Template: AdminSLA
+        'SLA Management' => '·şÎñ¼¶±ğĞ­Òé(SLA)¹ÜÀí',
+        'Add SLA' => 'Ôö¼Ó·şÎñ¼¶±ğĞ­Òé(SLA)',
+        'Add a new SLA.' => 'ĞÂÔöÒ»¸ö·şÎñ¼¶±ğĞ­Òé(SLA).',
+
+        # Template: AdminSMIMEForm
+        'S/MIME Management' => 'S/MIME ¹ÜÀí',
+        'Add Certificate' => 'Ìí¼ÓÖ¤Êé',
+        'Add Private Key' => 'Ìí¼ÓË½³×',
+        'Secret' => 'ÃÜÂë',
+        'Hash' => 'Hash',
+        'In this way you can directly edit the certification and private keys in file system.' => 'ÓÃÕâÖÖ·½Ê½Äú¿ÉÒÔÖ±½Ó±à¼­Ö¤ÊéºÍË½³×',
+
+        # Template: AdminStateForm
+        'State Management' => '×´Ì¬¹ÜÀí',
+        'Add State' => 'Ôö¼Ó×´Ì¬',
+        'Add a new State.' => 'Ôö¼ÓÒ»¸öĞÂµÄ×´Ì¬',
+        'State Type' => '×´Ì¬ÀàĞÍ',
+        'Take care that you also updated the default states in you Kernel/Config.pm!' => 'ÄúÍ¬Ê±¸üĞÂÁË Kernel/Config.pm ÖĞµÄÈ±Ê¡×´Ì¬!',
+        'See also' => '²Î¼û',
 
         # Template: AdminSysConfig
-        'SysConfig' => 'ç³»ç»Ÿé…ç½®',
-        'Navigate by searching in %s settings' => 'æµè§ˆä» %s ä¸ªé…ç½®é¡¹ä¸­æŸ¥æ‰¾çš„ç»“æœ',
-        'Navigate by selecting config groups' => 'æµè§ˆé€‰ä¸­çš„é…ç½®ç¾¤ç»„',
-        'Download all system config changes' => 'ä¸‹è½½æ‰€æœ‰é…ç½®(ä¸åŒ…æ‹¬é»˜è®¤é…ç½®)',
-        'Export settings' => 'å¯¼å‡ºè®¾ç½®',
-        'Load SysConfig settings from file' => 'ä»æŒ‡å®šæ–‡ä»¶åŠ è½½ç³»ç»Ÿé…ç½®',
-        'Import settings' => 'å¯¼å…¥è®¾ç½®',
-        'Import Settings' => 'å¯¼å…¥è®¾ç½®',
-        'Please enter a search term to look for settings.' => 'è¯·è¾“å…¥å…³é”®è¯æ¥æŸ¥æ‰¾ç›¸å…³çš„è®¾ç½®.',
-        'Subgroup' => 'å­ç»„',
-        'Elements' => 'å…ƒç´ ',
+        'SysConfig' => 'ÏµÍ³ÅäÖÃ',
+        'Group selection' => 'Ñ¡Ôñ×é',
+        'Show' => 'ÏÔÊ¾',
+        'Download Settings' => 'ÏÂÔØÉèÖÃ',
+        'Download all system config changes.' => 'ÏÂÔØËùÓĞµÄÏµÍ³ÅäÖÃ±ä»¯.',
+        'Load Settings' => '¼ÓÔØÉèÖÃ',
+        'Subgroup' => '×Ó×é',
+        'Elements' => 'ÔªËØ',
 
         # Template: AdminSysConfigEdit
-        'Edit Config Settings' => 'ä¿®æ”¹ç³»ç»Ÿé…ç½®',
-        'This config item is only available in a higher config level!' =>
-            'è¯¥é…ç½®é¡¹åªåœ¨é«˜çº§é…ç½®å¯ç”¨ï¼',
-        'Reset this setting' => 'é‡ç½®è®¾å®š',
-        'Error: this file could not be found.' => 'é”™è¯¯ï¼šæ–‡ä»¶ä¸å­˜åœ¨ã€‚',
-        'Error: this directory could not be found.' => 'é”™è¯¯ï¼šç›®å½•ä¸å­˜åœ¨ã€‚',
-        'Error: an invalid value was entered.' => 'é”™è¯¯ï¼šè¾“å…¥æ— æ•ˆçš„å€¼ã€‚',
-        'Content' => 'å€¼',
-        'Remove this entry' => 'åˆ é™¤è¯¥æ¡ç›®',
-        'Add entry' => 'æ–°å¢æ¡ç›®',
-        'Remove entry' => 'åˆ é™¤æ¡ç›®',
-        'Add new entry' => 'æ–°å¢æ–°æ¡ç›®',
-        'Create new entry' => 'åˆ›å»ºæ–°æ¡ç›®',
-        'New group' => 'æ–°ç¾¤ç»„',
-        'Group ro' => 'ç¾¤ç»„ro',
-        'Readonly group' => 'åªè¯»ç¾¤ç»„',
-        'New group ro' => 'æ–°ç¾¤ç»„ro',
-        'Loader' => 'åŠ è½½',
-        'File to load for this frontend module' => 'æ–‡ä»¶è£…è½½ç•Œé¢æ¨¡å—',
-        'New Loader File' => 'æ–°åŠ è½½æ–‡ä»¶',
-        'NavBarName' => 'å¯¼èˆªæ åç§°',
-        'NavBar' => 'å¯¼èˆªæ ',
-        'LinkOption' => 'é“¾æ¥é€‰é¡¹',
-        'Block' => 'å—',
-        'AccessKey' => 'è¿›é’¥',
-        'Add NavBar entry' => 'æ–°å¢å¯¼èˆªæ æ¡ç›®',
-        'Year' => 'å¹´',
-        'Month' => 'æœˆ',
-        'Day' => 'æ—¥',
-        'Invalid year' => 'éæ³•çš„å¹´ä»½',
-        'Invalid month' => 'éæ³•çš„æœˆä»½',
-        'Invalid day' => 'éæ³•çš„æ—¥æœŸ',
+        'Config Options' => 'ÅäÖÃÑ¡Ïî',
+        'Default' => 'È±Ê¡',
+        'New' => 'ĞÂ',
+        'New Group' => 'ĞÂ×é',
+        'Group Ro' => 'Ö»¶ÁÈ¨ÏŞµÄ×é',
+        'New Group Ro' => 'ĞÂµÄÖ»¶ÁÈ¨ÏŞµÄ×é',
+        'NavBarName' => 'µ¼º½À¸Ãû³Æ',
+        'NavBar' => 'µ¼º½À¸',
+        'Image' => 'Í¼Æ¬',
+        'Prio' => 'ÓÅÏÈ¼¶',
+        'Block' => '¿é',
+        'AccessKey' => '½øÔ¿',
 
-        # Template: AdminSystemAddress
-        'System Email Addresses Management' => 'ç³»ç»Ÿé‚®ä»¶åœ°å€ç®¡ç†',
-        'Add system address' => 'æ–°å¢ç³»ç»Ÿé‚®ä»¶åœ°å€',
-        'All incoming email with this address in To or Cc will be dispatched to the selected queue.' =>
-            'æ”¶ä»¶äººæˆ–æŠ„é€é˜Ÿåˆ—ä¸­åŒ…å«è¯¥åœ°å€çš„é‚®ä»¶å°†è¢«åˆ†å‘åˆ°æ‰€é€‰é˜Ÿåˆ—ã€‚',
-        'Email address' => 'é‚®ä»¶åœ°å€',
-        'Display name' => 'åç§°',
-        'Add System Email Address' => 'æ–°å¢ç³»ç»Ÿé‚®ä»¶åœ°å€',
-        'Edit System Email Address' => 'ä¿®æ”¹ç³»ç»Ÿé‚®ä»¶åœ°å€',
-        'The display name and email address will be shown on mail you send.' =>
-            'é‚®ä»¶åœ°å€å’Œåç§°å°†åœ¨é‚®ä»¶ä¸­æ˜¾ç¤ºã€‚',
+        # Template: AdminSystemAddressForm
+        'System Email Addresses Management' => 'ÏµÍ³ÓÊ¼şµØÖ·¹ÜÀí',
+        'Add System Address' => 'Ôö¼ÓÏµÍ³ÓÊ¼şµØÖ·',
+        'Add a new System Address.' => 'Ôö¼ÓÒ»¸öĞÂµÄÏµÍ³ÓÊ¼şµØÖ·.',
+        'Realname' => 'ÕæÊµĞÕÃû',
+        'All email addresses get excluded on replaying on composing an email.' => '',
+        'All incoming emails with this "Email" (To:) will be dispatched in the selected queue!' => 'ËùÓĞ·¢ËÍµ½¸ÃÊÕ¼şÈËµÄÏûÏ¢½«±»×ªµ½ËùÑ¡ÔñµÄ¶ÓÁĞ',
 
-        # Template: AdminType
-        'Type Management' => 'ç±»å‹ç®¡ç†',
-        'Add ticket type' => 'æ–°å¢ç¥¨å•ç±»å‹',
-        'Add Type' => 'æ–°å¢ç±»å‹',
-        'Edit Type' => 'ä¿®æ”¹ç±»å‹',
+        # Template: AdminTypeForm
+        'Type Management' => 'ÀàĞÍ¹ÜÀí',
+        'Add Type' => 'Ôö¼ÓÀàĞÍ',
+        'Add a new Type.' => 'Ôö¼ÓÒ»¸öĞÂµÄÀàĞÍ',
 
-        # Template: AdminUser
-        'Add agent' => 'æ–°å¢æœåŠ¡äººå‘˜',
-        'Agents will be needed to handle tickets.' => 'æœåŠ¡äººå‘˜éœ€è¦å¤„ç†ç¥¨å•ã€‚',
-        'Don\'t forget to add a new agent to groups and/or roles!' => 'è¯·åˆ«å¿˜äº†æ·»åŠ æœåŠ¡äººå‘˜åˆ°ç¾¤ç»„ æˆ– è§’è‰²é‡Œ!',
-        'Please enter a search term to look for agents.' => 'è¯·è¾“å…¥ä¸€ä¸ªæœç´¢æ¡ä»¶ä»¥å¿«é€ŸæŸ¥æ‰¾æœåŠ¡äººå‘˜çš„ç™»å½•ä¿¡æ¯.',
-        'Last login' => 'æœ€åä¸€æ¬¡ç™»å½•',
-        'Login as' => 'ç™»å½•å',
-        'Switch to agent' => 'åˆ‡æ¢æœåŠ¡äººå‘˜',
-        'Add Agent' => 'æ–°å¢æœåŠ¡äººå‘˜',
-        'Edit Agent' => 'ä¿®æ”¹æœåŠ¡äººå‘˜',
-        'Firstname' => 'å',
-        'Lastname' => 'å§“',
-        'Password is required.' => 'è¯·è¾“å…¥å¯†ç ã€‚',
-        'Start' => 'å¼€å§‹',
-        'End' => 'ç»“æŸ',
+        # Template: AdminUserForm
+        'User Management' => 'ÈËÔ±¹ÜÀí',
+        'Add User' => 'Ôö¼ÓÈËÔ±',
+        'Add a new Agent.' => 'Ôö¼ÓÒ»¸öĞÂµÄÈËÔ±',
+        'Login as' => 'µÇÂ¼Ãû',
+        'Firstname' => 'Ãû',
+        'Lastname' => 'ĞÕ',
+        'Start' => '¿ªÊ¼',
+        'End' => '½áÊø',
+        'User will be needed to handle tickets.' => 'ĞèÒªÓÃ»§À´´¦Àí Tickets.',
+        'Don\'t forget to add a new user to groups and/or roles!' => '²»ÒªÍü¼ÇÔö¼ÓÒ»¸öÓÃ»§µ½×éºÍ½ÇÉ«!',
 
-        # Template: AdminUserGroup
-        'Manage Agent-Group Relations' => 'ç®¡ç†æœåŠ¡äººå‘˜ä¸ç¾¤ç»„çš„å¯¹åº”å…³ç³»',
-        'Change Group Relations for Agent' => 'ä¸ºæœåŠ¡äººå‘˜ä¿®æ”¹ç¾¤ç»„',
-        'Change Agent Relations for Group' => 'ä¸ºç¾¤ç»„ä¿®æ”¹æœåŠ¡äººå‘˜',
-        'note' => 'æ³¨æ„',
-        'Permissions to add notes to tickets in this group/queue.' => 'å…è®¸ç»™ç¾¤ç»„/é˜Ÿåˆ—ç¥¨å•æ·»åŠ æ³¨é‡Šã€‚',
-        'owner' => 'æ‰€æœ‰è€…',
-        'Permissions to change the owner of tickets in this group/queue.' =>
-            'å…è®¸æ”¹å˜ç¾¤ç»„/é˜Ÿåˆ—ä¸­ç¥¨å•æ‰€æœ‰è€…ã€‚',
+        # Template: AdminUserGroupChangeForm
+        'Users <-> Groups Management' => 'ÓÃ»§ <-> ×é¹ÜÀí',
+
+        # Template: AdminUserGroupForm
 
         # Template: AgentBook
-        'Address Book' => 'åœ°å€ç°¿',
-        'Search for a customer' => 'æŸ¥æ‰¾å®¢æˆ·',
-        'Add email address %s to the To field' => 'å¢åŠ é‚®ä»¶åœ°å€åˆ°æ”¶ä»¶äººæ ä½',
-        'Add email address %s to the Cc field' => 'å¢åŠ é‚®ä»¶åœ°å€åˆ°æŠ„é€æ ä½',
-        'Add email address %s to the Bcc field' => 'å¢åŠ é‚®ä»¶åœ°å€åˆ°å¯†é€æ ä½',
-        'Apply' => 'åº”ç”¨',
+        'Address Book' => 'µØÖ·²¾',
+        'Return to the compose screen' => '»Øµ½×«Ğ´Ò³Ãæ',
+        'Discard all changes and return to the compose screen' => '·ÅÆúËùÓĞĞŞ¸Ä,»Øµ½×«Ğ´Ò³Ãæ',
+
+        # Template: AgentCalendarSmall
+
+        # Template: AgentCalendarSmallIcon
 
         # Template: AgentCustomerSearch
-        'Search Customer' => 'æœç´¢å®¢æˆ·',
-        'Duplicated entry' => '',
-        'This address already exists on the address list.' => '',
 
         # Template: AgentCustomerTableView
 
         # Template: AgentDashboard
-        'Dashboard' => 'ä»ªè¡¨æ¿',
+        'Dashboard' => '',
 
         # Template: AgentDashboardCalendarOverview
-        'in' => 'ä¹‹å†…',
-
-        # Template: AgentDashboardIFrame
+        'in' => '',
 
         # Template: AgentDashboardImage
 
         # Template: AgentDashboardProductNotify
-        '%s %s is available!' => '%s %s is å¯ç”¨ï¼',
-        'Please update now.' => 'è¯·æ›´æ–°',
-        'Release Note' => 'ç‰ˆæœ¬å‘å¸ƒæ³¨é‡Š',
-        'Level' => 'çº§åˆ«',
+        '%s %s is available!' => '',
+        'Please update now.' => 'Çë¸üĞÂ',
+        'Release Note' => '°æ±¾·¢²¼×¢ÊÍ',
+        'Level' => '¼¶±ğ',
 
         # Template: AgentDashboardRSSOverview
-        'Posted %s ago.' => 'å‘å¸ƒäº %s ä¹‹å‰',
+        'Posted %s ago.' => '',
 
         # Template: AgentDashboardTicketGeneric
-        'My locked tickets' => '',
-        'My watched tickets' => '',
-        'My responsibilites' => '',
-        'Tickets in My Queues' => '',
 
         # Template: AgentDashboardTicketStats
 
         # Template: AgentDashboardUserOnline
 
-        # Template: AgentHTMLReferenceForms
-
-        # Template: AgentHTMLReferenceOverview
-
-        # Template: AgentHTMLReferencePageLayout
-        'The ticket has been locked' => 'ç¥¨å•å·²é”å®š',
-        'Undo & close window' => 'å–æ¶ˆå…³é—­çª—å£',
-
         # Template: AgentInfo
-        'Info' => 'è¯¦æƒ…',
-        'To accept some news, a license or some changes.' => 'æ¥æ”¶æ–°é—»ï¼Œè®¸å¯è¯æˆ–è€…å˜æ›´ã€‚',
+        'Info' => 'ÏêÇé',
 
         # Template: AgentLinkObject
-        'Link Object: %s' => 'è¿æ¥å¯¹è±¡: %s',
-        'Close window' => 'å…³é—­çª—å£',
-        'go to link delete screen' => 'è½¬åˆ°é“¾æ¥åˆ é™¤çª—å£',
-        'Select Target Object' => 'é€‰æ‹©ç›®æ ‡å¯¹è±¡',
-        'Link Object' => 'é“¾æ¥å¯¹è±¡',
-        'with' => 'å’Œ',
-        'Unlink Object: %s' => 'æœªè¿æ¥å¯¹è±¡ %s',
-        'go to link add screen' => 'è½¬åˆ°é“¾æ¥æ–°å¢çª—å£',
+        'Link Object: %s' => 'Á¬½Ó¶ÔÏó: %s',
+        'Object' => '¶ÔÏó',
+        'Link Object' => 'Á´½Ó¶ÔÏó',
+        'with' => 'ºÍ',
+        'Select' => 'Ñ¡Ôñ',
+        'Unlink Object: %s' => 'Î´Á¬½Ó¶ÔÏó %s',
+
+        # Template: AgentLookup
+        'Lookup' => '',
 
         # Template: AgentNavigationBar
 
-        # Template: AgentPreferences
-        'Edit your preferences' => 'ç¼–è¾‘ä¸ªäººè®¾ç½®',
+        # Template: AgentPreferencesForm
 
         # Template: AgentSpelling
-        'Spell Checker' => 'æ‹¼å†™æ£€æŸ¥',
-        'spelling error(s)' => 'æ‹¼å†™é”™è¯¯',
-        'Apply these changes' => 'åº”ç”¨è¿™äº›æ”¹å˜',
+        'Spell Checker' => 'Æ´Ğ´¼ì²é',
+        'spelling error(s)' => 'Æ´Ğ´´íÎó',
+        'or' => '»òÕß',
+        'Apply these changes' => 'Ó¦ÓÃÕâĞ©¸Ä±ä',
 
         # Template: AgentStatsDelete
-        'Delete stat' => 'åˆ é™¤ç»Ÿè®¡',
-        'Stat#' => 'ç»Ÿè®¡å·',
-        'Do you really want to delete this stat?' => 'ä½ ç¡®è®¤è¦åˆ é™¤è¯¥ç»Ÿè®¡?',
+        'Do you really want to delete this Object?' => 'ÄúÊÇ·ñÈ·ÈÏÉ¾³ı¸Ã¶ÔÏó?',
 
         # Template: AgentStatsEditRestrictions
-        'Step %s' => 'ç¬¬ %s æ­¥',
-        'General Specifications' => 'ä¸€èˆ¬è®¾å®š',
-        'Select the element that will be used at the X-axis' => 'é€‰æ‹©xè½´ä½¿ç”¨çš„è¦ç´ ',
-        'Select the elements for the value series' => 'é€‰æ‹©å€¼åˆ—çš„è¦ç´ ',
-        'Select the restrictions to characterize the stat' => 'é€‰æ‹©é™åˆ¶æ¡ä»¶',
-        'Here you can make restrictions to your stat.' => 'æ‚¨å¯ä»¥ä¸ºç»Ÿè®¡æŒ‡å®šé™åˆ¶å‚æ•°',
-        'If you remove the hook in the "Fixed" checkbox, the agent generating the stat can change the attributes of the corresponding element.' =>
-            'å¦‚æœæ‚¨åˆ é™¤é’©åœ¨â€œå›ºå®šâ€å¤é€‰æ¡†ï¼Œç”Ÿæˆè¯¥ç»Ÿè®¡çš„æŠ€æœ¯æ”¯æŒä»£è¡¨å¯ä»¥æ”¹å˜ç›¸åº”è¦ç´ çš„å±æ€§',
-        'Fixed' => 'ä¿®æ­£',
-        'Please select only one element or turn off the button \'Fixed\'.' =>
-            'è¯·åªé€‰æ‹©ä¸€ä¸ªå…ƒç´ æˆ–å…³é—­è¢«é€‰åŸŸçš„\'Fixed\'æŒ‰é’®',
-        'Absolute Period' => 'ç»å¯¹å‘¨æœŸ',
-        'Between' => 'åœ¨',
-        'Relative Period' => 'ç›¸å¯¹å‘¨æœŸ',
-        'The last' => 'æœ€å',
-        'Finish' => 'ç»“æŸ',
+        'Select the restrictions to characterise the stat' => 'Ñ¡ÔñÏŞÖÆ²ÎÊı£¬Ê¹Í³¼ÆÌØÕ÷»¯',
+        'Fixed' => 'ĞŞÕı',
+        'Please select only one element or turn off the button \'Fixed\'.' => 'ÇëÖ»Ñ¡ÔñÒ»¸öÔªËØ»ò¹Ø±Õ±»Ñ¡ÓòµÄ\'Fixed\'°´Å¥',
+        'Absolut Period' => '¾ø¶ÔÖÜÆÚ',
+        'Between' => '',
+        'Relative Period' => 'Ïà¶ÔÖÜÆÚ',
+        'The last' => '',
+        'Finish' => '',
+        'Here you can make restrictions to your stat.' => 'Äú¿ÉÒÔÎªÄúµÄÍ³¼ÆÖÆ¶¨ÏŞÖÆ²ÎÊı',
+        'If you remove the hook in the "Fixed" checkbox, the agent generating the stat can change the attributes of the corresponding element.' => 'Èç¹ûÄúÉ¾³ı¹³ÔÚ¡°¹Ì¶¨¡±¸´Ñ¡¿ò£¬Éú³É¸ÃÍ³¼ÆµÄ¼¼ÊõÖ§³Ö´ú±í¿ÉÒÔ¸Ä±äÏàÓ¦ÒªËØµÄÊôĞÔ',
 
         # Template: AgentStatsEditSpecification
-        'Permissions' => 'æƒé™',
-        'You can select one or more groups to define access for different agents.' =>
-            'å¯é€‰ä¸­ä¸€ä¸ªæˆ–å¤šä¸ªç¾¤ç»„å®šä¹‰æœåŠ¡äººå‘˜è®¿é—®æƒé™ã€‚',
-        'Some result formats are disabled because at least one needed package is not installed.' =>
-            'è‡³å°‘ä¸€ä¸ªå¿…é¡»çš„è½¯ä»¶åŒ…æ²¡æœ‰å®‰è£…ï¼Œéƒ¨åˆ†ç»“æœæ ¼å¼æ— æ³•ä½¿ç”¨ã€‚',
-        'Please contact your administrator.' => 'è¯·è”ç³»ç³»ç»Ÿç®¡ç†å‘˜',
-        'Graph size' => 'å›¾å½¢å°ºå¯¸',
-        'If you use a graph as output format you have to select at least one graph size.' =>
-            'å¦‚æœæ‚¨ä½¿ç”¨çš„æ˜¯å›¾å½¢çš„è¾“å‡ºæ ¼å¼ä½ å¿…é¡»è‡³å°‘é€‰æ‹©ä¸€ä¸ªå›¾å½¢çš„å¤§å°',
-        'Sum rows' => 'æ€»å’Œè¡Œ',
-        'Sum columns' => 'æ€»å’Œåˆ—',
-        'Use cache' => 'ä½¿ç”¨ç¼“å­˜',
-        'Most of the stats can be cached. This will speed up the presentation of this stat.' =>
-            'å¤§å¤šæ•°çš„ç»Ÿè®¡èµ„æ–™å¯ä»¥ç¼“å­˜ï¼Œå°†åŠ å¿«ç»Ÿè®¡è®¡ç®—ã€‚',
-        'If set to invalid end users can not generate the stat.' => 'å¦‚æœè¢«è®¾ç½®ä¸ºæ— æ•ˆï¼Œç”¨æˆ·å°†ä¸èƒ½è¿›è¡Œç»Ÿè®¡ã€‚',
+        'Insert of the common specifications' => '²åÈë¹²Í¬¹æ·¶',
+        'Permissions' => '¿ÉĞí',
+        'Format' => '¸ñÊ½',
+        'Graphsize' => 'Í¼ĞÎ»¯',
+        'Sum rows' => '×ÜºÍĞĞ',
+        'Sum columns' => '×ÜºÍÁĞ',
+        'Cache' => '»º´æ',
+        'Required Field' => '±ØÌî×Ö¶Î',
+        'Selection needed' => 'Ñ¡ÔñĞèÒª',
+        'Explanation' => '½âÊÍ',
+        'In this form you can select the basic specifications.' => 'ÒÔÕâÖÖĞÎÊ½£¬Äú¿ÉÒÔÑ¡Ôñ»ù±¾¹æ·¶',
+        'Attribute' => 'ÊôĞÔ',
+        'Title of the stat.' => 'Í³¼ÆµÄ±êÌâ',
+        'Here you can insert a description of the stat.' => 'Äú¿ÉÒÔ²åÈëÍ³¼ÆµÄÃèÊö',
+        'Dynamic-Object' => '¶¯Ì¬¶ÔÏó',
+        'Here you can select the dynamic object you want to use.' => 'Äú¿ÉÒÔÑ¡ÔñÄúĞèÒªÊ¹ÓÃµÄ¶¯Ì¬¶ÔÏó',
+        '(Note: It depends on your installation how many dynamic objects you can use)' => '×¢£ºÕâÈ¡¾öÓÚÄúµÄ°²×°¶àÉÙ¶¯Ì¬¶ÔÏó¿ÉÒÔÊ¹ÓÃ',
+        'Static-File' => '¾²Ì¬ÎÄ¼ş',
+        'For very complex stats it is possible to include a hardcoded file.' => '¶ÔÓÚ·Ç³£¸´ÔÓµÄÍ³¼ÆÓĞ¿ÉÄÜ°üÀ¨Ò»¸öÓ²±àÂëÎÄ¼ş',
+        'If a new hardcoded file is available this attribute will be shown and you can select one.' => 'Èç¹ûÒ»¸öĞÂµÄÓ²±àÂëÎÄ¼ş´æÔÚ£¬¿É´ËÊôĞÔ½«ÏÔÊ¾£¬Äú¿ÉÒÔÑ¡ÔñÆäÖĞÒ»¸ö',
+        'Permission settings. You can select one or more groups to make the configurated stat visible for different agents.' => 'È¨ÏŞÉèÖÃ¡£Äú¿ÉÒÔÑ¡ÔñÒ»¸ö»ò¶à¸öÍÅÌå£¬²»Í¬µÄ¼¼ÊõÖ§³Ö´ú±í¶¼¿É¿´¼û¸ÃÅäÖÃµÄÍ³¼Æ',
+        'Multiple selection of the output format.' => 'Êä³ö¸ñÊ½µÄ¶àÖÖÑ¡Ôñ',
+        'If you use a graph as output format you have to select at least one graph size.' => 'Èç¹ûÄúÊ¹ÓÃµÄÊÇÍ¼ĞÎµÄÊä³ö¸ñÊ½Äã±ØĞëÖÁÉÙÑ¡ÔñÒ»¸öÍ¼ĞÎµÄ´óĞ¡',
+        'If you need the sum of every row select yes' => 'ÈçĞèÒªÃ¿ĞĞµÄ×ÜºÍÑ¡Ôñ yes¡¯',
+        'If you need the sum of every column select yes.' => 'ÈçĞèÒªÃ¿ÁĞµÄ×ÜºÍÑ¡Ôñ¡¯yes¡¯',
+        'Most of the stats can be cached. This will speed up the presentation of this stat.' => '´ó¶àÊıµÄÍ³¼Æ×ÊÁÏ¿ÉÒÔ»º´æ,Õâ½«¼Ó¿ìÕâÒ»Í³¼ÆµÄÕ¹Ê¾.',
+        '(Note: Useful for big databases and low performance server)' => '×¢£ºÊÊÓÃÓÚ´óĞÍÊı¾İ¿âºÍµÍĞÔÄÜµÄ·şÎñÆ÷',
+        'With an invalid stat it isn\'t feasible to generate a stat.' => 'ÓÃÎŞĞ§µÄÍ³¼Æ²»¿ÉÉú³ÉÍ³¼Æ',
+        'This is useful if you want that no one can get the result of the stat or the stat isn\'t ready configurated.' => 'ÕâÊÇ·Ç³£ÓĞÓÃµÄ£¬Èç¹ûÄã²»ÏëÈÃÈËµÃµ½Í³¼ÆµÄ½á¹û»òÍ³¼Æ½á¹û²¢²»ÍêÕû',
 
         # Template: AgentStatsEditValueSeries
-        'Here you can define the value series.' => 'å®šä¹‰å€¼åˆ—',
-        'You have the possibility to select one or two elements.' => 'å¯é€‰æ‹©ä¸€ä¸ªæˆ–ä¸¤ä¸ªè¦ç´ ï¼Œ',
-        'Then you can select the attributes of elements.' => 'ç„¶åå¯ä»¥æŒ‡å®šè¦ç´ å±æ€§ã€‚',
-        'Each attribute will be shown as single value series.' => 'æ¯ä¸ªå±æ€§å°†è¢«æ˜¾ç¤ºä¸ºç‹¬ç«‹çš„å€¼åˆ—',
-        'If you don\'t select any attribute all attributes of the element will be used if you generate a stat, as well as new attributes which were added since the last configuration.' =>
-            '',
-        'Scale' => 'å°ºåº¦',
-        'minimal' => 'æœ€å°åŒ–',
-        'Please remember, that the scale for value series has to be larger than the scale for the X-axis (e.g. X-Axis => Month, ValueSeries => Year).' =>
-            'è¯·è®°ä½ï¼Œè¿™æ¯”é¢è¡¨çš„ä»·å€¼ç³»åˆ—è¦å¤§äºXè½´çš„å°ºåº¦ï¼ˆå¦‚X -è½´=>æœ¬æœˆï¼Œ ValueSeries =>å¹´ï¼‰ ',
+        'Select the elements for the value series' => 'Ñ¡Ôñ¼ÛÖµÏµÁĞµÄÒªËØ',
+        'Scale' => '³ß¶È',
+        'minimal' => '×îĞ¡»¯',
+        'Please remember, that the scale for value series has to be larger than the scale for the X-axis (e.g. X-Axis => Month, ValueSeries => Year).' => 'Çë¼Ç×¡£¬Õâ±È¶î±íµÄ¼ÛÖµÏµÁĞÒª´óÓÚXÖáµÄ³ß¶È£¨ÈçX -Öá=>±¾ÔÂ£¬ ValueSeries =>Äê£© ',
+        'Here you can define the value series. You have the possibility to select one or two elements. Then you can select the attributes of elements. Each attribute will be shown as single value series. If you don\'t select any attribute all attributes of the element will be used if you generate a stat. As well a new attribute is added since the last configuration.' => 'ÔÚÕâÀï£¬Äú¿ÉÒÔ¶¨ÒåÒ»ÏµÁĞµÄÖµ¡£ÄãÓĞ¿ÉÄÜÑ¡ÔñÒ»¸ö»òÁ½¸öÔªËØ¡£È»ºóÄú¿ÉÒÔÑ¡ÔñÔªËØµÄÊôĞÔ¡£Ã¿¸öÊôĞÔ½«ÏÔÊ¾Îªµ¥Ò»µÄÖµ¡£Èç¹ûÄú²»Ñ¡ÔñÈÎºÎÊôĞÔ, ÄÇÃ´µ±ÄúÉú³ÉÒ»¸öÍ³¼ÆµÄÊ±ºòËùÓĞÔªËØµÄÊôĞÔ½«±»Ê¹ÓÃ¡£²¢ÇÒÒ»¸öĞÂµÄÊôĞÔ±»¸üĞÂµ½ÉÏ´ÎÅäÖÃÖĞ',
 
         # Template: AgentStatsEditXaxis
-        'Here you can define the x-axis. You can select one element via the radio button.' =>
-            'å®šä¹‰xè½´ï¼Œå¯ä»¥ä½¿ç”¨å•é€‰æŒ‰é’®é€‰æ‹©è¦ç´ ã€‚',
-        'maximal period' => 'æœ€å¤§å‘¨æœŸ',
-        'minimal scale' => 'æœ€å°å°ºåº¦',
+        'Select the element, which will be used at the X-axis' => 'Ñ¡Ôñ½«ÓÃÔÚxÖáµÄÔªËØ',
+        'maximal period' => '×î´óÖÜÆÚ',
+        'minimal scale' => '×îĞ¡³ß¶È',
+        'Here you can define the x-axis. You can select one element via the radio button. If you make no selection all attributes of the element will be used if you generate a stat. As well a new attribute is added since the last configuration.' => 'ÔÚÕâÀï£¬Äú¿ÉÒÔ¶¨ÒåxÖá¡£Äú¿ÉÒÔÑ¡ÔñµÄÒ»¸öÒòËØÍ¨¹ıµ¥Ñ¡°´Å¥¡£Èç¹ûÄãÃ»ÓĞÑ¡Ôñ£¬ËùÓĞÔªËØµÄÊôĞÔ½«±»Ê¹ÓÃµ±ÄúÉú³ÉÒ»¸öÍ³¼ÆµÄÊ±ºò¡£²¢ÇÒÒ»¸öĞÂµÄÊôĞÔ±»¸üĞÂµ½ÉÏ´ÎÅäÖÃÖĞ',
 
         # Template: AgentStatsImport
-        'Import Stat' => 'å¯¼å…¥ç»Ÿè®¡',
-        'File is not a Stats config' => 'æ–‡ä»¶ä¸æ˜¯ä¸€ä¸ªç»Ÿè®¡é…ç½®',
-        'No File selected' => 'æ²¡æœ‰æ–‡ä»¶è¢«é€‰ä¸­',
+        'Import' => 'µ¼Èë',
+        'File is not a Stats config' => 'ÎÄ¼ş²»ÊÇÒ»¸öÍ³¼ÆÅäÖÃ',
+        'No File selected' => 'Ã»ÓĞÎÄ¼ş±»Ñ¡ÖĞ',
 
         # Template: AgentStatsOverview
-        'Stats' => 'ç»Ÿè®¡',
+        'Results' => '½á¹û',
+        'Total hits' => 'µã»÷Êı',
+        'Page' => 'Ò³',
 
         # Template: AgentStatsPrint
-        'Print' => 'æ‰“å°',
-        'No Element selected.' => 'æ²¡æœ‰å…ƒç´ è¢«é€‰ä¸­',
+        'Print' => '´òÓ¡',
+        'No Element selected.' => 'Ã»ÓĞÔªËØ±»Ñ¡ÖĞ',
 
         # Template: AgentStatsView
-        'Export config' => 'å¯¼å‡ºé…ç½®',
-        'With the input and select fields you can influence the format and contents of the statistic.' =>
-            '',
-        'Exactly what fields and formats you can influence is defined by the statistic administrator.' =>
-            '',
-        'Stat Details' => 'ç»Ÿè®¡è¯¦æƒ…',
-        'Format' => 'æ ¼å¼',
-        'Graphsize' => 'å›¾å½¢åŒ–',
-        'Cache' => 'ç¼“å­˜',
-        'Exchange Axis' => 'è½¬æ¢è½´',
-        'Configurable params of static stat' => 'é™æ€ç»Ÿè®¡çš„é…ç½®å‚æ•°',
-        'No element selected.' => 'æ²¡æœ‰è¢«é€‰å‚æ•°',
-        'maximal period from' => 'æœ€å¤§å‘¨æœŸè¡¨',
-        'to' => 'è‡³',
-
-        # Template: AgentTicketActionCommon
-        'Change Free Text of Ticket' => 'ä¿®æ”¹ç¥¨å•è‡ªå®šä¹‰æ–‡æœ¬',
-        'Change Owner of Ticket' => 'ä¿®æ”¹ç¥¨å•æ‰€æœ‰è€…',
-        'Close Ticket' => 'å…³é—­ç¥¨å•',
-        'Add Note to Ticket' => 'ç»™ç¥¨å•å¢åŠ æ³¨è§£',
-        'Set Pending' => 'è®¾ç½®å¾…å¤„ç†çŠ¶æ€',
-        'Change Priority of Ticket' => 'ä¿®æ”¹ç¥¨å•ä¼˜å…ˆçº§',
-        'Change Responsible of Ticket' => 'ä¿®æ”¹ç¥¨å•è´Ÿè´£äºº',
-        'Cancel & close window' => 'å–æ¶ˆå¹¶å…³é—­çª—å£',
-        'Service invalid.' => 'æœåŠ¡æ— æ•ˆã€‚',
-        'New Owner' => 'æ–°æ‰€æœ‰è€…',
-        'Please set a new owner!' => 'è¯·æŒ‡å®šæ–°çš„æ‰€æœ‰è€…ï¼',
-        'Previous Owner' => 'å‰ä¸€ä¸ªæ‰€æœ‰è€…',
-        'Inform Agent' => 'é€šçŸ¥æœåŠ¡äººå‘˜',
-        'Optional' => 'é€‰é¡¹',
-        'Inform involved Agents' => 'é€šçŸ¥ç›¸å…³æœåŠ¡äººå‘˜',
-        'Spell check' => 'æ‹¼å†™æ£€æŸ¥',
-        'Note type' => 'æ³¨é‡Šç±»å‹',
-        'Next state' => 'ç¥¨å•çŠ¶æ€',
-        'Pending date' => 'å¾…å¤„ç†æ—¥æœŸ',
-        'Date invalid!' => 'æ—¥æœŸæ— æ•ˆ!',
-
-        # Template: AgentTicketActionPopupClose
+        'Export Config' => 'µ¼³öÅäÖÃ',
+        'Information about the Stat' => '¹ØÓÚÍ³¼ÆµÄĞÅÏ¢',
+        'Exchange Axis' => '×ª»»Öá',
+        'Configurable params of static stat' => '¾²Ì¬Í³¼ÆµÄÅäÖÃ²ÎÊı',
+        'No element selected.' => 'Ã»ÓĞ±»Ñ¡²ÎÊı',
+        'maximal period from' => '×î´óÖÜÆÚ±í',
+        'to' => 'ÖÁ',
+        'With the input and select fields you can configurate the stat at your needs. Which elements of a stat you can edit depends on your stats administrator who configurated the stat.' => 'Í¨¹ıÊäÈëºÍÑ¡Ôñ×Ö¶Î£¬Äú¿ÉÒÔ°´ÄúµÄĞèÇóÀ´ÅäÖÃÍ³¼Æ¡£Äú¿ÉÒÔĞŞ¸Ä±à¼­ÄÇĞ©Í³¼ÆÒªËØÓÉÄúµÄÍ³¼Æ×ÊÁÏ¹ÜÀíÔ±À´ÉèÖÃ¡£',
 
         # Template: AgentTicketBounce
-        'Bounce Ticket' => '',
-        'Bounce to' => 'å›é€€åˆ° ',
-        'You need a email address.' => 'éœ€è¦é‚®ä»¶åœ°å€ã€‚',
-        'Need a valid email address or don\'t use a local email address.' =>
-            'éœ€è¦æœ‰æ•ˆçš„é‚®ä»¶åœ°å€/ä¸å¯ä»¥ä½¿ç”¨æœ¬åœ°é‚®ä»¶åœ°å€ã€‚',
-        'Next ticket state' => 'ç¥¨å•çŠ¶æ€',
-        'Inform sender' => 'é€šçŸ¥å‘é€è€…',
-        'Send mail!' => 'å‘é€!',
+        'A message should have a To: recipient!' => 'ÓÊ¼ş±ØĞëÓĞÊÕ¼şÈË!',
+        'You need a email address (e. g. customer@example.com) in To:!' => 'ÊÕ¼şÈËĞÅÏ¢±ØĞëÊÇÓÊ¼şµØÖ·(ÀıÈç£ºcustomer@example.com)',
+        'Bounce ticket' => '»ØÍË Ticket ',
+        'Ticket locked!' => 'Ticket ±»Ëø¶¨!',
+        'Ticket unlock!' => '½âËø Ticket!',
+        'Bounce to' => '»ØÍËµ½ ',
+        'Next ticket state' => 'Tickets ×´Ì¬',
+        'Inform sender' => 'Í¨Öª·¢ËÍÕß',
+        'Send mail!' => '·¢ËÍ!',
 
         # Template: AgentTicketBulk
-        'Ticket Bulk Action' => 'ç¥¨å•æ‰¹é‡å¤„ç†',
-        'Send Email' => '',
-        'Merge to' => 'åˆå¹¶åˆ°',
-        'Invalid ticket identifier!' => 'æ— æ•ˆçš„ç¥¨å•æ ‡è¯†ç¬¦!',
-        'Merge to oldest' => 'åˆå¹¶åˆ°æœ€è€çš„',
-        'Link together' => 'ç›¸äº’é“¾æ¥',
-        'Link to parent' => 'é“¾æ¥åˆ°ä¸Šä¸€çº§',
-        'Unlock tickets' => 'è§£é”ç¥¨å•',
+        'You need to account time!' => 'ÄúĞèÒª¼ÇÂ¼Ê±¼ä',
+        'Ticket Bulk Action' => 'Ticket ÅúÁ¿´¦Àí',
+        'Spell Check' => 'Æ´Ğ´¼ì²é',
+        'Note type' => '×¢ÊÍÀàĞÍ',
+        'Next state' => 'Ticket ×´Ì¬',
+        'Pending date' => '´ı´¦ÀíÈÕÆÚ',
+        'Merge to' => 'ºÏ²¢µ½',
+        'Merge to oldest' => 'ºÏ²¢µ½×îÀÏµÄ',
+        'Link together' => 'ºÏ²¢ÔÚÒ»Æğ',
+        'Link to Parent' => 'ºÏ²¢µ½ÉÏÒ»¼¶',
+        'Unlock Tickets' => '½âËø Tickets',
 
         # Template: AgentTicketClose
+        'Ticket Type is required!' => 'Ticket µÄÀàĞÍÊÇ±ØĞëµÄ!',
+        'A required field is:' => '±ØĞëµÄ×Ö¶ÎÊÇ',
+        'Close ticket' => '¹Ø±Õ Ticket',
+        'Previous Owner' => 'Ç°Ò»¸öËùÓĞÕß',
+        'Inform Agent' => 'Í¨Öª¼¼ÊõÖ§³ÖÈËÔ±',
+        'Optional' => 'Ñ¡Ïî',
+        'Inform involved Agents' => 'Í¨ÖªÏà¹Ø¼¼ÊõÖ§³ÖÈËÔ±',
+        'Attach' => '¸½¼ş',
 
         # Template: AgentTicketCompose
-        'Compose answer for ticket' => 'æ’°å†™ç­”å¤ç¥¨å•',
-        'Remove Ticket Customer' => '',
-        'Please remove this entry and enter a new one with the correct value.' =>
-            '',
-        'Please include at least one recipient' => '',
-        'Remove Cc' => '',
-        'Remove Bcc' => '',
-        'Address book' => 'åœ°å€ç°¿',
-        'Pending Date' => 'è¿›å…¥ç­‰å¾…çŠ¶æ€æ—¥æœŸ',
-        'for pending* states' => 'é’ˆå¯¹ç­‰å¾…çŠ¶æ€',
-        'Date Invalid!' => 'æ—¥æœŸæ— æ•ˆï¼',
+        'A message must be spell checked!' => 'ÏûÏ¢±ØĞë¾­¹ıÆ´Ğ´¼ì²é!',
+        'Compose answer for ticket' => '×«Ğ´´ğ¸´,Ticket ±àºÅ',
+        'Pending Date' => '½øÈëµÈ´ı×´Ì¬ÈÕÆÚ',
+        'for pending* states' => 'Õë¶ÔµÈ´ı×´Ì¬',
 
         # Template: AgentTicketCustomer
-        'Change customer of ticket' => 'ä¿®æ”¹ç¥¨å•æ‰€å±å®¢æˆ·',
-        'Customer Data' => 'å®¢æˆ·æ•°æ®',
-        'Customer user' => 'å®¢æˆ·ç”¨æˆ·',
+        'Change customer of ticket' => 'ĞŞ¸Ä Tickets ËùÊô¿Í»§',
+        'Set customer user and customer id of a ticket' => 'ÉèÖÃ Ticket ËùÊô¿Í»§ÓÃ»§',
+        'Customer User' => '¿Í»§ÓÃ»§',
+        'Search Customer' => 'ËÑË÷¿Í»§',
+        'Customer Data' => '¿Í»§Êı¾İ',
+        'Customer history' => '¿Í»§ÀúÊ·Çé¿ö',
+        'All customer tickets.' => '¸Ã¿Í»§ËùÓĞ Tickets ¼ÇÂ¼.',
 
         # Template: AgentTicketEmail
-        'Create New Email Ticket' => 'åˆ›å»ºé‚®ä»¶ç¥¨å•',
-        'From queue' => 'æ¥è‡ªé˜Ÿåˆ—',
-        'To customer' => '',
-        'Please include at least one customer for the ticket.' => '',
-        'Get all' => 'è·å–å…¨éƒ¨',
+        'Compose Email' => '×«Ğ´ Email',
+        'new ticket' => 'ĞÂ½¨ Ticket',
+        'Refresh' => 'Ë¢ĞÂ',
+        'Clear To' => 'Çå¿Õ',
+        'All Agents' => 'ËùÓĞ¼¼ÊõÖ§³ÖÈËÔ±',
 
         # Template: AgentTicketEscalation
 
         # Template: AgentTicketForward
-        'Forward ticket: %s - %s' => '',
-        'Need a valid email address or don\'t use a local email address' =>
-            'éœ€è¦æœ‰æ•ˆçš„é‚®ä»¶åœ°å€/ä¸å¯ä»¥ä½¿ç”¨æœ¬åœ°é‚®ä»¶åœ°å€ã€‚',
+        'Article type' => 'ÎÄÕÂÀàĞÍ',
 
         # Template: AgentTicketFreeText
+        'Change free text of ticket' => 'ĞŞ¸Ä Ticket ¶îÍâĞÅÏ¢',
 
         # Template: AgentTicketHistory
-        'History of' => 'å†å²',
-        'History Content' => 'å†å²å†…å®¹',
-        'Zoom view' => 'ç¼©æ”¾è§†å›¾',
+        'History of' => 'ÀúÊ·',
+
+        # Template: AgentTicketLocked
 
         # Template: AgentTicketMerge
-        'Ticket Merge' => 'ç¥¨å•åˆå¹¶',
-        'You need to use a ticket number!' => 'æ‚¨éœ€è¦ä½¿ç”¨ä¸€ä¸ªç¥¨å•ç¼–å·!',
-        'A valid ticket number is required.' => 'éœ€è¦æœ‰æ•ˆçš„ç¥¨å•ç¼–å·ã€‚',
-        'Need a valid email address.' => 'éœ€è¦æœ‰æ•ˆçš„é‚®ä»¶åœ°å€ã€‚',
+        'You need to use a ticket number!' => 'ÄúĞèÒªÊ¹ÓÃÒ»¸ö Ticket ±àºÅ!',
+        'Ticket Merge' => 'Ticket ºÏ²¢',
 
         # Template: AgentTicketMove
-        'Move Ticket' => 'ç§»åŠ¨ç¥¨å•',
-        'New Queue' => 'æ–°é˜Ÿåˆ—',
+        'Move Ticket' => 'ÒÆ¶¯ Ticket',
 
         # Template: AgentTicketNote
+        'Add note to ticket' => 'Ôö¼Ó×¢½âµ½ Ticket',
 
         # Template: AgentTicketOverviewMedium
-        'Select all' => 'é€‰æ‹©å…¨éƒ¨',
-        'No ticket data found.' => 'æ²¡æœ‰æ‰¾åˆ°ç¥¨å•æ•°æ®ã€‚',
-        'First Response Time' => 'é¦–æ¬¡æŠ¥å‘Šæ—¶é—´',
-        'Service Time' => 'æœåŠ¡æ—¶é—´',
-        'Update Time' => 'æ›´æ–°æ—¶é—´',
-        'Solution Time' => 'è§£å†³æ—¶é—´',
-        'Move ticket to a different queue' => 'ç§»åŠ¨ç¥¨å•åˆ°ä¸åŒçš„é˜Ÿåˆ—',
-        'Change queue' => 'æ”¹å˜é˜Ÿåˆ—',
+        'First Response Time' => 'Ê×´Î±¨¸æÊ±¼ä',
+        'Service Time' => '·şÎñÊ±¼ä',
+        'Update Time' => '¸üĞÂÊ±¼ä',
+        'Solution Time' => '½â¾öÊ±¼ä',
+
+        # Template: AgentTicketOverviewMediumMeta
+        'You need min. one selected Ticket!' => 'ÄúÖÁÉÙĞèÒªÑ¡ÔñÒ»¸ö Ticket!',
 
         # Template: AgentTicketOverviewNavBar
-        'Change search options' => 'ä¿®æ”¹æœç´¢é€‰é¡¹',
-        'Tickets per page' => 'ç¥¨å•/é¡µ',
+        'Filter' => '¹ıÂËÆ÷',
+        'Change search options' => 'ĞŞ¸ÄËÑË÷Ñ¡Ïî',
+        'Tickets' => '',
+        'of' => '',
+
+        # Template: AgentTicketOverviewNavBarSmall
 
         # Template: AgentTicketOverviewPreview
-        '","26' => '',
+        'Compose Answer' => '×«Ğ´´ğ¸´',
+        'Contact customer' => 'ÁªÏµ¿Í»§',
+        'Change queue' => '¸Ä±ä¶ÓÁĞ',
+
+        # Template: AgentTicketOverviewPreviewMeta
 
         # Template: AgentTicketOverviewSmall
-        'Escalation in' => 'é™æ—¶',
-        'Locked' => 'é”å®šçŠ¶æ€',
-        '","30' => '',
+        'sort upward' => 'ÕıĞòÅÅĞò',
+        'up' => 'ÉÏ',
+        'sort downward' => 'ÄæĞòÅÅĞò',
+        'down' => 'ÏÂ',
+        'Escalation in' => 'ÏŞÊ±',
+        'Locked' => 'Ëø¶¨×´Ì¬',
 
         # Template: AgentTicketOwner
+        'Change owner of ticket' => 'ĞŞ¸Ä Ticket ËùÓĞÕß',
 
         # Template: AgentTicketPending
+        'Set Pending' => 'ÉèÖÃ´ı´¦Àí×´Ì¬',
 
         # Template: AgentTicketPhone
-        'Create New Phone Ticket' => 'æ–°å»ºç”µè¯ç¥¨å•',
-        'From customer' => 'æ¥è‡ªå®¢æˆ·',
-        'To queue' => 'åˆ°',
+        'Phone call' => 'µç»°',
+        'Clear From' => 'ÖØÖÃ',
 
-        # Template: AgentTicketPhoneCommon
-        'Phone call' => 'ç”µè¯',
+        # Template: AgentTicketPhoneOutbound
 
         # Template: AgentTicketPlain
-        'Email Text Plain View' => 'ä»¥çº¯æ–‡æœ¬æ–¹å¼æ˜¾ç¤ºçš„é‚®ä»¶å†…å®¹',
-        'Plain' => 'çº¯æ–‡æœ¬',
-        'Download this email' => 'ä¸‹è½½è¯¥é‚®ä»¶',
+        'Plain' => '´¿ÎÄ±¾',
 
         # Template: AgentTicketPrint
-        'Ticket-Info' => 'ç¥¨å•ä¿¡æ¯',
-        'Accounted time' => 'æ‰€ç”¨æ—¶é—´',
-        'Linked-Object' => 'å·²é“¾æ¥å¯¹è±¡',
-        'by' => 'ç”±',
+        'Ticket-Info' => 'TicketĞÅÏ¢',
+        'Accounted time' => 'ËùÓÃÊ±¼ä',
+        'Linked-Object' => 'ÒÑÁ´½Ó¶ÔÏó',
+        'by' => 'ÓÉ',
 
         # Template: AgentTicketPriority
+        'Change priority of ticket' => 'µ÷Õû Ticket ÓÅÏÈ¼¶',
 
         # Template: AgentTicketQueue
+        'Tickets shown' => 'ÏÔÊ¾ Ticket',
+        'Tickets available' => '¿ÉÓÃ Ticket',
+        'All tickets' => 'ËùÓĞTicket',
+        'Queues' => '¶ÓÁĞ',
+        'Ticket escalation!' => 'Ticket ÏŞÊ±´¦Àí!',
 
         # Template: AgentTicketResponsible
+        'Change responsible of ticket' => '¸ü¸Ä Ticket µÄ¸ºÔğÈË',
 
         # Template: AgentTicketSearch
-        'Search template' => 'æœç´¢æ¨¡æ¿',
-        'Create Template' => 'åˆ›å»ºæ¨¡æ¿',
-        'Create New' => 'åˆ›å»º',
-        'Profile link' => '',
-        'Save changes in template' => 'ä¿å­˜å˜æ›´ä¸ºæ¨¡æ¿',
-        'Add another attribute' => 'å¢åŠ å¦ä¸€ä¸ªæœç´¢æ¡ä»¶',
-        'Output' => 'æœç´¢ç»“æœæ˜¾ç¤ºä¸º',
-        'Fulltext' => 'å…¨æ–‡',
-        'Remove' => 'åˆ é™¤',
-        'Customer User Login' => 'å®¢æˆ·ç™»å½•ç”¨æˆ·å',
-        'Created in Queue' => 'åˆ›å»ºé˜Ÿåˆ—',
-        'Lock state' => 'é”å®šçŠ¶æ€',
-        'Watcher' => 'å…³æ³¨äºº',
-        'Article Create Time (before/after)' => 'æ–‡ç« åˆ›å»ºæ—¶é—´ï¼ˆä¹‹å‰/ä¹‹åï¼‰',
-        'Article Create Time (between)' => 'æ–‡ç« åˆ›å»ºæ—¶é—´ï¼ˆä¹‹é—´ï¼‰',
-        'Ticket Create Time (before/after)' => 'ç¥¨å•åˆ›å»ºæ—¶é—´ï¼ˆä¹‹å‰/ä¹‹åï¼‰',
-        'Ticket Create Time (between)' => 'ç¥¨å•åˆ›å»ºæ—¶é—´ï¼ˆä¹‹é—´ï¼‰',
-        'Ticket Change Time (before/after)' => 'ç¥¨å•æ›´æ–°æ—¶é—´ï¼ˆä¹‹å‰/ä¹‹åï¼‰',
-        'Ticket Change Time (between)' => 'ç¥¨å•æ›´æ–°æ—¶é—´ï¼ˆä¹‹é—´ï¼‰',
-        'Ticket Close Time (before/after)' => 'ç¥¨å•å…³é—­æ—¶é—´ï¼ˆä¹‹å‰/ä¹‹åï¼‰',
-        'Ticket Close Time (between)' => 'ç¥¨å•å…³é—­æ—¶é—´ï¼ˆä¹‹é—´ï¼‰',
-        'Archive Search' => 'å½’æ¡£æœç´¢',
-        'Run search' => '',
+        'Ticket Search' => 'Ticket ËÑË÷',
+        'Profile' => 'ËÑË÷Ô¼ÊøÌõ¼ş',
+        'Search-Template' => 'ËÑË÷Ä£°å',
+        'TicketFreeText' => 'Ticket ¶îÍâĞÅÏ¢',
+        'Created in Queue' => 'ÔÚ¶ÓÁĞÀï½¨Á¢',
+        'Article Create Times' => '',
+        'Article created' => '',
+        'Article created between' => '',
+        'Change Times' => '¸Ä±äÊ±¼ä',
+        'No change time settings.' => '²»¸Ä±äÊ±¼äÉèÖÃ',
+        'Ticket changed' => '',
+        'Ticket changed between' => '',
+        'Result Form' => 'ËÑË÷½á¹ûÏÔÊ¾Îª',
+        'Save Search-Profile as Template?' => '½«ËÑË÷Ìõ¼ş±£´æÎªÄ£°å',
+        'Yes, save it with name' => 'ÊÇ, ±£´æÎªÃû³Æ',
 
         # Template: AgentTicketSearchOpenSearchDescriptionFulltext
+        'Fulltext' => 'È«ÎÄ',
 
         # Template: AgentTicketSearchOpenSearchDescriptionTicketNumber
 
         # Template: AgentTicketSearchResultPrint
 
         # Template: AgentTicketZoom
-        'Article filter' => 'æ–‡ç« è¿‡æ»¤å™¨',
-        'Article Type' => 'æ–‡ç« ç±»åˆ« ',
-        'Sender Type' => 'å‘é€äººç±»åˆ«',
-        'Save filter settings as default' => 'ä¿å­˜è¿‡æ»¤è®¾ç½®ä¸ºç¼ºçœå€¼',
-        'Ticket Information' => 'ç¥¨å•è¯¦æƒ…',
-        'Linked Objects' => 'å·²è¿æ¥çš„å¯¹è±¡',
-        'Article(s)' => 'æ–‡ç« ',
-        'Change Queue' => 'æ”¹å˜é˜Ÿåˆ—',
-        'Article Filter' => 'æ–‡ç« è¿‡æ»¤å™¨',
-        'Add Filter' => 'æ–°å¢è¿‡æ»¤å™¨',
-        'Set' => 'è®¾ç½®',
-        'Reset Filter' => 'é‡ç½®è¿‡æ»¤å™¨',
-        'Show one article' => 'æ˜¾ç¤ºå•ä¸€æ–‡ç« ',
-        'Show all articles' => 'æ˜¾ç¤ºæ‰€æœ‰æ–‡ç« ',
-        'Unread articles' => 'æœªè¯»æ–‡ç« ',
-        'No.' => 'ç¼–å·ï¼š',
-        'Unread Article!' => 'æœªè¯»æ–‡ç« !',
-        'Incoming message' => 'å…¥æ ˆä¿¡æ¯',
-        'Outgoing message' => 'å‡ºæ ˆä¿¡æ¯',
-        'Internal message' => 'å†…éƒ¨ä¿¡æ¯',
-        'Resize' => 'è°ƒæ•´å¤§å°',
+        'Expand View' => 'Õ¹¿ª',
+        'Collapse View' => 'ÕÛµş',
+        'Split' => '·Ö½â',
 
-        # Template: AttachmentBlocker
-        'To protect your privacy, active or/and remote content has blocked.' =>
-            'ä¸ºäº†ä¿æŠ¤æ‚¨çš„éšç§ï¼Œè¿œç¨‹å†…å®¹åŠ è½½è¢«é˜»æ­¢ã€‚',
-        'Load blocked content.' => 'è½½å…¥è¢«é˜»æŒ¡çš„å†…å®¹ã€‚',
+        # Template: AgentTicketZoomArticleFilterDialog
+        'Article filter settings' => 'Article ¹ıÂËÉèÖÃ',
+        'Save filter settings as default' => '±£´æ¹ıÂËÉèÖÃÎªÈ±Ê¡Öµ',
+
+        # Template: AgentWindowTab
+
+        # Template: AJAX
 
         # Template: Copyright
 
         # Template: CustomerAccept
 
+        # Template: CustomerCalendarSmallIcon
+
         # Template: CustomerError
-        'Traceback' => 'è¿½æº¯',
+        'Traceback' => '×·Ëİ',
 
         # Template: CustomerFooter
-        'Powered by' => 'Powered by',
-        'One or more errors occurred!' => 'ä¸€ä¸ªæˆ–å¤šä¸ªé”™è¯¯!',
-        'Close this dialog' => 'å…³é—­è¯¥å¯¹è¯',
-        'Could not open popup window. Please disable any popup blockers for this application.' =>
-            'æ— æ³•æ‰“å¼€å¼¹å‡ºçª—å£ï¼Œè¯·ç¦ç”¨å¼¹å‡ºçª—å£æ‹¦æˆªã€‚',
+        'Powered by' => 'Çı¶¯·½',
+
+        # Template: CustomerFooterSmall
 
         # Template: CustomerHeader
 
+        # Template: CustomerHeaderSmall
+
         # Template: CustomerLogin
-        'Login' => 'ç™»å½•',
-        'User name' => 'ç”¨æˆ·å',
-        'Your user name' => 'ä½ çš„ç”¨æˆ·å',
-        'Your password' => 'ä½ çš„å¯†ç ',
-        'Forgot password?' => 'å¯†ç é—å¿˜?',
-        'Log In' => 'ç™»å½•',
-        'Not yet registered?' => 'è¿˜æœªæ³¨å†Œ?',
-        'Sign up now' => 'ç°åœ¨æ³¨å†Œ',
-        'Request new password' => 'è¯·æ±‚æ–°å¯†ç ',
-        'Your User Name' => 'ä½ çš„ç”¨æˆ·å',
-        'A new password will be sent to your email address.' => 'æ–°å¯†ç å°†ä¼šå‘é€åˆ°æ‚¨çš„é‚®ç®±ä¸­',
-        'Create Account' => 'åˆ›å»ºå¸æˆ·',
-        'Please fill out this form to receive login credentials.' => '',
-        'How we should address you' => 'ç§°è°“',
-        'Your First Name' => 'åå­—',
-        'Please supply a first name' => 'è¯·æä¾›æ‚¨çš„åå­—',
-        'Your Last Name' => 'å§“',
-        'Please supply a last name' => 'è¯·æä¾›æ‚¨çš„å§“',
-        'Your email address (this will become your username)' => '',
-        'Please supply a' => 'è¯·æä¾›',
+        'Login' => 'µÇÂ¼',
+        'Lost your password?' => 'Íü¼ÇÃÜÂë?',
+        'Request new password' => 'ÉèÖÃĞÂÃÜÂë',
+        'Create Account' => '´´½¨ÕÊ»§',
 
         # Template: CustomerNavigationBar
-        'Edit personal preferences' => 'ç¼–è¾‘ä¸ªäººè®¾ç½®',
-        'Logout %s' => '',
+        'Welcome %s' => '»¶Ó­ %s',
 
-        # Template: CustomerPreferences
+        # Template: CustomerPreferencesForm
 
-        # Template: CustomerRichTextEditor
+        # Template: CustomerStatusView
 
         # Template: CustomerTicketMessage
-        'Service level agreement' => 'æœåŠ¡çº§åˆ«åè®®',
-
-        # Template: CustomerTicketOverview
-        'Welcome!' => 'æ¬¢è¿ï¼',
-        'Please click the button below to create your first ticket.' => 'è¯·ç‚¹å‡»ä¸‹é¢çš„æŒ‰é’®åˆ›å»ºç¬¬ä¸€ä¸ªç¥¨å•ã€‚',
-        'Create your first ticket' => 'åˆ›å»ºç¬¬ä¸€ä¸ªç¥¨å•',
 
         # Template: CustomerTicketPrint
-        'Ticket Print' => 'ç¥¨å•æ‰“å°',
 
         # Template: CustomerTicketSearch
-        'Profile' => 'æœç´¢æ¡ä»¶',
-        'e. g. 10*5155 or 105658*' => 'ä¾‹å¦‚: 10*5155 æˆ– 105658*',
-        'Customer ID' => 'å®¢æˆ·ç¼–å·',
-        'Fulltext search in tickets (e. g. "John*n" or "Will*")' => 'ç¥¨å•å…¨æ–‡æœç´¢ (ä¾‹å¦‚: "John*n" æˆ– "Will*")',
-        'Recipient' => 'æ”¶ä»¶äºº',
-        'Carbon Copy' => 'æŠ„é€',
-        'Time restrictions' => 'æ—¶é—´æŸ¥è¯¢æ¡ä»¶',
-        'No time settings' => '',
-        'Only tickets created' => 'ç¥¨å•åˆ›å»ºäº',
-        'Only tickets created between' => 'ç¥¨å•åˆ›å»ºè‡ª',
-        'Ticket archive system' => '',
-        'Save search as template?' => '',
-        'Save as Template?' => 'ä¿å­˜ä¸ºæ¨¡æ¿',
-        'Save as Template' => '',
-        'Template Name' => 'æ¨¡æ¿åç§°',
-        'Pick a profile name' => '',
-        'Output to' => 'è¾“å‡ºä¸º',
+        'Times' => 'Ê±¼ä',
+        'No time settings.' => 'ÎŞÊ±¼äÔ¼Êø.',
 
         # Template: CustomerTicketSearchOpenSearchDescription
+
+        # Template: CustomerTicketSearchResultCSV
 
         # Template: CustomerTicketSearchResultPrint
 
         # Template: CustomerTicketSearchResultShort
-        'of' => 'åœ¨',
-        'Page' => 'é¡µ',
-        'Search Results for' => 'æœç´¢ç»“æœ',
-        '","18' => '',
 
         # Template: CustomerTicketZoom
-        'Expand article' => 'å±•å¼€æ–‡ç« ',
-        'Reply' => 'å›å¤',
 
         # Template: CustomerWarning
 
-        # Template: Datepicker
-        'Invalid date (need a future date)!' => 'æ— æ•ˆçš„æ—¥æœŸï¼ˆéœ€ä½¿ç”¨æœªæ¥çš„æ—¥æœŸï¼‰ï¼',
-        'Previous' => 'å¾€å‰',
-        'Sunday' => 'æ˜ŸæœŸå¤©',
-        'Monday' => 'æ˜ŸæœŸä¸€',
-        'Tuesday' => 'æ˜ŸæœŸäºŒ',
-        'Wednesday' => 'æ˜ŸæœŸä¸‰',
-        'Thursday' => 'æ˜ŸæœŸå››',
-        'Friday' => 'æ˜ŸæœŸäº”',
-        'Saturday' => 'æ˜ŸæœŸå…­',
-        'Su' => 'æ—¥',
-        'Mo' => 'ä¸€',
-        'Tu' => 'äºŒ',
-        'We' => 'ä¸‰',
-        'Th' => 'å››',
-        'Fr' => 'äº”',
-        'Sa' => 'å…­',
-        'Open date selection' => 'æ‰“å¼€æ—¥å†',
-
         # Template: Error
-        'Oops! An Error occurred.' => 'ç³Ÿ, å‘ç”Ÿä¸€ä¸ªé”™è¯¯.',
-        'Error Message' => 'å‡ºé”™ä¿¡æ¯',
-        'You can' => 'ä½ å¯ä»¥',
-        'Send a bugreport' => 'å‘é€ä¸€ä¸ªé”™è¯¯æŠ¥å‘Š',
-        'go back to the previous page' => 'è¿”å›ä¸Šä¸€é¡µ',
-        'Error Details' => 'è¯¦ç»†é”™è¯¯ä¿¡æ¯',
+        'Click here to report a bug!' => 'µã»÷ÕâÀï±¨¸æÒ»¸ö Bug!',
 
         # Template: Footer
-        'Top of page' => 'è¿”å›é¡¶éƒ¨',
-
-        # Template: FooterJS
-        'If you now leave this page, all open popup windows will be closed, too!' =>
-            'å¦‚æœä½ ç°åœ¨ç¦»å¼€è¯¥é¡µ, æ‰€æœ‰å¼¹å‡ºçš„çª—å£ä¹Ÿéšä¹‹å…³é—­!',
-        'A popup of this screen is already open. Do you want to close it and load this one instead?' =>
-            'ä¸€ä¸ªå¼¹å‡ºçª—å£å·²ç»æ‰“å¼€ï¼Œæ˜¯å¦ç»§ç»­å…³é—­ï¼Ÿ',
-        'Please enter at least one search value or * to find anything.' =>
-            '',
+        'Top of Page' => 'Ò³Ãæ¶¥¶Ë',
 
         # Template: FooterSmall
 
-        # Template: HTMLHead
-
-        # Template: HTMLHeadBlockEvents
-
         # Template: Header
-        'You are logged in as' => 'æ‚¨å·²ç™»å½•ä¸º',
+        'Home' => 'Ê×Ò³',
 
         # Template: HeaderSmall
 
         # Template: Installer
-        'JavaScript not available' => 'JavaScript æ²¡æœ‰å¯ç”¨',
-        'In order to experience OTRS, you\'ll need to enable JavaScript in your browser.' =>
-            'è¦ç»§ç»­ä½¿ç”¨ OTRSï¼Œè¯·æ‰“å¼€æµè§ˆå™¨çš„ JavaScript åŠŸèƒ½.',
-        'Database Settings' => 'æ•°æ®åº“è®¾ç½®',
-        'General Specifications and Mail Settings' => 'ä¸€èˆ¬è®¾å®šå’Œé‚®ä»¶é…ç½®',
-        'Registration' => '',
-        'Welcome to %s' => 'æ¬¢è¿ä½¿ç”¨ %s',
-        'Web site' => 'ç½‘å€',
-        'Database check successful.' => 'æ•°æ®åº“æ£€æŸ¥å®Œæˆ.',
-        'Mail check successful.' => 'é‚®ä»¶é…ç½®æ£€æŸ¥å®Œæˆ',
-        'Error in the mail settings. Please correct and try again.' => 'é‚®ä»¶è®¾ç½®é”™è¯¯, è¯·é‡æ–°ä¿®æ­£.',
-
-        # Template: InstallerConfigureMail
-        'Configure Outbound Mail' => 'å¤–å‘é‚®ä»¶é…ç½®',
-        'Outbound mail type' => 'å¤–å‘é‚®ä»¶ç±»å‹',
-        'Select outbound mail type.' => 'é€‰æ‹©å¤–å‘é‚®ä»¶ç±»å‹ã€‚',
-        'Outbound mail port' => 'å¤–å‘é‚®ä»¶ç«¯å£',
-        'Select outbound mail port.' => 'é€‰æ‹©å¤–å‘é‚®ä»¶ç«¯å£ã€‚',
-        'SMTP host' => 'SMTPæœåŠ¡å™¨',
-        'SMTP host.' => 'SMTPæœåŠ¡å™¨ã€‚',
-        'SMTP authentication' => 'SMTPè®¤è¯',
-        'Does your SMTP host need authentication?' => 'SMTPæœåŠ¡å™¨æ˜¯å¦éœ€è¦éªŒè¯ï¼Ÿ',
-        'SMTP auth user' => 'SMTPè®¤è¯ç”¨æˆ·å',
-        'Username for SMTP auth.' => 'SMTPè®¤è¯ç”¨æˆ·åã€‚',
-        'SMTP auth password' => 'SMTPè®¤è¯å¯†ç ',
-        'Password for SMTP auth.' => 'SMTPè®¤è¯å¯†ç ã€‚',
-        'Configure Inbound Mail' => 'æ¥æ”¶é‚®ä»¶é…ç½®',
-        'Inbound mail type' => 'æ¥æ”¶é‚®ä»¶ç±»å‹',
-        'Select inbound mail type.' => 'é€‰æ‹©æ¥æ”¶é‚®ä»¶ç±»å‹ã€‚',
-        'Inbound mail host' => 'æ¥æ”¶é‚®ä»¶æœåŠ¡å™¨',
-        'Inbound mail host.' => 'æ¥æ”¶é‚®ä»¶æœåŠ¡å™¨ã€‚',
-        'Inbound mail user' => 'æ¥æ”¶é‚®ä»¶ç”¨æˆ·å',
-        'User for inbound mail.' => 'æ¥æ”¶é‚®ä»¶ç”¨æˆ·åã€‚',
-        'Inbound mail password' => 'æ¥æ”¶é‚®ä»¶å¯†ç ',
-        'Password for inbound mail.' => 'æ¥æ”¶é‚®ä»¶å¯†ç ',
-        'Result of mail configuration check' => 'é‚®ä»¶æœåŠ¡å™¨é…ç½®æ£€æŸ¥ç»“æœ',
-        'Check mail configuration' => 'æ£€æŸ¥é‚®ä»¶é…ç½®',
-        'Skip this step' => 'è·³è¿‡è¿™ä¸€æ­¥',
-        'Skipping this step will automatically skip the registration of your OTRS. Are you sure you want to continue?' =>
-            '',
-
-        # Template: InstallerDBResult
-        'False' => 'å‡ºé”™',
-
-        # Template: InstallerDBStart
-        'If you have set a root password for your database, it must be entered here. If not, leave this field empty. For security reasons we do recommend setting a root password. For more information please refer to your database documentation.' =>
-            'å¦‚æœæ‚¨çš„æ•°æ®åº“æœ‰è®¾ç½® root å¯†ç , è¯·åœ¨è¿™é‡Œè¾“å…¥, å¦åˆ™, è¯·ä¿ç•™ç©ºç™½. å‡ºäºå®‰å…¨è€ƒè™‘, æˆ‘ä»¬å»ºè®®æ‚¨ä¸º root è®¾ç½®ä¸€ä¸ªå¯†ç , æ›´å¤šä¿¡æ¯è¯·å‚è€ƒæ•°æ®åº“å¸®åŠ©æ–‡æ¡£.',
-        'Currently only MySQL is supported in the web installer.' => 'Webå®‰è£…å‘å¯¼ç›®å‰ä»…æ”¯æŒMySQLã€‚',
-        'If you want to install OTRS on another database type, please refer to the file README.database.' =>
-            'å¦‚æœä½¿ç”¨å…¶ä»–æ•°æ®åº“å®‰è£…OTRSï¼Œè¯·å‚è€ƒREADMEæ–‡æ¡£ã€‚',
-        'Database-User' => 'æ•°æ®åº“ç”¨æˆ·å',
-        'New' => 'æ–°å»º',
-        'A new database user with limited rights will be created for this OTRS system.' =>
-            'å·²ç»ä¸ºOTRSç³»ç»Ÿåˆ›å»ºäº†æ–°çš„æ•°æ®åº“ç”¨æˆ·',
-        'default \'hot\'' => 'é»˜è®¤å¯†ç  \'hot\'',
-        'DB--- host' => 'æ•°æ®åº“æœåŠ¡å™¨',
-        'Check database settings' => 'æµ‹è¯•æ•°æ®åº“è®¾ç½®',
-        'Result of database check' => 'æ•°æ®åº“æ£€æŸ¥ç»“æœ',
-
-        # Template: InstallerFinish
-        'To be able to use OTRS you have to enter the following line in your command line (Terminal/Shell) as root.' =>
-            'ä¸ºäº†èƒ½å¤Ÿä½¿ç”¨OTRS, æ‚¨å¿…é¡»ä»¥rootèº«ä»½è¾“å…¥ä»¥ä¸‹è¡Œåœ¨å‘½ä»¤è¡Œä¸­(Terminal/Shell).',
-        'Restart your webserver' => 'è¯·é‡å¯æ‚¨webæœåŠ¡å™¨.',
-        'After doing so your OTRS is up and running.' => 'å®Œæˆåï¼Œæ‚¨å¯ä»¥å¯åŠ¨OTRSç³»ç»Ÿäº†.',
-        'Start page' => 'å¼€å§‹é¡µé¢',
-        'Your OTRS Team' => 'æ‚¨çš„OTRSå°ç»„.',
-
-        # Template: InstallerLicense
-        'Accept license' => 'åŒæ„è®¸å¯',
-        'Don\'t accept license' => 'ä¸åŒæ„',
-
-        # Template: InstallerLicenseText
-
-        # Template: InstallerRegistration
-        'Organization' => 'ç»„ç»‡',
-        'Position' => '',
-        'Complete registration and continue' => '',
-        'Please fill in all fields marked as mandatory.' => '',
-
-        # Template: InstallerSystem
-        'SystemID' => 'ç³»ç»ŸID',
-        'The identifier of the system. Each ticket number and each HTTP session ID contain this number.' =>
-            'æ¯ä¸ªç¥¨å•å’ŒHTTPä¼šè¯IDåŒ…å«ç³»ç»Ÿæ ‡è¯†ç¬¦ã€‚',
-        'System FQDN' => 'ç³»ç»Ÿå…¨ç§°åŸŸå',
-        'Fully qualified domain name of your system.' => 'ç³»ç»ŸFQDNï¼ˆå…¨ç§°åŸŸåï¼‰',
-        'AdminEmail' => 'ç®¡ç†å‘˜åœ°å€',
-        'Email address of the system administrator.' => 'ç³»ç»Ÿç®¡ç†å‘˜é‚®ä»¶åœ°å€ã€‚',
-        'Log' => 'æ—¥å¿—',
-        'LogModule' => 'æ—¥å¿—æ¨¡å—',
-        'Log backend to use.' => 'æ—¥å¿—åå°ä½¿ç”¨ã€‚',
-        'LogFile' => 'æ—¥å¿—æ–‡ä»¶',
-        'Log file location is only needed for File-LogModule!' => 'åªéœ€è¦ä¸ºFile-LogModuleæŒ‡å®šæ—¥å¿—æ–‡ä»¶ä½ç½®!',
-        'Webfrontend' => 'Web å‰ç«¯',
-        'Default language' => 'é»˜è®¤è¯­è¨€',
-        'Default language.' => 'é»˜è®¤è¯­è¨€',
-        'CheckMXRecord' => 'æ£€æŸ¥ MX è®°å½•',
-        'Email addresses that are manually entered are checked against the MX records found in DNS. Don\'t use this option if your DNS is slow or does not resolve public addresses.' =>
-            'æ‰‹åŠ¨è¾“å…¥çš„ç”µå­é‚®ä»¶åœ°å€å°†é€šè¿‡DNSæœåŠ¡å™¨éªŒè¯MXè®°å½•ã€‚å¦‚æœDNSæœåŠ¡å™¨å“åº”æ…¢æˆ–æ— æ³•æä¾›å…¬ç½‘è§£æï¼Œè¯·ä¸è¦ä½¿ç”¨æ­¤é€‰é¡¹ã€‚',
+        'Web-Installer' => 'WEB °²×°Ïòµ¼',
+        'Welcome to %s' => '»¶Ó­Ê¹ÓÃ %s',
+        'Accept license' => 'Í¬ÒâĞí¿É',
+        'Don\'t accept license' => '²»Í¬Òâ',
+        'Admin-User' => '¹ÜÀíÔ±',
+        'If you have set a root password for your database, it must be entered here. If not, leave this field empty. For security reasons we do recommend setting a root password. For more information please refer to your database documentation.' => 'Èç¹ûÄúµÄÊı¾İ¿âÓĞÉèÖÃ root ÃÜÂë, ÇëÔÚÕâÀïÊäÈë, ·ñÔò, Çë±£Áô¿Õ°×. ³öÓÚ°²È«¿¼ÂÇ, ÎÒÃÇ½¨ÒéÄúÎª root ÉèÖÃÒ»¸öÃÜÂë, ¸ü¶àĞÅÏ¢Çë²Î¿¼Êı¾İ¿â°ïÖúÎÄµµ.',
+        'Admin-Password' => '¹ÜÀíÔ±ÃÜÂë',
+        'Database-User' => 'Êı¾İ¿âÓÃ»§Ãû³Æ',
+        'default \'hot\'' => 'Ä¬ÈÏÃÜÂë \'hot\'',
+        'DB connect host' => 'Êı¾İÁ¬½ÓÖ÷»ú',
+        'Database' => 'Êı¾İ¿â',
+        'Default Charset' => 'È±Ê¡×Ö·û¼¯',
+        'utf8' => 'UTF-8',
+        'false' => '¼Ù',
+        'SystemID' => 'ÏµÍ³ID',
+        '(The identify of the system. Each ticket number and each http session id starts with this number)' => '(ÏµÍ³±êÊ¶·û. Ticket ±àºÅºÍ http »á»°¶¼ÒÔÕâ¸ö±êÊ¶·û¿ªÍ·)',
+        'System FQDN' => 'ÏµÍ³ÓòÃû',
+        '(Full qualified domain name of your system)' => '(ÏµÍ³ÓòÃû)',
+        'AdminEmail' => '¹ÜÀíÔ±µØÖ·',
+        '(Email of the system admin)' => '(ÏµÍ³¹ÜÀíÔ±ÓÊ¼şµØÖ·)',
+        'Organization' => '×éÖ¯',
+        'Log' => 'ÈÕÖ¾',
+        'LogModule' => 'ÈÕÖ¾Ä£¿é',
+        '(Used log backend)' => 'Ê¹ÓÃÈÕÖ¾ºó¶Ë',
+        'Logfile' => 'ÈÕÖ¾ÎÄ¼ş',
+        '(Logfile just needed for File-LogModule!)' => '(Ö»ÓĞ¼¤»î File-LogModule Ê±²ÅĞèÒª Logfile!)',
+        'Webfrontend' => 'Web Ç°¶Ë',
+        'Use utf-8 it your database supports it!' => 'Èç¹ûÄúµÄÊı¾İ¿âÖ§³Ö£¬Ê¹ÓÃUTF-8×Ö·û±àÂë!',
+        'Default Language' => 'È±Ê¡ÓïÑÔ',
+        '(Used default language)' => '(Ê¹ÓÃÈ±Ê¡ÓïÑÔ)',
+        'CheckMXRecord' => '¼ì²é MX ¼ÇÂ¼',
+        '(Checks MX recordes of used email addresses by composing an answer. Don\'t use CheckMXRecord if your OTRS machine is behinde a dial-up line $!)' => 'Í¨¹ı×«Ğ´´ğ°¸À´¼ì²éÓÃ¹ıµÄµç×ÓÓÊ¼şµØÖ·µÄMX¼ÇÂ¼¡£ÄúOTRS»úÆ÷ÔÚ²¦ºÅ½ÓÈëµÄµÍËÙÍøÂçÀï£¬Çë²»ÒªÊ¹ÓÃCheckMXRecord!',
+        'To be able to use OTRS you have to enter the following line in your command line (Terminal/Shell) as root.' => 'ÎªÁËÄÜ¹»Ê¹ÓÃOTRS, Äú±ØĞëÒÔrootÉí·İÊäÈëÒÔÏÂĞĞÔÚÃüÁîĞĞÖĞ(Terminal/Shell).',
+        'Restart your webserver' => 'ÇëÖØĞÂÆô¶¯ÄúµÄ webserver.',
+        'After doing so your OTRS is up and running.' => 'Íê³Éºó£¬Äú¿ÉÒÔÆô¶¯ OTRS ÏµÍ³ÁË.',
+        'Start page' => '¿ªÊ¼Ò³Ãæ',
+        'Your OTRS Team' => 'ÄúµÄ OTRS Ğ¡×é.',
 
         # Template: LinkObject
-        'Object#' => 'å¯¹è±¡#',
-        'Add links' => 'æ–°å¢é“¾æ¥',
-        'Delete links' => 'åˆ é™¤é“¾æ¥',
 
         # Template: Login
-        'JavaScript Not Available' => 'æ²¡æœ‰å¯ç”¨ JavaScript',
-        'Browser Warning' => 'æç¤º',
-        'The browser you are using is too old.' => 'ä½ ä½¿ç”¨çš„æ¸¸è§ˆå™¨å¤ªæ—§äº†.',
-        'OTRS runs with a huge lists of browsers, please upgrade to one of these.' =>
-            'OTRS å·²ç¡®è®¤ä¸‹åˆ—çš„æ¸¸è§ˆå™¨å¯æ­£å¸¸æ˜¾ç¤º, è¯·æŒ‘ä¸€ä¸ªä½ å–œæ¬¢ç”¨çš„å‡çº§ä¹‹.',
-        'Please see the documentation or ask your admin for further information.' =>
-            'æ¬²äº†è§£æ›´å¤šä¿¡æ¯, è¯·å‘ä½ çš„ç®¡ç†è¯¢é—®æˆ–å‚è€ƒç›¸å…³æ–‡æ¡£.',
-        'Lost your password?' => 'å¿˜è®°å¯†ç ?',
-        'Request New Password' => 'è¯·æ±‚æ–°å¯†ç ',
-        'Back to login' => 'é‡æ–°ç™»å½•',
 
         # Template: Motd
-        'Message of the Day' => 'ä»Šæ—¥æ¶ˆæ¯',
 
         # Template: NoPermission
-        'Insufficient Rights' => 'æ²¡æœ‰è¶³å¤Ÿçš„æƒé™',
-        'Back to the previous page' => 'è¿”å›å‰ä¸€é¡µ',
+        'No Permission' => 'ÎŞÈ¨ÏŞ',
 
         # Template: Notify
-
-        # Template: Pagination
-        'Show first page' => 'é¦–é¡µ',
-        'Show previous pages' => 'å‰é¡µ',
-        'Show page %s' => 'ç¬¬ %s é¡µ',
-        'Show next pages' => 'åé¡µ',
-        'Show last page' => 'å°¾é¡µ',
-
-        # Template: PictureUpload
-        'Need FormID!' => 'éœ€è¦FormID',
-        'No file found!' => 'æ‰¾ä¸åˆ°æ–‡ä»¶ï¼',
-        'The file is not an image that can be shown inline!' => 'æ­¤æ–‡ä»¶æ˜¯ä¸æ˜¯ä¸€ä¸ªå¯ä»¥æ˜¾ç¤ºçš„å›¾åƒ!',
+        'Important' => 'ÖØÒª',
 
         # Template: PrintFooter
-        'URL' => 'ç½‘å€',
+        'URL' => 'ÍøÖ·',
 
         # Template: PrintHeader
-        'printed by' => 'æ‰“å°',
+        'printed by' => '´òÓ¡ÓÚ',
 
         # Template: PublicDefault
 
@@ -2446,2312 +1569,148 @@ sub Data {
 
         # Template: RichTextEditor
 
-        # Template: SpellingInline
-
         # Template: Test
-        'OTRS Test Page' => 'OTRS æµ‹è¯•é¡µ',
-        'Welcome %s' => 'æ¬¢è¿ %s',
-        'Counter' => 'è®¡æ•°å™¨',
+        'OTRS Test Page' => 'OTRS ²âÊÔÒ³',
+        'Counter' => '¼ÆÊıÆ÷',
 
         # Template: Warning
-        'Go back to the previous page' => 'è¿”å›å‰ä¸€é¡µ',
 
-        # SysConfig
-        'ACL module that allows closing parent tickets only if all its children are already closed ("State" shows which states are not available for the parent ticket until all child tickets are closed).' =>
-            '',
-        'Activates a blinking mechanism of the queue that contains the oldest ticket.' =>
-            '',
-        'Activates lost password feature for agents, in the agent interface.' =>
-            '',
-        'Activates lost password feature for customers.' => '',
-        'Activates support for customer groups.' => '',
-        'Activates the article filter in the zoom view to specify which articles should be shown.' =>
-            '',
-        'Activates the available themes on the system. Value 1 means active, 0 means inactive.' =>
-            '',
-        'Activates the ticket archive system search in the customer interface.' =>
-            '',
-        'Activates the ticket archive system to have a faster system by moving some tickets out of the daily scope. To search for these tickets, the archive flag has to be enabled in the ticket search.' =>
-            '',
-        'Activates time accounting.' => '',
-        'Add a note to this ticket' => '',
-        'Adds a suffix with the actual year and month to the OTRS log file. A logfile for every month will be created.' =>
-            '',
-        'Adds customers email addresses to recipients in the ticket compose screen of the agent interface.' =>
-            '',
-        'Adds the one time vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).' =>
-            '',
-        'Adds the one time vacation days. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).' =>
-            '',
-        'Adds the permanent vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).' =>
-            '',
-        'Adds the permanent vacation days. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).' =>
-            '',
-        'Agent Notifications' => 'æœåŠ¡äººå‘˜é€šçŸ¥',
-        'Agent interface article notification module to check PGP.' => '',
-        'Agent interface article notification module to check S/MIME.' =>
-            '',
-        'Agent interface module to access fulltext search via nav bar.' =>
-            '',
-        'Agent interface module to access search profiles via nav bar.' =>
-            '',
-        'Agent interface module to check incoming emails in the Ticket-Zoom-View if the S/MIME-key is available and true.' =>
-            '',
-        'Agent interface notification module to check the used charset.' =>
-            '',
-        'Agent interface notification module to see the number of tickets an agent is responsible for.' =>
-            '',
-        'Agent interface notification module to see the number of watched tickets.' =>
-            '',
-        'Agents <-> Groups' => 'æœåŠ¡äººå‘˜ <-> ç¾¤ç»„',
-        'Agents <-> Roles' => '',
-        'Allows adding notes in the close ticket screen of the agent interface.' =>
-            '',
-        'Allows adding notes in the ticket free text screen of the agent interface.' =>
-            '',
-        'Allows adding notes in the ticket note screen of the agent interface.' =>
-            '',
-        'Allows adding notes in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Allows adding notes in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Allows adding notes in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Allows adding notes in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Allows agents to exchange the axis of a stat if they generate one.' =>
-            '',
-        'Allows agents to generate individual-related stats.' => '',
-        'Allows choosing between showing the attachments of a ticket in the browser (inline) or just make them downloadable (attachment).' =>
-            '',
-        'Allows choosing the next compose state for customer tickets in the customer interface.' =>
-            '',
-        'Allows customers to change the ticket priority in the customer interface.' =>
-            '',
-        'Allows customers to set the ticket SLA in the customer interface.' =>
-            '',
-        'Allows customers to set the ticket priority in the customer interface.' =>
-            '',
-        'Allows customers to set the ticket queue in the customer interface. If this is set to \'No\', QueueDefault should be configured.' =>
-            '',
-        'Allows customers to set the ticket service in the customer interface.' =>
-            '',
-        'Allows defining new types for ticket (if ticket type feature is enabled).' =>
-            '',
-        'Allows defining services and SLAs for tickets (e. g. email, desktop, network, ...), and escalation attributes for SLAs (if ticket service/SLA feature is enabled).' =>
-            '',
-        'Allows extended search conditions in ticket search of the agent interface. With this feature you can search w. g. with this kind of conditions like "(key1&&key2)" or "(key1||key2)".' =>
-            '',
-        'Allows extended search conditions in ticket search of the customer interface. With this feature you can search w. g. with this kind of conditions like "(key1&&key2)" or "(key1||key2)".' =>
-            '',
-        'Allows having a medium format ticket overview (CustomerInfo => 1 - shows also the customer information).' =>
-            '',
-        'Allows having a small format ticket overview (CustomerInfo => 1 - shows also the customer information).' =>
-            '',
-        'Allows the administrators to login as other users, via the users administration panel.' =>
-            '',
-        'Allows to set a new ticket state in the move ticket screen of the agent interface.' =>
-            '',
-        'Attachments <-> Responses' => 'é™„ä»¶ <-> å›å¤',
-        'Auto Responses <-> Queues' => 'è‡ªåŠ¨å›å¤ <-> é˜Ÿåˆ—',
-        'Automated line break in text messages after x number of chars.' =>
-            '',
-        'Automatically lock and set owner to current Agent after selecting for an Bulk Action.' =>
-            '',
-        'Automatically sets the owner of a ticket as the responsible for it (if ticket responsible feature is enabled).' =>
-            '',
-        'Automatically sets the responsible of a ticket (if it is not set yet) after the first owner update.' =>
-            '',
-        'Balanced white skin by Felix Niklas.' => '',
-        'Blocks all the incoming emails that do not have a valid ticket number in subject with From: @example.com address.' =>
-            '',
-        'Builds an article index right after the article\'s creation.' =>
-            '',
-        'CMD example setup. Ignores emails where external CMD returns some output on STDOUT (email will be piped into STDIN of some.bin).' =>
-            '',
-        'Cache time in seconds for agent authentication in the GenericInterface.' =>
-            '',
-        'Cache time in seconds for customer authentication in the GenericInterface.' =>
-            '',
-        'Cache time in seconds for the web service config backend.' => '',
-        'Change password' => 'æ”¹å˜å¯†ç ',
-        'Change queue!' => '',
-        'Change the customer for this ticket' => '',
-        'Change the free fields for this ticket' => '',
-        'Change the owner for this ticket' => '',
-        'Change the responsible person for this ticket' => '',
-        'Change the ticket priority' => '',
-        'Changes the owner of tickets to everyone (useful for ASP). Normally only agent with rw permissions in the queue of the ticket will be shown.' =>
-            '',
-        'Checkbox' => '',
-        'Checks the SystemID in ticket number detection for follow-ups (use "No" if SystemID has been changed after using the system).' =>
-            '',
-        'Close this ticket' => '',
-        'Closed tickets of customer' => '',
-        'Comment for new history entries in the customer interface.' => '',
-        'Companies' => '',
-        'Company Tickets' => '',
-        'Company name for the customer web interface. Will also be included in emails as an X-Header.' =>
-            '',
-        'Configure your own log text for PGP.' => '',
-        'Configures a default TicketDynmicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (http://doc.otrs.org/), chapter "Ticket Event Module".' =>
-            '',
-        'Configures the full-text index. Execute "bin/otrs.RebuildFulltextIndex.pl" in order to generate a new index.' =>
-            '',
-        'Controls if customers have the ability to sort their tickets.' =>
-            '',
-        'Converts HTML mails into text messages.' => 'è½¬æ¢ HTML é‚®ä»¶ä¸ºæ–‡æœ¬ä¿¡æ¯.',
-        'Create and manage Service Level Agreements (SLAs).' => 'åˆ›å»ºå’Œç®¡ç†æœåŠ¡å“è´¨åè®® (SLA)',
-        'Create and manage agents.' => 'åˆ›å»ºå’Œç®¡ç†æœåŠ¡äººå‘˜.',
-        'Create and manage attachments.' => 'åˆ›å»ºå’Œç®¡ç†é™„ä»¶.',
-        'Create and manage companies.' => 'åˆ›å»ºå’Œç®¡ç†å®¢æˆ·å•ä½.',
-        'Create and manage customers.' => 'åˆ›å»ºå’Œç®¡ç†å®¢æˆ·.',
-        'Create and manage dynamic fields.' => '',
-        'Create and manage event based notifications.' => 'åˆ›å»ºå’Œç®¡ç†åŸºäºäº‹ä»¶çš„é€šçŸ¥.',
-        'Create and manage groups.' => 'åˆ›å»ºå’Œç®¡ç†ç¾¤ç»„.',
-        'Create and manage notifications that are sent to agents.' => 'åˆ›å»ºå’Œç®¡ç†ç”±ç³»ç»Ÿå‘ç»™æœåŠ¡äººå‘˜çš„é€šçŸ¥.',
-        'Create and manage queues.' => 'åˆ›å»ºå’Œç®¡ç†é˜Ÿåˆ—.',
-        'Create and manage response templates.' => 'åˆ›å»ºå’Œç®¡ç†å›å¤æ¨¡æ¿.',
-        'Create and manage responses that are automatically sent.' => 'åˆ›å»ºå’Œç®¡ç†è‡ªåŠ¨å‘é€çš„å›å¤.',
-        'Create and manage roles.' => 'åˆ›å»ºå’Œç®¡ç†è§’è‰².',
-        'Create and manage salutations.' => 'åˆ›å»ºå’Œç®¡ç†é‚®ä»¶å¼€å¤´çš„é—®å€™è¯­.',
-        'Create and manage services.' => 'åˆ›å»ºå’Œç®¡ç†æœåŠ¡',
-        'Create and manage signatures.' => 'åˆ›å»ºå’Œç®¡ç†ç­¾å',
-        'Create and manage ticket priorities.' => 'åˆ›å»ºå’Œç®¡ç† Ticket çš„ä¼˜å…ˆçº§åˆ«.',
-        'Create and manage ticket states.' => 'åˆ›å»ºå’Œç®¡ç† Ticket ç»Ÿè®¡.',
-        'Create and manage ticket types.' => 'åˆ›å»ºå’Œç®¡ç† Ticket çš„ç±»å‹. ',
-        'Create and manage web services.' => '',
-        'Create new email ticket and send this out (outbound)' => 'åˆ›å»ºæ–°çš„é‚®ä»¶ Ticket å¹¶å‘é€ç»™ç”¨æˆ· (å†…)',
-        'Create new phone ticket (inbound)' => 'åˆ›å»ºæ–°çš„ç”µè¯ Ticket (å¤–)',
-        'Custom text for the page shown to customers that have no tickets yet.' =>
-            '',
-        'Customer item (icon) which shows the closed tickets of this customer as info block. Setting CustomerUserLogin to 1 searches for tickets based on login name rather than CustomerID.' =>
-            '',
-        'Customer item (icon) which shows the open tickets of this customer as info block. Setting CustomerUserLogin to 1 searches for tickets based on login name rather than CustomerID.' =>
-            '',
-        'Customers <-> Groups' => 'å®¢æˆ· <-> ç¾¤ç»„',
-        'Customers <-> Services' => 'å®¢æˆ· <-> æœåŠ¡',
-        'DEPRECATED! This setting is not used any more and will be removed in a future version of OTRS.' =>
-            '',
-        'Data used to export the search result in CSV format.' => '',
-        'Date / Time' => '',
-        'Debugs the translation set. If this is set to "Yes" all strings (text) without translations are written to STDERR. This can be helpful when you are creating a new translation file. Otherwise, this option should remain set to "No".' =>
-            '',
-        'Default ACL values for ticket actions.' => '',
-        'Default data to use on attribute for ticket search screen. Example: "TicketCreateTimePointFormat=year;TicketCreateTimePointStart=Last;TicketCreateTimePoint=2;".' =>
-            '',
-        'Default data to use on attribute for ticket search screen. Example: "TicketCreateTimeStartYear=2010;TicketCreateTimeStartMonth=10;TicketCreateTimeStartDay=4;TicketCreateTimeStopYear=2010;TicketCreateTimeStopMonth=11;TicketCreateTimeStopDay=3;".' =>
-            '',
-        'Default loop protection module.' => '',
-        'Default queue ID used by the system in the agent interface.' => '',
-        'Default skin for OTRS 3.0 interface.' => '',
-        'Default skin for interface.' => '',
-        'Default ticket ID used by the system in the agent interface.' =>
-            '',
-        'Default ticket ID used by the system in the customer interface.' =>
-            '',
-        'Define a filter for html output to add links behind a defined string. The element Image allows two input kinds. At once the name of an image (e.g. faq.png). In this case the OTRS image path will be used. The second possiblity is to insert the link to the image.' =>
-            '',
-        'Define the start day of the week for the date picker.' => '',
-        'Defines a customer item, which generates a LinkedIn icon at the end of a customer info block.' =>
-            '',
-        'Defines a customer item, which generates a XING icon at the end of a customer info block.' =>
-            '',
-        'Defines a customer item, which generates a google icon at the end of a customer info block.' =>
-            '',
-        'Defines a customer item, which generates a google maps icon at the end of a customer info block.' =>
-            '',
-        'Defines a default list of words, that are ignored by the spell checker.' =>
-            '',
-        'Defines a filter for html output to add links behind CVE numbers. The element Image allows two input kinds. At once the name of an image (e.g. faq.png). In this case the OTRS image path will be used. The second possiblity is to insert the link to the image.' =>
-            '',
-        'Defines a filter for html output to add links behind MSBulletin numbers. The element Image allows two input kinds. At once the name of an image (e.g. faq.png). In this case the OTRS image path will be used. The second possiblity is to insert the link to the image.' =>
-            '',
-        'Defines a filter for html output to add links behind a defined string. The element Image allows two input kinds. At once the name of an image (e.g. faq.png). In this case the OTRS image path will be used. The second possiblity is to insert the link to the image.' =>
-            '',
-        'Defines a filter for html output to add links behind bugtraq numbers. The element Image allows two input kinds. At once the name of an image (e.g. faq.png). In this case the OTRS image path will be used. The second possiblity is to insert the link to the image.' =>
-            '',
-        'Defines a filter to process the text in the articles, in order to highlight predefined keywords.' =>
-            '',
-        'Defines a regular expression that excludes some addresses from the syntax check (if "CheckEmailAddresses" is set to "Yes"). Please enter a regex in this field for email addresses, that aren\'t syntactically valid, but are necessary for the system (i.e. "root@localhost").' =>
-            '',
-        'Defines a regular expression that filters all email addresses that should not be used in the application.' =>
-            '',
-        'Defines a useful module to load specific user options or to display news.' =>
-            '',
-        'Defines all the X-headers that should be scanned.' => '',
-        'Defines all the languages that are available to the application. The Key/Content pair links the front-end display name to the appropriate language PM file. The "Key" value should be the base-name of the PM file (i.e. de.pm is the file, then de is the "Key" value). The "Content" value should be the display name for the front-end. Specify any own-defined language here (see the developer documentation http://doc.otrs.org/ for more infomation). Please remember to use the HTML equivalents for non-ASCII characters (i.e. for the German oe = o umlaut, it is necessary to use the &ouml; symbol).' =>
-            '',
-        'Defines all the parameters for the RefreshTime object in the customer preferences of the customer interface.' =>
-            '',
-        'Defines all the parameters for the ShownTickets object in the customer preferences of the customer interface.' =>
-            '',
-        'Defines all the parameters for this item in the customer preferences.' =>
-            '',
-        'Defines all the possible stats output formats.' => '',
-        'Defines an alternate URL, where the login link refers to.' => '',
-        'Defines an alternate URL, where the logout link refers to.' => '',
-        'Defines an alternate login URL for the customer panel..' => '',
-        'Defines an alternate logout URL for the customer panel.' => '',
-        'Defines an external link to the database of the customer (e.g. \'http://yourhost/customer.php?CID=$Data{"CustomerID"}\' or \'\').' =>
-            '',
-        'Defines how the From field from the emails (sent from answers and email tickets) should look like.' =>
-            '',
-        'Defines if a ticket lock is required in the close ticket screen of the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket bounce screen of the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket compose screen of the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket forward screen of the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket free text screen of the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket merge screen of a zoomed ticket in the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket note screen of the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket owner screen of a zoomed ticket in the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket pending screen of a zoomed ticket in the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket phone inbound screen of the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket phone outbound screen of the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket priority screen of a zoomed ticket in the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required in the ticket responsible screen of the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if a ticket lock is required to change the customer of a ticket in the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
-            '',
-        'Defines if composed messages have to be spell checked in the agent interface.' =>
-            '',
-        'Defines if time accounting is mandatory in the agent interface.' =>
-            '',
-        'Defines if time accounting must be set to all tickets in bulk action.' =>
-            '',
-        'Defines scheduler PID update time in seconds (floating point number).' =>
-            '',
-        'Defines scheduler sleep time in seconds after processing all available tasks (floating point number).' =>
-            '',
-        'Defines the =hHeight for the rich text editor component. Enter number (pixels) or percent value (relative).' =>
-            '',
-        'Defines the IP regular expression for accessing the local repository. You need to enable this to have access to your local repository and the package::RepositoryList is required on the remote host.' =>
-            '',
-        'Defines the URL CSS path.' => '',
-        'Defines the URL base path of icons, CSS and Java Script.' => '',
-        'Defines the URL image path of icons for navigation.' => '',
-        'Defines the URL java script path.' => '',
-        'Defines the URL rich text editor path.' => '',
-        'Defines the address of a dedicated DNS server, if necessary, for the "CheckMXRecord" look-ups.' =>
-            '',
-        'Defines the body text for notification mails sent to agents, about new password (after using this link the new password will be sent).' =>
-            '',
-        'Defines the body text for notification mails sent to agents, with token about new requested password (after using this link the new password will be sent).' =>
-            '',
-        'Defines the body text for notification mails sent to customers, about new account.' =>
-            '',
-        'Defines the body text for notification mails sent to customers, about new password (after using this link the new password will be sent).' =>
-            '',
-        'Defines the body text for notification mails sent to customers, with token about new requested password (after using this link the new password will be sent).' =>
-            '',
-        'Defines the body text for rejected emails.' => '',
-        'Defines the boldness of the line drawed by the graph.' => '',
-        'Defines the colors for the graphs.' => '',
-        'Defines the column to store the keys for the preferences table.' =>
-            '',
-        'Defines the config parameters of this item, to be shown in the preferences view.' =>
-            '',
-        'Defines the config parameters of this item, to be shown in the preferences view. Take care to maintain the dictionaries installed in the system in the data section.' =>
-            '',
-        'Defines the connections for http/ftp, via a proxy.' => '',
-        'Defines the date input format used in forms (option or input fields).' =>
-            '',
-        'Defines the default CSS used in rich text editors.' => '',
-        'Defines the default auto response type of the article for this operation.' =>
-            '',
-        'Defines the default body of a note in the ticket free text screen of the agent interface.' =>
-            '',
-        'Defines the default front-end (HTML) theme to be used by the agents and customers. The default themes are Standard and Lite. If you like, you can add your own theme. Please refer the administrator manual located at http://doc.otrs.org/.' =>
-            '',
-        'Defines the default front-end language. All the possible values are determined by the available language files on the system (see the next setting).' =>
-            '',
-        'Defines the default history type in the customer interface.' => '',
-        'Defines the default maximum number of X-axis attributes for the time scale.' =>
-            '',
-        'Defines the default maximum number of search results shown on the overview page.' =>
-            '',
-        'Defines the default next state for a ticket after customer follow up in the customer interface.' =>
-            '',
-        'Defines the default next state of a ticket after adding a note, in the close ticket screen of the agent interface.' =>
-            '',
-        'Defines the default next state of a ticket after adding a note, in the ticket bulk screen of the agent interface.' =>
-            '',
-        'Defines the default next state of a ticket after adding a note, in the ticket free text screen of the agent interface.' =>
-            '',
-        'Defines the default next state of a ticket after adding a note, in the ticket note screen of the agent interface.' =>
-            '',
-        'Defines the default next state of a ticket after adding a note, in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the default next state of a ticket after adding a note, in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the default next state of a ticket after adding a note, in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the default next state of a ticket after adding a note, in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Defines the default next state of a ticket after being bounced, in the ticket bounce screen of the agent interface.' =>
-            '',
-        'Defines the default next state of a ticket after being forwarded, in the ticket forward screen of the agent interface.' =>
-            '',
-        'Defines the default next state of a ticket if it is composed / answered in the ticket compose screen of the agent interface.' =>
-            '',
-        'Defines the default note body text for phone tickets in the ticket phone inbound screen of the agent interface.' =>
-            '',
-        'Defines the default note body text for phone tickets in the ticket phone outbound screen of the agent interface.' =>
-            '',
-        'Defines the default priority of follow up customer tickets in the ticket zoom screen in the customer interface.' =>
-            '',
-        'Defines the default priority of new customer tickets in the customer interface.' =>
-            '',
-        'Defines the default priority of new tickets.' => '',
-        'Defines the default queue for new customer tickets in the customer interface.' =>
-            '',
-        'Defines the default selection at the drop down menu for dynamic objects (Form: Common Specification).' =>
-            '',
-        'Defines the default selection at the drop down menu for permissions (Form: Common Specification).' =>
-            '',
-        'Defines the default selection at the drop down menu for stats format (Form: Common Specification). Please insert the format key (see Stats::Format).' =>
-            '',
-        'Defines the default sender type for phone tickets in the ticket phone inbound screen of the agent interface.' =>
-            '',
-        'Defines the default sender type for phone tickets in the ticket phone outbound screen of the agent interface.' =>
-            '',
-        'Defines the default sender type for tickets in the ticket zoom screen of the customer interface.' =>
-            '',
-        'Defines the default sender type of the article for this operation.' =>
-            '',
-        'Defines the default shown ticket search attribute for ticket search screen.' =>
-            '',
-        'Defines the default shown ticket search attribute for ticket search screen. Example: a text, 1, DynamicField_Field1StartYear=2002;DynamicField_Field1StartMonth=12;DynamicField_Field1StartDay=12;DynamicField_Field1StartHour=00;DynamicField_Field1StartMinute=00;DynamicField_Field1StartSecond=00;DynamicField_Field1StopYear=2009;DynamicField_Field1StopMonth=02;DynamicField_Field1StopDay=10;DynamicField_Field1StopHour=23;DynamicField_Field1StopMinute=59;DynamicField_Field1StopSecond=59;.' =>
-            '',
-        'Defines the default sort criteria for all queues displayed in the queue view, after sort by priority is done.' =>
-            '',
-        'Defines the default sort order for all queues in the queue view, after priority sort.' =>
-            '',
-        'Defines the default spell checker dictionary.' => '',
-        'Defines the default state of new customer tickets in the customer interface.' =>
-            '',
-        'Defines the default state of new tickets.' => '',
-        'Defines the default subject for phone tickets in the ticket phone inbound screen of the agent interface.' =>
-            '',
-        'Defines the default subject for phone tickets in the ticket phone outbound screen of the agent interface.' =>
-            '',
-        'Defines the default subject of a note in the ticket free text screen of the agent interface.' =>
-            '',
-        'Defines the default ticket attribute for ticket sorting in a ticket search of the customer interface.' =>
-            '',
-        'Defines the default ticket attribute for ticket sorting in the escalation view of the agent interface.' =>
-            '',
-        'Defines the default ticket attribute for ticket sorting in the locked ticket view of the agent interface.' =>
-            '',
-        'Defines the default ticket attribute for ticket sorting in the responsible view of the agent interface.' =>
-            '',
-        'Defines the default ticket attribute for ticket sorting in the status view of the agent interface.' =>
-            '',
-        'Defines the default ticket attribute for ticket sorting in the watch view of the agent interface.' =>
-            '',
-        'Defines the default ticket attribute for ticket sorting of the ticket search result of the agent interface.' =>
-            '',
-        'Defines the default ticket bounced notification for customer/sender in the ticket bounce screen of the agent interface.' =>
-            '',
-        'Defines the default ticket next state after adding a phone note in the ticket phone inbound screen of the agent interface.' =>
-            '',
-        'Defines the default ticket next state after adding a phone note in the ticket phone outbound screen of the agent interface.' =>
-            '',
-        'Defines the default ticket order (after priority sort) in the escalation view of the agent interface. Up: oldest on top. Down: latest on top.' =>
-            '',
-        'Defines the default ticket order (after priority sort) in the status view of the agent interface. Up: oldest on top. Down: latest on top.' =>
-            '',
-        'Defines the default ticket order in the responsible view of the agent interface. Up: oldest on top. Down: latest on top.' =>
-            '',
-        'Defines the default ticket order in the ticket locked view of the agent interface. Up: oldest on top. Down: latest on top.' =>
-            '',
-        'Defines the default ticket order in the ticket search result of the agent interface. Up: oldest on top. Down: latest on top.' =>
-            '',
-        'Defines the default ticket order in the watch view of the agent interface. Up: oldest on top. Down: latest on top.' =>
-            '',
-        'Defines the default ticket order of a search result in the customer interface. Up: oldest on top. Down: latest on top.' =>
-            '',
-        'Defines the default ticket priority in the close ticket screen of the agent interface.' =>
-            '',
-        'Defines the default ticket priority in the ticket bulk screen of the agent interface.' =>
-            '',
-        'Defines the default ticket priority in the ticket free text screen of the agent interface.' =>
-            '',
-        'Defines the default ticket priority in the ticket note screen of the agent interface.' =>
-            '',
-        'Defines the default ticket priority in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the default ticket priority in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the default ticket priority in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the default ticket priority in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Defines the default type for article in the customer interface.' =>
-            '',
-        'Defines the default type of forwarded message in the ticket forward screen of the agent interface.' =>
-            '',
-        'Defines the default type of the article for this operation.' => '',
-        'Defines the default type of the note in the close ticket screen of the agent interface.' =>
-            '',
-        'Defines the default type of the note in the ticket bulk screen of the agent interface.' =>
-            '',
-        'Defines the default type of the note in the ticket free text screen of the agent interface.' =>
-            '',
-        'Defines the default type of the note in the ticket note screen of the agent interface.' =>
-            '',
-        'Defines the default type of the note in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the default type of the note in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the default type of the note in the ticket phone inbound screen of the agent interface.' =>
-            '',
-        'Defines the default type of the note in the ticket phone outbound screen of the agent interface.' =>
-            '',
-        'Defines the default type of the note in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the default type of the note in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Defines the default type of the note in the ticket zoom screen of the customer interface.' =>
-            '',
-        'Defines the default used Frontend-Module if no Action parameter given in the url on the agent interface.' =>
-            '',
-        'Defines the default used Frontend-Module if no Action parameter given in the url on the customer interface.' =>
-            '',
-        'Defines the default value for the action parameter for the public frontend. The action parameter is used in the scripts of the system.' =>
-            '',
-        'Defines the default viewable sender types of a ticket (default: customer).' =>
-            '',
-        'Defines the filter that processes the text in the articles, in order to highlight URLs.' =>
-            '',
-        'Defines the format of responses in the ticket compose screen of the agent interface ($QData{"OrigFrom"} is From 1:1, $QData{"OrigFromName"} is only realname of From).' =>
-            '',
-        'Defines the fully qualified domain name of the system. This setting is used as a variable, OTRS_CONFIG_FQDN which is found in all forms of messaging used by the application, to build links to the tickets within your system.' =>
-            '',
-        'Defines the groups every customer user will be in (if CustomerGroupSupport is enabled and you don\'t want to manage every user for these groups).' =>
-            '',
-        'Defines the height of the legend.' => '',
-        'Defines the history comment for the close ticket screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history comment for the email ticket screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history comment for the phone ticket screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history comment for the ticket free text screen action, which gets used for ticket history.' =>
-            '',
-        'Defines the history comment for the ticket note screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history comment for the ticket owner screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history comment for the ticket pending screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history comment for the ticket phone inbound screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history comment for the ticket phone outbound screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history comment for the ticket priority screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history comment for the ticket responsible screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history comment for the ticket zoom action, which gets used for ticket history in the customer interface.' =>
-            '',
-        'Defines the history comment for this operation, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history type for the close ticket screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history type for the email ticket screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history type for the phone ticket screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history type for the ticket free text screen action, which gets used for ticket history.' =>
-            '',
-        'Defines the history type for the ticket note screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history type for the ticket owner screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history type for the ticket pending screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history type for the ticket phone inbound screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history type for the ticket phone outbound screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history type for the ticket priority screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history type for the ticket responsible screen action, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the history type for the ticket zoom action, which gets used for ticket history in the customer interface.' =>
-            '',
-        'Defines the history type for this operation, which gets used for ticket history in the agent interface.' =>
-            '',
-        'Defines the hours and week days of the indicated calendar, to count the working time.' =>
-            '',
-        'Defines the hours and week days to count the working time.' => '',
-        'Defines the key to be checked with Kernel::Modules::AgentInfo module. If this user preferences key is true, the message is accepted by the system.' =>
-            '',
-        'Defines the key to check with CustomerAccept. If this user preferences key is true, then the message is accepted by the system.' =>
-            '',
-        'Defines the link type \'Normal\'. If the source name and the target name contain the same value, the resulting link is a non-directional one; otherwise, the result is a directional link.' =>
-            '',
-        'Defines the link type \'ParentChild\'. If the source name and the target name contain the same value, the resulting link is a non-directional one; otherwise, the result is a directional link.' =>
-            '',
-        'Defines the link type groups. The link types of the same group cancel one another. Example: If ticket A is linked per a \'Normal\' link with ticket B, then these tickets could not be additionally linked with link of a \'ParentChild\' relationship.' =>
-            '',
-        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="http://example.com/otrs/public.pl?Action=PublicRepository;File=" and Content="Some Name".' =>
-            '',
-        'Defines the location to get online repository list for additional packages. The first available result will be used.' =>
-            '',
-        'Defines the log module for the system. "File" writes all messages in a given logfile, "SysLog" uses the syslog daemon of the system, e.g. syslogd.' =>
-            '',
-        'Defines the maximal size (in bytes) for file uploads via the browser.' =>
-            '',
-        'Defines the maximal valid time (in seconds) for a session id.' =>
-            '',
-        'Defines the maximum number of pages per PDF file.' => '',
-        'Defines the maximum size (in MB) of the log file.' => '',
-        'Defines the module that shows a generic notification in the agent interface. Either "Text" - if configured - or the contents of "File" will be displayed.' =>
-            '',
-        'Defines the module that shows all the currently loged in customers in the agent interface.' =>
-            '',
-        'Defines the module that shows all the currently logged in agents in the agent interface.' =>
-            '',
-        'Defines the module that shows the currently loged in agents in the customer interface.' =>
-            '',
-        'Defines the module that shows the currently loged in customers in the customer interface.' =>
-            '',
-        'Defines the module to authenticate customers.' => '',
-        'Defines the module to display a notification in the agent interface, (only for agents on the admin group) if the scheduler is not running.' =>
-            '',
-        'Defines the module to display a notification in the agent interface, if the agent is logged in while having out-of-office active.' =>
-            '',
-        'Defines the module to display a notification in the agent interface, if the system is used by the admin user (normally you shouldn\'t work as admin).' =>
-            '',
-        'Defines the module to generate html refresh headers of html sites, in the customer interface.' =>
-            '',
-        'Defines the module to generate html refresh headers of html sites.' =>
-            '',
-        'Defines the module to send emails. "Sendmail" directly uses the sendmail binary of your operating system. Any of the "SMTP" mechanisms use a specified (external) mailserver. "DoNotSendEmail" doesn\'t send emails and it is useful for test systems.' =>
-            '',
-        'Defines the module used to store the session data. With "DB" the frontend server can be splitted from the db server. "FS" is faster.' =>
-            '',
-        'Defines the name of the application, shown in the web interface, tabs and title bar of the web browser.' =>
-            '',
-        'Defines the name of the column to store the data in the preferences table.' =>
-            '',
-        'Defines the name of the column to store the user identifier in the preferences table.' =>
-            '',
-        'Defines the name of the indicated calendar.' => '',
-        'Defines the name of the key for customer sessions.' => '',
-        'Defines the name of the session key. E.g. Session, SessionID or OTRS.' =>
-            '',
-        'Defines the name of the table, where the customer preferences are stored.' =>
-            '',
-        'Defines the next possible states after composing / answering a ticket in the ticket compose screen of the agent interface.' =>
-            '',
-        'Defines the next possible states after forwarding a ticket in the ticket forward screen of the agent interface.' =>
-            '',
-        'Defines the next possible states for customer tickets in the customer interface.' =>
-            '',
-        'Defines the next state of a ticket after adding a note, in the close ticket screen of the agent interface.' =>
-            '',
-        'Defines the next state of a ticket after adding a note, in the ticket bulk screen of the agent interface.' =>
-            '',
-        'Defines the next state of a ticket after adding a note, in the ticket free text screen of the agent interface.' =>
-            '',
-        'Defines the next state of a ticket after adding a note, in the ticket note screen of the agent interface.' =>
-            '',
-        'Defines the next state of a ticket after adding a note, in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the next state of a ticket after adding a note, in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the next state of a ticket after adding a note, in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Defines the next state of a ticket after adding a note, in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Defines the next state of a ticket after being bounced, in the ticket bounce screen of the agent interface.' =>
-            '',
-        'Defines the next state of a ticket after being moved to another queue, in the move ticket screen of the agent interface.' =>
-            '',
-        'Defines the parameters for the customer preferences table.' => '',
-        'Defines the parameters for the dashboard backend. "Group" is used to restrict access to the plugin (e. g. Group: admin;group1;group2;). "Default" indicates if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTL" indicates the cache expiration period in minutes for the plugin.' =>
-            '',
-        'Defines the parameters for the dashboard backend. "Group" is used to restrict access to the plugin (e. g. Group: admin;group1;group2;). "Default" indicates if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" defines the cache expiration period in minutes for the plugin.' =>
-            '',
-        'Defines the parameters for the dashboard backend. "Limit" defines the number of entries displayed by default. "Group" is used to restrict access to the plugin (e. g. Group: admin;group1;group2;). "Default" indicates if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTL" indicates the cache expiration period in minutes for the plugin.' =>
-            '',
-        'Defines the parameters for the dashboard backend. "Limit" defines the number of entries displayed by default. "Group" is used to restrict access to the plugin (e. g. Group: admin;group1;group2;). "Default" indicates if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" defines the cache expiration period in minutes for the plugin.' =>
-            '',
-        'Defines the password to access the SOAP handle (bin/cgi-bin/rpc.pl).' =>
-            '',
-        'Defines the path and TTF-File to handle bold italic monospaced font in PDF documents.' =>
-            '',
-        'Defines the path and TTF-File to handle bold italic proportional font in PDF documents.' =>
-            '',
-        'Defines the path and TTF-File to handle bold monospaced font in PDF documents.' =>
-            '',
-        'Defines the path and TTF-File to handle bold proportional font in PDF documents.' =>
-            '',
-        'Defines the path and TTF-File to handle italic monospaced font in PDF documents.' =>
-            '',
-        'Defines the path and TTF-File to handle italic proportional font in PDF documents.' =>
-            '',
-        'Defines the path and TTF-File to handle monospaced font in PDF documents.' =>
-            '',
-        'Defines the path and TTF-File to handle proportional font in PDF documents.' =>
-            '',
-        'Defines the path for scheduler to store its console output (SchedulerOUT.log and SchedulerERR.log).' =>
-            '',
-        'Defines the path of the shown info file, that is located under Kernel/Output/HTML/Standard/CustomerAccept.dtl.' =>
-            '',
-        'Defines the path to PGP binary.' => '',
-        'Defines the path to open ssl binary. It may need a HOME env ($ENV{HOME} = \'/var/lib/wwwrun\';).' =>
-            '',
-        'Defines the placement of the legend. This should be a two letter key of the form: \'B[LCR]|R[TCB]\'. The first letter indicates the placement (Bottom or Right), and the second letter the alignment (Left, Right, Center, Top, or Bottom).' =>
-            '',
-        'Defines the postmaster default queue.' => '',
-        'Defines the receipent target of the phone ticket and the sender of the email ticket ("Queue" shows all queues, "SystemAddress" displays all system addresses) in the agent interface.' =>
-            '',
-        'Defines the receipent target of the tickets ("Queue" shows all queues, "SystemAddress" displays all system addresses) in the customer interface.' =>
-            '',
-        'Defines the search limit for the stats.' => '',
-        'Defines the sender for rejected emails.' => '',
-        'Defines the separator between the agents real name and the given queue email address.' =>
-            '',
-        'Defines the spacing of the legends.' => '',
-        'Defines the standard permissions available for customers within the application. If more permissions are needed, you can enter them here. Permissions must be hard coded to be effective. Please ensure, when adding any of the afore mentioned permissions, that the "rw" permission remains the last entry.' =>
-            '',
-        'Defines the standard size of PDF pages.' => '',
-        'Defines the state of a ticket if it gets a follow-up and the ticket was already closed.' =>
-            '',
-        'Defines the state of a ticket if it gets a follow-up.' => '',
-        'Defines the state type of the reminder for pending tickets.' => '',
-        'Defines the subject for notification mails sent to agents, about new password.' =>
-            '',
-        'Defines the subject for notification mails sent to agents, with token about new requested password.' =>
-            '',
-        'Defines the subject for notification mails sent to customers, about new account.' =>
-            '',
-        'Defines the subject for notification mails sent to customers, about new password.' =>
-            '',
-        'Defines the subject for notification mails sent to customers, with token about new requested password.' =>
-            '',
-        'Defines the subject for rejected emails.' => '',
-        'Defines the system administrator\'s email address. It will be displayed in the error screens of the application.' =>
-            '',
-        'Defines the system identifier. Every ticket number and http session string contain this ID. This ensures that only tickets which belong to your system will be processed as follow-ups (useful when communicating between two instances of OTRS).' =>
-            '',
-        'Defines the target attribute in the link to external customer database. E.g. \'target="cdb"\'.' =>
-            '',
-        'Defines the time in days to keep log backup files.' => '',
-        'Defines the time in seconds after which the Scheduler performs an automatic self-restart.' =>
-            '',
-        'Defines the time zone of the indicated calendar, which can be assigned later to a specific queue.' =>
-            '',
-        'Defines the type of protocol, used by ther web server, to serve the application. If https protocol will be used instead of plain http, it must be specified it here. Since this has no affect on the web server\'s settings or behavior, it will not change the method of access to the application and, if it is wrong, it will not prevent you from logging into the application. This setting is used as a variable, OTRS_CONFIG_HttpType which is found in all forms of messaging used by the application, to build links to the tickets within your system.' =>
-            '',
-        'Defines the used character for email quotes in the ticket compose screen of the agent interface.' =>
-            '',
-        'Defines the user identifier for the customer panel.' => '',
-        'Defines the username to access the SOAP handle (bin/cgi-bin/rpc.pl).' =>
-            '',
-        'Defines the valid state types for a ticket.' => '',
-        'Defines the valid states for unlocked tickets. To unlock tickets the script "bin/otrs.UnlockTickets.pl" can be used.' =>
-            '',
-        'Defines the viewable locks of a ticket. Default: unlock, tmp_lock.' =>
-            '',
-        'Defines the width for the rich text editor component. Enter number (pixels) or percent value (relative).' =>
-            '',
-        'Defines the width of the legend.' => '',
-        'Defines which article sender types should be shown in the preview of a ticket.' =>
-            '',
-        'Defines which states should be set automatically (Content), after the pending time of state (Key) has been reached.' =>
-            '',
-        'Defines wich article type should be expanded when entering the overview. If nothing defined, latest article will be expanded.' =>
-            '',
-        'Delay time between autocomplete queries in milliseconds.' => '',
-        'Delete this ticket' => '',
-        'Deletes a session if the session id is used with an invalid remote IP address.' =>
-            '',
-        'Deletes requested sessions if they have timed out.' => '',
-        'Determines if the list of possible queues to move to ticket into should be displayed in a dropdown list or in a new window in the agent interface. If "New Window" is set you can add a move note to the ticket.' =>
-            '',
-        'Determines if the search results container for the autocomplete feature should adjust its width dynamically.' =>
-            '',
-        'Determines if the statistics module may generate ticket lists.' =>
-            '',
-        'Determines the next possible ticket states, after the creation of a new email ticket in the agent interface.' =>
-            '',
-        'Determines the next possible ticket states, after the creation of a new phone ticket in the agent interface.' =>
-            '',
-        'Determines the next screen after new customer ticket in the customer interface.' =>
-            '',
-        'Determines the next screen after the follow up screen of a zoomed ticket in the customer interface.' =>
-            '',
-        'Determines the next screen after the ticket is moved. LastScreenOverview will return to search results, queueview, dashboard or the like, LastScreenView will return to TicketZoom.' =>
-            '',
-        'Determines the possible states for pending tickets that changed state after reaching time limit.' =>
-            '',
-        'Determines the strings that will be shown as receipent (To:) of the phone ticket and as sender (From:) of the email ticket in the agent interface. For Queue as NewQueueSelectionType "<Queue>" shows the names of the queues and for SystemAddress "<Realname> <<Email>>" shows the name and email of the receipent.' =>
-            '',
-        'Determines the strings that will be shown as receipent (To:) of the ticket in the customer interface. For Queue as CustomerPanelSelectionType, "<Queue>" shows the names of the queues, and for SystemAddress, "<Realname> <<Email>>" shows the name and email of the receipent.' =>
-            '',
-        'Determines the way the linked objects are displayed in each zoom mask.' =>
-            '',
-        'Determines which options will be valid of the recepient (phone ticket) and the sender (email ticket) in the agent interface.' =>
-            '',
-        'Determines which queues will be valid for ticket\'s recepients in the customer interface.' =>
-            '',
-        'Disables sending reminder notifications to the responsible agent of a ticket (Ticket::Responsible needs to be activated).' =>
-            '',
-        'Disables the web installer (http://yourhost.example.com/otrs/installer.pl), to prevent the system from being hijacked. If set to "No", the system can be reinstalled and the current basic configuration will be used to pre-populate the questions within the installer script. If not active, it also disables the GenericAgent, PackageManager and SQL Box (to avoid the use of destructive queries, such as DROP DATABASE, and also to steal user passwords).' =>
-            '',
-        'Displays the accounted time for an article in the ticket zoom view.' =>
-            '',
-        'Dropdown' => '',
-        'Dynamic Fields Checkbox Backend GUI' => '',
-        'Dynamic Fields Date Time Backend GUI' => '',
-        'Dynamic Fields Drop-down Backend GUI' => '',
-        'Dynamic Fields GUI' => '',
-        'Dynamic Fields Multiselect Backend GUI' => '',
-        'Dynamic Fields Overview Limit' => '',
-        'Dynamic Fields Text Backend GUI' => '',
-        'Dynamic Fields used to export the search result in CSV format.' =>
-            '',
-        'Dynamic fields limit per page for Dynamic Fields Overview' => '',
-        'Dynamic fields options shown in the ticket message screen of the customer interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required. NOTE. If you want to display these fields also in the ticket zoom of the customer interface, you have to enable them in CustomerTicketZoom###AttributesView.' =>
-            '',
-        'Dynamic fields shown in the ticket close screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket compose screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket email screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket forward screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket free text screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket medium format overview screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled.' =>
-            '',
-        'Dynamic fields shown in the ticket move screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket note screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket owner screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket pending screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket phone inbound screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket phone outbound screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket phone screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket preview format overview screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled.' =>
-            '',
-        'Dynamic fields shown in the ticket print screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled.' =>
-            '',
-        'Dynamic fields shown in the ticket print screen of the customer interface. Possible settings: 0 = Disabled, 1 = Enabled.' =>
-            '',
-        'Dynamic fields shown in the ticket priority screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket responsible screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.' =>
-            '',
-        'Dynamic fields shown in the ticket search overview results screen of the customer interface. Possible settings: 0 = Disabled, 1 = Enabled.' =>
-            '',
-        'Dynamic fields shown in the ticket search screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled.' =>
-            '',
-        'Dynamic fields shown in the ticket search screen of the customer interface. Possible settings: 0 = Disabled, 1 = Enabled.' =>
-            '',
-        'Dynamic fields shown in the ticket small format overview screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled.' =>
-            '',
-        'Dynamic fields shown in the ticket zoom screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled.' =>
-            '',
-        'Dynamic fields shown in the ticket zoom screen of the customer interface. Possible settings: 0 = Disabled, 1 = Enabled.' =>
-            '',
-        'DynamicField backend registration.' => '',
-        'DynamicField object registration.' => '',
-        'Email Addresses' => 'Email åœ°å€',
-        'Enables PDF output. The CPAN module PDF::API2 is required, if not installed, PDF output will be disabled.' =>
-            '',
-        'Enables PGP support. When PGP support is enabled for signing and securing mail, it is HIGHLY recommended that the web server be run as the OTRS user. Otherwise, there will be problems with the privileges when accessing .gnupg folder.' =>
-            '',
-        'Enables S/MIME support.' => '',
-        'Enables customers to create their own accounts.' => '',
-        'Enables file upload in the package manager frontend.' => '',
-        'Enables or disable the debug mode over frontend interface.' => '',
-        'Enables or disables the autocomplete feature for the customer search in the agent interface.' =>
-            '',
-        'Enables or disables the ticket watcher feature, to keep track of tickets without being the owner nor the responsible.' =>
-            '',
-        'Enables performance log (to log the page response time). It will affect the system performance. Frontend::Module###AdminPerformanceLog must be enabled.' =>
-            '',
-        'Enables spell checker support.' => '',
-        'Enables ticket bulk action feature for the agent frontend to work on more than one ticket at a time.' =>
-            '',
-        'Enables ticket bulk action feature only for the listed groups.' =>
-            '',
-        'Enables ticket responsible feature, to keep track of a specific ticket.' =>
-            '',
-        'Enables ticket watcher feature only for the listed groups.' => '',
-        'Escalation view' => '',
-        'Event list to be displayed on GUI to trigger generic interface invokers.' =>
-            '',
-        'Event module registration. For more performance you can define a trigger event (e. g. Event => TicketCreate). This is only possible if all Ticket dynamic fields need the same event.' =>
-            '',
-        'Example for dynamic dield' => '',
-        'Example for dynamic field' => '',
-        'Example for free text' => '',
-        'Execute SQL statements.' => 'æ‰§è¡Œ SQL å‘½ä»¤',
-        'Executes follow up checks on In-Reply-To or References headers for mails that don\'t have a ticket number in the subject.' =>
-            '',
-        'Executes follow up mail attachments checks in  mails that don\'t have a ticket number in the subject.' =>
-            '',
-        'Executes follow up mail body checks in mails that don\'t have a ticket number in the subject.' =>
-            '',
-        'Executes follow up plain/raw mail checks in mails that don\'t have a ticket number in the subject.' =>
-            '',
-        'Experimental "Slim" skin which tries to save screen space for power users.' =>
-            '',
-        'Exports the whole article tree in search result (it can affect the system performance).' =>
-            '',
-        'Fetches packages via proxy. Overwrites "WebUserAgent::Proxy".' =>
-            '',
-        'File that is displayed in the Kernel::Modules::AgentInfo module, if located under Kernel/Output/HTML/Standard/AgentInfo.dtl.' =>
-            '',
-        'Filter incoming emails.' => 'è¿‡æ»¤æ”¶åˆ°çš„é‚®ä»¶.',
-        'Forces encoding of outgoing emails (7bit|8bit|quoted-printable|base64).' =>
-            '',
-        'Forces to choose a different ticket state (from current) after lock action. Define the current state as key, and the next state after lock action as content.' =>
-            '',
-        'Forces to unlock tickets after being moved to another queue.' =>
-            '',
-        'Frontend language' => 'è¯­è¨€ä»‹é¢',
-        'Frontend module registration (disable company link if no company feature is used).' =>
-            '',
-        'Frontend module registration for the agent interface.' => '',
-        'Frontend module registration for the customer interface.' => '',
-        'Frontend theme' => 'ä»‹é¢é£æ ¼',
-        'GenericAgent' => 'è®¡åˆ’ä»»åŠ¡',
-        'GenericInterface Debugger GUI' => '',
-        'GenericInterface Invoker GUI' => '',
-        'GenericInterface Operation GUI' => '',
-        'GenericInterface TransportHTTPSOAP GUI' => '',
-        'GenericInterface Web Service GUI' => '',
-        'GenericInterface Webservice History GUI' => '',
-        'GenericInterface Webservice Mapping GUI' => '',
-        'GenericInterface module registration for the invoker layer.' => '',
-        'GenericInterface module registration for the mapping layer.' => '',
-        'GenericInterface module registration for the operation layer.' =>
-            '',
-        'GenericInterface module registration for the transport layer.' =>
-            '',
-        'Gives end users the possibility to override the separator character for CSV files, defined in the translation files.' =>
-            '',
-        'Grants access, if the customer ID of the ticket matches the customer user\'s ID and the customer user has group permissions on the queue the ticket is in.' =>
-            '',
-        'Helps to extend your articles full-text search (From, To, Cc, Subject and Body search). Runtime will do full-text searches on live data (it works fine for up to 50.000 tickets). StaticDB will strip all articles and will build an index after article creation, increasing fulltext searches about 50%. To create an initial index use "bin/otrs.RebuildFulltextIndex.pl".' =>
-            '',
-        'If "DB" was selected for Customer::AuthModule, a database driver (normally autodetection is used) can be specified.' =>
-            '',
-        'If "DB" was selected for Customer::AuthModule, a password to connect to the customer table can be specified.' =>
-            '',
-        'If "DB" was selected for Customer::AuthModule, a username to connect to the customer table can be specified.' =>
-            '',
-        'If "DB" was selected for Customer::AuthModule, the DSN for the connection to the customer table must be specified.' =>
-            '',
-        'If "DB" was selected for Customer::AuthModule, the column name for the CustomerPassword in the customer table must be specified.' =>
-            '',
-        'If "DB" was selected for Customer::AuthModule, the crypt type of passwords must be specified.' =>
-            '',
-        'If "DB" was selected for Customer::AuthModule, the name of the column for the CustomerKey in the customer table must be specified.' =>
-            '',
-        'If "DB" was selected for Customer::AuthModule, the name of the table where your customer data should be stored must be specified.' =>
-            '',
-        'If "DB" was selected for SessionModule, a column for the identifiers in session table must be specified.' =>
-            '',
-        'If "DB" was selected for SessionModule, a column for the values in session table must be specified.' =>
-            '',
-        'If "DB" was selected for SessionModule, a table in database where session data will be stored must be specified.' =>
-            '',
-        'If "FS" was selected for SessionModule, a directory where the session data will be stored must be specified.' =>
-            '',
-        'If "HTTPBasicAuth" was selected for Customer::AuthModule, you can specify (by using a RegExp) to strip parts of REMOTE_USER (e. g. for to remove trailing domains). RegExp-Note, $1 will be the new Login.' =>
-            '',
-        'If "HTTPBasicAuth" was selected for Customer::AuthModule, you can specify to strip leading parts of user names (e. g. for domains like example_domain\user to user).' =>
-            '',
-        'If "LDAP" was selected for Customer::AuthModule and if you want to add a suffix to every customer login name, specifiy it here, e. g. you just want to write the username user but in your LDAP directory exists user@domain.' =>
-            '',
-        'If "LDAP" was selected for Customer::AuthModule and special paramaters are needed for the Net::LDAP perl module, you can specify them here. See "perldoc Net::LDAP" for more information about the parameters.' =>
-            '',
-        'If "LDAP" was selected for Customer::AuthModule and your users have only anonymous access to the LDAP tree, but you want to search through the data, you can do this with a user who has access to the LDAP directory. Specify the password for this special user here.' =>
-            '',
-        'If "LDAP" was selected for Customer::AuthModule and your users have only anonymous access to the LDAP tree, but you want to search through the data, you can do this with a user who has access to the LDAP directory. Specify the username for this special user here.' =>
-            '',
-        'If "LDAP" was selected for Customer::AuthModule, the BaseDN must be specified.' =>
-            '',
-        'If "LDAP" was selected for Customer::AuthModule, the LDAP host can be specified.' =>
-            '',
-        'If "LDAP" was selected for Customer::AuthModule, the user identifier must be specified.' =>
-            '',
-        'If "LDAP" was selected for Customer::AuthModule, user attributes can be specified. For LDAP posixGroups use UID, for non LDAP posixGroups use full user DN.' =>
-            '',
-        'If "LDAP" was selected for Customer::AuthModule, you can specify access attributes here.' =>
-            '',
-        'If "LDAP" was selected for Customer::AuthModule, you can specify if the applications will stop if e. g. a connection to a server can\'t be established due to network problems.' =>
-            '',
-        'If "LDAP" was selected for Customer::Authmodule, you can check if the user is allowed to authenticate because he is in a posixGroup, e.g. user needs to be in a group xyz to use OTRS. Specify the group, who may access the system.' =>
-            '',
-        'If "LDAP" was selected, you can add a filter to each LDAP query, e.g. (mail=*), (objectclass=user) or (!objectclass=computer).' =>
-            '',
-        'If "Radius" was selected for Customer::AuthModule, the password to authenticate to the radius host must be specified.' =>
-            '',
-        'If "Radius" was selected for Customer::AuthModule, the radius host must be specified.' =>
-            '',
-        'If "Radius" was selected for Customer::AuthModule, you can specify if the applications will stop if e. g. a connection to a server can\'t be established due to network problems.' =>
-            '',
-        'If "Sendmail" was selected as SendmailModule, the location of the sendmail binary and the needed options must be specified.' =>
-            '',
-        'If "SysLog" was selected for LogModule, a special log facility can be specified.' =>
-            '',
-        'If "SysLog" was selected for LogModule, a special log sock can be specified (on solaris you may need to use \'stream\').' =>
-            '',
-        'If "SysLog" was selected for LogModule, the charset that should be used for logging can be specified.' =>
-            '',
-        'If "file" was selected for LogModule, a logfile must be specified. If the file doesn\'t exist, it will be created by the system.' =>
-            '',
-        'If a note is added by an agent, sets the state of a ticket in the close ticket screen of the agent interface.' =>
-            '',
-        'If a note is added by an agent, sets the state of a ticket in the ticket bulk screen of the agent interface.' =>
-            '',
-        'If a note is added by an agent, sets the state of a ticket in the ticket free text screen of the agent interface.' =>
-            '',
-        'If a note is added by an agent, sets the state of a ticket in the ticket note screen of the agent interface.' =>
-            '',
-        'If a note is added by an agent, sets the state of a ticket in the ticket responsible screen of the agent interface.' =>
-            '',
-        'If a note is added by an agent, sets the state of the ticket in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'If a note is added by an agent, sets the state of the ticket in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'If a note is added by an agent, sets the state of the ticket in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'If any of the "SMTP" mechanisms was selected as SendmailModule, and authentication to the mail server is needed, a password must be specified.' =>
-            '',
-        'If any of the "SMTP" mechanisms was selected as SendmailModule, and authentication to the mail server is needed, an username must be specified.' =>
-            '',
-        'If any of the "SMTP" mechanisms was selected as SendmailModule, the mailhost that sends out the mails must be specified.' =>
-            '',
-        'If any of the "SMTP" mechanisms was selected as SendmailModule, the port where your mailserver is listening for incoming connections must be specified.' =>
-            '',
-        'If enabled, OTRS will deliver all CSS files in minified form. WARNING: If you turn this off, there will likely be problems in IE 7, because it cannot load more than 32 CSS files.' =>
-            '',
-        'If enabled, OTRS will deliver all JavaScript files in minified form.' =>
-            '',
-        'If enabled, TicketPhone and TicketEmail will be open in new windows.' =>
-            '',
-        'If enabled, the OTRS version tag will be removed from the HTTP headers.' =>
-            '',
-        'If enabled, the different overviews (Dashboard, LockedView, QueueView) will automatically refresh after the specified time.' =>
-            '',
-        'If enabled, the first level of the main menu opens on mouse hover (instead of click only).' =>
-            '',
-        'If set, this address is used as envelope from header in outgoing notifications. If no address is specified, the envelope from header is empty.' =>
-            '',
-        'If this regex matches, no message will be send by the autoresponder.' =>
-            '',
-        'If you want to use a mirror database for agent ticket fulltext search or to generate stats, specify the DSN to this database.' =>
-            '',
-        'If you want to use a mirror database for agent ticket fulltext search or to generate stats, the password to authenticate to this database can be specified.' =>
-            '',
-        'If you want to use a mirror database for agent ticket fulltext search or to generate stats, the user to authenticate to this database can be specified.' =>
-            '',
-        'Ignore article with system sender type for new article feature (e. g. auto responses or email notifications).' =>
-            '',
-        'Includes article create times in the ticket search of the agent interface.' =>
-            '',
-        'IndexAccelerator: to choose your backend TicketViewAccelerator module. "RuntimeDB" generates each queue view on the fly from ticket table (no performance problems up to approx. 60.000 tickets in total and 6.000 open tickets in the system). "StaticDB" is the most powerful module, it uses an extra ticket-index table that works like a view (recommended if more than 80.000 and 6.000 open tickets are stored in the system). Use the script "bin/otrs.RebuildTicketIndex.pl" for initial index update.' =>
-            '',
-        'Install ispell or aspell on the system, if you want to use a spell checker. Please specify the path to the aspell or ispell binary on your operating system.' =>
-            '',
-        'Interface language' => '',
-        'It is possible to configure different skins, for example to distinguish between diferent agents, to be used on a per-domain basis within the application. Using a regular expression (regex), you can configure a Key/Content pair to match a domain. The value in "Key" should match the domain, and the value in "Content" should be a valid skin on your system. Please see the example entries for the proper form of the regex.' =>
-            '',
-        'It is possible to configure different skins, for example to distinguish between diferent customers, to be used on a per-domain basis within the application. Using a regular expression (regex), you can configure a Key/Content pair to match a domain. The value in "Key" should match the domain, and the value in "Content" should be a valid skin on your system. Please see the example entries for the proper form of the regex.' =>
-            '',
-        'It is possible to configure different themes, for example to distinguish between agents and customers, to be used on a per-domain basis within the application. Using a regular expression (regex), you can configure a Key/Content pair to match a domain. The value in "Key" should match the domain, and the value in "Content" should be a valid theme on your system. Please see the example entries for the proper form of the regex.' =>
-            '',
-        'Link agents to groups.' => 'é“¾æ¥æœåŠ¡äººå‘˜åˆ°ç¾¤ç»„.',
-        'Link agents to roles.' => 'é“¾æ¥æœåŠ¡äººå‘˜åˆ°è§’è‰².',
-        'Link attachments to responses templates.' => 'é“¾æ¥é™„ä»¶åˆ°å›å¤æ¨¡æ¿.',
-        'Link customers to groups.' => 'é“¾æ¥å®¢æˆ·åˆ°ç¾¤ç»„.',
-        'Link customers to services.' => 'é“¾æ¥å®¢æˆ·åˆ°æœåŠ¡.',
-        'Link queues to auto responses.' => '',
-        'Link responses to queues.' => 'é“¾æ¥å›å¤æ¨¡æ¿åˆ°é˜Ÿåˆ—',
-        'Link roles to groups.' => '',
-        'Link this ticket to other objects' => '',
-        'Links 2 tickets with a "Normal" type link.' => '',
-        'Links 2 tickets with a "ParentChild" type link.' => '',
-        'List of CSS files to always be loaded for the agent interface.' =>
-            '',
-        'List of CSS files to always be loaded for the customer interface.' =>
-            '',
-        'List of IE6-specific CSS files to always be loaded for the customer interface.' =>
-            '',
-        'List of IE7-specific CSS files to always be loaded for the agent interface.' =>
-            '',
-        'List of IE7-specific CSS files to always be loaded for the customer interface.' =>
-            '',
-        'List of IE8-specific CSS files to always be loaded for the agent interface.' =>
-            '',
-        'List of IE8-specific CSS files to always be loaded for the customer interface.' =>
-            '',
-        'List of JS files to always be loaded for the agent interface.' =>
-            '',
-        'List of JS files to always be loaded for the customer interface.' =>
-            '',
-        'List of default StandardResponses which are assigned automatically to new Queues upon creation.' =>
-            '',
-        'Log file for the ticket counter.' => '',
-        'Mail Accounts' => '',
-        'Makes the application check the MX record of email addresses before sending an email or submitting a telephone or email ticket.' =>
-            '',
-        'Makes the application check the syntax of email addresses.' => '',
-        'Makes the picture transparent.' => '',
-        'Makes the session management use html cookies. If html cookies are disabled or if the client browser disabled html cookies, then the system will work as usual and append the session id to the links.' =>
-            '',
-        'Manage PGP keys for email encryption.' => 'ç®¡ç†ç”¨æˆ·é‚®ä»¶åŠ å¯†çš„ PGP å¯†é’¥.',
-        'Manage POP3 or IMAP accounts to fetch email from.' => 'ç®¡ç†æ”¶å–é‚®ä»¶çš„ POP3 æˆ– IMAP å¸å·.',
-        'Manage S/MIME certificates for email encryption.' => 'ç®¡ç†é‚®ä»¶çš„ S/MIME åŠ å¯†è¯ä¹¦.',
-        'Manage existing sessions.' => 'ç®¡ç†å½“å‰ç™»å½•ä¼šè¯.',
-        'Manage periodic tasks.' => 'ç®¡ç†å‘¨æœŸæ€§æ‰§è¡Œçš„ä»»åŠ¡.',
-        'Max size (in characters) of the customer information table (phone and email) in the compose screen.' =>
-            '',
-        'Max size of the subjects in an email reply.' => '',
-        'Maximal auto email responses to own email-address a day (Loop-Protection).' =>
-            '',
-        'Maximal size in KBytes for mails that can be fetched via POP3/POP3S/IMAP/IMAPS (KBytes).' =>
-            '',
-        'Maximum number of tickets to be displayed in the result of a search in the agent interface.' =>
-            '',
-        'Maximum number of tickets to be displayed in the result of a search in the customer interface.' =>
-            '',
-        'Maximum size (in characters) of the customer info table in the queue view.' =>
-            '',
-        'Maximum size (in characters) of the customer information table in the ticket zoom view.' =>
-            '',
-        'Merge into a different ticket' => '',
-        'Module for To-selection in new ticket screen in the customer interface.' =>
-            '',
-        'Module to check customer permissions.' => '',
-        'Module to check if a user is in a special group. Access is granted, if the user is in the specified group and has ro and rw permissions.' =>
-            '',
-        'Module to check if arrived emails should be marked as email-internal (because of original forwared internal email it college). ArticleType and SenderType define the values for the arrived email/article.' =>
-            '',
-        'Module to check the agent responsible of a ticket.' => '',
-        'Module to check the group permissions for the access to customer tickets.' =>
-            '',
-        'Module to check the owner of a ticket.' => '',
-        'Module to check the watcher agents of a ticket.' => '',
-        'Module to compose signed messages (PGP or S/MIME).' => '',
-        'Module to crypt composed messages (PGP or S/MIME).' => '',
-        'Module to filter and manipulate incoming messages. Block/ignore all spam email with From: noreply@ address.' =>
-            '',
-        'Module to filter and manipulate incoming messages. Get a 4 digit number to ticket free text, use regex in Match e. g. From => \'(.+?)@.+?\', and use () as [***] in Set =>.' =>
-            '',
-        'Module to generate accounted time ticket statistics.' => '',
-        'Module to generate html OpenSearch profile for short ticket search in the agent interface.' =>
-            '',
-        'Module to generate html OpenSearch profile for short ticket search in the customer interface.' =>
-            '',
-        'Module to generate ticket solution and response time statistics.' =>
-            '',
-        'Module to generate ticket statistics.' => '',
-        'Module to show notifications and escalations (ShownMax: max. shown escalations, EscalationInMinutes: Show ticket which will escalation in, CacheTime: Cache of calculated escalations in seconds).' =>
-            '',
-        'Module to use database filter storage.' => '',
-        'Multiselect' => '',
-        'My Tickets' => '',
-        'Name of custom queue. The custom queue is a queue selection of your preferred queues and can be selected in the preferences settings.' =>
-            '',
-        'New email ticket' => 'æ–°çš„é‚®ä»¶ Ticket',
-        'New phone ticket' => 'æ–°çš„ç”µè¯ Ticket',
-        'Next possible ticket states after adding a phone note in the ticket phone inbound screen of the agent interface.' =>
-            '',
-        'Next possible ticket states after adding a phone note in the ticket phone outbound screen of the agent interface.' =>
-            '',
-        'Notifications (Event)' => 'é€šçŸ¥ï¼ˆäº‹ä»¶ï¼‰',
-        'Number of displayed tickets' => '',
-        'Number of lines (per ticket) that are shown by the search utility in the agent interface.' =>
-            '',
-        'Number of tickets to be displayed in each page of a search result in the agent interface.' =>
-            '',
-        'Number of tickets to be displayed in each page of a search result in the customer interface.' =>
-            '',
-        'Open tickets of customer' => '',
-        'Overloads (redefines) existing functions in Kernel::System::Ticket. Used to easily add customizations.' =>
-            '',
-        'Overview Escalated Tickets' => '',
-        'Overview Refresh Time' => '',
-        'Overview of all open Tickets.' => '',
-        'PGP Key Management' => '',
-        'PGP Key Upload' => '',
-        'Parameters for the CreateNextMask object in the preference view of the agent interface.' =>
-            '',
-        'Parameters for the CustomQueue object in the preference view of the agent interface.' =>
-            '',
-        'Parameters for the FollowUpNotify object in the preference view of the agent interface.' =>
-            '',
-        'Parameters for the LockTimeoutNotify object in the preference view of the agent interface.' =>
-            '',
-        'Parameters for the MoveNotify object in the preference view of the agent interface.' =>
-            '',
-        'Parameters for the NewTicketNotify object in the preferences view of the agent interface.' =>
-            '',
-        'Parameters for the RefreshTime object in the preference view of the agent interface.' =>
-            '',
-        'Parameters for the WatcherNotify object in the preference view of the agent interface.' =>
-            '',
-        'Parameters for the dashboard backend of the new tickets overview of the agent interface. "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin.' =>
-            '',
-        'Parameters for the dashboard backend of the ticket calendar of the agent interface. "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin.' =>
-            '',
-        'Parameters for the dashboard backend of the ticket escalation overview of the agent interface . "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin.' =>
-            '',
-        'Parameters for the dashboard backend of the ticket pending reminder overview of the agent interface . "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin.' =>
-            '',
-        'Parameters for the dashboard backend of the ticket pending reminder overview of the agent interface. "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin.' =>
-            '',
-        'Parameters for the dashboard backend of the ticket stats of the agent interface. "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin.' =>
-            '',
-        'Parameters for the pages (in which the dynamic fields are shown) of the dynamic fields overview.' =>
-            '',
-        'Parameters for the pages (in which the tickets are shown) of the medium ticket overview.' =>
-            '',
-        'Parameters for the pages (in which the tickets are shown) of the small ticket overview.' =>
-            '',
-        'Parameters for the pages (in which the tickets are shown) of the ticket preview overview.' =>
-            '',
-        'Parameters of the example SLA attribute Comment2.' => '',
-        'Parameters of the example queue attribute Comment2.' => '',
-        'Parameters of the example service attribute Comment2.' => '',
-        'Path for the log file (it only applies if "FS" was selected for LoopProtectionModule and it is mandatory).' =>
-            '',
-        'Path of the file that stores all the settings for the QueueObject object for the agent interface.' =>
-            '',
-        'Path of the file that stores all the settings for the QueueObject object for the customer interface.' =>
-            '',
-        'Path of the file that stores all the settings for the TicketObject for the agent interface.' =>
-            '',
-        'Path of the file that stores all the settings for the TicketObject for the customer interface.' =>
-            '',
-        'Performs the configured action for each event (as an Invoker) for each configured Webservice.' =>
-            '',
-        'Permitted width for compose email windows.' => '',
-        'Permitted width for compose note windows.' => '',
-        'Picture-Upload' => '',
-        'PostMaster Filters' => 'æ”¶ä»¶è¿‡æ»¤å™¨',
-        'PostMaster Mail Accounts' => 'é‚®ä»¶å¸å·ç®¡ç†',
-        'Print this ticket' => '',
-        'Protection against CSRF (Cross Site Request Forgery) exploits (for more info see http://en.wikipedia.org/wiki/Cross-site_request_forgery).' =>
-            '',
-        'Queue view' => 'é˜Ÿåˆ—è§†å›¾',
-        'Refresh Overviews after' => '',
-        'Refresh interval' => 'åˆ·æ–°é—´éš”æ—¶é—´',
-        'Replaces the original sender with current customer\'s email address on compose answer in the ticket compose screen of the agent interface.' =>
-            '',
-        'Required permissions to change the customer of a ticket in the agent interface.' =>
-            '',
-        'Required permissions to use the close ticket screen in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket bounce screen in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket compose screen in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket forward screen in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket free text screen in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket merge screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket note screen in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket phone inbound screen in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket phone outbound screen in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Required permissions to use the ticket responsible screen in the agent interface.' =>
-            '',
-        'Resets and unlocks the owner of a ticket if it was moved to another queue.' =>
-            '',
-        'Responses <-> Queues' => 'å›å¤ <-> é˜Ÿåˆ—',
-        'Restores a ticket from the archive (only if the event is a state change, from closed to any open available state).' =>
-            '',
-        'Roles <-> Groups' => 'è§’è‰² <-> ç»„',
-        'Runs an initial wildcard search of the existing customer users when accessing the AdminCustomerUser module.' =>
-            '',
-        'Runs the system in "Demo" mode. If set to "Yes", agents can change preferences, such as selection of language and theme via the agent web interface. These changes are only valid for the current session. It will not be possible for agents to change their passwords.' =>
-            '',
-        'S/MIME Certificate Upload' => 'å·²ä¸Šä¼ çš„ S/MIME è¯ä¹¦',
-        'Saves the attachments of articles. "DB" stores all data in the database (not recommended for storing big attachments). "FS" stores the data on the filesystem; this is faster but the webserver should run under the OTRS user. You can switch between the modules even on a system that is already in production without any loss of data.' =>
-            '',
-        'Saves the login and password on the session table in the database, if "DB" was selected for SessionModule.' =>
-            '',
-        'Search backend default router.' => '',
-        'Search backend router.' => '',
-        'Select your frontend Theme.' => 'ç•Œé¢ä¸»é¢˜.',
-        'Selects the module to handle uploads via the web interface. "DB" stores all uploads in the database, "FS" uses the file system.' =>
-            '',
-        'Selects the ticket number generator module. "AutoIncrement" increments the ticket number, the SystemID and the counter are used with SystemID.counter format (e.g. 1010138, 1010139). With "Date" the ticket numbers will be generated by the current date, the SystemID and the counter. The format looks like Year.Month.Day.SystemID.counter (e.g. 200206231010138, 200206231010139). With "DateChecksum"  the counter will be appended as checksum to the string of date and SystemID. The checksum will be rotated on a daily basis. The format looks like Year.Month.Day.SystemID.Counter.CheckSum (e.g. 2002070110101520, 2002070110101535). "Random" generates randomized ticket numbers in the format "SystemID.Random" (e.g. 100057866352, 103745394596).' =>
-            '',
-        'Send me a notification if a customer sends a follow up and I\'m the owner of the ticket or the ticket is unlocked and is in one of my subscribed queues.' =>
-            'å¦‚æœå®¢äººå›å¤çš„ Ticket å±äºæˆ‘, æˆ–è€…è¯¥ Ticket æœªé”å®šä½†åœ¨æˆ‘çš„é˜Ÿåˆ—, è¯·å‘é€ä¸€ä¸ªé€šçŸ¥ç»™æˆ‘.',
-        'Send notifications to users.' => 'å‘é€é€šçŸ¥ç»™ç”¨æˆ·.',
-        'Send ticket follow up notifications' => 'å‘é€ Ticket è·Ÿè¿›é€šçŸ¥',
-        'Sender type for new tickets from the customer inteface.' => '',
-        'Sends agent follow-up notification only to the owner, if a ticket is unlocked (the default is to send the notification to all agents).' =>
-            '',
-        'Sends all outgoing email via bcc to the specified address. Please use this only for backup reasons.' =>
-            '',
-        'Sends customer notifications just to the mapped customer. Normally, if no customer is mapped, the latest customer sender gets the notification.' =>
-            '',
-        'Sends reminder notifications of unlocked ticket after reaching the reminder date (only sent to ticket owner).' =>
-            '',
-        'Sends the notifications which are configured in the admin interface under "Notfication (Event)".' =>
-            '',
-        'Set sender email addresses for this system.' => 'ä¸ºç³»ç»Ÿè®¾ç½®å¯„ä»¶äººçš„é‚®ä»¶åœ°å€.',
-        'Set the default height (in pixels) of inline HTML articles in AgentTicketZoom.' =>
-            '',
-        'Set the maximum height (in pixels) of inline HTML articles in AgentTicketZoom.' =>
-            '',
-        'Set this ticket to pending' => '',
-        'Set this to yes if you trust in all your public and private pgp keys, even if they are not certified with a trusted signature.' =>
-            '',
-        'Sets if ticket owner must be selected by the agent.' => '',
-        'Sets the PendingTime of a ticket to 0 if the state is changed to a non-pending state.' =>
-            '',
-        'Sets the age in minutes (first level) for highlighting queues that contain untouched tickets.' =>
-            '',
-        'Sets the age in minutes (second level) for highlighting queues that contain untouched tickets.' =>
-            '',
-        'Sets the configuration level of the administrator. Depending on the config level, some sysconfig options will be not shown. The config levels are in in ascending order: Expert, Advanced, Beginner. The higher the config level is (e.g. Beginner is the highest), the less likely is it that the user can accidentally configure the system in a way that it is not usable any more.' =>
-            '',
-        'Sets the default article type for new email tickets in the agent interface.' =>
-            '',
-        'Sets the default article type for new phone tickets in the agent interface.' =>
-            '',
-        'Sets the default body text for notes added in the close ticket screen of the agent interface.' =>
-            '',
-        'Sets the default body text for notes added in the ticket move screen of the agent interface.' =>
-            '',
-        'Sets the default body text for notes added in the ticket note screen of the agent interface.' =>
-            '',
-        'Sets the default body text for notes added in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the default body text for notes added in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the default body text for notes added in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the default body text for notes added in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Sets the default link type of splitted tickets in the agent interface.' =>
-            '',
-        'Sets the default next state for new phone tickets in the agent interface.' =>
-            '',
-        'Sets the default next ticket state, after the creation of an email ticket in the agent interface.' =>
-            '',
-        'Sets the default note text for new telephone tickets. E.g \'New ticket via call\' in the agent interface.' =>
-            '',
-        'Sets the default priority for new email tickets in the agent interface.' =>
-            '',
-        'Sets the default priority for new phone tickets in the agent interface.' =>
-            '',
-        'Sets the default sender type for new email tickets in the agent interface.' =>
-            '',
-        'Sets the default sender type for new phone ticket in the agent interface.' =>
-            '',
-        'Sets the default subject for new email tickets (e.g. \'email Outbound\') in the agent interface.' =>
-            '',
-        'Sets the default subject for new phone tickets (e.g. \'Phone call\') in the agent interface.' =>
-            '',
-        'Sets the default subject for notes added in the close ticket screen of the agent interface.' =>
-            '',
-        'Sets the default subject for notes added in the ticket move screen of the agent interface.' =>
-            '',
-        'Sets the default subject for notes added in the ticket note screen of the agent interface.' =>
-            '',
-        'Sets the default subject for notes added in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the default subject for notes added in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the default subject for notes added in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the default subject for notes added in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Sets the default text for new email tickets in the agent interface.' =>
-            '',
-        'Sets the display order of the different items in the preferences view.' =>
-            '',
-        'Sets the inactivity time (in seconds) to pass before a session is killed and a user is loged out.' =>
-            '',
-        'Sets the minimal ticket counter size (if "AutoIncrement" was selected as TicketNumberGenerator). Default is 5, this means the counter starts from 10000.' =>
-            '',
-        'Sets the minimum number of characters before autocomplete query is sent.' =>
-            '',
-        'Sets the number of lines that are displayed in text messages (e.g. ticket lines in the QueueZoom).' =>
-            '',
-        'Sets the number of search results to be displayed for the autocomplete feature.' =>
-            '',
-        'Sets the options for PGP binary.' => '',
-        'Sets the order of the different items in the customer preferences view.' =>
-            '',
-        'Sets the password for private PGP key.' => '',
-        'Sets the prefered time units (e.g. work units, hours, minutes).' =>
-            '',
-        'Sets the prefix to the scripts folder on the server, as configured on the web server. This setting is used as a variable, OTRS_CONFIG_ScriptAlias which is found in all forms of messaging used by the application, to build links to the tickets within the system.' =>
-            '',
-        'Sets the responsible agent of the ticket in the close ticket screen of the agent interface.' =>
-            '',
-        'Sets the responsible agent of the ticket in the ticket bulk screen of the agent interface.' =>
-            '',
-        'Sets the responsible agent of the ticket in the ticket free text screen of the agent interface.' =>
-            '',
-        'Sets the responsible agent of the ticket in the ticket note screen of the agent interface.' =>
-            '',
-        'Sets the responsible agent of the ticket in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the responsible agent of the ticket in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the responsible agent of the ticket in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the responsible agent of the ticket in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Sets the service in the close ticket screen of the agent interface (Ticket::Service needs to be activated).' =>
-            '',
-        'Sets the service in the ticket free text screen of the agent interface (Ticket::Service needs to be activated).' =>
-            '',
-        'Sets the service in the ticket note screen of the agent interface (Ticket::Service needs to be activated).' =>
-            '',
-        'Sets the service in the ticket owner screen of a zoomed ticket in the agent interface (Ticket::Service needs to be activated).' =>
-            '',
-        'Sets the service in the ticket pending screen of a zoomed ticket in the agent interface (Ticket::Service needs to be activated).' =>
-            '',
-        'Sets the service in the ticket priority screen of a zoomed ticket in the agent interface (Ticket::Service needs to be activated).' =>
-            '',
-        'Sets the service in the ticket responsible screen of the agent interface (Ticket::Service needs to be activated).' =>
-            '',
-        'Sets the size of the statistic graph.' => '',
-        'Sets the stats hook.' => '',
-        'Sets the system time zone (required a system with UTC as system time). Otherwise this is a diff time to the local time.' =>
-            '',
-        'Sets the ticket owner in the close ticket screen of the agent interface.' =>
-            '',
-        'Sets the ticket owner in the ticket bulk screen of the agent interface.' =>
-            '',
-        'Sets the ticket owner in the ticket free text screen of the agent interface.' =>
-            '',
-        'Sets the ticket owner in the ticket note screen of the agent interface.' =>
-            '',
-        'Sets the ticket owner in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the ticket owner in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the ticket owner in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Sets the ticket owner in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Sets the ticket type in the close ticket screen of the agent interface (Ticket::Type needs to be activated).' =>
-            '',
-        'Sets the ticket type in the ticket bulk screen of the agent interface.' =>
-            '',
-        'Sets the ticket type in the ticket free text screen of the agent interface (Ticket::Type needs to be activated).' =>
-            '',
-        'Sets the ticket type in the ticket note screen of the agent interface (Ticket::Type needs to be activated).' =>
-            '',
-        'Sets the ticket type in the ticket owner screen of a zoomed ticket in the agent interface (Ticket::Type needs to be activated).' =>
-            '',
-        'Sets the ticket type in the ticket pending screen of a zoomed ticket in the agent interface (Ticket::Type needs to be activated).' =>
-            '',
-        'Sets the ticket type in the ticket priority screen of a zoomed ticket in the agent interface (Ticket::Type needs to be activated).' =>
-            '',
-        'Sets the ticket type in the ticket responsible screen of the agent interface (Ticket::Type needs to be activated).' =>
-            '',
-        'Sets the time type which should be shown.' => '',
-        'Sets the timeout (in seconds) for http/ftp downloads.' => '',
-        'Sets the timeout (in seconds) for package downloads. Overwrites "WebUserAgent::Timeout".' =>
-            '',
-        'Sets the user time zone per user (required a system with UTC as system time and UTC under TimeZone). Otherwise this is a diff time to the local time.' =>
-            '',
-        'Sets the user time zone per user based on java script / browser time zone offset feature at login time.' =>
-            '',
-        'Show a responsible selection in phone and email tickets in the agent interface.' =>
-            '',
-        'Show article as rich text even if rich text writing is disabled.' =>
-            '',
-        'Shows a count of icons in the ticket zoom, if the article has attachments.' =>
-            '',
-        'Shows a link in the menu for subscribing / unsubscribing from a ticket in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu that allows linking a ticket with another object in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu that allows merging tickets in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to access the history of a ticket in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to add a free text field in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to add a note in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to add a note to a ticket in every ticket overview of the agent interface.' =>
-            '',
-        'Shows a link in the menu to close a ticket in every ticket overview of the agent interface.' =>
-            '',
-        'Shows a link in the menu to close a ticket in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to delete a ticket in every ticket overview of the agent interface. Additional access control to show or not show this link can be done by using Key "Group" and Content like "rw:group1;move_into:group2".' =>
-            '',
-        'Shows a link in the menu to delete a ticket in the ticket zoom view of the agent interface. Additional access control to show or not show this link can be done by using Key "Group" and Content like "rw:group1;move_into:group2".' =>
-            '',
-        'Shows a link in the menu to go back in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to lock / unlock a ticket in the ticket overviews of the agent interface.' =>
-            '',
-        'Shows a link in the menu to lock/unlock tickets in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to move a ticket in every ticket overview of the agent interface.' =>
-            '',
-        'Shows a link in the menu to print a ticket or an article in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to see the customer who requested the ticket in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to see the history of a ticket in every ticket overview of the agent interface.' =>
-            '',
-        'Shows a link in the menu to see the owner of a ticket in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to see the priority of a ticket in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to see the responsible agent of a ticket in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to set a ticket as pending in the ticket zoom view of the agent interface.' =>
-            '',
-        'Shows a link in the menu to set a ticket as spam in every ticket overview of the agent interface. Additional access control to show or not show this link can be done by using Key "Group" and Content like "rw:group1;move_into:group2".' =>
-            '',
-        'Shows a link in the menu to set the priority of a ticket in every ticket overview of the agent interface.' =>
-            '',
-        'Shows a link in the menu to zoom a ticket in the ticket overviews of the agent interface.' =>
-            '',
-        'Shows a link to access article attachments via a html online viewer in the zoom view of the article in the agent interface.' =>
-            '',
-        'Shows a link to download article attachments in the zoom view of the article in the agent interface.' =>
-            '',
-        'Shows a link to see a zoomed email ticket in plain text.' => '',
-        'Shows a link to set a ticket as spam in the ticket zoom view of the agent interface. Additional access control to show or not show this link can be done by using Key "Group" and Content like "rw:group1;move_into:group2".' =>
-            '',
-        'Shows a list of all the involved agents on this ticket, in the close ticket screen of the agent interface.' =>
-            '',
-        'Shows a list of all the involved agents on this ticket, in the ticket free text screen of the agent interface.' =>
-            '',
-        'Shows a list of all the involved agents on this ticket, in the ticket note screen of the agent interface.' =>
-            '',
-        'Shows a list of all the involved agents on this ticket, in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows a list of all the involved agents on this ticket, in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows a list of all the involved agents on this ticket, in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows a list of all the involved agents on this ticket, in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Shows a list of all the possible agents (all agents with note permissions on the queue/ticket) to determine who should be informed about this note, in the close ticket screen of the agent interface.' =>
-            '',
-        'Shows a list of all the possible agents (all agents with note permissions on the queue/ticket) to determine who should be informed about this note, in the ticket free text screen of the agent interface.' =>
-            '',
-        'Shows a list of all the possible agents (all agents with note permissions on the queue/ticket) to determine who should be informed about this note, in the ticket note screen of the agent interface.' =>
-            '',
-        'Shows a list of all the possible agents (all agents with note permissions on the queue/ticket) to determine who should be informed about this note, in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows a list of all the possible agents (all agents with note permissions on the queue/ticket) to determine who should be informed about this note, in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows a list of all the possible agents (all agents with note permissions on the queue/ticket) to determine who should be informed about this note, in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows a list of all the possible agents (all agents with note permissions on the queue/ticket) to determine who should be informed about this note, in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Shows a preview of the ticket overview (CustomerInfo => 1 - shows also Customer-Info, CustomerInfoMaxSize max. size in characters of Customer-Info).' =>
-            '',
-        'Shows all both ro and rw queues in the queue view.' => '',
-        'Shows all open tickets (even if they are locked) in the escalation view of the agent interface.' =>
-            '',
-        'Shows all open tickets (even if they are locked) in the status view of the agent interface.' =>
-            '',
-        'Shows all the articles of the ticket (expanded) in the zoom view.' =>
-            '',
-        'Shows all the customer identifiers in a multi-select field (not useful if you have a lot of customer identifiers).' =>
-            '',
-        'Shows an owner selection in phone and email tickets in the agent interface.' =>
-            '',
-        'Shows colors for different article types in the article table.' =>
-            '',
-        'Shows customer history tickets in AgentTicketPhone, AgentTicketEmail and AgentTicketCustomer.' =>
-            '',
-        'Shows either the last customer article\'s subject or the ticket title in the small format overview.' =>
-            '',
-        'Shows existing parent/child queue lists in the system in the form of a tree or a list.' =>
-            '',
-        'Shows the activated ticket attributes in the customer interface (0 = Disabled and 1 = Enabled).' =>
-            '',
-        'Shows the articles sorted normally or in reverse, under ticket zoom in the agent interface.' =>
-            '',
-        'Shows the customer user information (phone and email) in the compose screen.' =>
-            '',
-        'Shows the customer user\'s info in the ticket zoom view.' => '',
-        'Shows the message of the day (MOTD) in the agent dashboard. "Group" is used to restrict access to the plugin (e. g. Group: admin;group1;group2;). "Default" indicates if the plugin is enabled by default or if the user needs to enable it manually.' =>
-            '',
-        'Shows the message of the day on login screen of the agent interface.' =>
-            '',
-        'Shows the ticket history' => '',
-        'Shows the ticket history (reverse ordered) in the agent interface.' =>
-            '',
-        'Shows the ticket priority options in the close ticket screen of the agent interface.' =>
-            '',
-        'Shows the ticket priority options in the move ticket screen of the agent interface.' =>
-            '',
-        'Shows the ticket priority options in the ticket bulk screen of the agent interface.' =>
-            '',
-        'Shows the ticket priority options in the ticket free text screen of the agent interface.' =>
-            '',
-        'Shows the ticket priority options in the ticket note screen of the agent interface.' =>
-            '',
-        'Shows the ticket priority options in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows the ticket priority options in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows the ticket priority options in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows the ticket priority options in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Shows the title fields in the close ticket screen of the agent interface.' =>
-            '',
-        'Shows the title fields in the ticket free text screen of the agent interface.' =>
-            '',
-        'Shows the title fields in the ticket note screen of the agent interface.' =>
-            '',
-        'Shows the title fields in the ticket owner screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows the title fields in the ticket pending screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows the title fields in the ticket priority screen of a zoomed ticket in the agent interface.' =>
-            '',
-        'Shows the title fields in the ticket responsible screen of the agent interface.' =>
-            '',
-        'Shows time in long format (days, hours, minutes), if set to "Yes"; or in short format (days, hours), if set to "No".' =>
-            '',
-        'Shows time use complete description (days, hours, minutes), if set to "Yes"; or just first letter (d, h, m), if set to "No".' =>
-            '',
-        'Skin' => 'çš®è‚¤',
-        'Sorts the tickets (ascendingly or descendingly) when a single queue is selected in the queue view and after the tickets are sorted by priority. Values: 0 = ascending (oldest on top, default), 1 = descending (youngest on top). Use the QueueID for the key and 0 or 1 for value.' =>
-            '',
-        'Spam Assassin example setup. Ignores emails that are marked with SpamAssassin.' =>
-            '',
-        'Spam Assassin example setup. Moves marked mails to spam queue.' =>
-            '',
-        'Specifies if an agent should receive email notification of his own actions.' =>
-            '',
-        'Specifies the background color of the chart.' => '',
-        'Specifies the background color of the picture.' => '',
-        'Specifies the border color of the chart.' => '',
-        'Specifies the border color of the legend.' => '',
-        'Specifies the bottom margin of the chart.' => '',
-        'Specifies the different article types that will be used in the system.' =>
-            '',
-        'Specifies the different note types that will be used in the system.' =>
-            '',
-        'Specifies the directory to store the data in, if "FS" was selected for TicketStorageModule.' =>
-            '',
-        'Specifies the directory where SSL certificates are stored.' => '',
-        'Specifies the directory where private SSL certificates are stored.' =>
-            '',
-        'Specifies the email address that should be used by the application when sending notifications. The email address is used to build the complete display name for the notification master (i.e. "OTRS Notification Master" otrs@your.example.com). You can use the OTRS_CONFIG_FQDN variable as set in your configuation, or choose another email address. Notifications are messages such as en::Customer::QueueUpdate or en::Agent::Move.' =>
-            '',
-        'Specifies the left margin of the chart.' => '',
-        'Specifies the name that should be used by the application when sending notifications. The sender name is used to build the complete display name for the notification master (i.e. "OTRS Notification Master" otrs@your.example.com). Notifications are messages such as en::Customer::QueueUpdate or en::Agent::Move.' =>
-            '',
-        'Specifies the path of the file for the logo in the page header (gif|jpg|png, 700 x 100 pixel).' =>
-            '',
-        'Specifies the path of the file for the performance log.' => '',
-        'Specifies the path to the converter that allows the view of Microsoft Excel files, in the web interface.' =>
-            '',
-        'Specifies the path to the converter that allows the view of Microsoft Word files, in the web interface.' =>
-            '',
-        'Specifies the path to the converter that allows the view of PDF documents, in the web interface.' =>
-            '',
-        'Specifies the path to the converter that allows the view of XML files, in the web interface.' =>
-            '',
-        'Specifies the right margin of the chart.' => '',
-        'Specifies the text color of the chart (e. g. caption).' => '',
-        'Specifies the text color of the legend.' => '',
-        'Specifies the text that should appear in the log file to denote a CGI script entry.' =>
-            '',
-        'Specifies the top margin of the chart.' => '',
-        'Specifies user id of the postmaster data base.' => '',
-        'Standard available permissions for agents within the application. If more permissions are needed, they can be entered here. Permissions must be defined to be effective. Some other good permissions have also been provided built-in: note, close, pending, customer, freetext, move, compose, responsible, forward, and bounce. Make sure that "rw" is always the last registered permission.' =>
-            '',
-        'Start number for statistics counting. Every new stat increments this number.' =>
-            '',
-        'Starts a wildcard search of the active object after the link object mask is started.' =>
-            '',
-        'Statistics' => 'ç»Ÿè®¡',
-        'Status view' => 'çŠ¶æ€è§†å›¾',
-        'Stores cookies after the browser has been closed.' => '',
-        'Strips empty lines on the ticket preview in the queue view.' => '',
-        'Textarea' => '',
-        'The "bin/PostMasterMailAccount.pl" will reconnect to POP3/POP3S/IMAP/IMAPS host after the specified count of messages.' =>
-            '',
-        'The agent skin\'s InternalName which should be used in the agent interface. Please check the available skins in Frontend::Agent::Skins.' =>
-            '',
-        'The customer skin\'s InternalName which should be used in the customer interface. Please check the available skins in Frontend::Customer::Skins.' =>
-            '',
-        'The divider between TicketHook and ticket number. E.g \': \'.' =>
-            '',
-        'The duration in minutes after emitting an event, in which the new escalation notify and start events are suppressed.' =>
-            '',
-        'The format of the subject. \'Left\' means \'[TicketHook#:12345] Some Subject\', \'Right\' means \'Some Subject [TicketHook#:12345]\', \'None\' means \'Some Subject\' and no ticket number. In the last case you should enable PostmasterFollowupSearchInRaw or PostmasterFollowUpSearchInReferences to recognize followups based on email headers and/or body.' =>
-            '',
-        'The headline shown in the customer interface.' => '',
-        'The identifier for a ticket, e.g. Ticket#, Call#, MyTicket#. The default is Ticket#.' =>
-            '',
-        'The logo shown in the header of the agent interface. The URL to the image can be a relative URL to the skin image directory, or a full URL to a remote web server.' =>
-            '',
-        'The logo shown in the header of the customer interface. The URL to the image can be a relative URL to the skin image directory, or a full URL to a remote web server.' =>
-            '',
-        'The logo shown on top of the login box of the agent interface. The URL to the image must be relative URL to the skin image directory.' =>
-            '',
-        'The text at the beginning of the subject in an email reply, e.g. RE, AW, or AS.' =>
-            '',
-        'The text at the beginning of the subject when an email is forwarded, e.g. FW, Fwd, or WG.' =>
-            '',
-        'This module and its PreRun() function will be executed, if defined, for every request. This module is useful to check some user options or to display news about new applications.' =>
-            '',
-        'This setting allows you to override the built-in country list with your own list of countries. This is particularly handy if you just want to use a small select group of countries.' =>
-            '',
-        'Ticket event module that triggers the escalation stop events.' =>
-            '',
-        'Ticket overview' => 'ç¥¨å•ä¸€è§ˆ',
-        'Tickets' => 'ç¥¨å•',
-        'Time in seconds that gets added to the actual time if setting a pending-state (default: 86400 = 1 day).' =>
-            '',
-        'Toolbar Item for a shortcut.' => '',
-        'Turns on the animations used in the GUI. If you have problems with these animations (e.g. performance issues), you can turn them off here.' =>
-            '',
-        'Turns on the remote ip address check. It should be set to "No" if the application is used, for example, via a proxy farm or a dialup connection, because the remote ip address is mostly different for the requests.' =>
-            '',
-        'Types' => 'ç±»å‹',
-        'Update Ticket "Seen" flag if every article got seen or a new Article got created.' =>
-            '',
-        'Update and extend your system with software packages.' => 'æ›´æ–°æˆ–å®‰è£…ç³»ç»Ÿçš„è½¯ä»¶åŒ…æˆ–æ¨¡å—.',
-        'Updates the ticket escalation index after a ticket attribute got updated.' =>
-            '',
-        'Updates the ticket index accelerator.' => '',
-        'Uses Cc recipients in reply Cc list on compose an email answer in the ticket compose screen of the agent interface.' =>
-            '',
-        'Uses richtext for viewing and editing: articles, salutations, signatures, standard responses, auto responses and notifications.' =>
-            '',
-        'View performance benchmark results.' => 'æŸ¥çœ‹æ€§èƒ½åŸºå‡†æµ‹è¯•ç»“æœ.',
-        'View system log messages.' => 'æŸ¥çœ‹ç³»ç»Ÿæ—¥å¿—ä¿¡æ¯',
-        'Wear this frontend skin' => 'å½“å‰ä½¿ç”¨çš„çš®è‚¤',
-        'Webservice path separator.' => '',
-        'When tickets are merged, a note will be added automatically to the ticket which is no longer active. In this text area you can define this text (This text cannot be changed by the agent).' =>
-            '',
-        'When tickets are merged, the customer can be informed per email by setting the check box "Inform Sender". In this text area, you can define a pre-formatted text which can later be modified by the agents.' =>
-            '',
-        'Your language' => '',
-        'Your queue selection of your favorite queues. You also get notified about those queues via email if enabled.' =>
-            'æ‚¨çš„æœ€å¸¸ç”¨é˜Ÿåˆ—ï¼Œå¦‚æœæ‚¨è®¾ç½®äº†é‚®ä»¶é€šçŸ¥ï¼Œæ‚¨å°†ä¼šå¾—åˆ°è¯¥é˜Ÿåˆ—çš„çŠ¶æ€é€šçŸ¥.',
-
-        #
-        # OBSOLETE ENTRIES FOR REFERENCE, DO NOT TRANSLATE!
-        #
-        '%s Tickets affected! Do you really want to use this job?' => '%s Tickets å—åˆ°å½±å“! æ‚¨ç¡®å®šè¦ä½¿ç”¨è¿™ä¸ªè®¡åˆ’ä»»åŠ¡?',
-        '(Checks MX recordes of used email addresses by composing an answer. Don\'t use CheckMXRecord if your OTRS machine is behinde a dial-up line $!)' =>
-            'é€šè¿‡æ’°å†™ç­”æ¡ˆæ¥æ£€æŸ¥ç”¨è¿‡çš„ç”µå­é‚®ä»¶åœ°å€çš„MXè®°å½•ã€‚æ‚¨OTRSæœºå™¨åœ¨æ‹¨å·æ¥å…¥çš„ä½é€Ÿç½‘ç»œé‡Œï¼Œè¯·ä¸è¦ä½¿ç”¨CheckMXRecord!',
-        '(Email of the system admin)' => '(ç³»ç»Ÿç®¡ç†å‘˜é‚®ä»¶åœ°å€)',
-        '(Full qualified domain name of your system)' => '(ç³»ç»ŸåŸŸå)',
-        '(Logfile just needed for File-LogModule!)' => '(åªæœ‰æ¿€æ´» File-LogModule æ—¶æ‰éœ€è¦ Logfile!)',
-        '(Note: It depends on your installation how many dynamic objects you can use)' =>
-            'æ³¨ï¼šè¿™å–å†³äºæ‚¨çš„å®‰è£…å¤šå°‘åŠ¨æ€å¯¹è±¡å¯ä»¥ä½¿ç”¨',
-        '(Note: Useful for big databases and low performance server)' => 'æ³¨ï¼šé€‚ç”¨äºå¤§å‹æ•°æ®åº“å’Œä½æ€§èƒ½çš„æœåŠ¡å™¨',
-        '(The identify of the system. Each ticket number and each http session id starts with this number)' =>
-            '(ç³»ç»Ÿæ ‡è¯†ç¬¦. Ticket ç¼–å·å’Œ http ä¼šè¯éƒ½ä»¥è¿™ä¸ªæ ‡è¯†ç¬¦å¼€å¤´)',
-        '(Used default language)' => '(ä½¿ç”¨ç¼ºçœè¯­è¨€)',
-        '(Used log backend)' => 'ä½¿ç”¨æ—¥å¿—åç«¯',
-        '(Used ticket number format)' => '(ä½¿ç”¨ Ticket ç¼–å·æ ¼å¼)',
-        'A article should have a title!' => 'æ–‡ç« å¿…é¡»æœ‰æ ‡é¢˜!',
-        'A message must be spell checked!' => 'æ¶ˆæ¯å¿…é¡»ç»è¿‡æ‹¼å†™æ£€æŸ¥!',
-        'A message should have a To: recipient!' => 'é‚®ä»¶å¿…é¡»æœ‰æ”¶ä»¶äºº!',
-        'A message should have a body!' => 'é‚®ä»¶å¿…é¡»åŒ…å«å†…å®¹!',
-        'A message should have a subject!' => 'é‚®ä»¶å¿…é¡»æœ‰æ ‡é¢˜!',
-        'A new password will be sent to your e-mail adress.' => 'ä¸€ä¸ªæ–°å¯†ç å·²ç»å‘é€åˆ°ä½ çš„é‚®ç®±',
-        'A required field is:' => 'å¿…é¡»çš„å­—æ®µæ˜¯',
-        'A web calendar' => 'Web æ—¥å†',
-        'A web file manager' => 'Web æ–‡ä»¶ç®¡ç†å™¨',
-        'A web mail client' => 'WebMail å®¢æˆ·ç«¯',
-        'About OTRS' => 'å…³äº OTRS',
-        'Absolut Period' => 'ç»å¯¹å‘¨æœŸ',
-        'Add Customer User' => 'å¢åŠ å®¢äºº',
-        'Add System Address' => 'å¢åŠ ç³»ç»Ÿé‚®ä»¶åœ°å€',
-        'Add User' => 'å¢åŠ äººå‘˜',
-        'Add a new Agent.' => 'å¢åŠ ä¸€ä¸ªæ–°çš„äººå‘˜',
-        'Add a new Customer Company.' => 'å¢åŠ å®¢äººåˆ°å•ä½é‡Œ',
-        'Add a new Group.' => 'å¢åŠ ä¸€ä¸ªæ–°ç»„',
-        'Add a new Notification.' => 'æ–°å¢ä¸€ä¸ªé€šçŸ¥.',
-        'Add a new Priority.' => 'å¢åŠ ä¸€ä¸ªæ–°çš„ä¼˜å…ˆçº§',
-        'Add a new Role.' => 'æ–°å¢ä¸€ä¸ªè§’è‰²',
-        'Add a new SLA.' => 'æ–°å¢ä¸€ä¸ªæœåŠ¡çº§åˆ«åè®®(SLA).',
-        'Add a new Salutation.' => 'å¢åŠ ä¸€ä¸ªæ–°çš„ç§°å‘¼è¯­',
-        'Add a new Service.' => 'æ–°å¢ä¸€ä¸ªæœåŠ¡',
-        'Add a new Signature.' => 'æ–°å¢ä¸€ä¸ªç­¾å',
-        'Add a new State.' => 'å¢åŠ ä¸€ä¸ªæ–°çš„çŠ¶æ€',
-        'Add a new System Address.' => 'å¢åŠ ä¸€ä¸ªæ–°çš„ç³»ç»Ÿé‚®ä»¶åœ°å€.',
-        'Add a new Type.' => 'å¢åŠ ä¸€ä¸ªæ–°çš„ç±»å‹',
-        'Add new attachment' => 'å¢åŠ æ–°çš„é™„ä»¶',
-        'Add note to ticket' => 'å¢åŠ æ³¨è§£åˆ° Ticket',
-        'Added User "%s"' => 'å¢åŠ ç”¨æˆ· "%s".',
-        'Admin-Area' => 'ç®¡ç†åŒºåŸŸ',
-        'Admin-Password' => 'ç®¡ç†å‘˜å¯†ç ',
-        'Admin-User' => 'æ•°æ®åº“ç®¡ç†å‘˜',
-        'Admin-password' => 'ç®¡ç†å‘˜å¯†ç ',
-        'Agent Mailbox' => 'æŠ€æœ¯æ”¯æŒäººå‘˜é‚®ç®±',
-        'Agent Preferences' => 'ä¸ªäººè®¾ç½®',
-        'Agent based' => 'åŸºäºæŠ€æœ¯æ”¯æŒä»£è¡¨çš„',
-        'Agent-Area' => 'æŠ€æœ¯æ”¯æŒäººå‘˜åŒº',
-        'All Agent variables.' => 'æ‰€æœ‰çš„æŠ€æœ¯äººå‘˜å˜é‡',
-        'All Agents' => 'æ‰€æœ‰æŠ€æœ¯æ”¯æŒäººå‘˜',
-        'All Customer variables like defined in config option CustomerUser.' =>
-            'æ‰€æœ‰å®¢æˆ·å˜é‡å¯ä»¥åœ¨é…ç½®é€‰é¡¹CustomerUserä¸­å®šä¹‰',
-        'All customer tickets.' => 'è¯¥å®¢æˆ·æ‰€æœ‰ Tickets è®°å½•.',
-        'All email addresses get excluded on replaying on composing and email.' =>
-            'æ‰€æœ‰è¢«å–æ¶ˆæ’°å†™é‚®ä»¶åŠŸèƒ½çš„é‚®ä»¶åœ°å€',
-        'All incoming emails with this "Email" (To:) will be dispatched in the selected queue!' =>
-            'æ‰€æœ‰å‘é€åˆ°è¯¥æ”¶ä»¶äººçš„æ¶ˆæ¯å°†è¢«è½¬åˆ°æ‰€é€‰æ‹©çš„é˜Ÿåˆ—',
-        'All messages' => 'æ‰€æœ‰æ¶ˆæ¯',
-        'All new tickets!' => 'æ‰€æœ‰æ–°çš„tickets',
-        'All tickets where the reminder date has reached!' => 'æ‰€æœ‰å·²åˆ°æé†’æ—¥æœŸçš„Ticket',
-        'All tickets which are escalated!' => 'æ‰€æœ‰å‡çº§çš„tickets',
-        'Allocate CustomerUser to service' => 'æŒ‡æ´¾å®¢æˆ·åˆ°æœåŠ¡',
-        'Allocate services to CustomerUser' => 'åˆ†é…æœåŠ¡ç»™å®¢æˆ·',
-        'Answer' => 'å›å¤',
-        'Article Create Times' => 'ä¿¡ä»¶åˆ›å»ºæ—¶é—´',
-        'Article Create Times (between)' => 'ä¿¡ä»¶åˆ›å»ºäºæŒ‡å®šæ—¶é—´èŒƒå›´',
-        'Article created between' => 'ä¿¡ä»¶åˆ›å»ºäºæŒ‡å®šæ—¶é—´èŒƒå›´',
-        'Article filter settings' => 'Article è¿‡æ»¤è®¾ç½®',
-        'Attach' => 'é™„ä»¶',
-        'Attribute' => 'å±æ€§',
-        'Auto Response From' => 'è‡ªåŠ¨å›å¤æ¥è‡ª',
-        'Bounce Ticket: ' => 'å›é€€ç¥¨å•ï¼š',
-        'Bounce ticket' => 'å›é€€ Ticket ',
-        'Can not create link with %s!' => 'ä¸èƒ½ä¸º %s åˆ›å»ºè¿æ¥',
-        'Can not delete link with %s!' => 'ä¸èƒ½åˆ é™¤ %s çš„è¿æ¥',
-        'Can\'t update password, invalid characters!' => 'æ— æ³•æ›´æ–°å¯†ç ï¼ŒåŒ…å«æ— æ•ˆå­—ç¬¦.',
-        'Can\'t update password, must be at least %s characters!' => 'æ— æ³•æ›´æ–°å¯†ç ï¼Œå¯†ç é•¿åº¦è‡³å°‘%sä½.',
-        'Can\'t update password, must contain 2 lower and 2 upper characters!' =>
-            'æ— æ³•æ›´æ–°å¯†ç ï¼Œè‡³å°‘åŒ…å«2ä¸ªå¤§å†™å­—ç¬¦å’Œ2ä¸ªå°å†™å­—ç¬¦.',
-        'Can\'t update password, needs at least 1 digit!' => 'æ— æ³•æ›´æ–°å¯†ç ï¼Œè‡³å°‘åŒ…å«1ä½æ•°å­—',
-        'Can\'t update password, needs at least 2 characters!' => 'æ— æ³•æ›´æ–°å¯†ç ï¼Œè‡³å°‘åŒ…å«2ä¸ªå­—æ¯!',
-        'Can\'t update password, your new passwords do not match! Please try again!' =>
-            'å¯†ç ä¸¤æ¬¡ä¸ç¬¦ï¼Œæ— æ³•æ›´æ–°ï¼Œè¯·é‡æ–°è¾“å…¥',
-        'Category Tree' => 'ç›®å½•æ ‘',
-        'Change %s settings' => 'ä¿®æ”¹ %s è®¾ç½®',
-        'Change Times' => 'æ”¹å˜æ—¶é—´',
-        'Change free text of ticket' => 'ä¿®æ”¹ Ticket é¢å¤–ä¿¡æ¯',
-        'Change owner of ticket' => 'ä¿®æ”¹ Ticket æ‰€æœ‰è€…',
-        'Change priority of ticket' => 'è°ƒæ•´ Ticket ä¼˜å…ˆçº§',
-        'Change responsible of ticket' => 'æ›´æ”¹ Ticket çš„è´Ÿè´£äºº',
-        'Change user <-> group settings' => 'ä¿®æ”¹ ç”¨æˆ· <-> ç»„ è®¾ç½®',
-        'ChangeLog' => 'æ”¹å˜è®°å½•',
-        'Checks MX recordes of used email addresses by composing an answer. Don\'t use CheckMXRecord if your OTRS machine is behind a dial-up line!' =>
-            'æ£€æŸ¥ MX è®°å½•å¯æ ¡éªŒé‚®ä»¶åœ°å€çš„æ­£ç¡®æ€§, å¦‚æœä½ çš„ OTRS ç³»ç»Ÿæ˜¯ä½¿ç”¨æ‹”å·æ–¹å¼æ¥å…¥äº’è”ç½‘, è¯·ä¸è¦æ‰“å¼€æ­¤åŠŸèƒ½!',
-        'Child-Object' => 'å­å¯¹è±¡',
-        'Clear From' => 'é‡ç½®',
-        'Clear To' => 'æ¸…ç©º',
-        'Click here to report a bug!' => 'ç‚¹å‡»è¿™é‡ŒæŠ¥å‘Šä¸€ä¸ª Bug!',
-        'Close Times' => 'å…³é—­æ—¶é—´',
-        'Close ticket' => 'å…³é—­ Ticket',
-        'Close type' => 'å…³é—­ç±»å‹',
-        'Close!' => 'å…³é—­!',
-        'Collapse View' => 'æŠ˜å ',
-        'Comment (internal)' => 'æ³¨é‡Š (å†…éƒ¨)',
-        'CompanyTickets' => 'å…¬å¸Tickets',
-        'Compose Answer' => 'æ’°å†™ç­”å¤',
-        'Compose Email' => 'æ’°å†™ Email',
-        'Compose Follow up' => 'æ’°å†™è·Ÿè¸ªç­”å¤',
-        'Config Options' => 'é…ç½®é€‰é¡¹',
-        'Config options (e. g. &lt;OTRS_CONFIG_HttpType&gt;)' => 'é…ç½®é€‰é¡¹ (ä¾‹å¦‚: &lt;OTRS_CONFIG_HttpType&gt;)',
-        'Config options (e. g. <OTRS_CONFIG_HttpType>)' => 'é…ç½®é€‰é¡¹ (ä¾‹å¦‚:<OTRS_CONFIG_HttpType>)',
-        'Contact customer' => 'è”ç³»å®¢æˆ·',
-        'Create New Template' => 'åˆ›å»ºæ–°çš„æ¨¡æ¿',
-        'Create Times' => 'åˆ›å»ºæ—¶é—´',
-        'Create new Phone Ticket' => 'åˆ›å»ºæ–°çš„ç”µè¯ Ticket',
-        'Create new database' => 'åˆ›å»ºæ–°çš„æ•°æ®åº“',
-        'Create new groups to handle access permissions for different groups of agent (e. g. purchasing department, support department, sales department, ...).' =>
-            'åˆ›å»ºæ–°çš„ç»„æ¥æ§åˆ¶ä¸åŒçš„å­˜å–æƒé™',
-        'Create/Expires' => 'åˆ›å»º/è¿‡æœŸ',
-        'CreateTicket' => 'åˆ›å»º Ticket',
-        'Customer Move Notify' => 'Ticket ç§»åŠ¨å®¢æˆ·é€šçŸ¥',
-        'Customer Owner Notify' => 'å®¢æˆ·æ‰€æœ‰è€…é€šå‘Š',
-        'Customer State Notify' => 'Ticket çŠ¶æ€å®¢æˆ·é€šçŸ¥',
-        'Customer User' => 'å®¢æˆ·ç”¨æˆ·',
-        'Customer User Management' => 'å®¢æˆ·ç”¨æˆ·ç®¡ç†',
-        'Customer Users' => 'å®¢æˆ·ç”¨æˆ·',
-        'Customer Users <-> Groups' => 'å®¢æˆ·ç”¨æˆ· <-> ç»„',
-        'Customer Users <-> Groups Management' => 'å®¢æˆ·ç”¨æˆ· <-> ç»„ ç®¡ç†',
-        'Customer Users <-> Services' => 'å®¢æˆ·å¸å· <-> æœåŠ¡ç®¡ç†',
-        'Customer Users <-> Services Management' => 'å®¢æˆ·å¸å· <-> æœåŠ¡ç®¡ç†',
-        'Customer history' => 'å®¢æˆ·å†å²æƒ…å†µ',
-        'Customer history search' => 'å®¢æˆ·å†å²æœç´¢',
-        'Customer history search (e. g. "ID342425").' => 'æœç´¢å®¢æˆ·å†å² (ä¾‹å¦‚ï¼š "ID342425").',
-        'Customer user will be needed to have a customer history and to login via customer panel.' =>
-            'å®¢æˆ·ç”¨æˆ·å¿…é¡»æœ‰ä¸€ä¸ªè´¦å·ä»å®¢æˆ·ç™»å½•é¡µé¢ç™»å½•ç³»ç»Ÿ.',
-        'CustomerUser' => 'å®¢æˆ·ç”¨æˆ·',
-        'D' => 'é™åº',
-        'DB Admin Password' => 'æ•°æ®ç³»ç»Ÿç®¡ç†å‘˜å¯†ç ',
-        'DB Admin User' => 'æ•°æ®åº“ç®¡ç†å‘˜ç”¨æˆ·å',
-        'DB Host' => 'æ•°æ®åº“ä¸»æœº',
-        'DB Type' => 'æ•°æ®åº“ç±»å‹',
-        'DB connect host' => 'æ•°æ®è¿æ¥ä¸»æœº',
-        'Days' => 'å¤©',
-        'Default' => 'ç¼ºçœ',
-        'Default Charset' => 'ç¼ºçœå­—ç¬¦é›†',
-        'Default Language' => 'ç¼ºçœè¯­è¨€',
-        'Delete old database' => 'åˆ é™¤æ—§æ•°æ®åº“',
-        'Detail' => 'ç»†èŠ‚',
-        'Diff' => 'æ¯”è¾ƒ',
-        'Discard all changes and return to the compose screen' => 'æ”¾å¼ƒæ‰€æœ‰ä¿®æ”¹,å›åˆ°æ’°å†™é¡µé¢',
-        'Do dispatch or filter incoming emails based on email X-Headers! RegExp is also possible.' =>
-            'å¦‚æœæ‚¨æƒ³æ ¹æ® X-Headers å†…å®¹æ¥è¿‡æ»¤ï¼Œå¯ä»¥ä½¿ç”¨æ­£è§„åˆ™è¡¨è¾¾å¼.',
-        'Do you really want to delete this Object?' => 'æ‚¨æ˜¯å¦ç¡®è®¤åˆ é™¤è¯¥å¯¹è±¡?',
-        'Do you really want to reinstall this package (all manual changes get lost)?' =>
-            'æ‚¨æ˜¯å¦å‡†å¤‡å¥½é‡æ–°å®‰è£…è¿™äº›è½¯ä»¶åŒ… (æ‰€æœ‰æ‰‹å·¥è®¾ç½®å°†ä¼šä¸è§)?',
-        'Don\'t forget to add a new user to groups and/or roles!' => 'ä¸è¦å¿˜è®°å¢åŠ ä¸€ä¸ªç”¨æˆ·åˆ°ç»„å’Œè§’è‰²!',
-        'Don\'t forget to add a new user to groups!' => 'ä¸è¦å¿˜è®°å¢åŠ æ–°çš„ç”¨æˆ·åˆ°ç»„!',
-        'Don\'t work with UserID 1 (System account)! Create new users!' =>
-            'ä¸è¦ä½¿ç”¨ UserID 1 (ç³»ç»Ÿè´¦å·)! è¯·åˆ›å»ºä¸€ä¸ªæ–°çš„ç”¨æˆ·!',
-        'Download Settings' => 'ä¸‹è½½è®¾ç½®',
-        'Download all system config changes.' => 'ä¸‹è½½æ‰€æœ‰çš„ç³»ç»Ÿé…ç½®å˜åŒ–.',
-        'Drop Database' => 'åˆ é™¤æ•°æ®åº“',
-        'Dynamic-Object' => 'åŠ¨æ€å¯¹è±¡',
-        'Edit Article' => 'ç¼–è¾‘ä¿¡ä»¶',
-        'Edit default services.' => 'ç¼–è¾‘é»˜è®¤æœåŠ¡',
-        'Email based' => 'åŸºäºç”µé‚®çš„',
-        'Email of the system admin.' => 'ç®¡ç†å‘˜çš„é‚®ä»¶åœ°å€',
-        'Escalation - First Response Time' => 'ä»»åŠ¡è°ƒå‡ - é¦–æ¬¡å›å¤çš„æ—¶é—´',
-        'Escalation - Solution Time' => 'ä»»åŠ¡è°ƒå‡ - è§£å†³çš„æ—¶é—´',
-        'Escalation - Update Time' => 'ä»»åŠ¡è°ƒå‡ - æ›´æ–°çš„æ—¶é—´',
-        'Escalation Times' => 'å‡çº§æ—¶é—´',
-        'Escalation time' => 'é™æ—¶ç­”å¤æ—¶é—´',
-        'Event is required!' => 'éœ€è¦äº‹ä»¶',
-        'Expand View' => 'å±•å¼€',
-        'Explanation' => 'è§£é‡Š',
-        'Export Config' => 'å¯¼å‡ºé…ç½®',
-        'FileManager' => 'æ–‡ä»¶ç®¡ç†å™¨',
-        'Filelist' => 'æ–‡ä»¶æ¸…å•',
-        'Filter for Language' => 'è¿‡æ»¤ç‰¹å®šçš„è¯­è¨€',
-        'Filtername' => 'è¿‡æ»¤å™¨åç§°',
-        'Follow up' => 'è·Ÿè¿›',
-        'Follow up notification' => 'è·Ÿè¸ªé€šçŸ¥',
-        'For very complex stats it is possible to include a hardcoded file.' =>
-            'å¯¹äºéå¸¸å¤æ‚çš„ç»Ÿè®¡æœ‰å¯èƒ½åŒ…æ‹¬ä¸€ä¸ªç¡¬ç¼–ç æ–‡ä»¶',
-        'Forward ticket: ' => 'è½¬å‘ç¥¨å•ï¼š',
-        'Frontend' => 'å‰ç«¯ç•Œé¢',
-        'Full qualified domain name of your system.' => 'ä¸ºç³»ç»ŸæŒ‡å®šä¸€ä¸ªåŸŸå(FQDN)',
-        'Fulltext-Search in Article (e. g. "Mar*in" or "Baue*")' => 'æ–‡ç« å…¨æ–‡æœç´¢ (ä¾‹å¦‚: "Mar*in" æˆ–è€… "Baue*")',
-        'General Catalog' => 'æ€»ç›®å½•',
-        'Go' => 'æ‰§è¡Œ',
-        'Group Ro' => 'åªè¯»æƒé™çš„ç»„',
-        'Group based' => 'åŸºäºç»„çš„',
-        'Group selection' => 'é€‰æ‹©ç»„',
-        'Hash/Fingerprint' => 'å“ˆå¸Œ/æŒ‡çº¹',
-        'Have a lot of fun!' => 'Have a lot of fun!',
-        'Have you lost your password?' => 'ä½ çš„å¯†ç å¿˜è®°äº†?',
-        'Help' => 'å¸®åŠ©',
-        'Here you can define the value series. You have the possibility to select one or two elements. Then you can select the attributes of elements. Each attribute will be shown as single value series. If you don\'t select any attribute all attributes of the element will be used if you generate a stat. As well a new attribute is added since the last configuration.' =>
-            'åœ¨è¿™é‡Œï¼Œæ‚¨å¯ä»¥å®šä¹‰ä¸€ç³»åˆ—çš„å€¼ã€‚ä½ æœ‰å¯èƒ½é€‰æ‹©ä¸€ä¸ªæˆ–ä¸¤ä¸ªå…ƒç´ ã€‚ç„¶åæ‚¨å¯ä»¥é€‰æ‹©å…ƒç´ çš„å±æ€§ã€‚æ¯ä¸ªå±æ€§å°†æ˜¾ç¤ºä¸ºå•ä¸€çš„å€¼ã€‚å¦‚æœæ‚¨ä¸é€‰æ‹©ä»»ä½•å±æ€§, é‚£ä¹ˆå½“æ‚¨ç”Ÿæˆä¸€ä¸ªç»Ÿè®¡çš„æ—¶å€™æ‰€æœ‰å…ƒç´ çš„å±æ€§å°†è¢«ä½¿ç”¨ã€‚å¹¶ä¸”ä¸€ä¸ªæ–°çš„å±æ€§è¢«æ›´æ–°åˆ°ä¸Šæ¬¡é…ç½®ä¸­',
-        'Here you can define the x-axis. You can select one element via the radio button. If you make no selection all attributes of the element will be used if you generate a stat. As well a new attribute is added since the last configuration.' =>
-            'åœ¨è¿™é‡Œï¼Œæ‚¨å¯ä»¥å®šä¹‰xè½´ã€‚æ‚¨å¯ä»¥é€‰æ‹©çš„ä¸€ä¸ªå› ç´ é€šè¿‡å•é€‰æŒ‰é’®ã€‚å¦‚æœä½ æ²¡æœ‰é€‰æ‹©ï¼Œæ‰€æœ‰å…ƒç´ çš„å±æ€§å°†è¢«ä½¿ç”¨å½“æ‚¨ç”Ÿæˆä¸€ä¸ªç»Ÿè®¡çš„æ—¶å€™ã€‚å¹¶ä¸”ä¸€ä¸ªæ–°çš„å±æ€§è¢«æ›´æ–°åˆ°ä¸Šæ¬¡é…ç½®ä¸­',
-        'Here you can define the x-axis. You can select one element via the radio button. Then you you have to select two or more attributes of the element. If you make no selection all attributes of the element will be used if you generate a stat. As well a new attribute is added since the last configuration.' =>
-            'åœ¨è¿™é‡Œï¼Œæ‚¨å¯ä»¥å®šä¹‰xè½´ã€‚æ‚¨å¯ä»¥é€‰æ‹©çš„ä¸€ä¸ªå› ç´ é€šè¿‡å•é€‰æŒ‰é’®ã€‚ç„¶åï¼Œä½ å¿…é¡»é€‰æ‹©è¯¥å…ƒç´ ä¸¤ä¸ªæˆ–ä¸¤ä¸ªä»¥ä¸Šçš„å±æ€§ã€‚å¦‚æœæ‚¨ä¸é€‰æ‹©ä»»ä½•å±æ€§, é‚£ä¹ˆå½“æ‚¨ç”Ÿæˆä¸€ä¸ªç»Ÿè®¡çš„æ—¶å€™æ‰€æœ‰å…ƒç´ çš„å±æ€§å°†è¢«ä½¿ç”¨ã€‚å¹¶ä¸”ä¸€ä¸ªæ–°çš„å±æ€§è¢«æ›´æ–°åˆ°ä¸Šæ¬¡é…ç½®ä¸­',
-        'Here you can insert a description of the stat.' => 'æ‚¨å¯ä»¥æ’å…¥ç»Ÿè®¡çš„æè¿°',
-        'Here you can select the dynamic object you want to use.' => 'æ‚¨å¯ä»¥é€‰æ‹©æ‚¨éœ€è¦ä½¿ç”¨çš„åŠ¨æ€å¯¹è±¡',
-        'Home' => 'é¦–é¡µ',
-        'How we should adress you' => 'æˆ‘ä»¬åº”è¯¥å¦‚ä½•ç§°å‘¼ä½ ?',
-        'If Secure Mode is not activated, activate it via SysConfig because your application is already running.' =>
-            'å¦‚æœå¯åŠ¨æ¨¡å¼æ²¡æœ‰è¢«å¯åŠ¨ï¼Œè¯·é€šè¿‡ç³»ç»Ÿè®¾ç½®å¯åŠ¨å®ƒå› ä¸ºæ‚¨çš„OTRSç¨‹åºå·²ç»è¿è¡Œ',
-        'If a new hardcoded file is available this attribute will be shown and you can select one.' =>
-            'å¦‚æœä¸€ä¸ªæ–°çš„ç¡¬ç¼–ç æ–‡ä»¶å­˜åœ¨ï¼Œå¯æ­¤å±æ€§å°†æ˜¾ç¤ºï¼Œæ‚¨å¯ä»¥é€‰æ‹©å…¶ä¸­ä¸€ä¸ª',
-        'If a ticket is closed and the customer sends a follow up the ticket will be locked for the old owner.' =>
-            'å¦‚æœ Ticket å·²ç»å¤„äºå…³é—­çŠ¶æ€ï¼Œè€Œå®¢æˆ·å°±å‘é€äº†ä¸€ä¸ªè·Ÿè¿› Ticketï¼Œé‚£ä¹ˆè¿™ä¸ª Ticket å°†ä¼šè¢«ç›´æ¥åŠ é”ï¼Œè€Œæ‰€æœ‰è€…è¢«å®šä¹‰ä¸ºåŸæ¥æ‰€æœ‰è€…',
-        'If a ticket will not be answered in this time, just only this ticket will be shown.' =>
-            'è¯¥é˜Ÿåˆ—åªæ˜¾ç¤ºè§„å®šæ—¶é—´å†…æ²¡æœ‰è¢«å¤„ç†çš„ Ticket',
-        'If an agent locks a ticket and he/she will not send an answer within this time, the ticket will be unlock automatically. So the ticket is viewable for all other agents.' =>
-            'å¦‚æœæŠ€æœ¯æ”¯æŒäººå‘˜é”å®šäº† Ticket,ä½†æ˜¯åœ¨ä¸€å®šçš„æ—¶é—´å†…æ²¡æœ‰å›å¤ï¼Œè¯¥ Ticket å°†ä¼šè¢«è‡ªåŠ¨è§£é”ï¼Œè€Œå¯¹æ‰€æœ‰çš„æŠ€æœ¯æ”¯æŒäººå‘˜å¯è§†.',
-        'If nothing is selected, then there are no permissions in this group (tickets will not be available for the user).' =>
-            'å¦‚æœä¸é€‰æ‹©ï¼Œåˆ™è¯¥ç»„æ²¡æœ‰æƒé™ (è¯¥ç»„æ— æ³•å¤„ç† Ticket)',
-        'If you need the sum of every column select yes.' => 'å¦‚éœ€è¦æ¯åˆ—çš„æ€»å’Œé€‰æ‹©â€™yesâ€™',
-        'If you need the sum of every row select yes' => 'å¦‚éœ€è¦æ¯è¡Œçš„æ€»å’Œé€‰æ‹© yesâ€™',
-        'If you use RegExp, you also can use the matched value in () as [***] in \'Set\'.' =>
-            'å¦‚æœæ‚¨ç”¨RegExpï¼Œæ‚¨ä¹Ÿèƒ½ä½¿ç”¨åŒ¹é…å€¼in () as [***] in \'Set\'',
-        'If you want to install OTRS on other database systems, please refer to the file README.database.' =>
-            'å¦‚æœä½ æƒ³åœ¨å…¶å®ƒçš„æ•°æ®ç³»ç»Ÿä¸Šå®‰è£… OTRS, è¯·å‚è€ƒ README.database æ–‡ä»¶.',
-        'Image' => 'å›¾ç‰‡',
-        'Important' => 'é‡è¦',
-        'In order to experience OTRS, you\'ll need to enable Javascript in your browser.' =>
-            'å¦‚æœä½ æƒ³ç»§ç»­ä½“éªŒOTRSï¼Œ ä½ éœ€è¦å¯ç”¨æµè§ˆå™¨çš„ JavaScript åŠŸèƒ½',
-        'In this form you can select the basic specifications.' => 'ä»¥è¿™ç§å½¢å¼ï¼Œæ‚¨å¯ä»¥é€‰æ‹©åŸºæœ¬è§„èŒƒ',
-        'Information about the Stat' => 'å…³äºç»Ÿè®¡çš„ä¿¡æ¯',
-        'Insert of the common specifications' => 'æ’å…¥å…±åŒè§„èŒƒ',
-        'Is Job Valid' => 'å·¥ä½œæœ‰æ•ˆ',
-        'Is Job Valid?' => 'å·¥ä½œæ˜¯å¦æœ‰æ•ˆ?',
-        'It\'s useful for ASP solutions.' => 'è¿™æ˜¯ä¸€ä¸ªæœ‰æ•ˆçš„åº”ç”¨æœåŠ¡æä¾›å•†(ASP)è§£å†³æ–¹æ¡ˆ.',
-        'It\'s useful for a lot of users and groups.' => 'å½“æœ‰å¤§é‡çš„ç”¨æˆ·å’Œç»„çš„æ—¶å€™ï¼Œè§’è‰²éå¸¸é€‚åˆ.',
-        'Job-List' => 'å·¥ä½œåˆ—è¡¨',
-        'Keyword' => 'å…³é”®å­—',
-        'Keywords' => 'å…³é”®å­—',
-        'Last update' => 'æœ€åæ›´æ–°äº',
-        'Link auto responses to queues.' => 'é“¾æ¥è‡ªåŠ¨å›å¤åˆ°é˜Ÿåˆ—.',
-        'Link groups to roles.' => 'é“¾æ¥ç¾¤ç»„åˆ°è§’è‰².',
-        'Link to Parent' => 'åˆå¹¶åˆ°ä¸Šä¸€çº§',
-        'LinkType' => 'è¿æ¥ç±»å‹',
-        'Linked as' => 'å·²è¿æ¥ä¸º',
-        'Load' => 'åŠ è½½',
-        'Load Settings' => 'åŠ è½½è®¾ç½®',
-        'Lock it to work on it!' => 'é”å®šå¹¶å¼€å§‹å·¥ä½œ !',
-        'Logfile' => 'æ—¥å¿—æ–‡ä»¶',
-        'Logfile too large, you need to reset it!' => 'æ—¥å¿—æ–‡ä»¶è¿‡å¤§, ä½ éœ€è¦é‡ç½®å®ƒ',
-        'Login failed! Your username or password was entered incorrectly.' =>
-            'ç™»å½•å¤±è´¥ï¼Œæ‚¨çš„ç”¨æˆ·åæˆ–å¯†ç ä¸æ­£ç¡®.',
-        'Mail Management' => 'é‚®ä»¶ç›¸å…³è®¾ç½®',
-        'Mailbox' => 'é‚®ç®±',
-        'Match' => 'åŒ¹é…',
-        'Message for new Owner' => 'ç»™æ‰€æœ‰è€…çš„æ¶ˆæ¯',
-        'Message sent to' => 'æ¶ˆæ¯å‘é€ç»™',
-        'Misc' => 'ç»¼åˆ',
-        'Modified' => 'ä¿®æ”¹äº',
-        'Move notification' => 'ç§»åŠ¨é€šçŸ¥',
-        'Multiple selection of the output format.' => 'è¾“å‡ºæ ¼å¼çš„å¤šç§é€‰æ‹©',
-        'My Queue' => 'æˆ‘çš„é˜Ÿåˆ—',
-        'MyTickets' => 'æˆ‘çš„ Tickets',
-        'Name is required!' => 'éœ€è¦åç§°!',
-        'New Agent' => 'æ–°æŠ€æœ¯æ”¯æŒäººå‘˜',
-        'New Customer' => 'æ–°å®¢æˆ·',
-        'New Group' => 'æ–°ç»„',
-        'New Group Ro' => 'æ–°çš„åªè¯»æƒé™çš„ç»„',
-        'New Password' => 'æ–°å¯†ç ',
-        'New Priority' => 'æ–°ä¼˜å…ˆçº§',
-        'New SLA' => 'æ–°çš„æœåŠ¡çº§åˆ«åè®®(SLA)',
-        'New Service' => 'æ–°çš„æœåŠ¡çº§åˆ«',
-        'New State' => 'æ–°çŠ¶æ€',
-        'New Ticket Lock' => 'æ–° Ticket é”',
-        'New TicketFreeFields' => 'æŒ‡å®šç¥¨å•è‡ªå®šä¹‰å­—æ®µ',
-        'New Title' => 'æ–°çš„æ ‡é¢˜',
-        'New Type' => 'æ–°çš„ç±»å‹',
-        'New account created. Sent Login-Account to %s.' => 'æ–°çš„å¸å·å·²åˆ›å»º, å¹¶å¯„é€é€šçŸ¥ç»™ %s.',
-        'New messages' => 'æ–°æ¶ˆæ¯',
-        'New password again' => 'é‡å¤æ–°å¯†ç ',
-        'Next Week' => 'ä¸‹å‘¨',
-        'No * possible!' => 'ä¸å¯ä½¿ç”¨é€šé…ç¬¦ "*" !',
-        'No Packages for requested Framework in this Online Repository, but Packages for other Frameworks!' =>
-            'åœ¨çº¿èµ„æºä¸­æ²¡æœ‰è½¯ä»¶åŒ…å¯¹åº”éœ€è¦çš„æ¡†æ¶ï¼Œä½†æœ‰å…¶ä»–çš„æ¡†æ¶æ‰€éœ€è½¯ä»¶åŒ…',
-        'No Packages or no new Packages in selected Online Repository!' =>
-            'åœ¨æ‰€é€‰çš„åœ¨çº¿èµ„æºä¸­ï¼Œæ²¡æœ‰ç°å­˜æˆ–æ–°çš„è½¯ä»¶åŒ…',
-        'No Permission' => 'æ— æƒé™',
-        'No matches found' => 'æ²¡æœ‰åŒ¹é…çš„æ•°æ®',
-        'No means, send agent and customer notifications on changes.' => 'å½“æœ‰æ”¹å˜æ—¶ä¸å‘é€é€šçŸ¥ç»™æŠ€æœ¯äººå‘˜æˆ–å®¢æˆ·.',
-        'No time settings.' => 'æ— æ—¶é—´çº¦æŸ.',
-        'Note Text' => 'æ³¨è§£',
-        'Notification (Customer)' => 'é€šçŸ¥(å®¢æˆ·)',
-        'Notifications' => 'ç³»ç»Ÿé€šçŸ¥',
-        'OTRS DB Name' => 'æ•°æ®åº“åç§°',
-        'OTRS DB Password' => 'OTRS ç”¨æˆ·å¯†ç ',
-        'OTRS DB User' => 'OTRS æ•°æ®åº“ç”¨æˆ·å',
-        'OTRS DB connect host' => 'OTRS æ•°æ®åº“ä¸»æœº',
-        'OTRS sends an notification email to the customer if the ticket is moved.' =>
-            'å¦‚æœ Ticket è¢«ç§»åŠ¨ï¼Œç³»ç»Ÿå°†ä¼šå‘é€ä¸€ä¸ªé€šçŸ¥é‚®ä»¶ç»™å®¢æˆ·',
-        'OTRS sends an notification email to the customer if the ticket owner has changed.' =>
-            'å¦‚æœ Ticket æ‰€æœ‰è€…æ”¹å˜ï¼Œç³»ç»Ÿå°†ä¼šå‘é€é€šçŸ¥é‚®ä»¶ç»™å®¢æˆ·.',
-        'OTRS sends an notification email to the customer if the ticket state has changed.' =>
-            'å¦‚æœ Ticket çŠ¶æ€æ”¹å˜ï¼Œç³»ç»Ÿå°†ä¼šå‘é€é€šçŸ¥é‚®ä»¶ç»™å®¢æˆ·',
-        'Object already linked as %s.' => 'å¯¹è±¡å·²è¿æ¥åˆ° %s.',
-        'Of couse this feature will take some system performance it self!' =>
-            'å½“ç„¶, è¯¥åŠŸèƒ½ä¼šå ç”¨ä¸€å®šçš„ç³»ç»Ÿèµ„æº, åŠ é‡ç³»ç»Ÿçš„è´Ÿæ‹…!',
-        'One or more errors occured!' => 'å‘ç”Ÿäº†ä¸€ä¸ªæˆ–å¤šä¸ªé”™è¯¯!',
-        'Online' => 'åœ¨çº¿äººå‘˜',
-        'Only for ArticleCreate Event.' => 'ä»…é€‚ç”¨äº ArticleCreate äº‹ä»¶',
-        'Open Tickets' => 'å¼€æ”¾ Tickets',
-        'Options of the current customer user data (e. g. <OTRS_CUSTOMER_DATA_UserFirstname>)' =>
-            'å½“å‰å®¢æˆ·ç”¨æˆ·ä¿¡æ¯ (ä¾‹å¦‚: <OTRS_CUSTOMER_DATA_UserFirstname>)',
-        'Options of the current customer user data (e. g. <OTRS_CUSTOMER_DATA_UserFirstname>).' =>
-            'å½“å‰å®¢æˆ·ä¿¡æ¯çš„å¯é€‰é¡¹ (e. g. <OTRS_CUSTOMER_DATA_UserFirstname>)',
-        'Options of the current user who requested this action (e. g. &lt;OTRS_CURRENT_USERFIRSTNAME&gt;)' =>
-            'é€‰æ‹©å½“å‰ç”¨æˆ·è°éœ€è¦è¿™ä¸ªåŠ¨ä½œ (ä¾‹å¦‚: &lt;OTRS_CURRENT_USERFIRSTNAME&gt;)',
-        'Options of the current user who requested this action (e. g. <OTRS_CURRENT_UserFirstname>)' =>
-            'åŠ¨ä½œè¯·æ±‚è€…ä¿¡æ¯ (ä¾‹å¦‚: <OTRS_CURRENT_UserFirstname>)',
-        'Options of the ticket data (e. g. &lt;OTRS_TICKET_Number&gt;, &lt;OTRS_TICKET_ID&gt;, &lt;OTRS_TICKET_Queue&gt;, &lt;OTRS_TICKET_State&gt;)' =>
-            'å¯é€‰çš„ ticket æ•°æ® (ä¾‹å¦‚: &lt;OTRS_TICKET_Number&gt;, &lt;OTRS_TICKET_ID&gt;, &lt;OTRS_TICKET_Queue&gt;, &lt;OTRS_TICKET_State&gt;)',
-        'Options of the ticket data (e. g. <OTRS_TICKET_Number>, <OTRS_TICKET_ID>, <OTRS_TICKET_Queue>, <OTRS_TICKET_State>)' =>
-            'å¯é€‰çš„ ticket æ•°æ® (ä¾‹å¦‚: <OTRS_TICKET_Number>, <OTRS_TICKET_ID>, <OTRS_TICKET_Queue>, <OTRS_TICKET_State>)',
-        'Options of the ticket data (e. g. <OTRS_TICKET_TicketNumber>, <OTRS_TICKET_TicketID>, <OTRS_TICKET_Queue>, <OTRS_TICKET_State>).' =>
-            'å¯é€‰çš„ ticket æ•°æ® (ä¾‹å¦‚: <OTRS_TICKET_TicketNumber>, <OTRS_TICKET_TicketID>, <OTRS_TICKET_Queue>, <OTRS_TICKET_State>)',
-        'Other Options' => 'å…¶ä»–é€‰é¡¹',
-        'Out Of Office' => 'ä¸åœ¨åŠå…¬å®¤',
-        'POP3 Account Management' => 'POP3 å¸æˆ·ç®¡ç†',
-        'Package' => 'è½¯ä»¶åŒ…',
-        'Package not correctly deployed! You should reinstall the Package again!' =>
-            'è½¯ä»¶åŒ…å±•å¼€ä¸æ­£å¸¸! æ‚¨éœ€è¦é‡æ–°å®‰è£…è¿™ä¸ªè½¯ä»¶åŒ…',
-        'Package not correctly deployed! You should reinstall the package again!' =>
-            'è¯¥è½¯ä»¶æ²¡æœ‰æ­£ç¡®å±•å¼€! ä½ åº”è¯¥å†è¯•é‡æ–°å®‰è£…è¯¥è½¯ä»¶åŒ…!',
-        'Param 1' => 'å‚æ•° 1',
-        'Param 2' => 'å‚æ•° 2',
-        'Param 3' => 'å‚æ•° 3',
-        'Param 4' => 'å‚æ•° 4',
-        'Param 5' => 'å‚æ•° 5',
-        'Param 6' => 'å‚æ•° 6',
-        'Parent-Object' => 'çˆ¶å¯¹è±¡',
-        'Password is already in use! Please use an other password!' => 'è¯¥å¯†ç è¢«ä½¿ç”¨ï¼Œè¯·ä½¿ç”¨å…¶ä»–å¯†ç !',
-        'Password is already used! Please use an other password!' => 'è¯¥å¯†ç è¢«ä½¿ç”¨ï¼Œè¯·ä½¿ç”¨å…¶ä»–å¯†ç !',
-        'Passwords doesn\'t match! Please try it again!' => 'å¯†ç ä¸ç¬¦ï¼Œè¯·é‡è¯•!',
-        'Pending Times' => 'å¾…å®šæ—¶é—´',
-        'Pending messages' => 'æ¶ˆæ¯è½¬å…¥ç­‰å¾…çŠ¶æ€',
-        'Pending type' => 'å¾…å¤„ç†ç±»å‹',
-        'Permission settings. You can select one or more groups to make the configurated stat visible for different agents.' =>
-            'æƒé™è®¾ç½®ã€‚æ‚¨å¯ä»¥é€‰æ‹©ä¸€ä¸ªæˆ–å¤šä¸ªå›¢ä½“ï¼Œä¸åŒçš„æŠ€æœ¯æ”¯æŒä»£è¡¨éƒ½å¯çœ‹è§è¯¥é…ç½®çš„ç»Ÿè®¡',
-        'Permissions to change the ticket owner in this group/queue.' => 'åœ¨è¯¥ç»„/é˜Ÿåˆ—ä¸­ä¿®æ”¹ Tickets æ‰€æœ‰è€…çš„æƒé™.',
-        'PhoneView' => 'ç”µè¯è§†å›¾',
-        'Please contact your admin' => 'è¯·è”ç³»ç³»ç»Ÿç®¡ç†å‘˜',
-        'Please enter subject.' => 'è¯·è¾“å…¥ä¸»é¢˜',
-        'Please fill out this form to recieve login credentials.' => 'è¯·å¡«å†™ä¸‹é¢çš„è¡¨æ ¼æ¥è·å–ç™»å½•åå’Œå¯†ç ',
-        'Please provide a name.' => 'è¯·æä¾›ä¸€ä¸ªä»»åŠ¡',
-        'PostMaster Filter' => 'é‚®ä»¶å†…å®¹è¿‡æ»¤',
-        'PostMaster Mail Account' => 'é‚®ä»¶å¸å·ç®¡ç†',
-        'Prio' => 'ä¼˜å…ˆçº§',
-        'Problem' => 'é—®é¢˜',
-        'Queue <-> Auto Responses Management' => 'é˜Ÿåˆ— <-> è‡ªåŠ¨å›å¤ç®¡ç†',
-        'Queue ID' => 'é˜Ÿåˆ—ç¼–å·',
-        'Queue Management' => 'é˜Ÿåˆ—ç®¡ç†',
-        'Queue is required.' => 'éœ€è¦æŒ‡å®šä¸€ä¸ªé˜Ÿåˆ—.',
-        'QueueView Refresh Time' => 'é˜Ÿåˆ—è§†å›¾åˆ·æ–°æ—¶é—´',
-        'QuickSearch' => 'å¿«é€Ÿæœç´¢',
-        'Realname' => 'çœŸå®å§“å',
-        'Rebuild' => 'é‡æ–°æ„å»º',
-        'Recipients' => 'æ”¶ä»¶äºº',
-        'Reminder' => 'æé†’',
-        'Reminder messages' => 'æ¶ˆæ¯æé†’',
-        'Remove this Search Term.' => 'åˆ é™¤æ­¤æœç´¢å…³é”®è¯',
-        'Required Field' => 'å¿…å¡«å­—æ®µ',
-        'Required!' => 'å¿…é¡»çš„!',
-        'Response Management' => 'å›å¤å†…å®¹ç®¡ç†',
-        'Responses <-> Attachments Management' => 'å›å¤ <-> é™„ä»¶ç®¡ç†',
-        'Responses <-> Queue Management' => 'å›å¤ <-> é˜Ÿåˆ—ç®¡ç†',
-        'Return to the compose screen' => 'å›åˆ°æ’°å†™é¡µé¢',
-        'Role' => 'è§’è‰²',
-        'Roles <-> Agents' => 'è§’è‰² <-> æœåŠ¡äººå‘˜',
-        'Roles <-> Groups Management' => 'è§’è‰² <-> ç»„ç®¡ç†',
-        'Roles <-> Users' => 'è§’è‰² <-> ç”¨æˆ·',
-        'Roles <-> Users Management' => 'è§’è‰² <-> ç”¨æˆ·ç®¡ç†',
-        'Run Search' => 'æœç´¢',
-        'Save Job as?' => 'ä¿å­˜å·¥ä½œä¸º?',
-        'Save Search-Profile as Template?' => 'å°†æœç´¢æ¡ä»¶ä¿å­˜ä¸ºæ¨¡æ¿',
-        'Schedule' => 'å®‰æ’',
-        'Search Result' => 'æœç´¢ç»“æœ',
-        'Search for' => 'æœç´¢',
-        'Search for customers (wildcards are allowed).' => 'æŸ¥æ‰¾å®¢æˆ·ï¼ˆå¯ä½¿ç”¨é€šé…ç¬¦ï¼‰ã€‚',
-        'Search-Profile as Template?' => 'ä¿æŒå½“å‰æœç´¢æ¡ä»¶ä¸ºæ¨¡æ¿',
-        'Secure Mode need to be enabled!' => 'å®‰å…¨æ¨¡å¼éœ€è¦å¯åŠ¨',
-        'Select Box' => 'é€‰æ‹©æ–¹æ¡†',
-        'Select Box Result' => 'æŸ¥è¯¢ç»“æœ',
-        'Select Group' => 'é€‰æ‹©ç»„ä»¶',
-        'Select Source (for add)' => 'é€‰æ‹©æ•°æ®æº(å¢åŠ åŠŸèƒ½ä½¿ç”¨)',
-        'Select group' => 'é€‰æ‹©ç»„ä»¶',
-        'Select the customeruser:service relations.' => 'é€‰æ‹©å®¢æˆ·å’ŒæœåŠ¡å…³ç³».',
-        'Select the element, which will be used at the X-axis' => 'é€‰æ‹©å°†ç”¨åœ¨xè½´çš„å…ƒç´ ',
-        'Select the restrictions to characterise the stat' => 'é€‰æ‹©é™åˆ¶å‚æ•°ï¼Œä½¿ç»Ÿè®¡ç‰¹å¾åŒ–',
-        'Select the role:user relations.' => 'é€‰æ‹© è§’è‰²:ç”¨æˆ· å…³è”.',
-        'Select the user:group permissions.' => 'é€‰æ‹© ç”¨æˆ·:ç»„ æƒé™.',
-        'Select your QueueView refresh time.' => 'é˜Ÿåˆ—è§†å›¾åˆ·æ–°æ—¶é—´.',
-        'Select your default spelling dictionary.' => 'é€‰æ‹©ä½ é»˜è®¤çš„æ‹¼å†™æ£€æŸ¥å­—å…¸.',
-        'Select your frontend Charset.' => 'ç•Œé¢å­—ç¬¦é›†.',
-        'Select your frontend QueueView.' => 'é˜Ÿåˆ—è§†å›¾.',
-        'Select your frontend language.' => 'ç•Œé¢è¯­è¨€',
-        'Select your out of office time.' => 'é€‰æ‹©ä½ ä¸åœ¨åŠå…¬å®¤çš„æ—¶é—´',
-        'Select your screen after creating a new ticket.' => 'é€‰æ‹©æ‚¨åˆ›å»ºæ–° Ticket åï¼Œæ‰€æ˜¾ç¤ºçš„è§†å›¾.',
-        'Selection needed' => 'é€‰æ‹©éœ€è¦',
-        'Send Administrative Message to Agents' => 'å‘é€ç®¡ç†ä¸Šçš„ä¿¡æ¯ç»™æœåŠ¡äººå‘˜',
-        'Send Notification' => 'å‘é€é€šçŸ¥',
-        'Send me a notification if a customer sends a follow up and I\'m the owner of this ticket.' =>
-            'å¦‚æœå®¢æˆ·å‘é€äº† Ticket å›å¤ï¼Œå¹¶ä¸”æˆ‘æ˜¯è¯¥ Ticket çš„æ‰€æœ‰è€….',
-        'Send me a notification of an watched ticket like an owner of an ticket.' =>
-            'å¯¹æˆ‘æ‰€å…³æ³¨çš„ticketï¼Œåƒè¯¥ticketçš„æ‹¥æœ‰äººä¸€æ ·ï¼Œç»™æˆ‘ä¹Ÿå‘ä¸€ä»½é€šçŸ¥',
-        'Send no notifications' => 'ä¸å‘é€é€šçŸ¥',
-        'Sent new password to: %s' => 'å‘é€æ–°çš„å¯†ç åˆ°: %s',
-        'Sent password token to: %s' => 'å‘é€å¯†ç åˆ°: %s',
-        'Sessions' => 'ä¼šè¯',
-        'Set customer user and customer id of a ticket' => 'è®¾ç½® Ticket æ‰€å±å®¢æˆ·ç”¨æˆ·',
-        'Show' => 'æ˜¾ç¤º',
-        'Site' => 'ç«™ç‚¹',
-        'Solution' => 'è§£å†³æ–¹æ¡ˆ',
-        'Sort by' => 'æ’åº',
-        'Source' => 'æ•°æ®æº',
-        'Spell Check' => 'æ‹¼å†™æ£€æŸ¥',
-        'Split' => 'åˆ†è§£',
-        'State Type' => 'çŠ¶æ€ç±»å‹',
-        'Static-File' => 'é™æ€æ–‡ä»¶',
-        'Stats-Area' => 'ç»Ÿè®¡åŒº',
-        'Sub-Queue of' => 'å­é˜Ÿåˆ—',
-        'Sub-Service of' => 'å­æœåŠ¡éš¶å±äº',
-        'Subscribe' => 'è®¢é˜…',
-        'Symptom' => 'ç—‡çŠ¶',
-        'System History' => 'ç³»ç»Ÿå†å²',
-        'System State Management' => 'ç³»ç»ŸçŠ¶æ€ç®¡ç†',
-        'Systemaddress' => 'ç³»ç»Ÿé‚®ä»¶åœ°å€',
-        'Take care that you also updated the default states in you Kernel/Config.pm!' =>
-            'æ‚¨åŒæ—¶æ›´æ–°äº† Kernel/Config.pm ä¸­çš„ç¼ºçœçŠ¶æ€!',
-        'The User Name you wish to have' => 'å¸Œæœ›ä½¿ç”¨çš„ç³»ç»Ÿç™»å½•ç”¨æˆ·å',
-        'The customer is required.' => 'å®¢æˆ·å­—æ®µæ˜¯å¿…é¡»çš„.',
-        'The field is required.' => 'è¯¥å­—æ®µæ˜¯å¿…éœ€çš„',
-        'The identify of the system. Each ticket number and each http session id starts with this number.' =>
-            'è¿™æ˜¯ç³»ç»Ÿçš„æ ‡è¯†ç¬¦. æ¯ä¸€ä¸ª Ticket å’Œ http ä¼šè¯éƒ½ä½¿ç”¨æ­¤æ•°å­—.',
-        'The message being composed has been closed.  Exiting.' => 'è¿›è¡Œæ¶ˆæ¯æ’°å†™çš„çª—å£å·²ç»è¢«å…³é—­,é€€å‡º.',
-        'The ticket was locked' => 'æ­¤ç¥¨å•è¢«é”å®š',
-        'These values are read-only.' => 'è¯¥æ•°æ®åªè¯».',
-        'These values are required.' => 'è¯¥æ¡ç›®å¿…é¡»å¡«å†™.',
-        'This account exists.' => 'è¿™ä¸ªå¸æˆ·å·²å­˜åœ¨',
-        'This is useful if you want that no one can get the result of the stat or the stat isn\'t ready configurated.' =>
-            'è¿™æ˜¯éå¸¸æœ‰ç”¨çš„ï¼Œå¦‚æœä½ ä¸æƒ³è®©äººå¾—åˆ°ç»Ÿè®¡çš„ç»“æœæˆ–ç»Ÿè®¡ç»“æœå¹¶ä¸å®Œæ•´',
-        'This window must be called from compose window' => 'è¯¥çª—å£å¿…é¡»ç”±æ’°å†™çª—å£è°ƒç”¨',
-        'Ticket Change Times (before/after)' => 'Ticket æ›´æ”¹æ—¶é—´ (ä¹‹å‰/ä¹‹å)',
-        'Ticket Change Times (between)' => 'Ticket æ›´æ”¹æ—¶é—´ (æ—¶é—´èŒƒå›´)',
-        'Ticket Change Times (from moment)' => 'Ticket æ›´æ”¹æ—¶é—´ (æœˆä»½)',
-        'Ticket Close Times (before/after)' => 'Ticket å…³é—­æ—¶é—´',
-        'Ticket Close Times (between)' => 'Ticket å…³é—­æ—¶é—´ (æ—¶é—´èŒƒå›´)',
-        'Ticket Close Times (from moment)' => 'Ticket å…³é—­æ—¶é—´ (æœˆä»½)',
-        'Ticket Create Times (before/after)' => 'Ticket åˆ›å»ºæ—¶é—´ (ä¹‹å‰/ä¹‹å)',
-        'Ticket Create Times (between)' => 'Ticket åˆ›å»ºæ—¶é—´ (æ—¶é—´èŒƒå›´)',
-        'Ticket Create Times (from moment)' => 'Ticket åˆ›å»ºæ—¶é—´ (æœˆä»½)',
-        'Ticket Lock' => 'Ticket é”çŠ¶æ€',
-        'Ticket Number Generator' => 'Ticket ç¼–å·ç”Ÿæˆå™¨',
-        'Ticket Search' => 'Ticket æœç´¢',
-        'Ticket Status View' => 'Ticket çŠ¶æ€è§†å›¾',
-        'Ticket Type is required!' => 'Ticket çš„ç±»å‹æ˜¯å¿…é¡»çš„!',
-        'Ticket escalation!' => 'Ticket é™æ—¶å¤„ç†!',
-        'Ticket locked!' => 'Ticket è¢«é”å®š!',
-        'Ticket owner options (e. g. &lt;OTRS_OWNER_USERFIRSTNAME&gt;)' =>
-            'å¯ç”¨çš„ Ticket å½’å±äººä¿¡æ¯ (ä¾‹å¦‚: &lt;OTRS_OWNER_USERFIRSTNAME&gt;)',
-        'Ticket owner options (e. g. <OTRS_OWNER_UserFirstname>)' => 'Ticket æ‰€æœ‰è€…é€‰é¡¹ (ä¾‹å¦‚: <OTRS_OWNER_UserFirstname>)',
-        'Ticket owner options (e. g. <OTRS_OWNER_UserFirstname>).' => 'Ticketæ‹¥æœ‰è€…çš„å¯é€‰é¡¹ e. g. <OTRS_OWNER_UserFirstname>).',
-        'Ticket responsible options (e. g. <OTRS_RESPONSIBLE_UserFirstname>).' =>
-            'Ticketè´£ä»»é€‰é¡¹ (e. g. <OTRS_RESPONSIBLE_UserFirstname>).',
-        'Ticket selected for bulk action!' => 'è¢«é€‰ä¸­è¿›è¡Œæ‰¹é‡æ“ä½œçš„ Tickets',
-        'Ticket unlock!' => 'è§£é” Ticket!',
-        'Ticket#' => 'Ticket å·ç ',
-        'Ticket-Area' => 'TicketåŒº',
-        'TicketFreeFields' => 'ç¥¨å•è‡ªå®šä¹‰å­—æ®µ',
-        'TicketFreeText' => 'Ticket é¢å¤–ä¿¡æ¯',
-        'TicketZoom' => 'Ticket å±•å¼€',
-        'Tickets available' => 'å¯ç”¨çš„ç¥¨å•',
-        'Tickets shown' => 'æ˜¾ç¤º Ticket',
-        'Tickets which need to be answered!' => 'éœ€è¦å›ç­”çš„ Ticket',
-        'Time units is a required field.' => 'æ—¶é—´å•ä½ä¸ºå¿…é¡»çš„å­—æ®µ.',
-        'Time1' => 'æ—¶é—´1',
-        'Time2' => 'æ—¶é—´2',
-        'Time3' => 'æ—¶é—´3',
-        'Time4' => 'æ—¶é—´4',
-        'Time5' => 'æ—¶é—´5',
-        'Time6' => 'æ—¶é—´6',
-        'Timeover' => 'ç»“æŸ',
-        'Times' => 'æ—¶é—´',
-        'Title of the stat.' => 'ç»Ÿè®¡çš„æ ‡é¢˜',
-        'To get the article attribute (e. g. (<OTRS_AGENT_From>, <OTRS_AGENT_To>, <OTRS_AGENT_Cc>, <OTRS_AGENT_Subject> and <OTRS_AGENT_Body>).' =>
-            'å–å¾—ä¿¡ä»¶çš„å±æ€§ (ä¾‹å¦‚: <OTRS_AGENT_From>, <OTRS_AGENT_To>, <OTRS_AGENT_Cc>, <OTRS_AGENT_Subject> and <OTRS_AGENT_Body>).',
-        'Top of Page' => 'é¡µé¢é¡¶ç«¯',
-        'Total hits' => 'ç‚¹å‡»æ•°',
-        'U' => 'å‡åº',
-        'Unable to parse Online Repository index document!' => 'ä¸èƒ½åˆ†åˆ—åœ¨çº¿èµ„æºç´¢å¼•æ–‡æ¡£',
-        'Uniq' => 'å•ä¸€',
-        'Unlock Tickets' => 'è§£é” Tickets',
-        'Unlock to give it back to the queue!' => 'è§£é”å¹¶é€å›é˜Ÿåˆ—!',
-        'Unsubscribe' => 'é€€è®¢',
-        'Use utf-8 it your database supports it!' => 'å¦‚æœæ‚¨çš„æ•°æ®åº“æ”¯æŒï¼Œä½¿ç”¨UTF-8å­—ç¬¦ç¼–ç !',
-        'Useable options' => 'å¯ç”¨å®å˜é‡',
-        'Used default language.' => 'æŒ‡å®šé»˜è®¤è¯­è¨€.',
-        'User Management' => 'äººå‘˜ç®¡ç†',
-        'User will be needed to handle tickets.' => 'éœ€è¦ç”¨æˆ·æ¥å¤„ç† Tickets.',
-        'Users' => 'ç”¨æˆ·',
-        'Users <-> Groups' => 'ç”¨æˆ· <-> ç»„',
-        'Users <-> Groups Management' => 'ç”¨æˆ· <-> ç»„ç®¡ç†',
-        'Verify Password' => 'ç¡®è®¤æ–°å¯†ç ',
-        'Warning! This tickets will be removed from the database! This tickets are lost!' =>
-            'è­¦å‘Š! è¯¥ Ticket å°†ä¼šä»æ•°æ®åº“åˆ é™¤ï¼Œæ— æ³•æ¢å¤!',
-        'Watch notification' => 'å…³æ³¨é€šçŸ¥',
-        'Web-Installer' => 'WEB å®‰è£…å‘å¯¼',
+        # Misc
+        'Edit Article' => '±à¼­ĞÅ¼ş',
+        'Create Database' => '´´½¨Êı¾İ¿â',
+        'DB Host' => 'Êı¾İ¿âÖ÷»ú',
+        'Ticket Number Generator' => 'Ticket ±àºÅÉú³ÉÆ÷',
+        'Create new Phone Ticket' => '´´½¨ĞÂµÄµç»° Ticket',
+        'Symptom' => 'Ö¢×´',
+        'U' => 'ÉıĞò',
+        'Site' => 'Õ¾µã',
+        'Customer history search (e. g. "ID342425").' => 'ËÑË÷¿Í»§ÀúÊ· (ÀıÈç£º "ID342425").',
+        'Can not delete link with %s!' => '²»ÄÜÉ¾³ı %s µÄÁ¬½Ó',
+        'for agent firstname' => '¼¼ÊõÖ§³ÖÈËÔ± Ãû',
+        'Close!' => '¹Ø±Õ!',
+        'No means, send agent and customer notifications on changes.' => 'µ±ÓĞ¸Ä±äÊ±²»·¢ËÍÍ¨Öª¸ø¼¼ÊõÈËÔ±»ò¿Í»§.',
+        'A web calendar' => 'Web ÈÕÀú',
+        'to get the realname of the sender (if given)' => 'ÓÊ¼ş·¢ËÍÈËµÄÕæÊµĞÕÃû (Èç¹û´æÔÚ)',
+        'OTRS DB Name' => 'Êı¾İ¿âÃû³Æ',
+        'Notification (Customer)' => 'Í¨Öª(¿Í»§)',
+        'Select Source (for add)' => 'Ñ¡ÔñÊı¾İÔ´(Ôö¼Ó¹¦ÄÜÊ¹ÓÃ)',
+        'Options of the ticket data (e. g. &lt;OTRS_TICKET_Number&gt;, &lt;OTRS_TICKET_ID&gt;, &lt;OTRS_TICKET_Queue&gt;, &lt;OTRS_TICKET_State&gt;)' => '¿ÉÑ¡µÄ ticket Êı¾İ (ÀıÈç: &lt;OTRS_TICKET_Number&gt;, &lt;OTRS_TICKET_ID&gt;, &lt;OTRS_TICKET_Queue&gt;, &lt;OTRS_TICKET_State&gt;)',
+        'Child-Object' => '×Ó¶ÔÏó',
+        'Days' => 'Ìì',
+        'Queue ID' => '¶ÓÁĞ±àºÅ',
+        'Config options (e. g. <OTRS_CONFIG_HttpType>)' => 'ÅäÖÃÑ¡Ïî (ÀıÈç:<OTRS_CONFIG_HttpType>)',
+        'System History' => 'ÏµÍ³ÀúÊ·',
+        'customer realname' => '¿Í»§ÕæÊµĞÕÃû',
+        'Pending messages' => 'ÏûÏ¢×ªÈëµÈ´ı×´Ì¬',
+        'for agent login' => '¼¼ÊõÖ§³ÖÈËÔ± µÇÂ¼Ãû',
+        'Keyword' => '¹Ø¼ü×Ö',
+        'Close type' => '¹Ø±ÕÀàĞÍ',
+        'DB Admin User' => 'Êı¾İ¿â¹ÜÀíÔ±ÓÃ»§Ãû',
+        'for agent user id' => '¼¼ÊõÖ§³ÖÈËÔ± ÓÃ»§Ãû',
+        'Change user <-> group settings' => 'ĞŞ¸Ä ÓÃ»§ <-> ×é ÉèÖÃ',
+        'Problem' => 'ÎÊÌâ',
+        'Escalation' => 'µ÷Õû',
+        '"}' => '',
+        'Order' => '´ÎĞò',
+        'next step' => 'ÏÂÒ»²½',
+        'Follow up' => '¸ú½ø',
+        'Customer history search' => '¿Í»§ÀúÊ·ËÑË÷',
+        'PostMaster Mail Account' => 'ÓÊ¼şÕÊºÅ¹ÜÀí',
+        'Stat#' => 'Í³¼ÆºÅ',
+        'Create new database' => '´´½¨ĞÂµÄÊı¾İ¿â',
+        'Go' => 'Ö´ĞĞ',
+        'Keywords' => '¹Ø¼ü×Ö',
+        'Ticket Escalation View' => 'µ÷Õû²é¿´ Ticket',
+        'Today' => '½ñÌì',
+        'No * possible!' => '²»¿ÉÊ¹ÓÃÍ¨Åä·û "*" !',
+        'Load' => '¼ÓÔØ',
+        'PostMaster Filter' => 'ÓÊ¼şÄÚÈİ¹ıÂË',
+        'Options of the current user who requested this action (e. g. &lt;OTRS_CURRENT_USERFIRSTNAME&gt;)' => 'Ñ¡Ôñµ±Ç°ÓÃ»§Ë­ĞèÒªÕâ¸ö¶¯×÷ (ÀıÈç: &lt;OTRS_CURRENT_USERFIRSTNAME&gt;)',
+        'Message for new Owner' => '¸øËùÓĞÕßµÄÏûÏ¢',
+        'to get the first 5 lines of the email' => 'ÓÊ¼şÕıÎÄÇ°5ĞĞ',
+        'Sort by' => 'ÅÅĞò',
+        'OTRS DB Password' => 'OTRS ÓÃ»§ÃÜÂë',
+        'Last update' => '×îºó¸üĞÂÓÚ',
+        'Tomorrow' => 'Ã÷Ìì',
+        'not rated' => '²»ÓèÆÀ¼¶',
+        'to get the first 20 character of the subject' => 'ÓÊ¼ş±êÌâÇ°20¸ö×Ö·û',
+        'Select the customeruser:service relations.' => 'Ñ¡Ôñ¿Í»§ºÍ·şÎñ¹ØÏµ.',
+        'DB Admin Password' => 'Êı¾İÏµÍ³¹ÜÀíÔ±ÃÜÂë',
+        'Drop Database' => 'É¾³ıÊı¾İ¿â',
+        'Here you can define the x-axis. You can select one element via the radio button. Then you you have to select two or more attributes of the element. If you make no selection all attributes of the element will be used if you generate a stat. As well a new attribute is added since the last configuration.' => 'ÔÚÕâÀï£¬Äú¿ÉÒÔ¶¨ÒåxÖá¡£Äú¿ÉÒÔÑ¡ÔñµÄÒ»¸öÒòËØÍ¨¹ıµ¥Ñ¡°´Å¥¡£È»ºó£¬Äã±ØĞëÑ¡Ôñ¸ÃÔªËØÁ½¸ö»òÁ½¸öÒÔÉÏµÄÊôĞÔ¡£Èç¹ûÄú²»Ñ¡ÔñÈÎºÎÊôĞÔ, ÄÇÃ´µ±ÄúÉú³ÉÒ»¸öÍ³¼ÆµÄÊ±ºòËùÓĞÔªËØµÄÊôĞÔ½«±»Ê¹ÓÃ¡£²¢ÇÒÒ»¸öĞÂµÄÊôĞÔ±»¸üĞÂµ½ÉÏ´ÎÅäÖÃÖĞ',
+        'FileManager' => 'ÎÄ¼ş¹ÜÀíÆ÷',
+        'Options of the current customer user data (e. g. <OTRS_CUSTOMER_DATA_UserFirstname>)' => 'µ±Ç°¿Í»§ÓÃ»§ĞÅÏ¢ (ÀıÈç: <OTRS_CUSTOMER_DATA_UserFirstname>)',
+        'Pending type' => '´ı´¦ÀíÀàĞÍ',
+        'Comment (internal)' => '×¢ÊÍ (ÄÚ²¿)',
+        'Ticket owner options (e. g. &lt;OTRS_OWNER_USERFIRSTNAME&gt;)' => '¿ÉÓÃµÄ Ticket ¹éÊôÈËĞÅÏ¢ (ÀıÈç: &lt;OTRS_OWNER_USERFIRSTNAME&gt;)',
+        'Options of the ticket data (e. g. <OTRS_TICKET_Number>, <OTRS_TICKET_ID>, <OTRS_TICKET_Queue>, <OTRS_TICKET_State>)' => '¿ÉÓÃµÄÓĞ¹Ø Ticket ĞÅÏ¢ (ÀıÈç: <OTRS_TICKET_Number>, <OTRS_TICKET_ID>, <OTRS_TICKET_Queue>, <OTRS_TICKET_State>)',
+        '(Used ticket number format)' => '(Ê¹ÓÃ Ticket ±àºÅ¸ñÊ½)',
+        'Reminder' => 'ÌáĞÑ',
+        'OTRS DB connect host' => 'OTRS Êı¾İ¿âÖ÷»ú',
+        'All Agent variables.' => 'ËùÓĞµÄ¼¼ÊõÈËÔ±±äÁ¿',
+        ' (work units)' => '¹¤×÷µ¥Ôª',
+        'Next Week' => 'ÏÂÖÜ',
+        'All Customer variables like defined in config option CustomerUser.' => 'ËùÓĞ¿Í»§±äÁ¿¿ÉÒÔÔÚÅäÖÃÑ¡ÏîCustomerUserÖĞ¶¨Òå',
+        'for agent lastname' => '¼¼ÊõÖ§³ÖÈËÔ± Ãû',
+        'Options of the current user who requested this action (e. g. <OTRS_CURRENT_UserFirstname>)' => '¶¯×÷ÇëÇóÕßĞÅÏ¢ (ÀıÈç: <OTRS_CURRENT_UserFirstname>)',
+        'Reminder messages' => 'ÏûÏ¢ÌáĞÑ',
+        'Parent-Object' => '¸¸¶ÔÏó',
+        'Of couse this feature will take some system performance it self!' => 'µ±È», ¸Ã¹¦ÄÜ»áÕ¼ÓÃÒ»¶¨µÄÏµÍ³×ÊÔ´, ¼ÓÖØÏµÍ³µÄ¸ºµ£!',
+        'Your own Ticket' => 'Äú×Ô¼ºµÄ Ticket',
+        'Detail' => 'Ï¸½Ú',
+        'TicketZoom' => 'Ticket Õ¹¿ª',
+        'Open Tickets' => '¿ª·Å Tickets',
+        'Don\'t forget to add a new user to groups!' => '²»ÒªÍü¼ÇÔö¼ÓĞÂµÄÓÃ»§µ½×é!',
+        'General Catalog' => '×ÜÄ¿Â¼',
+        'CreateTicket' => '´´½¨ Ticket',
+        'You have to select two or more attributes from the select field!' => 'Äã±ØĞë´ÓËùÑ¡×Ö¶ÎÖĞÑ¡ÔñÁ½¸ö»òÁ½¸öÒÔÉÏµÄÊôĞÔ',
+        'System Settings' => 'Êı¾İ¿âÉèÖÃ ',
+        'Finished' => 'Íê³É',
+        'D' => '½µĞò',
+        'All messages' => 'ËùÓĞÏûÏ¢',
+        'Options of the ticket data (e. g. <OTRS_TICKET_Number>, <OTRS_TICKET_ID>, <OTRS_TICKET_Queue>, <OTRS_TICKET_State>)' => '¿ÉÑ¡µÄ ticket Êı¾İ (ÀıÈç: <OTRS_TICKET_Number>, <OTRS_TICKET_ID>, <OTRS_TICKET_Queue>, <OTRS_TICKET_State>)',
+        'Object already linked as %s.' => '¶ÔÏóÒÑÁ¬½Óµ½ %s.',
+        'A article should have a title!' => 'ÎÄÕÂ±ØĞëÓĞ±êÌâ!',
+        'Customer Users <-> Services' => '¿Í»§ÕÊºÅ <-> ·şÎñ¹ÜÀí',
+        'Config options (e. g. &lt;OTRS_CONFIG_HttpType&gt;)' => 'ÅäÖÃÑ¡Ïî (ÀıÈç: &lt;OTRS_CONFIG_HttpType&gt;)',
+        'All email addresses get excluded on replaying on composing and email.' => 'ËùÓĞ±»È¡Ïû×«Ğ´ÓÊ¼ş¹¦ÄÜµÄÓÊ¼şµØÖ·',
+        'A web mail client' => 'WebMail ¿Í»§¶Ë',
+        'Compose Follow up' => '×«Ğ´¸ú×Ù´ğ¸´',
         'WebMail' => 'WebMail',
-        'Wildcards are allowed.' => 'å…è®¸ä½¿ç”¨é€šé…ç¬¦.',
-        'With an invalid stat it isn\'t feasible to generate a stat.' => 'ç”¨æ— æ•ˆçš„ç»Ÿè®¡ä¸å¯ç”Ÿæˆç»Ÿè®¡',
-        'With the input and select fields you can configurate the stat at your needs. Which elements of a stat you can edit depends on your stats administrator who configurated the stat.' =>
-            'é€šè¿‡è¾“å…¥å’Œé€‰æ‹©å­—æ®µï¼Œæ‚¨å¯ä»¥æŒ‰æ‚¨çš„éœ€æ±‚æ¥é…ç½®ç»Ÿè®¡ã€‚æ‚¨å¯ä»¥ä¿®æ”¹ç¼–è¾‘é‚£äº›ç»Ÿè®¡è¦ç´ ç”±æ‚¨çš„ç»Ÿè®¡èµ„æ–™ç®¡ç†å‘˜æ¥è®¾ç½®ã€‚',
-        'Yes means, send no agent and customer notifications on changes.' =>
-            'å½“æœ‰æ”¹å˜æ—¶ä¸å‘é€é€šçŸ¥ç»™æŠ€æœ¯äººå‘˜æˆ–å®¢æˆ·.',
-        'Yes, save it with name' => 'æ˜¯, ä¿å­˜ä¸ºåç§°',
-        'You got new message!' => 'æ‚¨æœ‰æ–°æ¶ˆæ¯!',
-        'You have to select two or more attributes from the select field!' =>
-            'ä½ å¿…é¡»ä»æ‰€é€‰å­—æ®µä¸­é€‰æ‹©ä¸¤ä¸ªæˆ–ä¸¤ä¸ªä»¥ä¸Šçš„å±æ€§',
-        'You need a email address (e. g. customer@example.com) in To:!' =>
-            'æ”¶ä»¶äººä¿¡æ¯å¿…é¡»æ˜¯é‚®ä»¶åœ°å€(ä¾‹å¦‚ï¼šcustomer@example.com)',
-        'You need min. one selected Ticket!' => 'æ‚¨è‡³å°‘éœ€è¦é€‰æ‹©ä¸€ä¸ª Ticket!',
-        'You need to account time!' => 'æ‚¨éœ€è¦è®°å½•æ—¶é—´',
-        'You need to activate %s first to use it!' => '%s åœ¨ä½¿ç”¨ä¹‹å‰è¯·å…ˆæ¿€æ´»!',
-        'Your Password' => 'ä½ çš„å¯†ç ',
-        'Your email address is new' => 'æ‚¨çš„é‚®ä»¶åœ°å€æ˜¯æ–°çš„',
-        'Your email with ticket number "<OTRS_TICKET>" is bounced to "<OTRS_BOUNCE_TO>". Contact this address for further information.' =>
-            'æ‚¨çš„é‚®ä»¶ ç¼–å·: "<OTRS_TICKET>" å›é€€åˆ° "<OTRS_BOUNCE_TO>" . è¯·è”ç³»ä»¥ä¸‹åœ°å€è·å–è¯¦ç»†ä¿¡æ¯.',
-        'Your own Ticket' => 'æ‚¨è‡ªå·±çš„ Ticket',
-        'customer realname' => 'å®¢æˆ·çœŸå®å§“å',
-        'delete' => 'åˆ é™¤',
-        'down' => 'ä¸‹',
-        'false' => 'å‡',
-        'for agent firstname' => 'æŠ€æœ¯æ”¯æŒäººå‘˜ å',
-        'for agent lastname' => 'æŠ€æœ¯æ”¯æŒäººå‘˜ å',
-        'for agent login' => 'æŠ€æœ¯æ”¯æŒäººå‘˜ ç™»å½•å',
-        'for agent user id' => 'æŠ€æœ¯æ”¯æŒäººå‘˜ ç”¨æˆ·å',
-        'kill all sessions' => 'ä¸­æ­¢æ‰€æœ‰ä¼šè¯',
-        'kill session' => 'ç»ˆæ­¢ä¼šè¯',
-        'maximal period form' => 'æœ€å¤§å‘¨æœŸè¡¨',
-        'modified' => 'ä¿®æ”¹äº',
-        'new ticket' => 'æ–°å»º Ticket',
-        'next step' => 'ä¸‹ä¸€æ­¥',
-        'not rated' => 'ä¸äºˆè¯„çº§',
-        'send' => 'å‘é€',
-        'sort downward' => 'é€†åºæ’åº',
-        'sort upward' => 'æ­£åºæ’åº',
-        'to get the first 20 character of the subject' => 'é‚®ä»¶æ ‡é¢˜å‰20ä¸ªå­—ç¬¦',
-        'to get the first 5 lines of the email' => 'é‚®ä»¶æ­£æ–‡å‰5è¡Œ',
-        'to get the from line of the email' => 'é‚®ä»¶æ¥è‡ª',
-        'to get the realname of the sender (if given)' => 'é‚®ä»¶å‘é€äººçš„çœŸå®å§“å (å¦‚æœå­˜åœ¨)',
-        'up' => 'ä¸Š',
-        'utf8' => 'UTF-8',
-        'x' => 'x',
-
+        'Ticket owner options (e. g. <OTRS_OWNER_UserFirstname>)' => 'Ticket ËùÓĞÕßÑ¡Ïî (ÀıÈç: <OTRS_OWNER_UserFirstname>)',
+        'DB Type' => 'Êı¾İ¿âÀàĞÍ',
+        'kill all sessions' => 'ÖĞÖ¹ËùÓĞ»á»°',
+        'to get the from line of the email' => 'ÓÊ¼şÀ´×Ô',
+        'Solution' => '½â¾ö·½°¸',
+        'QueueView' => '¶ÓÁĞÊÓÍ¼',
+        'My Queue' => 'ÎÒµÄ¶ÓÁĞ',
+        'Select Box' => 'Ñ¡Ôñ·½¿ò',
+        'New messages' => 'ĞÂÏûÏ¢',
+        'Can not create link with %s!' => '²»ÄÜÎª %s ´´½¨Á¬½Ó',
+        'Linked as' => 'ÒÑÁ¬½ÓÎª',
+        'modified' => 'ĞŞ¸ÄÓÚ',
+        'Delete old database' => 'É¾³ı¾ÉÊı¾İ¿â',
+        'A web file manager' => 'Web ÎÄ¼ş¹ÜÀíÆ÷',
+        'Have a lot of fun!' => 'Have a lot of fun!',
+        'send' => '·¢ËÍ',
+        'QuickSearch' => '¿ìËÙËÑË÷',
+        'Send no notifications' => '²»·¢ËÍÍ¨Öª',
+        'Note Text' => '×¢½â',
+        'POP3 Account Management' => 'POP3 ÕÊ»§¹ÜÀí',
+        'Options of the current customer user data (e. g. &lt;OTRS_CUSTOMER_DATA_USERFIRSTNAME&gt;)' => '',
+        'System State Management' => 'ÏµÍ³×´Ì¬¹ÜÀí',
+        'OTRS DB User' => 'OTRS Êı¾İ¿âÓÃ»§Ãû',
+        'Mailbox' => 'ÓÊÏä',
+        'PhoneView' => 'µç»°ÊÓÍ¼',
+        'maximal period form' => '×î´óÖÜÆÚ±í',
+        'Escaladed Tickets' => '',
+        'Yes means, send no agent and customer notifications on changes.' => 'µ±ÓĞ¸Ä±äÊ±²»·¢ËÍÍ¨Öª¸ø¼¼ÊõÈËÔ±»ò¿Í»§.',
+        'Your email with ticket number "<OTRS_TICKET>" is bounced to "<OTRS_BOUNCE_TO>". Contact this address for further information.' => 'ÄúµÄÓÊ¼ş ±àºÅ: "<OTRS_TICKET>" »ØÍËµ½ "<OTRS_BOUNCE_TO>" . ÇëÁªÏµÒÔÏÂµØÖ·»ñÈ¡ÏêÏ¸ĞÅÏ¢.',
+        'Ticket Status View' => 'Ticket ×´Ì¬ÊÓÍ¼',
+        'Modified' => 'ĞŞ¸ÄÓÚ',
+        'Ticket selected for bulk action!' => '±»Ñ¡ÖĞ½øĞĞÅúÁ¿²Ù×÷µÄ Tickets',
+        '%s is not writable!' => '',
+        'Cannot create %s!' => '',
     };
     # $$STOP$$
     return;
