@@ -1,200 +1,206 @@
 # --
 # CustomerTicketMessage.dtl - provides HTML form for customer message
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerTicketMessage.dtl,v 1.66 2011/11/01 16:38:15 cr Exp $
+# $Id: CustomerTicketMessage.dtl,v 1.18.2.1 2009/09/22 09:39:21 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
-<div id="MainBox" class="TicketCompose ARIARoleMain">
-    <div class="Content">
-        <form action="$Env{"CGIHandle"}" method="post" name="compose" enctype="multipart/form-data" class="Validate PreventMultipleSubmits">
-            <input type="hidden" name="Action" value="$Env{"Action"}" />
-            <input type="hidden" name="Subaction" value="StoreNew" />
-            <input type="hidden" name="Expand" id="Expand" value="" />
-            <input type="hidden" name="FormID" value="$QData{"FormID"}" />
-            <fieldset>
 
-<!-- dtl:block:TicketType -->
-                <div>
-<!--<label for="TicketNumber">$Config{"Ticket::Hook"}</label>
-                    <input title="Ticket#" type="text" name="TicketNumber" size="30" value="$QData{"TicketNumber"}" />-->
-                    <label for="TypeID" class="Mandatory">
-                        <span class="Marker">*</span>
-                        $Text{"Type"}:
-                    </label>
-                    $Data{"TypeStrg"}
-                    <div id="TypeIDError" class="TooltipErrorMessage" ><p>$Text{"This field is required."}</p></div>
-                    <div id="TypeIDServerError" class="TooltipErrorMessage NoJavaScriptMessage$QData{"TypeIDInvalid"}" ><p>$Text{"This field is required."}</p></div>
-                    <div class="Clear"></div>
-                </div>
-<!--dtl:js_on_document_complete-->
-<script type="text/javascript">//<![CDATA[
-    $('#TypeID').bind('change', function (Event) {
-        // make sure the ticket is not yet created on queue change
-        $('input#Expand').val(1);
-        Core.Form.Validate.DisableValidation($(this).closest('form'));
-        $(this).closest('form').submit();
-    });
-//]]></script>
-<!--dtl:js_on_document_complete-->
-<!-- dtl:block:TicketType -->
+<!-- start form -->
+<script language="JavaScript" type="text/javascript">
+<!--
+function submit_compose() {
+    // if RichText is enabled, update the hidden textarea now for the body content check to work correctly
+    if (parseInt('$Config{"Frontend::RichText"}', 10) > 0) {
+        RichTextUpdateLinkedField();
+    }
 
-<!-- dtl:block:Queue -->
-                <div>
-                    <label for="Dest" class="Mandatory">
-                        <span class="Marker">*</span>
-                        $Text{"To"}:
-                    </label>
-                    $Data{"ToStrg"}
-                    <div id="DestError" class="TooltipErrorMessage" ><p>$Text{"This field is required."}</p></div>
-                    <div id="DestServerError" class="TooltipErrorMessage NoJavaScriptMessage$QData{"QueueInvalid"}" ><p>$Text{"This field is required."}</p></div>
-                    <div class="Clear"></div>
-                </div>
-<!--dtl:js_on_document_complete-->
-<script type="text/javascript">//<![CDATA[
-    $('#Dest').bind('change', function (Event) {
-        // make sure the ticket is not yet created on queue change
-        $('input#Expand').val(1);
-        Core.Form.Validate.DisableValidation($(this).closest('form'));
-        $(this).closest('form').submit();
-    });
-//]]></script>
-<!--dtl:js_on_document_complete-->
-<!-- dtl:block:Queue -->
-
-<!-- dtl:block:TicketService -->
-                <div>
-                    <label for="ServiceID">$Text{"Service"}:</label>
-                    $Data{"ServiceStrg"}
-                    <div class="Clear"></div>
-                </div>
-<!--dtl:js_on_document_complete-->
-<script type="text/javascript">//<![CDATA[
-    $('#ServiceID').bind('change', function (Event) {
-        // make sure the ticket is not yet created on queue change
-        $('input#Expand').val(1);
-        Core.Form.Validate.DisableValidation($(this).closest('form'));
-        $(this).closest('form').submit();
-    });
-//]]></script>
-<!--dtl:js_on_document_complete-->
-<!-- dtl:block:TicketService -->
-
-<!-- dtl:block:TicketSLA -->
-                <div>
-                    <label for="SLAID" title="$Text{"Service level agreement"}">$Text{"SLA"}:</label>
-                    $Data{"SLAStrg"}
-                    <div class="Clear"></div>
-                </div>
-<!--dtl:js_on_document_complete-->
-<script type="text/javascript">//<![CDATA[
-    $('#SLAID').bind('change', function (Event) {
-        // make sure the ticket is not yet created on queue change
-        $('input#Expand').val(1);
-        Core.Form.Validate.DisableValidation($(this).closest('form'));
-        $(this).closest('form').submit();
-    });
-//]]></script>
-<!--dtl:js_on_document_complete-->
-<!-- dtl:block:TicketSLA -->
-
-                <div>
-                    <label for="Subject" class="Mandatory">
-                        <span class="Marker">*</span>
-                        $Text{"Subject"}:
-                    </label>
-                    <input title="Subject" type="text" id="Subject" name="Subject" value="$QData{"Subject"}" class="Validate_Required $QData{"SubjectInvalid"}" />
-                    <div id="SubjectError" class="TooltipErrorMessage" ><p>$Text{"This field is required."}</p></div>
-                    <div id="SubjectServerError" class="TooltipErrorMessage NoJavaScriptMessage$QData{"SubjectInvalid"}" ><p>$Text{"This field is required."}</p></div>
-                    <div class="Clear"></div>
-                </div>
-                <div class="RichTextHolder">
-                    <label for="RichText" class="Mandatory">
-                        <span class="Marker">*</span>
-                        $Text{"Text"}:
-                    </label>
-                    <div class="Clear"></div>
-<!-- dtl:block:RichText -->
-$Include{"CustomerRichTextEditor"}
-<!-- dtl:block:RichText -->
-                    <textarea id="RichText" class="RichText Validate_Required $QData{"BodyInvalid"}" name="Body" rows="15" cols="$Config{"Ticket::Frontend::TextAreaNote"}">$QData{"Body"}</textarea>
-                    <div id="RichTextError" class="TooltipErrorMessage" ><p>$Text{"This field is required."}</p></div>
-                    <div id="RichTextServerError" class="TooltipErrorMessage NoJavaScriptMessage$QData{"BodyInvalid"}" ><p>$Text{"This field is required."}</p></div>
-                    <div class="Clear"></div>
-                </div>
-                <div>
-                    <label for="Attachment">$Text{"Attachment"}:</label>
-                    <input name="file_upload" id="Attachment" title="Attachment" type="file" size="40" />
-                    <input type="hidden" id="AttachmentUpload" name="AttachmentUpload" value="0" />
-<!--dtl:js_on_document_complete-->
-<script type="text/javascript">//<![CDATA[
-    $('#Attachment').bind('change', function (Event) {
-        var $Form = $('#Attachment').closest('form');
-        Core.Form.Validate.DisableValidation($Form);
-        $Form.find('#AttachmentUpload').val('1').end().submit();
-    });
-//]]></script>
-<!--dtl:js_on_document_complete-->
-<!-- dtl:block:Attachment -->
-                    <div class="Attachment">
-                        $QData{"Filename"} <span>$QData{"Filesize"}</span>
-                        <button type="submit" name="AttachmentDelete$QData{"FileID"}" value="$Text{"Delete"}" class="SpacingLeft">$Text{"Delete"}</button>
-                    </div>
-<!-- dtl:block:Attachment -->
-                    <div class="Clear"></div>
-                </div>
-<!-- dtl:block:Priority -->
-                <div>
-                    <label for="PriorityID">$Text{"Priority"}:</label>
-                    $Data{"PriorityStrg"}
-                    <div class="Clear"></div>
-                </div>
-<!-- dtl:block:Priority -->
-
-<!-- dtl:block:DynamicField -->
-                <div class="Row Row_DynamicField_$QData{"Name"}">
-                    $Data{"Label"}
-                    <div class="Field">
-                        $Data{"Field"}
-                    </div>
-                    <div class="Clear"></div>
-                </div>
-<!-- dtl:block:DynamicField -->
-
-# example of how to use fixed dynamic field blocks for customizations
-# Note: Field1 and Field2 are the names of the fields and had to be replaced with the actual
-# field names
-#<!-- dtl:block:DynamicField_Field1 -->
-#                <div class="Row Row_DynamicField_$QData{"Name"}">
-#                    $Data{"Label"}
-#                    <div class="Field">
-#                        $Data{"Field"}
-#                    </div>
-#                    <div class="Clear"></div>
-#                </div>
-#<!-- dtl:block:DynamicField_Field1 -->
-#<!-- dtl:block:DynamicField_Field2 -->
-#                <div class="Row Row_DynamicField_$QData{"Name"}">
-#                    $Data{"Label"}
-#                    <div class="Field">
-#                        $Data{"Field"}
-#                    </div>
-#                    <div class="Clear"></div>
-#                </div>
-#<!-- dtl:block:DynamicField_Field2 -->
-
-            </fieldset>
-            <div id="BottomActionRow" class="ActionRow">
-                <button id="submitRichText" accesskey="g" title="$Text{"Submit"} (g)" type="submit" value="$Text{"Submit"}">$Text{"Submit"}</button>
-            </div>
-        </form>
-    </div>
-</div>
-<!-- dtl:js_on_document_complete -->
-<script type="text/javascript">
-    Core.Customer.InitFocus();
+    if (document.compose.TypeID && document.compose.TypeID.value == "") {
+        alert('$JSText{"Ticket Type is required!"}');
+        document.compose.TypeID.focus();
+        return false;
+    }
+    else if (document.compose.Subject.value == "") {
+        alert('$JSText{"A message should have a subject!"}');
+        document.compose.Subject.focus();
+        return false;
+    }
+    else if (document.compose.Body.value.replace(/\s+|<\/?\w+\s?\/?>/g, '') == "") {
+        alert('$JSText{"A message should have a body!"}');
+        if (parseInt('$Config{"Frontend::RichText"}', 10) > 0) {
+            RichTextFocus();
+        }
+        else {
+            document.compose.Body.focus();
+        }
+        return false;
+    }
+<!-- dtl:block:TicketFreeTextCheckJs -->
+    else if (document.compose.$Data{"TicketFreeTextField"}.value == "") {
+        alert('$JSText{"A required field is:"} ' + document.compose.$Data{"TicketFreeKeyField"}.value + '!');
+        document.compose.$Data{"TicketFreeTextField"}.focus();
+        return false;
+    }
+<!-- dtl:block:TicketFreeTextCheckJs -->
+<!-- dtl:block:TicketFreeTimeCheckJs -->
+    else if (document.compose.$Data{"TicketFreeTimeCheck"} && document.compose.$Data{"TicketFreeTimeCheck"}.checked == false) {
+        alert('$JSText{"A required field is:"} $QData{"TicketFreeTimeKey"}!');
+        document.compose.$Data{"TicketFreeTimeCheck"}.focus();
+        return false;
+    }
+<!-- dtl:block:TicketFreeTimeCheckJs -->
+    else {
+        return true;
+    }
+}
+//-->
 </script>
-<!-- dtl:js_on_document_complete -->
+
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+    <tr>
+        <td class="mainhead">
+            $Env{"Box0"}$Text{"new ticket"}$Env{"Box1"}
+        </td>
+    </tr>
+    <tr>
+        <td class="mainbody">
+            <br/>
+            <table border="0" width="680" align="center" cellspacing="0" cellpadding="4">
+                <tr>
+                    <td colspan="2" class="contenthead">$Text{"Options"}</td>
+                </tr>
+                <tr>
+                    <td class="contentbody">
+                        <form action="$Env{"CGIHandle"}" method="post" name="compose" enctype="multipart/form-data">
+                            <input type="hidden" name="Action" value="$Env{"Action"}"/>
+                            <input type="hidden" name="Subaction" value="StoreNew"/>
+                            <input type="hidden" name="Expand" value=""/>
+                            <input type="hidden" name="FormID" value="$QData{"FormID"}"/>
+                            <table border="0">
+<!-- dtl:block:TicketType -->
+                                <tr>
+                                    <td class="contentkey">$Text{"Type"}:</td>
+                                    <td class="contentvalue"> $Data{"TypeStrg"}</td>
+                                </tr>
+<!-- dtl:block:TicketType -->
+                                <tr>
+                                    <td width="15%" class="contentkey">$Text{"To"}:</td>
+                                    <td width="85%" class="contentvalue">
+                                        $Data{"ToStrg"}
+                                        <font color="red" size="-2">$Text{"$Data{"Queue invalid"}"}</font>
+                                    </td>
+                                </tr>
+<!-- dtl:block:TicketService -->
+                                <tr>
+                                    <td class="contentkey">$Text{"Service"}:</td>
+                                    <td class="contentvalue"> $Data{"ServiceStrg"}</td>
+                                </tr>
+<!-- dtl:block:TicketService -->
+<!-- dtl:block:TicketSLA -->
+                                <tr>
+                                    <td class="contentkey">$Text{"SLA"}:</td>
+                                    <td class="contentvalue"> $Data{"SLAStrg"}</td>
+                                </tr>
+<!-- dtl:block:TicketSLA -->
+                                <tr>
+                                    <td class="contentkey">$Text{"Subject"}:</td>
+                                    <td class="contentvalue">
+                                        <input type="text" name="Subject" value="$QData{"Subject"}" size="70"/>
+                                        <font color="red" size="-2">$Text{"$Data{"Subject invalid"}"}</font>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="contentkey">$Text{"Text"}:</td>
+                                    <td class="contentvalue">
+                                        <div class="yui-skin-sam">
+<!-- dtl:block:RichText -->
+$Include{"RichTextEditor"}
+<!-- dtl:block:RichText -->
+<textarea id="RichText" name="Body" rows="15" cols="$Config{"Ticket::Frontend::TextAreaNote"}">$QData{"Body"}</textarea>
+                    <font color="red" size="-2">$Text{"$Data{"Body invalid"}"}</font>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="contentkey">$Text{"Attachment"}:</td>
+                  <td class="contentvalue">
+                    <table cellspacing="0" cellpadding="0" width="400">
+<!-- dtl:block:Attachment -->
+                      <tr>
+                        <td>$QData{"Filename"}</td>
+                        <td>$QData{"Filesize"}</td>
+                        <td align="right">
+                          <input class="button" type="submit" name="AttachmentDelete$QData{"FileID"}" value="$Text{"Delete"}"/>
+                        </td>
+                      </tr>
+<!-- dtl:block:Attachment -->
+                      <tr>
+                        <td colspan="2"><input name="file_upload" type="file" size="40" class="fixed"/></td>
+                        <td align="right">
+                          <input class="button" type="submit" name="AttachmentUpload" value="$Text{"Attach"}"/>
+                          <a name="attachment"></a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+<!-- dtl:block:Priority -->
+                <tr>
+                  <td class="contentkey">$Text{"Priority"}:</td>
+                  <td class="contentvalue"> $Data{"PriorityStrg"}</td>
+                </tr>
+<!-- dtl:block:Priority -->
+<!-- dtl:block:FreeText -->
+                <tr>
+                  <td class="contentkey">$Data{"TicketFreeKeyField"}:</td>
+                  <td class="contentvalue">$Data{"TicketFreeTextField"}</td>
+                </tr>
+<!-- dtl:block:FreeText -->
+#                <tr>
+#                  <td class="contentkey">$Data{"TicketFreeKeyField1"}:</td>
+#                  <td class="contentvalue">$Data{"TicketFreeTextField1"}</td>
+#                </tr>
+#                <tr>
+#                  <td class="contentkey">$Data{"TicketFreeKeyField2"}:</td>
+#                  <td class="contentvalue">$Data{"TicketFreeTextField2"}</td>
+#                </tr>
+#                <tr>
+#                  <td class="contentkey">$Data{"TicketFreeKeyField3"}:</td>
+#                  <td class="contentvalue">$Data{"TicketFreeTextField3"}</td>
+#                </tr>
+#                <tr>
+#                  <td class="contentkey">$Data{"TicketFreeKeyField4"}:</td>
+#                  <td class="contentvalue">$Data{"TicketFreeTextField4"}</td>
+#                </tr>
+<!-- dtl:block:FreeTime -->
+                <tr>
+                  <td class="contentkey">$Text{"$QData{"TicketFreeTimeKey"}"}:</td>
+                  <td class="contentvalue">$Data{"TicketFreeTime"}</td>
+                </tr>
+<!-- dtl:block:FreeTime -->
+#                <tr>
+#                  <td class="contentkey">$Text{"$Config{"TicketFreeTimeKey1"}"}:</td>
+#                  <td class="contentvalue">$Data{"TicketFreeTime1"}</td>
+#                </tr>
+#                <tr>
+#                  <td class="contentkey">$Text{"$Config{"TicketFreeTimeKey2"}"}:</td>
+#                  <td class="contentvalue">$Data{"TicketFreeTime2"}</td>
+#                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="contentfooter">
+              <input class="button" id="submitRichText" accesskey="g" type="submit" value="$Text{"Submit"}" onclick="return submit_compose();"/>
+            </td>
+          </tr>
+        </table>
+      </form>
+      <br/>
+    </td>
+  </tr>
+</table>
+<!-- end form -->
