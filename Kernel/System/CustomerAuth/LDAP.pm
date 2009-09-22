@@ -1,8 +1,8 @@
 # --
 # Kernel/System/CustomerAuth/LDAP.pm - provides the ldap authentication
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: LDAP.pm,v 1.38 2011/08/12 09:06:16 mg Exp $
+# $Id: LDAP.pm,v 1.33.2.1 2009/09/22 14:50:40 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Net::LDAP;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.38 $) [1];
+$VERSION = qw($Revision: 1.33.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -138,8 +138,8 @@ sub Auth {
             return;
         }
     }
-    $Param{User} = $Self->_ConvertTo( $Param{User}, 'utf-8' );
-    $Param{Pw}   = $Self->_ConvertTo( $Param{Pw},   'utf-8' );
+    $Param{User} = $Self->_ConvertTo( $Param{User}, $Self->{ConfigObject}->Get('DefaultCharset') );
+    $Param{Pw}   = $Self->_ConvertTo( $Param{Pw},   $Self->{ConfigObject}->Get('DefaultCharset') );
 
     # get params
     my $RemoteAddr = $ENV{REMOTE_ADDR} || 'Got no REMOTE_ADDR env!';
@@ -215,7 +215,6 @@ sub Auth {
     $Result = $LDAP->search(
         base   => $Self->{BaseDN},
         filter => $Filter,
-        attrs  => ['1.1'],
     );
     if ( $Result->code ) {
         $Self->{LogObject}->Log(
@@ -275,8 +274,7 @@ sub Auth {
         }
         my $Result2 = $LDAP->search(
             base   => $Self->{GroupDN},
-            filter => $Filter2,
-            attrs  => ['1.1'],
+            filter => $Filter2
         );
         if ( $Result2->code ) {
             $Self->{LogObject}->Log(
@@ -346,14 +344,14 @@ sub Auth {
 sub _ConvertTo {
     my ( $Self, $Text, $Charset ) = @_;
 
-    return if !defined $Text;
-
     if ( !$Charset || !$Self->{DestCharset} ) {
-        $Self->{EncodeObject}->EncodeInput( \$Text );
+        $Self->{EncodeObject}->Encode( \$Text );
         return $Text;
     }
+    if ( !defined($Text) ) {
+        return;
+    }
 
-    # convert from input charset ($Charset) to directory charset ($Self->{DestCharset})
     return $Self->{EncodeObject}->Convert(
         Text => $Text,
         From => $Charset,
