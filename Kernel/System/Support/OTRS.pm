@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.20 2009/08/18 09:07:13 mb Exp $
+# $Id: OTRS.pm,v 1.21 2009/09/22 14:39:22 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,9 +18,10 @@ use Kernel::System::Support;
 use Kernel::System::User;
 use Kernel::System::Ticket;
 use Kernel::System::Package;
+use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.20 $) [1];
+$VERSION = qw($Revision: 1.21 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -30,7 +31,7 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for (qw(ConfigObject LogObject MainObject DBObject)) {
+    for (qw(ConfigObject LogObject MainObject TimeObject EncodeObject DBObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -38,6 +39,8 @@ sub new {
     $Self->{UserObject}    = Kernel::System::User->new(%Param);
     $Self->{TicketObject}  = Kernel::System::Ticket->new(%Param);
     $Self->{PackageObject} = Kernel::System::Package->new(%Param);
+    $Self->{GroupObject}   = Kernel::System::Group->new(%Param);
+    $Self->{AuthObject}    = Kernel::System::Auth->new( %{$Self} );
 
     return $Self;
 }
@@ -48,9 +51,9 @@ sub AdminChecksGet {
     # add new function name here
     my @ModuleList = (
         '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketFulltextIndexModuleCheck',
-        '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
-        '_FileSystemCheck', '_PackageDeployCheck', '_InvalidUserLockedTicketSearch',
-        '_ConfigCheckTicketFrontendResponseFormat',
+        '_FQDNConfigCheck', '_SystemIDConfigCheck',    '_LogCheck',
+        '_FileSystemCheck', '_PackageDeployCheck',     '_InvalidUserLockedTicketSearch',
+        '_ConfigCheckTicketFrontendResponseFormat', '_DefaultUserCheck',
     );
 
     my @DataArray;
@@ -124,7 +127,8 @@ sub _TicketIndexModuleCheck {
         if ( $Row[0] > 80000 ) {
             if ( $Module =~ /RuntimeDB/ ) {
                 $Check = 'Failed';
-                $Message = "$Row[0] tickets in your system. You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
+                $Message
+                    = "$Row[0] tickets in your system. You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
             }
             else {
                 $Check   = 'OK';
@@ -134,7 +138,8 @@ sub _TicketIndexModuleCheck {
         elsif ( $Row[0] > 60000 ) {
             if ( $Module =~ /RuntimeDB/ ) {
                 $Check = 'Critical';
-                $Message = "$Row[0] tickets in your system. You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
+                $Message
+                    = "$Row[0] tickets in your system. You should use the StaticDB backend. See admin manual (Performance Tuning) for more information.";
             }
             else {
                 $Check   = 'OK';
@@ -169,7 +174,8 @@ sub _TicketFulltextIndexModuleCheck {
         if ( $Row[0] > 100000 ) {
             if ( $Module =~ /RuntimeDB/ ) {
                 $Check = 'Failed';
-                $Message = "$Row[0] article in your system. You should use the StaticDB backend for OTRS 2.3 and higher. See admin manual (Performance Tuning) for more information.";
+                $Message
+                    = "$Row[0] article in your system. You should use the StaticDB backend for OTRS 2.3 and higher. See admin manual (Performance Tuning) for more information.";
             }
             else {
                 $Check   = 'OK';
@@ -179,7 +185,8 @@ sub _TicketFulltextIndexModuleCheck {
         elsif ( $Row[0] > 50000 ) {
             if ( $Module =~ /RuntimeDB/ ) {
                 $Check = 'Critical';
-                $Message = "$Row[0] article in your system. You should use the StaticDB backend for OTRS 2.3 and higher. See admin manual (Performance Tuning) for more information.";
+                $Message
+                    = "$Row[0] article in your system. You should use the StaticDB backend for OTRS 2.3 and higher. See admin manual (Performance Tuning) for more information.";
             }
             else {
                 $Check   = 'OK';
@@ -187,8 +194,9 @@ sub _TicketFulltextIndexModuleCheck {
             }
         }
         else {
-            $Check   = 'OK';
-            $Message = "You are using \"$Module\", that's fine for $Row[0] articles in your system.";
+            $Check = 'OK';
+            $Message
+                = "You are using \"$Module\", that's fine for $Row[0] articles in your system.";
         }
     }
     $Data = {
@@ -217,19 +225,22 @@ sub _OpenTicketCheck {
     );
     if ( $#TicketIDs > 89990 ) {
         $Check = 'Failed';
-        $Message = 'You should not have more then 8000 open tickets in your system. You currently have over 89999! In case you want to improve your performance, close not needed open tickets.';
+        $Message
+            = 'You should not have more then 8000 open tickets in your system. You currently have over 89999! In case you want to improve your performance, close not needed open tickets.';
 
     }
     elsif ( $#TicketIDs > 10000 ) {
         $Check = 'Failed';
-        $Message = 'You should not have more then 8000 open tickets in your system. You currently have '
+        $Message
+            = 'You should not have more then 8000 open tickets in your system. You currently have '
             . $#TicketIDs
             . '. In case you want to improve your performance, close not needed open tickets.';
 
     }
     elsif ( $#TicketIDs > 8000 ) {
         $Check = 'Critical';
-        $Message = 'You should not have more then 8000 open tickets in your system. You currently have '
+        $Message
+            = 'You should not have more then 8000 open tickets in your system. You currently have '
             . $#TicketIDs
             . '. In case you want to improve your performance, close not needed open tickets.';
 
@@ -262,8 +273,9 @@ sub _FQDNConfigCheck {
 
     # Do we have set our FQDN?
     if ( $FQDN eq 'yourhost.example.com' ) {
-        $Data->{Check}   = 'Failed';
-        $Data->{Comment} = "Please configure your FQDN inside the SysConfig module. (currently the default setting '$FQDN' is enabled).";
+        $Data->{Check} = 'Failed';
+        $Data->{Comment}
+            = "Please configure your FQDN inside the SysConfig module. (currently the default setting '$FQDN' is enabled).";
     }
 
     # FQDN syntax check.
@@ -325,7 +337,8 @@ sub _ConfigCheckTicketFrontendResponseFormat {
         $Data->{Comment} = " No \$Data{\"\"} found."
     }
     else {
-        $Data->{Comment} = "Config option Ticket::Frontend::ResponseFormat cointains \$Data{\"\"}, use \$QData{\"\"} instand (seed default setting).";
+        $Data->{Comment}
+            = "Config option Ticket::Frontend::ResponseFormat cointains \$Data{\"\"}, use \$QData{\"\"} instand (seed default setting).";
     }
     return $Data;
 }
@@ -334,7 +347,7 @@ sub _FileSystemCheck {
     my ( $Self, %Param ) = @_;
 
     my $Message = '';
-    my $Data = {
+    my $Data    = {
         Name        => 'FileSystemCheck',
         Description => 'Check if file system is writable.',
         Check       => 'Failed',
@@ -342,17 +355,21 @@ sub _FileSystemCheck {
     };
 
     my $Home = $Self->{ConfigObject}->Get('Home');
+
     # check Home
-    if (! -e $Home) {
+    if ( !-e $Home ) {
         $Data->{Check}   = 'Failed';
         $Data->{Comment} = "No such home directory: $Home!",
-        return $Data;
+            return $Data;
     }
-    foreach (qw(/bin/ /Kernel/ /Kernel/System/ /Kernel/Output/ /Kernel/Output/HTML/ /Kernel/Modules/)) {
+    foreach (
+        qw(/bin/ /Kernel/ /Kernel/System/ /Kernel/Output/ /Kernel/Output/HTML/ /Kernel/Modules/)
+        )
+    {
         my $File = "$Home/$_/check_permissons.$$";
-        if (open(OUT, "> $File")) {
+        if ( open( OUT, "> $File" ) ) {
             print OUT "test";
-            close (OUT);
+            close(OUT);
             unlink $File;
         }
         else {
@@ -362,10 +379,10 @@ sub _FileSystemCheck {
 
     if ($Message) {
         $Data->{Comment} = "Can't write file: $Message",
-        return $Data;
+            return $Data;
     }
 
-    $Data->{Check}   = 'OK';
+    $Data->{Check} = 'OK';
 
     return $Data;
 }
@@ -405,20 +422,20 @@ sub _InvalidUserLockedTicketSearch {
     # set the default message
     my $Data = {
         Name        => 'InvalidUserLockedTicketSearch',
-        Description => 'Search after invalid user with locked tickets.',
+        Description => 'Search for invalid user with locked tickets.',
         Check       => 'OK',
-        Comment     => 'There is no invalid user with locked tickets.',
+        Comment     => 'There are no invalid users with locked tickets.',
     };
 
-    # get all user (because there is no function to get all invalid user)
+    # get all users (because there is no function to get all invalid users)
     my %UserList = $Self->{UserObject}->UserList(
-        Type => 'Long',
+        Type  => 'Long',
         Valid => 0
     );
 
-    # create the list of invalid user
+    # create the list of invalid users
     my @InvalidUser = ();
-    for my $UserID (sort keys %UserList) {
+    for my $UserID ( sort keys %UserList ) {
         my %User = $Self->{UserObject}->GetUserData(
             UserID => $UserID,
             Cached => 1,
@@ -431,10 +448,10 @@ sub _InvalidUserLockedTicketSearch {
     return $Data if !@InvalidUser;
 
     my @TicketIDs = $Self->{TicketObject}->TicketSearch(
-        Result => 'ARRAY',
-        LockIDs => [2],
+        Result   => 'ARRAY',
+        LockIDs  => [2],
         OwnerIDs => \@InvalidUser,
-        UserID => 1,
+        UserID   => 1,
     );
 
     return $Data if !@TicketIDs;
@@ -445,11 +462,49 @@ sub _InvalidUserLockedTicketSearch {
             TicketID => $TicketID,
             UserID   => 1,
         );
-        $LockedTicketUser{$Ticket{OwnerID}} = $UserList{$Ticket{OwnerID}};
+        $LockedTicketUser{ $Ticket{OwnerID} } = $UserList{ $Ticket{OwnerID} };
     }
 
     my $UserString = join ', ', values %LockedTicketUser;
-    $Data->{Comment} = "These invalid users have locked tickets: $UserString",
+    $Data->{Comment}   = "These invalid users have locked tickets: $UserString",
+        $Data->{Check} = 'Critical';
+
+    return $Data;
+}
+
+sub _DefaultUserCheck {
+    my ( $Self, %Param ) = @_;
+
+    # set the default message
+    my $Data = {
+        Name        => 'DefaultUserCheck',
+        Description => 'Check if root@localhost account has the default password.',
+        Check       => 'OK',
+        Comment     => 'There is no active root@localhost with default password.',
+    };
+
+    # get userID for root@localhost (will probably be 1)
+    my $UserID = $Self->{UserObject}->UserLookup(
+        UserLogin => 'root@localhost',
+    );
+    return $Data if !$UserID;
+
+    # see if there is a default password attached
+    my $DefaultPass = $Self->{AuthObject}->Auth(
+        User => 'root@localhost',
+        Pw   => 'root',
+    );
+    return $Data if !$DefaultPass;
+
+    # see if the account is valid
+    my %User = $Self->{UserObject}->GetUserData(
+        UserID  => $UserID,
+        ValidID => 1,
+    );
+
+    return $Data if !%User;
+
+    $Data->{Comment} = "Change the password or invalidate the account 'root\@localhost'";
     $Data->{Check}   = 'Critical';
 
     return $Data;
