@@ -2,7 +2,7 @@
 # Kernel/Output/HTML/OutputFilterTextAutoLink.pm - Auto article links filter
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OutputFilterTextAutoLink.pm,v 1.5 2009/09/23 10:53:20 mg Exp $
+# $Id: OutputFilterTextAutoLink.pm,v 1.4.2.1 2009/09/23 10:53:33 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.5 $) [1];
+$VERSION = qw($Revision: 1.4.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
