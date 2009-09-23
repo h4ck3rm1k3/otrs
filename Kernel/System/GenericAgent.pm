@@ -1,8 +1,8 @@
 # --
 # Kernel/System/GenericAgent.pm - generic agent system module
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: GenericAgent.pm,v 1.80 2012/01/11 17:28:26 jh Exp $
+# $Id: GenericAgent.pm,v 1.58.2.1 2009/09/23 12:51:13 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,16 +14,12 @@ package Kernel::System::GenericAgent;
 use strict;
 use warnings;
 
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
-use Kernel::System::VariableCheck qw(:all);
-
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.80 $) [1];
+$VERSION = qw($Revision: 1.58.2.1 $) [1];
 
 =head1 NAME
 
-Kernel::System::GenericAgent - to manage the generic agent jobs
+Kernel::System::GenericAgent - to manage the generic agent and jobs
 
 =head1 SYNOPSIS
 
@@ -109,16 +105,6 @@ sub new {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
-    # create additional objects
-    $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new(%Param);
-    $Self->{BackendObject}      = Kernel::System::DynamicField::Backend->new(%Param);
-
-    # get the dynamic fields for ticket object
-    $Self->{DynamicField} = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid      => 1,
-        ObjectType => ['Ticket'],
-    );
-
     # debug
     $Self->{Debug} = $Param{Debug} || 0;
 
@@ -144,7 +130,6 @@ sub new {
         OwnerIDs                => 'ARRAY',
         LockIDs                 => 'ARRAY',
         TypeIDs                 => 'ARRAY',
-        ResponsibleIDs          => 'ARRAY',
         ServiceIDs              => 'ARRAY',
         SLAIDs                  => 'ARRAY',
         NewTitle                => 'SCALAR',
@@ -156,7 +141,6 @@ sub new {
         NewOwnerID              => 'SCALAR',
         NewLockID               => 'SCALAR',
         NewTypeID               => 'SCALAR',
-        NewResponsibleID        => 'SCALAR',
         NewServiceID            => 'SCALAR',
         NewSLAID                => 'SCALAR',
         ScheduleLastRun         => 'SCALAR',
@@ -169,14 +153,14 @@ sub new {
 
     # add time attributes
     for my $Type (
-        qw(Time ChangeTime CloseTime TimePending EscalationTime EscalationResponseTime EscalationUpdateTime EscalationSolutionTime)
+        qw(Time CloseTime TimePending EscalationTime EscalationResponseTime EscalationUpdateTime EscalationSolutionTime)
         )
     {
         my $Key = $Type . 'SearchType';
         $Map{$Key} = 'SCALAR';
     }
     for my $Type (
-        qw(TicketCreate TicketChange TicketClose TicketPending TicketEscalation TicketEscalationResponse TicketEscalationUpdate TicketEscalationSolution)
+        qw(TicketCreate TicketClose TicketPending TicketEscalation TicketEscalationResponse TicketEscalationUpdate TicketEscalationSolution)
         )
     {
         for my $Attribute (
@@ -188,23 +172,13 @@ sub new {
         }
     }
 
-    # Add Dynamic Fields attributes
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+    # add free text attributes
+    for my $Type ( 1 .. 16 ) {
+        my $Key   = 'TicketFreeKey' . $Type;
+        my $Value = 'TicketFreeText' . $Type;
 
-        # get the field type of the dynamic fields for edit and search
-        my $FieldValueType = $Self->{BackendObject}->TemplateValueTypeGet(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            FieldType          => 'All',
-        );
-
-        # Add field type to Map
-        if ( IsHashRefWithData($FieldValueType) ) {
-            for my $FieldName ( keys %{$FieldValueType} ) {
-                $Map{$FieldName} = $FieldValueType->{$FieldName};
-            }
-        }
+        $Map{$Key}   = 'ARRAY';
+        $Map{$Value} = 'ARRAY';
     }
 
     $Self->{Map} = \%Map;
@@ -214,7 +188,7 @@ sub new {
 
 =item JobRun()
 
-run a generic agent job
+run an generic agent job
 
     $GenericAgentObject->JobRun(
         Job    => 'JobName',
@@ -238,8 +212,7 @@ sub JobRun {
     }
 
     # get job from param
-    my %Job;
-    my %DynamicFieldSearchTemplate;
+    my %Job = ();
     if ( $Param{Config} ) {
         %Job = %{ $Param{Config} };
 
@@ -273,77 +246,25 @@ sub JobRun {
                 $Job{New}->{$NewKey} = $DBJobRaw{$Key};
             }
             else {
-
-                # skip dynamic fields
-                if ( $Key !~ m{ DynamicField_ }xms ) {
-                    $Job{$Key} = $DBJobRaw{$Key};
-                }
+                $Job{$Key} = $DBJobRaw{$Key};
             }
-
-            # convert dynamic fields
-            if ( $Key =~ m{ \A DynamicField_ }xms ) {
-                $Job{New}->{$Key} = $DBJobRaw{$Key};
-            }
-            elsif ( $Key =~ m{ \A Search_DynamicField_ }xms ) {
-                $DynamicFieldSearchTemplate{$Key} = $DBJobRaw{$Key};
-            }
-        }
-        if ( exists $Job{SearchInArchive} && $Job{SearchInArchive} eq 'ArchivedTickets' ) {
-            $Job{ArchiveFlags} = ['y'];
-        }
-        if ( exists $Job{SearchInArchive} && $Job{SearchInArchive} eq 'AllTickets' ) {
-            $Job{ArchiveFlags} = [ 'y', 'n' ];
         }
     }
 
-    # set dynamic fields search parameters
-    my %DynamicFieldSearchParameters;
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-        # get field value from the information extracted from Generic Agent job
-        my $Value = $Self->{BackendObject}->SearchFieldValueGet(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            Profile            => \%DynamicFieldSearchTemplate,
-        ) || '';
-
-        if ($Value) {
-
-            # get search attibutes
-            my $SearchParameter = $Self->{BackendObject}->CommonSearchFieldParameterBuild(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                Value              => $Value,
-            );
-
-            # add search attribute to the search structure
-            $DynamicFieldSearchParameters{ 'DynamicField_' . $DynamicFieldConfig->{Name} }
-                = $SearchParameter;
-        }
-    }
-
-    my %Tickets;
+    my %Tickets = ();
 
     # escalation tickets
     if ( $Job{Escalation} ) {
-
-        my @Tickets = $Self->{TicketObject}->TicketSearch(
-            Result                           => 'ARRAY',
-            Limit                            => 100,
-            TicketEscalationTimeOlderMinutes => -( 3 * 8 * 60 ),       # 3 days, roughly
-            Permission                       => 'rw',
-            UserID                           => $Param{UserID} || 1,
-        );
-
-        for (@Tickets) {
-            if ( !$Job{Queue} ) {
+        if ( !$Job{Queue} ) {
+            my @Tickets = $Self->{TicketObject}->GetOverTimeTickets();
+            for (@Tickets) {
                 $Tickets{$_} = $Self->{TicketObject}->TicketNumberLookup( TicketID => $_ );
             }
-            else {
-                my %Ticket = $Self->{TicketObject}->TicketGet(
-                    TicketID      => $_,
-                    DynamicFields => 0,
-                );
+        }
+        else {
+            my @Tickets = $Self->{TicketObject}->GetOverTimeTickets();
+            for (@Tickets) {
+                my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $_ );
                 if ( $Ticket{Queue} eq $Job{Queue} ) {
                     $Tickets{$_} = $Ticket{TicketNumber};
                 }
@@ -364,11 +285,9 @@ sub JobRun {
             %Tickets = (
                 $Self->{TicketObject}->TicketSearch(
                     %Job,
-                    %DynamicFieldSearchParameters,
-                    ConditionInline => 1,
-                    StateType       => $Type,
-                    Limit           => $Param{Limit} || 4000,
-                    UserID          => $Param{UserID},
+                    StateType => $Type,
+                    Limit     => $Param{Limit} || 4000,
+                    UserID    => $Param{UserID},
                 ),
                 %Tickets
             );
@@ -381,12 +300,10 @@ sub JobRun {
                 %Tickets = (
                     $Self->{TicketObject}->TicketSearch(
                         %Job,
-                        %DynamicFieldSearchParameters,
-                        ConditionInline => 1,
-                        Queues          => [$_],
-                        StateType       => $Type,
-                        Limit           => $Param{Limit} || 4000,
-                        UserID          => $Param{UserID},
+                        Queues    => [$_],
+                        StateType => $Type,
+                        Limit     => $Param{Limit} || 4000,
+                        UserID    => $Param{UserID},
                     ),
                     %Tickets
                 );
@@ -396,21 +313,16 @@ sub JobRun {
             %Tickets = (
                 $Self->{TicketObject}->TicketSearch(
                     %Job,
-                    %DynamicFieldSearchParameters,
-                    ConditionInline => 1,
-                    StateType       => $Type,
-                    Queues          => [ $Job{Queue} ],
-                    Limit           => $Param{Limit} || 4000,
-                    UserID          => $Param{UserID},
+                    StateType => $Type,
+                    Queues    => [ $Job{Queue} ],
+                    Limit     => $Param{Limit} || 4000,
+                    UserID    => $Param{UserID},
                 ),
                 %Tickets
             );
         }
         for ( keys %Tickets ) {
-            my %Ticket = $Self->{TicketObject}->TicketGet(
-                TicketID      => $_,
-                DynamicFields => 0,
-            );
+            my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $_ );
             if ( $Ticket{UntilTime} > 1 ) {
                 delete $Tickets{$_};
             }
@@ -429,12 +341,7 @@ sub JobRun {
                 }
             }
 
-            # also search in Dynamic fields search attributes
-            for my $DynamicFieldName ( keys %DynamicFieldSearchParameters ) {
-                $Count++;
-            }
-
-            # log no search attribute
+            # log no search attribut
             if ( !$Count ) {
                 $Self->{LogObject}->Log(
                     Priority => 'error',
@@ -450,10 +357,8 @@ sub JobRun {
             }
             %Tickets = $Self->{TicketObject}->TicketSearch(
                 %Job,
-                %DynamicFieldSearchParameters,
-                ConditionInline => 1,
-                Limit           => $Param{Limit} || 4000,
-                UserID          => $Param{UserID},
+                Limit => $Param{Limit} || 4000,
+                UserID => $Param{UserID},
             );
         }
         elsif ( ref $Job{Queue} eq 'ARRAY' ) {
@@ -464,11 +369,9 @@ sub JobRun {
                 %Tickets = (
                     $Self->{TicketObject}->TicketSearch(
                         %Job,
-                        %DynamicFieldSearchParameters,
-                        ConditionInline => 1,
-                        Queues          => [$_],
-                        Limit           => $Param{Limit} || 4000,
-                        UserID          => $Param{UserID},
+                        Queues => [$_],
+                        Limit  => $Param{Limit} || 4000,
+                        UserID => $Param{UserID},
                     ),
                     %Tickets
                 );
@@ -477,11 +380,9 @@ sub JobRun {
         else {
             %Tickets = $Self->{TicketObject}->TicketSearch(
                 %Job,
-                %DynamicFieldSearchParameters,
-                ConditionInline => 1,
-                Queues          => [ $Job{Queue} ],
-                Limit           => $Param{Limit} || 4000,
-                UserID          => $Param{UserID},
+                Queues => [ $Job{Queue} ],
+                Limit  => $Param{Limit} || 4000,
+                UserID => $Param{UserID},
             );
         }
     }
@@ -499,304 +400,20 @@ sub JobRun {
     return 1;
 }
 
-=item JobList()
-
-returns a hash of jobs
-
-    my %List = $GenericAgentObject->JobList();
-
-=cut
-
-sub JobList {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-    return if !$Self->{DBObject}->Prepare(
-        SQL => 'SELECT DISTINCT(job_name) FROM generic_agent_jobs',
-    );
-    my %Data;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        $Data{ $Row[0] } = $Row[0];
-    }
-    return %Data;
-}
-
-=item JobGet()
-
-returns a hash of the job data
-
-    my %Job = $GenericAgentObject->JobGet(Name => 'JobName');
-
-=cut
-
-sub JobGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Name)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-    return if !$Self->{DBObject}->Prepare(
-        SQL  => 'SELECT job_key, job_value FROM generic_agent_jobs WHERE job_name = ?',
-        Bind => [ \$Param{Name} ],
-    );
-    my %Data;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        if ( $Self->{Map}->{ $Row[0] } && $Self->{Map}->{ $Row[0] } eq 'ARRAY' ) {
-            push @{ $Data{ $Row[0] } }, $Row[1];
-        }
-        else {
-            $Data{ $Row[0] } = $Row[1];
-        }
-    }
-    for my $Key ( keys %Data ) {
-        if ( $Key =~ /(NewParam)Key(\d)/ ) {
-            if ( $Data{"$1Value$2"} ) {
-                $Data{"New$Data{$Key}"} = $Data{"$1Value$2"};
-            }
-        }
-    }
-
-    # get time settings
-    my %Map = (
-        TicketCreate             => 'Time',
-        TicketChange             => 'ChangeTime',
-        TicketClose              => 'CloseTime',
-        TicketPending            => 'TimePending',
-        TicketEscalation         => 'EscalationTime',
-        TicketEscalationResponse => 'EscalationResponseTime',
-        TicketEscalationUpdate   => 'EscalationUpdateTime',
-        TicketEscalationSolution => 'EscalationSolutionTime',
-    );
-    for my $Type (
-        qw(TicketCreate TicketChange TicketClose TicketPending TicketEscalation TicketEscalationResponse TicketEscalationUpdate TicketEscalationSolution)
-        )
-    {
-        my $SearchType = $Map{$Type} . 'SearchType';
-
-        if ( !$Data{$SearchType} || $Data{$SearchType} eq 'None' ) {
-
-            # do nothing on time stuff
-            for (
-                qw(TimeStartMonth TimeStopMonth TimeStopDay
-                TimeStartDay TimeStopYear TimePoint
-                TimeStartYear TimePointFormat TimePointStart)
-                )
-            {
-                delete $Data{ $Type . $_ };
-            }
-        }
-        elsif ( $Data{$SearchType} && $Data{$SearchType} eq 'TimeSlot' ) {
-            for (qw(TimePoint TimePointFormat TimePointStart)) {
-                delete $Data{ $Type . $_ };
-            }
-            for (qw(Month Day)) {
-                $Data{ $Type . "TimeStart$_" } = sprintf( '%02d', $Data{ $Type . "TimeStart$_" } );
-                $Data{ $Type . "TimeStop$_" }  = sprintf( '%02d', $Data{ $Type . "TimeStop$_" } );
-            }
-            if (
-                $Data{ $Type . 'TimeStartDay' }
-                && $Data{ $Type . 'TimeStartMonth' }
-                && $Data{ $Type . 'TimeStartYear' }
-                )
-            {
-                $Data{ $Type . 'TimeNewerDate' }
-                    = $Data{ $Type . 'TimeStartYear' } . '-'
-                    . $Data{ $Type . 'TimeStartMonth' } . '-'
-                    . $Data{ $Type . 'TimeStartDay' }
-                    . ' 00:00:01';
-            }
-            if (
-                $Data{ $Type . 'TimeStopDay' }
-                && $Data{ $Type . 'TimeStopMonth' }
-                && $Data{ $Type . 'TimeStopYear' }
-                )
-            {
-                $Data{ $Type . 'TimeOlderDate' }
-                    = $Data{ $Type . 'TimeStopYear' } . '-'
-                    . $Data{ $Type . 'TimeStopMonth' } . '-'
-                    . $Data{ $Type . 'TimeStopDay' }
-                    . ' 23:59:59';
-            }
-        }
-        elsif ( $Data{$SearchType} && $Data{$SearchType} eq 'TimePoint' ) {
-            for (
-                qw(TimeStartMonth TimeStopMonth TimeStopDay
-                TimeStartDay TimeStopYear TimeStartYear)
-                )
-            {
-                delete $Data{ $Type . $_ };
-            }
-            if (
-                $Data{ $Type . 'TimePoint' }
-                && $Data{ $Type . 'TimePointStart' }
-                && $Data{ $Type . 'TimePointFormat' }
-                )
-            {
-                my $Time = 0;
-                if ( $Data{ $Type . 'TimePointFormat' } eq 'minute' ) {
-                    $Time = $Data{ $Type . 'TimePoint' };
-                }
-                elsif ( $Data{ $Type . 'TimePointFormat' } eq 'hour' ) {
-                    $Time = $Data{ $Type . 'TimePoint' } * 60;
-                }
-                elsif ( $Data{ $Type . 'TimePointFormat' } eq 'day' ) {
-                    $Time = $Data{ $Type . 'TimePoint' } * 60 * 24;
-                }
-                elsif ( $Data{ $Type . 'TimePointFormat' } eq 'week' ) {
-                    $Time = $Data{ $Type . 'TimePoint' } * 60 * 24 * 7;
-                }
-                elsif ( $Data{ $Type . 'TimePointFormat' } eq 'month' ) {
-                    $Time = $Data{ $Type . 'TimePoint' } * 60 * 24 * 30;
-                }
-                elsif ( $Data{ $Type . 'TimePointFormat' } eq 'year' ) {
-                    $Time = $Data{ $Type . 'TimePoint' } * 60 * 24 * 356;
-                }
-                if ( $Data{ $Type . 'TimePointStart' } eq 'Before' ) {
-                    $Data{ $Type . 'TimeOlderMinutes' } = $Time;
-                }
-                else {
-                    $Data{ $Type . 'TimeNewerMinutes' } = $Time;
-                }
-            }
-        }
-    }
-
-    # check valid
-    if ( %Data && !defined $Data{Valid} ) {
-        $Data{Valid} = 1;
-    }
-    if (%Data) {
-        $Data{Name} = $Param{Name};
-    }
-    return %Data;
-}
-
-=item JobAdd()
-
-adds a new job to the database
-
-    $GenericAgentObject->JobAdd(
-        Name => 'JobName',
-        Data => {
-            Queue => 'SomeQueue',
-            ...
-            Valid => 1,
-        },
-        UserID => 123,
-    );
-
-=cut
-
-sub JobAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Name Data UserID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # check if job name already exists
-    my %Check = $Self->JobGet( Name => $Param{Name} );
-    if (%Check) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't add job '$Param{Name}', job already exists!",
-        );
-        return;
-    }
-
-    # insert data into db
-    for my $Key ( keys %{ $Param{Data} } ) {
-        if ( ref $Param{Data}->{$Key} eq 'ARRAY' ) {
-            for my $Item ( @{ $Param{Data}->{$Key} } ) {
-                if ( defined $Item ) {
-                    $Self->{DBObject}->Do(
-                        SQL => 'INSERT INTO generic_agent_jobs '
-                            . '(job_name, job_key, job_value) VALUES (?, ?, ?)',
-                        Bind => [ \$Param{Name}, \$Key, \$Item ],
-                    );
-                }
-            }
-        }
-        else {
-            if ( defined $Param{Data}->{$Key} ) {
-                $Self->{DBObject}->Do(
-                    SQL => 'INSERT INTO generic_agent_jobs '
-                        . '(job_name, job_key, job_value) VALUES (?, ?, ?)',
-                    Bind => [ \$Param{Name}, \$Key, \$Param{Data}->{$Key} ],
-                );
-            }
-        }
-    }
-    $Self->{LogObject}->Log(
-        Priority => 'notice',
-        Message  => "New GenericAgent job '$Param{Name}' added (UserID=$Param{UserID}).",
-    );
-    return 1;
-}
-
-=item JobDelete()
-
-deletes a job from the database
-
-    $GenericAgentObject->JobDelete(Name => 'JobName');
-
-=cut
-
-sub JobDelete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Name UserID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # delete job
-    $Self->{DBObject}->Do(
-        SQL  => 'DELETE FROM generic_agent_jobs WHERE job_name = ?',
-        Bind => [ \$Param{Name} ],
-    );
-    $Self->{LogObject}->Log(
-        Priority => 'notice',
-        Message  => "GenericAgent job '$Param{Name}' deleted (UserID=$Param{UserID}).",
-    );
-    return 1;
-}
-
-=begin Internal:
-
-=cut
-
-=item _JobRunTicket()
-
-run a generic agent job on a ticket
-
-    $GenericAgentObject->_JobRunTicket(
-        TicketID => 123,
-        TicketNumber => '2004081400001',
-        Config => {
-            %Job,
-        },
-        UserID => 1,
-    );
-
-=cut
+# =item _JobRunTicket()
+#
+# run an generic agent job on a ticket
+#
+#     $GenericAgentObject->_JobRunTicket(
+#         TicketID => 123,
+#         TicketNumber => '2004081400001',
+#         Config => {
+#             %Job,
+#         },
+#         UserID => 1,
+#     );
+#
+# =cut
 
 sub _JobRunTicket {
     my ( $Self, %Param ) = @_;
@@ -811,33 +428,30 @@ sub _JobRunTicket {
 
     my $Ticket = "($Param{TicketNumber}/$Param{TicketID})";
 
-    # disable sending emails
-    if ( $Param{Config}->{New}->{SendNoNotification} ) {
-        $Self->{TicketObject}->{SendNoNotification} = 1;
-    }
-
     # move ticket
     if ( $Param{Config}->{New}->{Queue} ) {
         if ( $Self->{NoticeSTDOUT} ) {
             print "  - Move Ticket $Ticket to Queue '$Param{Config}->{New}->{Queue}'\n";
         }
-        $Self->{TicketObject}->TicketQueueSet(
+        $Self->{TicketObject}->MoveTicket(
             QueueID => $Self->{QueueObject}->QueueLookup(
                 Queue => $Param{Config}->{New}->{Queue},
                 Cache => 1,
             ),
-            UserID   => $Param{UserID},
-            TicketID => $Param{TicketID},
+            UserID             => $Param{UserID},
+            TicketID           => $Param{TicketID},
+            SendNoNotification => $Param{Config}->{New}->{SendNoNotification} || 0,
         );
     }
     if ( $Param{Config}->{New}->{QueueID} ) {
         if ( $Self->{NoticeSTDOUT} ) {
             print "  - Move Ticket $Ticket to QueueID '$Param{Config}->{New}->{QueueID}'\n";
         }
-        $Self->{TicketObject}->TicketQueueSet(
-            QueueID  => $Param{Config}->{New}->{QueueID},
-            UserID   => $Param{UserID},
-            TicketID => $Param{TicketID},
+        $Self->{TicketObject}->MoveTicket(
+            QueueID            => $Param{Config}->{New}->{QueueID},
+            UserID             => $Param{UserID},
+            TicketID           => $Param{TicketID},
+            SendNoNotification => $Param{Config}->{New}->{SendNoNotification} || 0,
         );
     }
 
@@ -858,7 +472,7 @@ sub _JobRunTicket {
                 || 'Note',
             Body => $Param{Config}->{New}->{Note}->{Body} || $Param{Config}->{New}->{NoteBody},
             MimeType       => 'text/plain',
-            Charset        => 'utf-8',
+            Charset        => $Self->{ConfigObject}->Get('DefaultCharset'),
             UserID         => $Param{UserID},
             HistoryType    => 'AddNote',
             HistoryComment => 'Generic Agent note added.',
@@ -881,20 +495,22 @@ sub _JobRunTicket {
         if ( $Self->{NoticeSTDOUT} ) {
             print "  - changed state of Ticket $Ticket to '$Param{Config}->{New}->{State}'\n";
         }
-        $Self->{TicketObject}->TicketStateSet(
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
-            State    => $Param{Config}->{New}->{State},
+        $Self->{TicketObject}->StateSet(
+            TicketID           => $Param{TicketID},
+            UserID             => $Param{UserID},
+            SendNoNotification => $Param{Config}->{New}->{SendNoNotification} || 0,
+            State              => $Param{Config}->{New}->{State},
         );
     }
     if ( $Param{Config}->{New}->{StateID} ) {
         if ( $Self->{NoticeSTDOUT} ) {
             print "  - changed state id of ticket $Ticket to '$Param{Config}->{New}->{StateID}'\n";
         }
-        $Self->{TicketObject}->TicketStateSet(
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
-            StateID  => $Param{Config}->{New}->{StateID},
+        $Self->{TicketObject}->StateSet(
+            TicketID           => $Param{TicketID},
+            SendNoNotification => $Param{Config}->{New}->{SendNoNotification} || 0,
+            UserID             => $Param{UserID},
+            StateID            => $Param{Config}->{New}->{StateID},
         );
     }
 
@@ -912,7 +528,7 @@ sub _JobRunTicket {
                     "  - set customer user id of Ticket $Ticket to '$Param{Config}->{New}->{CustomerUserLogin}'\n";
             }
         }
-        $Self->{TicketObject}->TicketCustomerSet(
+        $Self->{TicketObject}->SetCustomerData(
             TicketID => $Param{TicketID},
             No       => $Param{Config}->{New}->{CustomerID} || '',
             User     => $Param{Config}->{New}->{CustomerUserLogin} || '',
@@ -1003,7 +619,7 @@ sub _JobRunTicket {
         if ( $Self->{NoticeSTDOUT} ) {
             print "  - set priority of Ticket $Ticket to '$Param{Config}->{New}->{Priority}'\n";
         }
-        $Self->{TicketObject}->TicketPrioritySet(
+        $Self->{TicketObject}->PrioritySet(
             TicketID => $Param{TicketID},
             UserID   => $Param{UserID},
             Priority => $Param{Config}->{New}->{Priority},
@@ -1014,7 +630,7 @@ sub _JobRunTicket {
             print
                 "  - set priority id of Ticket $Ticket to '$Param{Config}->{New}->{PriorityID}'\n";
         }
-        $Self->{TicketObject}->TicketPrioritySet(
+        $Self->{TicketObject}->PrioritySet(
             TicketID   => $Param{TicketID},
             UserID     => $Param{UserID},
             PriorityID => $Param{Config}->{New}->{PriorityID},
@@ -1026,44 +642,22 @@ sub _JobRunTicket {
         if ( $Self->{NoticeSTDOUT} ) {
             print "  - set owner of Ticket $Ticket to '$Param{Config}->{New}->{Owner}'\n";
         }
-        $Self->{TicketObject}->TicketOwnerSet(
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
-            NewUser  => $Param{Config}->{New}->{Owner},
+        $Self->{TicketObject}->OwnerSet(
+            SendNoNotification => $Param{Config}->{New}->{SendNoNotification} || 0,
+            TicketID           => $Param{TicketID},
+            UserID             => $Param{UserID},
+            NewUser            => $Param{Config}->{New}->{Owner},
         );
     }
     if ( $Param{Config}->{New}->{OwnerID} ) {
         if ( $Self->{NoticeSTDOUT} ) {
             print "  - set owner id of Ticket $Ticket to '$Param{Config}->{New}->{OwnerID}'\n";
         }
-        $Self->{TicketObject}->TicketOwnerSet(
-            TicketID  => $Param{TicketID},
-            UserID    => $Param{UserID},
-            NewUserID => $Param{Config}->{New}->{OwnerID},
-        );
-    }
-
-    # set new responsible
-    if ( $Param{Config}->{New}->{Responsible} ) {
-        if ( $Self->{NoticeSTDOUT} ) {
-            print
-                "  - set responsible of Ticket $Ticket to '$Param{Config}->{New}->{Responsible}'\n";
-        }
-        $Self->{TicketObject}->TicketResponsibleSet(
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
-            NewUser  => $Param{Config}->{New}->{Responsible},
-        );
-    }
-    if ( $Param{Config}->{New}->{ResponsibleID} ) {
-        if ( $Self->{NoticeSTDOUT} ) {
-            print
-                "  - set responsible id of Ticket $Ticket to '$Param{Config}->{New}->{ResponsibleID}'\n";
-        }
-        $Self->{TicketObject}->TicketResponsibleSet(
-            TicketID  => $Param{TicketID},
-            UserID    => $Param{UserID},
-            NewUserID => $Param{Config}->{New}->{ResponsibleID},
+        $Self->{TicketObject}->OwnerSet(
+            TicketID           => $Param{TicketID},
+            UserID             => $Param{UserID},
+            NewUserID          => $Param{Config}->{New}->{OwnerID},
+            SendNoNotification => $Param{Config}->{New}->{SendNoNotification} || 0,
         );
     }
 
@@ -1072,61 +666,68 @@ sub _JobRunTicket {
         if ( $Self->{NoticeSTDOUT} ) {
             print "  - set lock of Ticket $Ticket to '$Param{Config}->{New}->{Lock}'\n";
         }
-        $Self->{TicketObject}->TicketLockSet(
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
-            Lock     => $Param{Config}->{New}->{Lock},
+        $Self->{TicketObject}->LockSet(
+            TicketID           => $Param{TicketID},
+            UserID             => $Param{UserID},
+            Lock               => $Param{Config}->{New}->{Lock},
+            SendNoNotification => $Param{Config}->{New}->{SendNoNotification} || 0,
         );
     }
     if ( $Param{Config}->{New}->{LockID} ) {
         if ( $Self->{NoticeSTDOUT} ) {
             print "  - set lock id of Ticket $Ticket to '$Param{Config}->{New}->{LockID}'\n";
         }
-        $Self->{TicketObject}->TicketLockSet(
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
-            LockID   => $Param{Config}->{New}->{LockID},
+        $Self->{TicketObject}->LockSet(
+            TicketID           => $Param{TicketID},
+            UserID             => $Param{UserID},
+            LockID             => $Param{Config}->{New}->{LockID},
+            SendNoNotification => $Param{Config}->{New}->{SendNoNotification} || 0,
         );
     }
 
-    # set new dynamic fields options
-    # cycle trough the activated Dynamic Fields for this screen
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+    # set ticket free text options
+    for ( 1 .. 16 ) {
+        if (
+            defined $Param{Config}->{New}->{"TicketFreeKey$_"}
+            || defined $Param{Config}->{New}->{"TicketFreeText$_"}
+            )
+        {
+            my %Data = ();
+            $Data{TicketID} = $Param{TicketID};
+            $Data{UserID}   = $Param{UserID};
+            $Data{Counter}  = $_;
 
-        # extract the dynamic field value form the web request
-        my $Value = $Self->{BackendObject}->EditFieldValueGet(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            Template           => $Param{Config}->{New},
-            TransformDates     => 0,
-        );
+            if ( defined $Param{Config}->{New}->{"TicketFreeKey$_"} ) {
+                $Data{Key} = $Param{Config}->{New}->{"TicketFreeKey$_"};
+            }
 
-        if ( defined $Value && $Value ne '' ) {
-            my $Success = $Self->{BackendObject}->ValueSet(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                ObjectID           => $Param{TicketID},
-                Value              => $Value,
-                UserID             => 1,
-            );
+            # insert the freefieldkey, if only one key is possible
+            if (
+                !$Data{Key}
+                && ref $Self->{ConfigObject}->Get( 'TicketFreeKey' . $_ ) eq 'HASH'
+                )
+            {
+                my %TicketFreeKey = %{ $Self->{ConfigObject}->Get( 'TicketFreeKey' . $_ ) };
+                my @FreeKey       = keys %TicketFreeKey;
 
-            if ($Success) {
-                if ( $Self->{NoticeSTDOUT} ) {
-                    my $ValueStrg = $Self->{BackendObject}->ReadableValueRender(
-                        DynamicFieldConfig => $DynamicFieldConfig,
-                        Value              => $Value,
-                    );
-                    print "  - set ticket dynamic field $DynamicFieldConfig->{Name} "
-                        . "of Ticket $Ticket to $ValueStrg->{Title} '\n";
+                if ( $#FreeKey == 0 ) {
+                    $Data{Key} = $TicketFreeKey{ $FreeKey[0] };
                 }
             }
-            else {
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => "Coud not set dynamic field $DynamicFieldConfig->{Name} "
-                        . "for Ticket $Ticket.",
-                );
+
+            if ( defined $Param{Config}->{New}->{"TicketFreeText$_"} ) {
+                $Data{Value} = $Param{Config}->{New}->{"TicketFreeText$_"};
             }
+
+            if ( $Self->{NoticeSTDOUT} ) {
+                if ( defined $Data{Key} ) {
+                    print "  - set ticket free text of Ticket $Ticket to Key: '$Data{Key}'\n";
+                }
+                if ( defined $Data{Value} ) {
+                    print "  - set ticket free text of Ticket $Ticket to Text: '$Data{Value}'\n";
+                }
+            }
+            $Self->{TicketObject}->TicketFreeTextSet(%Data);
         }
     }
 
@@ -1146,41 +747,24 @@ sub _JobRunTicket {
             );
         }
         if ( $Self->{MainObject}->Require( $Param{Config}->{New}->{Module} ) ) {
+            my $Object = $Param{Config}->{New}->{Module}->new(
+                %{$Self},
+                Debug => $Self->{Debug},
+            );
+            if ($Object) {
 
-            # protect parent process
-            eval {
-                my $Object = $Param{Config}->{New}->{Module}->new(
-                    %{$Self},
-                    Debug => $Self->{Debug},
-                );
-                if ($Object) {
+                # protect parent process
+                eval {
                     $Object->Run(
                         %{ $Param{Config} },
                         TicketID => $Param{TicketID},
                     );
+                };
+                if ($@) {
+                    $Self->{LogObject}->Log( Priority => 'error', Message => $@ );
                 }
-            };
-            if ($@) {
-                $Self->{LogObject}->Log( Priority => 'error', Message => $@ );
             }
         }
-    }
-
-    # set new archive flag
-    if (
-        $Param{Config}->{New}->{ArchiveFlag}
-        && $Self->{ConfigObject}->Get('Ticket::ArchiveSystem')
-        )
-    {
-        if ( $Self->{NoticeSTDOUT} ) {
-            print
-                "  - set archive flag of Ticket $Ticket to '$Param{Config}->{New}->{ArchiveFlag}'\n";
-        }
-        $Self->{TicketObject}->TicketArchiveFlagSet(
-            TicketID    => $Param{TicketID},
-            UserID      => $Param{UserID},
-            ArchiveFlag => $Param{Config}->{New}->{ArchiveFlag},
-        );
     }
 
     # cmd
@@ -1212,8 +796,295 @@ sub _JobRunTicket {
     return 1;
 }
 
+=item JobList()
+
+returns a hash of jobs
+
+    my %List = $GenericAgentObject->JobList();
+
+=cut
+
+sub JobList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw()) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
+    return if !$Self->{DBObject}->Prepare(
+        SQL => 'SELECT DISTINCT(job_name) FROM generic_agent_jobs',
+    );
+    my %Data = ();
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        $Data{ $Row[0] } = $Row[0];
+    }
+    return %Data;
+}
+
+=item JobGet()
+
+returns a hash of the job data
+
+    my %Job = $GenericAgentObject->JobGet(Name => 'JobName');
+
+=cut
+
+sub JobGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Name)) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
+    return if !$Self->{DBObject}->Prepare(
+        SQL  => 'SELECT job_key, job_value FROM generic_agent_jobs WHERE job_name = ?',
+        Bind => [ \$Param{Name} ],
+    );
+    my %Data = ();
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        if ( $Self->{Map}->{ $Row[0] } && $Self->{Map}->{ $Row[0] } eq 'ARRAY' ) {
+            push @{ $Data{ $Row[0] } }, $Row[1];
+        }
+        else {
+            $Data{ $Row[0] } = $Row[1];
+        }
+    }
+    for my $Key ( keys %Data ) {
+        if ( $Key =~ /(NewParam)Key(\d)/ ) {
+            if ( $Data{"$1Value$2"} ) {
+                $Data{"New$Data{$Key}"} = $Data{"$1Value$2"};
+            }
+        }
+    }
+
+    # get time settings
+    my %Map = (
+        TicketCreate             => 'Time',
+        TicketClose              => 'CloseTime',
+        TicketPending            => 'TimePending',
+        TicketEscalation         => 'EscalationTime',
+        TicketEscalationResponse => 'EscalationResponseTime',
+        TicketEscalationUpdate   => 'EscalationUpdateTime',
+        TicketEscalationSolution => 'EscalationSolutionTime',
+    );
+    for my $Type (
+        qw(TicketCreate TicketClose TicketPending TicketEscalation TicketEscalationResponse TicketEscalationUpdate TicketEscalationSolution)
+        )
+    {
+        my $SearchType = $Map{$Type} . 'SearchType';
+
+        if ( !$Data{$SearchType} || $Data{$SearchType} eq 'None' ) {
+
+            # do noting on time stuff
+            for (
+                qw(TimeStartMonth TimeStopMonth TimeStopDay
+                TimeStartDay TimeStopYear TimePoint
+                TimeStartYear TimePointFormat TimePointStart)
+                )
+            {
+                delete $Data{ $Type . $_ };
+            }
+        }
+        elsif ( $Data{$SearchType} && $Data{$SearchType} eq 'TimeSlot' ) {
+            for (qw(TimePoint TimePointFormat TimePointStart)) {
+                delete $Data{ $Type . $_ };
+            }
+            for (qw(Month Day)) {
+                if ( $Data{ $Type . "TimeStart$_" } <= 9 ) {
+                    $Data{ $Type . "TimeStart$_" } = '0' . $Data{ $Type . "TimeStart$_" };
+                }
+            }
+            for (qw(Month Day)) {
+                if ( $Data{ $Type . "TimeStop$_" } <= 9 ) {
+                    $Data{ $Type . "TimeStop$_" } = '0' . $Data{ $Type . "TimeStop$_" };
+                }
+            }
+            if (
+                $Data{ $Type . 'TimeStartDay' }
+                && $Data{ $Type . 'TimeStartMonth' }
+                && $Data{ $Type . 'TimeStartYear' }
+                )
+            {
+                $Data{ $Type . 'TimeNewerDate' }
+                    = $Data{ $Type . 'TimeStartYear' } . '-'
+                    . $Data{ $Type . 'TimeStartMonth' } . '-'
+                    . $Data{ $Type . 'TimeStartDay' }
+                    . ' 00:00:01';
+            }
+            if (
+                $Data{ $Type . 'TimeStopDay' }
+                && $Data{ $Type . 'TimeStopMonth' }
+                && $Data{ $Type . 'TimeStopYear' }
+                )
+            {
+                $Data{ $Type . 'TimeOlderDate' }
+                    = $Data{ $Type . 'TimeStopYear' } . '-'
+                    . $Data{ $Type . 'TimeStopMonth' } . '-'
+                    . $Data{ $Type . 'TimeStopDay' }
+                    . ' 23:59:59';
+            }
+        }
+        elsif ( $Data{$SearchType} && $Data{$SearchType} eq 'TimePoint' ) {
+            for (
+                qw(TimeStartMonth TimeStopMonth TimeStopDay
+                TimeStartDay TimeStopYear TimeStartYear)
+                )
+            {
+                delete $Data{ $Type . $_ };
+            }
+            if (
+                $Data{ $Type . 'TimePoint' }
+                && $Data{ $Type . 'TimePointStart' }
+                && $Data{ $Type . 'TimePointFormat' }
+                )
+            {
+                my $Time = 0;
+                if ( $Data{ $Type . 'TimePointFormat' } eq 'minute' ) {
+                    $Time = $Data{ $Type . 'TimePoint' };
+                }
+                elsif ( $Data{ $Type . 'TimePointFormat' } eq 'hour' ) {
+                    $Time = $Data{ $Type . 'TimePoint' } * 60;
+                }
+                elsif ( $Data{ $Type . 'TimePointFormat' } eq 'day' ) {
+                    $Time = $Data{ $Type . 'TimePoint' } * 60 * 24;
+                }
+                elsif ( $Data{ $Type . 'TimePointFormat' } eq 'week' ) {
+                    $Time = $Data{ $Type . 'TimePoint' } * 60 * 24 * 7;
+                }
+                elsif ( $Data{ $Type . 'TimePointFormat' } eq 'month' ) {
+                    $Time = $Data{ $Type . 'TimePoint' } * 60 * 24 * 30;
+                }
+                elsif ( $Data{ $Type . 'TimePointFormat' } eq 'year' ) {
+                    $Time = $Data{ $Type . 'TimePoint' } * 60 * 24 * 356;
+                }
+                if ( $Data{ $Type . 'TimePointStart' } eq 'Before' ) {
+                    $Data{ $Type . 'TimeOlderMinutes' } = $Time;
+                }
+                else {
+                    $Data{ $Type . 'TimeNewerMinutes' } = $Time;
+                }
+            }
+        }
+    }
+
+    # check valid
+    if ( %Data && !defined $Data{Valid} ) {
+        $Data{Valid} = 1;
+    }
+    if (%Data) {
+        $Data{Name} = $Param{Name};
+    }
+    return %Data;
+}
+
+=item JobAdd()
+
+adds a new job to the database
+
+    $GenericAgentObject->JobAdd(
+        Name => 'JobName',
+        Data => {
+            Queue => 'SomeQueue',
+            ...
+            Vaild => 1,
+        },
+        UserID => 123,
+    );
+
+=cut
+
+sub JobAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Name Data UserID)) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
+
+    # check if job name already exists
+    my %Check = $Self->JobGet( Name => $Param{Name} );
+    if (%Check) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't add job '$Param{Name}', job already exists!",
+        );
+        return;
+    }
+
+    # insert data into db
+    for my $Key ( keys %{ $Param{Data} } ) {
+        if ( ref $Param{Data}->{$Key} eq 'ARRAY' ) {
+            for my $Item ( @{ $Param{Data}->{$Key} } ) {
+                if ( defined $Item ) {
+                    $Self->{DBObject}->Do(
+                        SQL => 'INSERT INTO generic_agent_jobs '
+                            . '(job_name, job_key, job_value) VALUES (?, ?, ?)',
+                        Bind => [ \$Param{Name}, \$Key, \$Item ],
+                    );
+                }
+            }
+        }
+        else {
+            if ( defined $Param{Data}->{$Key} ) {
+                $Self->{DBObject}->Do(
+                    SQL => 'INSERT INTO generic_agent_jobs '
+                        . '(job_name, job_key, job_value) VALUES (?, ?, ?)',
+                    Bind => [ \$Param{Name}, \$Key, \$Param{Data}->{$Key} ],
+                );
+            }
+        }
+    }
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => "New GenericAgent job '$Param{Name}' added (UserID=$Param{UserID}).",
+    );
+    return 1;
+}
+
+=item JobDelete()
+
+deletes an job from the database
+
+    $GenericAgentObject->JobDelete(Name => 'JobName');
+
+=cut
+
+sub JobDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Name UserID)) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
+
+    # delete job
+    $Self->{DBObject}->Do(
+        SQL  => 'DELETE FROM generic_agent_jobs WHERE job_name = ?',
+        Bind => [ \$Param{Name} ],
+    );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => "GenericAgent job '$Param{Name}' deleted (UserID=$Param{UserID}).",
+    );
+    return 1;
+}
+
 sub _JobUpdateRunTime {
     my ( $Self, %Param ) = @_;
+
+    my @Data = ();
 
     # check needed stuff
     for (qw(Name UserID)) {
@@ -1228,7 +1099,6 @@ sub _JobUpdateRunTime {
         SQL  => 'SELECT job_key, job_value FROM generic_agent_jobs WHERE job_name = ?',
         Bind => [ \$Param{Name} ],
     );
-    my @Data;
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         if ( $Row[0] =~ /^(ScheduleLastRun|ScheduleLastRunUnixTime)/ ) {
             push @Data, { Key => $Row[0], Value => $Row[1] };
@@ -1262,22 +1132,20 @@ sub _JobUpdateRunTime {
 
 1;
 
-=end Internal:
-
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.80 $ $Date: 2012/01/11 17:28:26 $
+$Revision: 1.58.2.1 $ $Date: 2009/09/23 12:51:13 $
 
 =cut
