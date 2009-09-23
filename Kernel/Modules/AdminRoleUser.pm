@@ -1,8 +1,8 @@
 # --
-# Kernel/Modules/AdminRoleUser.pm - to add/update/delete roles <-> users
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Kernel/Modules/AdminRoleUser.pm - to add/update/delete role <-> users
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminRoleUser.pm,v 1.32 2011/12/23 13:35:56 mg Exp $
+# $Id: AdminRoleUser.pm,v 1.16.2.1 2009/09/23 13:23:19 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.32 $) [1];
+$VERSION = qw($Revision: 1.16.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -30,34 +30,31 @@ sub new {
             $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
         }
     }
-
     return $Self;
 }
 
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    # ------------------------------------------------------------ #
-    # user <-> role 1:n  interface to assign roles to an user
-    # ------------------------------------------------------------ #
+    my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' ) || '';
+
+    # user <-> role 1:n
     if ( $Self->{Subaction} eq 'User' ) {
+        my $Output = $Self->{LayoutObject}->Header();
+        $Output .= $Self->{LayoutObject}->NavigationBar();
 
         # get user data
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
         my %UserData = $Self->{UserObject}->GetUserData( UserID => $ID );
 
-        # get role list
+        # get group data
         my %RoleData = $Self->{GroupObject}->RoleList( Valid => 1 );
 
-        # get roles in which the user is a member
+        # get role member
         my %Member = $Self->{GroupObject}->GroupUserRoleMemberList(
             UserID => $ID,
             Result => 'HASH',
         );
-
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->_Change(
+        $Output .= $Self->MaskAdminUserGroupChangeForm(
             Selected => \%Member,
             Data     => \%RoleData,
             ID       => $UserData{UserID},
@@ -65,36 +62,34 @@ sub Run {
             Type     => 'User',
         );
         $Output .= $Self->{LayoutObject}->Footer();
-
         return $Output;
     }
 
-    # ------------------------------------------------------------ #
-    # role <-> user n:1  interface to assign users to a role
-    # ------------------------------------------------------------ #
+    # roles <-> user n:1
     elsif ( $Self->{Subaction} eq 'Role' ) {
+        my $Output = $Self->{LayoutObject}->Header();
+        $Output .= $Self->{LayoutObject}->NavigationBar();
 
-        # get role data
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
-        my %RoleData = $Self->{GroupObject}->RoleGet( ID => $ID );
-
-        # get user list, with the full name in the value
+        # get user data
         my %UserData = $Self->{UserObject}->UserList( Valid => 1 );
-        for my $UserID ( keys %UserData ) {
-            my $Name = $Self->{UserObject}->UserName( UserID => $UserID );
-            next if !$Name;
-            $UserData{$UserID} .= " ($Name)";
+        for ( keys %UserData ) {
+
+            # get user data
+            my %User = $Self->{UserObject}->GetUserData( UserID => $_, Cached => 1 );
+            if ( $User{UserFirstname} && $User{UserLastname} ) {
+                $UserData{$_} .= " ($User{UserFirstname} $User{UserLastname})";
+            }
         }
 
-        # get members of the the role
+        # get group data
+        my %RoleData = $Self->{GroupObject}->RoleGet( ID => $ID );
+
+        # get role member
         my %Member = $Self->{GroupObject}->GroupUserRoleMemberList(
             RoleID => $ID,
             Result => 'HASH',
         );
-
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->_Change(
+        $Output .= $Self->MaskAdminUserGroupChangeForm(
             Selected => \%Member,
             Data     => \%UserData,
             ID       => $RoleData{ID},
@@ -102,34 +97,23 @@ sub Run {
             Type     => 'Role',
         );
         $Output .= $Self->{LayoutObject}->Footer();
-
         return $Output;
     }
 
-    # ------------------------------------------------------------ #
-    # add or remove users to a role
-    # ------------------------------------------------------------ #
+    # add user to roles
     elsif ( $Self->{Subaction} eq 'ChangeRole' ) {
 
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        # to be set members of the role
+        # get new role member
         my @IDs = $Self->{ParamObject}->GetArray( Param => 'Role' );
-
-        # get the role id
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
 
         # get user list
         my %UserData = $Self->{UserObject}->UserList( Valid => 1 );
-
-        # add or remove user from roles
         for my $UserID ( keys %UserData ) {
             my $Active = 0;
-            for my $MemberOfRole (@IDs) {
-                next if $MemberOfRole ne $UserID;
-                $Active = 1;
-                last;
+            for (@IDs) {
+                if ( $_ eq $UserID ) {
+                    $Active = 1;
+                }
             }
             $Self->{GroupObject}->GroupUserRoleMemberAdd(
                 UID    => $UserID,
@@ -138,34 +122,25 @@ sub Run {
                 UserID => $Self->{UserID},
             );
         }
-
-        return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
+        return $Self->{LayoutObject}->Redirect(
+            OP => "Action=AdminRoleUser"
+        );
     }
 
-    # ------------------------------------------------------------ #
-    # add or remove roles for a user
-    # ------------------------------------------------------------ #
+    # roles to users
     elsif ( $Self->{Subaction} eq 'ChangeUser' ) {
 
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        # to be set roles of the user
+        # get new role member
         my @IDs = $Self->{ParamObject}->GetArray( Param => 'User' );
 
-        # get user id
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
-
-        # get role list
+        # get user list
         my %RoleData = $Self->{GroupObject}->RoleList( Valid => 1 );
-
-        # add or remove user from roles
         for my $RoleID ( keys %RoleData ) {
             my $Active = 0;
-            for my $RoleOfMember (@IDs) {
-                next if $RoleOfMember ne $RoleID;
-                $Active = 1;
-                last;
+            for (@IDs) {
+                if ( $_ eq $RoleID ) {
+                    $Active = 1;
+                }
             }
             $Self->{GroupObject}->GroupUserRoleMemberAdd(
                 UID    => $ID,
@@ -174,132 +149,111 @@ sub Run {
                 UserID => $Self->{UserID},
             );
         }
-
-        return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
+        return $Self->{LayoutObject}->Redirect(
+            OP => "Action=AdminRoleUser"
+        );
     }
 
-    # ------------------------------------------------------------ #
-    # overview
-    # ------------------------------------------------------------ #
-    my $Output = $Self->{LayoutObject}->Header();
-    $Output .= $Self->{LayoutObject}->NavigationBar();
-    $Output .= $Self->_Overview();
-    $Output .= $Self->{LayoutObject}->Footer();
+    # else ! print form
+    else {
+        my $Output = $Self->{LayoutObject}->Header();
+        $Output .= $Self->{LayoutObject}->NavigationBar();
 
-    return $Output;
+        # get user data
+        my %UserData = $Self->{UserObject}->UserList( Valid => 1 );
+        for ( keys %UserData ) {
+
+            # get user data
+            my %User = $Self->{UserObject}->GetUserData( UserID => $_, Cached => 1 );
+            if ( $User{UserFirstname} && $User{UserLastname} ) {
+                $UserData{$_} .= " ($User{UserFirstname} $User{UserLastname})";
+            }
+        }
+
+        # get group data
+        my %RoleData = $Self->{GroupObject}->RoleList( Valid => 1 );
+        $Output .= $Self->MaskAdminUserGroupForm(
+            RoleData => \%RoleData,
+            UserData => \%UserData,
+        );
+        $Output .= $Self->{LayoutObject}->Footer();
+        return $Output;
+    }
 }
 
-sub _Change {
+sub MaskAdminUserGroupChangeForm {
     my ( $Self, %Param ) = @_;
 
     my %Data   = %{ $Param{Data} };
     my $Type   = $Param{Type} || 'User';
-    my $NeType = $Type eq 'Role' ? 'User' : 'Role';
-
-    my %VisibleType = ( Role => 'Role', User => 'Agent' );
-
-    $Self->{LayoutObject}->Block(
-        Name => 'Change',
-        Data => {
-            %Param,
-            ActionHome    => 'Admin' . $Type,
-            NeType        => $NeType,
-            VisibleType   => $VisibleType{$Type},
-            VisibleNeType => $VisibleType{$NeType},
-        },
-    );
-
-    $Self->{LayoutObject}->Block( Name => "ChangeHeader$VisibleType{$NeType}" );
-
-    $Self->{LayoutObject}->Block(
-        Name => 'ChangeHeader',
-        Data => {
-            %Param,
-            Type   => $Type,
-            NeType => $NeType,
-        },
-    );
-
-    for my $ID ( sort { uc( $Data{$a} ) cmp uc( $Data{$b} ) } keys %Data ) {
+    my $NeType = 'Role';
+    $NeType = 'User' if ( $Type eq 'Role' );
+    my $CssClass = 'searchactive';
+    for ( sort { uc( $Data{$a} ) cmp uc( $Data{$b} ) } keys %Data ) {
 
         # set output class
-        my $Selected = $Param{Selected}->{$ID} ? ' checked="checked"' : '';
+        if ( $CssClass && $CssClass eq 'searchactive' ) {
+            $CssClass = 'searchpassive';
+        }
+        else {
+            $CssClass = 'searchactive';
+        }
 
+        # input box
+        my $Selected = '';
+        if ( $Param{Selected}->{$_} ) {
+            $Selected = ' checked';
+        }
+        my $Input = '<input type="checkbox" name="' . $Type . '" value="' . $_ . "\"$Selected>";
         $Self->{LayoutObject}->Block(
-            Name => 'ChangeRow',
+            Name => 'Row',
             Data => {
-                %Param,
-                Name     => $Param{Data}->{$ID},
-                NeType   => $NeType,
+                Name     => $Param{Data}->{$_},
+                InputBox => $Input,
                 Type     => $Type,
-                ID       => $ID,
-                Selected => $Selected,
+                NeType   => $NeType,
+                ID       => $_,
+                CssClass => $CssClass,
             },
         );
     }
 
     return $Self->{LayoutObject}->Output(
-        TemplateFile => 'AdminRoleUser',
-        Data         => \%Param,
+        TemplateFile => 'AdminRoleUserChangeForm',
+        Data => { %Param, NeType => $NeType },
     );
 }
 
-sub _Overview {
+sub MaskAdminUserGroupForm {
     my ( $Self, %Param ) = @_;
 
-    $Self->{LayoutObject}->Block(
-        Name => 'Overview',
-        Data => {},
-    );
-
-    # get user list
-    my %UserData = $Self->{UserObject}->UserList( Valid => 1 );
-
-    # get user name
-    for my $UserID ( keys %UserData ) {
-        my $Name = $Self->{UserObject}->UserName( UserID => $UserID );
-        next if !$Name;
-        $UserData{$UserID} .= " ($Name)";
+    my $UserData     = $Param{UserData};
+    my %UserDataTmp  = %$UserData;
+    my $GroupData    = $Param{RoleData};
+    my %GroupDataTmp = %$GroupData;
+    my $BaseLink     = $Self->{LayoutObject}->{Baselink} . "Action=AdminRoleUser&";
+    for ( sort { uc( $UserDataTmp{$a} ) cmp uc( $UserDataTmp{$b} ) } keys %UserDataTmp ) {
+        $UserDataTmp{$_} = $Self->{LayoutObject}->Ascii2Html(
+            Text                => $UserDataTmp{$_},
+            HTMLQuote           => 1,
+            LanguageTranslation => 0,
+        ) || '';
+        $Param{UserStrg}
+            .= "<A HREF=\"$BaseLink" . "Subaction=User&ID=$_\">$UserDataTmp{$_}</A><BR>";
     }
-    for my $UserID ( sort { uc( $UserData{$a} ) cmp uc( $UserData{$b} ) } keys %UserData ) {
-
-        # set output class
-        $Self->{LayoutObject}->Block(
-            Name => 'List1n',
-            Data => {
-                Name      => $UserData{$UserID},
-                Subaction => 'User',
-                ID        => $UserID,
-            },
-        );
-    }
-
-    # get group data
-    my %RoleData = $Self->{GroupObject}->RoleList( Valid => 1 );
-    if (%RoleData) {
-        for my $RoleID ( sort { uc( $RoleData{$a} ) cmp uc( $RoleData{$b} ) } keys %RoleData ) {
-
-            # set output class
-            $Self->{LayoutObject}->Block(
-                Name => 'Listn1',
-                Data => {
-                    Name      => $RoleData{$RoleID},
-                    Subaction => 'Role',
-                    ID        => $RoleID,
-                },
-            );
-        }
-    }
-    else {
-        $Self->{LayoutObject}->Block(
-            Name => 'NoDataFoundMsg',
-            Data => {},
-        );
+    for ( sort { uc( $GroupDataTmp{$a} ) cmp uc( $GroupDataTmp{$b} ) } keys %GroupDataTmp ) {
+        $GroupDataTmp{$_} = $Self->{LayoutObject}->Ascii2Html(
+            Text                => $GroupDataTmp{$_},
+            HTMLQuote           => 1,
+            LanguageTranslation => 0,
+        ) || '';
+        $Param{RoleStrg}
+            .= "<A HREF=\"$BaseLink" . "Subaction=Role&ID=$_\">$GroupDataTmp{$_}</A><BR>";
     }
 
     # return output
     return $Self->{LayoutObject}->Output(
-        TemplateFile => 'AdminRoleUser',
+        TemplateFile => 'AdminRoleUserForm',
         Data         => \%Param,
     );
 }
