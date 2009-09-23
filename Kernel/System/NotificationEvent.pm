@@ -1,8 +1,8 @@
 # --
 # Kernel/System/NotificationEvent.pm - notification system module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: NotificationEvent.pm,v 1.7 2011/12/23 14:08:54 mg Exp $
+# $Id: NotificationEvent.pm,v 1.2.2.1 2009/09/23 21:14:04 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Valid;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.7 $) [1];
+$VERSION = qw($Revision: 1.2.2.1 $) [1];
 
 =head1 NAME
 
@@ -87,7 +87,6 @@ create an object
         QueueObject  => $QueueObject,
         DBObject     => $DBObject,
         MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
     );
 
 =cut
@@ -100,10 +99,7 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for (
-        qw(DBObject ConfigObject LogObject TimeObject TicketObject QueueObject MainObject EncodeObject)
-        )
-    {
+    for (qw(DBObject ConfigObject LogObject TimeObject TicketObject QueueObject MainObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -162,7 +158,7 @@ sub NotificationGet {
     if ( $Param{Name} ) {
         $Self->{DBObject}->Prepare(
             SQL => 'SELECT id, name, subject, text, content_type, charset, valid_id, '
-                . 'comments, create_time, create_by, change_time, change_by '
+                . 'create_time, create_by, change_time, change_by '
                 . 'FROM notification_event WHERE name = ?',
             Bind => [ \$Param{Name} ],
         );
@@ -170,7 +166,7 @@ sub NotificationGet {
     else {
         $Self->{DBObject}->Prepare(
             SQL => 'SELECT id, name, subject, text, content_type, charset, valid_id, '
-                . 'comments, create_time, create_by, change_time, change_by '
+                . 'create_time, create_by, change_time, change_by '
                 . 'FROM notification_event WHERE id = ?',
             Bind => [ \$Param{ID} ],
         );
@@ -184,11 +180,10 @@ sub NotificationGet {
         $Data{Type}       = $Row[4];
         $Data{Charset}    = $Row[5];
         $Data{ValidID}    = $Row[6];
-        $Data{Comment}    = $Row[7];
-        $Data{CreateTime} = $Row[8];
-        $Data{CreateBy}   = $Row[9];
-        $Data{ChangeTime} = $Row[10];
-        $Data{ChangeBy}   = $Row[11];
+        $Data{CreateTime} = $Row[7];
+        $Data{CreateBy}   = $Row[8];
+        $Data{ChangeTime} = $Row[9];
+        $Data{ChangeBy}   = $Row[10];
     }
     return if !%Data;
 
@@ -251,13 +246,12 @@ sub NotificationAdd {
     # insert data into db
     return if !$Self->{DBObject}->Do(
         SQL => 'INSERT INTO notification_event '
-            . '(name, subject, text, content_type, charset, valid_id, comments, '
+            . '(name, subject, text, content_type, charset, valid_id, '
             . 'create_time, create_by, change_time, change_by) VALUES '
-            . '(?, ?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+            . '(?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
         Bind => [
-            \$Param{Name},    \$Param{Subject}, \$Param{Body},
-            \$Param{Type},    \$Param{Charset}, \$Param{ValidID},
-            \$Param{Comment}, \$Param{UserID},  \$Param{UserID},
+            \$Param{Name},    \$Param{Subject}, \$Param{Body},   \$Param{Type},
+            \$Param{Charset}, \$Param{ValidID}, \$Param{UserID}, \$Param{UserID},
         ],
     );
 
@@ -301,7 +295,7 @@ update a notification in database
         Data => {
             Queue => [ 'SomeQueue', ],
             ...
-            Valid => [ 1, ],
+            Vaild => [ 1, ],
         },
         UserID => 123,
     );
@@ -325,13 +319,11 @@ sub NotificationUpdate {
     # update data in db
     return if !$Self->{DBObject}->Do(
         SQL => 'UPDATE notification_event SET '
-            . 'name = ?, subject = ?, text = ?, content_type = ?, charset = ?, '
-            . 'valid_id = ?, comments = ?, '
+            . 'name = ?, subject = ?, text = ?, content_type = ?, charset = ?, valid_id = ?, '
             . 'change_time = current_timestamp, change_by = ? WHERE id = ?',
         Bind => [
-            \$Param{Name},    \$Param{Subject}, \$Param{Body},
-            \$Param{Type},    \$Param{Charset}, \$Param{ValidID},
-            \$Param{Comment}, \$Param{UserID},  \$Param{ID},
+            \$Param{Name},    \$Param{Subject}, \$Param{Body},   \$Param{Type},
+            \$Param{Charset}, \$Param{ValidID}, \$Param{UserID}, \$Param{ID},
         ],
     );
 
@@ -388,11 +380,11 @@ sub NotificationDelete {
 
     # delete notification
     $Self->{DBObject}->Do(
-        SQL  => 'DELETE FROM notification_event_item WHERE notification_id = ?',
+        SQL  => 'DELETE FROM notification_event WHERE id = ?',
         Bind => [ \$Param{ID} ],
     );
     $Self->{DBObject}->Do(
-        SQL  => 'DELETE FROM notification_event WHERE id = ?',
+        SQL  => 'DELETE FROM notification_event_item WHERE notification_id = ?',
         Bind => [ \$Param{ID} ],
     );
     $Self->{LogObject}->Log(
@@ -440,16 +432,16 @@ sub NotificationEventCheck {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.7 $ $Date: 2011/12/23 14:08:54 $
+$Revision: 1.2.2.1 $ $Date: 2009/09/23 21:14:04 $
 
 =cut
