@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Web/InterfaceCustomer.pm - the customer interface file (incl. auth)
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: InterfaceCustomer.pm,v 1.63 2012/01/23 15:12:17 mb Exp $
+# $Id: InterfaceCustomer.pm,v 1.41.2.1 2009/09/23 08:01:57 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION @INC);
-$VERSION = qw($Revision: 1.63 $) [1];
+$VERSION = qw($Revision: 1.41.2.1 $) [1];
 
 # all framework needed modules
 use Kernel::Config;
@@ -52,10 +52,7 @@ create customer web interface object
     use Kernel::System::Web::InterfaceCustomer;
 
     my $Debug = 0;
-    my $InterfaceCustomer = Kernel::System::Web::InterfaceCustomer->new(
-        Debug      => $Debug,
-        WebRequest => CGI::Fast->new(), # optional, e. g. if fast cgi is used, the CGI object is already provided
-    );
+    my $InterfaceCustomer = Kernel::System::Web::InterfaceCustomer->new(Debug => $Debug);
 
 =cut
 
@@ -72,7 +69,7 @@ sub new {
     # performance log
     $Self->{PerformanceLogStart} = time();
 
-    # create common framework objects 1/2
+    # create common framework objects 1/3
     $Self->{ConfigObject} = Kernel::Config->new();
     $Self->{LogObject}    = Kernel::System::Log->new(
         LogPrefix => $Self->{ConfigObject}->Get('CGILogPrefix'),
@@ -109,7 +106,7 @@ sub Run {
     my $Self = shift;
 
     # get common framework params
-    my %Param;
+    my %Param = ();
 
     # get session id
     $Param{SessionName} = $Self->{ConfigObject}->Get('CustomerPanelSessionName') || 'CSID';
@@ -117,21 +114,21 @@ sub Run {
 
     # drop old session id (if exists)
     my $QueryString = $ENV{QUERY_STRING} || '';
-    $QueryString =~ s/(\?|&|;|)$Param{SessionName}(=&|=;|=.+?&|=.+?$)/;/g;
+    $QueryString =~ s/(\?|&|)$Param{SessionName}(=&|=.+?&|=.+?$)/&/g;
 
-    # define framework params
-    my $FrameworkParams = {
+    # definde frame work params
+    my $FramworkPrams = {
         Lang         => '',
         Action       => '',
         Subaction    => '',
         RequestedURL => $QueryString,
     };
-    for my $Key ( keys %{$FrameworkParams} ) {
+    for my $Key ( keys %{$FramworkPrams} ) {
         $Param{$Key} = $Self->{ParamObject}->GetParam( Param => $Key )
-            || $FrameworkParams->{$Key};
+            || $FramworkPrams->{$Key};
     }
 
-    # Check if the browser sends the SessionID cookie and set the SessionID-cookie
+    # Check if the brwoser sends the SessionID cookie and set the SessionID-cookie
     # as SessionID! GET or POST SessionID have the lowest priority.
     if ( $Self->{ConfigObject}->Get('SessionUseCookie') ) {
         $Param{SessionIDCookie} = $Self->{ParamObject}->GetCookie( Key => $Param{SessionName} );
@@ -140,26 +137,22 @@ sub Run {
         }
     }
 
+    # create common framework objects 2/3
+    $Self->{LayoutObject} = Kernel::Output::HTML::Layout->new( %{$Self}, Lang => $Param{Lang} );
+
     # check common objects
     $Self->{DBObject} = Kernel::System::DB->new( %{$Self} );
-    if ( !$Self->{DBObject} || $Self->{ParamObject}->Error() ) {
-        my $LayoutObject = Kernel::Output::HTML::Layout->new( %{$Self}, Lang => $Param{Lang} );
-        if ( !$Self->{DBObject} ) {
-            $LayoutObject->CustomerFatalError(
-                Comment => 'Please contact your administrator',
-            );
-            return;
-        }
-        if ( $Self->{ParamObject}->Error() ) {
-            $LayoutObject->CustomerFatalError(
-                Message => $Self->{ParamObject}->Error(),
-                Comment => 'Please contact your administrator',
-            );
-            return;
-        }
+    if ( !$Self->{DBObject} ) {
+        $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your admin' );
+    }
+    if ( $Self->{ParamObject}->Error() ) {
+        $Self->{LayoutObject}->CustomerFatalError(
+            Message => $Self->{ParamObject}->Error(),
+            Comment => 'Please contact your admin'
+        );
     }
 
-    # create common framework objects 2/2
+    # create common framework objects 3/3
     $Self->{UserObject}    = Kernel::System::CustomerUser->new( %{$Self} );
     $Self->{GroupObject}   = Kernel::System::CustomerGroup->new( %{$Self} );
     $Self->{SessionObject} = Kernel::System::AuthSession->new( %{$Self} );
@@ -175,8 +168,7 @@ sub Run {
         else {
 
             # print error
-            my $LayoutObject = Kernel::Output::HTML::Layout->new( %{$Self}, Lang => $Param{Lang} );
-            $LayoutObject->CustomerFatalError( Comment => 'Please contact your administrator' );
+            $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your admin' );
         }
     }
 
@@ -186,14 +178,11 @@ sub Run {
         $Param{$Key} = $Self->{ParamObject}->GetParam( Param => $Key ) || $CommonObjectParam{$Key};
     }
 
-    # security check Action Param (replace non-word chars)
+    # security check Action Param (replace non word chars)
     $Param{Action} =~ s/\W//g;
 
     # check request type
     if ( $Param{Action} eq 'Login' ) {
-
-        # new layout object
-        my $LayoutObject = Kernel::Output::HTML::Layout->new( %{$Self}, Lang => $Param{Lang} );
 
         # get params
         my $PostUser = $Self->{ParamObject}->GetParam( Param => 'User' )     || '';
@@ -202,257 +191,214 @@ sub Run {
         # create AuthObject
         my $AuthObject = Kernel::System::CustomerAuth->new( %{$Self} );
 
-        # check submitted data
+        # check submited data
         my $User = $AuthObject->Auth( User => $PostUser, Pw => $PostPw );
+        if ($User) {
 
-        # login is vailid
-        if ( !$User ) {
+            # get user data
+            my %UserData = $Self->{UserObject}->CustomerUserDataGet( User => $User, Valid => 1 );
 
-            # redirect to alternate login
-            if ( $Self->{ConfigObject}->Get('CustomerPanelLoginURL') ) {
-                $Param{RequestedURL} = $LayoutObject->LinkEncode( $Param{RequestedURL} );
-                print $LayoutObject->Redirect(
-                    ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLoginURL')
-                        . "?Reason=LoginFailed;RequestedURL=$Param{RequestedURL}",
-                );
-                return;
-            }
+            # check needed data
+            if ( !$UserData{UserID} || !$UserData{UserLogin} ) {
+                if ( $Self->{ConfigObject}->Get('CustomerPanelLoginURL') ) {
 
-            # show normal login
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
-                    Title   => 'Login',
-                    Message => $Self->{LogObject}->GetLogEntry(
-                        Type => 'Info',
-                        What => 'Message',
-                        )
-                        || 'Login failed! Your user name or password was entered incorrectly.',
-                    User        => $PostUser,
-                    LoginFailed => 1,
-                    %Param,
-                ),
-            );
-            return;
-        }
-
-        # login is successful
-        my %UserData = $Self->{UserObject}->CustomerUserDataGet( User => $User, Valid => 1 );
-
-        # check needed data
-        if ( !$UserData{UserID} || !$UserData{UserLogin} ) {
-
-            # redirect to alternate login
-            if ( $Self->{ConfigObject}->Get('CustomerPanelLoginURL') ) {
-                print $LayoutObject->Redirect(
-                    ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLoginURL')
-                        . '?Reason=SystemError',
-                );
-                return;
-            }
-
-            # show need user data error message
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
-                    Title => 'Panic!',
-                    Message =>
-                        'Authentication succeeded, but no customer record is found in the customer backend. Please contact your administrator.',
-                    %Param,
-                ),
-            );
-            return;
-        }
-
-        # get groups rw/ro
-        for my $Type (qw(rw ro)) {
-            my %GroupData = $Self->{GroupObject}->GroupMemberList(
-                Result => 'HASH',
-                Type   => $Type,
-                UserID => $UserData{UserID},
-            );
-            for ( keys %GroupData ) {
-                if ( $Type eq 'rw' ) {
-                    $UserData{"UserIsGroup[$GroupData{$_}]"} = 'Yes';
+                    # redirect to alternate login
+                    print $Self->{LayoutObject}->Redirect(
+                        ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLoginURL')
+                            . '?Reason=SystemError',
+                    );
                 }
                 else {
-                    $UserData{"UserIsGroupRo[$GroupData{$_}]"} = 'Yes';
+
+                    # show login screen
+                    $Self->{LayoutObject}->Print(
+                        Output => \$Self->{LayoutObject}->CustomerLogin(
+                            Title   => 'Panic!',
+                            Message => 'Panic! No UserData!!!',
+                            %Param,
+                        ),
+                    );
+                    exit 0;
                 }
             }
-        }
-
-        my $NewSessionID;
-
-        # verify if the login and password should be saved in the session
-        if ( $Self->{ConfigObject}->Get("SessionSaveLoginPasswd") ) {
 
             # create new session id
-            $NewSessionID = $Self->{SessionObject}->CreateSessionID(
+            my $NewSessionID = $Self->{SessionObject}->CreateSessionID(
                 _UserLogin => $PostUser,
                 _UserPw    => $PostPw,
                 %UserData,
                 UserLastRequest => $Self->{TimeObject}->SystemTime(),
                 UserType        => 'Customer',
             );
-        }
-        else {
 
-            # create new session id
-            $NewSessionID = $Self->{SessionObject}->CreateSessionID(
-                %UserData,
-                UserLastRequest => $Self->{TimeObject}->SystemTime(),
-                UserType        => 'Customer',
+            # set time zone offset if TimeZoneFeature is active
+            if (
+                $Self->{ConfigObject}->Get('TimeZoneUser')
+                && $Self->{ConfigObject}->Get('TimeZoneUserBrowserAutoOffset')
+                && $Self->{LayoutObject}->{BrowserJavaScriptSupport}
+                )
+            {
+                my $TimeOffset = $Self->{ParamObject}->GetParam( Param => 'TimeOffset' ) || '';
+                if ( $TimeOffset > 0 ) {
+                    $TimeOffset = '-' . ( $TimeOffset / 60 );
+                }
+                else {
+                    $TimeOffset = ( $TimeOffset / 60 );
+                    $TimeOffset =~ s/-/+/;
+                }
+                $Self->{UserObject}->SetPreferences(
+                    UserID => $UserData{UserID},
+                    Key    => 'UserTimeZone',
+                    Value  => $TimeOffset,
+                );
+                $Self->{SessionObject}->UpdateSessionID(
+                    SessionID => $NewSessionID,
+                    Key       => 'UserTimeZone',
+                    Value     => $TimeOffset,
+                );
+            }
+
+            # create a new LayoutObject with SessionIDCookie
+            my $Expires = '+' . $Self->{ConfigObject}->Get('SessionMaxTime') . 's';
+            if ( !$Self->{ConfigObject}->Get('SessionUseCookieAfterBrowserClose') ) {
+                $Expires = '';
+            }
+            my $LayoutObject = Kernel::Output::HTML::Layout->new(
+                SetCookies => {
+                    SessionIDCookie => $Self->{ParamObject}->SetCookie(
+                        Key     => $Param{SessionName},
+                        Value   => $NewSessionID,
+                        Expires => $Expires,
+                    ),
+                },
+                SessionID   => $NewSessionID,
+                SessionName => $Param{SessionName},
+                %{$Self},
             );
+
+            # redirect with new session id and old params
+            # prepare old redirect URL -- do not redirect to Login or Logout (loop)!
+            if ( $Param{RequestedURL} =~ /Action=(Logout|Login|LostPassword)/ ) {
+                $Param{RequestedURL} = '';
+            }
+
+            # redirect with new session id
+            print $LayoutObject->Redirect( OP => $Param{RequestedURL} );
         }
 
-        # set time zone offset if TimeZoneFeature is active
-        if (
-            $Self->{ConfigObject}->Get('TimeZoneUser')
-            && $Self->{ConfigObject}->Get('TimeZoneUserBrowserAutoOffset')
-            && $LayoutObject->{BrowserJavaScriptSupport}
-            )
-        {
-            my $TimeOffset = $Self->{ParamObject}->GetParam( Param => 'TimeOffset' ) || 0;
-            if ( $TimeOffset > 0 ) {
-                $TimeOffset = '-' . ( $TimeOffset / 60 );
+        # login is vailid
+        else {
+            if ( $Self->{ConfigObject}->Get('CustomerPanelLoginURL') ) {
+
+                # redirect to alternate login
+                $Param{RequestedURL} = $Self->{LayoutObject}->LinkEncode( $Param{RequestedURL} );
+                print $Self->{LayoutObject}->Redirect(
+                    ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLoginURL')
+                        . "?Reason=LoginFailed&RequestedURL=$Param{RequestedURL}",
+                );
             }
             else {
-                $TimeOffset = ( $TimeOffset / 60 );
-                $TimeOffset =~ s/-/+/;
+
+                # show normal login
+                $Self->{LayoutObject}->Print(
+                    Output => \$Self->{LayoutObject}->CustomerLogin(
+                        Title   => 'Login',
+                        Message => $Self->{LogObject}->GetLogEntry(
+                            Type => 'Info',
+                            What => 'Message',
+                            )
+                            || 'Login failed! Your username or password was entered incorrectly.',
+                        User => $PostUser,
+                        %Param,
+                    ),
+                );
             }
-            $Self->{UserObject}->SetPreferences(
-                UserID => $UserData{UserID},
-                Key    => 'UserTimeZone',
-                Value  => $TimeOffset,
-            );
-            $Self->{SessionObject}->UpdateSessionID(
-                SessionID => $NewSessionID,
-                Key       => 'UserTimeZone',
-                Value     => $TimeOffset,
-            );
         }
-
-        # create a new LayoutObject with SessionIDCookie
-        my $Expires = '+' . $Self->{ConfigObject}->Get('SessionMaxTime') . 's';
-        if ( !$Self->{ConfigObject}->Get('SessionUseCookieAfterBrowserClose') ) {
-            $Expires = '';
-        }
-
-        my $SecureAttribute;
-        if ( $Self->{ConfigObject}->Get('HttpType') eq 'https' ) {
-
-            # Restrict Cookie to HTTPS if it is used.
-            $SecureAttribute = 1;
-        }
-
-        $LayoutObject = Kernel::Output::HTML::Layout->new(
-            SetCookies => {
-                SessionIDCookie => $Self->{ParamObject}->SetCookie(
-                    Key     => $Param{SessionName},
-                    Value   => $NewSessionID,
-                    Expires => $Expires,
-                    Secure  => scalar $SecureAttribute,
-                ),
-            },
-            SessionID   => $NewSessionID,
-            SessionName => $Param{SessionName},
-            %{$Self},
-        );
-
-        # redirect with new session id and old params
-        # prepare old redirect URL -- do not redirect to Login or Logout (loop)!
-        if ( $Param{RequestedURL} =~ /Action=(Logout|Login|LostPassword)/ ) {
-            $Param{RequestedURL} = '';
-        }
-
-        # redirect with new session id
-        print $LayoutObject->Redirect( OP => $Param{RequestedURL} );
-        return 1;
     }
 
     # Logout
     elsif ( $Param{Action} eq 'Logout' ) {
+        if ( $Self->{SessionObject}->CheckSessionID( SessionID => $Param{SessionID} ) ) {
 
-        # check session id
-        if ( !$Self->{SessionObject}->CheckSessionID( SessionID => $Param{SessionID} ) ) {
+            # get session data
+            my %UserData
+                = $Self->{SessionObject}->GetSessionIDData( SessionID => $Param{SessionID}, );
 
-            # new layout object
-            my $LayoutObject = Kernel::Output::HTML::Layout->new( %{$Self}, Lang => $Param{Lang} );
+            # create new LayoutObject with new '%Param' and '%UserData'
+            $Self->{LayoutObject} = Kernel::Output::HTML::Layout->new(
+                SetCookies => {
+                    SessionIDCookie => $Self->{ParamObject}->SetCookie(
+                        Key   => $Param{SessionName},
+                        Value => '',
+                    ),
+                },
+                %{$Self},
+                %Param,
+                %UserData,
+            );
 
-            # redirect to alternate login
+            # remove session id
+            if ( $Self->{SessionObject}->RemoveSessionID( SessionID => $Param{SessionID} ) ) {
+                if ( $Self->{ConfigObject}->Get('CustomerPanelLogoutURL') ) {
+
+                    # redirect to alternate login
+                    print $Self->{LayoutObject}->Redirect(
+                        ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLogoutURL')
+                            . "?Reason=Logout",
+                    );
+                }
+                else {
+
+                    # show logout screen
+                    $Self->{LayoutObject}->Print(
+                        Output => \$Self->{LayoutObject}->CustomerLogin(
+                            Title   => 'Logout',
+                            Message => 'Logout successful. Thank you for using OTRS!',
+                            %Param,
+                        ),
+                    );
+                }
+            }
+            else {
+                $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your admin' );
+            }
+        }
+        else {
             if ( $Self->{ConfigObject}->Get('CustomerPanelLoginURL') ) {
-                $Param{RequestedURL} = $LayoutObject->LinkEncode( $Param{RequestedURL} );
-                print $LayoutObject->Redirect(
+
+                # redirect to alternate login
+                $Param{RequestedURL} = $Self->{LayoutObject}->LinkEncode( $Param{RequestedURL} );
+                print $Self->{LayoutObject}->Redirect(
                     ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLoginURL')
-                        . "?Reason=InvalidSessionID;RequestedURL=$Param{RequestedURL}",
+                        . "?Reason=InvalidSessionID&RequestedURL=$Param{RequestedURL}",
                 );
             }
+            else {
 
-            # show login screen
-            print $LayoutObject->CustomerLogin(
-                Title   => 'Logout',
-                Message => 'Invalid SessionID!',
-                %Param,
-            );
-            return;
+                # show login screen
+                print $Self->{LayoutObject}->CustomerLogin(
+                    Title   => 'Logout',
+                    Message => 'Invalid SessionID!',
+                    %Param,
+                );
+            }
         }
-
-        # get session data
-        my %UserData = $Self->{SessionObject}->GetSessionIDData( SessionID => $Param{SessionID}, );
-
-        # create new LayoutObject with new '%Param' and '%UserData'
-        my $LayoutObject = Kernel::Output::HTML::Layout->new(
-            SetCookies => {
-                SessionIDCookie => $Self->{ParamObject}->SetCookie(
-                    Key   => $Param{SessionName},
-                    Value => '',
-                ),
-            },
-            %{$Self},
-            %Param,
-            %UserData,
-        );
-
-        # remove session id
-        if ( !$Self->{SessionObject}->RemoveSessionID( SessionID => $Param{SessionID} ) ) {
-            $LayoutObject->CustomerFatalError( Comment => 'Please contact your administrator' );
-            return;
-        }
-
-        # redirect to alternate login
-        if ( $Self->{ConfigObject}->Get('CustomerPanelLogoutURL') ) {
-            print $LayoutObject->Redirect(
-                ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLogoutURL')
-                    . "?Reason=Logout",
-            );
-        }
-
-        # show logout screen
-        $LayoutObject->Print(
-            Output => \$LayoutObject->CustomerLogin(
-                Title   => 'Logout',
-                Message => 'Logout successful. Thank you for using OTRS!',
-                %Param,
-            ),
-        );
-        return 1;
     }
 
     # CustomerLostPassword
     elsif ( $Param{Action} eq 'CustomerLostPassword' ) {
 
-        # new layout object
-        my $LayoutObject = Kernel::Output::HTML::Layout->new( %{$Self}, Lang => $Param{Lang}, );
-
         # check feature
         if ( !$Self->{ConfigObject}->Get('CustomerPanelLostPassword') ) {
 
             # show normal login
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
+            $Self->{LayoutObject}->Print(
+                Output => \$Self->{LayoutObject}->CustomerLogin(
                     Title   => 'Login',
                     Message => 'Feature not active!',
                 ),
             );
-            return;
+            exit 0;
         }
 
         # get params
@@ -480,151 +426,132 @@ sub Run {
         # get user data
         my %UserData = $Self->{UserObject}->CustomerUserDataGet( User => $User );
         if ( !$UserData{UserID} ) {
-
-            # Security: pretend that password reset instructions were actually sent to
-            #   make sure that users cannot find out valid usernames by
-            #   just trying and checking the result message.
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
+            $Self->{LayoutObject}->Print(
+                Output => \$Self->{LayoutObject}->CustomerLogin(
                     Title   => 'Login',
-                    Message => 'Sent password reset instructions. Please check your email.',
+                    Message => 'There is no account with that login name.',
                 ),
             );
-            return;
         }
+        else {
 
-        # create email object
-        my $EmailObject = Kernel::System::Email->new( %{$Self} );
+            # create email object
+            my $EmailObject = Kernel::System::Email->new( %{$Self} );
 
-        # send password reset token
-        if ( !$Token ) {
+            # send password reset token
+            if ( !$Token ) {
 
-            # generate token
-            $UserData{Token} = $Self->{UserObject}->TokenGenerate(
-                UserID => $UserData{UserID},
-            );
-
-            # send token notify email with link
-            my $Body = $Self->{ConfigObject}->Get('CustomerPanelBodyLostPasswordToken')
-                || 'ERROR: CustomerPanelBodyLostPasswordToken is missing!';
-            my $Subject = $Self->{ConfigObject}->Get('CustomerPanelSubjectLostPasswordToken')
-                || 'ERROR: CustomerPanelSubjectLostPasswordToken is missing!';
-            for ( keys %UserData ) {
-                $Body =~ s/<OTRS_$_>/$UserData{$_}/gi;
-            }
-            my $Sent = $EmailObject->Send(
-                To       => $UserData{UserEmail},
-                Subject  => $Subject,
-                Charset  => $LayoutObject->{UserCharset},
-                MimeType => 'text/plain',
-                Body     => $Body
-            );
-            if ( !$Sent ) {
-                $LayoutObject->FatalError(
-                    Comment => 'Please contact your administrator'
+                # generate token
+                $UserData{Token} = $Self->{UserObject}->TokenGenerate(
+                    UserID => $UserData{UserID},
                 );
-                return;
+
+                # send token notify email with link
+                my $Body = $Self->{ConfigObject}->Get('CustomerPanelBodyLostPasswordToken')
+                    || 'ERROR: CustomerPanelBodyLostPasswordToken is missing!';
+                my $Subject = $Self->{ConfigObject}->Get('CustomerPanelSubjectLostPasswordToken')
+                    || 'ERROR: CustomerPanelSubjectLostPasswordToken is missing!';
+                for ( keys %UserData ) {
+                    $Body =~ s/<OTRS_$_>/$UserData{$_}/gi;
+                }
+                my $Sent = $EmailObject->Send(
+                    To       => $UserData{UserEmail},
+                    Subject  => $Subject,
+                    Charset  => $Self->{LayoutObject}->{UserCharset},
+                    MimeType => 'text/plain',
+                    Body     => $Body
+                );
+                if ($Sent) {
+                    $Self->{LayoutObject}->Print(
+                        Output => \$Self->{LayoutObject}->CustomerLogin(
+                            Title   => 'Login',
+                            Message => "Sent password token to: \%s\", \"$UserData{UserEmail}",
+                            %Param,
+                        ),
+                    );
+                    exit 0;
+                }
+                $Self->{LayoutObject}->FatalError(
+                    Comment => 'Please contact your admin'
+                );
             }
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
-                    Title   => 'Login',
-                    Message => 'Sent password reset instructions. Please check your email.',
-                    %Param,
-                ),
-            );
-            return 1;
 
+            # reset password
+            else {
+
+                # check if token is valid
+                my $TokenValid = $Self->{UserObject}->TokenCheck(
+                    Token  => $Token,
+                    UserID => $UserData{UserID},
+                );
+                if ( !$TokenValid ) {
+                    $Self->{LayoutObject}->Print(
+                        Output => \$Self->{LayoutObject}->CustomerLogin(
+                            Title   => 'Login',
+                            Message => "Invalid Token!",
+                            %Param,
+                        ),
+                    );
+                    exit 0;
+                }
+
+                # get new password
+                $UserData{NewPW} = $Self->{UserObject}->GenerateRandomPassword();
+
+                # update new password
+                $Self->{UserObject}->SetPassword( UserLogin => $User, PW => $UserData{NewPW} );
+
+                # send notify email
+                my $Body = $Self->{ConfigObject}->Get('CustomerPanelBodyLostPassword')
+                    || "New Password is: <OTRS_NEWPW>";
+                my $Subject = $Self->{ConfigObject}->Get('CustomerPanelSubjectLostPassword')
+                    || 'New Password!';
+                for ( keys %UserData ) {
+                    $Body =~ s/<OTRS_$_>/$UserData{$_}/gi;
+                }
+                my $Sent = $EmailObject->Send(
+                    To       => $UserData{UserEmail},
+                    Subject  => $Subject,
+                    Charset  => $Self->{LayoutObject}->{UserCharset},
+                    MimeType => 'text/plain',
+                    Body     => $Body
+                );
+                if ($Sent) {
+                    $Self->{LayoutObject}->Print(
+                        Output => \$Self->{LayoutObject}->CustomerLogin(
+                            Title   => 'Login',
+                            Message => "Sent new password to: \%s\", \"$UserData{UserEmail}",
+                            User    => $User,
+                        ),
+                    );
+                }
+                else {
+                    $Self->{LayoutObject}->CustomerFatalError(
+                        Comment => 'Please contact your admin'
+                    );
+                }
+            }
         }
-
-        # reset password
-        # check if token is valid
-        my $TokenValid = $Self->{UserObject}->TokenCheck(
-            Token  => $Token,
-            UserID => $UserData{UserID},
-        );
-        if ( !$TokenValid ) {
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
-                    Title   => 'Login',
-                    Message => 'Invalid Token!',
-                    %Param,
-                ),
-            );
-            return;
-        }
-
-        # get new password
-        $UserData{NewPW} = $Self->{UserObject}->GenerateRandomPassword();
-
-        # update new password
-        my $Success
-            = $Self->{UserObject}->SetPassword( UserLogin => $User, PW => $UserData{NewPW} );
-
-        if ( !$Success ) {
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
-                    Title => 'Login',
-                    Message =>
-                        "Reset password unsuccessful. Please contact your administrator",
-                    User => $User,
-                ),
-            );
-            return;
-        }
-
-        # send notify email
-        my $Body = $Self->{ConfigObject}->Get('CustomerPanelBodyLostPassword')
-            || 'New Password is: <OTRS_NEWPW>';
-        my $Subject = $Self->{ConfigObject}->Get('CustomerPanelSubjectLostPassword')
-            || 'New Password!';
-        for ( keys %UserData ) {
-            $Body =~ s/<OTRS_$_>/$UserData{$_}/gi;
-        }
-        my $Sent = $EmailObject->Send(
-            To       => $UserData{UserEmail},
-            Subject  => $Subject,
-            Charset  => $LayoutObject->{UserCharset},
-            MimeType => 'text/plain',
-            Body     => $Body
-        );
-        if ( !$Sent ) {
-            $LayoutObject->CustomerFatalError(
-                Comment => 'Please contact your administrator'
-            );
-            return;
-        }
-        $LayoutObject->Print(
-            Output => \$LayoutObject->CustomerLogin(
-                Title => 'Login',
-                Message =>
-                    "Sent new password to \%s. Please check your email.\", \"$UserData{UserEmail}",
-                User => $User,
-            ),
-        );
-        return 1;
     }
 
     # create new customer account
     elsif ( $Param{Action} eq 'CustomerCreateAccount' ) {
 
-        # new layout object
-        my $LayoutObject = Kernel::Output::HTML::Layout->new( %{$Self}, Lang => $Param{Lang} );
-
         # check feature
         if ( !$Self->{ConfigObject}->Get('CustomerPanelCreateAccount') ) {
 
             # show normal login
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
+            $Self->{LayoutObject}->Print(
+                Output => \$Self->{LayoutObject}->CustomerLogin(
                     Title   => 'Login',
                     Message => 'Feature not active!',
                 ),
             );
-            return;
+            exit 0;
         }
 
         # get params
-        my %GetParams;
+        my %GetParams = ();
         for my $Entry ( @{ $Self->{ConfigObject}->Get('CustomerUser')->{Map} } ) {
             $GetParams{ $Entry->[0] } = $Self->{ParamObject}->GetParam( Param => $Entry->[1] )
                 || '';
@@ -645,148 +572,136 @@ sub Run {
         # get user data
         my %UserData = $Self->{UserObject}->CustomerUserDataGet( User => $GetParams{UserLogin} );
         if ( $UserData{UserID} || !$GetParams{UserLogin} ) {
-            $LayoutObject->Block( Name => 'SignupError' );
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
-                    Title => 'Login',
-                    Message =>
-                        'This email address already exists. Please log in or reset your password.',
-                    UserTitle     => $GetParams{UserTitle},
-                    UserFirstname => $GetParams{UserFirstname},
-                    UserLastname  => $GetParams{UserLastname},
-                    UserEmail     => $GetParams{UserEmail},
-                ),
+            my $Output = $Self->{LayoutObject}->CustomerHeader( Area => 'Core', Title => 'Error' );
+            $Output .= $Self->{LayoutObject}->CustomerWarning(
+                Message => 'This account exists.',
+                Comment => 'Please press Back and try again.'
             );
-            return;
+            $Output .= $Self->{LayoutObject}->CustomerFooter();
+            $Self->{LayoutObject}->Print( Output => \$Output );
         }
-
-        # create account
-        my $Now = $Self->{TimeObject}->SystemTime2TimeStamp(
-            SystemTime => $Self->{TimeObject}->SystemTime(),
-        );
-        my $Add = $Self->{UserObject}->CustomerUserAdd(
-            %GetParams,
-            Comment => "Added via Customer Panel ($Now)",
-            ValidID => 1,
-            UserID  => $Self->{ConfigObject}->Get('CustomerPanelUserID'),
-        );
-        if ( !$Add ) {
-            $LayoutObject->Block( Name => 'SignupError' );
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
-                    Title         => 'Login',
-                    Message       => 'Customer user can\'t be added!',
-                    UserTitle     => $GetParams{UserTitle},
-                    UserFirstname => $GetParams{UserFirstname},
-                    UserLastname  => $GetParams{UserLastname},
-                    UserEmail     => $GetParams{UserEmail},
-                ),
+        else {
+            my $Now = $Self->{TimeObject}->SystemTime2TimeStamp(
+                SystemTime => $Self->{TimeObject}->SystemTime(),
             );
-            return;
-        }
-
-        # send notify email
-        my $EmailObject = Kernel::System::Email->new( %{$Self} );
-        my $Body        = $Self->{ConfigObject}->Get('CustomerPanelBodyNewAccount')
-            || 'No Config Option found!';
-        my $Subject = $Self->{ConfigObject}->Get('CustomerPanelSubjectNewAccount')
-            || 'New OTRS Account!';
-        for ( keys %GetParams ) {
-            $Body =~ s/<OTRS_$_>/$GetParams{$_}/gi;
-        }
-
-        # send account info
-        my $Sent = $EmailObject->Send(
-            To       => $GetParams{UserEmail},
-            Subject  => $Subject,
-            Charset  => $LayoutObject->{UserCharset},
-            MimeType => 'text/plain',
-            Body     => $Body
-        );
-        if ( !$Sent ) {
-            my $Output = $LayoutObject->CustomerHeader(
-                Area  => 'Core',
-                Title => 'Error'
+            my $Add = $Self->{UserObject}->CustomerUserAdd(
+                %GetParams,
+                Comment => "Added via Customer Panel ($Now)",
+                ValidID => 1,
+                UserID  => $Self->{ConfigObject}->Get('CustomerPanelUserID'),
             );
-            $Output .= $LayoutObject->CustomerWarning(
-                Comment => 'Can\'t send account info!'
+            if ( !$Add ) {
+                my $Output = $Self->{LayoutObject}->CustomerHeader(
+                    Area  => 'Core',
+                    Title => 'Error',
+                );
+                $Output .= $Self->{LayoutObject}->CustomerWarning(
+                    Comment => 'Please press Back and try again.'
+                );
+                $Output .= $Self->{LayoutObject}->CustomerFooter();
+                $Self->{LayoutObject}->Print( Output => \$Output );
+                exit 0;
+            }
+
+            # send notify email
+            my $EmailObject = Kernel::System::Email->new( %{$Self} );
+            my $Body        = $Self->{ConfigObject}->Get('CustomerPanelBodyNewAccount')
+                || 'No Config Option found!';
+            my $Subject = $Self->{ConfigObject}->Get('CustomerPanelSubjectNewAccount')
+                || 'New OTRS Account!';
+            for ( keys %GetParams ) {
+                $Body =~ s/<OTRS_$_>/$GetParams{$_}/gi;
+            }
+
+            # send account info
+            my $Sent = $EmailObject->Send(
+                To       => $GetParams{UserEmail},
+                Subject  => $Subject,
+                Charset  => $Self->{LayoutObject}->{UserCharset},
+                MimeType => 'text/plain',
+                Body     => $Body
             );
-            $Output .= $LayoutObject->CustomerFooter();
-            $LayoutObject->Print( Output => \$Output );
-            return;
+            if ( !$Sent ) {
+                my $Output = $Self->{LayoutObject}->CustomerHeader(
+                    Area  => 'Core',
+                    Title => 'Error'
+                );
+                $Output .= $Self->{LayoutObject}->CustomerWarning(
+                    Comment => 'Can\'t send account info!'
+                );
+                $Output .= $Self->{LayoutObject}->CustomerFooter();
+                $Self->{LayoutObject}->Print( Output => \$Output );
+                exit 0;
+            }
+
+            # show sent account info
+            if ( $Self->{ConfigObject}->Get('CustomerPanelLoginURL') ) {
+
+                # redirect to alternate login
+                $Param{RequestedURL} = $Self->{LayoutObject}->LinkEncode( $Param{RequestedURL} );
+                print $Self->{LayoutObject}->Redirect(
+                    ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLoginURL')
+                        . "?RequestedURL=$Param{RequestedURL}&User=$GetParams{UserLogin}&"
+                        . "&Email=$GetParams{UserEmail}&Reason=NewAccountCreated",
+                );
+            }
+            else {
+
+                # login screen
+                $Self->{LayoutObject}->Print(
+                    Output => \$Self->{LayoutObject}->CustomerLogin(
+                        Title => 'Login',
+                        Message =>
+                            "New account created. Sent Login-Account to \%s.\", \"$GetParams{UserEmail}",
+                        User => $GetParams{UserLogin},
+                    ),
+                );
+            }
         }
-
-        # show sent account info
-        if ( $Self->{ConfigObject}->Get('CustomerPanelLoginURL') ) {
-
-            # redirect to alternate login
-            $Param{RequestedURL} = $LayoutObject->LinkEncode( $Param{RequestedURL} );
-            print $LayoutObject->Redirect(
-                ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLoginURL')
-                    . "?RequestedURL=$Param{RequestedURL};User=$GetParams{UserLogin};"
-                    . "Email=$GetParams{UserEmail};Reason=NewAccountCreated",
-            );
-            return 1;
-        }
-
-        # login screen
-        $LayoutObject->Print(
-            Output => \$LayoutObject->CustomerLogin(
-                Title => 'Login',
-                Message =>
-                    "New account created. Sent login information to \%s. Please check your email.\", \"$GetParams{UserEmail}",
-                User => $GetParams{UserLogin},
-            ),
-        );
-        return 1;
     }
 
     # show login site
     elsif ( !$Param{SessionID} ) {
-
-        # new layout object
-        my $LayoutObject = Kernel::Output::HTML::Layout->new( %{$Self}, Lang => $Param{Lang} );
 
         # create AuthObject
         my $AuthObject = Kernel::System::CustomerAuth->new( %{$Self} );
         if ( $AuthObject->GetOption( What => 'PreAuth' ) ) {
 
             # automatic login
-            $Param{RequestedURL} = $LayoutObject->LinkEncode( $Param{RequestedURL} );
-            print $LayoutObject->Redirect(
-                OP => "Action=Login;RequestedURL=$Param{RequestedURL}",
+            $Param{RequestedURL} = $Self->{LayoutObject}->LinkEncode( $Param{RequestedURL} );
+            print $Self->{LayoutObject}->Redirect(
+                OP => "Action=Login&RequestedURL=$Param{RequestedURL}",
             );
-            return;
         }
         elsif ( $Self->{ConfigObject}->Get('CustomerPanelLoginURL') ) {
 
             # redirect to alternate login
-            $Param{RequestedURL} = $LayoutObject->LinkEncode( $Param{RequestedURL} );
-            print $LayoutObject->Redirect(
+            $Param{RequestedURL} = $Self->{LayoutObject}->LinkEncode( $Param{RequestedURL} );
+            print $Self->{LayoutObject}->Redirect(
                 ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLoginURL')
                     . "?RequestedURL=$Param{RequestedURL}",
             );
-            return;
         }
+        else {
 
-        # login screen
-        $LayoutObject->Print(
-            Output => \$LayoutObject->CustomerLogin(
-                Title => 'Login',
-                %Param,
-            ),
-        );
-        return 1;
+            # login screen
+            $Self->{LayoutObject}->Print(
+                Output => \$Self->{LayoutObject}->CustomerLogin(
+                    Title => 'Login',
+                    %Param,
+                ),
+            );
+        }
     }
 
-    # run modules if a version value exists
+    # run modules if exists a version value
     elsif ( $Self->{MainObject}->Require("Kernel::Modules::$Param{Action}") ) {
 
         # check session id
         if ( !$Self->{SessionObject}->CheckSessionID( SessionID => $Param{SessionID} ) ) {
 
             # create new LayoutObject with new '%Param'
-            my $LayoutObject = Kernel::Output::HTML::Layout->new(
+            $Self->{LayoutObject} = Kernel::Output::HTML::Layout->new(
                 SetCookies => {
                     SessionIDCookie => $Self->{ParamObject}->SetCookie(
                         Key   => $Param{SessionName},
@@ -796,249 +711,185 @@ sub Run {
                 %{$Self},
                 %Param,
             );
-
-            # redirect to alternate login
             if ( $Self->{ConfigObject}->Get('CustomerPanelLoginURL') ) {
 
-                $Param{RequestedURL} = $LayoutObject->LinkEncode( $Param{RequestedURL} );
-                print $LayoutObject->Redirect(
+                # redirect to alternate login
+                $Param{RequestedURL} = $Self->{LayoutObject}->LinkEncode( $Param{RequestedURL} );
+                print $Self->{LayoutObject}->Redirect(
                     ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLoginURL')
-                        . "?Reason=InvalidSessionID;RequestedURL=$Param{RequestedURL}",
+                        . "?Reason=InvalidSessionID&RequestedURL=$Param{RequestedURL}",
                 );
-                return;
             }
+            else {
 
-            # show login
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
-                    Title   => 'Login',
-                    Message => $Self->{SessionObject}->CheckSessionIDMessage(),
-                    %Param,
-                ),
-            );
-            return;
+                # show login
+                $Self->{LayoutObject}->Print(
+                    Output => \$Self->{LayoutObject}->CustomerLogin(
+                        Title   => 'Login',
+                        Message => $Self->{SessionObject}->CheckSessionIDMessage(),
+                        %Param,
+                    ),
+                );
+            }
         }
 
         # run module
-
-        # get session data
-        my %UserData = $Self->{SessionObject}->GetSessionIDData(
-            SessionID => $Param{SessionID},
-        );
-
-        # check needed data
-        if ( !$UserData{UserID} || !$UserData{UserLogin} || $UserData{UserType} ne 'Customer' ) {
-            my $LayoutObject = Kernel::Output::HTML::Layout->new( %{$Self}, Lang => $Param{Lang} );
-
-            # redirect to alternate login
-            if ( $Self->{ConfigObject}->Get('CustomerPanelLoginURL') ) {
-                print $LayoutObject->Redirect(
-                    ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLoginURL')
-                        . "?Reason=SystemError",
-                );
-                return;
-            }
-
-            # show login screen
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
-                    Title   => 'Panic!',
-                    Message => 'Panic! Invalid Session!!!',
-                    %Param,
-                ),
-            );
-            return;
-        }
-
-        # module registry
-        my $ModuleReg = $Self->{ConfigObject}->Get('CustomerFrontend::Module')->{ $Param{Action} };
-        if ( !$ModuleReg ) {
-
-            # new layout object
-            my $LayoutObject = Kernel::Output::HTML::Layout->new( %{$Self}, Lang => $Param{Lang}, );
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message =>
-                    "Module Kernel::Modules::$Param{Action} not registered in Kernel/Config.pm!",
-            );
-            $LayoutObject->CustomerFatalError( Comment => 'Please contact your administrator' );
-            return;
-        }
-
-        # module permisson check
-        if ( !$ModuleReg->{GroupRo} && !$ModuleReg->{Group} ) {
-            $Param{AccessRo} = 1;
-            $Param{AccessRw} = 1;
-        }
         else {
-            for my $Permission (qw(GroupRo Group)) {
-                my $AccessOk = 0;
-                my $Group    = $ModuleReg->{$Permission};
-                my $Key      = "UserIs$Permission";
-                next if !$Group;
-                if ( ref $Group eq 'ARRAY' ) {
-                    for ( @{$Group} ) {
-                        next if !$_;
-                        next if !$UserData{ $Key . "[$_]" };
-                        next if $UserData{ $Key . "[$_]" } ne 'Yes';
-                        $AccessOk = 1;
-                        last;
-                    }
-                }
-                else {
-                    if ( $UserData{ $Key . "[$Group]" } && $UserData{ $Key . "[$Group]" } eq 'Yes' )
-                    {
-                        $AccessOk = 1;
-                    }
-                }
-                if ( $Permission eq 'Group' && $AccessOk ) {
-                    $Param{AccessRo} = 1;
-                    $Param{AccessRw} = 1;
-                }
-                elsif ( $Permission eq 'GroupRo' && $AccessOk ) {
-                    $Param{AccessRo} = 1;
-                }
-            }
-            if ( !$Param{AccessRo} && !$Param{AccessRw} || !$Param{AccessRo} && $Param{AccessRw} ) {
 
-                # new layout object
-                my $LayoutObject = Kernel::Output::HTML::Layout->new(
-                    %{$Self},
-                    Lang => $Param{Lang},
-                );
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => 'No Permission to use this frontend module!'
-                );
-                $LayoutObject->CustomerFatalError( Comment => 'Please contact your administrator' );
-                return;
-            }
-        }
+            # get session data
+            my %UserData = $Self->{SessionObject}->GetSessionIDData(
+                SessionID => $Param{SessionID},
+            );
 
-        # create new LayoutObject with new '%Param' and '%UserData'
-        my $LayoutObject = Kernel::Output::HTML::Layout->new(
-            %{$Self},
-            %Param,
-            %UserData,
-            ModuleReg => $ModuleReg,
-        );
+            # check needed data
+            if ( !$UserData{UserID} || !$UserData{UserLogin} || $UserData{UserType} ne 'Customer' )
+            {
+                if ( $Self->{ConfigObject}->Get('CustomerPanelLoginURL') ) {
 
-        # updated last request time
-        $Self->{SessionObject}->UpdateSessionID(
-            SessionID => $Param{SessionID},
-            Key       => 'UserLastRequest',
-            Value     => $Self->{TimeObject}->SystemTime(),
-        );
-
-        # pre application module
-        my $PreModule = $Self->{ConfigObject}->Get('CustomerPanelPreApplicationModule');
-        if ($PreModule) {
-            my %PreModuleList;
-            if ( ref $PreModule eq 'HASH' ) {
-                %PreModuleList = %{$PreModule};
-            }
-            else {
-                $PreModuleList{Init} = $PreModule;
-            }
-            for my $PreModuleKey ( sort keys %PreModuleList ) {
-                my $PreModule = $PreModuleList{$PreModuleKey};
-                next if !$PreModule;
-                next if !$Self->{MainObject}->Require($PreModule);
-
-                # debug info
-                if ( $Self->{Debug} ) {
-                    $Self->{LogObject}->Log(
-                        Priority => 'debug',
-                        Message  => "CustomerPanelPreApplication module $PreModule is used.",
+                    # redirect to alternate login
+                    print $Self->{LayoutObject}->Redirect(
+                        ExtURL => $Self->{ConfigObject}->Get('CustomerPanelLoginURL')
+                            . "?Reason=SystemError",
                     );
                 }
+                else {
 
-                # use module
-                my $PreModuleObject = $PreModule->new(
-                    %{$Self},
-                    %Param,
-                    %UserData,
-                    LayoutObject => $LayoutObject,
+                    # show login screen
+                    $Self->{LayoutObject}->Print(
+                        Output => \$Self->{LayoutObject}->CustomerLogin(
+                            Title   => 'Panic!',
+                            Message => 'Panic! Invalid Session!!!',
+                            %Param,
+                        ),
+                    );
+                    exit 0;
+                }
+            }
 
+            # create new LayoutObject with new '%Param' and '%UserData'
+            $Self->{LayoutObject} = Kernel::Output::HTML::Layout->new(
+                %{$Self},
+                %Param,
+                %UserData,
+            );
+
+            # module registry
+            my $ModuleReg
+                = $Self->{ConfigObject}->Get('CustomerFrontend::Module')->{ $Param{Action} };
+            if ( !$ModuleReg ) {
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message =>
+                        "Module Kernel::Modules::$Param{Action} not registered in Kernel/Config.pm!",
                 );
-                my $Output = $PreModuleObject->PreRun();
-                if ($Output) {
-                    $LayoutObject->Print( Output => \$Output );
-                    return 1;
+                $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your admin' );
+            }
+
+            # updated last request time
+            $Self->{SessionObject}->UpdateSessionID(
+                SessionID => $Param{SessionID},
+                Key       => 'UserLastRequest',
+                Value     => $Self->{TimeObject}->SystemTime(),
+            );
+
+            # pre application module
+            my $PreModule = $Self->{ConfigObject}->Get('CustomerPanelPreApplicationModule');
+            if ($PreModule) {
+                my %PreModuleList;
+                if ( ref $PreModule eq 'HASH' ) {
+                    %PreModuleList = %{$PreModule};
+                }
+                else {
+                    $PreModuleList{Init} = $PreModule;
+                }
+                for my $PreModuleKey ( sort keys %PreModuleList ) {
+                    my $PreModule = $PreModuleList{$PreModuleKey};
+                    next if !$PreModule;
+                    next if !$Self->{MainObject}->Require($PreModule);
+
+                    # debug info
+                    if ( $Self->{Debug} ) {
+                        $Self->{LogObject}->Log(
+                            Priority => 'debug',
+                            Message  => "CustomerPanelPreApplication module $PreModule is used.",
+                        );
+                    }
+
+                    # use module
+                    my $PreModuleObject = $PreModule->new( %{$Self}, %Param, %UserData, );
+                    my $Output = $PreModuleObject->PreRun();
+                    if ($Output) {
+                        $Self->{LayoutObject}->Print( Output => \$Output );
+                        exit 0;
+                    }
+                }
+            }
+
+            # debug info
+            if ( $Self->{Debug} ) {
+                $Self->{LogObject}->Log(
+                    Priority => 'debug',
+                    Message  => 'Kernel::Modules::' . $Param{Action} . '->new',
+                );
+            }
+
+            # prove of concept! - create $GenericObject
+            my $GenericObject = ( 'Kernel::Modules::' . $Param{Action} )->new(
+                %{$Self},
+                %Param,
+                %UserData,
+            );
+
+            # debug info
+            if ( $Self->{Debug} ) {
+                $Self->{LogObject}->Log(
+                    Priority => 'debug',
+                    Message  => 'Kernel::Modules::' . $Param{Action} . '->run',
+                );
+            }
+
+            # ->Run $Action with $GenericObject
+            $Self->{LayoutObject}->Print( Output => \$GenericObject->Run() );
+
+            # log request time
+            if ( $Self->{ConfigObject}->Get('PerformanceLog') ) {
+                if ( ( !$QueryString && $Param{Action} ) || $QueryString !~ /Action=/ ) {
+                    $QueryString = 'Action=' . $Param{Action} . '&Subaction=' . $Param{Subaction};
+                }
+                my $File = $Self->{ConfigObject}->Get('PerformanceLog::File');
+                if ( open my $Out, '>>', $File ) {
+                    print $Out time()
+                        . '::Customer::'
+                        . ( time() - $Self->{PerformanceLogStart} )
+                        . "::$UserData{UserLogin}::$QueryString\n";
+                    close $Out;
+                    $Self->{LogObject}->Log(
+                        Priority => 'notice',
+                        Message  => 'Response::Customer: '
+                            . ( time() - $Self->{PerformanceLogStart} )
+                            . "s taken (URL:$QueryString:$UserData{UserLogin})",
+                    );
+                }
+                else {
+                    $Self->{LogObject}->Log(
+                        Priority => 'error',
+                        Message  => "Can't write $File: $!",
+                    );
                 }
             }
         }
-
-        # debug info
-        if ( $Self->{Debug} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'debug',
-                Message  => 'Kernel::Modules::' . $Param{Action} . '->new',
-            );
-        }
-
-        # proof of concept! - create $GenericObject
-        my $GenericObject = ( 'Kernel::Modules::' . $Param{Action} )->new(
-            %{$Self},
-            %Param,
-            %UserData,
-            LayoutObject => $LayoutObject,
-            ModuleReg    => $ModuleReg,
-        );
-
-        # debug info
-        if ( $Self->{Debug} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'debug',
-                Message  => 'Kernel::Modules::' . $Param{Action} . '->run',
-            );
-        }
-
-        # ->Run $Action with $GenericObject
-        $LayoutObject->Print( Output => \$GenericObject->Run() );
-
-        # log request time
-        if ( $Self->{ConfigObject}->Get('PerformanceLog') ) {
-            if ( ( !$QueryString && $Param{Action} ) || $QueryString !~ /Action=/ ) {
-                $QueryString = 'Action=' . $Param{Action} . ';Subaction=' . $Param{Subaction};
-            }
-            my $File = $Self->{ConfigObject}->Get('PerformanceLog::File');
-            if ( open my $Out, '>>', $File ) {
-                print $Out time()
-                    . '::Customer::'
-                    . ( time() - $Self->{PerformanceLogStart} )
-                    . "::$UserData{UserLogin}::$QueryString\n";
-                close $Out;
-                $Self->{LogObject}->Log(
-                    Priority => 'notice',
-                    Message  => 'Response::Customer: '
-                        . ( time() - $Self->{PerformanceLogStart} )
-                        . "s taken (URL:$QueryString:$UserData{UserLogin})",
-                );
-            }
-            else {
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => "Can't write $File: $!",
-                );
-            }
-        }
-        return 1;
     }
 
-    # print an error screen
-    my %Data = $Self->{SessionObject}->GetSessionIDData( SessionID => $Param{SessionID}, );
-    my $LayoutObject = Kernel::Output::HTML::Layout->new(
-        %{$Self},
-        %Param,
-        %Data,
-    );
-    $LayoutObject->CustomerFatalError( Comment => 'Please contact your administrator' );
-    return;
-}
+    # else print an error screen
+    else {
 
-sub DESTROY {
-    my $Self = shift;
+        # create new LayoutObject with '%Param'
+        my %Data = $Self->{SessionObject}->GetSessionIDData( SessionID => $Param{SessionID}, );
+        $Self->{LayoutObject} = Kernel::Output::HTML::Layout->new( %{$Self}, %Param, %Data, );
+
+        # print error
+        $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your admin' );
+    }
 
     # debug info
     if ( $Self->{Debug} ) {
@@ -1048,6 +899,7 @@ sub DESTROY {
         );
     }
 
+    undef %Param;
     return 1;
 }
 
@@ -1057,16 +909,16 @@ sub DESTROY {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.63 $ $Date: 2012/01/23 15:12:17 $
+$Revision: 1.41.2.1 $ $Date: 2009/09/23 08:01:57 $
 
 =cut

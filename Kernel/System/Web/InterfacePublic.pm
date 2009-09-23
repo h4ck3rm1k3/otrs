@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Web/InterfacePublic.pm - the public interface file
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: InterfacePublic.pm,v 1.33 2011/02/08 15:57:38 martin Exp $
+# $Id: InterfacePublic.pm,v 1.24.2.1 2009/09/23 08:01:57 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION @INC);
-$VERSION = qw($Revision: 1.33 $) [1];
+$VERSION = qw($Revision: 1.24.2.1 $) [1];
 
 # all framework needed  modules
 use Kernel::Config;
@@ -49,10 +49,7 @@ create public web interface object
     use Kernel::System::Web::InterfacePublic;
 
     my $Debug = 0;
-    my $Interface = Kernel::System::Web::InterfacePublic->new(
-        Debug      => $Debug,
-        WebRequest => CGI::Fast->new(), # optional, e. g. if fast cgi is used, the CGI object is already provided
-    );
+    my $Interface = Kernel::System::Web::InterfacePublic->new(Debug => $Debug);
 
 =cut
 
@@ -106,7 +103,7 @@ sub Run {
     my $Self = shift;
 
     # get common framework params
-    my %Param;
+    my %Param = ();
 
     # get session id
     $Param{SessionName} = $Self->{ConfigObject}->Get('CustomerPanelSessionName') || 'CSID';
@@ -114,21 +111,21 @@ sub Run {
 
     # drop old session id (if exists)
     my $QueryString = $ENV{QUERY_STRING} || '';
-    $QueryString =~ s/(\?|&|;|)$Param{SessionName}(=&|=;|=.+?&|=.+?$)/;/g;
+    $QueryString =~ s/(\?|&|)$Param{SessionName}(=&|=.+?&|=.+?$)/&/g;
 
-    # define framework params
-    my $FrameworkParams = {
+    # definde frame work params
+    my $FramworkPrams = {
         Lang         => '',
         Action       => '',
         Subaction    => '',
         RequestedURL => $QueryString,
     };
-    for my $Key ( keys %{$FrameworkParams} ) {
+    for my $Key ( keys %{$FramworkPrams} ) {
         $Param{$Key} = $Self->{ParamObject}->GetParam( Param => $Key )
-            || $FrameworkParams->{$Key};
+            || $FramworkPrams->{$Key};
     }
 
-    # Check if the browser sends the SessionID cookie and set the SessionID-cookie
+    # Check if the brwoser sends the SessionID cookie and set the SessionID-cookie
     # as SessionID! GET or POST SessionID have the lowest priority.
     if ( $Self->{ConfigObject}->Get('SessionUseCookie') ) {
         $Param{SessionIDCookie} = $Self->{ParamObject}->GetCookie( Key => $Param{SessionName} );
@@ -136,20 +133,6 @@ sub Run {
             $Param{SessionID} = $Param{SessionIDCookie};
         }
     }
-
-    # get common application and add-on application params
-    # Important!
-    # This must be done before creating the layout object,
-    # because otherwise the action parameter is not passed and then
-    # the loader can not load module specific JavaScript and CSS
-    # For details see bug: http://bugs.otrs.org/show_bug.cgi?id=6471
-    my %CommonObjectParam = %{ $Self->{ConfigObject}->Get('PublicFrontend::CommonParam') };
-    for my $Key ( keys %CommonObjectParam ) {
-        $Param{$Key} = $Self->{ParamObject}->GetParam( Param => $Key ) || $CommonObjectParam{$Key};
-    }
-
-    # security check Action Param (replace non-word chars)
-    $Param{Action} =~ s/\W//g;
 
     # create common framework objects 2/3
     $Self->{LayoutObject} = Kernel::Output::HTML::Layout->new(
@@ -162,19 +145,19 @@ sub Run {
     # check common objects
     $Self->{DBObject} = Kernel::System::DB->new( %{$Self} );
     if ( !$Self->{DBObject} ) {
-        $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your administrator' );
+        $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your admin' );
     }
     if ( $Self->{ParamObject}->Error() ) {
         $Self->{LayoutObject}->CustomerFatalError(
             Message => $Self->{ParamObject}->Error(),
-            Comment => 'Please contact your administrator'
+            Comment => 'Please contact your admin'
         );
     }
 
     # create common framework objects 3/3
     $Self->{UserObject} = Kernel::System::CustomerUser->new( %{$Self} );
 
-    # application and add-on application common objects
+    # application and add on application common objects
     my %CommonObject = %{ $Self->{ConfigObject}->Get('PublicFrontend::CommonObject') };
     for my $Key ( keys %CommonObject ) {
         if ( $Self->{MainObject}->Require( $CommonObject{$Key} ) ) {
@@ -183,88 +166,93 @@ sub Run {
         else {
 
             # print error
-            $Self->{LayoutObject}->CustomerFatalError(
-                Comment => 'Please contact your administrator',
-            );
+            $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your admin' );
         }
     }
 
-    # run modules if a version value exists
-    if ( !$Self->{MainObject}->Require("Kernel::Modules::$Param{Action}") ) {
-        $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your administrator' );
-        return 1;
+    # get common application and add on application params
+    my %CommonObjectParam = %{ $Self->{ConfigObject}->Get('PublicFrontend::CommonParam') };
+    for my $Key ( keys %CommonObjectParam ) {
+        $Param{$Key} = $Self->{ParamObject}->GetParam( Param => $Key ) || $CommonObjectParam{$Key};
     }
 
-    # module registry
-    my $ModuleReg = $Self->{ConfigObject}->Get('PublicFrontend::Module')->{ $Param{Action} };
-    if ( !$ModuleReg ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message =>
-                "Module Kernel::Modules::$Param{Action} not registered in Kernel/Config.pm!",
-        );
-        $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your administrator' );
-        return;
-    }
+    # security check Action Param (replace non word chars)
+    $Param{Action} =~ s/\W//g;
 
-    # debug info
-    if ( $Self->{Debug} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'debug',
-            Message  => 'Kernel::Modules::' . $Param{Action} . '->new',
-        );
-    }
+    # run modules if exists a version value
+    if ( $Self->{MainObject}->Require("Kernel::Modules::$Param{Action}") ) {
 
-    # proof of concept! - create $GenericObject
-    my $GenericObject = ( 'Kernel::Modules::' . $Param{Action} )->new(
-        UserID => 1,
-        %{$Self},
-        %Param,
-    );
-
-    # debug info
-    if ( $Self->{Debug} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'debug',
-            Message  => 'Kernel::Modules::' . $Param{Action} . '->run',
-        );
-    }
-
-    # ->Run $Action with $GenericObject
-    $Self->{LayoutObject}->Print( Output => \$GenericObject->Run() );
-
-    # log request time
-    if ( $Self->{ConfigObject}->Get('PerformanceLog') ) {
-        if ( ( !$QueryString && $Param{Action} ) || $QueryString !~ /Action=/ ) {
-            $QueryString = 'Action=' . $Param{Action} . '&Subaction=' . $Param{Subaction};
-        }
-        my $File = $Self->{ConfigObject}->Get('PerformanceLog::File');
-        if ( open my $Out, '>>', $File ) {
-            print $Out time()
-                . '::Public::'
-                . ( time() - $Self->{PerformanceLogStart} )
-                . "::-::$QueryString\n";
-            close $Out;
-            $Self->{LogObject}->Log(
-                Priority => 'notice',
-                Message  => 'Response::Public: '
-                    . ( time() - $Self->{PerformanceLogStart} )
-                    . "s taken (URL:$QueryString)",
-            );
-        }
-        else {
+        # module registry
+        my $ModuleReg = $Self->{ConfigObject}->Get('PublicFrontend::Module')->{ $Param{Action} };
+        if ( !$ModuleReg ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => "Can't write $File: $!",
+                Message =>
+                    "Module Kernel::Modules::$Param{Action} not registered in Kernel/Config.pm!",
             );
+            $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your admin' );
+        }
+
+        # debug info
+        if ( $Self->{Debug} ) {
+            $Self->{LogObject}->Log(
+                Priority => 'debug',
+                Message  => 'Kernel::Modules::' . $Param{Action} . '->new',
+            );
+        }
+
+        # prove of concept! - create $GenericObject
+        my $GenericObject = ( 'Kernel::Modules::' . $Param{Action} )->new(
+            UserID => 1,
+            %{$Self},
+            %Param,
+        );
+
+        # debug info
+        if ( $Self->{Debug} ) {
+            $Self->{LogObject}->Log(
+                Priority => 'debug',
+                Message  => 'Kernel::Modules::' . $Param{Action} . '->run',
+            );
+        }
+
+        # ->Run $Action with $GenericObject
+        $Self->{LayoutObject}->Print( Output => \$GenericObject->Run() );
+
+        # log request time
+        if ( $Self->{ConfigObject}->Get('PerformanceLog') ) {
+            if ( ( !$QueryString && $Param{Action} ) || ( $QueryString !~ /Action=/ ) ) {
+                $QueryString = 'Action=' . $Param{Action} . '&Subaction=' . $Param{Subaction};
+            }
+            my $File = $Self->{ConfigObject}->Get('PerformanceLog::File');
+            if ( open my $Out, '>>', $File ) {
+                print $Out time()
+                    . '::Public::'
+                    . ( time() - $Self->{PerformanceLogStart} )
+                    . "::-::$QueryString\n";
+                close $Out;
+                $Self->{LogObject}->Log(
+                    Priority => 'notice',
+                    Message  => 'Response::Public: '
+                        . ( time() - $Self->{PerformanceLogStart} )
+                        . "s taken (URL:$QueryString)",
+                );
+            }
+            else {
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message  => "Can't write $File: $!",
+                );
+            }
         }
     }
 
-    return 1;
-}
+    # else print an error screen
+    else {
 
-sub DESTROY {
-    my $Self = shift;
+        # print error
+        $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your admin' );
+    }
 
     # debug info
     if ( $Self->{Debug} ) {
@@ -274,6 +262,7 @@ sub DESTROY {
         );
     }
 
+    undef %Param;
     return 1;
 }
 
@@ -283,16 +272,16 @@ sub DESTROY {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.33 $ $Date: 2011/02/08 15:57:38 $
+$Revision: 1.24.2.1 $ $Date: 2009/09/23 08:01:57 $
 
 =cut
