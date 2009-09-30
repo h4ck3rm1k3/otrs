@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/DashboardCalendar.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: DashboardCalendar.pm,v 1.21 2011/11/25 10:36:41 mg Exp $
+# $Id: DashboardCalendar.pm,v 1.12.2.1 2009/09/30 12:53:48 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.21 $) [1];
+$VERSION = qw($Revision: 1.12.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -54,8 +54,6 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     # find tickets with reached times in near future
-    my $PendingReminderStateTypes = $Self->{ConfigObject}->Get('Ticket::PendingReminderStateType');
-
     my %Map = (
         Escalation => [
 
@@ -66,7 +64,7 @@ sub Run {
             {
 
                 # where escalation time reached
-                TicketEscalationTimeNewerMinutes => 15,
+                TicketEscalationTimeNewerMinutes => (15),
 
                 # sort
                 SortBy  => 'EscalationTime',
@@ -82,10 +80,10 @@ sub Run {
             {
 
                 # only pending reminder tickets
-                StateType => $PendingReminderStateTypes,
+                StateType => ['pending reminder'],
 
                 # where pending time reached in
-                TicketPendingTimeNewerMinutes => 15,
+                TicketPendingTimeNewerMinutes => (15),
 
                 # sort
                 SortBy  => 'PendingTime',
@@ -96,11 +94,6 @@ sub Run {
     my %Date;
     for my $Type ( sort keys %Map ) {
 
-        my $UID;
-        if ( $Self->{Config}->{OwnerOnly} ) {
-            $UID = $Self->{UserID};
-        }
-
         # search tickets
         my @TicketIDs = $Self->{TicketObject}->TicketSearch(
 
@@ -110,7 +103,6 @@ sub Run {
             Result     => 'ARRAY',
             Permission => $Self->{Config}->{Permission} || 'ro',
             UserID     => $Self->{UserID},
-            OwnerID    => $UID,
             Limit      => 25,
         );
 
@@ -118,9 +110,8 @@ sub Run {
         for my $TicketID (@TicketIDs) {
 
             my %Ticket = $Self->{TicketObject}->TicketGet(
-                TicketID      => $TicketID,
-                UserID        => $Self->{UserID},
-                DynamicFields => 0,
+                TicketID => $TicketID,
+                UserID   => $Self->{UserID},
             );
             my $TimeStamp;
             my $TimeTill;
@@ -149,7 +140,7 @@ sub Run {
                 ObjectID     => $Ticket{TicketID},
                 ObjectNumber => $Ticket{TicketNumber},
                 Title        => $Ticket{Title},
-                Link         => "Action=AgentTicketZoom;TicketID=$Ticket{TicketID}",
+                Link         => "Action=AgentTicketZoom&TicketID=$Ticket{TicketID}",
                 TimeStamp    => $TimeStamp,
                 TimeTill     => $TimeTill,
                 In           => $Self->{LayoutObject}->CustomerAge(
@@ -171,14 +162,6 @@ sub Run {
         );
     }
 
-    # fillup if not content exists
-    if ( !$Count ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'ContentSmallCalendarOverviewNone',
-            Data => {},
-        );
-    }
-
     # render content
     my $Content = $Self->{LayoutObject}->Output(
         TemplateFile => 'AgentDashboardCalendarOverview',
@@ -186,6 +169,11 @@ sub Run {
             %{ $Self->{Config} },
         },
     );
+
+    # fillup if not content exists
+    if ( !%Date ) {
+        $Content = '$Text{"none"}';
+    }
 
     # return content
     return $Content;
