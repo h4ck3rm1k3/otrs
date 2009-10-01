@@ -1,8 +1,8 @@
 # --
 # Kernel/System/AutoResponse.pm - lib for auto responses
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AutoResponse.pm,v 1.46 2011/08/12 09:06:15 mg Exp $
+# $Id: AutoResponse.pm,v 1.35.2.1 2009/10/01 18:22:14 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::SystemAddress;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.46 $) [1];
+$VERSION = qw($Revision: 1.35.2.1 $) [1];
 
 =head1 NAME
 
@@ -181,7 +181,7 @@ sub AutoResponseGet {
     # select
     return if !$Self->{DBObject}->Prepare(
         SQL => 'SELECT name, valid_id, comments, text0, text1, type_id, system_address_id, '
-            . ' charset, content_type, create_time, create_by, change_time, change_by'
+            . ' charset, content_type'
             . ' FROM auto_response WHERE id = ?',
         Bind => [ \$Param{ID} ],
     );
@@ -189,24 +189,28 @@ sub AutoResponseGet {
     my %Data;
     while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
 
-        # convert body
-        $Data[3] = $Self->{EncodeObject}->Convert(
-            Text  => $Data[3],
-            From  => $Data[7],
-            To    => 'utf-8',
-            Force => 1,
-        );
+        # convert to internal charset e. g. utf8
+        if ( $Self->{EncodeObject}->EncodeInternalUsed() ) {
 
-        # convert subject
-        $Data[4] = $Self->{EncodeObject}->Convert(
-            Text  => $Data[4],
-            From  => $Data[7],
-            To    => 'utf-8',
-            Force => 1,
-        );
+            # convert body
+            $Data[3] = $Self->{EncodeObject}->Convert(
+                Text  => $Data[3],
+                From  => $Data[7],
+                To    => $Self->{EncodeObject}->EncodeInternalUsed(),
+                Force => 1,
+            );
 
-        # set new charset
-        $Data[7] = 'utf-8';
+            # convert subject
+            $Data[4] = $Self->{EncodeObject}->Convert(
+                Text  => $Data[4],
+                From  => $Data[7],
+                To    => $Self->{EncodeObject}->EncodeInternalUsed(),
+                Force => 1,
+            );
+
+            # set new charset
+            $Data[7] = $Self->{EncodeObject}->EncodeInternalUsed();
+        }
 
         %Data = (
             ID          => $Param{ID},
@@ -219,16 +223,8 @@ sub AutoResponseGet {
             AddressID   => $Data[6],
             Charset     => $Data[7],
             ContentType => $Data[8] || 'text/plain',
-            CreateTime  => $Data[9],
-            CreateBy    => $Data[10],
-            ChangeTime  => $Data[11],
-            ChangeBy    => $Data[12],
-
         );
     }
-
-    my %Types = $Self->AutoResponseTypeList();
-    $Data{Type} = $Types{ $Data{TypeID} };
     return %Data;
 }
 
@@ -269,7 +265,7 @@ sub AutoResponseUpdate {
     );
 
     # update the database
-    return if !$Self->{DBObject}->Do(
+    return $Self->{DBObject}->Do(
         SQL => 'UPDATE auto_response SET '
             . 'name = ?, text0 = ?, comments = ?, text1 = ?, type_id = ?, '
             . 'system_address_id = ?, charset = ?, content_type = ?, valid_id = ?, '
@@ -281,41 +277,7 @@ sub AutoResponseUpdate {
             \$Param{UserID}, \$Param{ID},
         ],
     );
-    return 1;
 }
-
-=item AutoResponseGetByTypeQueueID()
-
-get a hash with data from Auto Response and it's corresponding System Address
-
-    my %QueueAddressData = $AutoResponseObject->AutoResponseGetByTypeQueueID(
-        QueueID => 3,
-        Type    => 'auto reply/new ticket',
-    );
-
-Return example:
-
-    %QueueAddressData(
-        #Auto Response Data
-        'Text'            => 'Your OTRS TeamOTRS! answered by a human asap.',
-        'Subject'         => 'New ticket has been created! (RE: <OTRS_CUSTOMER_SUBJECT[24]>)',
-        'Charset'         => 'iso-8859-1',
-        'ContentType'     => 'text/plain',
-        'SystemAddressID' => '1',
-
-        #System Address Data
-        'ID'              => '1',
-        'Name'            => 'otrs@localhost',
-        'Address'         => 'otrs@localhost',  #Compatibility with OTRS 2.1
-        'Realname'        => 'OTRS System',
-        'Comment'         => 'Standard Address.',
-        'ValidID'         => '1',
-        'QueueID'         => '1',
-        'CreateTime'      => '2010-03-16 21:24:03',
-        'ChangeTime'      => '2010-03-16 21:24:03',
-    );
-
-=cut
 
 sub AutoResponseGetByTypeQueueID {
     my ( $Self, %Param ) = @_;
@@ -351,32 +313,16 @@ sub AutoResponseGetByTypeQueueID {
     return if !%Data;
 
     # get sender attributes
-    my %Address = $Self->{SystemAddressObject}->SystemAddressGet(
+    my %Adresss = $Self->{SystemAddressObject}->SystemAddressGet(
         ID => $Data{SystemAddressID},
     );
 
     # COMPAT: 2.1
-    $Data{Address} = $Address{Name};
+    $Data{Address} = $Adresss{Name};
 
     # return both, sender attributes and auto response attributes
-    return ( %Address, %Data );
+    return ( %Adresss, %Data );
 }
-
-=item AutoResponseList()
-
-get a list of the Auto Responses
-
-    my %AutoResponse = $AutoResponseObject->AutoResponseList();
-
-Return example:
-
-    %AutoResponse = (
-        '1' => 'default reply (after new ticket has been created) ( 1 )',
-        '2' => 'default reject (after follow up and rejected of a closed ticket) ( 2 )',
-        '3' => 'default follow up (after a ticket follow up has been added) ( 3 )',
-    );
-
-=cut
 
 sub AutoResponseList {
     my ( $Self, %Param ) = @_;
@@ -389,24 +335,6 @@ sub AutoResponseList {
     );
 }
 
-=item AutoResponseTypeList()
-
-get a list of the Auto Response Types
-
-    my %AutoResponseType = $AutoResponseObject->AutoResponseTypeList();
-
-Return example:
-
-    %AutoResponseType = (
-        '1' => 'auto reply',
-        '2' => 'auto reject',
-        '3' => 'auto follow up',
-        '4' => 'auto reply/new ticket',
-        '5' => 'auto remove',
-    );
-
-=cut
-
 sub AutoResponseTypeList {
     my ( $Self, %Param ) = @_;
 
@@ -417,20 +345,6 @@ sub AutoResponseTypeList {
         Table => 'auto_response_type',
     );
 }
-
-=item AutoResponseQueue()
-
-assigns a list of autoresponses to a queue
-
-    my @AutoResponseIDs = (1,2,3);
-
-    $AutoResponseObject->AutoResponseQueue (
-        QueueID         => 1,
-        AutoResponseIDs => \@AutoResponseIDs,
-        UserID          => 1,
-    );
-
-=cut
 
 sub AutoResponseQueue {
     my ( $Self, %Param ) = @_;
@@ -462,8 +376,6 @@ sub AutoResponseQueue {
     }
     return 1;
 }
-
-=begin Internal:
 
 =item _NameExistsCheck()
 
@@ -501,26 +413,22 @@ sub _NameExistsCheck {
     return 1;
 }
 
-=end Internal:
-
-=cut
-
 1;
 
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.46 $ $Date: 2011/08/12 09:06:15 $
+$Revision: 1.35.2.1 $ $Date: 2009/10/01 18:22:14 $
 
 =cut
