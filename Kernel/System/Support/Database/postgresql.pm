@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/postgresql.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: postgresql.pm,v 1.11 2009/04/17 14:17:07 tr Exp $
+# $Id: postgresql.pm,v 1.12 2009/10/01 15:03:48 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = qw($Revision: 1.12 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -42,7 +42,7 @@ sub AdminChecksGet {
     # add new function name here
     my @ModuleList = (
         '_DatestyleCheck', '_UTF8ServerCheck',
-        '_TableCheck', '_UTF8ClientCheck',
+        '_TableCheck',     '_UTF8ClientCheck',
         '_VersionCheck',
     );
 
@@ -85,7 +85,10 @@ sub _TableCheck {
             for my $Table ( @{ $XMLHash[1]->{database}->[1]->{Table} } ) {
                 if ($Table) {
                     $Count++;
-                    if ( $Self->{DBObject}->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 ) )
+                    if (
+                        $Self->{DBObject}
+                        ->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 )
+                        )
                     {
                         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
                         }
@@ -171,7 +174,8 @@ sub _UTF8ServerCheck {
         $Self->{DBObject}->Prepare( SQL => 'show all' );
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
             if ( $Row[0] =~ /^server_encoding/i ) {
-                $Message = "Setting server_encoding found, but it's set to '$Row[1]' (need to be UNICODE or UTF8).";
+                $Message
+                    = "Setting server_encoding found, but it's set to '$Row[1]' (need to be UNICODE or UTF8).";
                 if ( $Row[1] =~ /(UNICODE|utf(8|\-8))/i ) {
                     $Check   = 'OK';
                     $Message = "$Row[1]";
@@ -200,7 +204,8 @@ sub _UTF8ClientCheck {
         $Self->{DBObject}->Prepare( SQL => 'show all' );
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
             if ( $Row[0] =~ /^client_encoding/i ) {
-                $Message = "Setting client_encoding found, but it's set to '$Row[1]' (need to be UNICODE or UTF8)";
+                $Message
+                    = "Setting client_encoding found, but it's set to '$Row[1]' (need to be UNICODE or UTF8)";
                 if ( $Row[1] =~ /(UNICODE|utf(8|\-8))/i ) {
                     $Check   = 'OK';
                     $Message = "$Row[1]";
@@ -225,9 +230,9 @@ sub _VersionCheck {
     # version check
     my $Check   = 'Failed';
     my $Message = 'No database version found.';
-    $Self->{DBObject}->Prepare( SQL => 'show all' );
+    $Self->{DBObject}->Prepare( SQL => 'show server_version' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        if ( $Row[0] =~ /^server_version/i ) {
+        if ( $Row[0] eq 'server_version' ) {
             if ( $Row[1] =~ /^(\d{1,3}).*$/ ) {
                 if ( $1 > 7 ) {
                     $Check   = 'OK';
