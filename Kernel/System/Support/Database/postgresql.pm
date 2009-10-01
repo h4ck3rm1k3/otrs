@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/postgresql.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: postgresql.pm,v 1.12 2009/10/01 15:03:48 mb Exp $
+# $Id: postgresql.pm,v 1.13 2009/10/01 15:30:51 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.13 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -232,21 +232,19 @@ sub _VersionCheck {
     my $Message = 'No database version found.';
     $Self->{DBObject}->Prepare( SQL => 'show server_version' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        if ( $Row[0] eq 'server_version' ) {
-            if ( $Row[1] =~ /^(\d{1,3}).*$/ ) {
-                if ( $1 > 7 ) {
-                    $Check   = 'OK';
-                    $Message = "$Row[1]";
-                }
-                else {
-                    $Check   = 'Failed';
-                    $Message = "You use database version $Row[1], you should use 8.x or higner.";
-                }
+        if ( $Row[0] =~ /^(\d{1,3}).*$/ ) {
+            if ( $1 > 7 ) {
+                $Check   = 'OK';
+                $Message = "$Row[0]";
             }
             else {
                 $Check   = 'Failed';
-                $Message = "Unknown version $Row[1].";
+                $Message = "You use database version $Row[0], you should use 8.x or higner.";
             }
+        }
+        else {
+            $Check   = 'Failed';
+            $Message = "Unknown version $Row[0].";
         }
     }
     $Data = {
