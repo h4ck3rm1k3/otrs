@@ -1,8 +1,8 @@
 # --
 # AgentSpelling.dtl - provides HTML form for AgentSpelling
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentSpelling.dtl,v 1.35 2010/10/06 13:54:30 mg Exp $
+# $Id: AgentSpelling.dtl,v 1.20.2.1 2009/10/01 14:12:45 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -10,65 +10,151 @@
 # --
 
 <!-- dtl:block:SpellCheckerExtern -->
-<div class="LayoutPopup">
-    <div class="Content">
-        <h1>$Text{"Spell Checker"}</h1>
-        <h2>$QData{"SpellCounter"} $Text{"spelling error(s)"}</h2>
-        <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data" name="spelling">
-            <input type="hidden" name="Action" value="AgentSpelling"/>
-            <input type="hidden" name="Field" id="Field" value="$QData{"Field"}"/>
-            <fieldset>
-                $Text{"Language"}: $Data{"SpellLanguageString"}
-            </fieldset>
-            <table id="SpellCheck" class="DataTable">
-                <thead>
+<script language="JavaScript" type="text/javascript">
+<!--
+
+function updateMessage() {
+    if (parent.opener.closed) {
+        alert('$JSText{"The message being composed has been closed.  Exiting."}');
+        this.close();
+        return;
+    }
+
+    if (!parent.opener.document.compose) {
+        alert('$JSText{"This window must be called from compose window"}');
+        this.close();
+        return;
+    }
+
+    parent.opener.document.compose.$QData{"Field"}.value = document.spelling.Body.value;
+    this.close();
+}
+
+function change_selected(sel) {
+    start_elements = (5 * sel) - 1;
+
+    if (document.spelling.elements[0].name == "$Config{"SessionName"}") {
+        start_elements = start_elements + 1;
+    }
+
+    if (!document.spelling.elements[start_elements].checked) {
+        document.spelling.elements[start_elements].checked = true;
+    }
+}
+
+//-->
+</script>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+    <tr>
+        <td class="mainhead">
+            $Env{"Box0"}$Text{"Spell Checker"} - $Data{"SpellCounter"} $Text{"spelling error(s)"} $Env{"Box1"}
+        </td>
+    </tr>
+    <tr>
+        <td class="mainbody">
+            <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data" name="spelling">
+                <input type="hidden" name="Action" value="AgentSpelling"/>
+                <input type="hidden" name="Field" value="$QData{"Field"}"/>
+                <table border="0" width="100%" cellspacing="0" cellpadding="1">
                     <tr>
-                        <th>$Text{"Line"}</th>
-                        <th>$Text{"Word"}</th>
+                        <th width="50">$Text{"Line"}</th>
+                        <th width="100">$Text{"Word"}</th>
                         <th colspan="2">$Text{"replace with"}</th>
-                        <th>$Text{"Change"}</th>
-                        <th>$Text{"Ignore"}</th>
+                        <th width="50">$Text{"Change"}</th>
+                        <th width="50">$Text{"Ignore"}</th>
                     </tr>
-                </thead>
-                <tbody>
 <!-- dtl:block:Row -->
-                    <tr id="Row$QData{"Count"}">
+                    <tr>
                         <td align="center">$QData{"Line"}</td>
                         <td>
-                            <strong>$QData{"Word"}</strong>
+                            <font color="red">$QData{"Word"}</font>
                             <input type="hidden" name="SpellCheckOld::$QData{"Count"}" value="$QData{"Word"}"/>
                         </td>
                         <td>$Data{"OptionList"}</td>
                         <td>
                             $Text{"or"}
-                            <input type="text" name="SpellCheckOrReplace::$QData{"Count"}" value="" size="20" />
+                            <input type="text" name="SpellCheckOrReplace::$QData{"Count"}" value="" size="20" onchange="change_selected($QData{"Count"})"/>
                         </td>
-                        <td class="Center">
-                            <input type="radio" id="ChangeWord$QData{"Count"}" name="SpellCheck::Replace::$QData{"Count"}" value="$QData{"Word"}" />
+                        <td align="center">
+                            <input type="radio" name="SpellCheck::Replace::$QData{"Count"}" value="$QData{"Word"}"/>
                         </td>
-                        <td class="Center">
-                            <input type="radio" id="IgnoreWord$QData{"Count"}" name="SpellCheck::Replace::$QData{"Count"}" value="" checked="checked" />
+                        <td align="center">
+                            <input type="radio" name="SpellCheck::Replace::$QData{"Count"}" value="" checked="checked"/>
                         </td>
                     </tr>
 <!-- dtl:block:Row -->
-                </tbody>
-            </table>
-            <fieldset class="SpacingTop">
-                <button type="submit" value="$Text{"Apply these changes"}">$Text{"Apply these changes"}</button>
-            </fieldset>
-            <fieldset class="SpacingTop">
-                <textarea id="Body" name="Body" rows="22" cols="78">$QData{"Body"}</textarea>
-            </fieldset>
-            <fieldset class="SpacingTop">
-                <button type="button" id="Apply" value="$Text{"Done"}">$Text{"Done"}</button>
-                <button type="button" id="Cancel" value="$Text{"Cancel"}">$Text{"Cancel"}</button>
-            </fieldset>
-        </form>
-    </div>
-</div>
-<!--dtl:js_on_document_complete-->
-<script type="text/javascript">//<![CDATA[
-    Core.Agent.TicketAction.InitSpellCheck();
-//]]></script>
-<!--dtl:js_on_document_complete-->
+                </table>
+                <hr>
+                <table border="0" width="580" cellspacing="0" cellpadding="1">
+                    <tr>
+                        <td>
+                            <input class="button" type="submit" value="$Text{"Apply these changes"}"/>
+                            <input class="button" type="reset" value="$Text{"Reset"}"/>
+                        </td>
+                        <td>
+                            $Text{"Language"}: $Data{"SpellLanguageString"}
+                        </td>
+                    </tr>
+                </table>
+                <textarea name="Body" rows="22" cols="78" wrap="$Env{"BrowserWrap"}">$QData{"Body"}</textarea>
+                <br/>
+                <input class="button" type="button" onclick="updateMessage();" value="$Text{"Done"}"/>
+                <i>($Text{"Return to the compose screen"})</i>
+                <input class="button" type="button" onclick="window.close();" value="$Text{"Cancel"}"/>
+                <i>($Text{"Discard all changes and return to the compose screen"})</i>
+            </form>
+            <hr>
+        </td>
+    </tr>
+</table>
 <!-- dtl:block:SpellCheckerExtern -->
+<!-- dtl:block:SpellCheckerInline -->
+<html>
+<head>
+
+    <link rel="stylesheet" type="text/css" href="$Config{"Frontend::JavaScriptPath"}/fckeditor-2.6.4.1/editor/dialog/fck_spellerpages/spellerpages/spellerStyle.css"/>
+<script src="$Config{"Frontend::JavaScriptPath"}/fckeditor-2.6.4.1/editor/dialog/fck_spellerpages/spellerpages/wordWindow.js" type="text/javascript"></script>
+<script type="text/javascript">
+var suggs = new Array();
+var words = new Array();
+var textinputs = new Array();
+var error;
+
+
+$Data{"JSData"}
+
+
+var wordWindowObj = new wordWindow();
+wordWindowObj.originalSpellings = words;
+wordWindowObj.suggestions = suggs;
+wordWindowObj.textInputs = textinputs;
+
+
+function init_spell() {
+    // check if any error occured during server-side processing
+    if( error ) {
+        alert( error );
+    } else {
+        // call the init_spell() function in the parent frameset
+        if (parent.frames.length) {
+            parent.init_spell( wordWindowObj );
+        } else {
+            error = "This page was loaded outside of a frameset. ";
+            error += "It might not display properly";
+            alert( error );
+        }
+    }
+}
+
+</script>
+
+</head>
+<body onLoad="init_spell();">
+
+<script type="text/javascript">
+wordWindowObj.writeBody();
+</script>
+</body>
+</html>
+<!-- dtl:block:SpellCheckerInline -->

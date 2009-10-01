@@ -1,136 +1,113 @@
 # --
 # AdminEmail.dtl - provides global HTML AdminEmail
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminEmail.dtl,v 1.42 2010/12/15 09:36:13 mg Exp $
+# $Id: AdminEmail.dtl,v 1.20.2.1 2009/10/01 14:12:05 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
+<!-- start -->
 <!-- dtl:block:RichText -->
 $Include{"RichTextEditor"}
 <!-- dtl:block:RichText -->
-<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
-    <h1>$Text{"Admin Notification"}</h1>
-
-    <div class="SidebarColumn">
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"Hint"}</h2>
-            </div>
-            <div class="Content">
-                <p class="FieldExplanation">
-                    $Text{"With this module, administrators can send messages to agents, group or role members."}
-                </p>
-            </div>
-        </div>
-    </div>
-    <div class="ContentColumn">
-
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"Create Administrative Message"}</h2>
-            </div>
-            <div class="Content">
-
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+    <tr>
+        <td class="mainhead">
+            $Env{"Box0"}$Text{"Admin Notification"}$Env{"Box1"}
+        </td>
+    </tr>
+    <tr>
+        <td align="center" class="mainbody">
+            <br/>
 <!-- dtl:block:Sent -->
-                <p>
-                    $Text{"Your message was sent to"}: $QData{"Bcc"}
-                </p>
+            <table border="0" width="800" cellspacing="0" cellpadding="4">
+                <tr>
+                    <td class="contenthead">$Text{"Options"}:</td>
+                </tr>
+                <tr>
+                    <td class="contentbody">
+                        <p>
+                            $Text{"Message sent to"}: $Data{"Bcc"}
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="contentfooter">&nbsp;</td>
+                </tr>
+            </table>
 <!-- dtl:block:Sent -->
-
 <!-- dtl:block:Form -->
-                <form action="$Env{"CGIHandle"}" method="post" name="compose" class="Validate">
-                    <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                    <input type="hidden" name="Subaction" value="Send"/>
+<script language="JavaScript" type="text/javascript">
+<!--
+function submit_compose() {
+    if (document.compose.Subject.value == "") {
+        alert('$JSText{"A message should have a subject!"}');
+        document.compose.Subject.focus();
+        return false;
+    }
+    return true;
+}
+//-->
+</script>
 
-                    <fieldset class="TableLike">
-                        <label class="Mandatory" for="From"><span class="Marker">*</span> $Text{"From"}:</label>
-                        <div class="Field">
-                            <input type="text" name="From" id="From" value="$Config{"AdminEmail"}" class="W75pc Validate_Required $QData{"FromInvalid"}"/>
-                            <div id="FromError" class="TooltipErrorMessage">
-                                <p>$Text{"This field is required."}</p>
-                            </div>
-                            <div id="FromServerError" class="TooltipErrorMessage">
-                                <p>$Text{"This field is required."}</p>
-                            </div>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="UserIDs">$Text{"Send message to users"}:</label>
-                        <div class="Field">
-                            $Data{"UserOption"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="GroupIDs">$Text{"Send message to group members"}:</label>
-                        <div class="Field">
-                            $Data{"GroupOption"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="GroupPermissionRO">$Text{"Group members need to have permission"}:</label>
-                        <div class="Field">
-                            <input type="radio" name="GroupPermission" id="GroupPermissionRO" value="ro" checked="checked"/>
-                            <label for="GroupPermissionRO">$Text{"ro"}</label>
-                            <br/>
-                            <input type="radio" name="GroupPermission" id="GroupPermissionRW" value="rw"/>
-                            <label for="GroupPermissionRW">$Text{"rw"}</label>
-                        </div>
-                        <div class="Clear"></div>
-
-<!-- dtl:block:RoleRecipients -->
-                        <label for="RoleIDs">$Text{"Send message to role members"}:</label>
-                        <div class="Field">
-                            $Data{"RoleOption"}
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:RoleRecipients -->
-
-<!-- dtl:block:CustomerUserGroups -->
-                        <label for="NotifyCustomerUsers">$Text{"Also send to customers in groups"}:</label>
-                        <div class="Field">
-                            <input type="checkbox" name="NotifyCustomerUsers" id="NotifyCustomerUsers" />
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:CustomerUserGroups -->
-
-                        <label class="Mandatory" for="Subject"><span class="Marker">*</span> $Text{"Subject"}:</label>
-                        <div class="Field">
-                            <input type="text" name="Subject" id="Subject" class="W75pc Validate_Required $QData{"SubjectInvalid"}" value="$QData{"Subject"}" />
-                            <div id="SubjectError" class="TooltipErrorMessage">
-                                <p>$Text{"This field is required."}</p>
-                            </div>
-                            <div id="SubjectServerError" class="TooltipErrorMessage">
-                                <p>$Text{"This field is required."}</p>
-                            </div>
-                        </div>
-
-                        <label class="Mandatory" for="RichText"><span class="Marker">*</span> $Text{"Body"}:</label>
-                        <div class="RichTextField">
-                            <textarea id="RichText" class="W100pc RichText Validate_RequiredRichText $QData{"RichTextInvalid"}" name="Body" rows="16" cols="78">$QData{"Body"}</textarea>
-                            <div id="RichTextError" class="TooltipErrorMessage">
-                                <p>$Text{"This field is required."}</p>
-                            </div>
-                            <div id="RichTextServerError" class="TooltipErrorMessage">
-                                <p>$Text{"This field is required."}</p>
-                            </div>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field SpacingTop">
-                            <button class="Primary" id="submitRichText" type="submit" value="$Text{"Send"}">$Text{"Send"}</button>
-                        </div>
-                        <div class="Clear"></div>
-
-                    </fieldset>
-                </form>
+            <form action="$Env{"CGIHandle"}" method="post" name="compose">
+                <input type="hidden" name="Action" value="$Env{"Action"}"/>
+                <input type="hidden" name="Subaction" value="Send"/>
+                <table border="0" width="800" cellspacing="0" cellpadding="4">
+                    <tr>
+                        <td class="contenthead">$Text{"Options"}:</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">
+                            <table border="0" width="100%" cellspacing="0" cellpadding="4">
+                                <tr>
+                                    <td class="contentkey">$Text{"From"}:</td>
+                                    <td class="contentvalue"><input type="Text" name="From" value="$Config{"AdminEmail"}" size="40"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="contentkey">$Text{"Recipients"}:</td>
+                                    <td class="contentvalue">
+                                        <table border="0" cellspacing="0" cellpadding="1" width="70%">
+                                            <tr>
+                                                <td rowspan="2" valign="top">$Text{"User"}:<br/>$Data{"UserOption"}</td>
+                                                <td valign="top">$Text{"Group"}:<br/>$Data{"GroupOption"}</td>
+                                            </tr>
+                                            <tr>
+                                                <td valign="top">
+                                                    $Text{"Permission"}:<br/>ro <input type="radio" name="GroupPermission" value="ro" checked/> - rw <input type="radio" name="GroupPermission" value="rw"/>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="contentkey">$Text{"Subject"}:</td>
+                                    <td class="contentvalue">
+                                        <input type="Text" name="Subject" value="$QData{"Subject"}" size="76"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="contentkey">$Text{"Body"}:</td>
+                                    <td class="contentvalue">
+                                        <div class="yui-skin-sam">
+                                            <textarea id="RichText" name="Body" rows="16" cols="76">$QData{"Body"}</textarea>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="contentfooter"><input class="button" id="submitRichText" type="submit" value="$Text{"Send"}" onclick="return submit_compose();"/></td>
+                    </tr>
+                </table>
+            </form>
 <!-- dtl:block:Form -->
-
-            </div>
-        </div>
-    </div>
-    <div class="Clear"></div>
-</div>
+            <br/>
+        </td>
+    </tr>
+</table>
+<!-- end -->

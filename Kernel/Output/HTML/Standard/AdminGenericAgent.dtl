@@ -1,816 +1,703 @@
 # --
 # AdminGenericAgent.dtl - provides HTML form for AdminGenericAgent.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminGenericAgent.dtl,v 1.93 2011/12/21 14:53:25 mg Exp $
+# $Id: AdminGenericAgent.dtl,v 1.44.2.1 2009/10/01 14:12:05 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
+
 <!-- start form -->
-<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
-    <h1>$Text{"Generic Agent"}</h1>
-    <div class="SidebarColumn">
-<!-- dtl:block:ActionList -->
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"Actions"}</h2>
-            </div>
-            <div class="Content">
-                <ul class="ActionList">
-<!-- dtl:block:ActionAdd -->
-                    <li>
-                        <a class="CallForAction Plus" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Update"><span>$Text{"Add job"}</span></a>
-                    </li>
-<!-- dtl:block:ActionAdd -->
-<!-- dtl:block:ActionOverview -->
-                    <li>
-                        <a class="CallForAction" href="$Env{"Baselink"}Action=$Env{"Action"}"><span>$Text{"Go to overview"}</span></a>
-                    </li>
-<!-- dtl:block:ActionOverview -->
-                </ul>
-            </div>
-        </div>
-<!-- dtl:block:ActionList -->
-    </div>
-
-    <div class="ContentColumn">
-
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+    <tr>
+        <td colspan="2" class="mainhead">
+            $Env{"Box0"}$Text{"GenericAgent"}$Env{"Box1"}
+        </td>
+    </tr>
 <!-- dtl:block:Overview -->
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"List"}</h2>
-            </div>
-            <div class="Content">
-                <table class="DataTable">
-                    <thead>
-                        <tr>
-                            <th>$Text{"Name"}</th>
-                            <th>$Text{"Last run"}</th>
-                            <th>$Text{"Validity"}</th>
-                            <th>$Text{"Delete"}</th>
-                            <th>$Text{"Run Now!"}</th>
-                        </tr>
-                    </thead>
-<!-- dtl:block:NoDataFoundMsg -->
+    <tr>
+        <td width="30%" class="mainbody">
+            <form action="$Env{"CGIHandle"}" method="post">
+                <input type="hidden" name="Action" value="$Env{"Action"}"/>
+                <input type="hidden" name="Subaction" value="Add"/>
+                <table width="100%" cellspacing="0" cellpadding="4">
                     <tr>
-                        <td colspan="5">
-                            $Text{"No data found."}
+                        <td class="contenthead">$Text{"Add"}:</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">
+                            <table>
+                                <tr>
+                                    <td class="contentkey">$Text{"Name"}:</td>
+                                    <td class="contentvalue">
+                                        <input type="text" name="Profile" value="" size="20"/>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
-<!-- dtl:block:NoDataFoundMsg -->
-<!-- dtl:block:Row -->
-                    <tbody>
-                        <tr>
-                            <td>
-                                <a class="AsBlock" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Update;Profile=$LQData{"Name"}">
-                                    $QData{"Name"}
-                                </a>
-                            </td>
-                            <td>$TimeLong{"$QData{"ScheduleLastRun"}"}</td>
-                            <td>$Text{"$Data{"ShownValid"}"}</td>
-                            <td class="Center">
-                                <a class="TrashCan" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Delete;Profile=$LQData{"Name"};$QEnv{"ChallengeTokenParam"}" title="$Text{"Delete this task"}">
-                                    $Text{"Delete this task"}
-                                </a>
-                            </td>
-                            <td>
-                                <a class="AsBlock" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=RunNow;Profile=$LQData{"Name"};$QEnv{"ChallengeTokenParam"}">
-                                    $Text{"Run this task"}
-                                </a>
-                            </td>
-                        </tr>
-                    </tbody>
-<!-- dtl:block:Row -->
+                    <tr>
+                        <td class="contentfooter">
+                            <input class="button" type="submit" value="$Text{"Add"}"/>
+                        </td>
+                    </tr>
                 </table>
-            </div>
-        </div>
+            </form>
+        </td>
+        <td width="70%" class="mainbody">
+            <table width="100%" cellspacing="0" cellpadding="4">
+                <tr>
+                    <td class="contenthead">$Text{"Job-List"}:</td>
+                </tr>
+                <tr>
+                    <td class="contentbody">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="3">
+                            <tr>
+                                <td class="contentkey" width="35%">$Text{"Name"}</td>
+                                <td class="contentkey">$Text{"Last run"}</td>
+                                <td align="center" class="contentkey">$Text{"valid"}/$Text{"invalid"}</td>
+                                <td align="center" class="contentkey">$Text{"Delete"}</td>
+                                <td align="center" class="contentkey">$Text{"Run Now!"}</td>
+                            </tr>
+<!-- dtl:block:Row -->
+                            <tr class="$QData{"css"}">
+                                <td class="$QData{"cssValid"}">
+                                    <a href="$Env{"Baselink"}Action=$Env{"Action"}&Subaction=Update&Profile=$LQData{"Name"}" class="$QData{"cssValid"}">
+                                    $QData{"Name"}
+                                    </a>
+                                </td>
+                                <td class="$QData{"cssValid"}">
+                                    $TimeLong{"$QData{"ScheduleLastRun"}"}
+                                </td>
+                                <td align="center" class="$QData{"cssValid"}">
+                                    $Text{"$QData{"ShownValid"}"}
+                                </td>
+                                <td align="center" class="$QData{"cssValid"}">
+                                    <a href="$Env{"Baselink"}Action=$Env{"Action"}&&Subaction=Delete&Profile=$LQData{"Name"}">$Text{"x"}</a>
+                                </td>
+                                <td align="center" class="$QData{"cssValid"}">
+                                    <a href="$Env{"Baselink"}Action=$Env{"Action"}&Subaction=RunNow&Profile=$LQData{"Name"}">$Text{"x"}</a>
+                                </td>
+                            </tr>
+<!-- dtl:block:Row -->
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="contentfooter">&nbsp;</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
 <!-- dtl:block:Overview -->
-
-
 <!-- dtl:block:Edit -->
-        <form action="$Env{"CGIHandle"}" method="post" name="compose" class="Validate PreventMultipleSubmits">
-            <div class="WidgetSimple">
-                <div class="Header">
-                    <h2>$Text{"Job Settings"}</h2>
-                </div>
-                <div class="Content">
-                    <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                    <input type="hidden" name="Subaction" value="UpdateAction"/>
-                    <input type="hidden" name="ScheduleLastRun" value="$QData{"ScheduleLastRun"}"/>
-                    <input type="hidden" name="OldProfile" value="$QData{"Profile"}"/>
-                    <fieldset class="TableLike">
-                        <label for="Profile" class="Mandatory"><span class="Marker">*</span> $Text{"Job name"}:</label>
-                        <div class="Field">
-                            <input type="text" name="Profile" id="Profile" class="Validate_Required W50pc $QData{"ProfileInvalid"}" value="$QData{"Profile"}" />
-                            <div id="ProfileError" class="TooltipErrorMessage">
-                                <p>$Text{"This field is required."}</p>
-                            </div>
-                            <div id="ProfileServerError" class="TooltipErrorMessage">
-                                <p>$Text{"This field is required."}</p>
-                            </div>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="Valid">$Text{"Validity"}:</label>
-                        <div class="Field">
-                            $Data{"ValidOption"}
-                        </div>
-                        <div class="Clear"></div>
-
+    <tr>
+        <td colspan="2" class="menu">
+            <a href="$Env{"Baselink"}Action=$Env{"Action"}">$Text{"Job-List"}</a>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" align="center" class="mainbody">
+            <br/>
+            <form action="$Env{"CGIHandle"}" method="post" name="compose">
+                <input type="hidden" name="Action" value="$Env{"Action"}"/>
+                <input type="hidden" name="Subaction" value="UpdateAction"/>
+                <input type="hidden" name="ScheduleLastRun" value="$QData{"ScheduleLastRun"}"/>
+                <input type="hidden" name="OldProfile" value="$QData{"Profile"}"/>
+                <table width="800" border="0" cellspacing="0" cellpadding="4">
+<!-- job name -->
+                    <tr align="left">
+                        <td class="contenthead">$Text{"Save Job as?"}</td>
+                        <td class="contenthead">$Text{"Is Job Valid?"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">
+                            $Text{"Name"}:
+                            <input type="text" name="Profile" size="20" value="$QData{"Profile"}"/>
+                        </td>
+                        <td class="contentbody">
+                            $Text{"Is Job Valid"}: $Data{"ValidOption"}
+                        </td>
+                    </tr>
+<!-- job schedule -->
+                    <tr>
+                        <td colspan="2" class="contenthead">$Text{"Schedule"}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
+                            $Text{"minutes"}: $Data{"ScheduleMinutesList"} $Text{"hours"}: $Data{"ScheduleHoursList"}
+                            $Text{"days"}: $Data{"ScheduleDaysList"}
 <!-- dtl:block:JobScheduleWarning-->
-                        <p class="Field Error">
-                            $Text{"Currently this generic agent job will not run automatically."}
                             <br/>
+                            <span class="validity">
+                            $Text{"Currently this generic agent job will not run automatically."}
                             $Text{"To enable automatic execution select at least one value from minutes, hours and days!"}
-                        </p>
-                        <div class="Clear"></div>
+                            </span>
 <!-- dtl:block:JobScheduleWarning-->
-                    </fieldset>
-                    <div class="LayoutGrid ColumnsWithSpacing">
-                        <div class="Size1of3">
-                            <fieldset class="TableLike FixedLabelSmall">
-                                <label for="ScheduleMinutes">$Text{"Schedule minutes"}:</label>
-                                <div class="Field">
-                                    $Data{"ScheduleMinutesList"}
-                                </div>
-                                <div class="Clear"></div>
-                            </fieldset>
-                        </div>
-                        <div class="Size1of3">
-                            <fieldset class="TableLike FixedLabelSmall">
-                                <label for="ScheduleHours">$Text{"Schedule hours"}:</label>
-                                <div class="Field">
-                                    $Data{"ScheduleHoursList"}
-                                </div>
-                                <div class="Clear"></div>
-                            </fieldset>
-                        </div>
-                        <div class="Size1of3">
-                            <fieldset class="TableLike FixedLabelSmall">
-                                <label for="ScheduleDays">$Text{"Schedule days"}:</label>
-                                <div class="Field">
-                                    $Data{"ScheduleDaysList"}
-                                </div>
-                                <div class="Clear"></div>
-                            </fieldset>
-                        </div>
-                        <div class="Clear"></div>
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="WidgetSimple SpacingTop Collapsed">
-                <div class="Header">
-                    <div class="WidgetAction Toggle">
-                        <a href="#" title="$Text{"Toggle this widget"}"></a>
-                    </div>
-                    <h2>$Text{"Ticket Filter"}</h2>
-                </div>
-                <div class="Content">
-                    <fieldset class="TableLike">
-                        <label for="TicketNumber">$Config{"Ticket::Hook"}:</label>
-                        <div class="Field">
-                            <input type="text" name="TicketNumber" id="TicketNumber" size="30" value="$QData{"TicketNumber"}"/>
-                            <p class="FieldExplanation">
-                                $Text{"(e. g. 10*5155 or 105658*)"}
-                            </p>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="Title">$Text{"Title"}:</label>
-                        <div class="Field">
-                            <input type="text" name="Title" id="Title" class="W33pc" value="$QData{"Title"}"/>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="CustomerID">$Text{"CustomerID"}:</label>
-                        <div class="Field">
-                            <input type="text" name="CustomerID" id="CustomerID" class="W33pc" value="$QData{"CustomerID"}"/>
-                            <p class="FieldExplanation">
-                                $Text{"(e. g. 234321)"}
-                            </p>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="CustomerUserLogin">$Text{"Customer login"}:</label>
-                        <div class="Field">
-                            <input type="text" name="CustomerUserLogin" id="CustomerUserLogin" class="W33pc" value="$QData{"CustomerUserLogin"}"/>
-                            <p class="FieldExplanation">
-                                $Text{"(e. g. U5150)"}
-                            </p>
-                        </div>
-                        <div class="Clear"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="contenthead">$Config{"Ticket::Hook"} $Text{"and"} $Text{"CustomerID"}</td>
+                        <td class="contenthead">$Text{"Fulltext-Search in Article (e. g. "Mar*in" or "Baue*")"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">
+                            <table width="100%" border="0" cellspacing="1" cellpadding="1">
+                                <tr>
+                                    <td width="50%">
+                                        $Config{"Ticket::Hook"} $Text{"(e. g. 10*5155 or 105658*)"}
+                                    </td>
+                                    <td width="50%">
+                                        <input type="text" name="TicketNumber" size="30" value="$QData{"TicketNumber"}"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>$Text{"Title"}</td>
+                                    <td><input type="text" name="Title" size="30" value="$QData{"Title"}"/></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        $Text{"CustomerID"} $Text{"(e. g. 234321)"}
+                                    </td>
+                                    <td>
+                                        <input type="text" name="CustomerID" size="30" value="$QData{"CustomerID"}"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        $Text{"Customer User Login"} $Text{"(e. g. U5150)"}
+                                    </td>
+                                    <td>
+                                        <input type="text" name="CustomerUserLogin" size="30" value="$QData{"CustomerUserLogin"}"/>
+                                    </td>
+                                </tr>
 <!-- dtl:block:TicketType -->
-                        <label for="TypeIDs">$Text{"Type"}:</label>
-                        <div class="Field">
-                            $Data{"TypesStrg"}
-                        </div>
-                        <div class="Clear"></div>
+                                <tr>
+                                    <td>
+                                        $Text{"Type"}
+                                    </td>
+                                    <td>
+                                        $Data{"TypesStrg"}
+                                    </td>
+                                </tr>
 <!-- dtl:block:TicketType -->
-                        <label for="From">$Text{"From"}:</label>
-                        <div class="Field">
-                            <input type="text" name="From" id="From" class="W30pc" value="$QData{"From"}"/>
-                            <p class="FieldExplanation">
-                                $Text{"Fulltext-search in article (e. g. "Mar*in" or "Baue*")."}
-                            </p>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="To">$Text{"To"}:</label>
-                        <div class="Field">
-                            <input type="text" name="To" id="To" class="W33pc" value="$QData{"To"}"/>
-                            <p class="FieldExplanation">
-                                $Text{"Fulltext-search in article (e. g. "Mar*in" or "Baue*")."}
-                            </p>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="Cc">$Text{"Cc"}:</label>
-                        <div class="Field">
-                            <input type="text" name="Cc" id="Cc" class="W33pc" value="$QData{"Cc"}"/>
-                            <p class="FieldExplanation">
-                                $Text{"Fulltext-search in article (e. g. "Mar*in" or "Baue*")."}
-                            </p>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="Subject">$Text{"Subject"}:</label>
-                        <div class="Field">
-                            <input type="text" name="Subject" id="Subject" class="W33pc" value="$QData{"Subject"}"/>
-                            <p class="FieldExplanation">
-                                $Text{"Fulltext-search in article (e. g. "Mar*in" or "Baue*")."}
-                            </p>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="Body">$Text{"Text"}:</label>
-                        <div class="Field">
-                            <input type="text" name="Body" id="Body" class="W33pc" value="$QData{"Body"}"/>
-                            <p class="FieldExplanation">
-                                $Text{"Fulltext-search in article (e. g. "Mar*in" or "Baue*")."}
-                            </p>
-                        </div>
-                        <div class="Clear"></div>
+                            </table>
+                        </td>
+                        <td class="contentbody">
+                            <table width="100%" border="0" cellspacing="1" cellpadding="1">
+                                <tr>
+                                    <td>
+                                        $Text{"From"}
+                                    </td>
+                                    <td>
+                                        <input type="text" name="From" size="30" value="$QData{"From"}"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        $Text{"To"}
+                                    </td>
+                                    <td>
+                                        <input type="text" name="To" size="30" value="$QData{"To"}"/>
+                                    </td>
+                                </tr>
+                                <tr align="left">
+                                    <td>
+                                        $Text{"Cc"}
+                                    </td>
+                                    <td>
+                                        <input type="text" name="Cc" size="30" value="$QData{"Cc"}"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        $Text{"Subject"}
+                                    </td>
+                                    <td>
+                                        <input type="text" name="Subject" size="30" value="$QData{"Subject"}"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        $Text{"Text"}
+                                    </td>
+                                    <td>
+                                        <input type="text" name="Body" size="30" value="$QData{"Body"}"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 <!-- dtl:block:TicketService -->
-                        <label for="ServiceIDs">$Text{"Service"}:</label>
-                        <div class="Field">
-                            $Data{"ServicesStrg"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="SLAIDs">$Text{"Service Level Agreement"}:</label>
-                        <div class="Field">
-                            $Data{"SLAsStrg"}
-                        </div>
-                        <div class="Clear"></div>
+                    <tr>
+                        <td class="contenthead">$Text{"Service"}</td>
+                        <td class="contenthead">$Text{"SLA"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">$Data{"ServicesStrg"}</td>
+                        <td class="contentbody">$Data{"SLAsStrg"}</td>
+                    </tr>
 <!-- dtl:block:TicketService -->
-                        <label for="PriorityIDs">$Text{"Priority"}:</label>
-                        <div class="Field">
-                            $Data{"PrioritiesStrg"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="QueueIDs">$Text{"Queue"}:</label>
-                        <div class="Field">
-                            $Data{"QueuesStrg"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="StateIDs">$Text{"State"}:</label>
-                        <div class="Field">
-                            $Data{"StatesStrg"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="OwnerIDs">$Text{"Agent"}/$Text{"Owner"}:</label>
-                        <div class="Field">
-                            $Data{"OwnerStrg"}
-                        </div>
-                        <div class="Clear"></div>
-
-<!-- dtl:block:TicketResponsible -->
-                        <label for="ResponsibleIDs">$Text{"Agent"}/$Text{"Responsible"}:</label>
-                        <div class="Field">
-                            $Data{"ResponsibleStrg"}
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:TicketResponsible -->
-
-                        <label for="LockIDs">$Text{"Ticket lock"}:</label>
-                        <div class="Field">
-                            $Data{"LockOption"}
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:DynamicField -->
-                        <label>$Text{"Dynamic Fields"}</label>
-                        <div class="Clear"></div>
-<!-- dtl:block:DynamicFieldElement -->
-                        $Data{"Label"}
-                        <div class="Field">
-                            $Data{"Field"}
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:DynamicFieldElement -->
-<!-- dtl:block:DynamicField -->
-                        <label for="TimeSearchTypeNone">$Text{"Create times"}:</label>
-                        <div class="Field">
-                            <input type="radio" name="TimeSearchType" id="TimeSearchTypeNone" value="" $Data{"TimeSearchType::None"}/>
+                    <tr>
+                        <td class="contenthead" width="50%">$Text{"Priority"}</td>
+                        <td class="contenthead" width="50%">$Text{"Queue"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">$Data{"PrioritiesStrg"}</td>
+                        <td class="contentbody">$Data{"QueuesStrg"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contenthead">$Text{"State"}</td>
+                        <td class="contenthead">$Text{"Agent"}/$Text{"Owner"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">$Data{"StatesStrg"}</td>
+                        <td class="contentbody">$Data{"OwnerStrg"}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contenthead">$Text{"Ticket Lock"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody" colspan="2">$Data{"LockOption"}</td>
+                    </tr>
+<!-- dtl:block:TicketFreeField -->
+                    <tr>
+                        <td colspan="2" class="contenthead">$Text{"TicketFreeFields"}</td>
+                    </tr>
+<!-- dtl:block:TicketFreeFieldElement -->
+                    <tr>
+                        <td class="contentbody">$Data{"TicketFreeKey"}</td>
+                        <td class="contentbody">$Data{"TicketFreeText"}</td>
+                    </tr>
+<!-- dtl:block:TicketFreeFieldElement -->
+<!-- dtl:block:TicketFreeField -->
+                    <tr>
+                        <td colspan="2" class="contenthead">$Text{"Create Times"}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
+                            <input type="radio" name="TimeSearchType" value="" $Data{"TimeSearchType::None"}/>
                             $Text{"No create time settings."}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="TimeSearchType" value="TimePoint" $Data{"TimeSearchType::TimePoint"}/>
                             $Text{"Ticket created"} $Data{"TicketCreateTimePointStart"} $Data{"TicketCreateTimePoint"} $Data{"TicketCreateTimePointFormat"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="TimeSearchType" value="TimeSlot" $Data{"TimeSearchType::TimeSlot"}/>
                             $Text{"Ticket created between"} $Data{"TicketCreateTimeStart"} $Text{"and"} $Data{"TicketCreateTimeStop"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="ChangeTimeSearchTypeNone">$Text{"Change times"}:</label>
-                        <div class="Field">
-                            <input type="radio" name="ChangeTimeSearchType" id="ChangeTimeSearchTypeNone" value="" $Data{"ChangeTimeSearchType::None"}/>
-                            $Text{"No change time settings."}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
-                            <input type="radio" name="ChangeTimeSearchType" value="TimePoint" $Data{"ChangeTimeSearchType::TimePoint"}/>
-                            $Text{"Ticket changed"} $Data{"TicketChangeTimePointStart"} $Data{"TicketChangeTimePoint"} $Data{"TicketChangeTimePointFormat"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
-                            <input type="radio" name="ChangeTimeSearchType" value="TimeSlot" $Data{"ChangeTimeSearchType::TimeSlot"}/>
-                            $Text{"Ticket changed between"} $Data{"TicketChangeTimeStart"} $Text{"and"} $Data{"TicketChangeTimeStop"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="CloseTimeSearchTypeNone">$Text{"Close times"}:</label>
-                        <div class="Field">
-                            <input type="radio" name="CloseTimeSearchType" id="CloseTimeSearchTypeNone" value="" $Data{"CloseTimeSearchType::None"}/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contenthead">$Text{"Close Times"}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
+                            <input type="radio" name="CloseTimeSearchType" value="" $Data{"CloseTimeSearchType::None"}/>
                             $Text{"No close time settings."}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="CloseTimeSearchType" value="TimePoint" $Data{"CloseTimeSearchType::TimePoint"}/>
                             $Text{"Ticket closed"} $Data{"TicketCloseTimePointStart"} $Data{"TicketCloseTimePoint"} $Data{"TicketCloseTimePointFormat"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="CloseTimeSearchType" value="TimeSlot" $Data{"CloseTimeSearchType::TimeSlot"}/>
                             $Text{"Ticket closed between"} $Data{"TicketCloseTimeStart"} $Text{"and"} $Data{"TicketCloseTimeStop"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="TimePendingSearchTypeNone">$Text{"Pending times"}:</label>
-                        <div class="Field">
-                            <input type="radio" name="TimePendingSearchType" id="TimePendingSearchTypeNone" value="" $Data{"TimePendingSearchType::None"}/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contenthead">$Text{"Pending Times"}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
+                            <input type="radio" name="TimePendingSearchType" value="" $Data{"TimePendingSearchType::None"}/>
                             $Text{"No pending time settings."}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="TimePendingSearchType" value="TimePoint" $Data{"TimePendingSearchType::TimePoint"}/>
                             $Text{"Ticket pending time reached"} $Data{"TicketPendingTimePointStart"} $Data{"TicketPendingTimePoint"} $Data{"TicketPendingTimePointFormat"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="TimePendingSearchType" value="TimeSlot" $Data{"TimePendingSearchType::TimeSlot"}/>
                             $Text{"Ticket pending time reached between"} $Data{"TicketPendingTimeStart"} $Text{"and"} $Data{"TicketPendingTimeStop"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="EscalationTimeSearchTypeNone">$Text{"Escalation times"}:</label>
-                        <div class="Field">
-                            <input type="radio" name="EscalationTimeSearchType" id="EscalationTimeSearchTypeNone" value="" $Data{"EscalationTimeSearchType::None"}/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contenthead">$Text{"Escalation Times"}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
+                            <input type="radio" name="EscalationTimeSearchType" value="" $Data{"EscalationTimeSearchType::None"}/>
                             $Text{"No escalation time settings."}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="EscalationTimeSearchType" value="TimePoint" $Data{"EscalationTimeSearchType::TimePoint"}/>
                             $Text{"Ticket escalation time reached"} $Data{"TicketEscalationTimePointStart"} $Data{"TicketEscalationTimePoint"} $Data{"TicketEscalationTimePointFormat"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="EscalationTimeSearchType" value="TimeSlot" $Data{"EscalationTimeSearchType::TimeSlot"}/>
                             $Text{"Ticket escalation time reached between"} $Data{"TicketEscalationTimeStart"} $Text{"and"} $Data{"TicketEscalationTimeStop"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="EscalationResponseTimeSearchTypeNone">$Text{"Escalation - first response time"}:</label>
-                        <div class="Field">
-                            <input type="radio" name="EscalationResponseTimeSearchType" id="EscalationResponseTimeSearchTypeNone" value="" $Data{"EscalationResponseTimeSearchType::None"}/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contenthead">$Text{"Escalation - First Response Time"}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
+                            <input type="radio" name="EscalationResponseTimeSearchType" value="" $Data{"EscalationResponseTimeSearchType::None"}/>
                             $Text{"No escalation time settings."}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="EscalationResponseTimeSearchType" value="TimePoint" $Data{"EscalationResponseTimeSearchType::TimePoint"}/>
                             $Text{"Ticket first response time reached"} $Data{"TicketEscalationResponseTimePointStart"} $Data{"TicketEscalationResponseTimePoint"} $Data{"TicketEscalationResponseTimePointFormat"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="EscalationResponseTimeSearchType" value="TimeSlot" $Data{"EscalationResponseTimeSearchType::TimeSlot"}/>
                             $Text{"Ticket first response time reached between"} $Data{"TicketEscalationResponseTimeStart"} $Text{"and"} $Data{"TicketEscalationResponseTimeStop"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="EscalationUpdateTimeSearchTypeNone">$Text{"Escalation - update time"}:</label>
-                        <div class="Field">
-                            <input type="radio" name="EscalationUpdateTimeSearchType" id="EscalationUpdateTimeSearchTypeNone" value="" $Data{"EscalationUpdateTimeSearchType::None"}/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contenthead">$Text{"Escalation - Update Time"}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
+                            <input type="radio" name="EscalationUpdateTimeSearchType" value="" $Data{"EscalationUpdateTimeSearchType::None"}/>
                             $Text{"No escalation time settings."}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="EscalationUpdateTimeSearchType" value="TimePoint" $Data{"EscalationUpdateTimeSearchType::TimePoint"}/>
                             $Text{"Ticket update time reached"} $Data{"TicketEscalationUpdateTimePointStart"} $Data{"TicketEscalationUpdateTimePoint"} $Data{"TicketEscalationUpdateTimePointFormat"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="EscalationUpdateTimeSearchType" value="TimeSlot" $Data{"EscalationUpdateTimeSearchType::TimeSlot"}/>
                             $Text{"Ticket update time reached between"} $Data{"TicketEscalationUpdateTimeStart"} $Text{"and"} $Data{"TicketEscalationUpdateTimeStop"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="EscalationSolutionTimeSearchTypeNone">$Text{"Escalation - solution time"}:</label>
-                        <div class="Field">
-                            <input type="radio" name="EscalationSolutionTimeSearchType" id="EscalationSolutionTimeSearchTypeNone" value="" $Data{"EscalationSolutionTimeSearchType::None"}/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contenthead">$Text{"Escalation - Solution Time"}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
+                            <input type="radio" name="EscalationSolutionTimeSearchType" value="" $Data{"EscalationSolutionTimeSearchType::None"}/>
                             $Text{"No escalation time settings."}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="EscalationSolutionTimeSearchType" value="TimePoint" $Data{"EscalationSolutionTimeSearchType::TimePoint"}/>
                             $Text{"Ticket solution time reached"} $Data{"TicketEscalationSolutionTimePointStart"} $Data{"TicketEscalationSolutionTimePoint"} $Data{"TicketEscalationSolutionTimePointFormat"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
                             <input type="radio" name="EscalationSolutionTimeSearchType" value="TimeSlot" $Data{"EscalationSolutionTimeSearchType::TimeSlot"}/>
                             $Text{"Ticket solution time reached between"} $Data{"TicketEscalationSolutionTimeStart"} $Text{"and"} $Data{"TicketEscalationSolutionTimeStop"}.
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:SearchInArchive -->
-                        <label for="SearchInArchive">$Text{"Archive search option"}:</label>
-                        <div class="Field">
-                            $Data{"SearchInArchiveStrg"}
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:SearchInArchive -->
-                    </fieldset>
-                </div>
-            </div>
+                        </td>
+                    </tr>
 <!-- new options -->
-            <div class="WidgetSimple SpacingTop Collapsed">
-                <div class="Header">
-                    <div class="WidgetAction Toggle">
-                        <a href="#" title="$Text{"Toggle this widget"}"></a>
-                    </div>
-                    <h2>$Text{"Ticket Action"}</h2>
-                </div>
-                <div class="Content">
-                    <fieldset class="TableLike">
 <!-- dtl:block:NewTicketService -->
-                        <label for="NewServiceID">$Text{"Set new service"}:</label>
-                        <div class="Field">
-                            $Data{"NewServicesStrg"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewSLAID">$Text{"Set new Service Level Agreement"}:</label>
-                        <div class="Field">
-                            $Data{"NewSLAsStrg"}
-                        </div>
-                        <div class="Clear"></div>
+                    <tr>
+                        <td class="mainhead">$Text{"New Service"}</td>
+                        <td class="mainhead">$Text{"New SLA"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">$Data{"NewServicesStrg"}</td>
+                        <td class="contentbody">$Data{"NewSLAsStrg"}</td>
+                    </tr>
 <!-- dtl:block:NewTicketService -->
-                        <label for="NewPriorityID">$Text{"Set new priority"}:</label>
-                        <div class="Field">
-                            $Data{"NewPrioritiesStrg"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewQueueID">$Text{"Set new queue"}:</label>
-                        <div class="Field">
-                            $Data{"NewQueuesStrg"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewStateID">$Text{"Set new state"}:</label>
-                        <div class="Field">
-                            $Data{"NewStatesStrg"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewOwnerID">$Text{"Set new agent"}/$Text{"new owner"}:</label>
-                        <div class="Field">
-                            $Data{"NewOwnerStrg"}
-                        </div>
-                        <div class="Clear"></div>
-
-<!-- dtl:block:NewTicketResponsible -->
-                        <label for="NewResponsibleID">$Text{"Set new agent"}/$Text{"new responsible"}:</label>
-                        <div class="Field">
-                            $Data{"NewResponsibleStrg"}
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:NewTicketResponsible -->
-
-                        <label for="NewLockID">$Text{"Set new ticket lock"}:</label>
-                        <div class="Field">
-                            $Data{"NewLockOption"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewCustomerUserLogin">$Text{"New customer"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewCustomerUserLogin" id="NewCustomerUserLogin" value="$QData{"NewCustomerUserLogin"}" class="W33pc"/>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewCustomerID">$Text{"New customer ID"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewCustomerID" id="NewCustomerID" value="$QData{"NewCustomerID"}" class="W33pc"/>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewTitle">$Text{"New title"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewTitle" id="NewTitle" class="W33pc" value="$QData{"NewTitle"}"/>
-                        </div>
-                        <div class="Clear"></div>
+                    <tr>
+                        <td class="mainhead" width="50%">$Text{"New Priority"}</td>
+                        <td class="mainhead" width="50%">$Text{"New Queue"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">$Data{"NewPrioritiesStrg"}</td>
+                        <td class="contentbody">$Data{"NewQueuesStrg"}</td>
+                    </tr>
+                    <tr>
+                        <td class="mainhead">$Text{"New State"}</td>
+                        <td class="mainhead">$Text{"New Agent"}/$Text{"New Owner"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">$Data{"NewStatesStrg"}</td>
+                        <td class="contentbody">$Data{"NewOwnerStrg"}</td>
+                    </tr>
+                    <tr>
+                        <td class="mainhead" width="50%">$Text{"New Customer"}</td>
+                        <td class="mainhead" width="50%">$Text{"New Ticket Lock"} & $Text{"New Type"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">
+                            <table>
+                                <tr>
+                                    <td>
+                                        $Text{"CustomerUser"}:
+                                    </td>
+                                    <td>
+                                        <input type="text" name="NewCustomerUserLogin" value="$QData{"NewCustomerUserLogin"}" size="30"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        $Text{"CustomerID"}:
+                                    </td>
+                                    <td>
+                                        <input type="text" name="NewCustomerID" value="$QData{"NewCustomerID"}" size="30"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td class="contentbody">
+                            <table>
+                                <tr>
+                                    <td>
+                                        $Text{"New Ticket Lock"}:
+                                    </td>
+                                    <td>
+                                        $Data{"NewLockOption"}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>$Text{"New Title"}</td>
+                                    <td><input type="text" name="NewTitle" size="30" value="$QData{"New Title"}"/></td>
+                                </tr>
 <!-- dtl:block:NewTicketType -->
-                        <label for="NewTypeID">$Text{"New type"}:</label>
-                        <div class="Field">
-                            $Data{"NewTypesStrg"}
-                        </div>
-                        <div class="Clear"></div>
+                                <tr>
+                                    <td>
+                                        $Text{"New Type"}:
+                                    </td>
+                                    <td>
+                                        $Data{"NewTypesStrg"}
+                                    </td>
+                                </tr>
 <!-- dtl:block:NewTicketType -->
-<!-- dtl:block:NewDynamicField -->
-                        <label>$Text{"New Dynamic Field Values"}</label>
-                        <div class="Clear"></div>
-<!-- dtl:block:NewDynamicFieldElement -->
-                        $Data{"Label"}
-                        <div class="Field">
-                            $Data{"Field"}
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:NewDynamicFieldElement -->
-<!-- dtl:block:NewDynamicField -->
-<!-- dtl:block:NewArchiveFlag -->
-                        <label for="NewArchiveFlag">$Text{"Archive selected tickets"}:</label>
-                        <div class="Field">
-                            $Data{"NewArchiveFlagStrg"}
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:NewArchiveFlag -->
-                    </fieldset>
-                </div>
-            </div>
-            <div class="WidgetSimple SpacingTop Collapsed">
-                <div class="Header">
-                    <div class="WidgetAction Toggle">
-                        <a href="#" title="$Text{"Toggle this widget"}"></a>
-                    </div>
-                    <h2>$Text{"Add Note"}</h2>
-                </div>
-                <div class="Content">
-                    <fieldset class="TableLike">
-                        <label for="NewNoteFrom">$Text{"From"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewNoteFrom" id="NewNoteFrom" value="$QData{"NewNoteFrom"}" class="W50pc"/>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewNoteSubject">$Text{"Subject"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewNoteSubject" id="NewNoteSubject" value="$QData{"NewNoteSubject"}" size="60"/>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewNoteBody">$Text{"Text"}:</label>
-                        <div class="Field">
-                            <textarea name="NewNoteBody" id="NewNoteBody" rows="7" cols="60">$QData{"NewNoteBody"}</textarea>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewNoteTimeUnits">$Text{"Time units"}$Text{"$Config{"Ticket::Frontend::TimeUnits"}"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewNoteTimeUnits" id="NewNoteTimeUnits" value="$QData{"NewNoteTimeUnits"}" class="W20pc"/>
-                        </div>
-                        <div class="Clear"></div>
-                    </fieldset>
-                </div>
-            </div>
-            <div class="WidgetSimple SpacingTop Collapsed">
-                <div class="Header">
-                    <div class="WidgetAction Toggle">
-                        <a href="#" title="$Text{"Toggle this widget"}"></a>
-                    </div>
-                    <h2>$Text{"Ticket Commands"}</h2>
-                </div>
-                <div class="Content">
-                    <fieldset class="TableLike">
-                        <label for="NewSendNoNotification">$Text{"Send agent/customer notifications on changes"}:</label>
-                        <div class="Field">
-                            $Data{"SendNoNotificationOption"}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewCMD">$Text{"CMD"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewCMD" id="NewCMD" value="$QData{"NewCMD"}" size="40"/>
-                            <p class="FieldExplanation">
-                                ($Text{"This command will be executed. ARG[0] will be the ticket number. ARG[1] the ticket id."})
-                            </p>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewDelete">$Text{"Delete tickets"}:</label>
-                        <div class="Field">
-                            $Data{"DeleteOption"}
-                            <p class="Error">
-                                $Text{"Warning: All affected tickets will be removed from the database and cannot be restored!"}
-                            </p>
-                        </div>
-                        <div class="Clear"></div>
-                    </fieldset>
-                </div>
-            </div>
-
-            <div class="WidgetSimple SpacingTop Collapsed">
-                <div class="Header">
-                    <div class="WidgetAction Toggle">
-                        <a href="#" title="$Text{"Toggle this widget"}"></a>
-                    </div>
-                    <h2>$Text{"Execute Custom Module"}</h2>
-                </div>
-                <div class="Content">
-                    <fieldset class="TableLike">
-                        <label for="NewModule">$Text{"Module"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewModule" id="NewModule" value="$QData{"NewModule"}" size="45"/>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewParamKey1">$Text{"Param %s key", "1"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewParamKey1" id="NewParamKey1" value="$QData{"NewParamKey1"}" class="W20pc"/>
-                            <label for="NewParamValue1"> $Text{"Param %s value", "1"}:</label>
-                            <input type="text" name="NewParamValue1" id="NewParamValue1" value="$QData{"NewParamValue1"}" class="W20pc"/>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewParamKey2">$Text{"Param %s key", "2"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewParamKey2" id="NewParamKey2" value="$QData{"NewParamKey2"}" class="W20pc"/>
-                            <label for="NewParamValue2"> $Text{"Param %s value", "2"}:</label>
-                            <input type="text" name="NewParamValue2" id="NewParamValue2" value="$QData{"NewParamValue2"}" class="W20pc"/>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewParamKey3">$Text{"Param %s key", "3"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewParamKey3" id="NewParamKey3" value="$QData{"NewParamKey3"}" class="W20pc"/>
-                            <label for="NewParamValue3">$Text{"Param %s value", "3"}:</label>
-                            <input type="text" name="NewParamValue3" id="NewParamValue3" value="$QData{"NewParamValue3"}" class="W20pc"/>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewParamKey4">$Text{"Param %s key", "4"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewParamKey4" id="NewParamKey4" value="$QData{"NewParamKey4"}" class="W20pc"/>
-                            <label for="NewParamValue4"> $Text{"Param %s value", "4"}:</label>
-                            <input type="text" name="NewParamValue4" id="NewParamValue4" value="$QData{"NewParamValue4"}" class="W20pc"/>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewParamKey5">$Text{"Param %s key", "5"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewParamKey5" id="NewParamKey5" value="$QData{"NewParamKey5"}" class="W20pc"/>
-                            <label for="NewParamValue5"> $Text{"Param %s value", "5"}:</label>
-                            <input type="text" name="NewParamValue5" id="NewParamValue5" value="$QData{"NewParamValue5"}" class="W20pc"/>
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="NewParamKey6">$Text{"Param %s key", "6"}:</label>
-                        <div class="Field">
-                            <input type="text" name="NewParamKey6" id="NewParamKey6" value="$QData{"NewParamKey6"}" class="W20pc"/>
-                            <label for="NewParamValue6"> $Text{"Param %s value", "6"}:</label>
-                            <input type="text" name="NewParamValue6" id="NewParamValue6" value="$QData{"NewParamValue6"}" class="W20pc"/>
-                        </div>
-                        <div class="Clear"></div>
-                    </fieldset>
-                </div>
-            </div>
-
-            <div class="WidgetSimple SpacingTop">
-                <div class="Header">
-                    <h2>$Text{"Save Changes"}</h2>
-                </div>
-                <div class="Content">
-                    <fieldset class="TableLike">
-                        <div class="Field SpacingTop">
-                            <button class="Primary" type="submit" value="$Text{"Save"}">$Text{"Save"}</button>
-                            $Text{"or"}
-                            <a href="$Env{"Baselink"}Action=$Env{"Action"}">$Text{"Cancel"}</a>
-                        </div>
-                        <div class="Clear"></div>
-                    </fieldset>
-                </div>
-            </div>
-        </form>
-<!-- dtl:block:Edit -->
-
-<!-- dtl:block:Result -->
-        <div class="WidgetSimple">
-            <div class="Header">
-                <h2>$Text{"Results"}</h2>
-            </div>
-            <div class="Content">
-                <p>
-                    $Text{"%s Tickets affected! What do you want to do?", "$QData{"AffectedIDs"}"}
-                </p>
-<!-- dtl:block:DeleteWarning -->
-                <p class="Error">
-                    $Text{"Warning: You used the DELETE option. All deleted tickets will be lost!"}
-                </p>
-<!-- dtl:block:DeleteWarning -->
-
-                <div class="SpacingTop">
-                    <a class="CallForAction" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Update;Profile=$LQData{"Name"}">
-                        <span>$Text{"Edit job"}</span>
-                    </a>
-                    <a class="CallForAction" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=RunNow;Profile=$LQData{"Name"};$QEnv{"ChallengeTokenParam"}">
-                        <span>$Text{"Run job"}</span>
-                    </a>
-                    $Text{"or"}
-                    <a href="$Env{"Baselink"}Action=$Env{"Action"}">
-                        $Text{"Cancel"}
-                    </a>
-                </div>
-            </div>
-        </div>
-<!-- dtl:block:ResultBlock -->
-        <div class="WidgetSimple SpacingTop">
-            <div class="Header">
-                <h2>$Text{"Affected Tickets"}</h2>
-            </div>
-            <div class="Content">
-                <table class="DataTable">
-                    <thead>
-                        <tr>
-                            <th>$Config{"Ticket::Hook"}</th>
-                            <th>$Text{"Age"}</th>
-                            <th>$Text{"From"} / $Text{"Subject"}</th>
-                            <th>$Text{"State"}</th>
-                            <th>$Text{"Queue"}</th>
-                            <th>$Text{"Owner"}</th>
-                            <th>$Text{"CustomerID"}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-<!-- dtl:block:Ticket -->
-                        <tr>
-                            <td>
-                                <a class="AsBlock" href="$Env{"Baselink"};Action=AgentTicketZoom;TicketID=$LQData{"TicketID"}">
-                                    $QData{"TicketNumber"}
-                                </a>
-                            </td>
-                            <td>$QData{"Age"}</td>
-                            <td>$QData{"From","30"}$QData{"Subject","30"}</td>
-                            <td>$Text{"$Data{"State"}"}</td>
-                            <td>$QData{"Queue","30"}</td>
-                            <td>$QData{"Owner","30"} ($QData{"UserFirstname"} $QData{"UserLastname"})</td>
-                            <td>
-                                <a class="AsBlock" href="$Env{"Baselink"}Action=AgentTicketCustomer;TicketID=$LQData{"TicketID"}">
-                                    $QData{"CustomerID", "15"}
-                                </a>
-                            </td>
-                        </tr>
-<!-- dtl:block:Ticket -->
-                    </tbody>
+                            </table>
+                        </td>
+                    </tr>
+<!-- dtl:block:NewTicketFreeField -->
+                    <tr>
+                        <td colspan="2" class="mainhead">$Text{"New TicketFreeFields"}</td>
+                    </tr>
+<!-- dtl:block:NewTicketFreeFieldElement -->
+                    <tr>
+                        <td class="contentbody">$Data{"NewTicketFreeKey"}</td>
+                        <td class="contentbody">$Data{"NewTicketFreeText"}</td>
+                    </tr>
+<!-- dtl:block:NewTicketFreeFieldElement -->
+<!-- dtl:block:NewTicketFreeField -->
+                    <tr>
+                        <td colspan="2" class="mainhead" width="50%">$Text{"Add Note"}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentbody">
+                            <table>
+                                <tr>
+                                    <td valign="top">
+                                        $Text{"From"}:
+                                    </td>
+                                    <td>
+                                        <input type="text" name="NewNoteFrom" value="$QData{"NewNoteFrom"}" size="60"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">
+                                        $Text{"Subject"}:
+                                    </td>
+                                    <td>
+                                        <input type="text" name="NewNoteSubject" value="$QData{"NewNoteSubject"}" size="60"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">
+                                        $Text{"Text"}:
+                                    </td>
+                                    <td>
+                                        <textarea name="NewNoteBody" rows="7" cols="60" wrap="hard">$QData{"NewNoteBody"}</textarea>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">
+                                        $Text{"Time units"}$Text{"$Config{"Ticket::Frontend::TimeUnits"}"}:
+                                    </td>
+                                    <td>
+                                        <input type="text" name="NewNoteTimeUnits" value="$QData{"NewNoteTimeUnits"}" size="3"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="mainhead" width="50%">$Text{"CMD"}</td>
+                        <td class="mainhead" width="50%">$Text{"Delete"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">
+                            <input type="text" name="NewCMD" value="$QData{"NewCMD"}" size="40"/>
+                            <br/>
+                            ($Text{"This command will be executed. ARG[0] will be the ticket number. ARG[1] the ticket id."})
+                        </td>
+                        <td class="contentbody">
+                            $Text{"Delete tickets"}: $Data{"DeleteOption"}
+                            <br/>
+                            <font color="red">
+                            <b>($Text{"Warning! This tickets will be removed from the database! This tickets are lost!"})</b>
+                            </font>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="mainhead" width="50%">$Text{"Module"}</td>
+                        <td class="mainhead" width="50%">$Text{"Send Notification"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">
+                            <table>
+                                <tr>
+                                    <td valign="top">$Text{"Module"}:</td>
+                                    <td><input type="text" name="NewModule" value="$QData{"NewModule"}" size="45"/></td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">$Text{"Param 1"}:</td>
+                                    <td>
+                                        <input type="text" name="NewParamKey1" value="$QData{"NewParamKey1"}" size="12"/>=&gt;
+                                        <input type="text" name="NewParamValue1" value="$QData{"NewParamValue1"}" size="20"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">$Text{"Param 2"}:</td>
+                                    <td>
+                                        <input type="text" name="NewParamKey2" value="$QData{"NewParamKey2"}" size="12"/>=&gt;
+                                        <input type="text" name="NewParamValue2" value="$QData{"NewParamValue2"}" size="20"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">$Text{"Param 3"}:</td>
+                                    <td>
+                                        <input type="text" name="NewParamKey3" value="$QData{"NewParamKey3"}" size="12"/>=&gt;
+                                        <input type="text" name="NewParamValue3" value="$QData{"NewParamValue3"}" size="20"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">$Text{"Param 4"}:</td>
+                                    <td>
+                                        <input type="text" name="NewParamKey4" value="$QData{"NewParamKey4"}" size="12"/>=&gt;
+                                        <input type="text" name="NewParamValue4" value="$QData{"NewParamValue4"}" size="20"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">$Text{"Param 5"}:</td>
+                                    <td>
+                                        <input type="text" name="NewParamKey5" value="$QData{"NewParamKey5"}" size="12"/>=&gt;
+                                        <input type="text" name="NewParamValue5" value="$QData{"NewParamValue5"}" size="20"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top">$Text{"Param 6"}:</td>
+                                    <td>
+                                        <input type="text" name="NewParamKey6" value="$QData{"NewParamKey6"}" size="12"/>=&gt;
+                                        <input type="text" name="NewParamValue6" value="$QData{"NewParamValue6"}" size="20"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td class="contentbody">
+                            $Text{"Send agent/customer notifications on changes"}: $Data{"SendNoNotificationOption"}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="contentfooter">
+                            <input class="button" type="submit" value="$Text{"Save"}"/>
+                        </td>
+                    </tr>
                 </table>
-            </div>
-        </div>
+            </form>
+            <br/>
+        </td>
+    </tr>
+<!-- dtl:block:Edit -->
+<!-- dtl:block:Result -->
+    <tr>
+        <td colspan="2" class="menu">
+            <a href="$Env{"Baselink"}Action=$Env{"Action"}">$Text{"Job-List"}</a> -
+            <a href="$Env{"Baselink"}Action=$Env{"Action"}&Subaction=Update&Profile=$LQData{"Name"}">
+            $Text{"Edit"}
+            </a> -
+            <a href="$Env{"Baselink"}Action=$Env{"Action"}&Subaction=RunNow&Profile=$LQData{"Name"}">$Text{"Run Now!"}</a>
+        </td>
+    </tr>
+    <tr>
+        <td class="mainbody">
+            <p>
+                $Text{"%s Tickets affected! Do you really want to use this job?", "$QData{"AffectedIDs"}"}<br/>
+                $Text{"$QData{"DeleteMessage"}"}
+            </p>
+        </td>
+    </tr>
+<!-- dtl:block:ResultBlock -->
+    <tr>
+        <td class="mainbody">
+            <br/>
+            <table border="0" width="100%" cellpadding="3" cellspacing="0">
+                <tr class="contenthead">
+                    <td>$Config{"Ticket::Hook"}</td>
+                    <td>$Text{"Age"}</td>
+                    <td>$Text{"From"}/$Text{"Subject"}</td>
+                    <td>$Text{"State"}</td>
+                    <td>$Text{"Queue"}</td>
+                    <td>$Text{"Owner"}</td>
+                    <td>$Text{"CustomerID"}</td>
+                </tr>
+<!-- dtl:block:Ticket -->
+                <tr class="$QData{"css"}">
+                    <td class="$QData{"TextCss"}">
+                        <a href="$Env{"Baselink"}&Action=AgentTicketZoom&TicketID=$QData{"TicketID"}">$QData{"TicketNumber"}</a>
+                    </td>
+                    <td class="contentvalue">$QData{"Age"}</td>
+                    <td class="contentvalue">
+                        $QData{"From","30"}<br/>$QData{"Subject","30"}
+                    </td>
+                    <td class="contentvalue">$Quote{"$Text{"$Data{"State"}"}","30"}</td>
+                    <td class="contentvalue">$QData{"Queue","30"}</td>
+                    <td class="contentvalue">$QData{"Owner","30"}<br/>($QData{"UserFirstname"} $QData{"UserLastname"})</td>
+                    <td class="contentvalue">
+                        <a href="$Env{"Baselink"}Action=AgentTicketCustomer&TicketID=$QData{"TicketID"}">
+                        $Quote{"$Data{"CustomerID"}","15"}
+                        </a>
+                    </td>
+                </tr>
+<!-- dtl:block:Ticket -->
+                <tr>
+                    <td colspan="7" class="contentfooter">&nbsp;</td>
+                </tr>
+            </table>
+            <br/>
+        </td>
+    </tr>
 <!-- dtl:block:ResultBlock -->
 <!-- dtl:block:Result -->
-
-    </div>
-    <div class="Clear"></div>
-</div>
+</table>
+<!-- end form -->

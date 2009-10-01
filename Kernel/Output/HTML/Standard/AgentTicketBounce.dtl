@@ -1,8 +1,8 @@
 # --
 # AgentTicketBounce.dtl - provides HTML form for bounce mask
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketBounce.dtl,v 1.51 2011/05/26 21:31:45 en Exp $
+# $Id: AgentTicketBounce.dtl,v 1.18.2.1 2009/10/01 14:12:45 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -10,101 +10,110 @@
 # --
 
 <!-- start bounce form -->
-<form action="$Env{"CGIHandle"}" method="post" name="bounce" class="Validate">
-    <input type="hidden" name="Action"     value="$Env{"Action"}"/>
-    <input type="hidden" name="Subaction"  value="Store"/>
-    <input type="hidden" name="QueueID"    value="$QData{"QueueID"}"/>
-    <input type="hidden" name="TicketID"   value="$QData{"TicketID"}"/>
-    <input type="hidden" name="ArticleID"  value="$QData{"ArticleID"}"/>
-    <input type="hidden" name="NextScreen" value="$QData{"NextScreen"}"/>
 
-    <div class="LayoutPopup ARIARoleMain">
+<!-- This java script is just for nice to have funktions! -->
+<script language="JavaScript" type="text/javascript">
+<!--
+function submit_bounce() {
+    if (document.bounce.BounceTo.value == "") {
+        alert('$JSText{"A message should have a To: recipient!"}');
+        document.compose.To.focus();
+        return false;
+    }
+    else if (document.bounce.BounceTo.value.indexOf('@') == -1) {
+        alert('$JSText{"You need a email address (e. g. customer@example.com) in To:!"}');
+        document.compose.BounceTo.focus();
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+//-->
+</script>
 
-        <div class="Header">
-            <h1>$Text{"Bounce Ticket"}: $QData{"TicketNumber"} - $QData{"Title","60"}</h1>
-
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+    <tr>
+        <td class="contenthead">
+            $Env{"Box0"}$Text{"Bounce ticket"}: $Data{"TicketNumber"}$Env{"Box1"}
+        </td>
+    </tr>
+    <tr>
+        <td class="menu">
 <!-- dtl:block:TicketBack -->
-            <p>
-                <a class="CancelClosePopup" href="#">$Text{"Cancel & close window"}</a>
-            </p>
+            <a href="$Env{"Baselink"}$Env{"LastScreenView"}" onmouseover="window.status='$JSText{"Back"}'; return true;" onmouseout="window.status='';" class="menuitem">$Text{"Back"}</a>
 <!-- dtl:block:TicketBack -->
-<!-- dtl:block:PropertiesLock -->
-            <p>
-                $Text{"The ticket has been locked"}.
-                <a class="UndoClosePopup" href="$Env{"Baselink"}Action=AgentTicketLock;Subaction=Unlock;TicketID=$Data{"TicketID"}">
-                    $Text{"Undo & close window"}
-                </a>
-            </p>
-<!-- dtl:block:PropertiesLock -->
-
-        </div>
-
-        <div class="Content">
-
-            <div class="Header">
-                <h2>$Text{"Options"}</h2>
-            </div>
-
-            <fieldset class="TableLike FixedLabel">
-                <label for="BounceTo">$Text{"Bounce to"}:</label>
-                <div class="Field">
-                    <input type="text" name="BounceTo" id="BounceTo" value="" class="W50pc Validate_Required $QData{"BounceToInvalid"}"/>
-                    <div id="BounceToError" class="TooltipErrorMessage" ><p>$Text{"You need a email address."}</p></div>
-                    <div id="BounceToServerError" class="TooltipErrorMessage"><p>$Text{"Need a valid email address or don't use a local email address."}</p></div>
-                </div>
-                <div class="Clear"></div>
-
-                <label for="BounceStateID">$Text{"Next ticket state"}:</label>
-                <div class="Field">
-                    $Data{"NextStatesStrg"}
-                </div>
-                <div class="Clear"></div>
-
-                <label for="InformSender">$Text{"Inform sender"}:</label>
-                <div class="Field">
-                    <input type="checkbox" name="InformSender" id="InformSender" value="1"/>
-                </div>
-                <div class="Clear"></div>
-
-                <label>$Text{"From"}:</label>
-                <div class="Field">
-                    <input type="hidden" name="From" value="$QData{"From"}"/>
-                    $QData{"From"}
-                </div>
-                <div class="Clear"></div>
-
-                <label for="To">$Text{"To"}:</label>
-                <div class="Field">
-                    <input type="text" name="To" id="To" value="$QData{"To"}" class="W50pc Validate_Required $QData{"ToInvalid"}"/>
-                    <div id="ToError" class="TooltipErrorMessage" ><p>$Text{"This field is required."}</p></div>
-                    <div id="ToServerError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
-                </div>
-                <div class="Clear"></div>
-
-                <label for="Subject">$Text{"Subject"}:</label>
-                <div class="Field">
-                    <input type="text" name="Subject" id="Subject" value="$QData{"Subject"}" class="W50pc Validate_Required $QData{"SubjectInvalid"}"/>
-                    <div id="SubjectError" class="TooltipErrorMessage" ><p>$Text{"This field is required."}</p></div>
-                    <div id="SubjectServerError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
-                </div>
-                <div class="Clear"></div>
-
-                <label for="RichText">$Text{"Text"}:</label>
-                <div class="RichTextField">
+<!-- dtl:block:TicketLocked -->
+            <img border="0" src="$Config{"Frontend::ImagePath"}warning.png" alt="$Text{"Info"}">: <font color="red">$Text{"Ticket locked!"}</font> (<a href="$Env{"Baselink"}Action=AgentTicketLock&Subaction=Unlock&TicketID=$Data{"TicketID"}" onmouseover="window.status='$JSText{"Ticket unlock!"}'; return true;" onmouseout="window.status='';">$Text{"Ticket unlock!"}</a>)
+<!-- dtl:block:TicketLocked -->
+        </td>
+    </tr>
+    <tr>
+        <td class="mainbody">
+            <br/>
+            <form action="$Env{"CGIHandle"}" method="post" name="bounce">
+                <input type="hidden" name="Action"     value="$Env{"Action"}"/>
+                <input type="hidden" name="Subaction"  value="Store"/>
+                <input type="hidden" name="QueueID"    value="$QData{"QueueID"}"/>
+                <input type="hidden" name="TicketID"   value="$QData{"TicketID"}"/>
+                <input type="hidden" name="ArticleID"  value="$QData{"ArticleID"}"/>
+                <input type="hidden" name="NextScreen" value="$QData{"NextScreen"}"/>
+                <table border="0" width="800" align="center" cellspacing="0" cellpadding="4">
+                    <tr>
+                        <td colspan="2" class="contenthead">$Text{"Options"}</td>
+                    </tr>
+                    <tr>
+                        <td class="contentbody">
+                            <table border="0" width="100%">
+                                <tr>
+                                    <td width="20%" class="contentkey">$Text{"Bounce to"}:</td>
+                                    <td width="80%" class="contentvalue"><input type="text" name="BounceTo" value="" size="60"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="contentkey">$Text{"Next ticket state"}:</td>
+                                    <td class="contentvalue">$Data{"NextStatesStrg"}</td>
+                                </tr>
+                                <tr>
+                                    <td class="contentkey">$Text{"Inform sender"}:</td>
+                                    <td class="contentvalue"><input type="checkbox" name="InformSender" value="1"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="contentkey">$Text{"From"}:</td>
+                                    <td class="contentvalue"><input type="hidden" name="From" value="$QData{"From"}"/>$QData{"From"}</td>
+                                </tr>
+                                <tr>
+                                    <td class="contentkey">$Text{"To"}:</td>
+                                    <td class="contentvalue"><input type="text" name="To" value="$QData{"To"}" size="60"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="contentkey">$Text{"Subject"}:</td>
+                                    <td class="contentvalue"><input type="text" name="Subject" value="$QData{"Subject"}" size="60"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="contentkey">$Text{"Text"}:</td>
+                                    <td class="contentvalue">
+                                        <div class="yui-skin-sam">
 <!-- dtl:block:RichText -->
 $Include{"RichTextEditor"}
 <!-- dtl:block:RichText -->
-                    <textarea id="RichText" class="RichText Validate_Required $QData{"BodyInvalid"}" name="Body" rows="15" cols="$Config{"Ticket::Frontend::TextAreaEmail"}">$Data{"InformationFormat"}</textarea>
-                    <div id="RichTextError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
-                    <div id="RichTextServerError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
-                </div>
-                <div class="Clear"></div>
-
-            </fieldset>
-        </div>
-        <div class="Footer">
-            <button class="Primary" id="submitRichText" accesskey="g" title="$Text{"Send mail!"} (g)" type="submit" value="$Text{"Send mail!"}">$Text{"Send mail!"}</button>
-        </div>
-    </div>
-</form>
+<textarea id="RichText" name="Body" rows="15" cols="$Config{"Ticket::Frontend::TextAreaEmail"}" wrap="$Env{"BrowserWrap"}">
+$Data{"InformationFormat"}
+</textarea>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="contentfooter">
+                            <input class="button" id="submitRichText" accesskey="g" type="submit" value="$Text{"Send mail!"}" onclick="return submit_compose();"/>
+                        </td>
+                    </tr>
+                </table>
+            </form>
+            <br/>
+        </td>
+    </tr>
+</table>
 <!-- end bounce form -->
