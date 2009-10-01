@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.21 2009/09/22 14:39:22 mb Exp $
+# $Id: OTRS.pm,v 1.22 2009/10/01 15:04:30 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.21 $) [1];
+$VERSION = qw($Revision: 1.22 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -54,6 +54,7 @@ sub AdminChecksGet {
         '_FQDNConfigCheck', '_SystemIDConfigCheck',    '_LogCheck',
         '_FileSystemCheck', '_PackageDeployCheck',     '_InvalidUserLockedTicketSearch',
         '_ConfigCheckTicketFrontendResponseFormat', '_DefaultUserCheck',
+        '_DefaultSOAPUserCheck',
     );
 
     my @DataArray;
@@ -509,4 +510,27 @@ sub _DefaultUserCheck {
 
     return $Data;
 }
+
+sub _DefaultSOAPUserCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $Data = {
+        Name        => 'SOAPCheck',
+        Description => 'Check default SOAP credentials.',
+        Comment     => 'You have not enabled SOAP or have set your own password.',
+        Check       => 'OK',
+    };
+
+    my $SOAPUser     = $Self->{ConfigObject}->Get('SOAP::User');
+    my $SOAPPassword = $Self->{ConfigObject}->Get('SOAP::Password');
+
+    if ( $SOAPUser eq 'some_user' ) {
+        if ( $SOAPPassword eq 'some_pass' || $SOAPPassword eq '' ) {
+            $Data->{Check}   = 'Failed';
+            $Data->{Comment} = 'Please set a strong password for SOAP::Password in SysConfig';
+        }
+    }
+    return $Data;
+}
+
 1;
