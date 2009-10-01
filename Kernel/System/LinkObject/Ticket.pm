@@ -1,8 +1,8 @@
 # --
 # Kernel/System/LinkObject/Ticket.pm - to link ticket objects
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Ticket.pm,v 1.38 2012/01/10 14:44:27 mg Exp $
+# $Id: Ticket.pm,v 1.33.2.1 2009/10/01 18:05:22 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -16,71 +16,8 @@ use warnings;
 
 use Kernel::System::Ticket;
 
-=head1 NAME
-
-Kernel::System::LinkObject::Ticket
-
-=head1 SYNOPSIS
-
-Ticket backend for the ticket link object.
-
-=head1 PUBLIC INTERFACE
-
-=over 4
-
-=cut
-
-=item new()
-
-create an object
-
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::LinkObject::Ticket;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $TicketObject = Kernel::System::LinkObject::Ticket->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-        GroupObject        => $GroupObject,        # if given
-        CustomerUserObject => $CustomerUserObject, # if given
-        QueueObject        => $QueueObject,        # if given
-    );
-
-=cut
-
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.38 $) [1];
+$VERSION = qw($Revision: 1.33.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -141,9 +78,8 @@ sub LinkListWithData {
 
                 # get ticket data
                 my %TicketData = $Self->{TicketObject}->TicketGet(
-                    TicketID      => $TicketID,
-                    UserID        => $Param{UserID},
-                    DynamicFields => 0,
+                    TicketID => $TicketID,
+                    UserID   => $Param{UserID},
                 );
 
                 # remove id from hash if ticket can not get
@@ -203,9 +139,8 @@ sub ObjectDescriptionGet {
 
     # get ticket
     my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Param{Key},
-        UserID        => 1,
-        DynamicFields => 0,
+        TicketID => $Param{Key},
+        UserID   => 1,
     );
 
     return if !%Ticket;
@@ -277,15 +212,13 @@ sub ObjectSearch {
     my @TicketIDs = $Self->{TicketObject}->TicketSearch(
         %{ $Param{SearchParams} },
         %Search,
-        Limit               => 50,
-        Result              => 'ARRAY',
-        ConditionInline     => 1,
-        ContentSearchPrefix => '*',
-        ContentSearchSuffix => '*',
-        FullTextIndex       => 1,
-        OrderBy             => 'Down',
-        SortBy              => 'Age',
-        UserID              => $Param{UserID},
+        Limit           => 50,
+        Result          => 'ARRAY',
+        ConditionInline => 1,
+        FullTextIndex   => 1,
+        OrderBy         => 'Down',
+        SortBy          => 'Age',
+        UserID          => $Param{UserID},
     );
 
     my %SearchList;
@@ -294,9 +227,8 @@ sub ObjectSearch {
 
         # get ticket data
         my %TicketData = $Self->{TicketObject}->TicketGet(
-            TicketID      => $TicketID,
-            UserID        => $Param{UserID},
-            DynamicFields => 0,
+            TicketID => $TicketID,
+            UserID   => $Param{UserID},
         );
 
         next TICKETID if !%TicketData;
@@ -412,12 +344,10 @@ sub LinkAddPost {
         );
 
         # ticket event
-        $Self->{TicketObject}->EventHandler(
-            Event => 'TicketSlaveLinkAdd' . $Param{Type},
-            Data  => {
-                TicketID => $Param{Key},
-            },
-            UserID => $Param{UserID},
+        $Self->{TicketObject}->TicketEventHandlerPost(
+            Event    => 'TicketSlaveLinkAdd' . $Param{Type},
+            UserID   => $Param{UserID},
+            TicketID => $Param{Key},
         );
 
         return 1;
@@ -440,12 +370,10 @@ sub LinkAddPost {
         );
 
         # ticket event
-        $Self->{TicketObject}->EventHandler(
-            Event  => 'TicketMasterLinkAdd' . $Param{Type},
-            UserID => $Param{UserID},
-            Data   => {
-                TicketID => $Param{Key},
-            },
+        $Self->{TicketObject}->TicketEventHandlerPost(
+            Event    => 'TicketMasterLinkAdd' . $Param{Type},
+            UserID   => $Param{UserID},
+            TicketID => $Param{Key},
         );
 
         return 1;
@@ -558,12 +486,10 @@ sub LinkDeletePost {
         );
 
         # ticket event
-        $Self->{TicketObject}->EventHandler(
-            Event => 'TicketSlaveLinkDelete' . $Param{Type},
-            Data  => {
-                TicketID => $Param{Key},
-            },
-            UserID => $Param{UserID},
+        $Self->{TicketObject}->TicketEventHandlerPost(
+            Event    => 'TicketSlaveLinkDelete' . $Param{Type},
+            UserID   => $Param{UserID},
+            TicketID => $Param{Key},
         );
 
         return 1;
@@ -586,12 +512,10 @@ sub LinkDeletePost {
         );
 
         # ticket event
-        $Self->{TicketObject}->EventHandler(
-            Event => 'TicketMasterLinkDelete' . $Param{Type},
-            Data  => {
-                TicketID => $Param{Key},
-            },
-            UserID => $Param{UserID},
+        $Self->{TicketObject}->TicketEventHandlerPost(
+            Event    => 'TicketMasterLinkDelete' . $Param{Type},
+            UserID   => $Param{UserID},
+            TicketID => $Param{Key},
         );
 
         return 1;
@@ -601,19 +525,3 @@ sub LinkDeletePost {
 }
 
 1;
-
-=back
-
-=head1 TERMS AND CONDITIONS
-
-This software is part of the OTRS project (L<http://otrs.org/>).
-
-This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
-
-=head1 VERSION
-
-$Revision: 1.38 $ $Date: 2012/01/10 14:44:27 $
-
-=cut
