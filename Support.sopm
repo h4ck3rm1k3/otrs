@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-    <CVS>$Id: Support.sopm,v 1.20 2009/04/01 10:29:46 sr Exp $</CVS>
+    <CVS>$Id: Support.sopm,v 1.21 2009/10/01 16:01:25 mb Exp $</CVS>
     <Name>Support</Name>
     <Version>0.0.0</Version>
     <Framework>2.4.x</Framework>
@@ -10,9 +10,9 @@
     <Vendor>OTRS AG</Vendor>
     <URL>http://otrs.org/</URL>
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
-    <Description Lang="en">Verifies System Settings and gives some performance tips.</Description>
+    <Description Lang="en">Verifies System settings and gives performance tips.</Description>
     <Description Lang="de">Das Support Assessment Modul prüft fehlerhafte System Einstellungen und gibt Performance Tips.</Description>
-    <IntroInstallPost Title="Notice - Introduction" Lang="en">The Support assassment modul will be found at the admin navigation bar in the fourth column and can be used for system checks to find setup errors.</IntroInstallPost>
+    <IntroInstallPost Title="Notice - Introduction" Lang="en">The Support assessment module provides system checks and can help to find setup errors. After installation it can be accessed from the Administration Interface, in the rightmost column.</IntroInstallPost>
     <IntroInstallPost Title="Hinweis - Einführung" Lang="de">Die Verknüpfung zum Support Assessment Modul ist in der vierten Spalte des Administrations-Bereichs hinterlegt. Mit ihr können System-Checks ausgeführt werden, um Fehler im Setup zu finden.</IntroInstallPost>
     <Filelist>
         <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupport.dtl"/>
