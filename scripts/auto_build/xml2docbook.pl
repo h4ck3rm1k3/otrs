@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 # --
 # xml2docbook.pl - config xml to docbook
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: xml2docbook.pl,v 1.26 2011/08/12 09:06:16 mg Exp $
+# $Id: xml2docbook.pl,v 1.21.2.1 2009/10/06 13:17:01 mb Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -33,14 +33,14 @@ use warnings;
 use Getopt::Std;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.26 $) [1];
+$VERSION = qw($Revision: 1.21.2.1 $) [1];
 
 use Kernel::Config;
 use Kernel::System::Log;
 use Kernel::System::Main;
 use Kernel::System::Time;
 use Kernel::System::DB;
-use Kernel::System::SysConfig;
+use Kernel::System::Config;
 
 # create common objects
 my %CommonObject = ();
@@ -53,7 +53,7 @@ $CommonObject{MainObject}      = Kernel::System::Main->new(%CommonObject);
 $CommonObject{TimeObject}      = Kernel::System::Time->new(%CommonObject);
 $CommonObject{EncodeObject}    = Kernel::System::Encode->new(%CommonObject);
 $CommonObject{DBObject}        = Kernel::System::DB->new(%CommonObject);
-$CommonObject{SysConfigObject} = Kernel::System::SysConfig->new(%CommonObject);
+$CommonObject{SysConfigObject} = Kernel::System::Config->new(%CommonObject);
 
 # list Groups
 #my %List = $CommonObject{SysConfigObject}->ConfigGroupList();
@@ -73,12 +73,12 @@ $UserLang = $Opts{l};
 
 # start xml output
 
-print '<?xml version="1.0" encoding="utf-8"?>
+print '<?xml version="1.0" encoding="' . $CommonObject{ConfigObject}->Get('DefaultCharset') . '"?>
 <!DOCTYPE appendix PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
     "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 ';
 if ( $Opts{l} eq 'de' ) {
-    print "\n<appendix id=\"config\"><title>Referenz der Konfigurationsoptionen</title>\n";
+    print "\n<appendix id=\"config\"><title>Config Referenzliste</title>\n";
 }
 else {
     print "\n<appendix id=\"config\"><title>Configuration Options Reference</title>\n";
@@ -115,7 +115,6 @@ for my $Group (@Groups) {
             #Description
             my %HashLang;
             for my $Index ( 1 ... $#{ $Item{Description} } ) {
-                $Item{Description}[$Index]{Lang} ||= 'en';
                 $HashLang{ $Item{Description}[$Index]{Lang} } = $Item{Description}[$Index]{Content};
             }
             my $Description;
@@ -173,13 +172,16 @@ for my $Group (@Groups) {
             $Key =~ s/\\/\\\\/g;
             $Key =~ s/'/\'/g;
             $Key =~ s/###/'}->{'/g;
-            print "<row>\n";
-            print " <entry>Config-Setting:</entry>\n";
-            print " <entry namest=\"col2\" nameend=\"col4\"><programlisting><![CDATA[\n";
             my $Config = " \$Self->{'$Key'} = "
                 . $CommonObject{SysConfigObject}->_XML2Perl( Data => \%ConfigItemDefault );
+            $Config =~ s/&/&amp;/g;
+            $Config =~ s/</&lt;/g;
+            $Config =~ s/>/&gt;/g;
+            print "<row>\n";
+            print " <entry>Config-Setting:</entry>\n";
+            print " <entry namest=\"col2\" nameend=\"col4\"><programlisting>\n";
             print $Config;
-            print "]]></programlisting>\n";
+            print "</programlisting>\n";
             print " </entry>\n";
             print "</row>\n";
             print "</tbody>\n";
