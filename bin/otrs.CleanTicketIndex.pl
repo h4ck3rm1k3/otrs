@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 # --
 # otrs.CleanTicketIndex.pl - Clean the Static Ticket Index
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: otrs.CleanTicketIndex.pl,v 1.5 2010/08/06 17:49:20 cr Exp $
+# $Id: otrs.CleanTicketIndex.pl,v 1.1.2.1 2009/10/07 13:52:55 mb Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -28,9 +28,10 @@ use warnings;
 use File::Basename;
 use FindBin qw($RealBin);
 use lib dirname($RealBin);
+use lib dirname($RealBin) . '/Kernel/cpan-lib';
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.5 $) [1];
+$VERSION = qw($Revision: 1.1.2.1 $) [1];
 
 use Kernel::Config;
 use Kernel::System::Encode;
@@ -44,7 +45,7 @@ my %CommonObject;
 $CommonObject{ConfigObject} = Kernel::Config->new();
 $CommonObject{EncodeObject} = Kernel::System::Encode->new(%CommonObject);
 $CommonObject{LogObject}    = Kernel::System::Log->new(
-    LogPrefix => 'OTRS-otrs.CleanTicketIndex.pl',
+    LogPrefix => 'OTRS-CleanTicketIndex',
     %CommonObject,
 );
 $CommonObject{MainObject} = Kernel::System::Main->new(%CommonObject);
@@ -54,16 +55,15 @@ $CommonObject{DBObject}   = Kernel::System::DB->new(%CommonObject);
 # check args
 my $Command = shift || '--help';
 print "otrs.CleanTicketIndex.pl <Revision $VERSION> - clean static index\n";
-print "Copyright (C) 2001-2010 OTRS AG, http://otrs.org/\n";
+print "Copyright (C) 2001-2009 OTRS AG, http://otrs.org/\n";
 
 my $Module = $CommonObject{ConfigObject}->Get('Ticket::IndexModule');
 print "Module is $Module\n";
 if ( $Module !~ /StaticDB/ ) {
     print "OTRS is configured to use $Module as index\n";
 
-    $CommonObject{DBObject}->Prepare(
-        SQL => 'SELECT count(*) from ticket_index'
-    );
+    $CommonObject{DBObject}
+        ->Prepare( SQL => 'SELECT count(*) from ticket_index' );
     while ( my @Row = $CommonObject{DBObject}->FetchrowArray() ) {
         if ( $Row[0] ) {
             print "Found $Row[0] records in StaticDB index.\n";
@@ -74,16 +74,14 @@ if ( $Module !~ /StaticDB/ ) {
         else { print "No records found in StaticDB index.. OK!\n"; }
     }
 
-    $CommonObject{DBObject}->Prepare(
-        SQL => 'SELECT count(*) from ticket_lock_index'
-    );
+    $CommonObject{DBObject}
+        ->Prepare( SQL => 'SELECT count(*) from ticket_lock_index' );
     while ( my @Row = $CommonObject{DBObject}->FetchrowArray() ) {
         if ( $Row[0] ) {
             print "Found $Row[0] records in StaticDB lock_index.\n";
             print "Deleting $Row[0] records...";
-            $CommonObject{DBObject}->Do(
-                SQL => 'DELETE FROM ticket_lock_index'
-            );
+            $CommonObject{DBObject}
+                ->Do( SQL => 'DELETE FROM ticket_lock_index' );
             print " OK!\n";
         }
         else { print "No records found in StaticDB lock_index.. OK!\n"; }
