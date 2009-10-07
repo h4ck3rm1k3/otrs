@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AgentTicketEscalationView.pm - status for all open tickets
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketEscalationView.pm,v 1.16 2011/12/15 15:14:51 mg Exp $
+# $Id: AgentTicketEscalationView.pm,v 1.11.2.1 2009/10/07 19:23:58 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.16 $) [1];
+$VERSION = qw($Revision: 1.11.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -116,7 +116,7 @@ sub Run {
             },
         },
         NextWeek => {
-            Name   => 'Next week',
+            Name   => 'Next Week',
             Prio   => 3000,
             Search => {
                 TicketEscalationTimeOlderDate => $TimeStampNextWeek,
@@ -156,18 +156,18 @@ sub Run {
     # show ticket's
     my $LinkPage = 'Filter='
         . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{Filter} )
-        . ';View=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{View} )
-        . ';SortBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{SortBy} )
-        . ';OrderBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{OrderBy} )
-        . ';';
+        . '&View=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{View} )
+        . '&SortBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{SortBy} )
+        . '&OrderBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{OrderBy} )
+        . '&';
     my $LinkSort = 'Filter='
         . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{Filter} )
-        . ';View=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{View} )
-        . ';';
+        . '&View=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{View} )
+        . '&';
     my $LinkFilter = 'SortBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{SortBy} )
-        . ';OrderBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{OrderBy} )
-        . ';View=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{View} )
-        . ';';
+        . '&OrderBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{OrderBy} )
+        . '&View=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{View} )
+        . '&';
     $Output .= $Self->{LayoutObject}->TicketListShow(
         TicketIDs => \@ViewableTickets,
         Total     => scalar @ViewableTickets,
@@ -185,9 +185,6 @@ sub Run {
         Env      => $Self,
         LinkPage => $LinkPage,
         LinkSort => $LinkSort,
-
-        OrderBy => $Self->{OrderBy},
-        SortBy  => $Self->{SortBy},
 
         Escalation => 1,
     );
