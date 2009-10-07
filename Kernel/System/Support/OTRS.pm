@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.22 2009/10/01 15:04:30 mb Exp $
+# $Id: OTRS.pm,v 1.23 2009/10/07 14:22:54 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.22 $) [1];
+$VERSION = qw($Revision: 1.23 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -50,9 +50,10 @@ sub AdminChecksGet {
 
     # add new function name here
     my @ModuleList = (
-        '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketFulltextIndexModuleCheck',
-        '_FQDNConfigCheck', '_SystemIDConfigCheck',    '_LogCheck',
-        '_FileSystemCheck', '_PackageDeployCheck',     '_InvalidUserLockedTicketSearch',
+        '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketStaticDBOrphanedRecords',
+        '_TicketFulltextIndexModuleCheck',
+        '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
+        '_FileSystemCheck', '_PackageDeployCheck',  '_InvalidUserLockedTicketSearch',
         '_ConfigCheckTicketFrontendResponseFormat', '_DefaultUserCheck',
         '_DefaultSOAPUserCheck',
     );
@@ -161,6 +162,54 @@ sub _TicketIndexModuleCheck {
     return $Data;
 }
 
+sub _TicketStaticDBOrphanedRecords {
+    my ( $Self, %Param ) = @_;
+
+    my $Data = {};
+
+    # Ticket::IndexModule check for records in StaticDB when using different backend
+    my $Check   = 'Failed';
+    my $Message = '';
+    my $Module  = $Self->{ConfigObject}->Get('Ticket::IndexModule');
+
+    if ( $Module !~ /StaticDB/ ) {
+
+        $Self->{DBObject}->Prepare( SQL => 'SELECT count(*) from ticket_lock_index' );
+        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+            if ( $Row[0] ) {
+                $Check = 'Failed';
+                $Message
+                    = "$Row[0] tickets in StaticDB lock_index but you are using the $Module index. Please run otrs/bin/otrs.CleanTicketIndex.pl to clean the StaticDB index.";
+            }
+        }
+
+        $Self->{DBObject}->Prepare( SQL => 'SELECT count(*) from ticket_index' );
+        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+            if ( $Row[0] ) {
+                $Check = 'Failed';
+                $Message
+                    = "$Row[0] tickets in StaticDB index but you are using the $Module index. Please run otrs/bin/otrs.CleanTicketIndex.pl to clean the StaticDB index.";
+            }
+        }
+    }
+    else {
+        $Message = "You are using $Module. Skipping test.";
+        $Check   = 'OK';
+    }
+    if ( $Message eq '' ) {
+        $Message = 'No orphaned records found.';
+        $Check   = 'OK';
+    }
+
+    $Data = {
+        Name        => 'TicketStaticDBOrphanedRecords',
+        Description => 'Check orphaned StaticDB records.',
+        Comment     => $Message,
+        Check       => $Check,
+    };
+    return $Data;
+}
+
 sub _TicketFulltextIndexModuleCheck {
     my ( $Self, %Param ) = @_;
 
@@ -176,7 +225,7 @@ sub _TicketFulltextIndexModuleCheck {
             if ( $Module =~ /RuntimeDB/ ) {
                 $Check = 'Failed';
                 $Message
-                    = "$Row[0] article in your system. You should use the StaticDB backend for OTRS 2.3 and higher. See admin manual (Performance Tuning) for more information.";
+                    = "$Row[0] articles in your system. You should use the StaticDB backend for OTRS 2.3 and higher. See admin manual (Performance Tuning) for more information.";
             }
             else {
                 $Check   = 'OK';
@@ -187,7 +236,7 @@ sub _TicketFulltextIndexModuleCheck {
             if ( $Module =~ /RuntimeDB/ ) {
                 $Check = 'Critical';
                 $Message
-                    = "$Row[0] article in your system. You should use the StaticDB backend for OTRS 2.3 and higher. See admin manual (Performance Tuning) for more information.";
+                    = "$Row[0] articles in your system. You should use the StaticDB backend for OTRS 2.3 and higher. See admin manual (Performance Tuning) for more information.";
             }
             else {
                 $Check   = 'OK';
@@ -233,7 +282,7 @@ sub _OpenTicketCheck {
     elsif ( $#TicketIDs > 10000 ) {
         $Check = 'Failed';
         $Message
-            = 'You should not have more then 8000 open tickets in your system. You currently have '
+            = 'You should not have over 8000 open tickets in your system. You currently have '
             . $#TicketIDs
             . '. In case you want to improve your performance, close not needed open tickets.';
 
@@ -368,9 +417,9 @@ sub _FileSystemCheck {
         )
     {
         my $File = "$Home/$_/check_permissons.$$";
-        if ( open( OUT, "> $File" ) ) {
-            print OUT "test";
-            close(OUT);
+        if ( open( my $FILE, '>', "$File" ) ) {
+            print $FILE "test";
+            close($FILE);
             unlink $File;
         }
         else {
