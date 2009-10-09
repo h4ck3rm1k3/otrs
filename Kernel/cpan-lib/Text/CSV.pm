@@ -3,17 +3,16 @@ package Text::CSV;
 
 use strict;
 use Carp ();
-use vars qw( $VERSION $DEBUG );
 
 BEGIN {
-    $VERSION = '1.21';
-    $DEBUG   = 0;
+    $Text::CSV::VERSION = '1.14';
+    $Text::CSV::DEBUG   = 0;
 }
 
 # if use CSV_XS, requires version
 my $Module_XS  = 'Text::CSV_XS';
 my $Module_PP  = 'Text::CSV_PP';
-my $XS_Version = '0.80';
+my $XS_Version = '0.68';
 
 my $Is_Dynamic = 0;
 
@@ -26,7 +25,7 @@ my @PublicMethods = qw/
     version types quote_char escape_char sep_char eol always_quote binary allow_whitespace
     keep_meta_info allow_loose_quotes allow_loose_escapes verbatim meta_info is_quoted is_binary eof
     getline print parse combine fields string error_diag error_input status blank_is_undef empty_is_undef
-    getline_hr column_names bind_columns auto_diag quote_space quote_null getline_all getline_hr_all
+    getline_hr column_names bind_columns auto_diag
     PV IV NV
 /;
 #
@@ -287,13 +286,13 @@ perhaps better called ASV (anything separated values) rather than just CSV.
 
 =head1 VERSION
 
-    1.21
+    1.14
 
-This module is compatible with Text::CSV_XS B<0.80> and later.
+This module is compatible with Text::CSV_XS B<0.68> and later.
 
 =head2 Embedded newlines
 
-B<Important Note>: The default behavior is to only accept ASCII characters.
+B<Important Note>: The default behavior is to only accept ascii characters.
 This means that fields can not contain newlines. If your data contains
 newlines embedded in fields, or characters above 0x7e (tilde), or binary data,
 you *must* set C<< binary => 1 >> in the call to C<new ()>.  To cover the widest
@@ -308,7 +307,7 @@ usage:
      $csv->parse ($_);
      my @fields = $csv->fields ();
 
-will break, as the while might read broken lines, as that does not care
+will break, as the while might read broken lines, as that doesn't care
 about the quoting. If you need to support embedded newlines, the way to go
 is either
 
@@ -329,6 +328,9 @@ On parsing (both for C<getline ()> and C<parse ()>), if the source is
 marked being UTF8, then all fields that are marked binary will also be
 be marked UTF8.
 
+On combining (C<print ()> and C<combine ()>), if any of the combining
+fields was marked UTF8, the resulting string will be marked UTF8.
+
 For complete control over encoding, please use L<Text::CSV::Encoded>:
 
     use Text::CSV::Encoded;
@@ -344,19 +346,6 @@ For complete control over encoding, please use L<Text::CSV::Encoded>:
     $csv = Text::CSV::Encoded->new ({ encoding  => undef }); # default
     # combine () and print () accept UTF8 marked data
     # parse () and getline () return UTF8 marked data
-
-On combining (C<print ()> and C<combine ()>), if any of the combining
-fields was marked UTF8, the resulting string will be marked UTF8.
-
-Note however if the backend module is Text::CSV_XS,
-that all fields C<before> the first field that was marked UTF8
-and contained 8-bit characters that were not upgraded to UTF8, these
-will be bytes in the resulting string too, causing errors. If you pass
-data of different encoding, or you don't know if there is different
-encoding, force it to be upgraded before you pass them on:
-
-    # backend = Text::CSV_XS
-    $csv->print ($fh, [ map { utf8::upgrade (my $x = $_); $x } @data ]);
 
 =head1 SPECIFICATION
 
@@ -463,7 +452,7 @@ is read as
 
  (1, undef, undef, " ", 2)
 
-Note that this only effects fields that are I<really> empty, not fields
+Note that this only effects fields that are I<realy> empty, not fields
 that are empty after stripping allowed whitespace. YMMV.
 
 =item quote_char
@@ -539,7 +528,7 @@ be escaped as C<"0>.) By default this feature is off.
 If a string is marked UTF8, binary will be turned on automatically when
 binary characters other than CR or NL are encountered. Note that a simple
 string like C<"\x{00a0}"> might still be binary, but not marked UTF8, so
-setting C<{ binary =E<gt> 1 }> is still a wise option.
+setting C<{ binary => 1 }> is still a wise option.
 
 =item types
 
@@ -552,22 +541,8 @@ of the I<types> method below.
 
 By default the generated fields are quoted only, if they need to, for
 example, if they contain the separator. If you set this attribute to
-a TRUE value, then all defined fields will be quoted. This is typically
-easier to handle in external applications.
-
-=item quote_space
-
-By default, a space in a field would trigger quotation. As no rule
-exists this to be forced in CSV, nor any for the opposite, the default
-is true for safety. You can exclude the space from this trigger by
-setting this option to 0.
-
-=item quote_null
-
-By default, a NULL byte in a field would be escaped. This attribute
-enables you to treat the NULL byte as a simple binary character in
-binary mode (the C<{ binary =E<gt> 1 }> is set). The default is true.
-You can prevent NULL escapes by setting this attribute to 0.
+a TRUE value, then all fields will be quoted. This is typically easier
+to handle in external applications.
 
 =item keep_meta_info
 
@@ -599,7 +574,7 @@ Imagine a file format like
 where, the line ending is a very specific "#\r\n", and the sep_char
 is a ^ (caret). None of the fields is quoted, but embedded binary
 data is likely to be present. With the specific line ending, that
-shouldn not be too hard to detect.
+shouldn't be too hard to detect.
 
 By default, Text::CSV' parse function however is instructed to only
 know about "\n" and "\r" to be legal line endings, and so has to deal
@@ -636,8 +611,6 @@ is equivalent to
      sep_char            => ',',
      eol                 => $\,
      always_quote        => 0,
-     quote_space         => 1,
-     quote_null          => 1,
      binary              => 0,
      keep_meta_info      => 0,
      allow_loose_quotes  => 0,
@@ -684,7 +657,7 @@ implies that the following is wrong in perl 5.005_xx and older:
  $status = $csv->print (\*FILE, $colref);
 
 as in perl 5.005 and older, the glob C<\*FILE> is not an object, thus it
-does not have a print method. The solution is to use an IO::File object or
+doesn't have a print method. The solution is to use an IO::File object or
 to hide the glob behind an IO::Wrap object. See L<IO::File> and L<IO::Wrap>
 for details.
 
@@ -727,30 +700,6 @@ reference to an empty list.
 The I<$csv-E<gt>string ()>, I<$csv-E<gt>fields ()> and I<$csv-E<gt>status ()>
 methods are meaningless, again.
 
-=head2 getline_all
-
- $arrayref = $csv->getline_all ($io);
- $arrayref = $csv->getline_all ($io, $offset);
- $arrayref = $csv->getline_all ($io, $offset, $length);
-
-This will return a reference to a list of C<getline ($io)> results.
-In this call, C<keep_meta_info> is disabled. If C<$offset> is negative,
-as with C<splice ()>, only the last C<abs ($offset)> records of C<$io>
-are taken into consideration.
-
-Given a CSV file with 10 lines:
-
- lines call
- ----- ---------------------------------------------------------
- 0..9  $csv->getline_all ($io)         # all
- 0..9  $csv->getline_all ($io,  0)     # all
- 8..9  $csv->getline_all ($io,  8)     # start at 8
- -     $csv->getline_all ($io,  0,  0) # start at 0 first 0 rows
- 0..4  $csv->getline_all ($io,  0,  5) # start at 0 first 5 rows
- 4..5  $csv->getline_all ($io,  4,  2) # start at 4 first 2 rows
- 8..9  $csv->getline_all ($io, -2)     # last 2 rows
- 6..7  $csv->getline_all ($io, -4,  2) # first 2 of last  4 rows
-
 =head2 parse
 
  $status = $csv->parse ($line);
@@ -776,15 +725,6 @@ first to declare your column names.
  print "Price for $hr->{name} is $hr->{price} EUR\n";
 
 C<getline_hr ()> will croak if called before C<column_names ()>.
-
-=head2 getline_hr_all
-
- $arrayref = $csv->getline_hr_all ($io);
- $arrayref = $csv->getline_hr_all ($io, $offset);
- $arrayref = $csv->getline_hr_all ($io, $offset, $length);
-
-This will return a reference to a list of C<getline_hr ($io)> results.
-In this call, C<keep_meta_info> is disabled.
 
 =head2 column_names
 
@@ -890,7 +830,7 @@ was called more recently.
 
 For each field, a meta_info field will hold flags that tell something about
 the field returned by the C<fields ()> method or passed to the C<combine ()>
-method. The flags are bit-wise-or'd like:
+method. The flags are bitwise-or'd like:
 
 =over 4
 
@@ -1133,12 +1073,12 @@ Copyright (C) 2007-2009 Makamaka Hannyaharamitu.
 
 Text::CSV_PP:
 
-Copyright (C) 2005-2010 Makamaka Hannyaharamitu.
+Copyright (C) 2005-2009 Makamaka Hannyaharamitu.
 
 
 Text:CSV_XS:
 
-Copyright (C) 2007-2010 H.Merijn Brand for PROCURA B.V.
+Copyright (C) 2007-2009 H.Merijn Brand for PROCURA B.V.
 Copyright (C) 1998-2001 Jochen Wiedmann. All rights reserved.
 Portions Copyright (C) 1997 Alan Citterman. All rights reserved.
 

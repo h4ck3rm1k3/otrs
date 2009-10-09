@@ -11,7 +11,7 @@ use strict;
 use vars qw($VERSION);
 use Carp ();
 
-$VERSION = '1.29';
+$VERSION = '1.22';
 
 sub PV  { 0 }
 sub IV  { 1 }
@@ -26,7 +26,6 @@ my $ERRORS = {
         1000 => "INI - constructor failed",
         1001 => "sep_char is equal to quote_char or escape_char",
         1002 => "INI - allow_whitespace with escape_char or quote_char SP or TAB",
-        1003 => "INI - \r or \n in main attr not allowed",
 
         2010 => "ECR - QUO char inside quotes followed by CR not part of EOL",
         2011 => "ECR - Characters after end of quoted field",
@@ -58,7 +57,7 @@ my $ERRORS = {
         3003 => "EHR - bind_columns () and column_names () fields count mismatch",
         3004 => "EHR - bind_columns () only accepts refs to scalars",
         3006 => "EHR - bind_columns () did not pass enough refs for parsed fields",
-        3007 => "EHR - bind_columns needs refs to writable scalars",
+        3007 => "EHR - bind_columns needs refs to writeable scalars",
         3008 => "EHR - unexpected error in bound fields",
 
         0    => "",
@@ -85,8 +84,6 @@ my %def_attr = (
     blank_is_undef      => 0,
     empty_is_undef      => 0,
     auto_diag           => 0,
-    quote_space         => 1,
-    quote_null          => 1,
 
     _EOF                => 0,
     _STATUS             => undef,
@@ -140,28 +137,6 @@ sub version {
 ################################################################################
 # new
 ################################################################################
-
-sub _check_sanity {
-    my ( $self ) = @_;
-
-    for ( qw( sep_char quote_char escape_char ) ) {
-        ( exists $self->{$_} && defined $self->{$_} && $self->{$_} =~ m/[\r\n]/ ) and return 1003;
-    }
-
-    if ( $self->{allow_whitespace} and
-           ( defined $self->{quote_char}  && $self->{quote_char}  =~ m/^[ \t]$/ ) 
-           ||
-           ( defined $self->{escape_char} && $self->{escape_char} =~ m/^[ \t]$/ )
-    ) {
-       #$last_new_error = "INI - allow_whitespace with escape_char or quote_char SP or TAB";
-       #$last_new_err_num = 1002;
-       return 1002;
-    }
-
-    return 0;
-}
-
-
 sub new {
     my $proto = shift;
     my $attr  = @_ > 0 ? shift : {};
@@ -177,19 +152,19 @@ sub new {
     for my $prop (keys %$attr) { # if invalid attr, return undef
         unless ($prop =~ /^[a-z]/ && exists $def_attr{$prop}) {
             $last_new_error = "INI - Unknown attribute '$prop'";
-            error_diag() if $attr->{ auto_diag };
             return;
         }
         $self->{$prop} = $attr->{$prop};
     }
 
-    my $ec = _check_sanity( $self );
-
-    if ( $ec ) {
-        $last_new_error   = $ERRORS->{ $ec };
-        $last_new_err_num = $ec;
-        return;
-        #$class->SetDiag ($ec);
+    if ( $self->{allow_whitespace} and
+           ( defined $self->{quote_char}  && $self->{quote_char}  =~ m/^[ \t]$/ ) 
+           ||
+           ( defined $self->{escape_char} && $self->{escape_char} =~ m/^[ \t]$/ )
+    ) {
+       $last_new_error = "INI - allow_whitespace with escape_char or quote_char SP or TAB";
+       $last_new_err_num = 1002;
+       return;
     }
 
     $last_new_error = '';
@@ -236,8 +211,7 @@ sub error_diag {
     unless (defined $context) { # Void context
         if ( $diag[0] ) {
             my $msg = "# CSV_PP ERROR: " . $diag[0] . " - $diag[1]\n";
-            ref $self ? ( $self->{auto_diag} > 1 ? die $msg : warn $msg )
-                      : warn $msg;
+            $self->{auto_diag} > 1 ? die $msg : warn $msg;
         }
         return;
     }
@@ -273,15 +247,15 @@ sub _combine {
     $self->{_STRING}      = '';
     $self->{_STATUS}      = 0;
 
-    my ($always_quote, $binary, $quot, $sep, $esc, $empty_is_undef, $quote_space, $quote_null)
-            = @{$self}{qw/always_quote binary quote_char sep_char escape_char empty_is_undef quote_space quote_null/};
+    my ($always_quote, $binary, $quot, $sep, $esc, $empty_is_undef)
+            = @{$self}{qw/always_quote binary quote_char sep_char escape_char empty_is_undef/};
 
     if(!defined $quot){ $quot = ''; }
 
     return $self->_set_error_diag(1001) if ($sep eq $esc or $sep eq $quot);
 
     my $re_esc = $self->{_re_comb_escape}->{$quot}->{$esc} ||= qr/(\Q$quot\E|\Q$esc\E)/;
-    my $re_sp  = $self->{_re_comb_sp}->{$sep}->{$quote_space} ||= ( $quote_space ? qr/[\s\Q$sep\E]/ : qr/[\Q$sep\E]/ );
+    my $re_sp  = $self->{_re_comb_sp}->{$sep}              ||= qr/[\s\Q$sep\E]/;
 
     my $must_be_quoted;
     for my $column (@part) {
@@ -310,11 +284,14 @@ sub _combine {
             $must_be_quoted++;
         }
 
-        if( $binary and $quote_null ){
+        if($binary){
             use bytes;
             $must_be_quoted++ if ( $column =~ s/\0/${esc}0/g || $column =~ /[\x00-\x1f\x7f-\xa0]/ );
         }
 
+        if ( $empty_is_undef and defined $column and not length $column ) {
+        }
+        #elsif($always_quote or $must_be_quoted){
         if($always_quote or $must_be_quoted){
             $column = $quot . $column . $quot;
         }
@@ -345,11 +322,9 @@ sub _parse {
             qw/binary quote_char sep_char escape_char types keep_meta_info allow_whitespace eol blank_is_undef empty_is_undef/
            };
 
-    $sep  = ',' unless (defined $sep);
+    $sep  = "\0" unless (defined $sep);
     $esc  = "\0" unless (defined $esc);
-    $quot = "\0" unless (defined $quot);
-
-    my $quot_is_null = $quot eq "\0"; # in this case, any fields are not interpreted as quoted data.
+    $quot = ''   unless (defined $quot);
 
     return $self->_set_error_diag(1001) if (($sep eq $esc or $sep eq $quot) and $sep ne "\0");
 
@@ -361,6 +336,7 @@ sub _parse {
     my $re_quot_char    = $self->{_re_quot_char}->{$quot}            ||= qr/\Q$quot\E/;
     my $re_esc          = $self->{_re_esc}->{$quot}->{$esc}          ||= qr/\Q$esc\E(\Q$quot\E|\Q$esc\E|0)/;
     my $re_invalid_quot = $self->{_re_invalid_quot}->{$quot}->{$esc} ||= qr/^$re_quot_char|[^\Q$re_esc\E]$re_quot_char/;
+    my $re_rs           = $self->{_re_rs}->{$/} ||= qr{\Q$/\E?$}; # $/ .. input record separator
 
     if ($allow_whitespace) {
         $re_split = $self->{_re_split_allow_sp}->{$quot}->{$esc}->{$sep}
@@ -403,7 +379,7 @@ sub _parse {
         $pos += length $col;
 
         if ( ( !$binary and !$utf8 ) and $col =~ /[^\x09\x20-\x7E]/) { # Binary character, binary off
-            if ( not $quot_is_null and $col =~ $re_quoted ) {
+            if ( $col =~ $re_quoted ) {
                 $self->_set_error_diag(
                       $col =~ /\n([^\n]*)/ ? (2021, $pos - 1 - length $1)
                     : $col =~ /\r([^\r]*)/ ? (2022, $pos - 1 - length $1)
@@ -429,17 +405,16 @@ sub _parse {
             last;
         }
 
-        if ( not $quot_is_null and $col =~ $re_quoted ) {
+        if ($col =~ $re_quoted) {
             $flag |= IS_QUOTED if ($keep_meta_info);
             $col = $1;
 
-            my $flag_in_quot_esp;
+            my $flga_in_quot_esp;
             while ( $col =~ /$re_in_quot_esp1/g ) {
                 my $str = $1;
-                $flag_in_quot_esp = 1;
+                $flga_in_quot_esp = 1;
 
                 if ($str !~ $re_in_quot_esp2) {
-
                     unless ($self->{allow_loose_escapes}) {
                         $self->_set_error_diag( 2025, $pos - 2 ); # Needless ESC in quoted field
                         $palatable = 0;
@@ -454,7 +429,7 @@ sub _parse {
 
             last unless ( $palatable );
 
-            unless ( $flag_in_quot_esp ) {
+            unless ( $flga_in_quot_esp ) {
                 if ($col =~ /(?<!\Q$esc\E)\Q$esc\E/) {
                     $self->_set_error_diag( 4002, $pos - 1 ); # No escaped ESC in quoted field
                     $palatable = 0;
@@ -476,7 +451,7 @@ sub _parse {
 
         # quoted but invalid
 
-        elsif ( not $quot_is_null and $col =~ $re_invalid_quot ) {
+        elsif ($col =~ $re_invalid_quot) {
 
             unless ($self->{allow_loose_quotes} and $col =~ /$re_quot_char/) {
                 $self->_set_error_diag(
@@ -499,7 +474,9 @@ sub _parse {
         else {
 
             if (!$self->{verbatim} and $col =~ /\r\n|\n/) {
-                $col =~ s/(?:\r\n|\n).*$//sm;
+                unless (defined $eol and !$allow_eol{$eol}) {
+                    $col =~ s/(?:\r\n|\n).*//sm;
+                }
             }
 
             if ($col =~ /\Q$esc\E\r$/) { # for t/15_flags : test 165 'ESC CR' at line 203
@@ -617,125 +594,57 @@ sub getline {
 
     $self->{_EOF} = eof($io) ? 1 : '';
 
+    my $line = $io->getline();
     my $quot = $self->{quote_char};
     my $sep  = $self->{sep_char};
-    my $re   =  defined $quot ? qr/(?:\Q$quot\E)/ : undef;
-
     my $eol  = $self->{eol};
 
-    local $/ = $eol if ( defined $eol and $eol ne '' );
+    my $re   = qr/(?:\Q$quot\E)/;
 
-    my $line = $io->getline();
+    if ( defined $line and $line =~ /${re}0/ ) {
+        my $auto_diag = $self->auto_diag;
+        $self->auto_diag( 0 ) if ( $auto_diag ); # stop auto error diag
 
-    # AUTO DETECTION EOL CR
-    if ( defined $line and defined $eol and $eol eq '' and $line =~ /[^\r]\r[^\r\n]/ and eof ) {
-        $self->{_AUTO_DETECT_CR} = 1;
-        $self->{eol} = "\r";
-        seek( $io, 0, 0 ); # restart
-        return $self->getline( $io );
+        while ( not $self->_parse($line) and !eof($io) ) {
+            $line .= $io->getline();
+        }
+
+        $self->auto_diag( $auto_diag ) if ( $auto_diag ); # restore
+    }
+    else {
+        $line .= $io->getline() while ( defined $line and scalar(my @list = $line =~ /$re/g) % 2 and !eof($io) );
+
+        if (defined $eol and defined $line) {
+            $line =~ s/\Q$eol\E$//;
+        }
+
+        $self->_parse($line) or return;
     }
 
-    if ( $re and defined $line ) {
-        LOOP: {
-            my $is_continued   = scalar(my @list = $line =~ /$re/g) % 2; # if line is valid, quot is even
+    if ( $self->{_BOUND_COLUMNS} ) {
+        my @vals  = $self->_fields();
+        my ( $max, $count ) = ( scalar @vals, 0 );
 
-            if ( $line =~ /${re}0/ ) { # null suspicion case
-                $is_continued = $line =~ qr/
-                    ^
-                    (
-                        (?:
-                            $re             # $quote
-                            (?:
-                                  $re$re    #    escaped $quote
-                                | ${re}0    # or escaped zero
-                                | [^$quot]  # or exceptions of $quote
-                            )*
-                            $re             # $quote
-                            [^0$quot]       # non zero or $quote
-                        )
-                        |                   
-                        (?:[^$quot]*)       # exceptions of $quote
-                    )+
-                    $
-                /x ? 0 : 1;
+        if ( @{ $self->{_BOUND_COLUMNS} } < $max ) {
+                $self->_set_error_diag(3006);
+                return;
+        }
+
+        for ( my $i = 0; $i < $max; $i++ ) {
+            my $bind = $self->{_BOUND_COLUMNS}->[ $i ];
+            if ( Scalar::Util::readonly( $$bind ) ) {
+                $self->_set_error_diag(3008);
+                return;
             }
-
-            if ( $is_continued and !eof($io) ) {
-                $line .= $io->getline();
-                goto LOOP;
-            }
+            $$bind = $vals[ $i ];
         }
+
+        return [];
+    }
+    else {
+        [ $self->_fields() ];
     }
 
-    $line =~ s/\Q$eol\E$// if ( defined $line and defined $eol and $eol ne '' );
-
-    $self->_parse($line);
-
-    return $self->_return_getline_result();
-}
-
-
-sub _return_getline_result {
-
-    if ( eof ) {
-        $_[0]->{_AUTO_DETECT_CR} = 0;
-    }
-
-    return unless $_[0]->{_STATUS};
-
-    return [ $_[0]->_fields() ] unless $_[0]->{_BOUND_COLUMNS};
-
-    my @vals  = $_[0]->_fields();
-    my ( $max, $count ) = ( scalar @vals, 0 );
-
-    if ( @{ $_[0]->{_BOUND_COLUMNS} } < $max ) {
-            $_[0]->_set_error_diag(3006);
-            return;
-    }
-
-    for ( my $i = 0; $i < $max; $i++ ) {
-        my $bind = $_[0]->{_BOUND_COLUMNS}->[ $i ];
-        if ( Scalar::Util::readonly( $$bind ) ) {
-            $_[0]->_set_error_diag(3008);
-            return;
-        }
-        $$bind = $vals[ $i ];
-    }
-
-    return [];
-}
-
-################################################################################
-# getline_all
-################################################################################
-sub getline_all {
-    my ( $self, $io, $offset, $len ) = @_;
-    my @list;
-    my $tail;
-    my $n = 0;
-
-    $offset ||= 0;
-
-    if ( $offset < 0 ) {
-        $tail = -$offset;
-        $offset = 0;
-    }
-
-    while ( my $row = $self->getline($io) ) {
-        next if $offset && $offset-- > 0;               # skip
-        last if defined $len && !$tail && $n >= $len;   # exceedes limit size
-        push @list, $row;
-        ++$n;
-        if ( $tail && $n > $tail ) {
-            shift @list;
-        }
-    }
-
-    if ( $tail && defined $len && $n > $len ) {
-        @list = splice( @list, 0, $len);
-    }
-
-    return \@list;
 }
 ################################################################################
 # getline_hr
@@ -753,21 +662,6 @@ sub getline_hr {
     @hr{ @{ $self->{_COLUMN_NAMES} } } = @$fr;
 
     \%hr;
-}
-################################################################################
-# getline_hr_all
-################################################################################
-sub getline_hr_all {
-    my ( $self, $io, @args ) = @_;
-    my %hr;
-
-    unless ( $self->{_COLUMN_NAMES} ) {
-        $self->SetDiag( 3002 );
-    }
-
-    my @cn = @{$self->{_COLUMN_NAMES}};
-
-    return [ map { my %h; @h{ @cn } = @$_; \%h } @{ $self->getline_all( $io, @args ) } ];
 }
 ################################################################################
 # column_names
@@ -894,8 +788,8 @@ sub _set_error_diag {
 ################################################################################
 
 BEGIN {
-    for my $method ( qw/always_quote binary keep_meta_info allow_loose_quotes allow_loose_escapes
-                            verbatim blank_is_undef empty_is_undef auto_diag quote_space quote_null/ ) {
+    for my $method ( qw/sep_char always_quote binary keep_meta_info allow_loose_quotes allow_loose_escapes
+                            verbatim blank_is_undef empty_is_undef auto_diag/ ) {
         eval qq|
             sub $method {
                 \$_[0]->{$method} = defined \$_[1] ? \$_[1] : 0 if (\@_ > 1);
@@ -906,24 +800,12 @@ BEGIN {
 }
 
 
-
-sub sep_char {
-    my $self = shift;
-    if ( @_ ) {
-        $self->{sep_char} = $_[0];
-        my $ec = _check_sanity( $self );
-        $ec and Carp::croak( $self->SetDiag( $ec ) );
-    }
-    $self->{sep_char};
-}
-
-
 sub quote_char {
     my $self = shift;
     if ( @_ ) {
-        $self->{quote_char} = $_[0];
-        my $ec = _check_sanity( $self );
-        $ec and Carp::croak( $self->SetDiag( $ec ) );
+        my $qc = shift;
+        defined $qc && $qc =~ m/^[ \t]$/ && $self->{allow_whitespace} and Carp::croak( $self->SetDiag(1002) );
+        $self->{quote_char} = $qc;
     }
     $self->{quote_char};
 }
@@ -932,9 +814,9 @@ sub quote_char {
 sub escape_char {
     my $self = shift;
     if ( @_ ) {
-        $self->{escape_char} = $_[0];
-        my $ec = _check_sanity( $self );
-        $ec and Carp::croak( $self->SetDiag( $ec ) );
+        my $es = shift;
+        defined $es && $es =~ m/^[ \t]$/ && $self->{allow_whitespace} and Carp::croak( $self->SetDiag(1002) );
+        $self->{escape_char} = $es;
     }
     $self->{escape_char};
 }
@@ -1042,9 +924,9 @@ is a XS module and Text::CSV_PP is a Puer Perl one.
 
 =head1 VERSION
 
-    1.29
+    1.22
 
-This module is compatible with Text::CSV_XS B<0.80> and later.
+This module is compatible with Text::CSV_XS B<0.68> and later.
 
 =head2 Unicode (UTF8)
 
@@ -1234,7 +1116,7 @@ be escaped as C<"0>.) By default this feature is off.
 If a string is marked UTF8, binary will be turned on automatically when
 binary characters other than CR or NL are encountered. Note that a simple
 string like C<"\x{00a0}"> might still be binary, but not marked UTF8, so
-setting C<{ binary =E<gt> 1 }> is still a wise option.
+setting C<{ binary => 1 }> is still a wise option.
 
 =item types
 
@@ -1247,22 +1129,8 @@ of the I<types> method below.
 
 By default the generated fields are quoted only, if they need to, for
 example, if they contain the separator. If you set this attribute to
-a TRUE value, then all defined fields will be quoted. This is typically
-easier to handle in external applications.
-
-=item quote_space
-
-By default, a space in a field would trigger quotation. As no rule
-exists this to be forced in CSV, nor any for the opposite, the default
-is true for safety. You can exclude the space from this trigger by
-setting this option to 0.
-
-=item quote_null
-
-By default, a NULL byte in a field would be escaped. This attribute
-enables you to treat the NULL byte as a simple binary character in
-binary mode (the C<{ binary =E<gt> 1 }> is set). The default is true.
-You can prevent NULL escapes by setting this attribute to 0.
+a TRUE value, then all fields will be quoted. This is typically easier
+to handle in external applications.
 
 =item keep_meta_info
 
@@ -1331,8 +1199,6 @@ is equivalent to
      sep_char            => ',',
      eol                 => $\,
      always_quote        => 0,
-     quote_space         => 1,
-     quote_null          => 1,
      binary              => 0,
      keep_meta_info      => 0,
      allow_loose_quotes  => 0,
@@ -1423,30 +1289,6 @@ reference to an empty list.
 The I<$csv-E<gt>string ()>, I<$csv-E<gt>fields ()> and I<$csv-E<gt>status ()>
 methods are meaningless, again.
 
-=head2 getline_all
-
- $arrayref = $csv->getline_all ($io);
- $arrayref = $csv->getline_all ($io, $offset);
- $arrayref = $csv->getline_all ($io, $offset, $length);
-
-This will return a reference to a list of C<getline ($io)> results.
-In this call, C<keep_meta_info> is disabled. If C<$offset> is negative,
-as with C<splice ()>, only the last C<abs ($offset)> records of C<$io>
-are taken into consideration.
-
-Given a CSV file with 10 lines:
-
- lines call
- ----- ---------------------------------------------------------
- 0..9  $csv->getline_all ($io)         # all
- 0..9  $csv->getline_all ($io,  0)     # all
- 8..9  $csv->getline_all ($io,  8)     # start at 8
- -     $csv->getline_all ($io,  0,  0) # start at 0 first 0 rows
- 0..4  $csv->getline_all ($io,  0,  5) # start at 0 first 5 rows
- 4..5  $csv->getline_all ($io,  4,  2) # start at 4 first 2 rows
- 8..9  $csv->getline_all ($io, -2)     # last 2 rows
- 6..7  $csv->getline_all ($io, -4,  2) # first 2 of last  4 rows
-
 =head2 parse
 
  $status = $csv->parse ($line);
@@ -1472,13 +1314,6 @@ first to declare your column names.
  print "Price for $hr->{name} is $hr->{price} EUR\n";
 
 C<getline_hr ()> will croak if called before C<column_names ()>.
-
-=head2 getline_hr_all
-
- $arrayref = $csv->getline_hr_all ($io);
-
-This will return a reference to a list of C<getline_hr ($io)> results.
-In this call, C<keep_meta_info> is disabled.
 
 =head2 column_names
 
@@ -1697,11 +1532,6 @@ or the escape character, as that will invalidate all parsing rules.
 Using C<allow_whitespace> when either C<escape_char> or C<quote_char> is
 equal to SPACE or TAB is too ambiguous to allow.
 
-=item 1003 "INI - \r or \n in main attr not allowed"
-
-Using default C<eol> characters in either C<sep_char>, C<quote_char>, or
-C<escape_char> is not allowed.
-
 =item 2010 "ECR - QUO char inside quotes followed by CR not part of EOL"
 
 =item 2011 "ECR - Characters after end of quoted field"
@@ -1746,7 +1576,7 @@ C<escape_char> is not allowed.
 
 =item 3006 "EHR - bind_columns () did not pass enough refs for parsed fields"
 
-=item 3007 "EHR - bind_columns needs refs to writable scalars"
+=item 3007 "EHR - bind_columns needs refs to writeable scalars"
 
 =item 3008 "EHR - unexpected error in bound fields"
 
@@ -1764,7 +1594,7 @@ Text::CSV was written by E<lt>alan[at]mfgrtl.comE<gt>.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2010 by Makamaka Hannyaharamitu, E<lt>makamaka[at]cpan.orgE<gt>
+Copyright 2005-2009 by Makamaka Hannyaharamitu, E<lt>makamaka[at]cpan.orgE<gt>
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself. 
