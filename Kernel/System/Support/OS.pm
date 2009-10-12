@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.12 2009/09/04 12:23:43 mb Exp $
+# $Id: OS.pm,v 1.13 2009/10/12 19:50:46 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.13 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -351,7 +351,7 @@ sub _DiskUsageCheck {
     # If used OS is a linux system
     if ( $^O =~ /(linux|unix|netbsd|freebsd|darwin)/i ) {
         my $In;
-        if ( open( $In, "df -lx tmpfs |" ) ) {
+        if ( open( $In, "df -lx tmpfs -x iso9960 -x udf |" ) ) {
             while (<$In>) {
                 if ( $_ =~ /^(.+?)\s.*\s(\d\d\d|\d\d|\d)%.+?$/ ) {
                     if ( $2 > 90 ) {
