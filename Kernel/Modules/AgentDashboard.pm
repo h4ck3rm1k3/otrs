@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AgentDashboard.pm - a global dashbard
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentDashboard.pm,v 1.28 2012/01/06 12:34:19 mg Exp $
+# $Id: AgentDashboard.pm,v 1.14.2.1 2009/10/26 19:09:51 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Cache;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.28 $) [1];
+$VERSION = qw($Revision: 1.14.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -51,10 +51,6 @@ sub Run {
 
     # update/close item
     if ( $Self->{Subaction} eq 'UpdateRemove' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Name = $Self->{ParamObject}->GetParam( Param => 'Name' );
         my $Key = 'UserDashboard' . $Name;
 
@@ -83,9 +79,6 @@ sub Run {
 
     # update preferences
     elsif ( $Self->{Subaction} eq 'UpdatePreferences' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
 
         my $Name = $Self->{ParamObject}->GetParam( Param => 'Name' );
 
@@ -128,7 +121,7 @@ sub Run {
         }
 
         # deliver new content page
-        my %ElementReload = $Self->_Element( Name => $Name, Configs => $Config, AJAX => 1 );
+        my %ElementReload = $Self->_Element( Name => $Name, Configs => $Config );
         if ( !%ElementReload ) {
             $Self->{LayoutObject}->FatalError(
                 Message => "Can't get element data of $Name!",
@@ -144,9 +137,6 @@ sub Run {
 
     # update settings
     elsif ( $Self->{Subaction} eq 'UpdateSettings' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
 
         my @Backends = $Self->{ParamObject}->GetArray( Param => 'Backend' );
         for my $Name ( sort keys %{$Config} ) {
@@ -181,52 +171,12 @@ sub Run {
         );
     }
 
-    # update position
-    elsif ( $Self->{Subaction} eq 'UpdatePosition' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        my @Backends = $Self->{ParamObject}->GetArray( Param => 'Backend' );
-
-        # get new order
-        my $Key  = 'UserDashboardPosition';
-        my $Data = '';
-        for my $Backend (@Backends) {
-            $Backend =~ s/^Dashboard(.+?)-box$/$1/g;
-            $Data .= $Backend . ';';
-        }
-
-        # update ssession
-        $Self->{SessionObject}->UpdateSessionID(
-            SessionID => $Self->{SessionID},
-            Key       => $Key,
-            Value     => $Data,
-        );
-
-        # update preferences
-        if ( !$Self->{ConfigObject}->Get('DemoSystem') ) {
-            $Self->{UserObject}->SetPreferences(
-                UserID => $Self->{UserID},
-                Key    => $Key,
-                Value  => $Data,
-            );
-        }
-
-        # redirect
-        return $Self->{LayoutObject}->Attachment(
-            ContentType => 'text/html',
-            Charset     => $Self->{LayoutObject}->{UserCharset},
-            Content     => '',
-        );
-    }
-
     # deliver element
     elsif ( $Self->{Subaction} eq 'Element' ) {
 
         my $Name = $Self->{ParamObject}->GetParam( Param => 'Name' );
 
-        my %Element = $Self->_Element( Name => $Name, Configs => $Config, AJAX => 1 );
+        my %Element = $Self->_Element( Name => $Name, Configs => $Config );
         if ( !%Element ) {
             $Self->{LayoutObject}->FatalError(
                 Message => "Can't get element data of $Name!",
@@ -234,7 +184,6 @@ sub Run {
         }
         return $Self->{LayoutObject}->Attachment(
             ContentType => 'text/html',
-            Charset     => $Self->{LayoutObject}->{UserCharset},
             Content     => ${ $Element{Content} },
             Type        => 'inline',
             NoCache     => 1,
@@ -268,17 +217,12 @@ sub Run {
 
         # check permissions
         if ( $Config->{$Name}->{Group} ) {
-            my $PermissionOK = 0;
             my @Groups = split /;/, $Config->{$Name}->{Group};
-            GROUP:
             for my $Group (@Groups) {
-                my $Permission = 'UserIsGroup[' . $Group . ']';
-                if ( defined $Self->{$Permission} && $Self->{$Permission} eq 'Yes' ) {
-                    $PermissionOK = 1;
-                    last GROUP;
-                }
+                my $Name = 'UserIsGroup[' . $Group . ']';
+                next BACKEND if !$Self->{$Name};
+                next BACKEND if $Self->{$Name} ne 'Yes';
             }
-            next BACKEND if !$PermissionOK;
         }
 
         my $Key = 'UserDashboard' . $Name;
@@ -290,36 +234,12 @@ sub Run {
         }
     }
 
-    # set order of plugins
-    my $Key = 'UserDashboardPosition';
-    my @Order;
-    my $Value = $Self->{$Key};
-
-    if ($Value) {
-        @Order = split /;/, $Value;
-
-        # only use active backends
-        @Order = grep { $Config->{$_} } @Order;
-    }
-    if ( !@Order ) {
-        for my $Name ( sort keys %Backends ) {
-            push @Order, $Name;
-        }
-    }
-
-    # add not ordered plugins (e. g. new active)
-    for my $Name ( sort keys %Backends ) {
-        my $Included = 0;
-        for my $Item (@Order) {
-            next if $Item ne $Name;
-            $Included = 1;
-        }
-        next if $Included;
-        push @Order, $Name;
-    }
-
     # try every backend to load and execute it
-    for my $Name (@Order) {
+    for my $Name ( sort keys %{$Config} ) {
+
+        # NameForm (to support IE, is not working with "-" in form names)
+        my $NameForm = $Name;
+        $NameForm =~ s/-//g;
 
         # get element data
         my %Element = $Self->_Element(
@@ -328,10 +248,6 @@ sub Run {
             Backends => \%Backends,
         );
         next if !%Element;
-
-        # NameForm (to support IE, is not working with "-" in form names)
-        my $NameForm = $Name;
-        $NameForm =~ s/-//g;
 
         # rendering
         $Self->{LayoutObject}->Block(
@@ -364,11 +280,10 @@ sub Run {
                     },
                 );
                 if ( $Param->{Block} eq 'Option' ) {
-                    $Param->{Option} = $Self->{LayoutObject}->BuildSelection(
-                        Data        => $Param->{Data},
-                        Name        => $Param->{Name},
-                        SelectedID  => $Param->{SelectedID},
-                        Translation => $Param->{Translation},
+                    $Param->{Option} = $Self->{LayoutObject}->OptionStrgHashRef(
+                        Data       => $Param->{Data},
+                        Name       => $Param->{Name},
+                        SelectedID => $Param->{SelectedID},
                     );
                 }
                 $Self->{LayoutObject}->Block(
@@ -397,11 +312,7 @@ sub Run {
     }
 
     # get output back
-    my $Refresh = '';
-    if ( $Self->{UserRefreshTime} ) {
-        $Refresh = 60 * $Self->{UserRefreshTime};
-    }
-    my $Output = $Self->{LayoutObject}->Header( Refresh => $Refresh, );
+    my $Output = $Self->{LayoutObject}->Header( Refresh => 30 * 60 );
     $Output .= $Self->{LayoutObject}->NavigationBar();
     $Output .= $Self->{LayoutObject}->Output(
         TemplateFile => 'AgentDashboard',
@@ -420,17 +331,12 @@ sub _Element {
 
     # check permissions
     if ( $Configs->{$Name}->{Group} ) {
-        my $PermissionOK = 0;
         my @Groups = split /;/, $Configs->{$Name}->{Group};
-        GROUP:
         for my $Group (@Groups) {
-            my $Permission = 'UserIsGroup[' . $Group . ']';
-            if ( defined $Self->{$Permission} && $Self->{$Permission} eq 'Yes' ) {
-                $PermissionOK = 1;
-                last GROUP;
-            }
+            my $Name = 'UserIsGroup[' . $Group . ']';
+            return if !$Self->{$Name};
+            return if $Self->{$Name} ne 'Yes';
         }
-        return if !$PermissionOK;
     }
 
     # load backends
@@ -453,7 +359,7 @@ sub _Element {
     if ($Backends) {
         my $Checked = '';
         if ( $Backends->{$Name} ) {
-            $Checked = 'checked="checked"';
+            $Checked = 'checked';
         }
         $Self->{LayoutObject}->Block(
             Name => 'ContentSettings',
@@ -483,7 +389,7 @@ sub _Element {
     my $CacheUsed = 1;
     if ( !defined $Content ) {
         $CacheUsed = 0;
-        $Content = $Object->Run( AJAX => $Param{AJAX} );
+        $Content   = $Object->Run();
     }
 
     # check if content should be shown
