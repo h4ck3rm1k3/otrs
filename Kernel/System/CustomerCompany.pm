@@ -1,8 +1,8 @@
 # --
 # Kernel/System/CustomerCompany.pm - All customer company related function should be here eventually
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerCompany.pm,v 1.25 2011/03/15 19:08:35 cg Exp $
+# $Id: CustomerCompany.pm,v 1.19.2.1 2009/11/06 09:11:31 tt Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,15 +17,15 @@ use warnings;
 use Kernel::System::Valid;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.25 $) [1];
+$VERSION = qw($Revision: 1.19.2.1 $) [1];
 
 =head1 NAME
 
-Kernel::System::CustomerCompany - customer company lib
+Kernel::System::CustomerCompany - project lib
 
 =head1 SYNOPSIS
 
-All Customer Company functions. E.g. to add and update customer companies.
+All project functions.
 
 =head1 PUBLIC INTERFACE
 
@@ -130,35 +130,28 @@ sub new {
             Type         => $Self->{ConfigObject}->Get('CustomerCompany')->{Params}->{Type} || '',
         ) || die('Can\'t connect to database!');
 
-        # remember that we don't have inherited the DBObject from parent call
+        # remember that we have the DBObject not from parent call
         $Self->{NotParentDBObject} = 1;
     }
-
-# this setting specifies if the table has the create_time, create_by, change_time and change_by fields of OTRS
-    $Self->{ForeignDB}
-        = $Self->{ConfigObject}->Get('CustomerCompany')->{Params}->{ForeignDB} ? 1 : 0;
 
     return $Self;
 }
 
 =item CustomerCompanyAdd()
 
-add a new customer company
+add new projects
 
     my $ID = $CustomerCompanyObject->CustomerCompanyAdd(
-        CustomerID              => 'example.com',
-        CustomerCompanyName     => 'New Customer Company Inc.',
-        CustomerCompanyStreet   => '5201 Blue Lagoon Drive',
-        CustomerCompanyZIP      => '33126',
-        CustomerCompanyCity     => 'Miami',
-        CustomerCompanyCountry  => 'USA',
-        CustomerCompanyComment  => 'some comment',
-        ValidID                 => 1,
-        UserID                  => 123,
+        CustomerID => 'example.com',
+        CustomerCompanyName => 'New Customer Company Inc.',
+        CustomerCompanyStreet => '5201 Blue Lagoon Drive',
+        CustomerCompanyZIP => '33126',
+        CustomerCompanyLocation => 'Miami',
+        CustomerCompanyCountry => 'USA',
+        CustomerCompanyComment => 'some comment',
+        ValidID => 1,
+        UserID => 123,
     );
-
-NOTE: Actual fields accepted by this API call may differ based on
-CustomerCompany mapping in your system configuration.
 
 =cut
 
@@ -175,33 +168,20 @@ sub CustomerCompanyAdd {
 
     # build insert
     my $SQL = "INSERT INTO $Self->{CustomerCompanyTable} (";
-    my $FieldInserted;
     for my $Entry ( @{ $Self->{CustomerCompanyMap} } ) {
-        $SQL .= ', ' if ($FieldInserted);
-        $SQL .= " $Entry->[2] ";
-        $FieldInserted = 1;
+        $SQL .= " $Entry->[2], ";
     }
-    if ( !$Self->{ForeignDB} ) {
-        $SQL .= ', ' if ($FieldInserted);
-        $SQL .= 'create_time, create_by, change_time, change_by';
-    }
-    $SQL .= ") VALUES (";
-    my $ValueInserted;
+    $SQL .= "create_time, create_by, change_time, change_by)";
+    $SQL .= " VALUES (";
     for my $Entry ( @{ $Self->{CustomerCompanyMap} } ) {
-        $SQL .= ', ' if ($ValueInserted);
         if ( $Entry->[5] =~ /^int$/i ) {
-            $SQL .= " " . $Self->{DBObject}->Quote( $Param{ $Entry->[0] } );
+            $SQL .= " " . $Self->{DBObject}->Quote( $Param{ $Entry->[0] } ) . ", ";
         }
         else {
-            $SQL .= " '" . $Self->{DBObject}->Quote( $Param{ $Entry->[0] } ) . "'";
+            $SQL .= " '" . $Self->{DBObject}->Quote( $Param{ $Entry->[0] } ) . "', ";
         }
-        $ValueInserted = 1;
     }
-    if ( !$Self->{ForeignDB} ) {
-        $SQL .= ', ' if ($ValueInserted);
-        $SQL .= "current_timestamp, $Param{UserID}, current_timestamp, $Param{UserID}";
-    }
-    $SQL .= ")";
+    $SQL .= "current_timestamp, $Param{UserID}, current_timestamp, $Param{UserID})";
     if ( $Self->{DBObject}->Do( SQL => $SQL ) ) {
 
         # log notice
@@ -219,30 +199,11 @@ sub CustomerCompanyAdd {
 
 =item CustomerCompanyGet()
 
-get customer company attributes
+get projects attributes
 
     my %CustomerCompany = $CustomerCompanyObject->CustomerCompanyGet(
         CustomerID => 123,
     );
-
-Returns:
-
-    %CustomerCompany = (
-        'CustomerCompanyName'    => 'Customer Company Inc.',
-        'CustomerID'             => 'example.com',
-        'CustomerCompanyStreet'  => '5201 Blue Lagoon Drive',
-        'CustomerCompanyZIP'     => '33126',
-        'CustomerCompanyCity'    => 'Miami',
-        'CustomerCompanyCountry' => 'United States',
-        'CustomerCompanyURL'     => 'http://example.com',
-        'CustomerCompanyComment' => 'Some Comments',
-        'ValidID'                => '1',
-        'CreateTime'             => '2010-10-04 16:35:49',
-        'ChangeTime'             => '2010-10-04 16:36:12',
-    );
-
-NOTE: Actual fields returned by this API call may differ based on
-CustomerCompany mapping in your system configuration.
 
 =cut
 
@@ -262,13 +223,8 @@ sub CustomerCompanyGet {
     for my $Entry ( @{ $Self->{CustomerCompanyMap} } ) {
         $SQL .= " $Entry->[2], ";
     }
-    $SQL .= $Self->{CustomerCompanyKey};
-
-    if ( !$Self->{ForeignDB} ) {
-        $SQL .= ", change_time, create_time";
-    }
-
-    $SQL .= " FROM $Self->{CustomerCompanyTable} WHERE ";
+    $SQL .= $Self->{CustomerCompanyKey}
+        . ", change_time, create_time FROM $Self->{CustomerCompanyTable} WHERE ";
     if ( $Param{Name} ) {
         $SQL .= "LOWER($Self->{CustomerCompanyKey}) = LOWER('"
             . $Self->{DBObject}->Quote( $Param{Name} ) . "')";
@@ -298,19 +254,19 @@ sub CustomerCompanyGet {
 
 =item CustomerCompanyUpdate()
 
-update customer company attributes
+update project attributes
 
     $CustomerCompanyObject->CustomerCompanyUpdate(
-        CustomerCompanyID       => 'oldexample.com', #required if CustomerCompanyID-update
-        CustomerID              => 'example.com',
-        CustomerCompanyName     => 'New Customer Company Inc.',
-        CustomerCompanyStreet   => '5201 Blue Lagoon Drive',
-        CustomerCompanyZIP      => '33126',
+        CustomerCompanyID => 'oldexample.com', #required if CustomerCompanyID-update
+        CustomerID => 'example.com',
+        CustomerCompanyName => 'New Customer Company Inc.',
+        CustomerCompanyStreet => '5201 Blue Lagoon Drive',
+        CustomerCompanyZIP => '33126',
         CustomerCompanyLocation => 'Miami',
-        CustomerCompanyCountry  => 'USA',
-        CustomerCompanyComment  => 'some comment',
-        ValidID                 => 1,
-        UserID                  => 123,
+        CustomerCompanyCountry => 'USA',
+        CustomerCompanyComment => 'some comment',
+        ValidID => 1,
+        UserID => 123,
     );
 
 =cut
@@ -332,20 +288,16 @@ sub CustomerCompanyUpdate {
 
     # update db
     my $SQL = "UPDATE $Self->{CustomerCompanyTable} SET ";
-    my $FieldInserted;
     for my $Entry ( @{ $Self->{CustomerCompanyMap} } ) {
-        $SQL .= ', ' if $FieldInserted;
         if ( $Entry->[5] =~ /^int$/i ) {
-            $SQL .= " $Entry->[2] = " . $Self->{DBObject}->Quote( $Param{ $Entry->[0] } );
+            $SQL .= " $Entry->[2] = " . $Self->{DBObject}->Quote( $Param{ $Entry->[0] } ) . ", ";
         }
         elsif ( $Entry->[0] !~ /^UserPassword$/i ) {
-            $SQL .= " $Entry->[2] = '" . $Self->{DBObject}->Quote( $Param{ $Entry->[0] } ) . "'";
+            $SQL .= " $Entry->[2] = '" . $Self->{DBObject}->Quote( $Param{ $Entry->[0] } ) . "', ";
         }
-        $FieldInserted = 1;
     }
-    if ( !$Self->{ForeignDB} ) {
-        $SQL .= ", change_time = current_timestamp, change_by = $Param{UserID} ";
-    }
+    $SQL .= " change_time = current_timestamp, ";
+    $SQL .= " change_by = $Param{UserID} ";
     $SQL .= " WHERE LOWER($Self->{CustomerCompanyKey}) = LOWER('"
         . $Self->{DBObject}->Quote( $Param{CustomerCompanyID} ) . "')";
 
@@ -371,7 +323,7 @@ sub CustomerCompanyUpdate {
 
 =item CustomerCompanyList()
 
-get list of customer companies.
+get project list
 
     my %List = $CustomerCompanyObject->CustomerCompanyList();
 
@@ -381,15 +333,8 @@ get list of customer companies.
 
     my %List = $ProjectObject->ProjectList(
         Search => '*sometext*',
-        Limit  => 10,
+        Limit => 10,
     );
-
-Returns:
-
-%List = {
-          'example.com' => 'example.com Customer Company Inc.        ',
-          'acme.com'    => 'acme.com Acme, Inc.        '
-        };
 
 =cut
 
@@ -457,10 +402,9 @@ sub CustomerCompanyList {
 
     # sql
     my %List = ();
-    my $CompleteSQL
-        = "SELECT $Self->{CustomerCompanyKey}, $What FROM $Self->{CustomerCompanyTable}";
-    $CompleteSQL .= $SQL ? " WHERE $SQL" : '';
-    $Self->{DBObject}->Prepare( SQL => $CompleteSQL, Limit => 50000 );
+    $SQL
+        = "SELECT $Self->{CustomerCompanyKey}, $What FROM $Self->{CustomerCompanyTable} WHERE $SQL";
+    $Self->{DBObject}->Prepare( SQL => $SQL, Limit => 50000 );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         my $Value = '';
         for my $Position ( 1 .. 10 ) {
@@ -494,16 +438,16 @@ sub DESTROY {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.25 $ $Date: 2011/03/15 19:08:35 $
+$Revision: 1.19.2.1 $ $Date: 2009/11/06 09:11:31 $
 
 =cut
