@@ -1,8 +1,8 @@
 # --
 # README.web server - web server configuration for OTRS
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: README.webserver,v 1.24 2011/12/19 09:10:22 mg Exp $
+# $Id: README.webserver,v 1.19.2.1 2009/11/11 11:37:08 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -11,7 +11,7 @@
 
 Which web server is needed?
 ===========================
-We recommend the apache web server (http://httpd.apache.org).
+I prefer the apache web server (http://httpd.apache.org).
 
 Configuration:
 ==============
@@ -49,12 +49,12 @@ a)
     because you have other applications running on this server, you can
     also work with group permissions. This is somewhat more work.
 
-     Webserver with OTRS user:
-        "bin/otrs.SetPermissions.pl --otrs-user=otrs --web-user=otrs /opt/otrs"
-     Webserver with wwwrun user (e. g. SuSE):
-        "bin/otrs.SetPermissions.pl --otrs-user=otrs --web-user=wwwrun /opt/otrs"
-     Webserver with apache user (e. g. Redhat):
-        "bin/otrs.SetPermissions.pl --otrs-user=otrs --web-user=apache --otrs-group=apache --web-group=apache /opt/otrs"
+     Web server with OTRS user:
+        "bin/SetPermissions.pl --otrs-user=otrs --web-user=otrs /opt/otrs"
+     Web server with wwwrun user (e. g. SuSE):
+        "bin/SetPermissions.pl --otrs-user=otrs --web-user=wwwrun /opt/otrs"
+     Web server with apache user (e. g. Redhat):
+        "bin/SetPermissions.pl --otrs-user=otrs --web-user=apache --otrs-group=apache --web-group=apache /opt/otrs"
 
 b)
  *)
@@ -67,8 +67,33 @@ b)
   [...]
 
  *)
+  With mod_perl 1 (speed!):
+  =========================
+  Add this to the mod_perl stuff section in httpd.conf
+  [...]
+    # agent, admin and customer frontend (mod_alias required!)
+    ScriptAlias /otrs/ "/opt/otrs/bin/cgi-bin/"
+    Alias /otrs-web/ "/opt/otrs/var/httpd/htdocs/"
 
-  With mod_perl 2 (fast):
+    # load all otrs modules (speed improvement!)
+#   Perlrequire /opt/otrs/scripts/apache-perl-startup.pl
+
+    # Apache::StatINC - Reload %INC files when updated on disk
+    # (just use it for testing, setup, ... not for high productiv systems)
+#   PerlInitHandler Apache::StatINC
+
+    <Location /otrs>
+        ErrorDocument 403 /otrs/index.pl
+        SetHandler  perl-script
+        PerlHandler Apache::Registry
+        Options ExecCGI
+        PerlSendHeader On
+        PerlSetupEnv On
+    </Location>
+  [...]
+
+ *)
+  With mod_perl 2 (speed!):
   =========================
   Add this to the mod_perl stuff section in httpd.conf
   [...]
@@ -98,6 +123,28 @@ b)
     </Location>
   [...]
 
+  Edit the scripts/apache-perl-startup.pl / scripts/apache2-perl-startup.pl script:
+
+   - Establish database connections on process startup (httpd).
+
+     [...]
+     use Apache::DBI ();
+     Apache::DBI->connect_on_init('DBI:mysql:otrs', 'otrs', 'some-pass');
+     # Apache::DBI->connect_on_init($data_source, $username, $auth, \%attr)
+     [...]
+
+   - Change the otrs lib dir (if needed)!
+
+     [...]
+     # ----------------------------------------
+     # set otrs lib path!
+     # ----------------------------------------
+     use lib "/path/to/otrs/";
+     use lib "/path/to/otrs/Kernel/cpan-lib";
+     [...]
+
+  Nice! You will love mod_perl! ,-)
+
 c)
   Restart the web server
   ======================
@@ -112,3 +159,5 @@ d)
    http://yourhost/otrs/index.pl
    User: root@localhost
    Password: root
+
+EOF
