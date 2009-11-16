@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Spelling.pm - the global spelling module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Spelling.pm,v 1.33 2011/08/12 09:06:15 mg Exp $
+# $Id: Spelling.pm,v 1.28.2.1 2009/11/16 13:04:29 mn Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::FileTemp;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.33 $) [1];
+$VERSION = qw($Revision: 1.28.2.1 $) [1];
 
 =head1 NAME
 
@@ -181,7 +181,9 @@ sub Check {
 
     # aspell encoding
     if ( $Self->{SpellChecker} =~ /aspell/ ) {
-        $Self->{SpellChecker} .= ' --encoding=utf-8';
+        if ( $Self->{EncodeObject}->EncodeInternalUsed() ) {
+            $Self->{SpellChecker} .= ' --encoding=utf-8';
+        }
     }
 
     # open spell checker
@@ -196,14 +198,14 @@ sub Check {
     }
 
     my $Output      = '';
+    my %Data        = ();
     my $Lines       = 1;
     my $CurrentLine = 0;
-    my %Data;
     while ( my $Line = <$Spell> ) {
         $CurrentLine++;
 
         # set utf8 stamp if running in utf8 mode
-        $Self->{EncodeObject}->EncodeInput( \$Line );
+        $Self->{EncodeObject}->Encode( \$Line );
 
         # ispell encoding: # ÄÖÜäöü
         if ( $Self->{SpellChecker} =~ /ispell/ ) {
@@ -290,14 +292,14 @@ sub Error {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.33 $ $Date: 2011/08/12 09:06:15 $
+$Revision: 1.28.2.1 $ $Date: 2009/11/16 13:04:29 $
 
 =cut
