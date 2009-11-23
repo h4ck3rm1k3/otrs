@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver/Apache.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Apache.pm,v 1.11 2009/08/26 22:11:50 mb Exp $
+# $Id: Apache.pm,v 1.12 2009/11/23 16:23:01 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = qw($Revision: 1.12 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -37,8 +37,8 @@ sub AdminChecksGet {
 
     # add new function name here
     my @ModuleList = (
-        '_ApacheDBICheck', '_ApacheReloadCheck',
-        '_ModPerlVersionCheck',
+        '_ApacheVersionCheck', '_CGIAcceleratorCheck',
+        '_ApacheDBICheck',     '_ApacheReloadCheck',
     );
 
     my @DataArray;
@@ -58,6 +58,29 @@ sub AdminChecksGet {
     return \@DataArray;
 }
 
+sub _ApacheVersionCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $Data    = {};
+    my $Check   = '';
+    my $Message = '';
+    if ( $ENV{SERVER_SOFTWARE} ) {
+        $Check   = 'OK';
+        $Message = "You are running $ENV{SERVER_SOFTWARE}.";
+    }
+    else {
+        $Check   = 'Failed';
+        $Message = 'Could not determine Apache version.';
+    }
+    $Data = {
+        Name        => 'Apache Version',
+        Description => 'Display web server version.',
+        Comment     => $Message,
+        Check       => $Check,
+    };
+    return $Data;
+}
+
 sub _ApacheDBICheck {
     my ( $Self, %Param ) = @_;
 
@@ -67,21 +90,28 @@ sub _ApacheDBICheck {
     my $ApacheDBI = 0;
     my $Check     = '';
     my $Message   = '';
-    for my $Module ( keys %INC ) {
-        $Module =~ s/\//::/g;
-        $Module =~ s/\.pm$//g;
-        if ( $Module eq 'Apache::DBI' || $Module eq 'Apache2::DBI' ) {
-            $ApacheDBI = $Module;
+    if ( $ENV{MOD_PERL} ) {
+        for my $Module ( keys %INC ) {
+            $Module =~ s/\//::/g;
+            $Module =~ s/\.pm$//g;
+            if ( $Module eq 'Apache::DBI' || $Module eq 'Apache2::DBI' ) {
+                $ApacheDBI = $Module;
+            }
+        }
+        if ( !$ApacheDBI ) {
+            $Check = 'Critical';
+            $Message
+                = 'Apache::DBI should be used to get a better performance (pre-establish database connections).';
+        }
+        else {
+            $Check   = 'OK';
+            $Message = $ApacheDBI;
         }
     }
-    if ( !$ApacheDBI ) {
-        $Check = 'Critical';
-        $Message
-            = 'Apache::DBI should be used to get a better performance (pre establish database connections).';
-    }
     else {
-        $Check   = 'OK';
-        $Message = $ApacheDBI;
+
+        # Just skip this test if we' re not running mod_perl.
+        return;
     }
     $Data = {
         Name        => 'Apache::DBI',
@@ -115,9 +145,9 @@ sub _ApacheReloadCheck {
                     }
                 }
                 if ( !$ApacheReload ) {
-                    $Check = 'Critical';
+                    $Check = 'Info';
                     $Message
-                        = 'Apache::Reload or Apache2::Reload should be used as PerlModule and PerlInitHandler.';
+                        = 'Apache::Reload or Apache2::Reload should be used as PerlModule and PerlInitHandler to prevent web server restarts when installing and upgrading modules.';
                 }
                 else {
                     $Check   = 'OK';
@@ -127,8 +157,9 @@ sub _ApacheReloadCheck {
         }
     }
     else {
-        $Check   = 'Critical';
-        $Message = 'You should use Apache::Reload or Apache2::Reload to increase your performance.';
+
+        # Just skip this test if we' re not running mod_perl.
+        return;
     }
     $Data = {
         Name        => 'Apache::Reload',
@@ -139,15 +170,16 @@ sub _ApacheReloadCheck {
     return $Data;
 }
 
-sub _ModPerlVersionCheck {
+sub _CGIAcceleratorCheck {
     my ( $Self, %Param ) = @_;
 
     my $Data = {};
 
-    # check mod_perl version
     my $Check   = 'Failed';
     my $Message = '';
     if ( $ENV{MOD_PERL} ) {
+
+        # check mod_perl version
         if ( $ENV{MOD_PERL} =~ /\/1.99/ ) {
             $Check = 'Critical';
             $Message
@@ -162,13 +194,17 @@ sub _ModPerlVersionCheck {
             $Message = $ENV{MOD_PERL};
         }
     }
+    elsif ( $ENV{SERVER_SOFTWARE} =~ /fastcgi/i ) {
+        $Check   = 'OK';
+        $Message = 'You are using FastCGI.';
+    }
     else {
         $Check   = 'Critical';
-        $Message = 'You should use mod_perl to increase your performance.';
+        $Message = 'You should use FastCGI or mod_perl to increase your performance.';
     }
     $Data = {
-        Name        => 'Version (mod_perl)',
-        Description => 'Check used mod_perl version.',
+        Name        => 'CGI Accelerator',
+        Description => 'Check for CGI Accelerator.',
         Comment     => $Message,
         Check       => $Check,
     };
