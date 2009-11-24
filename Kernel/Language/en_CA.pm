@@ -1,21 +1,20 @@
 # --
 # Kernel/Language/en_CA.pm - provides en_CA language translation
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: en_CA.pm,v 1.10 2011/09/15 11:38:47 mg Exp $
+# $Id: en_CA.pm,v 1.2.2.1 2009/11/24 10:34:58 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
-
 package Kernel::Language::en_CA;
 
 use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.2.2.1 $) [1];
 
 sub Data {
     my $Self = shift;
@@ -38,7 +37,6 @@ sub Data {
     $Self->{DateFormatShort}     = '%Y-%M-%D';
     $Self->{DateInputFormat}     = '%Y-%M-%D';
     $Self->{DateInputFormatLong} = '%Y-%M-%D - %T';
-    $Self->{Separator}           = ',';
 
     $Self->{Translation} = {
 
@@ -75,47 +73,19 @@ sub Data {
         'History::CustomerUpdate' => 'Updated: %s',
         'History::PriorityUpdate' => 'Changed priority from "%s" (%s) to "%s" (%s).',
         'History::OwnerUpdate' => 'New owner is "%s" (ID=%s).',
-        'History::ResponsibleUpdate' => 'New responsible is "%s" (ID=%s).',
         'History::LoopProtection' => 'Loop-Protection! No auto-response sent to "%s".',
         'History::Misc' => '%s',
         'History::SetPendingTime' => 'Updated: %s',
         'History::StateUpdate' => 'Old: "%s" New: "%s"',
-        'History::TicketDynamicFieldUpdate' => 'Updated: %s=%s;%s=%s;',
+        'History::TicketFreeTextUpdate' => 'Updated: %s=%s;%s=%s;',
         'History::WebRequestCustomer' => 'Customer request via web.',
         'History::TicketLinkAdd' => 'Added link to ticket "%s".',
         'History::TicketLinkDelete' => 'Deleted link to ticket "%s".',
         'History::Subscribe' => 'Added subscription for user "%s".',
         'History::Unsubscribe' => 'Removed subscription for user "%s".',
         'History::SystemRequest' => 'System Request (%s).',
-        'History::EscalationResponseTimeNotifyBefore' => 'Escalation response time forewarned',
-        'History::EscalationUpdateTimeNotifyBefore' => 'Escalation update time forewarned',
-        'History::EscalationSolutionTimeNotifyBefore' => 'Escalation solution time forewarned',
-        'History::EscalationResponseTimeStart' => 'Escalation response time in effect',
-        'History::EscalationUpdateTimeStart' => 'Escalation update time in effect',
-        'History::EscalationSolutionTimeStart' => 'Escalation solution time in effect',
-        'History::EscalationResponseTimeStop' => 'Escalation response time finished',
-        'History::EscalationUpdateTimeStop' => 'Escalation update time finished',
-        'History::EscalationSolutionTimeStop' => 'Escalation solution time finished',
-        'History::ArchiveFlagUpdate' => 'Archive state changed: "%s"',
         # There's a difference between May (short) and May (long) in some languages, not in en
         'May_long' => 'May',
-        #CustomerUser fields
-        'Title{CustomerUser}' => 'Title',
-        'Firstname{CustomerUser}' => 'First name',
-        'Lastname{CustomerUser}' => 'Last name',
-        'Username{CustomerUser}' => 'Username',
-        'Email{CustomerUser}' => 'E-mail address',
-        'CustomerID{CustomerUser}' => 'Customer ID',
-        'Phone{CustomerUser}' => 'Phone',
-        'Fax{CustomerUser}' => 'Fax',
-        'Mobile{CustomerUser}' => 'Cellphone',
-        'Street{CustomerUser}' => 'Street',
-        'Zip{CustomerUser}' => 'ZIP code',
-        'City{CustomerUser}' => 'City',
-        'Country{CustomerUser}' => 'Country',
-        'Comment{CustomerUser}' => 'Comment',
-        #User field
-        'Title{user}' => 'Title',
     };
     # $$STOP$$
     return;

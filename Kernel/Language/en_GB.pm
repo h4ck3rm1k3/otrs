@@ -1,8 +1,8 @@
 # --
-# Kernel/Language/en_GB.pm - provides British English language translation
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Kernel/Language/en_GB.pm - provides en_GB languag translation
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: en_GB.pm,v 1.13 2011/10/07 09:17:01 mb Exp $
+# $Id: en_GB.pm,v 1.2.2.1 2009/11/24 10:34:58 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.13 $) [1];
+$VERSION = qw($Revision: 1.2.2.1 $) [1];
 
 sub Data {
     my $Self = shift;
@@ -35,7 +35,6 @@ sub Data {
     $Self->{DateFormatShort}     = '%D/%M/%Y';
     $Self->{DateInputFormat}     = '%D/%M/%Y';
     $Self->{DateInputFormatLong} = '%D/%M/%Y - %T';
-    $Self->{Separator}           = ',';
 
     # maybe nothing ... or help texts
     $Self->{Translation} = {
@@ -66,54 +65,17 @@ sub Data {
         'History::CustomerUpdate' => 'Updated: %s',
         'History::PriorityUpdate' => 'Changed priority from "%s" (%s) to "%s" (%s).',
         'History::OwnerUpdate' => 'New owner is "%s" (ID=%s).',
-        'History::ResponsibleUpdate' => 'New responsible is "%s" (ID=%s).',
         'History::LoopProtection' => 'Loop-Protection! No auto-response sent to "%s".',
         'History::Misc' => '%s',
         'History::SetPendingTime' => 'Updated: %s',
         'History::StateUpdate' => 'Old: "%s" New: "%s"',
-        'History::TicketDynamicFieldUpdate' => 'Updated: %s=%s;%s=%s;',
+        'History::TicketFreeTextUpdate' => 'Updated: %s=%s;%s=%s;',
         'History::WebRequestCustomer' => 'Customer request via web.',
         'History::TicketLinkAdd' => 'Added link to ticket "%s".',
         'History::TicketLinkDelete' => 'Deleted link to ticket "%s".',
         'History::Subscribe' => 'Added subscription for user "%s".',
         'History::Unsubscribe' => 'Removed subscription for user "%s".',
         'History::SystemRequest' => 'System Request (%s).',
-        'History::EscalationResponseTimeNotifyBefore' => 'Escalation response time forewarned',
-        'History::EscalationUpdateTimeNotifyBefore' => 'Escalation update time forewarned',
-        'History::EscalationSolutionTimeNotifyBefore' => 'Escalation solution time forewarned',
-        'History::EscalationResponseTimeStart' => 'Escalation response time in effect',
-        'History::EscalationUpdateTimeStart' => 'Escalation update time in effect',
-        'History::EscalationSolutionTimeStart' => 'Escalation solution time in effect',
-        'History::EscalationResponseTimeStop' => 'Escalation response time finished',
-        'History::EscalationUpdateTimeStop' => 'Escalation update time finished',
-        'History::EscalationSolutionTimeStop' => 'Escalation solution time finished',
-        'History::ArchiveFlagUpdate' => 'Archive state changed: "%s"',
-        #CustomerUser fields
-        'Title{CustomerUser}' => 'Title',
-        'Firstname{CustomerUser}' => 'First name',
-        'Lastname{CustomerUser}' => 'Surname',
-        'Username{CustomerUser}' => 'Username',
-        'Email{CustomerUser}' => 'E-mail address',
-        'CustomerID{CustomerUser}' => 'Customer ID',
-        'Phone{CustomerUser}' => 'Phone',
-        'Fax{CustomerUser}' => 'Fax',
-        'Mobile{CustomerUser}' => 'Mobile',
-        'Street{CustomerUser}' => 'Street',
-        'Zip{CustomerUser}' => 'Postcode',
-        'City{CustomerUser}' => 'City',
-        'Country{CustomerUser}' => 'Country',
-        'Comment{CustomerUser}' => 'Comment',
-        #User field
-        'Title{user}' => 'Title',
-        #'Statuses' is American English
-        'Statuses'    => 'Status',
-        #'License' is American English
-        'License' => 'Licence',
-        'To accept some news, a license or some changes.' => 'To accept some news, a licence or some changes.',
-        'Accept license' => 'Accept licence',
-        'Don\'t accept license' => 'Don\'t accept licence',
-        #'Favorite' is American English
-        'Your queue selection of your favorite queues. You also get notified about those queues via email if enabled.' => 'Your queue selection of your favourite queues. You also get notified about those queues via email if enabled.',
     };
     # $$STOP$$
     return;
