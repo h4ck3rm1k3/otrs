@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mssql.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: mssql.pm,v 1.11 2009/04/17 14:17:07 tr Exp $
+# $Id: mssql.pm,v 1.12 2009/11/24 11:05:16 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = qw($Revision: 1.12 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -41,7 +41,7 @@ sub AdminChecksGet {
 
     # add new function name here
     my @ModuleList = (
-        '_TableCheck',
+        '_VersionCheck', '_TableCheck',
     );
 
     my @DataArray;
@@ -61,6 +61,33 @@ sub AdminChecksGet {
     return \@DataArray;
 }
 
+sub _VersionCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $Data = {};
+
+    # version check
+    my $Check   = 'Failed';
+    my $Message = 'Could not determine Microsoft SQL Server version.';
+    $Self->{DBObject}->Prepare(
+        SQL   => 'SELECT @@version',
+        Limit => 1,
+    );
+
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        $Message = $Row[0];
+        $Check   = 'OK';
+    }
+
+    $Data = {
+        Name        => 'Version',
+        Description => 'Check database version.',
+        Comment     => $Message,
+        Check       => $Check,
+    };
+    return $Data;
+}
+
 sub _TableCheck {
     my ( $Self, %Param ) = @_;
 
@@ -74,7 +101,7 @@ sub _TableCheck {
         my $Message = '';
         my $Content = '';
         my $In;
-        if ( open( $In, '<', $File) ) {
+        if ( open( $In, '<', $File ) ) {
             while (<$In>) {
                 $Content .= $_;
             }
@@ -82,11 +109,14 @@ sub _TableCheck {
             my @XMLHash = $Self->{XMLObject}->XMLParse2XMLHash( String => $Content );
             for my $Table ( @{ $XMLHash[1]->{database}->[1]->{Table} } ) {
                 if ($Table) {
-                    if ($Table->{Name} eq 'system_user') {
+                    if ( $Table->{Name} eq 'system_user' ) {
                         $Table->{Name} = 'system_user2';
                     }
                     $Count++;
-                    if ( $Self->{DBObject}->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 ) )
+                    if (
+                        $Self->{DBObject}
+                        ->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 )
+                        )
                     {
                         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
                         }
@@ -97,17 +127,17 @@ sub _TableCheck {
                 }
             }
             if ($Message) {
-                $Message = "Table dosn't exists: $Message";
+                $Message = "Table doesn't exist: $Message";
             }
             else {
                 $Check   = 'OK';
-                $Message = "$Count Tables";
+                $Message = "$Count tables.";
             }
             $Data = {
                 Name        => 'Table Check',
                 Description => 'Check existing framework tables.',
                 Comment     => $Message,
-                Check       => 'Critical',
+                Check       => $Check,
             };
         }
         else {
