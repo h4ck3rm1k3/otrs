@@ -1,8 +1,8 @@
 # --
 # Kernel/System/HTMLUtils.pm - creating and modifying html strings
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: HTMLUtils.pm,v 1.32 2012/01/17 14:47:35 mg Exp $
+# $Id: HTMLUtils.pm,v 1.12.2.1 2009/11/25 15:26:02 mn Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,10 +14,8 @@ package Kernel::System::HTMLUtils;
 use strict;
 use warnings;
 
-use MIME::Base64;
-
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.32 $) [1];
+$VERSION = qw($Revision: 1.12.2.1 $) [1];
 
 =head1 NAME
 
@@ -25,7 +23,7 @@ Kernel::System::HTMLUtils - creating and modifying html strings
 
 =head1 SYNOPSIS
 
-A module for creating and modifying html strings.
+A module to for creating and modifying html strings.
 
 =head1 PUBLIC INTERFACE
 
@@ -107,7 +105,7 @@ sub ToAscii {
         "[$Counter]";
     }egxi;
 
-    # pre-process <blockquote> and <div style=\"cite\"
+    # pre process <blockquote> and <div style=\"cite\"
     my %Cite;
     $Counter = 0;
     $Param{String} =~ s{
@@ -117,7 +115,7 @@ sub ToAscii {
         my $Ascii = $Self->ToAscii(
             String => $2,
         );
-        # force line breaking
+        # force line braking
         if ( length $Ascii > 78 ) {
             $Ascii =~ s/(.{4,78})(?:\s|\z)/$1\n/gm;
         }
@@ -134,7 +132,7 @@ sub ToAscii {
         my $Ascii = $Self->ToAscii(
             String => $1,
         );
-        # force line breaking
+        # force line braking
         if ( length $Ascii > 78 ) {
             $Ascii =~ s/(.{4,78})(?:\s|\z)/$1\n/gm;
         }
@@ -210,7 +208,7 @@ sub ToAscii {
     # strip all other tags
     $Param{String} =~ s/\<.+?\>//gs;
 
-    # html encode based on cpan's HTML::Entities v1.35
+    # html encode based from cpan's HTML::Entities v1.35
     my %Entity = (
 
         # Some normal chars that have special meaning in SGML context
@@ -533,7 +531,7 @@ sub ToAscii {
     # remove empty lines
     $Param{String} =~ s/^\s*\n\s*\n/\n/mg;
 
-    # force line breaking
+    # force line braking
     if ( length $Param{String} > 78 ) {
         $Param{String} =~ s/(.{4,78})(?:\s|\z)/$1\n/gm;
     }
@@ -619,7 +617,7 @@ sub DocumentComplete {
 
 =item DocumentStrip()
 
-remove html document tags from string
+remove html document tags from sting
 
     my $HTMLString = $HTMLUtilsObject->DocumentStrip(
         String  => $String,
@@ -638,10 +636,10 @@ sub DocumentStrip {
         }
     }
 
-    $Param{String} =~ s/^<\!DOCTYPE\sHTML\sPUBLIC.+?>//gsi;
+    $Param{String} =~ s/^<\!DOCTYPE\sHTML\sPUBLIC.+?>//gi;
     $Param{String} =~ s/<head>.+?<\/head>//gsi;
-    $Param{String} =~ s/<(html|body)(.*?)>//gsi;
-    $Param{String} =~ s/<\/(html|body)>//gsi;
+    $Param{String} =~ s/<(html|body)(.*?)>//gi;
+    $Param{String} =~ s/<\/(html|body)>//gi;
 
     return $Param{String};
 }
@@ -732,9 +730,6 @@ sub LinkQuote {
     if ( !ref $String ) {
         $StringScalar = $String;
         $String       = \$StringScalar;
-
-        # return if string is not a ref and it is empty
-        return $StringScalar if !$StringScalar;
     }
 
     # add target to already existing url of html string
@@ -762,11 +757,11 @@ sub LinkQuote {
         }egxsi;
     }
 
-    # remove existing "<a href" on all other tags (to find not linked urls) and remember it
+    # remove existing "<a href" an all other tags (to find not linked urls) and remember it
     my $Counter = 0;
     my %LinkHash;
     ${$String} =~ s{
-        (<a\s.+?>.+?</a>)
+        (<a\s.+?>.+?</a>|<.+?>)
     }
     {
         my $Content = $1;
@@ -782,85 +777,48 @@ sub LinkQuote {
         $Target = " target=\"$Param{Target}\"";
     }
     ${$String} =~ s{
-        (                                          # $1 greater-than and less-than sign
-            > | < | \s+ | \#{6} |
-            (?: &[a-zA-Z0-9]+; )                   # get html entities
-        )
-        (                                          # $2
-            (?:                                    # http or only www
-                (?: (?: http s? | ftp ) :\/\/) |   # http://,https:// and ftp://
-                (?: (?: www | ftp ) \.)            # www. and ftp.
+        ( > | < | &gt; | &lt; | )  # $1 greater-than and less-than sign
+
+        (                                              #2
+            (?:                                      # http or only www
+                (?: (?: http s? | ftp ) :\/\/) |        # http://,https:// and ftp://
+                (?: (?: www | ftp ) \.)                 # www. and ftp.
             )
+            .*?               # this part should be better defined!
         )
-        (                                          # $3
-            (?: [a-z0-9\-]+ \. )*                  # get subdomains, optional
-            [a-z0-9\-]+                            # get top level domain
-            (?:                                    # file path element
-                [\/\.]
-                | [a-zA-Z0-9\-]
-            )*
-            (?:                                    # param string
-                [\?]                               # if param string is there, "?" must be present
-                [a-zA-Z0-9&;=%]*                   # param string content, this will also catch entities like &amp;
-            )?
-            (?:                                    # link hash string
-                [\#]                               #
-                [a-zA-Z0-9&;=%]*                   # hash string content, this will also catch entities like &amp;
-            )?
-        )
-        (                                          # $4
-            ?=(?:
-                [\?,;!\.\)] (?: \s | $ )           # \)\s this construct is because of bug# 2450
-                | \"
-                | \]
-                | \s+
-                | '
-                | >                               # greater-than and less-than sign
-                | <                               # "
-                | (?: &[a-zA-Z0-9]+; )+            # html entities
-                | $                                # bug# 2715
-            )
-            | \#{6}                                # ending LinkHash
-        )
-    }
+        (                               # $3
+            [\?,;!\.\)] (?: \s | $ )    # \)\s this construct is because of bug# 2450
+            | \s
+            | \"
+            | &quot;
+            | &nbsp;
+            | ]
+            | '
+            | >                           # greater-than and less-than sign
+            | <                           # "
+            | &gt;                        # "
+            | &lt;                        # "
+            | \#\#\#\#\#\#                # ending LinkHash
+            | $                           # bug# 2715
+        )        }
     {
-        my $Start    = $1;
-        my $Protocol = $2;
-        my $Link     = $3;
-        my $End      = $4 || '';
-
-        # there may different links for href and link body
-        my $HrefLink;
-        my $DisplayLink;
-
-        if ( $Protocol =~ m{\A ( http | https | ftp ) : \/ \/ }xi ) {
-            $DisplayLink = $Protocol . $Link;
-            $HrefLink    = $DisplayLink;
-        }
-        else {
-            if ($Protocol =~ m{\A ftp }smx ) {
-                $HrefLink = 'ftp://';
+        my $Start = $1;
+        my $Link  = $2;
+        my $End   = $3;
+        if ( $Link !~ m{^ ( http | https | ftp ) : \/ \/ }xi ) {
+            if ($Link =~ m{^ ftp }smx ) {
+                $Link = 'ftp://' . $Link;
             }
             else {
-                $HrefLink = 'http://';
+                $Link = 'http://' . $Link;
             }
-
-            if ( $Protocol ) {
-                $HrefLink   .= $Protocol;
-                $DisplayLink = $Protocol;
-            }
-
-            $DisplayLink .= $Link;
-            $HrefLink    .= $Link;
         }
-        $Start . "<a href=\"$HrefLink\"$Target title=\"$HrefLink\">$DisplayLink<\/a>" . $End;
+        $Start . "<a href=\"$Link\"$Target title=\"$Link\">$Link<\/a>" . $End;
     }egxism;
 
-    my ( $Key, $Value );
-
     # add already existing "<a href" again
-    while ( ( $Key, $Value ) = each(%LinkHash) ) {
-        ${$String} =~ s{$Key}{$Value};
+    for my $Key ( keys %LinkHash ) {
+        ${$String} =~ s/$Key/$LinkHash{$Key}/g;
     }
 
     # check ref && return result like called
@@ -870,241 +828,20 @@ sub LinkQuote {
     return $String;
 }
 
-=item Safety()
-
-To remove/strip active html tags/addons (javascript, applets, embeds and objects)
-from html strings.
-
-    my %Safe = $HTMLUtilsObject->Safety(
-        String       => $HTMLString,
-        NoApplet     => 1,
-        NoObject     => 1,
-        NoEmbed      => 1,
-        NoIntSrcLoad => 0,
-        NoExtSrcLoad => 1,
-        NoJavaScript => 1,
-    );
-
-also string ref is possible
-
-    my %Safe = $HTMLUtilsObject->Safety(
-        String       => \$HTMLStringRef,
-        NoApplet     => 1,
-        NoObject     => 1,
-        NoEmbed      => 1,
-        NoIntSrcLoad => 0,
-        NoExtSrcLoad => 1,
-        NoJavaScript => 1,
-    );
-
-returns
-
-    my %Safe = (
-        String  => $HTMLString, # modified html string (scalar or ref)
-        Replace => 1,           # 1|0 - info if something got replaced
-    );
-
-=cut
-
-sub Safety {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(String)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    my $String = $Param{String} || '';
-
-    # check ref
-    my $StringScalar;
-    if ( !ref $String ) {
-        $StringScalar = $String;
-        $String       = \$StringScalar;
-    }
-
-    my %Safety;
-
-    # remove script tags
-    if ( $Param{NoJavaScript} ) {
-        $Safety{Replace} ||= ${$String} =~ s{
-            <scrip.+?>(.+?|.?)</script>
-        }
-        {}sgxim;
-        $Safety{Replace} ||= ${$String} =~ s{
-            <scrip.+?>.+?(<|>)
-        }
-        {}sgxim;
-    }
-
-    # remove <applet> tags
-    if ( $Param{NoApplet} ) {
-        $Safety{Replace} ||= ${$String} =~ s{
-            <apple.+?>(.+?)</applet>
-        }
-        {}sgxim;
-    }
-
-    # remove <Object> tags
-    if ( $Param{NoObject} ) {
-        $Safety{Replace} ||= ${$String} =~ s{
-            <objec.+?>(.+?)</object>
-        }
-        {}sgxim;
-    }
-
-    # remove style/javascript parts
-    if ( $Param{NoJavaScript} ) {
-        $Safety{Replace} ||= ${$String} =~ s{
-            <style.+?javascript(.+?|)>(.*)</style>
-        }
-        {}sgxim;
-    }
-
-    # remove <embed> tags
-    if ( $Param{NoEmbed} ) {
-        $Safety{Replace} ||= ${$String} =~ s{
-            <embed\s.+?>
-        }
-        {}sgxim;
-    }
-
-    # check each html tag
-    ${$String} =~ s{
-        (<.+?>)
-    }
-    {
-        my $Tag = $1;
-        if ($Param{NoJavaScript}) {
-
-            # remove on action attributes
-            $Safety{Replace} ||= $Tag =~ s{
-                \son.+?=(".+?"|'.+?'|.+?)(>|\s)
-            }
-            {$2}sgxim;
-
-            # remove entities in tag
-            $Safety{Replace} ||= $Tag =~ s{
-                (&\{.+?\})
-            }
-            {}sgxim;
-
-            # remove javascript in a href links or src links
-            $Safety{Replace} ||= $Tag =~ s{
-                ((\s|;)(background|url|src|href)=)('|"|)(javascript.+?)('|"|)(\s|>)
-            }
-            {
-                "$1\"\"$7";
-            }sgxime;
-
-            # remove link javascript tags
-            $Safety{Replace} ||= $Tag =~ s{
-                (<link.+?javascript(.+?|)>)
-            }
-            {}sgxim;
-
-        }
-
-        # remove load tags
-        if ($Param{NoIntSrcLoad} || $Param{NoExtSrcLoad}) {
-            $Tag =~ s{
-                (<(.+?)\ssrc=(.+?)(\s.+?|)>)
-            }
-            {
-                my $URL = $3;
-                if ($Param{NoIntSrcLoad} || ($Param{NoExtSrcLoad} && $URL =~ /(http|ftp|https):\//i)) {
-                    $Safety{Replace} = 1;
-                    '';
-                }
-                else {
-                    $1;
-                }
-            }segxim;
-        }
-
-        # replace original tag with clean tag
-        $Tag;
-    }segxim;
-
-    # check ref && return result like called
-    if ($StringScalar) {
-        $Safety{String} = ${$String};
-    }
-    else {
-        $Safety{String} = $String;
-    }
-    return %Safety;
-}
-
-=item EmbeddedImagesExtract()
-
-extracts embedded images with data-URLs from an HTML document.
-
-    $HTMLUtilsObject->EmbeddedImagesExtract(
-        DocumentRef    => \$Body,
-        AttachmentsRef => \@Attachments,
-    );
-
-Returns nothing. If embedded images were found, these will be appended
-to the attachments list, and the image data URL will be replaced with a
-cid: URL in the document.
-
-=cut
-
-sub EmbeddedImagesExtract {
-    my ( $Self, %Param ) = @_;
-
-    if ( ref $Param{DocumentRef} ne 'SCALAR' || !defined ${ $Param{DocumentRef} } ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need DocumentRef!" );
-        return;
-    }
-    if ( ref $Param{AttachmentsRef} ne 'ARRAY' ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need DocumentRef!" );
-        return;
-    }
-
-    my $FQDN = $Self->{ConfigObject}->Get('FQDN');
-    ${ $Param{DocumentRef} } =~ s{(src=")(data:image/)(png|gif|jpg|bmp)(;base64,)(.+?)(")}{
-
-        my $Base64String = $5;
-
-        my $FileName     = 'pasted-' . time() . '-' . int(rand(1000000)) . '.' . $3;
-        my $ContentType  = "image/$3; name=\"$FileName\"";
-        my $ContentID    = 'pasted.' . time() . '.' . int(rand(1000000)) . '@' . $FQDN;
-
-        my $AttachmentData = {
-            Content     => decode_base64($Base64String),
-            ContentType => $ContentType,
-            ContentID   => $ContentID,
-            Filename    => $FileName,
-        };
-        push @{$Param{AttachmentsRef}}, $AttachmentData;
-
-        # compose new image tag
-        $1 . "cid:$ContentID" . $6
-
-    }egxi;
-
-    return 1;
-}
-
 1;
 
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.32 $ $Date: 2012/01/17 14:47:35 $
+$Revision: 1.12.2.1 $ $Date: 2009/11/25 15:26:02 $
 
 =cut

@@ -1,22 +1,17 @@
 # --
 # HTMLUtils.t - HTMLUtils tests
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: HTMLUtils.t,v 1.39 2012/01/17 14:56:17 mg Exp $
+# $Id: HTMLUtils.t,v 1.13.2.1 2009/11/25 15:26:01 mn Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-use strict;
-use warnings;
-use vars (qw($Self));
-use utf8;
-
 use Kernel::System::HTMLUtils;
 
-my $HTMLUtilsObject = Kernel::System::HTMLUtils->new( %{$Self} );
+$Self->{HTMLUtilsObject} = Kernel::System::HTMLUtils->new( %{$Self} );
 
 # ToAscii tests
 my @Tests = (
@@ -98,31 +93,6 @@ More Text',
         Name => 'ToAscii - simple'
     },
     {
-        Input =>
-            '<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/></head><body style="font-family:Geneva,Helvetica,Arial,sans-serif; font-size: 12px;"><p>test<br />
-test<br />
-test<br />
-test<br />
-test<br />
-</p>
-<ul><li>1</li><li>2</li><li>3</li><li>4</li><li>5</li></ul></body></html>',
-        Result => '
-test
-test
-test
-test
-test
-
- - 1
- - 2
- - 3
- - 4
- - 5
-
-',
-        Name => 'ToAscii - simple'
-    },
-    {
         Input  => "<pre>Some Text\n\nWith new Lines</pre>",
         Result => "\nSome Text\n\nWith new Lines\n\n",
         Name   => 'ToAscii - <pre>'
@@ -160,12 +130,9 @@ Fifth Line',
 );
 
 for my $Test (@Tests) {
-    my $Ascii = $HTMLUtilsObject->ToAscii(
+    my $Ascii = $Self->{HTMLUtilsObject}->ToAscii(
         String => $Test->{Input},
     );
-
-    # this line is for Windows check-out
-    $Test->{Result} =~ s{\r\n}{\n}smxg;
     $Self->Is(
         $Ascii,
         $Test->{Result},
@@ -189,7 +156,7 @@ for my $Test (@Tests) {
 );
 
 for my $Test (@Tests) {
-    my $Ascii = $HTMLUtilsObject->DocumentComplete(
+    my $Ascii = $Self->{HTMLUtilsObject}->DocumentComplete(
         Charset => 'iso-8859-1',
         String  => $Test->{Input},
     );
@@ -285,44 +252,12 @@ style='font-size:12.0pt;font-family:\"Courier New\"'>Hello, <br>
 </div>
 \n\n\n
 ",
-        Name => 'DocumentStrip - Generator - Microsoft Word 10 (filtered)',
-    },
-    {
-        Input => '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML><HEAD>
-<META http-equiv="Content-Type content=text/html; charset=utf-8">
-<META content="MSHTML 6.00.6002.18124" name=GENERATOR></HEAD>
-<BODY style="FONT-SIZE: 12px; FONT-FAMILY: =
-Geneva,Helvetica,Arial,sans-serif"=20
-bgColor=#ffffff>
-<DIV><FONT face=Arial size=2>xxx</FONT></DIV>
-<DIV><FONT face=Arial size=2>
-</FONT></DIV>
-<DIV><FONT face=Arial size=2></FONT>&nbsp;</DIV>
-<DIV><FONT face=Arial size=2>
-</FONT></DIV>
-<DIV><FONT face=Arial size=2></FONT>&nbsp;</DIV>
-',
-        Result => "\n\n
-<DIV><FONT face=Arial size=2>xxx</FONT></DIV>
-<DIV><FONT face=Arial size=2>
-</FONT></DIV>
-<DIV><FONT face=Arial size=2></FONT>&nbsp;</DIV>
-<DIV><FONT face=Arial size=2>
-</FONT></DIV>
-<DIV><FONT face=Arial size=2></FONT>&nbsp;</DIV>
-",
-
-        Name => 'DocumentStrip - Generator - Microsoft Word 10 (filtered)',
+        Name => 'DocumentStrip - Generator - Microsoft Word 10 (filtered)'
     },
 );
 
 for my $Test (@Tests) {
-
-    # these 2 lines are for Windows check-out
-    $Test->{Input}  =~ s{\r\n}{\n}smxg;
-    $Test->{Result} =~ s{\r\n}{\n}smxg;
-    my $Ascii = $HTMLUtilsObject->DocumentStrip(
+    my $Ascii = $Self->{HTMLUtilsObject}->DocumentStrip(
         String => $Test->{Input},
     );
     $Self->Is(
@@ -415,7 +350,7 @@ for my $Test (@Tests) {
 );
 
 for my $Test (@Tests) {
-    my $HTML = $HTMLUtilsObject->DocumentStyleCleanup(
+    my $HTML = $Self->{HTMLUtilsObject}->DocumentStyleCleanup(
         String => $Test->{Input},
     );
     $Self->Is(
@@ -447,20 +382,6 @@ for my $Test (@Tests) {
         Target => '',
     },
     {
-        Input => 'Some Text with url http://xwww.example.com',
-        Result =>
-            'Some Text with url <a href="http://xwww.example.com" title="http://xwww.example.com">http://xwww.example.com</a>',
-        Name   => 'LinkQuote - simple',
-        Target => '',
-    },
-    {
-        Input => 'Some Text with url http://example-domain.com',
-        Result =>
-            'Some Text with url <a href="http://example-domain.com" title="http://example-domain.com">http://example-domain.com</a>',
-        Name   => 'LinkQuote - URL with dash',
-        Target => '',
-    },
-    {
         Input  => 'Some Text with url <a href="http://example.com">http://example.com</a>',
         Result => 'Some Text with url <a href="http://example.com">http://example.com</a>',
         Name   => 'LinkQuote - simple',
@@ -484,14 +405,6 @@ for my $Test (@Tests) {
         Result =>
             'Some Text with url <a href="http://example.com">http://example.com</a> and not quoted url <a href="http://example.com/?q=123" title="http://example.com/?q=123">http://example.com/?q=123</a>',
         Name   => 'LinkQuote - simple',
-        Target => '',
-    },
-    {
-        Input =>
-            'Some text with a complicated url http://example.com/otrs/index.pl?Action=AgentTicketZoom&TicketID=256868&ArticleID=696631&ZoomExpand=0#696631',
-        Result =>
-            'Some text with a complicated url <a href="http://example.com/otrs/index.pl?Action=AgentTicketZoom&TicketID=256868&ArticleID=696631&ZoomExpand=0#696631" title="http://example.com/otrs/index.pl?Action=AgentTicketZoom&TicketID=256868&ArticleID=696631&ZoomExpand=0#696631">http://example.com/otrs/index.pl?Action=AgentTicketZoom&TicketID=256868&ArticleID=696631&ZoomExpand=0#696631</a>',
-        Name   => 'LinkQuote - complicated',
         Target => '',
     },
     {
@@ -542,177 +455,10 @@ for my $Test (@Tests) {
         Target    => '',
         TargetAdd => 1,
     },
-    {
-        Input =>
-            'Some text with a full url http://example.com/otrs/index.pl?Action=AgentTicketZoom&TicketID=256868&ArticleID=696631&ZoomExpand=0#696631',
-        Result =>
-            'Some text with a full url <a href="http://example.com/otrs/index.pl?Action=AgentTicketZoom&TicketID=256868&ArticleID=696631&ZoomExpand=0#696631" title="http://example.com/otrs/index.pl?Action=AgentTicketZoom&TicketID=256868&ArticleID=696631&ZoomExpand=0#696631">http://example.com/otrs/index.pl?Action=AgentTicketZoom&TicketID=256868&ArticleID=696631&ZoomExpand=0#696631</a>',
-        Name   => 'LinkQuote – full url',
-        Target => '',
-    },
-    {
-        Input => '<html>www.heise.de</html>',
-        Result =>
-            '<html><a href="http://www.heise.de" title="http://www.heise.de">www.heise.de</a></html>',
-        Name   => 'LinkQuote with plain domains.',
-        Target => '',
-    },
-    {
-        Input  => '<html>xwww.heise.de</html>',
-        Result => '<html>xwww.heise.de</html>',
-        Name   => 'LinkQuote with plain domains.',
-        Target => '',
-    },
-    {
-        Input => '<html>ftp.heise.de</html>',
-        Result =>
-            '<html><a href="ftp://ftp.heise.de" title="ftp://ftp.heise.de">ftp.heise.de</a></html>',
-        Name   => 'LinkQuote with plain domains.',
-        Target => '',
-    },
-    {
-        Input => '<html>www.heise.de/Suffix</html>',
-        Result =>
-            '<html><a href="http://www.heise.de/Suffix" title="http://www.heise.de/Suffix">www.heise.de/Suffix</a></html>',
-        Name   => 'LinkQuote with plain domains.',
-        Target => '',
-    },
-    {
-        Input => '<html>www.heise-online.de/Suffix</html>',
-        Result =>
-            '<html><a href="http://www.heise-online.de/Suffix" title="http://www.heise-online.de/Suffix">www.heise-online.de/Suffix</a></html>',
-        Name   => 'LinkQuote with plain domains with a dash.',
-        Target => '',
-    },
-    {
-        Input => '<html>ftp.heise.de/Suffix</html>',
-        Result =>
-            '<html><a href="ftp://ftp.heise.de/Suffix" title="ftp://ftp.heise.de/Suffix">ftp.heise.de/Suffix</a></html>',
-        Name   => 'LinkQuote with plain domains.',
-        Target => '',
-    },
-    {
-        Input  => '<html>Prefixwww.heise.de</html>',
-        Result => '<html>Prefixwww.heise.de</html>',
-        Name   => 'LinkQuote with prefix plain domains.',
-        Target => '',
-    },
-    {
-        Input  => '<html>Prefixftp.heise.de</html>',
-        Result => '<html>Prefixftp.heise.de</html>',
-        Name   => 'LinkQuote with prefix plain domains.',
-        Target => '',
-    },
-    {
-        Input  => '<html>Prefixwww.heise.deSuffix</html>',
-        Result => '<html>Prefixwww.heise.deSuffix</html>',
-        Name   => 'LinkQuote with prefix and suffix plain domains.',
-        Target => '',
-    },
-    {
-        Input  => '<html>Prefixftp.heise.deSuffix</html>',
-        Result => '<html>Prefixftp.heise.deSuffix</html>',
-        Name   => 'LinkQuote with prefix and suffix plain domains.',
-        Target => '',
-    },
-    {
-        Input => '<html> www.heise.de </html>',
-        Result =>
-            '<html> <a href="http://www.heise.de" title="http://www.heise.de">www.heise.de</a> </html>',
-        Name   => 'LinkQuote with plain domains.',
-        Target => '',
-    },
-    {
-        Input => '<html> ftp.heise.de </html>',
-        Result =>
-            '<html> <a href="ftp://ftp.heise.de" title="ftp://ftp.heise.de">ftp.heise.de</a> </html>',
-        Name   => 'LinkQuote with plain domains.',
-        Target => '',
-    },
-    {
-        Input => '<html>&nbsp;www.heise.de&nbsp;</html>',
-        Result =>
-            '<html>&nbsp;<a href="http://www.heise.de" title="http://www.heise.de">www.heise.de</a>&nbsp;</html>',
-        Name   => 'LinkQuote with plain domains.',
-        Target => '',
-    },
-    {
-        Input => '<html>&nbsp;ftp.heise.de&nbsp;</html>',
-        Result =>
-            '<html>&nbsp;<a href="ftp://ftp.heise.de" title="ftp://ftp.heise.de">ftp.heise.de</a>&nbsp;</html>',
-        Name   => 'LinkQuote with plain domains.',
-        Target => '',
-    },
-    {
-        Input => '<html>&nbsp;www.heise.de&nbsp;www.heise.de</html>',
-        Result =>
-            '<html>&nbsp;<a href="http://www.heise.de" title="http://www.heise.de">www.heise.de</a>&nbsp;<a href="http://www.heise.de" title="http://www.heise.de">www.heise.de</a></html>',
-        Name   => 'LinkQuote with plain domains.',
-        Target => '',
-    },
-    {
-        Input => '<html>&nbsp;ftp.heise.de&nbsp;ftp.heise.de</html>',
-        Result =>
-            '<html>&nbsp;<a href="ftp://ftp.heise.de" title="ftp://ftp.heise.de">ftp.heise.de</a>&nbsp;<a href="ftp://ftp.heise.de" title="ftp://ftp.heise.de">ftp.heise.de</a></html>',
-        Name   => 'LinkQuote with plain domains.',
-        Target => '',
-    },
-    {
-        Input  => 'Some Text with url thisisnotanftp.link',
-        Result => 'Some Text with url thisisnotanftp.link',
-        Name   => 'LinkQuote - Not valid ftp url ',
-        Target => '',
-    },
-    {
-        Input  => 'Some Text with url thisisnotanwww.link',
-        Result => 'Some Text with url thisisnotanwww.link',
-        Name   => 'LinkQuote - Not valid www url ',
-        Target => '',
-    },
-    {
-        Input =>
-            'Test www.example.org www.example3.org <sometag attribute="www.example4.org">www.example4.org</sometag> <sometag attribute="www5.example.org"> www.example5.org </sometag>',
-        Result =>
-            'Test <a href="http://www.example.org" target="_blue" title="http://www.example.org">www.example.org</a> <a href="http://www.example3.org" target="_blue" title="http://www.example3.org">www.example3.org</a> <sometag attribute="www.example4.org"><a href="http://www.example4.org" target="_blue" title="http://www.example4.org">www.example4.org</a></sometag> <sometag attribute="www5.example.org"> <a href="http://www.example5.org" target="_blue" title="http://www.example5.org">www.example5.org</a> </sometag>',
-        Name   => 'LinkQuote - complex test with other tags ',
-        Target => '_blue',
-    },
-    {
-        Input =>
-            'Test http://example.example.local/example/index.pl?Action=AgentTicketZoom&TicketID=2 link with &',
-        Result =>
-            'Test <a href="http://example.example.local/example/index.pl?Action=AgentTicketZoom&TicketID=2" title="http://example.example.local/example/index.pl?Action=AgentTicketZoom&TicketID=2">http://example.example.local/example/index.pl?Action=AgentTicketZoom&TicketID=2</a> link with &',
-        Name   => 'LinkQuote - link params with &',
-        Target => '',
-    },
-    {
-        Input =>
-            'Test http://example.example.local/example/index.pl?Action=AgentTicketZoom&amp;TicketID=2 link with &amp;',
-        Result =>
-            'Test <a href="http://example.example.local/example/index.pl?Action=AgentTicketZoom&amp;TicketID=2" title="http://example.example.local/example/index.pl?Action=AgentTicketZoom&amp;TicketID=2">http://example.example.local/example/index.pl?Action=AgentTicketZoom&amp;TicketID=2</a> link with &amp;',
-        Name   => 'LinkQuote - link params with &amp;',
-        Target => '',
-    },
-    {
-        Input =>
-            'Test http://example.example.local/example/index.pl?Action=AgentTicketZoom;TicketID=2 link with ;',
-        Result =>
-            'Test <a href="http://example.example.local/example/index.pl?Action=AgentTicketZoom;TicketID=2" title="http://example.example.local/example/index.pl?Action=AgentTicketZoom;TicketID=2">http://example.example.local/example/index.pl?Action=AgentTicketZoom;TicketID=2</a> link with ;',
-        Name   => 'LinkQuote - link params with ;',
-        Target => '',
-    },
-    {
-        Input =>
-            '<br />http://cuba/otrs/index.pl?Action=AgentTicketZoom&amp;TicketID=4348<br /><br />Your OTRS Notification Master',
-        Result =>
-            '<br /><a href="http://cuba/otrs/index.pl?Action=AgentTicketZoom&amp;TicketID=4348" title="http://cuba/otrs/index.pl?Action=AgentTicketZoom&amp;TicketID=4348">http://cuba/otrs/index.pl?Action=AgentTicketZoom&amp;TicketID=4348</a><br /><br />Your OTRS Notification Master',
-        Name   => 'LinkQuote - just TLD given;',
-        Target => '',
-    },
 );
 
 for my $Test (@Tests) {
-    my $HTML = $HTMLUtilsObject->LinkQuote(
+    my $HTML = $Self->{HTMLUtilsObject}->LinkQuote(
         String    => $Test->{Input},
         Target    => $Test->{Target},
         TargetAdd => $Test->{TargetAdd},
@@ -722,557 +468,6 @@ for my $Test (@Tests) {
         $Test->{Result},
         $Test->{Name},
     );
-}
-
-#
-# Special performance test for a large amount of data
-#
-my $XML = $Self->{MainObject}->FileRead(
-    Location => $Self->{ConfigObject}->Get('Home')
-        . '/scripts/test/sample/HTMLUtils/obstacles_upd2.xml',
-);
-$XML = ${$XML};
-
-my $StartSeconds = $Self->{TimeObject}->SystemTime();
-
-my $HTML = $HTMLUtilsObject->LinkQuote(
-    String => \$XML,
-);
-
-my $EndSeconds = $Self->{TimeObject}->SystemTime();
-$Self->True(
-    ( $EndSeconds - $StartSeconds ) < 10,
-    'LinkQuote - Performance on large data set',
-);
-
-# Safety tests
-@Tests = (
-    {
-        Input  => 'Some Text',
-        Result => {
-            Output  => 'Some Text',
-            Replace => 0,
-        },
-        Name => 'Safety - simple'
-    },
-    {
-        Input  => '<b>Some Text</b>',
-        Result => {
-            Output  => '<b>Some Text</b>',
-            Replace => 0,
-        },
-        Name => 'Safety - simple'
-    },
-    {
-        Input  => '<a href="javascript:alert(1)">Some Text</a>',
-        Result => {
-            Output  => '<a href="">Some Text</a>',
-            Replace => 1,
-        },
-        Name => 'Safety - simple'
-    },
-    {
-        Input  => '<a href="http://example.com/" onclock="alert(1)">Some Text</a>',
-        Result => {
-            Output  => '<a href="http://example.com/">Some Text</a>',
-            Replace => 1,
-        },
-        Name => 'Safety - simple'
-    },
-    {
-        Input =>
-            '<a href="http://example.com/" onclock="alert(1)">Some Text <img src="http://example.com/logo.png"/></a>',
-        Result => {
-            Output  => '<a href="http://example.com/">Some Text </a>',
-            Replace => 1,
-        },
-        Name => 'Safety - simple'
-    },
-    {
-        Input => '<script type="text/javascript" id="topsy_global_settings">
-var topsy_style = "big";
-</script><script type="text/javascript" id="topsy-js-elem" src="http://example.com/topsy.js?init=topsyWidgetCreator"></script>
-<script type="text/javascript" src="/pub/js/podpress.js"></script>
-',
-        Result => {
-            Output => '
-',
-            Replace => 1,
-        },
-        Name => 'Safety - script tag'
-    },
-    {
-        Input => '<center>
-<applet code="AEHousman.class" width="300" height="150">
-Not all browsers can run applets.  If you see this, yours can not.
-You should be able to continue reading these lessons, however.
-</applet>
-</center>',
-        Result => {
-            Output => '<center>
-
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - applet tag'
-    },
-    {
-        Input => '<center>
-<object width="384" height="236" align="right" vspace="5" hspace="5"><param name="movie" value="http://www.youtube.com/v/l1JdGPVMYNk&hl=en_US&fs=1&hd=1"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/l1JdGPVMYNk&hl=en_US&fs=1&hd=1" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="384" height="236"></embed></object>
-</center>',
-        Result => {
-            Output => '<center>
-
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - object tag'
-    },
-    {
-        Input => '<center>
-\'\';!--"<XSS>=&{()}
-</center>',
-        Result => {
-            Output => '<center>
-\'\';!--"<XSS>=&{()}
-</center>',
-            Replace => 0,
-        },
-        Name => 'Safety - simple'
-    },
-    {
-        Input => '<center>
-<SCRIPT SRC=http://ha.ckers.org/xss.js></SCRIPT>
-</center>',
-        Result => {
-            Output => '<center>
-
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script/src tag'
-    },
-    {
-        Input => '<center>
-<SCRIPT SRC=http://ha.ckers.org/xss.js><!-- some comment --></SCRIPT>
-</center>',
-        Result => {
-            Output => '<center>
-
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script/src tag'
-    },
-    {
-        Input => '<center>
-<IMG SRC="javascript:alert(\'XSS\');">
-</center>',
-        Result => {
-            Output => '<center>
-<IMG SRC="">
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - img tag'
-    },
-    {
-        Input => '<center>
-<IMG SRC=javascript:alert(\'XSS\');>
-</center>',
-        Result => {
-            Output => '<center>
-<IMG SRC="">
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - img tag'
-    },
-    {
-        Input => '<center>
-<IMG SRC=JaVaScRiPt:alert(\'XSS\')>
-</center>',
-        Result => {
-            Output => '<center>
-<IMG SRC="">
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - img tag'
-    },
-    {
-        Input => '<center>
-<IMG SRC=javascript:alert(&quot;XSS&quot;)>
-</center>',
-        Result => {
-            Output => '<center>
-<IMG SRC="">
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - img tag'
-    },
-    {
-        Input => '<center>
-<IMG """><SCRIPT>alert("XSS")</SCRIPT>">
-</center>',
-        Result => {
-            Output => '<center>
-<IMG """>">
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script/img tag'
-    },
-    {
-        Input => '<center>
-<SCRIPT/XSS SRC="http://ha.ckers.org/xss.js"></SCRIPT>
-</center>',
-        Result => {
-            Output => '<center>
-
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script tag'
-    },
-    {
-        Input => '<center>
-<BODY onload!#$%&()*~+-_.,:;?@[/|\]^`="alert("XSS")">
-</center>',
-        Result => {
-            Output => '<center>
-<BODY>
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - onload'
-    },
-    {
-        Input => '<center>
-<SCRIPT/SRC="http://ha.ckers.org/xss.js"></SCRIPT>
-</center>',
-        Result => {
-            Output => '<center>
-
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script tag'
-    },
-    {
-        Input => '<center>
-<<SCRIPT>alert("XSS");//<</SCRIPT>
-</center>',
-        Result => {
-            Output => '<center>
-<
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script tag'
-    },
-    {
-        Input => '<center>
-<SCRIPT SRC=http://ha.ckers.org/xss.js?<B>
-</center>',
-        Result => {
-            Output => '<center>
-/center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script tag'
-    },
-    {
-        Input => '<center>
-<SCRIPT SRC=//ha.ckers.org/.j>
-</center>',
-        Result => {
-            Output => '<center>
-/center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script tag'
-    },
-    {
-        Input => '<center>
-<iframe src=http://ha.ckers.org/scriptlet.html >
-</center>',
-        Result => {
-            Output => '<center>
-
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - iframe'
-    },
-    {
-        Input => '<center>
-<BODY ONLOAD=alert(\'XSS\')>
-</center>',
-        Result => {
-            Output => '<center>
-<BODY>
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - onload'
-    },
-    {
-        Input => '<center>
-<META HTTP-EQUIV="refresh" CONTENT="0;url=javascript:alert(\'XSS\');">
-</center>',
-        Result => {
-            Output => '<center>
-<META HTTP-EQUIV="refresh" CONTENT="0;url="">
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - meta'
-    },
-    {
-        Input => '<center>
-<META HTTP-EQUIV="refresh" CONTENT="0; URL=http://;URL=javascript:alert(\'XSS\');">
-</center>',
-        Result => {
-            Output => '<center>
-<META HTTP-EQUIV="refresh" CONTENT="0; URL=http://;URL="">
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - meta'
-    },
-    {
-        Input => '<center>
-<TABLE BACKGROUND="javascript:alert(\'XSS\')">
-</center>',
-        Result => {
-            Output => '<center>
-<TABLE BACKGROUND="">
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - background'
-    },
-    {
-        Input => '<center>
-<SCRIPT a=">" SRC="http://ha.ckers.org/xss.js"></SCRIPT>
-</center>',
-        Result => {
-            Output => '<center>
-
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script'
-    },
-    {
-        Input => '<center>
-<SCRIPT =">" SRC="http://ha.ckers.org/xss.js"></SCRIPT>
-</center>',
-        Result => {
-            Output => '<center>
-
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script'
-    },
-    {
-        Input => '<center>
-<SCRIPT "a=\'>\'"
- SRC="http://ha.ckers.org/xss.js"></SCRIPT>
-</center>',
-        Result => {
-            Output => '<center>
-
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script'
-    },
-    {
-        Input => '<center>
-<SCRIPT>document.write("<SCRI");</SCRIPT>PT
- SRC="http://ha.ckers.org/xss.js"></SCRIPT>
-</center>',
-        Result => {
-            Output => '<center>
-PT
- SRC="http://ha.ckers.org/xss.js"></SCRIPT>
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script'
-    },
-    {
-        Input => '<center>
-<A
- HREF="javascript:document.location=\'http://www.example.com/\'">XSS</A>
-</center>',
-        Result => {
-            Output => '<center>
-<A
- HREF="">XSS</A>
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script'
-    },
-    {
-        Input => '<center>
-  <body style="background: #fff; color: #000;" onmouseover     ="var ga = document.createElement(\'script\'); ga.type = \'text/javascript\'; ga.src = (\'https:\' == document.location.protocol ? \'https://\' : \'http://\') + \'ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js\'; document.body.appendChild(ga); setTimeout(function() { jQuery(\'body\').append(jQuery(\'<div />\').attr(\'id\', \'hack-me\').css(\'display\', \'none\')); jQuery(\'#hack-me\').load(\'/otrs/index.pl?Action=AgentPreferences\', null, function() { jQuery.ajax({url: \'/otrs/index.pl\', type: \'POST\', data: ({Action: \'AgentPreferences\', ChallengeToken: jQuery(\'input[name=ChallengeToken]:first\', \'#hack-me\').val(), Group: \'Language\', \'Subaction\': \'Update\', UserLanguage: \'zh_CN\'})}); }); }, 500);">
-</center>',
-        Result => {
-            Output => '<center>
-  <body style="background: #fff; color: #000;" ga = document.createElement(\'script\'); ga.type = \'text/javascript\'; ga.src = (\'https:\' == document.location.protocol ? \'https://\' : \'http://\') + \'ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js\'; document.body.appendChild(ga); setTimeout(function() { jQuery(\'body\').append(jQuery(\'<div />\').attr(\'id\', \'hack-me\').css(\'display\', \'none\')); jQuery(\'#hack-me\').load(\'/otrs/index.pl?Action=AgentPreferences\', null, function() { jQuery.ajax({url: \'/otrs/index.pl\', type: \'POST\', data: ({Action: \'AgentPreferences\', ChallengeToken: jQuery(\'input[name=ChallengeToken]:first\', \'#hack-me\').val(), Group: \'Language\', \'Subaction\': \'Update\', UserLanguage: \'zh_CN\'})}); }); }, 500);">
-</center>',
-            Replace => 1,
-        },
-        Name => 'Safety - script'
-    },
-);
-
-for my $Test (@Tests) {
-    my %Result = $HTMLUtilsObject->Safety(
-        String       => $Test->{Input},
-        NoApplet     => 1,
-        NoObject     => 1,
-        NoEmbed      => 1,
-        NoIntSrcLoad => 0,
-        NoExtSrcLoad => 1,
-        NoJavaScript => 1,
-    );
-    if ( $Test->{Result}->{Replace} ) {
-        $Self->True(
-            $Result{Replace},
-            $Test->{Name},
-        );
-    }
-    else {
-        $Self->False(
-            $Result{Replace},
-            $Test->{Name},
-        );
-    }
-    $Self->Is(
-        $Result{String},
-        $Test->{Result}->{Output},
-        $Test->{Name},
-    );
-}
-
-#
-# EmbeddedImagesExtract()
-#
-my $InlineImage
-    = '<img alt="text" src="data:image/gif;base64,R0lGODlhAQABAJH/AP///wAAAP///wAAACH/C0FET0JFOklSMS4wAt7tACH5BAEAAAIALAAAAAABAAEAAAICVAEAOw==" />';
-@Tests = (
-    {
-        Name   => 'no image',
-        Body   => '',
-        Result => {
-            Success     => 1,
-            Body        => qr|^$|,
-            Attachments => [],
-            }
-    },
-    {
-        Name   => 'no body',
-        Body   => undef,
-        Result => {
-            Success => 0,
-            }
-    },
-    {
-        Name   => 'single image',
-        Body   => "$InlineImage",
-        Result => {
-            Success     => 1,
-            Body        => qr|^<img alt="text" src="cid:.*?" />$|,
-            Attachments => [
-                {
-                    ContentType => qr|^image/gif;|,
-                }
-            ],
-            }
-    },
-    {
-        Name   => 'two images',
-        Body   => "123 $InlineImage 456 $InlineImage 789",
-        Result => {
-            Success => 1,
-            Body =>
-                qr|^123 <img alt="text" src="cid:.*?" /> 456 <img alt="text" src="cid:.*?" /> 789$|,
-            Attachments => [
-                {
-                    ContentType => qr|^image/gif;|,
-                },
-                {
-                    ContentType => qr|^image/gif;|,
-                }
-            ],
-            }
-    },
-    {
-        Name   => 'two images, only one embedded',
-        Body   => "123 $InlineImage 456 <img src=\"http://some.url/image.gif\" /> 789",
-        Result => {
-            Success => 1,
-            Body =>
-                qr|^123 <img alt="text" src="cid:.*?" /> 456 <img src=\"http://some.url/image.gif\" /> 789$|,
-            Attachments => [
-                {
-                    ContentType => qr|^image/gif;|,
-                },
-            ],
-            }
-    },
-);
-
-TEST:
-for my $Test (@Tests) {
-    my $Body = $Test->{Body};
-    my @Attachments;
-    my $Success = $HTMLUtilsObject->EmbeddedImagesExtract(
-        DocumentRef    => \$Body,
-        AttachmentsRef => \@Attachments,
-    );
-
-    $Self->Is(
-        $Success ? 1 : 0,
-        $Test->{Result}->{Success},
-        "$Test->{Name} success",
-    );
-
-    next TEST if !$Success;
-
-    $Self->True(
-        scalar $Body =~ ( $Test->{Result}->{Body} ),
-        "$Test->{Name} body after image extraction (body: $Body, check: $Test->{Result}->{Body})",
-    );
-
-    $Self->Is(
-        scalar @Attachments,
-        scalar @{ $Test->{Result}->{Attachments} },
-        "$Test->{Name} number of attachments",
-    );
-
-    my $Index = 0;
-    for my $Attachment (@Attachments) {
-
-        $Self->True(
-            scalar $Attachment->{ContentType}
-                =~ ( $Test->{Result}->{Attachments}->[$Index]->{ContentType} ),
-            "$Test->{Name} content type of attachment $Index (content type: $Attachment->{ContentType}, check: $Test->{Result}->{Attachments}->[$Index]->{ContentType})",
-        );
-        $Self->True(
-            scalar $Attachment->{Content},
-            "$Test->{Name} content of attachment $Index is not empty",
-        );
-
-        $Index++;
-    }
 }
 
 1;
