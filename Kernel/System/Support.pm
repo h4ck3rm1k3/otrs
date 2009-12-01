@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.33 2009/12/01 17:29:33 martin Exp $
+# $Id: Support.pm,v 1.34 2009/12/01 17:31:39 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.33 $) [1];
+$VERSION = qw($Revision: 1.34 $) [1];
 
 =head1 NAME
 
@@ -544,7 +544,7 @@ sub DirectoryFiles {
             push @Files, $File;
 
             # check total count of files (max. file count)
-            my $FileCountMax = 10;
+            my $FileCountMax = 8_000;
             $Self->{DirectoryFilesCount}++;
             if ( $Self->{DirectoryFilesCount} > $FileCountMax ) {
                 $Self->{LogObject}->Log(
@@ -988,6 +988,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.33 $ $Date: 2009/12/01 17:29:33 $
+$Revision: 1.34 $ $Date: 2009/12/01 17:31:39 $
 
 =cut
