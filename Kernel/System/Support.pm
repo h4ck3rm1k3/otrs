@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.32 2009/12/01 15:06:47 martin Exp $
+# $Id: Support.pm,v 1.33 2009/12/01 17:29:33 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.32 $) [1];
+$VERSION = qw($Revision: 1.33 $) [1];
 
 =head1 NAME
 
@@ -410,7 +410,7 @@ sub ApplicationArchiveCreate {
     my @List;
     for my $ListElement ( $Self->DirectoryFiles( Directory => $Home ) ) {
         if ( -r $ListElement ) {
-            push( @List, $ListElement )
+            push @List, $ListElement;
         }
     }
 
@@ -458,15 +458,19 @@ sub ApplicationArchiveCreate {
         my $GzTar = Compress::Zlib::memGzip($TmpTar);
 
         # log info
-        $Self->{LogObject}
-            ->Log( Priority => 'notice', Message => 'ApplicationArchiveCreate Compress::Zlib end' );
+        $Self->{LogObject}->Log(
+            Priority => 'notice',
+            Message  => 'ApplicationArchiveCreate Compress::Zlib end',
+        );
 
         return ( \$GzTar, 'application.tar.gz' );
     }
 
     # log info
-    $Self->{LogObject}
-        ->Log( Priority => 'notice', Message => 'ApplicationArchiveCreate no Compress::Zlib end' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'ApplicationArchiveCreate no Compress::Zlib end',
+    );
 
     return ( \$TmpTar, 'application.tar' );
 }
@@ -494,9 +498,14 @@ sub DirectoryFiles {
     # cleanup file name
     $TempDir =~ s/\/\//\//g;
 
+    # reset file count on initial call
+    if ( !$Param{Loop} ) {
+        $Self->{DirectoryFilesCount} = 0;
+    }
+
     # check all $Param{Directory}/* in home directory
-    my @Files = ();
-    my @List  = glob("$Param{Directory}/*");
+    my @Files;
+    my @List = glob("$Param{Directory}/*");
     for my $File (@List) {
 
         # cleanup file name
@@ -515,7 +524,7 @@ sub DirectoryFiles {
             next if $File =~ /\Q$TempDir\E/i;
 
             # add directory to list
-            push @Files, $Self->DirectoryFiles( Directory => $File );
+            push @Files, $Self->DirectoryFiles( Directory => $File, Loop => 1 );
         }
         else {
 
@@ -533,6 +542,17 @@ sub DirectoryFiles {
 
             # add file to list
             push @Files, $File;
+
+            # check total count of files (max. file count)
+            my $FileCountMax = 10;
+            $Self->{DirectoryFilesCount}++;
+            if ( $Self->{DirectoryFilesCount} > $FileCountMax ) {
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message  => "Max file count ($FileCountMax) for application archive reached!",
+                );
+                return @Files;
+            }
         }
     }
 
@@ -968,6 +988,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.32 $ $Date: 2009/12/01 15:06:47 $
+$Revision: 1.33 $ $Date: 2009/12/01 17:29:33 $
 
 =cut
