@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.31 2009/08/18 09:57:30 mb Exp $
+# $Id: Support.pm,v 1.32 2009/12/01 15:06:47 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.31 $) [1];
+$VERSION = qw($Revision: 1.32 $) [1];
 
 =head1 NAME
 
@@ -133,6 +133,9 @@ sub AdminChecksGet {
         }
     }
 
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'AdminChecksGet start' );
+
     # get the directory name
     my $DirName = $Self->{ConfigObject}->Get('Home') . '/Kernel/System/Support/';
 
@@ -181,6 +184,9 @@ sub AdminChecksGet {
         $DataHash->{$File} = \@CleandAdminCheckRef;
     }
 
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'AdminChecksGet end' );
+
     return $DataHash;
 }
 
@@ -194,15 +200,18 @@ sub XMLStringCreate {
             return;
         }
     }
-    if ( ref( $Param{DataHash} ) ne 'HASH' ) {
+    if ( ref $Param{DataHash} ne 'HASH' ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "DataHash must be a hash reference!",
+            Message  => 'DataHash must be a hash reference!',
         );
         return;
     }
 
-    my $XMLHash = [];
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'XMLStringCreate start' );
+
+    my $XMLHash     = [];
     my $CountModule = 0;
     my $CountItem   = 0;
     for my $Module ( keys %{ $Param{DataHash} } ) {
@@ -215,12 +224,17 @@ sub XMLStringCreate {
                 next if $Element eq 'Name';
                 $Data->{$Element}->[1]->{Content} = $DataHashRow->{$Element};
             }
-            $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem] = $Data;
-            $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem]->{Name} = $DataHashRow->{Name};
+            $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem]
+                = $Data;
+            $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem]
+                ->{Name} = $DataHashRow->{Name};
         }
     }
 
     my $XMLString = $Self->{XMLObject}->XMLHash2XML( @{$XMLHash} );
+
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'XMLStringCreate end' );
 
     return \$XMLString;
 }
@@ -228,13 +242,22 @@ sub XMLStringCreate {
 sub LogLast {
     my ( $Self, %Param ) = @_;
 
-    my $LogString = $Self->{LogObject}->GetLog( Limit => 1000 );
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => "LogLast '$Param{Type}' start" );
 
-    return ( \$LogString, $Param{Type}.'.log' );
+    my $LogString = $Self->{LogObject}->GetLog( Limit => 1200 );
+
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => "LogLast '$Param{Type}' end" );
+
+    return ( \$LogString, $Param{Type} . '.log' );
 }
 
 sub ModuleCheck {
     my ( $Self, %Param ) = @_;
+
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'ModuleCheck start' );
 
     my $Home = $Self->{ConfigObject}->Get('Home');
     my $TmpSumString;
@@ -246,11 +269,17 @@ sub ModuleCheck {
     }
     close($TmpSumString);
 
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'ModuleCheck end' );
+
     return ( \$TmpLog, 'ModuleCheck.log' );
 }
 
-sub ARCHIVE {
+sub ARCHIVELogCreate {
     my ( $Self, %Param ) = @_;
+
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'ARCHIVELogCreate start' );
 
     my $Home    = $Self->{ConfigObject}->Get('Home');
     my $Archive = $Self->{ConfigObject}->Get('Home') . '/ARCHIVE';
@@ -269,7 +298,7 @@ sub ARCHIVE {
     }
     close($Tar);
 
-    my %Result = $Self->_ARCHIVELookup(
+    my %Result = $Self->_ARCHIVELogLookup(
         In      => $Home,
         Compare => \%Compare,
         Home    => $Home,
@@ -280,10 +309,13 @@ sub ARCHIVE {
         $ARCHIVEString .= "$Result{$Key}\n";
     }
 
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'ARCHIVELogCreate end' );
+
     return ( \$ARCHIVEString, 'ARCHIVE.log' );
 }
 
-sub _ARCHIVELookup {
+sub _ARCHIVELogLookup {
     my ( $Self, %Param ) = @_;
     my @List = glob("$Param{In}/*");
 
@@ -291,7 +323,7 @@ sub _ARCHIVELookup {
     for my $File (@List) {
         $File =~ s/\/\//\//g;
         if ( -d $File && $File !~ /CVS/ && $File !~ /^doc\// && $File !~ /^var\/tmp/ ) {
-            $Self->_ARCHIVELookup(
+            $Self->_ARCHIVELogLookup(
                 In      => $File,
                 Compare => $Param{Compare},
                 Home    => $Param{Home},
@@ -303,14 +335,17 @@ sub _ARCHIVELookup {
             $File =~ s/\Q$Param{Home}\E//;
             $File =~ s/^\/(.*)$/$1/;
 
-            if ( $File !~ /Entries|Repository|Root|CVS|ARCHIVE/
+            if (
+                $File !~ /Entries|Repository|Root|CVS|ARCHIVE/
                 && $File !~ /^doc\//
-                && $File !~ /^var\/tmp/) {
+                && $File !~ /^var\/tmp/
+                )
+            {
 
-                if (! -r $OrigFile) {
+                if ( !-r $OrigFile ) {
                     next FILE;
                 }
-                if (! open( IN, '<', $OrigFile ) ) {
+                if ( !open( IN, '<', $OrigFile ) ) {
                     $Self->{LogObject}->Log(
                         Priority => 'error',
                         Message  => "Can't read: $OrigFile: $!",
@@ -339,66 +374,46 @@ sub _ARCHIVELookup {
 sub OpmInfo {
     my ( $Self, %Param ) = @_;
 
-    # check needed stuff
-    for (qw(Mode)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'OpmInfo start' );
 
-    if ($Param{Mode} eq "IsFileInPackageCheck" && !$Param{File}) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need Filename!" );
-        return;
+    my $OpmInfo;
+    for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
+        $OpmInfo
+            .= "+----------------------------------------------------------------------------+\n";
+        $OpmInfo .= "| Name:        $Package->{Name}->{Content}\n";
+        $OpmInfo .= "| Version:     $Package->{Version}->{Content}\n";
+        $OpmInfo .= "| Vendor:      $Package->{Vendor}->{Content}\n";
+        $OpmInfo .= "| URL:         $Package->{URL}->{Content}\n";
+        $OpmInfo .= "| License:     $Package->{License}->{Content}\n";
     }
+    $OpmInfo .= "+----------------------------------------------------------------------------+\n";
 
-    if ($Param{Mode} eq "IsFileInPackageCheck") {
-        $Param{File} =~ s/\/\//\//g;
-        my $Hit = 0;
-        for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
-            for my $File ( @{ $Package->{Filelist} } ) {
-                if ( $Param{File} =~ /^\Q$File->{Location}\E$/ ) {
-                    $Hit = 1;
-                }
-            }
-        }
-        return $Hit;
-    }
-    elsif ($Param{Mode} eq "OPMInfo") {
-        my $OpmInfo;
-        for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
-            $OpmInfo .= "+----------------------------------------------------------------------------+\n";
-            $OpmInfo .= "| Name:        $Package->{Name}->{Content}\n";
-            $OpmInfo .= "| Version:     $Package->{Version}->{Content}\n";
-            $OpmInfo .= "| Vendor:      $Package->{Vendor}->{Content}\n";
-            $OpmInfo .= "| URL:         $Package->{URL}->{Content}\n";
-            $OpmInfo .= "| License:     $Package->{License}->{Content}\n";
-        }
-        $OpmInfo .= "+----------------------------------------------------------------------------+\n";
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'OpmInfo end' );
 
-        return ( \$OpmInfo, 'InstalledPackages.log' );
-    }
-    else {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Wrong mode in Function OpmInfo!" );
-        return;
-    }
+    return ( \$OpmInfo, 'InstalledPackages.log' );
 }
 
-sub ArchiveApplication {
+sub ApplicationArchiveCreate {
     my ( $Self, %Param ) = @_;
 
-    my $Home = $Self->{ConfigObject}->Get('Home');
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'ApplicationArchiveCreate start' );
+
+    my $Home    = $Self->{ConfigObject}->Get('Home');
     my $Archive = $Self->{ConfigObject}->Get('Home') . '/var/tmp/application.tar';
     if ( -f $Archive ) {
         unlink $Archive || die "Can't unlink $Archive: $!";
     }
 
     my @List;
-    for my $ListElement ($Self->DirectoryFiles( Directory => $Home )) {
-        if (-r $ListElement) {
-            push (@List, $ListElement)
+    for my $ListElement ( $Self->DirectoryFiles( Directory => $Home ) ) {
+        if ( -r $ListElement ) {
+            push( @List, $ListElement )
         }
     }
+
     # add files to the tar archive
     my $TarObject = Archive::Tar->new();
 
@@ -407,7 +422,7 @@ sub ArchiveApplication {
     #Mask Passwords in Config.pm
     my $HomeWithoutSlash = $Home;
     $HomeWithoutSlash =~ s/^\///;
-    my $Config = $TarObject->get_content( "$HomeWithoutSlash/Kernel/Config.pm" );
+    my $Config = $TarObject->get_content("$HomeWithoutSlash/Kernel/Config.pm");
 
     my @TrimAction = (
         'DatabasePw',
@@ -421,7 +436,7 @@ sub ArchiveApplication {
     );
 
     ACTION:
-    for ( @TrimAction ) {
+    for (@TrimAction) {
         next ACTION if !$_;
         $Config =~ s/(^\s+\$Self.*?$_.*?=.*?)\'.*?\';/$1\'xxx\';/mg;
     }
@@ -439,11 +454,19 @@ sub ArchiveApplication {
     }
     close($Tar);
 
-    if ( $Self->{MainObject}->Require("Compress::Zlib") ) {
+    if ( $Self->{MainObject}->Require('Compress::Zlib') ) {
         my $GzTar = Compress::Zlib::memGzip($TmpTar);
 
-        return ( \$GzTar, 'application.tar.gz');
+        # log info
+        $Self->{LogObject}
+            ->Log( Priority => 'notice', Message => 'ApplicationArchiveCreate Compress::Zlib end' );
+
+        return ( \$GzTar, 'application.tar.gz' );
     }
+
+    # log info
+    $Self->{LogObject}
+        ->Log( Priority => 'notice', Message => 'ApplicationArchiveCreate no Compress::Zlib end' );
 
     return ( \$TmpTar, 'application.tar' );
 }
@@ -473,14 +496,14 @@ sub DirectoryFiles {
 
     # check all $Param{Directory}/* in home directory
     my @Files = ();
-    my @List = glob("$Param{Directory}/*");
+    my @List  = glob("$Param{Directory}/*");
     for my $File (@List) {
 
         # cleanup file name
         $File =~ s/\/\//\//g;
 
         # check if directory
-        if (-d $File ) {
+        if ( -d $File ) {
 
             # do not include CVS directories
             next if $File =~ /\/CVS/;
@@ -503,10 +526,10 @@ sub DirectoryFiles {
             next if $File =~ /#/;
 
             # do not include if file is bigger the 0.5 MB
-            next if ( -s $File > (1024*1024*0.5) );
+            next if ( -s $File > ( 1024 * 1024 * 0.5 ) );
 
             # do not include if file is not readable
-            next if ! -r $File;
+            next if !-r $File;
 
             # add file to list
             push @Files, $File;
@@ -516,64 +539,78 @@ sub DirectoryFiles {
     return @Files;
 }
 
+sub GetInstalledProduct {
+    my ( $Self, %Param ) = @_;
+
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'GetInstalledProduct start' );
+
+    my $Product;
+    my %Tool = (
+        SIRIOS               => 0,
+        ITSM                 => 0,
+        WIDAuthoring         => 0,
+        WIDPublicationSystem => 0,
+    );
+
+    $Product = "Product:" . $Self->{ConfigObject}->Get('Product') . ' '
+        . $Self->{ConfigObject}->Get('Version');
+
+    for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
+        for my $Tools ( keys %Tool ) {
+            if ( $Tools =~ /^\Q$Package->{Name}->{Content}\E$/ ) {
+                if ( $Tool{$Tools} == 0 ) {
+                    $Product .= " / $Package->{Name}->{Content}";
+                }
+                $Tool{$Tools} = 1;
+            }
+        }
+    }
+
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'GetInstalledProduct end' );
+
+    return $Product;
+}
+
 sub SendInfo {
     my ( $Self, %Param ) = @_;
 
-    # set default value
-    $Param{CustomerInfo} ||= {};
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'SendInfo start' );
 
     # create log package
-    my ($LogPreContent, $LogPreFilename ) = $Self->LogLast( Type => 'log_pre' );
+    my ( $LogPreContent, $LogPreFilename ) = $Self->LogLast( Type => 'log_pre' );
 
     # create check package
     my $DataHash = $Self->AdminChecksGet();
-
-    my @CustomerInfo;
-    ROW:
-    for my $Row ( sort keys %{ $Param{CustomerInfo} } ) {
-
-        next ROW if !$Row;
-        next ROW if !$Param{CustomerInfo}->{$Row};
-
-        my %Check = (
-
-            Check       => 'OK',
-            Comment     => $Param{CustomerInfo}->{$Row},
-            Description => 'Customer Info',
-            Name        => $Row,
-        );
-        push @CustomerInfo, \%Check;
-    }
-
-    $DataHash->{CustomerInfo} = \@CustomerInfo;
-
-    my $XMLCheck = $Self->XMLStringCreate( DataHash => $DataHash, );
+    my $XMLCheck = $Self->XMLStringCreate( DataHash => $DataHash );
 
     # create application package
-    my ($Content, $Filename ) = $Self->ArchiveApplication();
+    my ( $Content, $Filename ) = $Self->ApplicationArchiveCreate();
 
-    # create ARCHIVE package
-    my ($ARCHIVEContent, $ARCHIVEFilename ) = $Self->ARCHIVE();
+    # create ARCHIVE log package
+    my ( $ARCHIVEContent, $ARCHIVEFilename ) = $Self->ARCHIVELogCreate();
 
     # create OPM Info package like ./opm.pl -a list
-    my ($OPMInfoContent, $OPMInfoFilename ) = $Self->OpmInfo(Mode => "OPMInfo");
+    my ( $OPMInfoContent, $OPMInfoFilename ) = $Self->OpmInfo();
 
     # create module check package
-    my ($ModuleCheckContent, $ModuleCheckFilename ) = $Self->ModuleCheck();
+    my ( $ModuleCheckContent, $ModuleCheckFilename ) = $Self->ModuleCheck();
 
     # create log package
-    my ($LogPostContent, $LogPostFilename ) = $Self->LogLast( Type => 'log_post' );
+    my ( $LogPostContent, $LogPostFilename ) = $Self->LogLast( Type => 'log_post' );
 
     # create mail body
     my $Body = '';
-    for my $Key ( sort keys %{ $Param{CustomerInfo} } ) {
+    for my $Key ( sort keys %Param ) {
         $Body .= "$Key:$Param{CustomerInfo}->{$Key}\n";
     }
 
-    #Get the FQDN
+    # Get the FQDN
     $Body .= "FQDN:" . $Self->{ConfigObject}->Get('FQDN') . "\n";
 
-    #Get the otrs version and if installed add other product info like SIRIOS or ITSM.
+    # Get the otrs version and if installed add other product info like SIRIOS or ITSM.
     $Body .= $Self->GetInstalledProduct();
 
     my $Send = $Self->{EmailObject}->Send(
@@ -586,54 +623,60 @@ sub SendInfo {
         Attachment => [
             {
                 Filename    => $LogPreFilename,
-                Content     => ${ $LogPreContent },
+                Content     => ${$LogPreContent},
                 ContentType => 'text/plain',
                 Disposition => 'attachment',
             },
             {
                 Filename    => 'check.xml',
-                Content     => ${ $XMLCheck },
+                Content     => ${$XMLCheck},
                 ContentType => 'text/xml',
                 Disposition => 'attachment',
             },
             {
                 Filename    => $Filename,
-                Content     => ${ $Content },
+                Content     => ${$Content},
                 ContentType => 'application/octet-stream',
                 Disposition => 'attachment',
             },
             {
                 Filename    => $ARCHIVEFilename,
-                Content     => ${ $ARCHIVEContent },
+                Content     => ${$ARCHIVEContent},
                 ContentType => 'text/plain',
                 Disposition => 'attachment',
             },
             {
                 Filename    => $ModuleCheckFilename,
-                Content     => ${ $ModuleCheckContent },
+                Content     => ${$ModuleCheckContent},
                 ContentType => 'text/plain',
                 Disposition => 'attachment',
             },
             {
                 Filename    => $OPMInfoFilename,
-                Content     => ${ $OPMInfoContent },
+                Content     => ${$OPMInfoContent},
                 ContentType => 'text/plain',
                 Disposition => 'attachment',
             },
             {
                 Filename    => $LogPostFilename,
-                Content     => ${ $LogPostContent },
+                Content     => ${$LogPostContent},
                 ContentType => 'text/plain',
                 Disposition => 'attachment',
             },
         ],
     );
 
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'SendInfo end' );
+
     return 1;
 }
 
 sub Download {
     my ( $Self, %Param ) = @_;
+
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'Download start' );
 
     my ( $s, $m, $h, $D, $M, $Y, $wd, $yd, $dst ) = $Self->{TimeObject}->SystemTime2Date(
         SystemTime => $Self->{TimeObject}->SystemTime(),
@@ -642,27 +685,27 @@ sub Download {
 
     # create log package
     my %File;
-    ($File{LogPreContent}, $File{LogPreFilename}) = $Self->LogLast( Type => 'log_pre' );
+    ( $File{LogPreContent}, $File{LogPreFilename} ) = $Self->LogLast( Type => 'log_pre' );
 
     # create check package
     my $DataHash = $Self->AdminChecksGet();
-    $File{CheckContent}  = $Self->XMLStringCreate( DataHash => $DataHash, );
+    $File{CheckContent} = $Self->XMLStringCreate( DataHash => $DataHash, );
     $File{CheckFilename} = 'check.xml',
 
-    # create application package
-    ($File{AppContent}, $File{AppFilename}) = $Self->ArchiveApplication();
+        # create application package
+        ( $File{AppContent}, $File{AppFilename} ) = $Self->ApplicationArchiveCreate();
 
-    # create ARCHIVE package
-    ($File{ArchContent}, $File{ArchFilename}) = $Self->ARCHIVE();
+    # create ARCHIVE log package
+    ( $File{ArchContent}, $File{ArchFilename} ) = $Self->ARCHIVELogCreate();
 
     # create OPM Info package like ./opm.pl -a list
-    ($File{OPMInfoContent}, $File{OPMInfoFilename}) = $Self->OpmInfo(Mode => "OPMInfo");
+    ( $File{OPMInfoContent}, $File{OPMInfoFilename} ) = $Self->OpmInfo();
 
     # create module check package
-    ($File{ModuleCheckContent}, $File{ModuleCheckFilename}) = $Self->ModuleCheck();
+    ( $File{ModuleCheckContent}, $File{ModuleCheckFilename} ) = $Self->ModuleCheck();
 
     # create log package
-    ($File{LogPostContent}, $File{LogPostFilename}) = $Self->LogLast( Type => 'log_post' );
+    ( $File{LogPostContent}, $File{LogPostFilename} ) = $Self->LogLast( Type => 'log_post' );
 
     # create mail body
     my $Body = '';
@@ -672,13 +715,13 @@ sub Download {
     $Body .= "FQDN:" . $Self->{ConfigObject}->Get('FQDN') . "\n";
     $Body .= $Self->GetInstalledProduct();
 
-    $File{BodyContent} = \$Body;
+    $File{BodyContent}  = \$Body;
     $File{BodyFilename} = 'Body.txt';
 
     # save and create archive
     my $TempDir = $Self->{ConfigObject}->Get('TempDir') . '/supportinfo/';
 
-    if ( ! -d $TempDir ) {
+    if ( !-d $TempDir ) {
         mkdir $TempDir;
     }
 
@@ -689,7 +732,7 @@ sub Download {
     }
 
     my @List;
-    for my $Key (qw(Body LogPre Check App Arch ModuleCheck LogPost OPMInfo) ) {
+    for my $Key (qw(Body LogPre Check App Arch ModuleCheck LogPost OPMInfo)) {
         if ( $File{ $Key . 'Filename' } && $File{ $Key . 'Content' } ) {
             my $Filename = $TempDir . '/' . $File{ $Key . 'Filename' };
             open( my $Out, '>', $Filename );
@@ -701,7 +744,7 @@ sub Download {
     }
 
     # add files to the tar archive
-    my $Archive = $TempDir . '/' . $Filename;
+    my $Archive   = $TempDir . '/' . $Filename;
     my $TarObject = Archive::Tar->new();
     $TarObject->add_files(@List);
     $TarObject->write( $Archive, 0 ) || die "Could not write: $_!";
@@ -721,38 +764,19 @@ sub Download {
         unlink $File;
     }
 
-    if ( $Self->{MainObject}->Require("Compress::Zlib") ) {
+    if ( $Self->{MainObject}->Require('Compress::Zlib') ) {
         my $GzTar = Compress::Zlib::memGzip($TmpTar);
-        return ( \$GzTar, $Filename . '.tar.gz');
+
+        # log info
+        $Self->{LogObject}->Log( Priority => 'notice', Message => 'Download Compress::Zlib end' );
+
+        return ( \$GzTar, $Filename . '.tar.gz' );
     }
+
+    # log info
+    $Self->{LogObject}->Log( Priority => 'notice', Message => 'Download no Compress::Zlib end' );
 
     return ( \$TmpTar, $Filename . '.tar' );
-}
-
-sub GetInstalledProduct {
-    my ( $Self, %Param ) = @_;
-    my $Product;
-    my %Tool = (
-        SIRIOS => 0,
-        ITSM   => 0,
-        WIDAuthoring    => 0,
-        WIDPublicationSystem    => 0,
-    );
-
-    $Product = "Product:" . $Self->{ConfigObject}->Get('Product') . ' '
-        . $Self->{ConfigObject}->Get('Version');
-
-    for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
-        for my $Tools (keys %Tool) {
-            if ( $Tools =~ /^\Q$Package->{Name}->{Content}\E$/ ) {
-                if ($Tool{$Tools} == 0) {
-                    $Product .= " / $Package->{Name}->{Content}";
-                }
-                $Tool{$Tools} = 1;
-            }
-        }
-    }
-    return $Product;
 }
 
 sub Benchmark {
@@ -761,10 +785,10 @@ sub Benchmark {
     my $Insert = $Param{Insert};
     my $Update = $Param{Update};
     my $Select = $Param{Select};
-    my $Mode = $Param{Mode};
+    my $Mode   = $Param{Mode};
 
-    foreach (1..$Mode) {
-        $Self->{"DBObject$_"} = Kernel::System::DB->new(%{$Self});
+    foreach ( 1 .. $Mode ) {
+        $Self->{"DBObject$_"} = Kernel::System::DB->new( %{$Self} );
     }
 
     $Param{InsertTime} = 0;
@@ -772,90 +796,94 @@ sub Benchmark {
     $Param{SelectTime} = 0;
     $Param{DeleteTime} = 0;
     my $TimeStart = $Self->{TimeObject}->SystemTime();
-    $Self->_SQLInsert($Insert, $Mode);
+    $Self->_SQLInsert( $Insert, $Mode );
     my $Time1 = $Self->{TimeObject}->SystemTime();
-    $Self->_SQLUpdate($Update, $Mode);
+    $Self->_SQLUpdate( $Update, $Mode );
     my $Time2 = $Self->{TimeObject}->SystemTime();
-    $Self->_SQLSelect($Select, $Mode);
+    $Self->_SQLSelect( $Select, $Mode );
     my $Time3 = $Self->{TimeObject}->SystemTime();
-    $Self->_SQLDelete($Insert, $Mode);
+    $Self->_SQLDelete( $Insert, $Mode );
     my $Time4 = $Self->{TimeObject}->SystemTime();
-    $Param{InsertTime} = $Param{InsertTime}+$Time1-$TimeStart;
-    $Param{UpdateTime} = $Param{UpdateTime}+$Time2-$Time1;
-    $Param{SelectTime} = $Param{SelectTime}+$Time3-$Time2;
-    $Param{DeleteTime} = $Param{DeleteTime}+$Time4-$Time3;
+    $Param{InsertTime} = $Param{InsertTime} + $Time1 - $TimeStart;
+    $Param{UpdateTime} = $Param{UpdateTime} + $Time2 - $Time1;
+    $Param{SelectTime} = $Param{SelectTime} + $Time3 - $Time2;
+    $Param{DeleteTime} = $Param{DeleteTime} + $Time4 - $Time3;
 
-    my $InsertTime = ($Param{InsertTime}/$Mode)*(10000/$Insert);
+    my $InsertTime = ( $Param{InsertTime} / $Mode ) * ( 10000 / $Insert );
     if ( $InsertTime <= 3 ) {
-        $Param{InsertMood} = ':-)';
-        $Param{InsertComment}    = '$Text{"Looks fine!"}',
+        $Param{InsertMood}    = ':-)';
+        $Param{InsertComment} = '$Text{"Looks fine!"}',
     }
     elsif ( $InsertTime <= 5 ) {
-        $Param{InsertMood} = ':-|';
-        $Param{InsertComment}    = '$Text{"Ok"}';
+        $Param{InsertMood}    = ':-|';
+        $Param{InsertComment} = '$Text{"Ok"}';
     }
     else {
         $Param{InsertMood} = ':-(';
-        my $ShouldTake  = int( $Mode * 5 );
-        $Param{InsertComment} = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
+        my $ShouldTake = int( $Mode * 5 );
+        $Param{InsertComment}
+            = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
     }
 
-    my $UpdateTime = ($Param{UpdateTime}/$Mode)*(10000/$Update);
+    my $UpdateTime = ( $Param{UpdateTime} / $Mode ) * ( 10000 / $Update );
     if ( $UpdateTime <= 5 ) {
-        $Param{UpdateMood} = ':-)';
+        $Param{UpdateMood}    = ':-)';
         $Param{UpdateComment} = '$Text{"Looks fine!"}',
     }
     elsif ( $UpdateTime <= 9 ) {
-        $Param{UpdateMood} = ':-|';
-        $Param{UpdateComment}    = '$Text{"Ok"}';
+        $Param{UpdateMood}    = ':-|';
+        $Param{UpdateComment} = '$Text{"Ok"}';
     }
     else {
         $Param{UpdateMood} = ':-(';
-        my $ShouldTake  = int( $Mode * 9 );
-        $Param{UpdateComment} = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
+        my $ShouldTake = int( $Mode * 9 );
+        $Param{UpdateComment}
+            = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
     }
 
-    my $SelectTime = ($Param{SelectTime}/$Mode)*(10000/$Select);
+    my $SelectTime = ( $Param{SelectTime} / $Mode ) * ( 10000 / $Select );
     if ( $SelectTime <= 5 ) {
-        $Param{SelectMood} = ':-)';
+        $Param{SelectMood}    = ':-)';
         $Param{SelectComment} = '$Text{"Looks fine!"}',
     }
     elsif ( $SelectTime <= 6 ) {
-        $Param{SelectMood} = ':-|';
-        $Param{SelectComment}    = '$Text{"Ok"}';
+        $Param{SelectMood}    = ':-|';
+        $Param{SelectComment} = '$Text{"Ok"}';
     }
     else {
         $Param{SelectMood} = ':-(';
-        my $ShouldTake  = int( $Mode * 6 );
-        $Param{SelectComment} = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
+        my $ShouldTake = int( $Mode * 6 );
+        $Param{SelectComment}
+            = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
     }
 
-    my $DeleteTime = ($Param{DeleteTime}/$Mode);
+    my $DeleteTime = ( $Param{DeleteTime} / $Mode );
     if ( $DeleteTime <= 4 ) {
-        $Param{DeleteMood} = ':-)';
+        $Param{DeleteMood}    = ':-)';
         $Param{DeleteComment} = '$Text{"Looks fine!"}',
     }
     elsif ( $DeleteTime <= 5 ) {
-        $Param{DeleteMood} = ':-|';
-        $Param{DeleteComment}    = '$Text{"Ok"}';
+        $Param{DeleteMood}    = ':-|';
+        $Param{DeleteComment} = '$Text{"Ok"}';
     }
     else {
         $Param{DeleteMood} = ':-(';
-        my $ShouldTake  = int( $Mode * 5 );
-        $Param{DeleteComment} = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
+        my $ShouldTake = int( $Mode * 5 );
+        $Param{DeleteComment}
+            = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
     }
 
     return %Param;
 }
 
 sub _SQLInsert {
-    my $Self = shift;
+    my $Self  = shift;
     my $Count = shift;
-    my $Mode = shift;
-    foreach my $C (1..$Count) {
-        foreach my $M (1..$Mode) {
-            my $Value1  = "aaa$C-$M";
-            my $Value2  = 'bbb';
+    my $Mode  = shift;
+    foreach my $C ( 1 .. $Count ) {
+        foreach my $M ( 1 .. $Mode ) {
+            my $Value1 = "aaa$C-$M";
+            my $Value2 = 'bbb';
             $Self->{"DBObject$M"}->Do(
                 SQL => 'INSERT INTO support_bench_test (name_a, name_b) values (?, ?)',
                 Bind => [ \$Value1, \$Value2, ],
@@ -866,14 +894,14 @@ sub _SQLInsert {
 }
 
 sub _SQLUpdate {
-    my $Self = shift;
-    my $Count = shift;
-    my $Mode = shift;
+    my $Self   = shift;
+    my $Count  = shift;
+    my $Mode   = shift;
     my $Value1 = '111';
     my $Value2 = '222';
-    foreach my $C (1..$Count) {
-        foreach my $M (1..$Mode) {
-            my $Value  = "aaa$C-$M";
+    foreach my $C ( 1 .. $Count ) {
+        foreach my $M ( 1 .. $Mode ) {
+            my $Value = "aaa$C-$M";
             $Self->{"DBObject$M"}->Do(
                 SQL => 'UPDATE support_bench_test SET name_a = ?, name_b = ? WHERE name_a = ?',
                 Bind => [ \$Value1, \$Value2, \$Value ],
@@ -884,21 +912,23 @@ sub _SQLUpdate {
 }
 
 sub _SQLSelect {
-    my $Self = shift;
+    my $Self  = shift;
     my $Count = shift;
-    my $Mode = shift;
-    foreach my $C (1..$Count) {
-        foreach my $M (1..$Mode) {
-#            my $Value = "aaa$C-$M";
-#            $Self->{"DBObject$M"}->Prepare(
-#                SQL  => 'SELECT name_a, name_b FROM support_bench_test WHERE name_a = ?',
-#                Bind => [ \$Value ],
-#            );
+    my $Mode  = shift;
+    foreach my $C ( 1 .. $Count ) {
+        foreach my $M ( 1 .. $Mode ) {
+
+          #            my $Value = "aaa$C-$M";
+          #            $Self->{"DBObject$M"}->Prepare(
+          #                SQL  => 'SELECT name_a, name_b FROM support_bench_test WHERE name_a = ?',
+          #                Bind => [ \$Value ],
+          #            );
             my $Value = $Self->{DBObject}->Quote("aaa$C-$M");
             $Self->{"DBObject$M"}->Prepare(
-                SQL  => "SELECT name_a, name_b FROM support_bench_test WHERE name_a = '$Value'",
+                SQL => "SELECT name_a, name_b FROM support_bench_test WHERE name_a = '$Value'",
             );
-            while (my @Row = $Self->{"DBObject$M"}->FetchrowArray()) {
+            while ( my @Row = $Self->{"DBObject$M"}->FetchrowArray() ) {
+
                 # do nothing
             }
         }
@@ -907,14 +937,14 @@ sub _SQLSelect {
 }
 
 sub _SQLDelete {
-    my $Self = shift;
+    my $Self  = shift;
     my $Count = shift;
-    my $Mode = shift;
-    foreach my $C (1..$Count) {
-        foreach my $M (1..$Mode) {
-            my $Value  = "111$C-$M";
+    my $Mode  = shift;
+    foreach my $C ( 1 .. $Count ) {
+        foreach my $M ( 1 .. $Mode ) {
+            my $Value = "111$C-$M";
             $Self->{"DBObject$M"}->Do(
-                SQL => 'DELETE FROM support_bench_test WHERE name_a = ?',
+                SQL  => 'DELETE FROM support_bench_test WHERE name_a = ?',
                 Bind => [ \$Value ],
             );
         }
@@ -938,6 +968,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.31 $ $Date: 2009/08/18 09:57:30 $
+$Revision: 1.32 $ $Date: 2009/12/01 15:06:47 $
 
 =cut
