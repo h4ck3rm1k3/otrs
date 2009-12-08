@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Email.pm - the global email send module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: Email.pm,v 1.75 2011/06/07 07:24:56 jb Exp $
+# $Id: Email.pm,v 1.64.2.1 2009/12/08 14:35:34 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Crypt;
 use Kernel::System::HTMLUtils;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.75 $) [1];
+$VERSION = qw($Revision: 1.64.2.1 $) [1];
 
 =head1 NAME
 
@@ -185,11 +185,6 @@ sub Send {
         $Param{From} = $Self->{ConfigObject}->Get('AdminEmail') || 'otrs@localhost';
     }
 
-    # replace all br tags with br tags with a space to show newlines in Lotus Notes
-    if ( $Param{MimeType} && lc $Param{MimeType} eq 'text/html' ) {
-        $Param{Body} =~ s{\Q<br/>\E}{<br />}xmsgi;
-    }
-
     # get sign options for inline
     if ( $Param{Sign} && $Param{Sign}->{SubType} && $Param{Sign}->{SubType} eq 'Inline' ) {
         my $CryptObject = Kernel::System::Crypt->new(
@@ -225,13 +220,8 @@ sub Send {
             MainObject   => $Self->{MainObject},
         );
         if ( !$CryptObject ) {
-            $Self->{LogObject}->Log(
-                Message  => 'Not possible to create crypt object',
-                Priority => 'error',
-            );
             return;
         }
-
         my $Body = $CryptObject->Crypt(
             Message => $Param{Body},
             Key     => $Param{Crypt}->{Key},
@@ -243,7 +233,7 @@ sub Send {
     }
 
     # build header
-    my %Header;
+    my %Header = ();
     for (qw(From To Cc Subject Charset Reply-To)) {
         next if !$Param{$_};
         $Header{$_} = $Param{$_};
@@ -251,9 +241,8 @@ sub Send {
 
     # loop
     if ( $Param{Loop} ) {
-        $Header{'X-Loop'}          = 'yes';
-        $Header{'Precedence:'}     = 'bulk';
-        $Header{'Auto-Submitted:'} = "auto-generated";
+        $Header{'X-Loop'} = 'yes';
+        $Header{Precedence} = 'bulk';
     }
 
     # do some encode
@@ -298,10 +287,8 @@ sub Send {
     my $Product = $Self->{ConfigObject}->Get('Product');
     my $Version = $Self->{ConfigObject}->Get('Version');
 
-    if ( !$Self->{ConfigObject}->Get('Secure::DisableBanner') ) {
-        $Header{'X-Mailer'}     = "$Product Mail Service ($Version)";
-        $Header{'X-Powered-By'} = 'OTRS - Open Ticket Request System (http://otrs.org/)';
-    }
+    $Header{'X-Mailer'}     = "$Product Mail Service ($Version)";
+    $Header{'X-Powered-By'} = 'OTRS - Open Ticket Request System (http://otrs.org/)';
     $Header{Type} = $Param{MimeType} || 'text/plain';
 
     # define email encoding
@@ -358,46 +345,82 @@ sub Send {
 
     # add attachments to email
     if ( $Param{Attachment} ) {
-        my $Count    = 0;
-        my $PartType = '';
-        my @NewAttachments;
-        ATTACHMENT:
+        my $Count          = 0;
+        my $PartType       = '';
+        my @NewAttachments = ();
+        ATTACHMENTS:
         for my $Upload ( @{ $Param{Attachment} } ) {
+            if ( defined $Upload->{Content} && defined $Upload->{Filename} ) {
 
-            # ignore attachment if no content is given
-            next ATTACHMENT if !defined $Upload->{Content};
-
-            # ignore attachment if no filename is given
-            next ATTACHMENT if !defined $Upload->{Filename};
-
-            # if it's a html email, add the first attachment as alternative (to show it
-            # as alternative content)
-            if ($HTMLEmail) {
-                $Count++;
-                if ( $Count == 1 ) {
-                    $Entity->make_multipart('alternative;');
-                    $PartType = 'alternative';
-                }
-                else {
-
-                    # don't attach duplicate html attachment (aka file-2)
-                    next ATTACHMENT if
-                        $Upload->{Filename} eq 'file-2'
-                            && $Upload->{ContentType} =~ /html/i
-                            && $Upload->{Content} eq $Param{HTMLBody};
-
-                    # skip, but remember all attachments except inline images
-                    if ( !defined $Upload->{ContentID} ) {
-                        push @NewAttachments, \%{$Upload};
-                        next ATTACHMENT;
+                # if it's a html email, add the first attachment as alternative (to show it
+                # as alternative content)
+                if ($HTMLEmail) {
+                    $Count++;
+                    if ( $Count == 1 ) {
+                        $Entity->make_multipart('alternative;');
+                        $PartType = 'alternative';
                     }
+                    else {
 
-                    # add inline images as related
-                    if ( $PartType ne 'related' ) {
-                        $Entity->make_multipart( 'related;', Force => 1, );
-                        $PartType = 'related';
+                        # don't attach duplicate html attachment (aka file-2)
+                        next ATTACHMENTS if
+                            $Upload->{Filename} eq 'file-2'
+                                && $Upload->{ContentType} =~ /html/i
+                                && $Upload->{Content} eq $Param{HTMLBody};
+
+                        # skip, but remember all attachments except inline images
+                        if (
+                            !defined $Upload->{ContentID}
+                            || $Upload->{ContentID} !~ /^inline/
+                            )
+                        {
+                            push( @NewAttachments, \%{$Upload} );
+                            next ATTACHMENTS;
+                        }
+
+                        # add inline images as related
+                        if ( $PartType ne 'related' ) {
+                            $Entity->make_multipart( 'related;', Force => 1, );
+                            $PartType = 'related';
+                        }
                     }
                 }
+
+                # content encode
+                $Self->{EncodeObject}->EncodeOutput( \$Upload->{Content} );
+
+                # filename encode
+                my $Filename = $Self->_EncodeMIMEWords(
+                    Field   => 'filename',
+                    Line    => $Upload->{Filename},
+                    Charset => $Param{Charset},
+                );
+
+                # format content id, leave undefined if no value
+                my $ContentID = $Upload->{ContentID};
+                if ( $ContentID && $ContentID !~ /^</ ) {
+                    $ContentID = '<' . $ContentID . '>';
+                }
+
+                # attach file to email
+                $Entity->attach(
+                    Filename    => $Filename,
+                    Data        => $Upload->{Content},
+                    Type        => $Upload->{ContentType},
+                    Id          => $ContentID,
+                    Disposition => $Upload->{Disposition} || 'inline',
+                    Encoding    => $Upload->{Encoding} || '-SUGGEST',
+                );
+            }
+        }
+
+        # add all other attachments as multipart mixed (if we had html body)
+        for my $Upload (@NewAttachments) {
+
+            # make multipart mixed
+            if ( $PartType ne 'mixed' ) {
+                $Entity->make_multipart( 'mixed;', Force => 1, );
+                $PartType = 'mixed';
             }
 
             # content encode
@@ -426,35 +449,6 @@ sub Send {
                 Encoding    => $Upload->{Encoding} || '-SUGGEST',
             );
         }
-
-        # add all other attachments as multipart mixed (if we had html body)
-        for my $Upload (@NewAttachments) {
-
-            # make multipart mixed
-            if ( $PartType ne 'mixed' ) {
-                $Entity->make_multipart( 'mixed;', Force => 1, );
-                $PartType = 'mixed';
-            }
-
-            # content encode
-            $Self->{EncodeObject}->EncodeOutput( \$Upload->{Content} );
-
-            # filename encode
-            my $Filename = $Self->_EncodeMIMEWords(
-                Field   => 'filename',
-                Line    => $Upload->{Filename},
-                Charset => $Param{Charset},
-            );
-
-            # attach file to email (no content id needed)
-            $Entity->attach(
-                Filename    => $Filename,
-                Data        => $Upload->{Content},
-                Type        => $Upload->{ContentType},
-                Disposition => $Upload->{Disposition} || 'inline',
-                Encoding    => $Upload->{Encoding} || '-SUGGEST',
-            );
-        }
     }
 
     # get sign options for detached
@@ -468,13 +462,8 @@ sub Send {
             CryptType    => $Param{Sign}->{Type},
         );
         if ( !$CryptObject ) {
-            $Self->{LogObject}->Log(
-                Message  => 'Not possible to create crypt object',
-                Priority => 'error',
-            );
             return;
         }
-
         if ( $Param{Sign}->{Type} eq 'PGP' ) {
 
             # make_multipart -=> one attachment for sign
@@ -532,16 +521,16 @@ sub Send {
             $T =~ s/\x0A/\x0D\x0A/g;
             $T =~ s/\x0D+/\x0D/g;
             my $Sign = $CryptObject->Sign(
-                Message  => $T,
-                Filename => $Param{Sign}->{Key},
-                Type     => 'Detached',
+                Message => $T,
+                Hash    => $Param{Sign}->{Key},
+                Type    => 'Detached',
             );
             if ($Sign) {
                 use MIME::Parser;
-                my $Parser = MIME::Parser->new();
+                my $Parser = new MIME::Parser;
                 $Parser->output_to_core('ALL');
 
-                $Parser->output_dir( $Self->{ConfigObject}->Get('TempDir') );
+                #        $Parser->output_dir($Self->{ConfigObject}->Get('TempDir'));
                 $Entity = $Parser->parse_data( $Header . $Sign );
             }
         }
@@ -564,7 +553,9 @@ sub Send {
             MainObject   => $Self->{MainObject},
             CryptType    => $Param{Crypt}->{Type},
         );
-        return if !$CryptObject;
+        if ( !$CryptObject ) {
+            return;
+        }
 
         # make_multipart -=> one attachment for encryption
         $Entity->make_multipart(
@@ -615,12 +606,7 @@ sub Send {
             MainObject   => $Self->{MainObject},
             CryptType    => $Param{Crypt}->{Type},
         );
-
         if ( !$CryptObject ) {
-            $Self->{LogObject}->Log(
-                Message  => 'Failed creation of crypt object',
-                Priority => 'error',
-            );
             return;
         }
 
@@ -637,13 +623,13 @@ sub Send {
 
         # crypt it
         my $Crypt = $CryptObject->Crypt(
-            Message  => $Entity->parts(0)->as_string(),
-            Filename => $Param{Crypt}->{Key},
+            Message => $Entity->parts(0)->as_string(),
+            Hash    => $Param{Crypt}->{Key},
         );
         use MIME::Parser;
-        my $Parser = MIME::Parser->new();
+        my $Parser = new MIME::Parser;
 
-        $Parser->output_dir( $Self->{ConfigObject}->Get('TempDir') );
+        #        $Parser->output_dir($Self->{ConfigObject}->Get('TempDir'));
         $Entity = $Parser->parse_data( $Header . $Crypt );
     }
 
@@ -665,8 +651,8 @@ sub Send {
     $Param{Body} = $Entity->body_as_string();
 
     # get recipients
-    my @ToArray;
-    my $To = '';
+    my @ToArray = ();
+    my $To      = '';
     for (qw(To Cc Bcc)) {
         next if !$Param{$_};
         for my $Email ( Mail::Address->parse( $Param{$_} ) ) {
@@ -708,36 +694,9 @@ sub Send {
         Body    => \$Param{Body},
     );
 
-    if ( !$Sent ) {
-        $Self->{LogObject}->Log(
-            Message  => "Error sending message",
-            Priority => 'info',
-        );
-        return;
-    }
+    return if !$Sent;
 
     return ( \$Param{Header}, \$Param{Body} );
-}
-
-=item Check()
-
-Check mail configuration
-
-    my %Check = $SendObject->Check();
-
-=cut
-
-sub Check {
-    my ( $Self, %Param ) = @_;
-
-    my %Check = $Self->{Backend}->Check();
-
-    if ( $Check{Successful} ) {
-        return ( Successful => 1 )
-    }
-    else {
-        return ( Successful => 0, Message => $Check{Message} );
-    }
 }
 
 =item Bounce()
@@ -815,10 +774,6 @@ sub Bounce {
     return ( \$HeaderAsString, \$BodyAsString );
 }
 
-=begin Internal:
-
-=cut
-
 sub _EncodeMIMEWords {
     my ( $Self, %Param ) = @_;
 
@@ -869,22 +824,20 @@ sub _MessageIDCreate {
 
 1;
 
-=end Internal:
-
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.75 $ $Date: 2011/06/07 07:24:56 $
+$Revision: 1.64.2.1 $ $Date: 2009/12/08 14:35:34 $
 
 =cut
