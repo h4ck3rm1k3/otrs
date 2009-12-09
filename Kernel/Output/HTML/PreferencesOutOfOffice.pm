@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/PreferencesOutOfOffice.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: PreferencesOutOfOffice.pm,v 1.10 2011/12/23 14:36:18 mb Exp $
+# $Id: PreferencesOutOfOffice.pm,v 1.3.2.1 2009/12/09 08:58:12 mn Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.3.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -35,12 +35,12 @@ sub new {
 sub Param {
     my ( $Self, %Param ) = @_;
 
-    my @Params;
-    if ( $Param{UserData}->{OutOfOffice} ) {
-        $Param{OutOfOfficeOn} = 'checked="checked"';
+    my @Params = ();
+    if ( $Self->{OutOfOffice} ) {
+        $Param{OutOfOfficeOn} = 'checked';
     }
     else {
-        $Param{OutOfOfficeOff} = 'checked="checked"';
+        $Param{OutOfOfficeOff} = 'checked';
     }
     $Param{OptionStart} = $Self->{LayoutObject}->BuildDateSelection(
         Format                 => 'DateInputFormat',
@@ -51,9 +51,6 @@ sub Param {
         OutOfOfficeStartDay    => $Param{UserData}->{OutOfOfficeStartDay},
         OutOfOfficeStartHour   => 0,
         OutOfOfficeStartMinute => 0,
-        YearPeriodPast         => 1,
-        YearPeriodFuture       => 5,
-        Validate               => 1,
     );
     $Param{OptionEnd} = $Self->{LayoutObject}->BuildDateSelection(
         Format               => 'DateInputFormat',
@@ -65,9 +62,6 @@ sub Param {
         OutOfOfficeEndDay    => $Param{UserData}->{OutOfOfficeEndDay},
         OutOfOfficeEndHour   => 0,
         OutOfOfficeEndMinute => 0,
-        YearPeriodPast       => 1,
-        YearPeriodFuture     => 5,
-        Validate             => 1,
     );
 
     push(
@@ -90,7 +84,7 @@ sub Run {
 
         $Param{$Key} = $Self->{ParamObject}->GetParam( Param => $Key );
 
-        if ( defined $Param{$Key} ) {
+        if ( defined( $Param{$Key} ) ) {
 
             # pref update db
             if ( !$Self->{ConfigObject}->Get('DemoSystem') ) {
@@ -110,17 +104,6 @@ sub Run {
                 );
             }
         }
-    }
-
-    # also update the lastname to remove out of office message
-    if ( $Param{UserData}->{UserID} eq $Self->{UserID} ) {
-        my %User = $Self->{UserObject}->GetUserData( UserID => $Self->{UserID} );
-
-        $Self->{SessionObject}->UpdateSessionID(
-            SessionID => $Self->{SessionID},
-            Key       => 'UserLastname',
-            Value     => $User{UserLastname},
-        );
     }
 
     $Self->{Message} = 'Preferences updated successfully!';
