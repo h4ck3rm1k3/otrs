@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/TicketOverviewSmall.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: TicketOverviewSmall.pm,v 1.50 2011/11/28 07:57:28 mg Exp $
+# $Id: TicketOverviewSmall.pm,v 1.13.2.1 2009/12/13 12:51:13 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,12 +15,9 @@ use strict;
 use warnings;
 
 use Kernel::System::CustomerUser;
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.50 $) [1];
+$VERSION = qw($Revision: 1.13.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -38,77 +35,11 @@ sub new {
     }
 
     $Self->{CustomerUserObject} = Kernel::System::CustomerUser->new(%Param);
-    $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new(%Param);
-    $Self->{BackendObject}      = Kernel::System::DynamicField::Backend->new(%Param);
 
     $Self->{SmallViewColumnHeader}
         = $Self->{ConfigObject}->Get('Ticket::Frontend::OverviewSmall')->{ColumnHeader};
 
-    # get dynamic field config for frontend module
-    $Self->{DynamicFieldFilter}
-        = $Self->{ConfigObject}->Get("Ticket::Frontend::OverviewSmall")->{DynamicField};
-
-    # get the dynamic fields for this screen
-    $Self->{DynamicField} = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid       => 1,
-        ObjectType  => ['Ticket'],
-        FieldFilter => $Self->{DynamicFieldFilter} || {},
-    );
-
     return $Self;
-}
-
-sub ActionRow {
-    my ( $Self, %Param ) = @_;
-
-    # check if bulk feature is enabled
-    my $BulkFeature = 0;
-    if ( $Param{Bulk} && $Self->{ConfigObject}->Get('Ticket::Frontend::BulkFeature') ) {
-        my @Groups;
-        if ( $Self->{ConfigObject}->Get('Ticket::Frontend::BulkFeatureGroup') ) {
-            @Groups = @{ $Self->{ConfigObject}->Get('Ticket::Frontend::BulkFeatureGroup') };
-        }
-        if ( !@Groups ) {
-            $BulkFeature = 1;
-        }
-        else {
-            for my $Group (@Groups) {
-                next if !$Self->{LayoutObject}->{"UserIsGroup[$Group]"};
-                if ( $Self->{LayoutObject}->{"UserIsGroup[$Group]"} eq 'Yes' ) {
-                    $BulkFeature = 1;
-                    last;
-                }
-            }
-        }
-    }
-
-    $Self->{LayoutObject}->Block(
-        Name => 'DocumentActionRow',
-        Data => \%Param,
-    );
-
-    if ($BulkFeature) {
-        $Self->{LayoutObject}->Block(
-            Name => 'DocumentActionRowBulk',
-            Data => {
-                %Param,
-                Name => 'Bulk',
-            },
-        );
-    }
-
-    my $Output = $Self->{LayoutObject}->Output(
-        TemplateFile => 'AgentTicketOverviewSmall',
-        Data         => \%Param,
-    );
-
-    return $Output;
-}
-
-sub SortOrderBar {
-    my ( $Self, %Param ) = @_;
-
-    return '';
 }
 
 sub Run {
@@ -143,16 +74,43 @@ sub Run {
         }
     }
 
+    if ($BulkFeature) {
+        $Self->{LayoutObject}->Block(
+            Name => 'BulkHead',
+            Data => \%Param,
+        );
+    }
+
+    if ( $Param{Escalation} ) {
+        $Self->{LayoutObject}->Block(
+            Name => 'RecordEscalationHeader',
+            Data => \%Param,
+        );
+    }
+
+    # check if last customer subject or ticket title should be shown
+    if ( $Self->{SmallViewColumnHeader} eq 'LastCustomerSubject' ) {
+        $Self->{LayoutObject}->Block(
+            Name => 'RecordLastCustomerSubjectHeader',
+            Data => \%Param,
+        );
+    }
+    elsif ( $Self->{SmallViewColumnHeader} eq 'TicketTitle' ) {
+        $Self->{LayoutObject}->Block(
+            Name => 'RecordTicketTitleHeader',
+            Data => \%Param,
+        );
+    }
+
+    my $Output  = '';
     my $Counter = 0;
-    my @ArticleBox;
     for my $TicketID ( @{ $Param{TicketIDs} } ) {
         $Counter++;
         if ( $Counter >= $Param{StartHit} && $Counter < ( $Param{PageShown} + $Param{StartHit} ) ) {
 
             # get last customer article
             my %Article = $Self->{TicketObject}->ArticleLastCustomerArticle(
-                TicketID      => $TicketID,
-                DynamicFields => 0,
+                TicketID => $TicketID,
             );
 
             # prepare subject
@@ -167,491 +125,112 @@ sub Run {
                 Space => ' ',
             );
 
-            # get acl actions
-            $Self->{TicketObject}->TicketAcl(
-                Data          => '-',
-                Action        => $Self->{Action},
-                TicketID      => $Article{TicketID},
-                ReturnType    => 'Action',
-                ReturnSubType => '-',
-                UserID        => $Self->{UserID},
-            );
-            my %AclAction = $Self->{TicketObject}->TicketAclActionData();
+            # escalation human times
+            if ( $Article{EscalationTime} ) {
+                $Article{EscalationTimeHuman} = $Self->{LayoutObject}->CustomerAgeInHours(
+                    Age   => $Article{EscalationTime},
+                    Space => ' ',
+                );
+                $Article{EscalationTimeWorkingTime} = $Self->{LayoutObject}->CustomerAgeInHours(
+                    Age   => $Article{EscalationTimeWorkingTime},
+                    Space => ' ',
+                );
+            }
 
-            # run ticket pre menu modules
-            my @ActionItems;
-            if ( ref $Self->{ConfigObject}->Get('Ticket::Frontend::PreMenuModule') eq 'HASH' ) {
-                my %Menus = %{ $Self->{ConfigObject}->Get('Ticket::Frontend::PreMenuModule') };
-                my @Items;
-                for my $Menu ( sort keys %Menus ) {
-
-                    # load module
-                    if ( !$Self->{MainObject}->Require( $Menus{$Menu}->{Module} ) ) {
-                        return $Self->{LayoutObject}->FatalError();
-                    }
-                    my $Object
-                        = $Menus{$Menu}->{Module}->new( %{$Self}, TicketID => $Article{TicketID}, );
-
-                    # run module
-                    my $Item = $Object->Run(
-                        %Param,
-                        Ticket => \%Article,
-                        ACL    => \%AclAction,
-                        Config => $Menus{$Menu},
+            # customer info (customer name)
+            my %CustomerData;
+            if ( $Self->{ConfigObject}->Get('Ticket::Frontend::CustomerInfoQueue') ) {
+                if ( $Article{CustomerUserID} ) {
+                    %CustomerData = $Self->{CustomerUserObject}->CustomerUserDataGet(
+                        User => $Article{CustomerUserID},
                     );
-                    next if !$Item;
-                    next if ref $Item ne 'HASH';
-                    for my $Key (qw(Name Link Description)) {
-                        next if !$Item->{$Key};
-                        $Item->{$Key} = $Self->{LayoutObject}->Output(
-                            Template => $Item->{$Key},
-                            Data     => \%Article,
-                        );
-                    }
+                }
+                if ( $CustomerData{UserLogin} ) {
+                    $Article{CustomerName} = $Self->{CustomerUserObject}->CustomerName(
+                        UserLogin => $CustomerData{UserLogin},
+                    );
+                }
+            }
 
-                    # create id
-                    $Item->{ID} = $Item->{Name};
-                    $Item->{ID} =~ s/(\s|&|;)//ig;
+            # user info
+            my %UserInfo = $Self->{UserObject}->GetUserData(
+                User   => $Article{Owner},
+                Cached => 1
+            );
 
+            # seperate each searchresult line by using several css
+            if ( $Counter % 2 ) {
+                $Article{css} = "searchpassive";
+            }
+            else {
+                $Article{css} = "searchactive";
+            }
+            $Self->{LayoutObject}->Block(
+                Name => 'Record',
+                Data => { %Article, %UserInfo },
+            );
+
+            # check if bulk feature is enabled
+            if ($BulkFeature) {
+                $Self->{LayoutObject}->Block(
+                    Name => 'Bulk',
+                    Data => { %Article, %UserInfo },
+                );
+            }
+
+            if ( $Param{Escalation} ) {
+                $Self->{LayoutObject}->Block(
+                    Name => 'RecordEscalation',
+                    Data => { %Article, %UserInfo },
+                );
+                if ( $Article{EscalationTime} < 60 * 60 * 1 ) {
                     $Self->{LayoutObject}->Block(
-                        Name => $Item->{Block} || 'DocumentMenuItem',
-                        Data => $Item,
+                        Name => 'RecordEscalationFontStart',
+                        Data => { %Article, %UserInfo },
                     );
-                    my $Output = $Self->{LayoutObject}->Output(
-                        TemplateFile => 'AgentTicketOverviewSmall',
-                        Data         => $Item,
+                    $Self->{LayoutObject}->Block(
+                        Name => 'RecordEscalationFontStop',
+                        Data => { %Article, %UserInfo },
                     );
-                    $Output =~ s/\n+//g;
-                    $Output =~ s/\s+/ /g;
-                    $Output =~ s/<\!--.+?-->//g;
-
-                    push @ActionItems, {
-                        HTML        => $Output,
-                        ID          => $Item->{ID},
-                        Link        => $Self->{LayoutObject}->{Baselink} . $Item->{Link},
-                        Target      => $Item->{Target},
-                        PopupType   => $Item->{PopupType},
-                        Description => $Item->{Description},
-                    };
-                    $Article{ActionItems} = \@ActionItems;
                 }
             }
-            push @ArticleBox, \%Article;
+
+            # check if last customer subject or ticket title should be shown
+            if ( $Self->{SmallViewColumnHeader} eq 'LastCustomerSubject' ) {
+                $Self->{LayoutObject}->Block(
+                    Name => 'RecordLastCustomerSubject',
+                    Data => { %Article, %UserInfo },
+                );
+            }
+            elsif ( $Self->{SmallViewColumnHeader} eq 'TicketTitle' ) {
+                $Self->{LayoutObject}->Block(
+                    Name => 'RecordTicketTitle',
+                    Data => { %Article, %UserInfo },
+                );
+            }
         }
     }
 
-    $Self->{LayoutObject}->Block(
-        Name => 'DocumentContent',
-        Data => \%Param,
-    );
-
-    my $TicketData = scalar @ArticleBox;
-    if ($TicketData) {
-
-        $Self->{LayoutObject}->Block( Name => 'OverviewTable' );
-        $Self->{LayoutObject}->Block( Name => 'TableHeader' );
-
-        if ($BulkFeature) {
-            $Self->{LayoutObject}->Block(
-                Name => 'BulkNavBar',
-                Data => \%Param,
-            );
-        }
-
-        # meta items
-        my @TicketMetaItems = $Self->{LayoutObject}->TicketMetaItemsCount();
-        for my $Item (@TicketMetaItems) {
-
-            my $CSS = '';
-            my $OrderBy;
-            my $Link;
-
-            if ( $Param{SortBy} && ( $Param{SortBy} eq $Item ) ) {
-                if ( $Param{OrderBy} && ( $Param{OrderBy} eq 'Up' ) ) {
-                    $OrderBy = 'Down';
-                    $CSS .= ' SortAscending';
-                }
-                else {
-                    $OrderBy = 'Up';
-                    $CSS .= ' SortDescending';
-                }
-            }
-
-            $Self->{LayoutObject}->Block(
-                Name => 'OverviewNavBarPageFlag',
-                Data => {
-                    CSS => $CSS,
-                },
-            );
-
-            if ( $Item eq 'New Article' ) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarPageFlagEmpty',
-                    Data => { Name => $Item, }
-                );
-            }
-            else {
-                $Self->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarPageFlagLink',
-                    Data => {
-                        %Param,
-                        Name    => $Item,
-                        CSS     => $CSS,
-                        OrderBy => $OrderBy,
-                    },
-                );
-            }
-
-        }
-
-        my @Col = (qw(TicketNumber Age State Lock Queue Owner CustomerID));
-
-        # show escalation
-        if ( $Param{Escalation} ) {
-            push @Col, 'EscalationTime';
-        }
-
-        # check if last customer subject or ticket title should be shown
-        if ( $Self->{SmallViewColumnHeader} eq 'LastCustomerSubject' ) {
-            push @Col, 'LastCustomerSubject';
-        }
-        elsif ( $Self->{SmallViewColumnHeader} eq 'TicketTitle' ) {
-            push @Col, 'Title';
-        }
-
-        for my $Key (@Col) {
-            my $CSS = '';
-            my $OrderBy;
-            if ( $Param{SortBy} && ( $Param{SortBy} eq $Key ) ) {
-                if ( $Param{OrderBy} && ( $Param{OrderBy} eq 'Up' ) ) {
-                    $OrderBy = 'Down';
-                    $CSS .= ' SortAscending';
-                }
-                else {
-                    $OrderBy = 'Up';
-                    $CSS .= ' SortDescending';
-                }
-            }
-
-            $Self->{LayoutObject}->Block(
-                Name => 'OverviewNavBarPage' . $Key,
-                Data => {
-                    %Param,
-                    OrderBy => $OrderBy,
-                    CSS     => $CSS,
-                },
-            );
-        }
-
-        # Dynamic fields
-        # cycle trough the activated Dynamic Fields for this screen
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-            my $Label = $DynamicFieldConfig->{Label};
-
-            # get field sortable condition
-            my $IsSortable = $Self->{BackendObject}->IsSortable(
-                DynamicFieldConfig => $DynamicFieldConfig,
-            );
-
-            if ($IsSortable) {
-                my $CSS = '';
-                my $OrderBy;
-                if (
-                    $Param{SortBy}
-                    && ( $Param{SortBy} eq ( 'DynamicField_' . $DynamicFieldConfig->{Name} ) )
-                    )
-                {
-                    if ( $Param{OrderBy} && ( $Param{OrderBy} eq 'Up' ) ) {
-                        $OrderBy = 'Down';
-                        $CSS .= ' SortDescending';
-                    }
-                    else {
-                        $OrderBy = 'Up';
-                        $CSS .= ' SortAscending';
-                    }
-                }
-
-                $Self->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarPageDynamicField',
-                    Data => {
-                        %Param,
-                        CSS => $CSS,
-                    },
-                );
-
-                $Self->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarPageDynamicFieldSortable',
-                    Data => {
-                        %Param,
-                        OrderBy          => $OrderBy,
-                        Label            => $Label,
-                        DynamicFieldName => $DynamicFieldConfig->{Name},
-                    },
-                );
-
-                # example of dynamic fields order customization
-                $Self->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarPageDynamicField_' . $DynamicFieldConfig->{Name},
-                    Data => {
-                        %Param,
-                        CSS => $CSS,
-                    },
-                );
-
-                $Self->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarPageDynamicField_'
-                        . $DynamicFieldConfig->{Name}
-                        . 'Sortable_',
-                    Data => {
-                        %Param,
-                        OrderBy          => $OrderBy,
-                        Label            => $Label,
-                        DynamicFieldName => $DynamicFieldConfig->{Name},
-                    },
-                );
-            }
-            else {
-
-                $Self->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarPageDynamicField',
-                    Data => {
-                        %Param,
-                    },
-                );
-
-                $Self->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarPageDynamicFieldNotSortable',
-                    Data => {
-                        %Param,
-                        Label => $Label,
-                    },
-                );
-
-                # example of dynamic fields order customization
-                $Self->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarPageDynamicField_' . $DynamicFieldConfig->{Name},
-                    Data => {
-                        %Param,
-                    },
-                );
-
-                $Self->{LayoutObject}->Block(
-                    Name => 'OverviewNavBarPageDynamicField_'
-                        . $DynamicFieldConfig->{Name}
-                        . 'NotSortable',
-                    Data => {
-                        %Param,
-                        Label => $Label,
-                    },
-                );
-            }
-        }
-
-        $Self->{LayoutObject}->Block( Name => 'TableBody' );
-
-    }
-    else {
-        $Self->{LayoutObject}->Block( Name => 'NoTicketFound' );
-    }
-
-    for my $ArticleRef (@ArticleBox) {
-
-        # get last customer article
-        my %Article = %{$ArticleRef};
-
-        # escalation human times
-        if ( $Article{EscalationTime} ) {
-            $Article{EscalationTimeHuman} = $Self->{LayoutObject}->CustomerAgeInHours(
-                Age   => $Article{EscalationTime},
-                Space => ' ',
-            );
-            $Article{EscalationTimeWorkingTime} = $Self->{LayoutObject}->CustomerAgeInHours(
-                Age   => $Article{EscalationTimeWorkingTime},
-                Space => ' ',
-            );
-        }
-
-        # customer info (customer name)
-        if ( $Param{Config}->{CustomerInfo} ) {
-            if ( $Article{CustomerUserID} ) {
-                $Article{CustomerName} = $Self->{CustomerUserObject}->CustomerName(
-                    UserLogin => $Article{CustomerUserID},
-                );
-            }
-        }
-
-        # user info
-        my %UserInfo = $Self->{UserObject}->GetUserData(
-            UserID => $Article{OwnerID},
-        );
-
+    # check if bulk feature is enabled
+    if ($BulkFeature) {
         $Self->{LayoutObject}->Block(
-            Name => 'Record',
-            Data => { %Article, %UserInfo },
+            Name => 'BulkFooter',
+            Data => \%Param,
         );
-
-        # check if bulk feature is enabled
-        if ($BulkFeature) {
-            $Self->{LayoutObject}->Block(
-                Name => 'Bulk',
-                Data => { %Article, %UserInfo },
-            );
-        }
-
-        # show ticket flags
-        my @TicketMetaItems = $Self->{LayoutObject}->TicketMetaItems(
-            Ticket => \%Article,
-        );
-        for my $Item (@TicketMetaItems) {
-            $Self->{LayoutObject}->Block(
-                Name => 'ContentLargeTicketGenericRowMeta',
-                Data => $Item,
-            );
-            if ($Item) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'ContentLargeTicketGenericRowMetaImage',
-                    Data => $Item,
-                );
-            }
-        }
-
-        # show escalation
-        if ( $Param{Escalation} ) {
-            if ( $Article{EscalationTime} < 60 * 60 * 1 ) {
-                $Article{EscalationClass} = 'Warning';
-            }
-            $Self->{LayoutObject}->Block(
-                Name => 'RecordEscalationTime',
-                Data => { %Article, %UserInfo },
-            );
-        }
-
-        # check if last customer subject or ticket title should be shown
-        if ( $Self->{SmallViewColumnHeader} eq 'LastCustomerSubject' ) {
-            $Self->{LayoutObject}->Block(
-                Name => 'RecordLastCustomerSubject',
-                Data => { %Article, %UserInfo },
-            );
-        }
-        elsif ( $Self->{SmallViewColumnHeader} eq 'TicketTitle' ) {
-            $Self->{LayoutObject}->Block(
-                Name => 'RecordTicketTitle',
-                Data => { %Article, %UserInfo },
-            );
-        }
-
-        # Dynamic fields
-        # cycle trough the activated Dynamic Fields for this screen
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-            # get field value
-            my $Value = $Self->{BackendObject}->ValueGet(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                ObjectID           => $Article{TicketID},
-            );
-
-            my $ValueStrg = $Self->{BackendObject}->DisplayValueRender(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                Value              => $Value,
-                ValueMaxChars      => 20,
-                LayoutObject       => $Self->{LayoutObject},
-            );
-
-            $Self->{LayoutObject}->Block(
-                Name => 'RecordDynamicField',
-                Data => {
-                    Value => $ValueStrg->{Value},
-                    Title => $ValueStrg->{Title},
-                },
-            );
-
-            if ( $ValueStrg->{Link} ) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'RecordDynamicFieldLink',
-                    Data => {
-                        Value                       => $ValueStrg->{Value},
-                        Title                       => $ValueStrg->{Title},
-                        Link                        => $ValueStrg->{Link},
-                        $DynamicFieldConfig->{Name} => $ValueStrg->{Title},
-                    },
-                );
-            }
-            else {
-                $Self->{LayoutObject}->Block(
-                    Name => 'RecordDynamicFieldPlain',
-                    Data => {
-                        Value => $ValueStrg->{Value},
-                        Title => $ValueStrg->{Title},
-                    },
-                );
-            }
-
-            # example of dynamic fields order customization
-            $Self->{LayoutObject}->Block(
-                Name => 'RecordDynamicField' . $DynamicFieldConfig->{Name},
-                Data => {
-                    Value => $ValueStrg->{Value},
-                    Title => $ValueStrg->{Title},
-                },
-            );
-
-            if ( $ValueStrg->{Link} ) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'RecordDynamicField' . $DynamicFieldConfig->{Name} . 'Link',
-                    Data => {
-                        Value                       => $ValueStrg->{Value},
-                        Title                       => $ValueStrg->{Title},
-                        Link                        => $ValueStrg->{Link},
-                        $DynamicFieldConfig->{Name} => $ValueStrg->{Title},
-                    },
-                );
-            }
-            else {
-                $Self->{LayoutObject}->Block(
-                    Name => 'RecordDynamicField' . $DynamicFieldConfig->{Name} . 'Plain',
-                    Data => {
-                        Value => $ValueStrg->{Value},
-                        Title => $ValueStrg->{Title},
-                    },
-                );
-            }
-        }
-
-        # add action items as js
-        if ( $Article{ActionItems} ) {
-
-            my $JSON = $Self->{LayoutObject}->JSONEncode(
-                Data => $Article{ActionItems},
-            );
-
-            $Self->{LayoutObject}->Block(
-                Name => 'DocumentReadyActionRowAdd',
-                Data => {
-                    TicketID => $Article{TicketID},
-                    Data     => $JSON,
-                },
-            );
-        }
     }
 
-    # init for table control
-    $Self->{LayoutObject}->Block(
-        Name => 'DocumentReadyStart',
-        Data => \%Param,
-    );
+    # increase footer size on escalation view
+    if ( $Param{Escalation} ) {
+        $Self->{LayoutObject}->Block(
+            Name => 'EscalationFooter',
+            Data => \%Param,
+        );
+    }
 
     # use template
-    my $Output = $Self->{LayoutObject}->Output(
+    $Output .= $Self->{LayoutObject}->Output(
         TemplateFile => 'AgentTicketOverviewSmall',
-        Data         => {
-            %Param,
-            Type => $Self->{ViewType},
-        },
+        Data => { %Param, Type => $Self->{ViewType}, },
     );
 
     return $Output;
