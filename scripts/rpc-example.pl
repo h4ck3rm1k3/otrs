@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 # --
 # scripts/rpc-example.pl - soap example client
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: rpc-example.pl,v 1.8 2011/10/24 09:22:12 mg Exp $
+# $Id: rpc-example.pl,v 1.6.2.1 2009/12/22 11:18:19 mb Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -24,24 +24,21 @@
 use strict;
 use warnings;
 
-use SOAP::Lite;
-
+# config
+use SOAP::Lite( 'autodispatch', proxy => 'http://otrs.example.com/otrs/rpc.pl' );
 my $User = 'some_user';
 my $Pw   = 'some_pass';
-my $RPC = new SOAP::Lite( proxy => 'http://127.0.0.1/otrs/rpc.pl', uri => 'http://localhost/Core' );
+
+my $RPC = Core->new();
 
 # create a new ticket number
 print "NOTICE: TicketObject->TicketCreateNumber()\n";
-my $som = $RPC->Dispatch( $User, $Pw, 'TicketObject', 'TicketCreateNumber' );
-die $som->fault->{faultstring} if $som->fault;
-my $TicketNumber = $som->result;
+my $TicketNumber = $RPC->Dispatch( $User, $Pw, 'TicketObject', 'TicketCreateNumber' );
 print "NOTICE: New Ticket Number is: $TicketNumber\n";
 
 # get ticket attributes
 print "NOTICE: TicketObject->TicketGet(TicketID => 1)\n";
-$som = $RPC->Dispatch( $User, $Pw, 'TicketObject', 'TicketGet', TicketID => 1 );
-die $som->fault->{faultstring} if $som->fault;
-my %Ticket = $som->result;
+my %Ticket = $RPC->Dispatch( $User, $Pw, 'TicketObject', 'TicketGet', TicketID => 1 );
 print "NOTICE: Ticket Number is: $Ticket{TicketNumber}\n";
 print "NOTICE: Ticket State is:  $Ticket{State}\n";
 print "NOTICE: Ticket Queue is:  $Ticket{Queue}\n";
@@ -60,29 +57,26 @@ my %TicketData = (
 );
 
 print "NOTICE: TicketObject->TicketCreate(%TicketData)\n";
-$som = $RPC->Dispatch( $User, $Pw, 'TicketObject', 'TicketCreate', %TicketData );
-die $som->fault->{faultstring} if $som->fault;
-my $TicketID = $som->result;
+my $TicketID = $RPC->Dispatch( $User, $Pw, 'TicketObject', 'TicketCreate', %TicketData => 1 )
+    || die "$!";
 print "NOTICE: TicketID is $TicketID\n";
 
 # delete the ticket
 print "NOTICE: TicketObject->TicketDelete(TicketID => $TicketID)\n";
-$som = $RPC->Dispatch(
+my $Feedback = $RPC->Dispatch(
     $User, $Pw, 'TicketObject', 'TicketDelete',
     TicketID => $TicketID,
     UserID   => 1
 );
-die $som->fault->{faultstring} if $som->fault;
-my $Feedback = $som->result;
+
 my $Message = $Feedback ? 'was successful' : 'was not successful';
 print "NOTICE: Delete Ticket with ID $TicketID $Message\n";
 
 # check if the customer exits
 print "NOTICE: CustomerUserObject->CustomerName(UserLogin => 'test-user')\n";
-$som = $RPC->Dispatch( $User, $Pw, 'CustomerUserObject', 'CustomerName', UserLogin => 'test-user' );
-die $som->fault->{faultstring} if $som->fault;
-my $Name = $som->result;
-$Message = $Name ? 'exists' : 'does not exist';
+my $Name
+    = $RPC->Dispatch( $User, $Pw, 'CustomerUserObject', 'CustomerName', UserLogin => 'test-user' );
+$Message = $Name ? 'exists' : 'does not exists';
 print "NOTICE: The customer with the login 'test-user' $Message\n";
 
 exit 0;
