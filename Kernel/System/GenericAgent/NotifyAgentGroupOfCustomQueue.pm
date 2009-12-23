@@ -1,8 +1,8 @@
 # --
 # Kernel/System/GenericAgent/NotifyAgentGroupOfCustomQueue.pm - generic agent notifications
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: NotifyAgentGroupOfCustomQueue.pm,v 1.24 2011/11/25 10:19:42 mg Exp $
+# $Id: NotifyAgentGroupOfCustomQueue.pm,v 1.22.2.1 2009/12/23 22:56:45 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::Email;
 use Kernel::System::Queue;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.24 $) [1];
+$VERSION = qw($Revision: 1.22.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -47,10 +47,7 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     # get ticket data
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        %Param,
-        DynamicFields => 0,
-    );
+    my %Ticket = $Self->{TicketObject}->TicketGet(%Param);
 
     # check if bussines hours is, then send escalation info
     my $CountedTime = $Self->{TimeObject}->WorkingTime(
@@ -108,37 +105,38 @@ sub Run {
     # send each agent the escalation notification
     for my $UserID (@UserIDs) {
         my %User = $Self->{UserObject}->GetUserData( UserID => $UserID, Valid => 1 );
-        next if !%User;
+        if (%User) {
 
-        # check if today a reminder is already sent
-        my ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $Self->{TimeObject}->SystemTime2Date(
-            SystemTime => $Self->{TimeObject}->SystemTime(),
-        );
-        my @Lines = $Self->{TicketObject}->HistoryGet(
-            TicketID => $Ticket{TicketID},
-            UserID   => 1,
-        );
-        my $Sent = 0;
-        for my $Line (@Lines) {
-            if (
-                $Line->{Name}          =~ /\%\%$EscalationType\%\%/
-                && $Line->{Name}       =~ /\Q%%$User{UserEmail}\E$/i
-                && $Line->{CreateTime} =~ /$Year-$Month-$Day/
-                )
-            {
-                $Sent = 1;
+            # check if today a reminder is already sent
+            my ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $Self->{TimeObject}->SystemTime2Date(
+                SystemTime => $Self->{TimeObject}->SystemTime(),
+            );
+            my @Lines = $Self->{TicketObject}->HistoryGet(
+                TicketID => $Ticket{TicketID},
+                UserID   => 1,
+            );
+            my $Sent = 0;
+            for my $Line (@Lines) {
+                if (
+                    $Line->{Name}          =~ /\%\%$EscalationType\%\%/
+                    && $Line->{Name}       =~ /\Q%%$User{UserEmail}\E$/i
+                    && $Line->{CreateTime} =~ /$Year-$Month-$Day/
+                    )
+                {
+                    $Sent = 1;
+                }
             }
-        }
-        next if $Sent;
+            next if $Sent;
 
-        # send agent notification
-        $Self->{TicketObject}->SendAgentNotification(
-            TicketID              => $Param{TicketID},
-            CustomerMessageParams => \%Param,
-            Type                  => $EscalationType,
-            RecipientID           => $UserID,
-            UserID                => 1,
-        );
+            # send agent notification
+            $Self->{TicketObject}->SendAgentNotification(
+                TicketID              => $Param{TicketID},
+                CustomerMessageParams => \%Param,
+                Type                  => $EscalationType,
+                RecipientID           => $UserID,
+                UserID                => 1,
+            );
+        }
     }
     return 1;
 }
