@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/ArticleComposeSign.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: ArticleComposeSign.pm,v 1.23 2011/06/03 03:38:01 dz Exp $
+# $Id: ArticleComposeSign.pm,v 1.18.2.1 2009/12/23 22:28:09 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::Crypt;
 use Kernel::System::Queue;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.23 $) [1];
+$VERSION = qw($Revision: 1.18.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -56,7 +56,7 @@ sub Run {
 
     my %KeyList = $Self->Data(%Param);
 
-    # add signing options
+    # add singing options
     if (
         !defined $Param{SignKeyID}
         || ( $Param{ExpandCustomerName} && $Param{ExpandCustomerName} == 3 )
@@ -70,7 +70,7 @@ sub Run {
             $Param{SignKeyID} = $Queue{DefaultSignKey} || '';
         }
     }
-    my $List = $Self->{LayoutObject}->BuildSelection(
+    my $List = $Self->{LayoutObject}->OptionStrgHashRef(
         Data       => \%KeyList,
         Name       => 'SignKeyID',
         SelectedID => $Param{SignKeyID},
@@ -113,13 +113,14 @@ sub Data {
                     $Expires = "[$DataRef->{Expires}]";
                 }
 
+                $KeyList{"PGP::Detached::$DataRef->{Key}"}
+                    = "PGP-Detached: $DataRef->{Key} $Expires $DataRef->{Identifier}";
+
                 # disable inline pgp if rich text is enabled
                 if ( !$Self->{LayoutObject}->{BrowserRichText} ) {
                     $KeyList{"PGP::Inline::$DataRef->{Key}"}
                         = "PGP-Inline: $DataRef->{Key} $Expires $DataRef->{Identifier}";
                 }
-                $KeyList{"PGP::Detached::$DataRef->{Key}"}
-                    = "PGP-Detached: $DataRef->{Key} $Expires $DataRef->{Identifier}";
             }
         }
 
@@ -130,8 +131,12 @@ sub Data {
                 Search => $SearchAddress[0]->address(),
             );
             for my $DataRef (@PrivateKeys) {
-                $KeyList{"SMIME::Detached::$DataRef->{Filename}"}
-                    = "SMIME-Detached: $DataRef->{Filename} [$DataRef->{EndDate}] $DataRef->{Email}";
+                my $EndDate = '';
+                if ( $DataRef->{EndDate} ) {
+                    $EndDate = "[$DataRef->{EndDate}]";
+                }
+                $KeyList{"SMIME::Detached::$DataRef->{Hash}"}
+                    = "SMIME-Detached: $DataRef->{Hash} $EndDate $DataRef->{Email}";
             }
         }
 
