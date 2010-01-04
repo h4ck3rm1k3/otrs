@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Web/Request.pm - a wrapper for CGI.pm or Apache::Request.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Request.pm,v 1.41 2011/11/21 10:20:47 mg Exp $
+# $Id: Request.pm,v 1.31.2.1 2010/01/04 13:13:44 mn Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::CheckItem;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.41 $) [1];
+$VERSION = qw($Revision: 1.31.2.1 $) [1];
 
 =head1 NAME
 
@@ -61,18 +61,8 @@ create param object
         LogObject    => $LogObject,
         EncodeObject => $EncodeObject,
         MainObject   => $MainObject,
-        WebRequest   => CGI::Fast->new(), # optional, e. g. if fast cgi is used
+
     );
-
-If Kernel::System::Web::Request is instantiated several times, they will share the
-same CGI data (this can be helpful in filters which do not have access to the
-ParamObject, for example.
-
-If you need to reset the CGI data before creating a new instance, use
-
-    CGI::initialize_globals();
-
-before calling Kernel::System::Web::Request->new();
 
 =cut
 
@@ -91,8 +81,8 @@ sub new {
     # Simple Common Gateway Interface Class
     use CGI qw(:cgi);
 
-    # send errors to web server error log
-    use CGI::Carp;
+    # to get the errors on screen
+    use CGI::Carp qw(fatalsToBrowser);
 
     # max 5 MB posts
     $CGI::POST_MAX = $Self->{ConfigObject}->Get('WebMaxFileUpload') || 1024 * 1024 * 5;
@@ -140,7 +130,7 @@ sub GetParam {
     my ( $Self, %Param ) = @_;
 
     my $Value = $Self->{Query}->param( $Param{Param} );
-    $Self->{EncodeObject}->EncodeInput( \$Value );
+    $Self->{EncodeObject}->Encode( \$Value );
 
     if (
         $Param{TrimLeft}
@@ -159,36 +149,6 @@ sub GetParam {
     return $Value;
 }
 
-=item GetParamNames()
-
-to get names of all parameters passed to the script.
-
-    my @ParamNames = $ParamObject->GetParamNames();
-
-Example:
-
-Called URL: index.pl?Action=AdminSysConfig;Subaction=Save;Name=Config::Option::Valid
-
-    my @ParamNames = $ParamObject->GetParamNames();
-    print join " :: ", @ParamNames;
-    #prints Action :: Subaction :: Name
-
-=cut
-
-sub GetParamNames {
-    my $Self = shift;
-
-    # fetch all names
-    my @ParamNames = $Self->{Query}->param();
-
-    # is encode needed?
-    for my $Name (@ParamNames) {
-        $Self->{EncodeObject}->EncodeInput( \$Name );
-    }
-
-    return @ParamNames;
-}
-
 =item GetArray()
 
 to get array params
@@ -201,7 +161,7 @@ sub GetArray {
     my ( $Self, %Param ) = @_;
 
     my @Values = $Self->{Query}->param( $Param{Param} );
-    $Self->{EncodeObject}->EncodeInput( \@Values );
+    $Self->{EncodeObject}->Encode( \@Values );
 
     if (
         $Param{TrimLeft}
@@ -220,6 +180,38 @@ sub GetArray {
     }
 
     return @Values;
+}
+
+=item GetUpload()
+
+internal function for GetUploadAll()
+
+=cut
+
+sub GetUpload {
+    my ( $Self, %Param ) = @_;
+
+    return $Self->{Query}->upload( $Param{Filename} );
+}
+
+=item GetUploadInfo()
+
+internal function for GetUploadAll()
+
+=cut
+
+sub GetUploadInfo {
+    my ( $Self, %Param ) = @_;
+
+    my $ContentType = 'application/octet-stream';
+    if (
+        $Self->{Query}->uploadInfo( $Param{Filename} )
+        && $Self->{Query}->uploadInfo( $Param{Filename} )->{ $Param{Header} }
+        )
+    {
+        $ContentType = $Self->{Query}->uploadInfo( $Param{Filename} )->{ $Param{Header} };
+    }
+    return $ContentType;
 }
 
 =item GetUploadAll()
@@ -251,13 +243,13 @@ sub GetUploadAll {
     my ( $Self, %Param ) = @_;
 
     # get upload
-    my $Upload = $Self->{Query}->upload( $Param{Param} );
+    my $Upload = $Self->GetUpload( Filename => $Param{Param} );
     return if !$Upload;
 
     # get real file name
     my $UploadFilenameOrig = $Self->GetParam( Param => $Param{Param} ) || 'unkown';
     my $NewFileName = "$UploadFilenameOrig";    # use "" to get filename of anony. object
-    $Self->{EncodeObject}->EncodeInput( \$NewFileName );
+    $Self->{EncodeObject}->Encode( \$NewFileName );
 
     # replace all devices like c: or d: and dirs for IE!
     $NewFileName =~ s/.:\\(.*)/$1/g;
@@ -298,10 +290,10 @@ sub GetUploadAll {
     # without content
     return if !$Content;
 
-    my $ContentType = $Self->_GetUploadInfo(
+    my $ContentType = $Self->GetUploadInfo(
         Filename => $UploadFilenameOrig,
         Header   => 'Content-Type',
-    );
+    ) || '';
 
     return (
         Filename    => $NewFileName,
@@ -310,31 +302,13 @@ sub GetUploadAll {
     );
 }
 
-sub _GetUploadInfo {
-    my ( $Self, %Param ) = @_;
-
-    # get file upload info
-    my $FileInfo = $Self->{Query}->uploadInfo( $Param{Filename} );
-
-    # return if no upload info exists
-    return 'application/octet-stream' if !$FileInfo;
-
-    # return if no content type of upload info exists
-    return 'application/octet-stream' if !$FileInfo->{ $Param{Header} };
-
-    # return content type of upload info
-    return $FileInfo->{ $Param{Header} };
-}
-
 =item SetCookie()
 
 set a cookie
 
     $ParamObject->SetCookie(
-        Key     => ID,
-        Value   => 123456,
-        Expires => '+3660s',
-        Secure  => 1,           # optional, set secure attribute to disable cookie on HTTP (HTTPS only)
+        Key   => ID,
+        Value => 123456,
     );
 
 =cut
@@ -346,7 +320,6 @@ sub SetCookie {
         -name    => $Param{Key},
         -value   => $Param{Value},
         -expires => $Param{Expires},
-        -secure  => $Param{Secure},
     );
 }
 
@@ -363,7 +336,7 @@ get a cookie
 sub GetCookie {
     my ( $Self, %Param ) = @_;
 
-    return $Self->{Query}->cookie( $Param{Key} );
+    return $Self->{Query}->cookie( $Param{Key} ) || '';
 }
 
 1;
@@ -372,16 +345,16 @@ sub GetCookie {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.41 $ $Date: 2011/11/21 10:20:47 $
+$Revision: 1.31.2.1 $ $Date: 2010/01/04 13:13:44 $
 
 =cut
