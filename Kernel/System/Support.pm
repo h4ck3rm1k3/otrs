@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support.pm - all required system information
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.34 2009/12/01 17:31:39 martin Exp $
+# $Id: Support.pm,v 1.35 2010/01/07 20:12:23 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.34 $) [1];
+$VERSION = qw($Revision: 1.35 $) [1];
 
 =head1 NAME
 
@@ -284,19 +284,26 @@ sub ARCHIVELogCreate {
     my $Home    = $Self->{ConfigObject}->Get('Home');
     my $Archive = $Self->{ConfigObject}->Get('Home') . '/ARCHIVE';
 
-    my $Tar;
-    if ( !open( $Tar, '<', $Archive ) ) {
+    my $Handle;
+    if ( !open( $Handle, '<', $Archive ) ) {
         my $ARCHIVEEmpty = "Can't open $Archive: $!";
+
+        # log info
+        $Self->{LogObject}->Log(
+            Priority => 'notice',
+            Message  => 'ARCHIVELogCreate end',
+        );
+
         return ( \$ARCHIVEEmpty, 'ARCHIVE.log' );
     }
-    binmode($Tar);
+    binmode $Handle;
     my %Compare;
-    while (<$Tar>) {
+    while (<$Handle>) {
         my @Row = split( /::/, $_ );
-        chomp( $Row[1] );
+        chomp $Row[1];
         $Compare{ $Row[1] } = $Row[0];
     }
-    close($Tar);
+    close $Handle;
 
     my %Result = $Self->_ARCHIVELogLookup(
         In      => $Home,
@@ -317,57 +324,64 @@ sub ARCHIVELogCreate {
 
 sub _ARCHIVELogLookup {
     my ( $Self, %Param ) = @_;
-    my @List = glob("$Param{In}/*");
 
-    FILE:
+    my @List = glob("$Param{In}/*");
     for my $File (@List) {
+
+        # clean up directory name
         $File =~ s/\/\//\//g;
-        if ( -d $File && $File !~ /CVS/ && $File !~ /^doc\// && $File !~ /^var\/tmp/ ) {
+
+        # ignote cvs directories
+        next if $File =~ /Entries|Repository|Root|CVS|ARCHIVE/;
+
+        # if it's a directory
+        if ( -d $File ) {
             $Self->_ARCHIVELogLookup(
                 In      => $File,
                 Compare => $Param{Compare},
                 Home    => $Param{Home},
             );
-            $File =~ s/\Q$Param{Home}\E//;
+            next;
+
+            # print "Directory: $File\n";
         }
-        else {
-            my $OrigFile = $File;
-            $File =~ s/\Q$Param{Home}\E//;
-            $File =~ s/^\/(.*)$/$1/;
 
-            if (
-                $File !~ /Entries|Repository|Root|CVS|ARCHIVE/
-                && $File !~ /^doc\//
-                && $File !~ /^var\/tmp/
-                )
-            {
+        # if it's a file
+        my $OrigFile = $File;
+        $File =~ s/\Q$Param{Home}\E//;
+        $File =~ s/^\/(.*)$/$1/;
 
-                if ( !-r $OrigFile ) {
-                    next FILE;
-                }
-                if ( !open( IN, '<', $OrigFile ) ) {
-                    $Self->{LogObject}->Log(
-                        Priority => 'error',
-                        Message  => "Can't read: $OrigFile: $!",
-                    );
-                    next FILE;
-                }
-                my $ctx = Digest::MD5->new;
-                $ctx->addfile(*IN);
-                my $Digest = $ctx->hexdigest();
-                close(IN);
-                if ( !$Param{Compare}->{$File} ) {
-                    $Param{Compare}->{$File} = "New $File";
-                }
-                elsif ( $Param{Compare}->{$File} ne $Digest ) {
-                    $Param{Compare}->{$File} = "Dif $File";
-                }
-                elsif ( defined $Param{Compare}->{$File} ) {
-                    delete $Param{Compare}->{$File};
-                }
-            }
+        # ignore var directories
+        next if $File =~ /^doc\//;
+        next if $File =~ /^var\/tmp/;
+        next if $File =~ /^var\/article/;
+
+        # next if not readable
+        # print "File: $File\n";
+        my $Content = '';
+        my $In;
+        if ( !open( $In, '<', $OrigFile ) ) {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Can't read: $OrigFile: $!",
+            );
+            next;
+        }
+        my $ctx = Digest::MD5->new;
+        $ctx->addfile(*$In);
+        my $Digest = $ctx->hexdigest();
+        close $In;
+        if ( !$Param{Compare}->{$File} ) {
+            $Param{Compare}->{$File} = "New $File";
+        }
+        elsif ( $Param{Compare}->{$File} ne $Digest ) {
+            $Param{Compare}->{$File} = "Dif $File";
+        }
+        elsif ( defined $Param{Compare}->{$File} ) {
+            delete $Param{Compare}->{$File};
         }
     }
+
     return %{ $Param{Compare} };
 }
 
@@ -403,6 +417,7 @@ sub ApplicationArchiveCreate {
 
     my $Home    = $Self->{ConfigObject}->Get('Home');
     my $Archive = $Self->{ConfigObject}->Get('Home') . '/var/tmp/application.tar';
+
     if ( -f $Archive ) {
         unlink $Archive || die "Can't unlink $Archive: $!";
     }
@@ -434,25 +449,39 @@ sub ApplicationArchiveCreate {
         'Customer::AuthModule::DB::CustomerPassword',
         'Customer::AuthModule::Radius::Password',
     );
-
-    ACTION:
-    for (@TrimAction) {
-        next ACTION if !$_;
-        $Config =~ s/(^\s+\$Self.*?$_.*?=.*?)\'.*?\';/$1\'xxx\';/mg;
+    for my $String (@TrimAction) {
+        next if !$String;
+        $Config =~ s/(^\s+\$Self.*?$String.*?=.*?)\'.*?\';/$1\'xxx\';/mg;
     }
     $Config =~ s/(^\s+Password.*?=>.*?)\'.*?\',/$1\'xxx\',/mg;
 
     $TarObject->replace_content( "$HomeWithoutSlash/Kernel/Config.pm", $Config );
-    $TarObject->write( $Archive, 0 ) || die "Could not write: $_!";
+    my $Write = $TarObject->write( $Archive, 0 );
+    if ( !$Write ) {
+
+        # log info
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "ApplicationArchiveCreate can't write $Archive: $!",
+        );
+        return;
+    }
 
     # add files to the tar archive
-    open( my $Tar, '<', $Archive );
-    binmode($Tar);
-    my $TmpTar = '';
-    while (<$Tar>) {
-        $TmpTar .= $_;
+    my $Tar;
+    if ( !open( $Tar, '<', $Archive ) ) {
+
+        # log info
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "ApplicationArchiveCreate can't read $Archive: $!",
+        );
+        return;
     }
-    close($Tar);
+
+    binmode $Tar;
+    my $TmpTar = do { local $/; <$Tar> };
+    close $Tar;
 
     if ( $Self->{MainObject}->Require('Compress::Zlib') ) {
         my $GzTar = Compress::Zlib::memGzip($TmpTar);
@@ -534,8 +563,8 @@ sub DirectoryFiles {
             # do not include files with # in file name
             next if $File =~ /#/;
 
-            # do not include if file is bigger the 0.5 MB
-            next if ( -s $File > ( 1024 * 1024 * 0.5 ) );
+            # do not include if file is bigger the 0.45 MB
+            next if ( -s $File > ( 1024 * 1024 * 0.45 ) );
 
             # do not include if file is not readable
             next if !-r $File;
@@ -771,12 +800,9 @@ sub Download {
 
     # add files to the tar archive
     open( my $Tar, '<', $Archive );
-    binmode($Tar);
-    my $TmpTar = '';
-    while (<$Tar>) {
-        $TmpTar .= $_;
-    }
-    close($Tar);
+    binmode $Tar;
+    my $TmpTar = do { local $/; <$Tar> };
+    close $Tar;
 
     # remove all files
     @ListOld = glob( $TempDir . '/*' );
@@ -988,6 +1014,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.34 $ $Date: 2009/12/01 17:31:39 $
+$Revision: 1.35 $ $Date: 2010/01/07 20:12:23 $
 
 =cut
