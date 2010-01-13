@@ -1,8 +1,8 @@
 # --
 # Kernel/System/MailAccount/IMAPS.pm - lib for imap accounts
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: IMAPS.pm,v 1.12 2011/11/14 14:13:41 mb Exp $
+# $Id: IMAPS.pm,v 1.7.2.1 2010/01/13 16:56:02 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use Net::IMAP::Simple::SSL;
 use Kernel::System::PostMaster;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.7.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -32,43 +32,6 @@ sub new {
     }
 
     return $Self;
-}
-
-sub Connect {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Login Password Host Timeout Debug)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # connect to host
-    my $IMAPObject = Net::IMAP::Simple::SSL->new(
-        $Param{Host},
-        timeout => $Param{Timeout},
-        debug   => $Param{Debug},
-    );
-    if ( !$IMAPObject ) {
-        return ( Successful => 0, Message => "IMAPS: Can't connect to $Param{Host}" );
-    }
-
-    # authentcation
-    my $Auth = $IMAPObject->login( $Param{Login}, $Param{Password} );
-    if ( !defined $Auth ) {
-        $IMAPObject->quit();
-        return (
-            Successful => 0,
-            Message    => "IMAPS: Auth for user $Param{Login}/$Param{Host} failed!"
-        );
-    }
-
-    return (
-        Successful => 1,
-        IMAPObject => $IMAPObject,
-    );
 }
 
 sub Fetch {
@@ -115,35 +78,34 @@ sub _Fetch {
 
     $Self->{Reconnect} = 0;
 
-    my %Connect = $Self->Connect(
-        Host     => $Param{Host},
-        Login    => $Param{Login},
-        Password => $Param{Password},
-        Timeout  => $Timeout,
-        Debug    => $Debug
+    # connect to host
+    my $IMAPObject = Net::IMAP::Simple::SSL->new(
+        $Param{Host},
+        timeout => $Timeout,
+        debug   => $Debug,
     );
-
-    if ( !$Connect{Successful} ) {
+    if ( !$IMAPObject ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "$Connect{Message}",
+            Message  => "$AuthType: Can't connect to $Param{Host}",
         );
         return;
     }
 
-    # read folder from MailAccount configuration
-    my $IMAPFolder = $Param{IMAPFolder} || 'INBOX';
-
-    my $IMAPObject = $Connect{IMAPObject};
-    my $NOM = $IMAPObject->select($IMAPFolder) || 0;
+    # authentcation
+    my $Auth = $IMAPObject->login( $Param{Login}, $Param{Password} );
+    if ( !defined $Auth ) {
+        $IMAPObject->quit();
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "$AuthType: Auth for user $Param{Login}/$Param{Host} failed!",
+        );
+        return;
+    }
+    my $NOM = $IMAPObject->select('INBOX') || 0;
 
     # fetch messages
-    if ( !$NOM ) {
-        if ($CMD) {
-            print "$AuthType: No messages ($Param{Login}/$Param{Host})\n";
-        }
-    }
-    else {
+    if ( $NOM > 0 ) {
         for ( my $Messageno = 1; $Messageno <= $NOM; $Messageno++ ) {
 
             # check if reconnect is needed
@@ -163,8 +125,9 @@ sub _Fetch {
             if ( $MessageSize > $MaxEmailSize ) {
                 $Self->{LogObject}->Log(
                     Priority => 'error',
-                    Message => "$AuthType: Can't fetch email $NOM from $Param{Login}/$Param{Host}. "
-                        . "Email too big ($MessageSize KB - max $MaxEmailSize KB)!",
+                    Message =>
+                        "$AuthType: Can't fetch email $NOM from $Param{Login}/$Param{Host}. Email to "
+                        . "big ($MessageSize KB - max $MaxEmailSize KB)!",
                 );
             }
             else {
@@ -240,6 +203,11 @@ sub _Fetch {
             }
         }
     }
+    else {
+        if ($CMD) {
+            print "$AuthType: No messages ($Param{Login}/$Param{Host})\n";
+        }
+    }
 
     # log status
     if ( $Debug > 0 || $FetchCounter ) {
@@ -248,7 +216,7 @@ sub _Fetch {
             Message => "$AuthType: Fetched $FetchCounter email(s) from $Param{Login}/$Param{Host}.",
         );
     }
-    $IMAPObject->expunge_mailbox($IMAPFolder);
+    $IMAPObject->expunge_mailbox('INBOX');
     $IMAPObject->quit();
     if ($CMD) {
         print "$AuthType: Connection to $Param{Host} closed.\n\n";

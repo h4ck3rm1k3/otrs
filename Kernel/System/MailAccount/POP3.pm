@@ -1,8 +1,8 @@
 # --
 # Kernel/System/MailAccount/POP3.pm - lib for pop3 accounts
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: POP3.pm,v 1.9 2011/03/09 13:41:55 mb Exp $
+# $Id: POP3.pm,v 1.6.2.1 2010/01/13 16:56:02 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use Net::POP3;
 use Kernel::System::PostMaster;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.9 $) [1];
+$VERSION = qw($Revision: 1.6.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -37,42 +37,7 @@ sub new {
     return $Self;
 }
 
-sub Connect {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Login Password Host Timeout Debug)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # connect to host
-    my $PopObject
-        = Net::POP3->new( $Param{Host}, Timeout => $Param{Timeout}, Debug => $Param{Debug} );
-    if ( !$PopObject ) {
-        return ( Successful => 0, Message => "POP3: Can't connect to $Param{Host}" );
-    }
-
-    # authentcation
-    my $NOM = $PopObject->login( $Param{Login}, $Param{Password} );
-    if ( !defined $NOM ) {
-        $PopObject->quit();
-        return (
-            Successful => 0,
-            Message    => "POP3: Auth for user $Param{Login}/$Param{Host} failed!"
-        );
-    }
-
-    return (
-        Successful => 1,
-        PopObject  => $PopObject,
-        NOM        => $NOM
-    );
-}
-
-sub _Fetch {
+sub Fetch {
     my ( $Self, %Param ) = @_;
 
     # fetch again if still messages on the account
@@ -83,7 +48,7 @@ sub _Fetch {
     return 1;
 }
 
-sub Fetch {
+sub _Fetch {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
@@ -116,31 +81,29 @@ sub Fetch {
 
     $Self->{Reconnect} = 0;
 
-    my %Connect = $Self->Connect(
-        Host     => $Param{Host},
-        Login    => $Param{Login},
-        Password => $Param{Password},
-        Timeout  => $Timeout,
-        Debug    => $Debug
-    );
-
-    if ( !$Connect{Successful} ) {
+    # connect to host
+    my $PopObject = Net::POP3->new( $Param{Host}, Timeout => $Timeout, Debug => $Debug );
+    if ( !$PopObject ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "$Connect{Message}",
+            Message  => "$AuthType: Can't connect to $Param{Host}",
         );
         return;
     }
-    my $PopObject = $Connect{PopObject};
-    my $NOM       = $Connect{NOM};
+
+    # authentcation
+    my $NOM = $PopObject->login( $Param{Login}, $Param{Password} );
+    if ( !defined $NOM ) {
+        $PopObject->quit();
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "$AuthType: Auth for user $Param{Login}/$Param{Host} failed!",
+        );
+        return;
+    }
 
     # fetch messages
-    if ( !$NOM ) {
-        if ($CMD) {
-            print "$AuthType: No messages ($Param{Login}/$Param{Host})\n";
-        }
-    }
-    else {
+    if ( $NOM > 0 ) {
         for my $Messageno ( sort { $a <=> $b } keys %{ $PopObject->list() } ) {
 
             # check if reconnect is needed
@@ -160,8 +123,9 @@ sub Fetch {
             if ( $MessageSize > $MaxEmailSize ) {
                 $Self->{LogObject}->Log(
                     Priority => 'error',
-                    Message => "$AuthType: Can't fetch email $NOM from $Param{Login}/$Param{Host}. "
-                        . "Email too big ($MessageSize KB - max $MaxEmailSize KB)!",
+                    Message =>
+                        "$AuthType: Can't fetch email $NOM from $Param{Login}/$Param{Host}. Email to "
+                        . "big ($MessageSize KB - max $MaxEmailSize KB)!",
                 );
             }
             else {
@@ -225,6 +189,11 @@ sub Fetch {
             if ($CMD) {
                 print "\n";
             }
+        }
+    }
+    else {
+        if ($CMD) {
+            print "$AuthType: No messages ($Param{Login}/$Param{Host})\n";
         }
     }
 
