@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/DashboardRSS.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: DashboardRSS.pm,v 1.15 2011/12/01 10:50:58 mg Exp $
+# $Id: DashboardRSS.pm,v 1.12.2.1 2010/01/14 14:09:45 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use XML::FeedPP;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.15 $) [1];
+$VERSION = qw($Revision: 1.12.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -55,42 +55,23 @@ sub Config {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    # Default URL
-    my $FeedURL = $Self->{Config}->{URL};
-
-    my $Language = $Self->{LayoutObject}->{UserLanguage};
-
-    # Check if URL for UserLanguage is available
-    if ( $Self->{Config}->{"URL_$Language"} ) {
-        $FeedURL = $Self->{Config}->{"URL_$Language"};
-    }
-    else {
-
-        # Check for main language for languages like es_MX (es in this case)
-        ($Language) = split /_/, $Language;
-        if ( $Self->{Config}->{"URL_$Language"} ) {
-            $FeedURL = $Self->{Config}->{"URL_$Language"};
-        }
-    }
-
     # set proxy settings can't use Kernel::System::WebAgent because of used
     # XML::FeedPP to get RSS files
     my $Proxy = $Self->{ConfigObject}->Get('WebUserAgent::Proxy');
     if ($Proxy) {
         $ENV{CGI_HTTP_PROXY} = $Proxy;
     }
+    print STDERR "UserCharset = $Self->{LayoutObject}->{UserCharset} \n";
 
     # get content
-    my $Feed = eval {
-        XML::FeedPP->new(
-            $FeedURL,
-            'xml_deref' => 1,
-            'utf8_flag' => 1,
-        );
-    };
+    my %Options;
+    if ( $Self->{EncodeObject}->EncodeInternalUsed() ) {
+        $Options{utf8_flag} = 1;
+    }
+    my $Feed = eval { XML::FeedPP->new( $Self->{Config}->{URL}, %Options ) };
 
     if ( !$Feed ) {
-        my $Content = "Can't connect to $FeedURL";
+        my $Content = "Can't connect to " . $Self->{Config}->{URL};
         return $Content;
     }
 
@@ -99,7 +80,7 @@ sub Run {
         $Count++;
         last if $Count > $Self->{Config}->{Limit};
         my $Time = $Item->pubDate();
-        my $Ago;
+        my $Ago  = '-';
         if ($Time) {
             my $SystemTime = $Self->{TimeObject}->TimeStamp2SystemTime(
                 String => $Time,
@@ -110,34 +91,25 @@ sub Run {
                 Space => ' ',
             );
         }
+        my $Title = $Item->title();
+
+        # Feeds are always utf-8, Convert if needed
+        if ( $Self->{LayoutObject}->{UserCharset} ne 'utf-8' ) {
+            my $Title = $Self->{EncodeObject}->Convert(
+                Text => $Title,
+                From => 'utf-8',
+                To   => $Self->{LayoutObject}->{UserCharset},
+            );
+        }
 
         $Self->{LayoutObject}->Block(
             Name => 'ContentSmallRSSOverviewRow',
             Data => {
-                Title => $Item->title(),
+                Title => $Title,
                 Link  => $Item->link(),
+                Ago   => $Ago,
             },
         );
-        if ($Ago) {
-            $Self->{LayoutObject}->Block(
-                Name => 'ContentSmallRSSTimeStamp',
-                Data => {
-                    Ago   => $Ago,
-                    Title => $Item->title(),
-                    Link  => $Item->link(),
-                },
-            );
-        }
-        else {
-            $Self->{LayoutObject}->Block(
-                Name => 'ContentSmallRSS',
-                Data => {
-                    Ago   => $Ago,
-                    Title => $Item->title(),
-                    Link  => $Item->link(),
-                },
-            );
-        }
     }
     my $Content = $Self->{LayoutObject}->Output(
         TemplateFile => 'AgentDashboardRSSOverview',
