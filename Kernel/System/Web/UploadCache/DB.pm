@@ -2,7 +2,7 @@
 # Kernel/System/Web/UploadCache/DB.pm - a db upload cache
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: DB.pm,v 1.24 2010/02/03 14:51:03 bes Exp $
+# $Id: DB.pm,v 1.20.2.1 2010/01/18 19:46:01 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use MIME::Base64;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.24 $) [1];
+$VERSION = qw($Revision: 1.20.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -53,11 +53,10 @@ sub FormIDRemove {
             return;
         }
     }
-    return if !$Self->{DBObject}->Do(
+    return $Self->{DBObject}->Do(
         SQL  => 'DELETE FROM web_upload_cache WHERE form_id = ?',
         Bind => [ \$Param{FormID} ],
     );
-    return 1;
 }
 
 sub FormIDAddFile {
@@ -71,7 +70,11 @@ sub FormIDAddFile {
     }
 
     # get file size
-    $Param{Filesize} = bytes::length( $Param{Content} );
+    {
+        use bytes;
+        $Param{Filesize} = length( $Param{Content} );
+        no bytes;
+    }
 
     # encode attachment if it's a postgresql backend!!!
     if ( !$Self->{DBObject}->GetDatabaseFunction('DirectBlob') ) {
@@ -90,7 +93,7 @@ sub FormIDAddFile {
 
     # write attachment to db
     my $Time = time();
-    return if !$Self->{DBObject}->Do(
+    return $Self->{DBObject}->Do(
         SQL => 'INSERT INTO web_upload_cache '
             . ' (form_id, filename, content_type, content_size, content, create_time_unix,'
             . ' content_id)'
@@ -100,7 +103,6 @@ sub FormIDAddFile {
             \$Param{Content}, \$Time, \$ContentID
         ],
     );
-    return 1;
 }
 
 sub FormIDRemoveFile {
@@ -116,18 +118,17 @@ sub FormIDRemoveFile {
     my $ID    = $Param{FileID} - 1;
     $Param{Filename} = $Index[$ID]->{Filename};
 
-    return if !$Self->{DBObject}->Do(
+    return $Self->{DBObject}->Do(
         SQL => 'DELETE FROM web_upload_cache WHERE form_id = ? AND filename = ?',
         Bind => [ \$Param{FormID}, \$Param{Filename} ],
     );
-    return 1;
 }
 
 sub FormIDGetAllFilesData {
     my ( $Self, %Param ) = @_;
 
     my $Counter = 0;
-    my @Data;
+    my @Data    = ();
     for (qw(FormID)) {
         if ( !$Param{$_} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
@@ -182,7 +183,7 @@ sub FormIDGetAllFilesMeta {
     my ( $Self, %Param ) = @_;
 
     my $Counter = 0;
-    my @Data;
+    my @Data    = ();
     for (qw(FormID)) {
         if ( !$Param{$_} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
@@ -230,11 +231,10 @@ sub FormIDCleanUp {
     my ( $Self, %Param ) = @_;
 
     my $CurrentTile = time() - ( 60 * 60 * 24 * 1 );
-    return if !$Self->{DBObject}->Do(
+    return $Self->{DBObject}->Do(
         SQL  => 'DELETE FROM web_upload_cache WHERE create_time_unix < ?',
         Bind => [ \$CurrentTile ],
     );
-    return 1;
 }
 
 1;

@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Web/UploadCache/FS.pm - a fs upload cache
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: FS.pm,v 1.25 2011/01/14 09:23:44 martin Exp $
+# $Id: FS.pm,v 1.17.2.1 2010/01/18 19:46:02 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.25 $) [1];
+$VERSION = qw($Revision: 1.17.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -55,12 +55,9 @@ sub FormIDRemove {
         return;
     }
 
-    my @List = $Self->{MainObject}->DirectoryRead(
-        Directory => $Self->{TempDir},
-        Filter    => "$Param{FormID}.*",
-    );
+    my @List    = glob("$Self->{TempDir}/$Param{FormID}.*");
     my $Counter = 0;
-    my @Data;
+    my @Data    = ();
     for my $File (@List) {
         $Self->{MainObject}->FileDelete( Location => $File, );
     }
@@ -146,13 +143,9 @@ sub FormIDGetAllFilesData {
         return;
     }
 
-    my @List = $Self->{MainObject}->DirectoryRead(
-        Directory => $Self->{TempDir},
-        Filter    => "$Param{FormID}.*",
-    );
-
+    my @List    = glob("$Self->{TempDir}/$Param{FormID}.*");
     my $Counter = 0;
-    my @Data;
+    my @Data    = ();
     for my $File (@List) {
 
         # ignore meta files
@@ -161,6 +154,12 @@ sub FormIDGetAllFilesData {
 
         $Counter++;
         my $FileSize = -s $File;
+
+        # convert the file name in utf-8 if utf-8 is used
+        $File = $Self->{EncodeObject}->Decode(
+            Text => $File,
+            From => 'utf-8',
+        );
 
         # human readable file size
         if ($FileSize) {
@@ -195,11 +194,6 @@ sub FormIDGetAllFilesData {
         );
         next if !$ContentID;
 
-        # verify if content id is empty, set to undef
-        if ( !${$ContentID} ) {
-            ${$ContentID} = undef;
-        }
-
         # strip filename
         $File =~ s/^.*\/$Param{FormID}\.(.+?)$/$1/;
         push(
@@ -226,13 +220,9 @@ sub FormIDGetAllFilesMeta {
         return;
     }
 
-    my @List = $Self->{MainObject}->DirectoryRead(
-        Directory => $Self->{TempDir},
-        Filter    => "$Param{FormID}.*",
-    );
-
+    my @List    = glob("$Self->{TempDir}/$Param{FormID}.*");
     my $Counter = 0;
-    my @Data;
+    my @Data    = ();
     for my $File (@List) {
 
         # ignore meta files
@@ -241,6 +231,12 @@ sub FormIDGetAllFilesMeta {
 
         $Counter++;
         my $FileSize = -s $File;
+
+        # convert the file name in utf-8 if utf-8 is used
+        $File = $Self->{EncodeObject}->Decode(
+            Text => $File,
+            From => 'utf-8',
+        );
 
         # human readable file size
         if ($FileSize) {
@@ -270,11 +266,6 @@ sub FormIDGetAllFilesMeta {
         );
         next if !$ContentID;
 
-        # verify if content id is empty, set to undef
-        if ( !${$ContentID} ) {
-            ${$ContentID} = undef;
-        }
-
         # strip filename
         $File =~ s/^.*\/$Param{FormID}\.(.+?)$/$1/;
         push(
@@ -294,12 +285,9 @@ sub FormIDGetAllFilesMeta {
 sub FormIDCleanUp {
     my ( $Self, %Param ) = @_;
 
-    my $CurrentTile = time() - 86400;                       # 60 * 60 * 24 * 1
-    my @List        = $Self->{MainObject}->DirectoryRead(
-        Directory => $Self->{TempDir},
-        Filter    => '*'
-    );
-    my %RemoveFormIDs;
+    my $CurrentTile   = time() - 86400;               # 60 * 60 * 24 * 1
+    my @List          = glob("$Self->{TempDir}/*");
+    my %RemoveFormIDs = ();
     for my $File (@List) {
 
         # get FormID
