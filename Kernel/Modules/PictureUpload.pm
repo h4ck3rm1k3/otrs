@@ -2,7 +2,7 @@
 # Kernel/Modules/PictureUpload.pm - get picture uploads
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: PictureUpload.pm,v 1.10 2010/11/24 16:22:23 mn Exp $
+# $Id: PictureUpload.pm,v 1.3.2.1 2010/01/26 20:39:50 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Web::UploadCache;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.3.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -33,7 +33,9 @@ sub new {
         }
     }
 
-    $Self->{UploadCacheObject} = Kernel::System::Web::UploadCache->new(%Param);
+    $Self->{UploadCachObject} = Kernel::System::Web::UploadCache->new(%Param);
+
+    $Self->{FormID} = $Self->{ParamObject}->GetParam( Param => 'FormID' );
 
     return $Self;
 }
@@ -41,26 +43,20 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    my $Charset = $Self->{LayoutObject}->{UserCharset};
+    my $Output = "Content-Type: text/html; charset="
+        . $Self->{ConfigObject}->Get('DefaultCharset') . ";\n\n";
+    $Output .= "
+<script type=\"text/javascript\">
+(function(){var d=document.domain;while (true){try{var A=window.parent.document.domain;break;}catch(e
+) {};d=d.replace(/.*?(?:\.|\$)/,'');if (d.length==0) break;try{document.domain=d;}catch (e){break;}}}
+)();
 
-    # get params
-    my $FormID = $Self->{ParamObject}->GetParam( Param => 'FormID' );
-    my $CKEditorFuncNum = $Self->{ParamObject}->GetParam( Param => 'CKEditorFuncNum' ) || 0;
+";
 
     # return if no form id exists
-    if ( !$FormID ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'ErrorNoFormID',
-            Data => {
-                CKEditorFuncNum => $CKEditorFuncNum,
-            },
-        );
-        return $Self->{LayoutObject}->Attachment(
-            ContentType => 'text/html; charset=' . $Charset,
-            Content     => $Self->{LayoutObject}->Output( TemplateFile => 'PictureUpload' ),
-            Type        => 'inline',
-            NoCache     => 1,
-        );
+    if ( !$Self->{FormID} ) {
+        $Output .= "window.parent.OnUploadCompleted(404,\"\",\"\",\"\") ;</script>";
+        return $Output;
     }
 
     # deliver file form for display inline content
@@ -68,8 +64,8 @@ sub Run {
     if ($ContentID) {
 
         # return image inline
-        my @AttachmentData = $Self->{UploadCacheObject}->FormIDGetAllFilesData(
-            FormID => $FormID,
+        my @AttachmentData = $Self->{UploadCachObject}->FormIDGetAllFilesData(
+            FormID => $Self->{FormID},
         );
         for my $Attachment (@AttachmentData) {
             next if !$Attachment->{ContentID};
@@ -83,62 +79,42 @@ sub Run {
 
     # get uploaded file
     my %File = $Self->{ParamObject}->GetUploadAll(
-        Param  => 'upload',
+        Param  => 'NewFile',
         Source => 'string',
     );
 
     # return error if no file is there
     if ( !%File ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'ErrorNoFileFound',
-            Data => {
-                CKEditorFuncNum => $CKEditorFuncNum,
-            },
-        );
-        return $Self->{LayoutObject}->Attachment(
-            ContentType => 'text/html; charset=' . $Charset,
-            Content     => $Self->{LayoutObject}->Output( TemplateFile => 'PictureUpload' ),
-            Type        => 'inline',
-            NoCache     => 1,
-        );
+        $Output .= "window.parent.OnUploadCompleted(404,\"-\",\"-\",\"\") ;</script>";
+        return $Output;
     }
 
     # return error if file is not possible to show inline
     if ( $File{Filename} !~ /\.(png|gif|jpg|jpeg)$/i ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'ErrorNoImageFile',
-            Data => {
-                CKEditorFuncNum => $CKEditorFuncNum,
-            },
-        );
-        return $Self->{LayoutObject}->Attachment(
-            ContentType => 'text/html; charset=' . $Charset,
-            Content     => $Self->{LayoutObject}->Output( TemplateFile => 'PictureUpload' ),
-            Type        => 'inline',
-            NoCache     => 1,
-        );
+        $Output .= "window.parent.OnUploadCompleted(202,\"-\",\"-\",\"\") ;</script>";
+        return $Output;
     }
 
     # check if name already exists
-    my @AttachmentMeta = $Self->{UploadCacheObject}->FormIDGetAllFilesMeta(
-        FormID => $FormID,
+    my @AttachmentMeta = $Self->{UploadCachObject}->FormIDGetAllFilesMeta(
+        FormID => $Self->{FormID}
     );
-    my $FilenameTmp    = $File{Filename};
-    my $SuffixTmp      = 0;
+    my $TmpFilename    = $File{Filename};
+    my $TmpSuffix      = 0;
     my $UniqueFilename = '';
     while ( !$UniqueFilename ) {
-        $UniqueFilename = $FilenameTmp;
+        $UniqueFilename = $TmpFilename;
         NEWNAME:
-        for my $Attachment ( reverse @AttachmentMeta ) {
-            next NEWNAME if $FilenameTmp ne $Attachment->{Filename};
+        for my $TmpAttachment ( reverse @AttachmentMeta ) {
+            next NEWNAME if $TmpFilename ne $TmpAttachment->{Filename};
 
             # name exists -> change
-            ++$SuffixTmp;
+            ++$TmpSuffix;
             if ( $File{Filename} =~ /^(.*)\.(.+?)$/ ) {
-                $FilenameTmp = "$1-$SuffixTmp.$2";
+                $TmpFilename = "$1-$TmpSuffix.$2";
             }
             else {
-                $FilenameTmp = "$File{Filename}-$SuffixTmp";
+                $TmpFilename = "$File{Filename}-$TmpSuffix";
             }
             $UniqueFilename = '';
             last NEWNAME;
@@ -146,46 +122,41 @@ sub Run {
     }
 
     # add uploaded file to upload cache
-    $Self->{UploadCacheObject}->FormIDAddFile(
-        FormID      => $FormID,
-        Filename    => $FilenameTmp,
+    $Self->{UploadCachObject}->FormIDAddFile(
+        FormID      => $Self->{FormID},
+        Filename    => $TmpFilename,
         Content     => $File{Content},
-        ContentType => $File{ContentType} . '; name="' . $FilenameTmp . '"',
+        ContentType => $File{ContentType} . '; name="' . $TmpFilename . '"',
         Disposition => 'inline',
     );
 
     # get new content id
     my $ContentIDNew = '';
-    @AttachmentMeta = $Self->{UploadCacheObject}->FormIDGetAllFilesMeta(
-        FormID => $FormID
+    @AttachmentMeta = $Self->{UploadCachObject}->FormIDGetAllFilesMeta(
+        FormID => $Self->{FormID}
     );
-    for my $Attachment (@AttachmentMeta) {
-        next if $FilenameTmp ne $Attachment->{Filename};
-        $ContentIDNew = $Attachment->{ContentID};
-        last;
+    CONTENTID:
+    for my $TmpAttachment (@AttachmentMeta) {
+        next CONTENTID if $TmpFilename ne $TmpAttachment->{Filename};
+        $ContentIDNew = $TmpAttachment->{ContentID};
+        last CONTENTID;
     }
 
-    # serve new content id and url to rte
+    # serve new content id to rte
     my $Session = '';
     if ( $Self->{SessionID} && !$Self->{SessionIDCookie} ) {
-        $Session = '&' . $Self->{SessionName} . '=' . $Self->{SessionID};
+        $Session = "&" . $Self->{SessionName} . "=" . $Self->{SessionID};
     }
     my $URL = $Self->{LayoutObject}->{Baselink}
-        . "Action=PictureUpload;FormID=$FormID;ContentID=$ContentIDNew$Session";
+        . "Action=PictureUpload"
+        . "&FormID="
+        . $Self->{FormID}
+        . "&ContentID="
+        . $ContentIDNew
+        . $Session;
+    $Output .= "window.parent.OnUploadCompleted(0,\"$URL\",\"$URL\",\"\") ;</script>";
 
-    $Self->{LayoutObject}->Block(
-        Name => 'Success',
-        Data => {
-            CKEditorFuncNum => $CKEditorFuncNum,
-            URL             => $URL,
-        },
-    );
-    return $Self->{LayoutObject}->Attachment(
-        ContentType => 'text/html; charset=' . $Charset,
-        Content     => $Self->{LayoutObject}->Output( TemplateFile => 'PictureUpload' ),
-        Type        => 'inline',
-        NoCache     => 1,
-    );
+    return $Output;
 }
 
 1;
