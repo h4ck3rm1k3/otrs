@@ -1,8 +1,8 @@
 # --
-# RPM spec file for Fedora of the OTRS package
+# RPM spec file for RedHat Linux of the OTRS package
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: fedora-otrs-4.spec,v 1.3.2.1 2010/02/06 01:24:34 martin Exp $
+# $Id: redhat-otrs-8.0.spec,v 1.14.2.1 2010/02/06 01:24:34 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -60,7 +60,7 @@ install -m 755 scripts/redhat-rcotrs $RPM_BUILD_ROOT/etc/rc.d/init.d/otrs
 install -m 644 scripts/redhat-rcotrs-config $RPM_BUILD_ROOT/etc/sysconfig/otrs
 
 # copy apache2-httpd.include.conf to /etc/httpd/conf.d/otrs.conf
-install -m 644 scripts/apache2-httpd-new.include.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/otrs.conf
+install -m 644 scripts/apache2-httpd.include.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/otrs.conf
 
 # set permission
 export OTRSUSER=otrs
@@ -147,5 +147,7 @@ rm -rf $RPM_BUILD_ROOT
 <FILES>
 
 %changelog
-* Thu Mar 07 2007 - martin+rpm@otrs.org
-- spec for Fedora created
+* Thu Oct 18 2006 - martin+rpm@otrs.org
+- added rename of old /opt/otrs/Kernel/Config/Files/(Ticket|TicketPostMaster|FAQ).pm files
+* Thu Feb 12 2003 - martin+rpm@otrs.org
+- spec for RedHat 8.0 created
