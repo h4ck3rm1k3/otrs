@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.40 2010/02/09 20:02:41 ub Exp $
+# $Id: Support.pm,v 1.41 2010/02/09 20:06:27 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.40 $) [1];
+$VERSION = qw($Revision: 1.41 $) [1];
 
 =head1 NAME
 
@@ -147,7 +147,7 @@ sub AdminChecksGet {
             # log error
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => "Could create a new instance of $GenericModule!",
+                Message  => "Could not create a new instance of $GenericModule!",
             );
 
             next MODULE;
@@ -1047,6 +1047,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.40 $ $Date: 2010/02/09 20:02:41 $
+$Revision: 1.41 $ $Date: 2010/02/09 20:06:27 $
 
 =cut
