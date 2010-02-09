@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database/postgresql.pm - all required system information
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: postgresql.pm,v 1.13 2009/10/01 15:30:51 martin Exp $
+# $Id: postgresql.pm,v 1.14 2010/02/09 18:58:04 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.13 $) [1];
+$VERSION = qw($Revision: 1.14 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -86,8 +86,10 @@ sub _TableCheck {
                 if ($Table) {
                     $Count++;
                     if (
-                        $Self->{DBObject}
-                        ->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 )
+                        $Self->{DBObject}->Prepare(
+                            SQL   => "select * from $Table->{Name}",
+                            Limit => 1
+                        )
                         )
                     {
                         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {

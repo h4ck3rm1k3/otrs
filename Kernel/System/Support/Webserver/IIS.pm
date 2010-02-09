@@ -1,12 +1,12 @@
 # --
 # Kernel/System/Support/Webserver/IIS.pm - all required system information
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: IIS.pm,v 1.7 2009/01/15 00:40:21 sr Exp $
+# $Id: IIS.pm,v 1.8 2010/02/09 18:58:04 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
-# the enclosed file COPYING for license information (GPL). If you
-# did not receive this file, see http://www.gnu.org/licenses/gpl-2.0.txt.
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
 package Kernel::System::Support::Webserver::IIS;
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.7 $) [1];
+$VERSION = qw($Revision: 1.8 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -63,8 +63,8 @@ sub _PerlExCheck {
     my $Data = {};
 
     # check if Apache::DBI is loaded
-    my $Check     = '';
-    my $Message   = '';
+    my $Check   = '';
+    my $Message = '';
     if ( $ENV{'GATEWAY_INTERFACE'} && $ENV{'GATEWAY_INTERFACE'} =~ /^CGI-PerlEx/i ) {
         $Check   = 'OK';
         $Message = "PerlEx is in use ($ENV{'GATEWAY_INTERFACE'}).";

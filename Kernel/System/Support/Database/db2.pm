@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database/db2.pm - all required system information
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: db2.pm,v 1.6 2009/04/17 14:17:07 tr Exp $
+# $Id: db2.pm,v 1.7 2010/02/09 18:58:04 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.6 $) [1];
+$VERSION = qw($Revision: 1.7 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -74,7 +74,7 @@ sub _TableCheck {
         my $Message = '';
         my $Content = '';
         my $In;
-        if ( open( $In, '<', $File) ) {
+        if ( open( $In, '<', $File ) ) {
             while (<$In>) {
                 $Content .= $_;
             }
@@ -83,7 +83,12 @@ sub _TableCheck {
             for my $Table ( @{ $XMLHash[1]->{database}->[1]->{Table} } ) {
                 if ($Table) {
                     $Count++;
-                    if ( $Self->{DBObject}->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 ) )
+                    if (
+                        $Self->{DBObject}->Prepare(
+                            SQL   => "select * from $Table->{Name}",
+                            Limit => 1
+                        )
+                        )
                     {
                         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
                         }

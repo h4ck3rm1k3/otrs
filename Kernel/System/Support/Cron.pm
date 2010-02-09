@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Cron.pm - all required system information
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Cron.pm,v 1.4 2009/08/26 22:45:42 mb Exp $
+# $Id: Cron.pm,v 1.5 2010/02/09 18:58:04 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = '$Revision: 1.4 $';
+$VERSION = qw($Revision: 1.5 $) [1];
 
 =head1 NAME
 
@@ -34,13 +34,6 @@ All required system information to a running OTRS host.
 =item new()
 
 create Cron info object
-
-    use Kernel::Config;
-    use Kernel::System::Log;
-    my $ConfigObject = Kernel::Config->new();
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-    );
 
     $SystemInfoObject = Kernel::System::Support::Cron->new(
         ConfigObject => $ConfigObject,

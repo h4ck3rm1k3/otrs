@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.36 2010/02/09 18:52:19 ub Exp $
+# $Id: Support.pm,v 1.37 2010/02/09 18:58:03 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.36 $) [1];
+$VERSION = qw($Revision: 1.37 $) [1];
 
 =head1 NAME
 
@@ -812,7 +812,7 @@ sub Benchmark {
     my $Select = $Param{Select};
     my $Mode   = $Param{Mode};
 
-    foreach ( 1 .. $Mode ) {
+    for ( 1 .. $Mode ) {
         $Self->{"DBObject$_"} = Kernel::System::DB->new( %{$Self} );
     }
 
@@ -902,11 +902,10 @@ sub Benchmark {
 }
 
 sub _SQLInsert {
-    my $Self  = shift;
-    my $Count = shift;
-    my $Mode  = shift;
-    foreach my $C ( 1 .. $Count ) {
-        foreach my $M ( 1 .. $Mode ) {
+    my ( $Self, $Count, $Mode ) = @_;
+
+    for my $C ( 1 .. $Count ) {
+        for my $M ( 1 .. $Mode ) {
             my $Value1 = "aaa$C-$M";
             my $Value2 = 'bbb';
             $Self->{"DBObject$M"}->Do(
@@ -919,13 +918,12 @@ sub _SQLInsert {
 }
 
 sub _SQLUpdate {
-    my $Self   = shift;
-    my $Count  = shift;
-    my $Mode   = shift;
+    my ( $Self, $Count, $Mode ) = @_;
+
     my $Value1 = '111';
     my $Value2 = '222';
-    foreach my $C ( 1 .. $Count ) {
-        foreach my $M ( 1 .. $Mode ) {
+    for my $C ( 1 .. $Count ) {
+        for my $M ( 1 .. $Mode ) {
             my $Value = "aaa$C-$M";
             $Self->{"DBObject$M"}->Do(
                 SQL => 'UPDATE support_bench_test SET name_a = ?, name_b = ? WHERE name_a = ?',
@@ -937,11 +935,10 @@ sub _SQLUpdate {
 }
 
 sub _SQLSelect {
-    my $Self  = shift;
-    my $Count = shift;
-    my $Mode  = shift;
-    foreach my $C ( 1 .. $Count ) {
-        foreach my $M ( 1 .. $Mode ) {
+    my ( $Self, $Count, $Mode ) = @_;
+
+    for my $C ( 1 .. $Count ) {
+        for my $M ( 1 .. $Mode ) {
 
           #            my $Value = "aaa$C-$M";
           #            $Self->{"DBObject$M"}->Prepare(
@@ -962,11 +959,10 @@ sub _SQLSelect {
 }
 
 sub _SQLDelete {
-    my $Self  = shift;
-    my $Count = shift;
-    my $Mode  = shift;
-    foreach my $C ( 1 .. $Count ) {
-        foreach my $M ( 1 .. $Mode ) {
+    my ( $Self, $Count, $Mode ) = @_;
+
+    for my $C ( 1 .. $Count ) {
+        for my $M ( 1 .. $Mode ) {
             my $Value = "111$C-$M";
             $Self->{"DBObject$M"}->Do(
                 SQL  => 'DELETE FROM support_bench_test WHERE name_a = ?',
@@ -993,6 +989,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.36 $ $Date: 2010/02/09 18:52:19 $
+$Revision: 1.37 $ $Date: 2010/02/09 18:58:03 $
 
 =cut

@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database/oracle.pm - all required system information
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.15 2009/04/17 14:17:07 tr Exp $
+# $Id: oracle.pm,v 1.16 2010/02/09 18:58:04 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.15 $) [1];
+$VERSION = qw($Revision: 1.16 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -41,7 +41,7 @@ sub AdminChecksGet {
 
     # add new function name here
     my @ModuleList = (
-        '_TableCheck', '_NLSDateFormatCheck',
+        '_TableCheck',      '_NLSDateFormatCheck',
         '_OracleHomeCheck', '_NLSLangCheck',
         '_NLSDateFormatSelectCheck',
     );
@@ -86,8 +86,8 @@ sub _OracleHomeCheck {
         Description => "Check ORACLE_HOME configuration.",
         Comment     => $Message,
         Check       => $Check,
-        };
-        return $Data;
+    };
+    return $Data;
 }
 
 sub _NLSLangCheck {
@@ -117,8 +117,8 @@ sub _NLSLangCheck {
         Description => "Check NLS_LANG.",
         Comment     => $Message,
         Check       => $Check,
-        };
-        return $Data;
+    };
+    return $Data;
 }
 
 sub _NLSDateFormatCheck {
@@ -160,7 +160,7 @@ sub _NLSDateFormatSelectCheck {
         $CreateTime = $Row[0];
     }
 
-    if ( $CreateTime ) {
+    if ($CreateTime) {
         if ( $CreateTime !~ /^\d\d\d\d-(\d|\d\d)-(\d|\d\d)\s(\d|\d\d):(\d|\d\d):(\d|\d\d)/ ) {
             $Message
                 = "$CreateTime is not the right format 'yyyy-mm-dd hh:mm::ss' (please check \$ENV{NLS_DATE_FORMAT}).";
@@ -202,8 +202,12 @@ sub _TableCheck {
             for my $Table ( @{ $XMLHash[1]->{database}->[1]->{Table} } ) {
                 if ($Table) {
                     $Count++;
-                    if ( $Self->{DBObject}
-                        ->Prepare( SQL => "select * from $Table->{Name}", Limit => 1 ) )
+                    if (
+                        $Self->{DBObject}->Prepare(
+                            SQL   => "select * from $Table->{Name}",
+                            Limit => 1
+                        )
+                        )
                     {
                         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
                         }
