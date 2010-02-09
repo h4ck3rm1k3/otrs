@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.25 2010/02/09 18:58:04 ub Exp $
+# $Id: OTRS.pm,v 1.26 2010/02/09 19:54:17 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.25 $) [1];
+$VERSION = qw($Revision: 1.26 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -35,11 +35,12 @@ sub new {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
-    $Self->{SupportObject} = Kernel::System::Support->new(%Param);
-    $Self->{UserObject}    = Kernel::System::User->new(%Param);
-    $Self->{TicketObject}  = Kernel::System::Ticket->new(%Param);
-    $Self->{PackageObject} = Kernel::System::Package->new(%Param);
-    $Self->{GroupObject}   = Kernel::System::Group->new(%Param);
+    # create additional objects
+    $Self->{SupportObject} = Kernel::System::Support->new( %{$Self} );
+    $Self->{UserObject}    = Kernel::System::User->new( %{$Self} );
+    $Self->{TicketObject}  = Kernel::System::Ticket->new( %{$Self} );
+    $Self->{PackageObject} = Kernel::System::Package->new( %{$Self} );
+    $Self->{GroupObject}   = Kernel::System::Group->new( %{$Self} );
     $Self->{AuthObject}    = Kernel::System::Auth->new( %{$Self} );
 
     return $Self;
@@ -50,11 +51,18 @@ sub AdminChecksGet {
 
     # add new function name here
     my @ModuleList = (
-        '_OpenTicketCheck', '_TicketIndexModuleCheck', '_TicketStaticDBOrphanedRecords',
+        '_OpenTicketCheck',
+        '_TicketIndexModuleCheck',
+        '_TicketStaticDBOrphanedRecords',
         '_TicketFulltextIndexModuleCheck',
-        '_FQDNConfigCheck', '_SystemIDConfigCheck', '_LogCheck',
-        '_FileSystemCheck', '_PackageDeployCheck',  '_InvalidUserLockedTicketSearch',
-        '_ConfigCheckTicketFrontendResponseFormat', '_DefaultUserCheck',
+        '_FQDNConfigCheck',
+        '_SystemIDConfigCheck',
+        '_LogCheck',
+        '_FileSystemCheck',
+        '_PackageDeployCheck',
+        '_InvalidUserLockedTicketSearch',
+        '_ConfigCheckTicketFrontendResponseFormat',
+        '_DefaultUserCheck',
         '_DefaultSOAPUserCheck',
     );
 

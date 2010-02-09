@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/oracle.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.17 2010/02/09 19:54:17 ub Exp $
+# $Id: oracle.pm,v 1.18 2010/02/09 19:57:03 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.17 $) [1];
+$VERSION = qw($Revision: 1.18 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -27,7 +27,7 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for (qw(ConfigObject LogObject MainObject DBObject TimeObject EncodeObject)) {
+    for (qw(ConfigObject LogObject MainObject DBObject EncodeObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 

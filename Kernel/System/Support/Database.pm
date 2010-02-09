@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database.pm - all required system information
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Database.pm,v 1.11 2009/08/26 22:45:42 mb Exp $
+# $Id: Database.pm,v 1.12 2010/02/09 19:54:17 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = qw($Revision: 1.12 $) [1];
 
 =head1 NAME
 
@@ -112,14 +112,6 @@ sub AdminChecksGet {
 
     my $DataArray = [];
 
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
     # ------------------------------------------------------------ #
     # Get information about all databases
     # ------------------------------------------------------------ #
@@ -169,48 +161,6 @@ sub AdminChecksGet {
     return $DataArray;
 }
 
-=item _Check()
-
-returns a hash reference with Check information.
-
-$CheckHash =>
-            {
-                Name => 'Plattform',
-                Comment => 'Linux',
-                Description => 'Please add more memory.',
-                Check => 'OK',
-            };
-
-# check if config value is available
-if ($Param{Type}) {
-    print STDERR "TYPE: " . $Param{Type};
-}
-
-=cut
-
-sub _Check {
-    my ( $Self, %Param ) = @_;
-
-    my $ReturnHash = {};
-
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # If used OS is a linux system
-    if ( $^O =~ /linux/ || /unix/ || /netbsd/ || /freebsd/ || /Darwin/ ) {
-
-    }
-    elsif ( $^O =~ /win/i ) {
-
-    }
-    return $ReturnHash;
-}
-
 1;
 
 =back
@@ -227,6 +177,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.11 $ $Date: 2009/08/26 22:45:42 $
+$Revision: 1.12 $ $Date: 2010/02/09 19:54:17 $
 
 =cut

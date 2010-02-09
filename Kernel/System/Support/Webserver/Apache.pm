@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Webserver/Apache.pm - all required system information
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Apache.pm,v 1.12 2009/11/23 16:23:01 mb Exp $
+# $Id: Apache.pm,v 1.13 2010/02/09 19:54:17 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.13 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -37,8 +37,10 @@ sub AdminChecksGet {
 
     # add new function name here
     my @ModuleList = (
-        '_ApacheVersionCheck', '_CGIAcceleratorCheck',
-        '_ApacheDBICheck',     '_ApacheReloadCheck',
+        '_ApacheVersionCheck',
+        '_CGIAcceleratorCheck',
+        '_ApacheDBICheck',
+        '_ApacheReloadCheck',
     );
 
     my @DataArray;
