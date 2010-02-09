@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.39 2010/02/09 19:19:41 ub Exp $
+# $Id: Support.pm,v 1.40 2010/02/09 20:02:41 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.39 $) [1];
+$VERSION = qw($Revision: 1.40 $) [1];
 
 =head1 NAME
 
@@ -129,7 +129,12 @@ sub AdminChecksGet {
         # load module $GenericModule and check if loadable
         if ( !$Self->{MainObject}->Require($GenericModule) ) {
 
-            # TODO Log
+            # log error
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Could not load $GenericModule!",
+            );
+
             next MODULE;
         }
 
@@ -139,7 +144,12 @@ sub AdminChecksGet {
         # return if instance can not be created
         if ( !$SupportObject ) {
 
-            # TODO Log
+            # log error
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Could create a new instance of $GenericModule!",
+            );
+
             next MODULE;
         }
 
@@ -149,7 +159,12 @@ sub AdminChecksGet {
         # check if return value is a valid array reference
         if ( !$AdminCheckRef || ref $AdminCheckRef ne 'ARRAY' || !@{$AdminCheckRef} ) {
 
-            # TODO Log
+            # log error
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "The checks of $GenericModule returned no data!",
+            );
+
             next MODULE;
         }
 
@@ -1032,6 +1047,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.39 $ $Date: 2010/02/09 19:19:41 $
+$Revision: 1.40 $ $Date: 2010/02/09 20:02:41 $
 
 =cut
