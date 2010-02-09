@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.37 2010/02/09 18:58:03 ub Exp $
+# $Id: Support.pm,v 1.38 2010/02/09 19:12:25 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.37 $) [1];
+$VERSION = qw($Revision: 1.38 $) [1];
 
 =head1 NAME
 
@@ -175,7 +175,10 @@ sub XMLStringCreate {
     # check needed stuff
     for (qw(DataHash)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
             return;
         }
     }
@@ -188,11 +191,15 @@ sub XMLStringCreate {
     }
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'XMLStringCreate start' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'XMLStringCreate start',
+    );
 
     my $XMLHash     = [];
     my $CountModule = 0;
     my $CountItem   = 0;
+    MODULE:
     for my $Module ( keys %{ $Param{DataHash} } ) {
         $CountModule++;
         $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Name} = $Module;
@@ -200,7 +207,7 @@ sub XMLStringCreate {
             $CountItem++;
             my $Data = {};
             for my $Element ( keys %{$DataHashRow} ) {
-                next if $Element eq 'Name';
+                next MODULE if $Element eq 'Name';
                 $Data->{$Element}->[1]->{Content} = $DataHashRow->{$Element};
             }
             $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem]
@@ -213,7 +220,10 @@ sub XMLStringCreate {
     my $XMLString = $Self->{XMLObject}->XMLHash2XML( @{$XMLHash} );
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'XMLStringCreate end' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'XMLStringCreate end',
+    );
 
     return \$XMLString;
 }
@@ -222,12 +232,18 @@ sub LogLast {
     my ( $Self, %Param ) = @_;
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => "LogLast '$Param{Type}' start" );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => "LogLast '$Param{Type}' start",
+    );
 
     my $LogString = $Self->{LogObject}->GetLog( Limit => 1200 );
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => "LogLast '$Param{Type}' end" );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => "LogLast '$Param{Type}' end",
+    );
 
     return ( \$LogString, $Param{Type} . '.log' );
 }
@@ -236,7 +252,10 @@ sub ModuleCheck {
     my ( $Self, %Param ) = @_;
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'ModuleCheck start' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'ModuleCheck start',
+    );
 
     my $Home = $Self->{ConfigObject}->Get('Home');
     my $TmpSumString;
@@ -249,7 +268,10 @@ sub ModuleCheck {
     close($TmpSumString);
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'ModuleCheck end' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'ModuleCheck end',
+    );
 
     return ( \$TmpLog, 'ModuleCheck.log' );
 }
@@ -258,7 +280,10 @@ sub ARCHIVELogCreate {
     my ( $Self, %Param ) = @_;
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'ARCHIVELogCreate start' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'ARCHIVELogCreate start',
+    );
 
     my $Home    = $Self->{ConfigObject}->Get('Home');
     my $Archive = $Self->{ConfigObject}->Get('Home') . '/ARCHIVE';
@@ -305,13 +330,14 @@ sub _ARCHIVELogLookup {
     my ( $Self, %Param ) = @_;
 
     my @List = glob("$Param{In}/*");
+    FILE:
     for my $File (@List) {
 
         # clean up directory name
         $File =~ s/\/\//\//g;
 
         # ignote cvs directories
-        next if $File =~ /Entries|Repository|Root|CVS|ARCHIVE/;
+        next FILE if $File =~ /Entries|Repository|Root|CVS|ARCHIVE/;
 
         # if it's a directory
         if ( -d $File ) {
@@ -320,7 +346,7 @@ sub _ARCHIVELogLookup {
                 Compare => $Param{Compare},
                 Home    => $Param{Home},
             );
-            next;
+            next FILE;
 
             # print "Directory: $File\n";
         }
@@ -331,12 +357,11 @@ sub _ARCHIVELogLookup {
         $File =~ s/^\/(.*)$/$1/;
 
         # ignore var directories
-        next if $File =~ /^doc\//;
-        next if $File =~ /^var\/tmp/;
-        next if $File =~ /^var\/article/;
+        next FILE if $File =~ /^doc\//;
+        next FILE if $File =~ /^var\/tmp/;
+        next FILE if $File =~ /^var\/article/;
 
         # next if not readable
-        # print "File: $File\n";
         my $Content = '';
         my $In;
         if ( !open( $In, '<', $OrigFile ) ) {
@@ -344,7 +369,7 @@ sub _ARCHIVELogLookup {
                 Priority => 'error',
                 Message  => "Can't read: $OrigFile: $!",
             );
-            next;
+            next FILE;
         }
         my $ctx = Digest::MD5->new;
         $ctx->addfile(*$In);
@@ -413,23 +438,25 @@ sub ApplicationArchiveCreate {
 
     $TarObject->add_files(@List);
 
-    #Mask Passwords in Config.pm
+    # Mask Passwords in Config.pm
     my $HomeWithoutSlash = $Home;
     $HomeWithoutSlash =~ s/^\///;
     my $Config = $TarObject->get_content("$HomeWithoutSlash/Kernel/Config.pm");
 
-    my @TrimAction = (
-        'DatabasePw',
-        'SearchUserPw',
-        'UserPw',
-        'SendmailModule::AuthPassword',
-        'AuthModule::Radius::Password',
-        'PGP::Key::Password',
-        'Customer::AuthModule::DB::CustomerPassword',
-        'Customer::AuthModule::Radius::Password',
+    my @TrimAction = qw(
+        DatabasePw
+        SearchUserPw
+        UserPw
+        SendmailModule::AuthPassword
+        AuthModule::Radius::Password
+        PGP::Key::Password
+        Customer::AuthModule::DB::CustomerPassword
+        Customer::AuthModule::Radius::Password
     );
+
+    STRING:
     for my $String (@TrimAction) {
-        next if !$String;
+        next STRING if !$String;
         $Config =~ s/(^\s+\$Self.*?$String.*?=.*?)\'.*?\';/$1\'xxx\';/mg;
     }
     $Config =~ s/(^\s+Password.*?=>.*?)\'.*?\',/$1\'xxx\',/mg;
@@ -514,6 +541,7 @@ sub DirectoryFiles {
     # check all $Param{Directory}/* in home directory
     my @Files;
     my @List = glob("$Param{Directory}/*");
+    FILE:
     for my $File (@List) {
 
         # cleanup file name
@@ -523,13 +551,13 @@ sub DirectoryFiles {
         if ( -d $File ) {
 
             # do not include CVS directories
-            next if $File =~ /\/CVS/;
+            next FILE if $File =~ /\/CVS/;
 
             # do not include article in file system
-            next if $File =~ /\Q$ArticleDir\E/i;
+            next FILE if $File =~ /\Q$ArticleDir\E/i;
 
             # do not include tmp in file system
-            next if $File =~ /\Q$TempDir\E/i;
+            next FILE if $File =~ /\Q$TempDir\E/i;
 
             # add directory to list
             push @Files, $Self->DirectoryFiles( Directory => $File, Loop => 1 );
@@ -537,16 +565,16 @@ sub DirectoryFiles {
         else {
 
             # do not include hidden files
-            next if $File =~ /^\./;
+            next FILE if $File =~ /^\./;
 
             # do not include files with # in file name
-            next if $File =~ /#/;
+            next FILE if $File =~ /#/;
 
             # do not include if file is bigger the 0.45 MB
-            next if ( -s $File > ( 1024 * 1024 * 0.45 ) );
+            next FILE if ( -s $File > ( 1024 * 1024 * 0.45 ) );
 
             # do not include if file is not readable
-            next if !-r $File;
+            next FILE if !-r $File;
 
             # add file to list
             push @Files, $File;
@@ -571,7 +599,10 @@ sub GetInstalledProduct {
     my ( $Self, %Param ) = @_;
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'GetInstalledProduct start' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'GetInstalledProduct start',
+    );
 
     my $Product;
     my %Tool = (
@@ -596,7 +627,10 @@ sub GetInstalledProduct {
     }
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'GetInstalledProduct end' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'GetInstalledProduct end',
+    );
 
     return $Product;
 }
@@ -605,7 +639,10 @@ sub SendInfo {
     my ( $Self, %Param ) = @_;
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'SendInfo start' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'SendInfo start',
+    );
 
     # create log package
     my ( $LogPreContent, $LogPreFilename ) = $Self->LogLast( Type => 'log_pre' );
@@ -695,7 +732,10 @@ sub SendInfo {
     );
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'SendInfo end' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'SendInfo end',
+    );
 
     return 1;
 }
@@ -704,7 +744,10 @@ sub Download {
     my ( $Self, %Param ) = @_;
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'Download start' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'Download start',
+    );
 
     my ( $s, $m, $h, $D, $M, $Y, $wd, $yd, $dst ) = $Self->{TimeObject}->SystemTime2Date(
         SystemTime => $Self->{TimeObject}->SystemTime(),
@@ -793,13 +836,19 @@ sub Download {
         my $GzTar = Compress::Zlib::memGzip($TmpTar);
 
         # log info
-        $Self->{LogObject}->Log( Priority => 'notice', Message => 'Download Compress::Zlib end' );
+        $Self->{LogObject}->Log(
+            Priority => 'notice',
+            Message  => 'Download Compress::Zlib end',
+        );
 
         return ( \$GzTar, $Filename . '.tar.gz' );
     }
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'Download no Compress::Zlib end' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'Download no Compress::Zlib end',
+    );
 
     return ( \$TmpTar, $Filename . '.tar' );
 }
@@ -939,12 +988,6 @@ sub _SQLSelect {
 
     for my $C ( 1 .. $Count ) {
         for my $M ( 1 .. $Mode ) {
-
-          #            my $Value = "aaa$C-$M";
-          #            $Self->{"DBObject$M"}->Prepare(
-          #                SQL  => 'SELECT name_a, name_b FROM support_bench_test WHERE name_a = ?',
-          #                Bind => [ \$Value ],
-          #            );
             my $Value = $Self->{DBObject}->Quote("aaa$C-$M");
             $Self->{"DBObject$M"}->Prepare(
                 SQL => "SELECT name_a, name_b FROM support_bench_test WHERE name_a = '$Value'",
@@ -989,6 +1032,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.37 $ $Date: 2010/02/09 18:58:03 $
+$Revision: 1.38 $ $Date: 2010/02/09 19:12:25 $
 
 =cut
