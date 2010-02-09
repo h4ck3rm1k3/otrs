@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database/mysql.pm - all required system information
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.21 2009/08/26 22:11:49 mb Exp $
+# $Id: mysql.pm,v 1.22 2010/02/09 19:25:37 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.21 $) [1];
+$VERSION = qw($Revision: 1.22 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -41,10 +41,14 @@ sub AdminChecksGet {
 
     # add new function name here
     my @ModuleList = (
-        '_MaxAllowedPackageCheck', '_QueryCacheSizeCheck',
-        '_TableCheck',             '_UTF8SupportCheck',
-        '_UTF8ClientCheck',        '_UTF8DatabaseCheck',
-        '_UTF8TableCheck',         '_VersionCheck',
+        '_MaxAllowedPackageCheck',
+        '_QueryCacheSizeCheck',
+        '_TableCheck',
+        '_UTF8SupportCheck',
+        '_UTF8ClientCheck',
+        '_UTF8DatabaseCheck',
+        '_UTF8TableCheck',
+        '_VersionCheck',
     );
 
     my @DataArray;

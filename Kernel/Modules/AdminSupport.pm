@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.24 2010/02/09 18:51:20 ub Exp $
+# $Id: AdminSupport.pm,v 1.25 2010/02/09 19:25:11 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.24 $) [1];
+$VERSION = qw($Revision: 1.25 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -36,15 +36,8 @@ sub new {
         }
     }
 
-    $Self->{UserObject} = Kernel::System::User->new(
-        ConfigObject => $Self->{ConfigObject},
-        EncodeObject => $Self->{EncodeObject},
-        LogObject    => $Self->{LogObject},
-        MainObject   => $Self->{MainObject},
-        TimeObject   => $Self->{TimeObject},
-        DBObject     => $Self->{DBObject},
-    );
-
+    # create additional objects
+    $Self->{UserObject}    = Kernel::System::User->new(%Param);
     $Self->{SupportObject} = Kernel::System::Support->new(%Param);
 
     return $Self;
