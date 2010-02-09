@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.35 2010/01/07 20:12:23 martin Exp $
+# $Id: Support.pm,v 1.36 2010/02/09 18:52:19 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.35 $) [1];
+$VERSION = qw($Revision: 1.36 $) [1];
 
 =head1 NAME
 
@@ -85,31 +85,12 @@ sub new {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
-    $Self->{XMLObject} = Kernel::System::XML->new(%Param);
-    $Self->{DBObject}  = Kernel::System::DB->new(
-        ConfigObject => $Self->{ConfigObject},
-        MainObject   => $Self->{MainObject},
-        LogObject    => $Self->{LogObject},
-        EncodeObject => $Self->{EncodeObject},
-
-    );
-    $Self->{TimeObject}  = Kernel::System::Time->new(%Param);
-    $Self->{EmailObject} = Kernel::System::Email->new(
-        ConfigObject => $Self->{ConfigObject},
-        MainObject   => $Self->{MainObject},
-        LogObject    => $Self->{LogObject},
-        DBObject     => $Self->{DBObject},
-        TimeObject   => $Self->{TimeObject},
-        EncodeObject => $Self->{EncodeObject},
-    );
-    $Self->{PackageObject} = Kernel::System::Package->new(
-        MainObject   => $Self->{MainObject},
-        LogObject    => $Self->{LogObject},
-        ConfigObject => $Self->{ConfigObject},
-        TimeObject   => $Self->{TimeObject},
-        DBObject     => $Self->{DBObject},
-        EncodeObject => $Self->{EncodeObject},
-    );
+    # create additional objects
+    $Self->{XMLObject}     = Kernel::System::XML->new( %{$Self} );
+    $Self->{DBObject}      = Kernel::System::DB->new( %{$Self} );
+    $Self->{TimeObject}    = Kernel::System::Time->new( %{$Self} );
+    $Self->{EmailObject}   = Kernel::System::Email->new( %{$Self} );
+    $Self->{PackageObject} = Kernel::System::Package->new( %{$Self} );
 
     return $Self;
 }
@@ -125,16 +106,11 @@ get a hash reference with possibility checks.
 sub AdminChecksGet {
     my ( $Self, %Param ) = @_;
 
-    # check needed stuff
-    for (qw()) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'AdminChecksGet start' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'AdminChecksGet start',
+    );
 
     # get the directory name
     my $DirName = $Self->{ConfigObject}->Get('Home') . '/Kernel/System/Support/';
@@ -160,7 +136,7 @@ sub AdminChecksGet {
         # create new object
         my $SupportObject = $GenericModule->new( %{$Self} );
 
-        # return if instance can not create
+        # return if instance can not be created
         if ( !$SupportObject ) {
 
             # TODO Log
@@ -185,7 +161,10 @@ sub AdminChecksGet {
     }
 
     # log info
-    $Self->{LogObject}->Log( Priority => 'notice', Message => 'AdminChecksGet end' );
+    $Self->{LogObject}->Log(
+        Priority => 'notice',
+        Message  => 'AdminChecksGet end',
+    );
 
     return $DataHash;
 }
@@ -1014,6 +993,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.35 $ $Date: 2010/01/07 20:12:23 $
+$Revision: 1.36 $ $Date: 2010/02/09 18:52:19 $
 
 =cut

@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.23 2010/01/12 10:51:28 martin Exp $
+# $Id: AdminSupport.pm,v 1.24 2010/02/09 18:51:20 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.23 $) [1];
+$VERSION = qw($Revision: 1.24 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -53,12 +53,14 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
+    # get user data
     my %User = $Self->{UserObject}->GetUserData(
         UserID => $Self->{UserID},
         Cached => 1,
     );
-    my $SenderAdress = "";
 
+    # get sender email adress
+    my $SenderAdress = '';
     if ( $Self->{ConfigObject}->Get('Support::SenderEmail') ) {
         $SenderAdress = $Self->{ConfigObject}->Get('Support::SenderEmail');
     }
@@ -67,8 +69,7 @@ sub Run {
     }
     elsif (
         $Self->{ConfigObject}->Get('AdminEmail')
-        && $Self->{ConfigObject}->Get('AdminEmail')
-        !~ /root\@localhost/
+        && $Self->{ConfigObject}->Get('AdminEmail') !~ /root\@localhost/
         && $Self->{ConfigObject}->Get('AdminEmail') !~ /admin\@example.com/
         )
     {
@@ -179,10 +180,10 @@ sub Run {
                 $Output .= $Self->{LayoutObject}->Notify(
                     Priority => 'warning',
                     Info     => 'Can\'t send email to the ((otrs)) support team!' . "\n\n"
-                        . "You will found the otrs system information package at\n"
+                        . "You will find the otrs system information package at\n"
                         . "If you would like to use OTRS support services please send the package to support\@otrs.com or call\n"
-                        . "our support team per phone to review the next step\n\n"
-                        . " More about OTRS support or face-to-face contact information you will found at\n"
+                        . "our support team by phone to review the next step.\n\n"
+                        . "You can find more information about OTRS support or face-to-face contact information at\n"
                         . 'http://www.otrs.com/' . "\n\n",
                 );
             }
