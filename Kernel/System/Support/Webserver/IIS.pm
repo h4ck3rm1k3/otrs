@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver/IIS.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: IIS.pm,v 1.8 2010/02/09 18:58:04 ub Exp $
+# $Id: IIS.pm,v 1.9 2010/02/09 21:29:16 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.8 $) [1];
+$VERSION = qw($Revision: 1.9 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -35,15 +35,25 @@ sub new {
 sub AdminChecksGet {
     my ( $Self, %Param ) = @_;
 
-    # add new function name here
-    my @ModuleList = (
-        '_PerlExCheck',
-    );
+    # get names of available checks from sysconfig
+    my $Checks = $Self->{ConfigObject}->Get('Support::Webserver::IIS');
 
+    # find out which checks should are enabled in sysconfig
+    my @EnabledCheckFunctions;
+    if ( $Checks && ref $Checks eq 'HASH' ) {
+
+        # get all enabled check function names
+        @EnabledCheckFunctions = sort grep { $Checks->{$_} } keys %{$Checks};
+    }
+
+    # to store the result
     my @DataArray;
 
     FUNCTIONNAME:
-    for my $FunctionName (@ModuleList) {
+    for my $FunctionName (@EnabledCheckFunctions) {
+
+        # prepend an underscore
+        $FunctionName = '_' . $FunctionName;
 
         # run function and get check data
         my $Check = $Self->$FunctionName();

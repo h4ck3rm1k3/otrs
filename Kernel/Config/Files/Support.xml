@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: Support.xml,v 1.5 2009/01/20 11:12:02 sr Exp $</CVS>
+    <CVS>$Id: Support.xml,v 1.6 2010/02/09 21:29:16 ub Exp $</CVS>
     <ConfigItem Name="Frontend::Module###AdminSupport" Required="1" Valid="1">
-        <Description Lang="en">Frontend module registration for the AdminSystemStatus object  in the admin area.</Description>Description>
+        <Description Lang="en">Frontend module registration for the AdminSystemStatus object in the admin area.</Description>Description>
         <Description Lang="de">Frontendmodul-Registration des AdminSystemStatus-Objekts im Admin-Bereich.</Description>Description>
         <Group>Support</Group>
         <SubGroup>Frontend::Admin::ModuleRegistration</SubGroup>
@@ -28,6 +28,152 @@
         <SubGroup>Core::Support</SubGroup>
         <Setting>
             <String Regex=""></String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Support::Database::DB2" Required="0" Valid="1">
+        <Description Lang="en">Definition of the database checks for the DB2 database.</Description>
+        <Description Lang="de">Definition der Datenbank-Checks für die DB2 Datenbank.</Description>
+        <Group>Support</Group>
+        <SubGroup>Core::Support</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="TableCheck">1</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Support::Database::MSSQL" Required="0" Valid="1">
+        <Description Lang="en">Definition of the database checks for the MSSQL database.</Description>
+        <Description Lang="de">Definition der Datenbank-Checks für die MSSQL Datenbank.</Description>
+        <Group>Support</Group>
+        <SubGroup>Core::Support</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="TableCheck">1</Item>
+                <Item Key="VersionCheck">1</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Support::Database::MySQL" Required="0" Valid="1">
+        <Description Lang="en">Definition of the database checks for the MySQL database.</Description>
+        <Description Lang="de">Definition der Datenbank-Checks für die MySQL Datenbank.</Description>
+        <Group>Support</Group>
+        <SubGroup>Core::Support</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="TableCheck">1</Item>
+                <Item Key="MaxAllowedPackageCheck">1</Item>
+                <Item Key="QueryCacheSizeCheck">1</Item>
+                <Item Key="UTF8SupportCheck">1</Item>
+                <Item Key="UTF8ClientCheck">1</Item>
+                <Item Key="UTF8DatabaseCheck">1</Item>
+                <Item Key="UTF8TableCheck">1</Item>
+                <Item Key="VersionCheck">1</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Support::Database::Oracle" Required="0" Valid="1">
+        <Description Lang="en">Definition of the database checks for the Oracle database.</Description>
+        <Description Lang="de">Definition der Datenbank-Checks für die Oracle Datenbank.</Description>
+        <Group>Support</Group>
+        <SubGroup>Core::Support</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="TableCheck">1</Item>
+                <Item Key="NLSDateFormatCheck">1</Item>
+                <Item Key="OracleHomeCheck">1</Item>
+                <Item Key="NLSLangCheck">1</Item>
+                <Item Key="NLSDateFormatSelectCheck">1</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Support::Database::PostgreSQL" Required="0" Valid="1">
+        <Description Lang="en">Definition of the database checks for the PostgreSQL database.</Description>
+        <Description Lang="de">Definition der Datenbank-Checks für die PostgreSQL Datenbank.</Description>
+        <Group>Support</Group>
+        <SubGroup>Core::Support</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="TableCheck">1</Item>
+                <Item Key="DateStyleCheck">1</Item>
+                <Item Key="UTF8ServerCheck">1</Item>
+                <Item Key="UTF8ClientCheck">1</Item>
+                <Item Key="VersionCheck">1</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Support::OS" Required="0" Valid="1">
+        <Description Lang="en">Definition of the Operating System checks.</Description>
+        <Description Lang="de">Definition der Betriebssystem-Checks.</Description>
+        <Group>Support</Group>
+        <SubGroup>Core::Support</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="CPULoadCheck">1</Item>
+                <Item Key="DiskUsageCheck">1</Item>
+                <Item Key="MemorySwapCheck">1</Item>
+                <Item Key="DistributionCheck">1</Item>
+                <Item Key="KernelInfoCheck">1</Item>
+                <Item Key="PerlCheck">1</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Support::OTRS" Required="0" Valid="1">
+        <Description Lang="en">Definition of the OTRS checks.</Description>
+        <Description Lang="de">Definition der OTRS-Checks.</Description>
+        <Group>Support</Group>
+        <SubGroup>Core::Support</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="OpenTicketCheck">1</Item>
+                <Item Key="TicketIndexModuleCheck">1</Item>
+                <Item Key="TicketStaticDBOrphanedRecords">1</Item>
+                <Item Key="TicketFulltextIndexModuleCheck">1</Item>
+                <Item Key="FQDNConfigCheck">1</Item>
+                <Item Key="SystemIDConfigCheck">1</Item>
+                <Item Key="LogCheck">1</Item>
+                <Item Key="FileSystemCheck">1</Item>
+                <Item Key="PackageDeployCheck">1</Item>
+                <Item Key="InvalidUserLockedTicketSearch">1</Item>
+                <Item Key="ConfigCheckTicketFrontendResponseFormat">1</Item>
+                <Item Key="DefaultUserCheck">1</Item>
+                <Item Key="DefaultSOAPUserCheck">1</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Support::Webserver::Apache" Required="0" Valid="1">
+        <Description Lang="en">Definition of the webserver checks for the Apache webserver.</Description>
+        <Description Lang="de">Definition der Webserver-Checks für den Apache Webserver.</Description>
+        <Group>Support</Group>
+        <SubGroup>Core::Support</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="ApacheVersionCheck">1</Item>
+                <Item Key="CGIAcceleratorCheck">1</Item>
+                <Item Key="ApacheDBICheck">1</Item>
+                <Item Key="ApacheReloadCheck">1</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Support::Webserver::IIS" Required="0" Valid="1">
+        <Description Lang="en">Definition of the webserver checks for the IIS webserver.</Description>
+        <Description Lang="de">Definition der Webserver-Checks für den IIS Webserver.</Description>
+        <Group>Support</Group>
+        <SubGroup>Core::Support</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="PerlExCheck">1</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Support::Cron" Required="0" Valid="0">
+        <Description Lang="en">Definition of the Cron checks.</Description>
+        <Description Lang="de">Definition der Cron-Checks.</Description>
+        <Group>Support</Group>
+        <SubGroup>Core::Support</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="">1</Item>
+            </Hash>
         </Setting>
     </ConfigItem>
 </otrs_config>

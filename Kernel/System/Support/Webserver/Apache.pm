@@ -2,7 +2,7 @@
 # Kernel/System/Support/Webserver/Apache.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Apache.pm,v 1.13 2010/02/09 19:54:17 ub Exp $
+# $Id: Apache.pm,v 1.14 2010/02/09 21:29:16 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.13 $) [1];
+$VERSION = qw($Revision: 1.14 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -35,18 +35,25 @@ sub new {
 sub AdminChecksGet {
     my ( $Self, %Param ) = @_;
 
-    # add new function name here
-    my @ModuleList = (
-        '_ApacheVersionCheck',
-        '_CGIAcceleratorCheck',
-        '_ApacheDBICheck',
-        '_ApacheReloadCheck',
-    );
+    # get names of available checks from sysconfig
+    my $Checks = $Self->{ConfigObject}->Get('Support::Webserver::Apache');
 
+    # find out which checks should are enabled in sysconfig
+    my @EnabledCheckFunctions;
+    if ( $Checks && ref $Checks eq 'HASH' ) {
+
+        # get all enabled check function names
+        @EnabledCheckFunctions = sort grep { $Checks->{$_} } keys %{$Checks};
+    }
+
+    # to store the result
     my @DataArray;
 
     FUNCTIONNAME:
-    for my $FunctionName (@ModuleList) {
+    for my $FunctionName (@EnabledCheckFunctions) {
+
+        # prepend an underscore
+        $FunctionName = '_' . $FunctionName;
 
         # run function and get check data
         my $Check = $Self->$FunctionName();

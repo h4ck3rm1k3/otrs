@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/postgresql.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: postgresql.pm,v 1.16 2010/02/09 19:57:03 ub Exp $
+# $Id: postgresql.pm,v 1.17 2010/02/09 21:29:16 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.16 $) [1];
+$VERSION = qw($Revision: 1.17 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -40,19 +40,25 @@ sub new {
 sub AdminChecksGet {
     my ( $Self, %Param ) = @_;
 
-    # add new function name here
-    my @ModuleList = (
-        '_DateStyleCheck',
-        '_UTF8ServerCheck',
-        '_TableCheck',
-        '_UTF8ClientCheck',
-        '_VersionCheck',
-    );
+    # get names of available checks from sysconfig
+    my $Checks = $Self->{ConfigObject}->Get('Support::Database::PostgreSQL');
 
+    # find out which checks should are enabled in sysconfig
+    my @EnabledCheckFunctions;
+    if ( $Checks && ref $Checks eq 'HASH' ) {
+
+        # get all enabled check function names
+        @EnabledCheckFunctions = sort grep { $Checks->{$_} } keys %{$Checks};
+    }
+
+    # to store the result
     my @DataArray;
 
     FUNCTIONNAME:
-    for my $FunctionName (@ModuleList) {
+    for my $FunctionName (@EnabledCheckFunctions) {
+
+        # prepend an underscore
+        $FunctionName = '_' . $FunctionName;
 
         # run function and get check data
         my $Check = $Self->$FunctionName();

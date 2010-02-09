@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.26 2010/02/09 19:54:17 ub Exp $
+# $Id: OTRS.pm,v 1.27 2010/02/09 21:29:16 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.26 $) [1];
+$VERSION = qw($Revision: 1.27 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -49,27 +49,25 @@ sub new {
 sub AdminChecksGet {
     my ( $Self, %Param ) = @_;
 
-    # add new function name here
-    my @ModuleList = (
-        '_OpenTicketCheck',
-        '_TicketIndexModuleCheck',
-        '_TicketStaticDBOrphanedRecords',
-        '_TicketFulltextIndexModuleCheck',
-        '_FQDNConfigCheck',
-        '_SystemIDConfigCheck',
-        '_LogCheck',
-        '_FileSystemCheck',
-        '_PackageDeployCheck',
-        '_InvalidUserLockedTicketSearch',
-        '_ConfigCheckTicketFrontendResponseFormat',
-        '_DefaultUserCheck',
-        '_DefaultSOAPUserCheck',
-    );
+    # get names of available checks from sysconfig
+    my $Checks = $Self->{ConfigObject}->Get('Support::OTRS');
 
+    # find out which checks should are enabled in sysconfig
+    my @EnabledCheckFunctions;
+    if ( $Checks && ref $Checks eq 'HASH' ) {
+
+        # get all enabled check function names
+        @EnabledCheckFunctions = sort grep { $Checks->{$_} } keys %{$Checks};
+    }
+
+    # to store the result
     my @DataArray;
 
     FUNCTIONNAME:
-    for my $FunctionName (@ModuleList) {
+    for my $FunctionName (@EnabledCheckFunctions) {
+
+        # prepend an underscore
+        $FunctionName = '_' . $FunctionName;
 
         # run function and get check data
         my $Check = $Self->$FunctionName();

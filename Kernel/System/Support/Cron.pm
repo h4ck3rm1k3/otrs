@@ -2,7 +2,7 @@
 # Kernel/System/Support/Cron.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Cron.pm,v 1.5 2010/02/09 18:58:04 ub Exp $
+# $Id: Cron.pm,v 1.6 2010/02/09 21:29:16 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.5 $) [1];
+$VERSION = qw($Revision: 1.6 $) [1];
 
 =head1 NAME
 
@@ -81,13 +81,25 @@ $CronArray => [
 sub AdminChecksGet {
     my ( $Self, %Param ) = @_;
 
-    # add new function name here
-    my @ModuleList = ();
+    # get names of available checks from sysconfig
+    my $Checks = $Self->{ConfigObject}->Get('Support::Cron');
 
+    # find out which checks should are enabled in sysconfig
+    my @EnabledCheckFunctions;
+    if ( $Checks && ref $Checks eq 'HASH' ) {
+
+        # get all enabled check function names
+        @EnabledCheckFunctions = sort grep { $Checks->{$_} } keys %{$Checks};
+    }
+
+    # to store the result
     my @DataArray;
 
     FUNCTIONNAME:
-    for my $FunctionName (@ModuleList) {
+    for my $FunctionName (@EnabledCheckFunctions) {
+
+        # prepend an underscore
+        $FunctionName = '_' . $FunctionName;
 
         # run function and get check data
         my $Check = $Self->$FunctionName();
