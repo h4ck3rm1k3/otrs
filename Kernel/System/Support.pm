@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.38 2010/02/09 19:12:25 ub Exp $
+# $Id: Support.pm,v 1.39 2010/02/09 19:19:41 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.38 $) [1];
+$VERSION = qw($Revision: 1.39 $) [1];
 
 =head1 NAME
 
@@ -86,8 +86,8 @@ sub new {
     }
 
     # create additional objects
-    $Self->{XMLObject}     = Kernel::System::XML->new( %{$Self} );
     $Self->{DBObject}      = Kernel::System::DB->new( %{$Self} );
+    $Self->{XMLObject}     = Kernel::System::XML->new( %{$Self} );
     $Self->{TimeObject}    = Kernel::System::Time->new( %{$Self} );
     $Self->{EmailObject}   = Kernel::System::Email->new( %{$Self} );
     $Self->{PackageObject} = Kernel::System::Package->new( %{$Self} );
@@ -1032,6 +1032,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.38 $ $Date: 2010/02/09 19:12:25 $
+$Revision: 1.39 $ $Date: 2010/02/09 19:19:41 $
 
 =cut
