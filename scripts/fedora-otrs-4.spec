@@ -1,8 +1,8 @@
 # --
 # RPM spec file for Fedora of the OTRS package
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: fedora-otrs-4.spec,v 1.17 2011/09/08 14:26:47 mg Exp $
+# $Id: fedora-otrs-4.spec,v 1.6.2.1 2010/02/15 10:03:12 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -12,13 +12,13 @@
 # please send bugfixes or comments to bugs+rpm@otrs.org
 #
 # --
-Summary:      OTRS Help Desk.
+Summary:      The Open Ticket Request System.
 Name:         otrs
 Version:      0.0
 Copyright:    GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
 Group:        Applications/Mail
 Provides:     otrs
-Requires:     perl perl(DBI) perl(URI) mod_perl httpd procmail perl(Date::Format) perl(LWP::UserAgent) perl(Net::DNS) perl(IO::Socket::SSL) perl(XML::Parser)
+Requires:     perl perl-DBI perl-DBD-MySQL perl-URI mod_perl httpd mysql mysql-server procmail perl-libwww-perl perl-Net-DNS perl-IO-Socket-SSL perl-XML-Parser
 Autoreqprov:  no
 Release:      01
 Source0:      otrs-%{version}.tar.bz2
@@ -60,14 +60,14 @@ install -m 755 scripts/redhat-rcotrs $RPM_BUILD_ROOT/etc/rc.d/init.d/otrs
 install -m 644 scripts/redhat-rcotrs-config $RPM_BUILD_ROOT/etc/sysconfig/otrs
 
 # copy apache2-httpd.include.conf to /etc/httpd/conf.d/zzz_otrs.conf
-install -m 644 scripts/apache2-httpd.include.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/zzz_otrs.conf
+install -m 644 scripts/apache2-httpd-new.include.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/zzz_otrs.conf
 
 # set permission
 export OTRSUSER=otrs
 useradd $OTRSUSER || :
 useradd apache || :
 groupadd apache || :
-$RPM_BUILD_ROOT/opt/otrs/bin/otrs.SetPermissions.pl --otrs-user=$OTRSUSER --otrs-group=apache --web-user=apache --web-group=apache $RPM_BUILD_ROOT/opt/otrs
+$RPM_BUILD_ROOT/opt/otrs/bin/SetPermissions.sh $RPM_BUILD_ROOT/opt/otrs $OTRSUSER apache apache apache
 
 %pre
 # remember about the installed version
@@ -114,12 +114,6 @@ if test -e /opt/otrs/Kernel/Config/Files/FAQ.pm; then
     mv /opt/otrs/Kernel/Config/Files/FAQ.pm /opt/otrs/Kernel/Config/Files/FAQ.pm.not_longer_used;
 fi
 
-# run OTRS rebuild config, delete cache, if the system was already in use (i.e. upgrade).
-if test -e /opt/otrs/Kernel/Config/Files/ZZZAAuto.pm; then
-    /opt/otrs/bin/otrs.RebuildConfig.pl;
-    /opt/otrs/bin/otrs.DeleteCache.pl;
-fi
-
 # note
 HOST=`hostname -f`
 echo ""
@@ -128,9 +122,11 @@ echo ""
 echo "[httpd services]"
 echo " Restart httpd 'service httpd restart'"
 echo ""
+echo "[mysqld service]"
+echo " Start mysqld 'service mysqld start'"
+echo ""
 echo "[install the OTRS database]"
-echo " Make sure your database server is running."
-echo " Use a web browser and open this link:"
+echo " Use a webbrowser and open this link:"
 echo " http://$HOST/otrs/installer.pl"
 echo ""
 echo "[OTRS services]"
