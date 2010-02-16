@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 # --
 # scripts/apache-perl-startup.pl - to load the modules if mod_perl is used
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: apache2-perl-startup.pl,v 1.53 2011/12/12 17:12:23 mg Exp $
+# $Id: apache2-perl-startup.pl,v 1.36.2.1 2010/02/16 10:28:42 mb Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -25,20 +25,19 @@ use strict;
 use warnings;
 
 # make sure we are in a sane environment.
+#$ENV{GATEWAY_INTERFACE} =~ /^CGI-Perl/ or die "GATEWAY_INTERFACE not Perl!";
+# check $ENV{MOD_PERL}, $ENV{GATEWAY_INTERFACE} is deprecated for mod_perl2
 $ENV{MOD_PERL} =~ /mod_perl/ or die "MOD_PERL not used!";
 
 # switch to unload_package_xs, the PP version is broken in Perl 5.10.1.
-# see http://rt.perl.org/rt3//Public/Bug/Display.html?id=72866
 BEGIN {
     $ModPerl::Util::DEFAULT_UNLOAD_METHOD = 'unload_package_xs';
 }
-
 use ModPerl::Util;
 
 # set otrs lib path!
 use lib "/opt/otrs/";
 use lib "/opt/otrs/Kernel/cpan-lib";
-use lib "/opt/otrs/Custom";
 
 # pull in things we will use in most requests so it is read and compiled
 # exactly once
@@ -48,7 +47,9 @@ use CGI ();
 CGI->compile(':cgi');
 use CGI::Carp ();
 
-use Apache::DBI;
+#use Apache::DBI ();
+#Apache::DBI->connect_on_init('DBI:mysql:otrs', 'otrs', 'some-pass');
+use DBI ();
 
 # enable this if you use mysql
 #use DBD::mysql ();
@@ -71,11 +72,8 @@ use Kernel::System::Web::Request;
 use Kernel::System::Web::UploadCache;
 use Kernel::System::DB;
 use Kernel::System::Encode;
-use Kernel::System::EventHandler;
 use Kernel::System::Main;
 use Kernel::System::Time;
-use Kernel::System::Cache;
-use Kernel::System::CacheInternal;
 use Kernel::System::Auth;
 use Kernel::System::Auth::DB;
 use Kernel::System::AuthSession;
@@ -101,6 +99,7 @@ use Kernel::System::Stats;
 
 # optional core modules
 #use Kernel::System::Auth::LDAP;
+#use Kernel::System::AuthSession::IPC;
 #use Kernel::System::AuthSession::FS;
 #use Kernel::System::PDF;
 #use Kernel::System::Log::SysLog;
@@ -187,8 +186,9 @@ use Kernel::Modules::AdminRoleGroup;
 use Kernel::Modules::CustomerPreferences;
 use Kernel::Modules::CustomerTicketAttachment;
 use Kernel::Modules::CustomerTicketMessage;
-use Kernel::Modules::CustomerTicketOverview;
+use Kernel::Modules::CustomerTicketOverView;
 use Kernel::Modules::CustomerTicketZoom;
+use Kernel::Modules::CustomerZoom;
 
 # frontend modules
 use Kernel::Output::HTML::Layout;
@@ -199,15 +199,14 @@ use Kernel::Output::HTML::PreferencesPassword;
 use Kernel::Output::HTML::PreferencesTheme;
 use Kernel::Output::HTML::NavBarModuleAdmin;
 use Kernel::Output::HTML::NotificationUIDCheck;
+use Kernel::Output::HTML::NotificationCharsetCheck;
 use Kernel::Output::HTML::NotificationAgentOnline;
 use Kernel::Output::HTML::NotificationCustomerOnline;
+use Kernel::Output::HTML::NotificationAgentTicket;
+use Kernel::Output::HTML::NotificationAgentTicketSeen;
 use Kernel::Output::HTML::TicketMenuGeneric;
 use Kernel::Output::HTML::TicketMenuLock;
-use Kernel::Output::HTML::ToolBarTicketLocked;
-use Kernel::Output::HTML::ToolBarTicketResponsible;
-use Kernel::Output::HTML::ToolBarTicketWatcher;
-use Kernel::Output::HTML::ToolBarTicketSearchFulltext;
-use Kernel::Output::HTML::ToolBarTicketSearchProfile;
+use Kernel::Output::HTML::NavBarLockedTickets;
 use Kernel::Output::HTML::ArticleAttachmentDownload;
 use Kernel::Output::HTML::ArticleAttachmentHTMLViewer;
 
