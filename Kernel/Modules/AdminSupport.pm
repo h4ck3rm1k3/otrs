@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.26 2010/02/09 19:29:31 ub Exp $
+# $Id: AdminSupport.pm,v 1.27 2010/02/16 19:03:16 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.26 $) [1];
+$VERSION = qw($Revision: 1.27 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -296,8 +296,8 @@ sub Run {
         # get result of all admin checks
         my $DataHash = $Self->{SupportObject}->AdminChecksGet();
 
-        # build selection for benchmark test
-        $Param{ModeStrg} = $Self->{LayoutObject}->BuildSelection(
+        # selection data for benchmark dropdown list
+        my %SelectionData = (
             Data => {
                 1 => '1 * Normal (ca. 25 sec)',
                 3 => '3 * High   (ca. 75 sec)',
@@ -305,6 +305,19 @@ sub Run {
             },
             Name => 'Mode',
         );
+
+        # check if Layout object knows the function BuildSelection
+        # this is needed because older otrs versions use OptionStrgHashRef instead
+        if ( $Self->{LayoutObject}->can(BuildSelection) ) {
+
+            # build selection for benchmark test
+            $Param{ModeStrg} = $Self->{LayoutObject}->BuildSelection(%SelectionData);
+        }
+        else {
+
+            # build selection for benchmark test
+            $Param{ModeStrg} = $Self->{LayoutObject}->OptionStrgHashRef(%SelectionData);
+        }
 
         # create & return output
         my $Output = $Self->{LayoutObject}->Header();
