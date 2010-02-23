@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.41 2010/02/09 20:06:27 ub Exp $
+# $Id: Support.pm,v 1.42 2010/02/23 15:13:55 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.41 $) [1];
+$VERSION = qw($Revision: 1.42 $) [1];
 
 =head1 NAME
 
@@ -216,17 +216,25 @@ sub XMLStringCreate {
     my $CountItem   = 0;
     MODULE:
     for my $Module ( keys %{ $Param{DataHash} } ) {
+
         $CountModule++;
         $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Name} = $Module;
+
         for my $DataHashRow ( @{ $Param{DataHash}->{$Module} } ) {
+
             $CountItem++;
             my $Data = {};
+
+            ELEMENT:
             for my $Element ( keys %{$DataHashRow} ) {
-                next MODULE if $Element eq 'Name';
+
+                next ELEMENT if $Element eq 'Name';
                 $Data->{$Element}->[1]->{Content} = $DataHashRow->{$Element};
             }
+
             $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem]
                 = $Data;
+
             $XMLHash->[1]->{SupportInfo}->[1]->{Module}->[$CountModule]->{Item}->[$CountItem]
                 ->{Name} = $DataHashRow->{Name};
         }
@@ -775,6 +783,7 @@ sub Download {
 
     # create check package
     my $DataHash = $Self->AdminChecksGet();
+
     $File{CheckContent} = $Self->XMLStringCreate( DataHash => $DataHash, );
     $File{CheckFilename} = 'check.xml',
 
@@ -1047,6 +1056,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.41 $ $Date: 2010/02/09 20:06:27 $
+$Revision: 1.42 $ $Date: 2010/02/23 15:13:55 $
 
 =cut
