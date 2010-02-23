@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.42 2010/02/23 15:13:55 ub Exp $
+# $Id: Support.pm,v 1.43 2010/02/23 15:19:46 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.42 $) [1];
+$VERSION = qw($Revision: 1.43 $) [1];
 
 =head1 NAME
 
@@ -696,7 +696,8 @@ sub SendInfo {
     }
 
     # Get the FQDN
-    $Body .= "FQDN:" . $Self->{ConfigObject}->Get('FQDN') . "\n";
+    my $FQDN = $Self->{ConfigObject}->Get('FQDN') || '';
+    $Body .= "FQDN:" . $FQDN . "\n";
 
     # Get the otrs version and if installed add other product info like SIRIOS or ITSM.
     $Body .= $Self->GetInstalledProduct();
@@ -1056,6 +1057,6 @@ did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.42 $ $Date: 2010/02/23 15:13:55 $
+$Revision: 1.43 $ $Date: 2010/02/23 15:19:46 $
 
 =cut
