@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Ticket/Event/NotificationEvent.pm - a event module to send notifications
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: NotificationEvent.pm,v 1.37 2011/12/08 14:35:40 mg Exp $
+# $Id: NotificationEvent.pm,v 1.9.2.1 2010/03/08 18:30:18 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -10,18 +10,13 @@
 # --
 
 package Kernel::System::Ticket::Event::NotificationEvent;
-
 use strict;
 use warnings;
 
 use Kernel::System::NotificationEvent;
-use Kernel::System::SystemAddress;
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.37 $) [1];
+$VERSION = qw($Revision: 1.9.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -31,25 +26,11 @@ sub new {
     bless( $Self, $Type );
 
     # get needed objects
-    for my $Needed (
-        qw(DBObject ConfigObject TicketObject LogObject TimeObject UserObject CustomerUserObject SendmailObject QueueObject GroupObject MainObject EncodeObject)
+    for (
+        qw(DBObject ConfigObject TicketObject LogObject TimeObject UserObject CustomerUserObject SendmailObject QueueObject GroupObject MainObject)
         )
     {
-        $Self->{$Needed} = $Param{$Needed} || die "Got no $Needed!";
-    }
-
-    $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new(%Param);
-    $Self->{BackendObject}      = Kernel::System::DynamicField::Backend->new(%Param);
-
-    # get dynamic fields
-    $Self->{DynamicField} = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid      => 1,
-        ObjectType => ['Ticket'],
-    );
-
-    # create a dynamic field config lookup table
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        $Self->{DynamicFieldConfigLookup}->{ $DynamicFieldConfig->{Name} } = $DynamicFieldConfig;
+        $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
     return $Self;
@@ -59,25 +40,16 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(Event Data Config UserID)) {
+    for (qw(TicketID Event Config UserID)) {
         if ( !$Param{$_} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
-    for (qw(TicketID)) {
-        if ( !$Param{Data}->{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_ in Data!" );
-            return;
-        }
-    }
 
-    # return if no notification is active
-    return 1 if $Self->{TicketObject}->{SendNoNotification};
-
-    # return if no ticket exists (e. g. it got deleted)
+    # return of no ticket exists (e. g. it got deleted)
     my $TicketExists = $Self->{TicketObject}->TicketNumberLookup(
-        TicketID => $Param{Data}->{TicketID},
+        TicketID => $Param{TicketID},
         UserID   => $Param{UserID},
     );
     return 1 if !$TicketExists;
@@ -94,9 +66,8 @@ sub Run {
 
     # get ticket attribute matches
     my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Param{Data}->{TicketID},
-        UserID        => $Param{UserID},
-        DynamicFields => 1,
+        TicketID => $Param{TicketID},
+        UserID   => $Param{UserID},
     );
 
     NOTIFICATION:
@@ -111,15 +82,12 @@ sub Run {
             # ignore not ticket related attributes
             next if $Key eq 'Recipients';
             next if $Key eq 'RecipientAgents';
-            next if $Key eq 'RecipientGroups';
-            next if $Key eq 'RecipientRoles';
             next if $Key eq 'RecipientEmail';
             next if $Key eq 'Events';
             next if $Key eq 'ArticleTypeID';
             next if $Key eq 'ArticleSubjectMatch';
             next if $Key eq 'ArticleBodyMatch';
             next if $Key eq 'ArticleAttachmentInclude';
-            next if $Key eq 'NotificationArticleTypeID';
 
             # check ticket attributes
             next if !$Notification{Data}->{$Key};
@@ -129,33 +97,9 @@ sub Run {
             VALUE:
             for my $Value ( @{ $Notification{Data}->{$Key} } ) {
                 next VALUE if !$Value;
-
-                # check if key is a search dynamic field
-                if ( $Key =~ m{\A Search_DynamicField_}xms ) {
-
-                    # remove search prefix
-                    my $DynamicFieldName = $Key;
-
-                    $DynamicFieldName =~ s{Search_DynamicField_}{};
-
-                    # get the dynamic field config for this field
-                    my $DynamicFieldConfig = $Self->{DynamicFieldConfigLookup}->{$DynamicFieldName};
-
-                    next if !$DynamicFieldConfig;
-
-                    $Match = $Self->{BackendObject}->ObjectMatch(
-                        DynamicFieldConfig => $DynamicFieldConfig,
-                        Value              => $Value,
-                        ObjectAttributes   => \%Ticket,
-                    );
-                    last if $Match;
-                }
-                else {
-
-                    if ( $Value eq $Ticket{$Key} ) {
-                        $Match = 1;
-                        last;
-                    }
+                if ( $Value eq $Ticket{$Key} ) {
+                    $Match = 1;
+                    last;
                 }
             }
             next NOTIFICATION if !$Match;
@@ -163,11 +107,10 @@ sub Run {
 
         # match article types only on ArticleCreate event
         my @Attachments;
-        if ( $Param{Event} eq 'ArticleCreate' && $Param{Data}->{ArticleID} ) {
+        if ( $Param{Event} eq 'ArticleCreate' && $Param{ArticleID} ) {
             my %Article = $Self->{TicketObject}->ArticleGet(
-                ArticleID     => $Param{Data}->{ArticleID},
-                UserID        => $Param{UserID},
-                DynamicFields => 0,
+                ArticleID => $Param{ArticleID},
+                UserID    => $Param{UserID},
             );
 
             # check article type
@@ -200,16 +143,15 @@ sub Run {
             }
 
             # add attachments to notification
-            if ( $Notification{Data}->{ArticleAttachmentInclude}->[0] ) {
+            if ( $Notification{Data}->{ArticleAttachmentInclude} ) {
                 my %Index = $Self->{TicketObject}->ArticleAttachmentIndex(
-                    ArticleID                  => $Param{Data}->{ArticleID},
-                    UserID                     => $Param{UserID},
-                    StripPlainBodyAsAttachment => 3,
+                    ArticleID => $Param{ArticleID},
+                    UserID    => $Param{UserID},
                 );
                 if (%Index) {
                     for my $FileID ( sort keys %Index ) {
                         my %Attachment = $Self->{TicketObject}->ArticleAttachment(
-                            ArticleID => $Param{Data}->{ArticleID},
+                            ArticleID => $Param{ArticleID},
                             FileID    => $FileID,
                             UserID    => $Param{UserID},
                         );
@@ -221,8 +163,8 @@ sub Run {
         }
 
         # send notification
-        $Self->_SendNotificationToRecipients(
-            TicketID              => $Param{Data}->{TicketID},
+        $Self->SendCustomerNotification(
+            TicketID              => $Param{TicketID},
             UserID                => $Param{UserID},
             Notification          => \%Notification,
             CustomerMessageParams => {},
@@ -234,9 +176,7 @@ sub Run {
     return 1;
 }
 
-# Assemble the list of recipients. Agents and customer users can be recipient.
-# Call _SendNotification() for each recipient.
-sub _SendNotificationToRecipients {
+sub SendCustomerNotification {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
@@ -247,10 +187,9 @@ sub _SendNotificationToRecipients {
         }
     }
 
-    # get old article for quoting
+    # get old article for quoteing
     my %Article = $Self->{TicketObject}->ArticleLastCustomerArticle(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
+        TicketID => $Param{TicketID},
     );
 
     # get recipients by Recipients
@@ -273,7 +212,7 @@ sub _SendNotificationToRecipients {
                     my @UserIDs = $Self->{GroupObject}->GroupMemberList(
                         GroupID => $GroupID,
                         Type    => 'rw',
-                        Result  => 'ID',
+                        Result  => 'ARRAY',
                     );
                     push @{ $Param{Notification}->{Data}->{RecipientAgents} }, @UserIDs;
                 }
@@ -282,8 +221,8 @@ sub _SendNotificationToRecipients {
                 my %Recipient;
 
                 # ArticleLastCustomerArticle() returns the lastest customer article but if there
-                # is no customer acticle, it returns the latest agent article. In this case
-                # notification must not be send to the "From", but to the "To" article field.
+                # is no customer acticle it returns the lastest agent article in this case
+                # notificication must not be send to the "From", but to the "To" article field.
                 if ( $Article{SenderType} eq 'customer' ) {
                     $Recipient{Email} = $Article{From};
                 }
@@ -358,11 +297,9 @@ sub _SendNotificationToRecipients {
         }
     }
 
-    # hash to keep track which agents are already receiving this notification
-    my %AgentUsed;
-
     # get recipients by RecipientAgents
     if ( $Param{Notification}->{Data}->{RecipientAgents} ) {
+        my %AgentUsed;
         RECIPIENT:
         for my $Recipient ( @{ $Param{Notification}->{Data}->{RecipientAgents} } ) {
             next if $Recipient == 1;
@@ -384,61 +321,6 @@ sub _SendNotificationToRecipients {
         }
     }
 
-    # get recipients by RecipientGroups
-    if ( $Param{Notification}->{Data}->{RecipientGroups} ) {
-        RECIPIENT:
-        for my $Group ( @{ $Param{Notification}->{Data}->{RecipientGroups} } ) {
-            my @GroupMemberList = $Self->{GroupObject}->GroupMemberList(
-                Result  => 'ID',
-                Type    => 'ro',
-                GroupID => $Group,
-            );
-            GROUPMEMBER:
-            for my $Recipient (@GroupMemberList) {
-                next GROUPMEMBER if $Recipient == 1;
-                next GROUPMEMBER if $AgentUsed{$Recipient};
-                $AgentUsed{$Recipient} = 1;
-                my %UserData = $Self->{UserObject}->GetUserData(
-                    UserID => $Recipient,
-                    Valid  => 1
-                );
-                if ( $UserData{UserEmail} ) {
-                    my %Recipient;
-                    $Recipient{Email} = $UserData{UserEmail};
-                    $Recipient{Type}  = 'Agent';
-                    push @Recipients, \%Recipient;
-                }
-            }
-        }
-    }
-
-    # get recipients by RecipientRoles
-    if ( $Param{Notification}->{Data}->{RecipientRoles} ) {
-        RECIPIENT:
-        for my $Role ( @{ $Param{Notification}->{Data}->{RecipientRoles} } ) {
-            my @RoleMemberList = $Self->{GroupObject}->GroupUserRoleMemberList(
-                Result => 'ID',
-                RoleID => $Role,
-            );
-            ROLEMEMBER:
-            for my $Recipient (@RoleMemberList) {
-                next ROLEMEMBER if $Recipient == 1;
-                next ROLEMEMBER if $AgentUsed{$Recipient};
-                $AgentUsed{$Recipient} = 1;
-                my %UserData = $Self->{UserObject}->GetUserData(
-                    UserID => $Recipient,
-                    Valid  => 1
-                );
-                if ( $UserData{UserEmail} ) {
-                    my %Recipient;
-                    $Recipient{Email} = $UserData{UserEmail};
-                    $Recipient{Type}  = 'Agent';
-                    push @Recipients, \%Recipient;
-                }
-            }
-        }
-    }
-
     # get recipients by RecipientEmail
     if ( $Param{Notification}->{Data}->{RecipientEmail} ) {
         if ( $Param{Notification}->{Data}->{RecipientEmail}->[0] ) {
@@ -447,13 +329,6 @@ sub _SendNotificationToRecipients {
             $Recipient{Type}     = 'Customer';
             $Recipient{Email}    = $Param{Notification}->{Data}->{RecipientEmail}->[0];
 
-            # check if we have a specified article type
-            if ( $Param{Notification}->{Data}->{NotificationArticleTypeID} ) {
-                $Recipient{NotificationArticleType} = $Self->{TicketObject}->ArticleTypeLookup(
-                    ArticleTypeID => $Param{Notification}->{Data}->{NotificationArticleTypeID}->[0]
-                ) || 'email-notification-ext';
-            }
-
             # check recipients
             if ( $Recipient{Email} && $Recipient{Email} =~ /@/ ) {
                 push @Recipients, \%Recipient;
@@ -461,31 +336,8 @@ sub _SendNotificationToRecipients {
         }
     }
 
-    # Get current user data
-    my %CurrentUser = $Self->{UserObject}->GetUserData(
-        UserID => $Param{UserID},
-    );
-    $Self->{SystemAddressObject} = Kernel::System::SystemAddress->new( %{$Self} );
-    RECIPIENT:
     for my $Recipient (@Recipients) {
-        if (
-            $Self->{SystemAddressObject}
-            ->SystemAddressIsLocalAddress( Address => $Recipient->{Email} )
-            )
-        {
-            next RECIPIENT;
-        }
-
-        # do not send email to self if AgentSelfNotification is set to No
-        if (
-            !$Self->{ConfigObject}->Get('AgentSelfNotifyOnAction')
-            && $Recipient->{Email} eq $CurrentUser{UserEmail}
-            )
-        {
-            next RECIPIENT
-        }
-
-        $Self->_SendNotification(
+        $Self->_SendCustomerNotification(
             TicketID              => $Param{TicketID},
             UserID                => $Param{UserID},
             Notification          => $Param{Notification},
@@ -498,23 +350,22 @@ sub _SendNotificationToRecipients {
     return 1;
 }
 
-# send notification to
-sub _SendNotification {
+sub _SendCustomerNotification {
     my ( $Self, %Param ) = @_;
 
     # get notification data
+    #    my %Notification = $Self->{NotificationObject}->NotificationGet(
+    #        Name => $Language . '::Customer::' . $Param{Type},
+    #    );
     my %Notification = %{ $Param{Notification} };
+    my %Recipient    = %{ $Param{Recipient} };
 
-    # get recipient data
-    my %Recipient = %{ $Param{Recipient} };
-
-    # get old article for quoting
+    # get old article for quoteing
     my %Article = $Self->{TicketObject}->ArticleLastCustomerArticle(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 1,
+        TicketID => $Param{TicketID},
     );
 
-    # get notification texts
+    # get notify texts
     for (qw(Subject Body)) {
         next if $Notification{$_};
         $Notification{$_} = "No CustomerNotification $_ for $Param{Type} found!";
@@ -538,35 +389,11 @@ sub _SendNotification {
     $Notification{Body} =~ s/<OTRS_TICKET_NUMBER>/$Article{TicketNumber}/gi;
 
     # ticket data
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 1,
-    );
-    for my $Key ( keys %Ticket ) {
-        next if !defined $Ticket{$Key};
-
-        my $DisplayValue = $Ticket{$Key};
-
-        if ( $Key =~ /^DynamicField_/i ) {
-
-            my $FieldName = $Key;
-            $FieldName =~ s/DynamicField_//gi;
-
-            # get dynamic field config
-            my $DynamicField = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
-                Name => $FieldName,
-            );
-
-            # get display value
-            my $ValueStrg = $Self->{TicketObject}->{DynamicFieldBackendObject}->ReadableValueRender(
-                DynamicFieldConfig => $DynamicField,
-                Value              => $DisplayValue,
-            );
-            $DisplayValue = $ValueStrg->{Value};
-        }
-
-        $Notification{Body}    =~ s/<OTRS_TICKET_$Key>/$DisplayValue/gi;
-        $Notification{Subject} =~ s/<OTRS_TICKET_$Key>/$DisplayValue/gi;
+    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
+    for ( keys %Ticket ) {
+        next if !defined $Ticket{$_};
+        $Notification{Body}    =~ s/<OTRS_TICKET_$_>/$Ticket{$_}/gi;
+        $Notification{Subject} =~ s/<OTRS_TICKET_$_>/$Ticket{$_}/gi;
     }
 
     # cleanup
@@ -574,10 +401,7 @@ sub _SendNotification {
     $Notification{Body}    =~ s/<OTRS_TICKET_.+?>/-/gi;
 
     # get current user data
-    my %CurrentPreferences = $Self->{UserObject}->GetUserData(
-        UserID        => $Param{UserID},
-        NoOutOfOffice => 1,
-    );
+    my %CurrentPreferences = $Self->{UserObject}->GetUserData( UserID => $Param{UserID} );
     for ( keys %CurrentPreferences ) {
         next if !defined $CurrentPreferences{$_};
         $Notification{Body}    =~ s/<OTRS_CURRENT_$_>/$CurrentPreferences{$_}/gi;
@@ -589,10 +413,7 @@ sub _SendNotification {
     $Notification{Body}    =~ s/<OTRS_CURRENT_.+?>/-/gi;
 
     # get owner data
-    my %OwnerPreferences = $Self->{UserObject}->GetUserData(
-        UserID        => $Article{OwnerID},
-        NoOutOfOffice => 1,
-    );
+    my %OwnerPreferences = $Self->{UserObject}->GetUserData( UserID => $Article{OwnerID}, );
     for ( keys %OwnerPreferences ) {
         next if !$OwnerPreferences{$_};
         $Notification{Body}    =~ s/<OTRS_OWNER_$_>/$OwnerPreferences{$_}/gi;
@@ -605,8 +426,7 @@ sub _SendNotification {
 
     # get responsible data
     my %ResponsiblePreferences = $Self->{UserObject}->GetUserData(
-        UserID        => $Article{ResponsibleID},
-        NoOutOfOffice => 1,
+        UserID => $Article{ResponsibleID},
     );
     for ( keys %ResponsiblePreferences ) {
         next if !$ResponsiblePreferences{$_};
@@ -646,9 +466,8 @@ sub _SendNotification {
 
     # latest customer and agent article
     my @ArticleBoxAgent = $Self->{TicketObject}->ArticleGet(
-        TicketID      => $Param{TicketID},
-        UserID        => $Param{UserID},
-        DynamicFields => 0,
+        TicketID => $Param{TicketID},
+        UserID   => $Param{UserID},
     );
     my %ArticleAgent;
     for my $Article ( reverse @ArticleBoxAgent ) {
@@ -667,10 +486,7 @@ sub _SendNotification {
 
         if (%Article) {
             if ( $Article{Body} ) {
-
-                # Use the same line length as HTMLUtils::toAscii to avoid
-                #   line length problems.
-                $Article{Body} =~ s/(^>.+|.{4,78})(?:\s|\z)/$1\n/gm;
+                $Article{Body} =~ s/(^>.+|.{4,72})(?:\s|\z)/$1\n/gm;
             }
             for ( keys %Article ) {
                 next if !$Article{$_};
@@ -720,10 +536,10 @@ sub _SendNotification {
         $Notification{Subject} =~ s/<$ArticleItem.+?>/-/gi;
     }
 
-    # send notification
+    # send notify
     if ( $Recipient{Type} eq 'Agent' ) {
 
-        # send notification
+        # send notify
         my $From = $Self->{ConfigObject}->Get('NotificationSenderName') . ' <'
             . $Self->{ConfigObject}->Get('NotificationSenderEmail') . '>';
         $Self->{SendmailObject}->Send(
@@ -753,19 +569,16 @@ sub _SendNotification {
         );
 
         # ticket event
-        $Self->{TicketObject}->EventHandler(
-            Event => 'ArticleAgentNotification',
-            Data  => {
-                TicketID => $Param{TicketID},
-            },
-            UserID => $Param{UserID},
+        $Self->{TicketObject}->TicketEventHandlerPost(
+            Event    => 'ArticleAgentNotification',
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID},
         );
     }
     else {
         my %Address = $Self->{QueueObject}->GetSystemAddress( QueueID => $Article{QueueID} );
-        my $ArticleType = $Recipient{NotificationArticleType} || 'email-notification-ext';
-        my $ArticleID = $Self->{TicketObject}->ArticleSend(
-            ArticleType    => $ArticleType,
+        $Self->{TicketObject}->ArticleSend(
+            ArticleType    => 'email-notification-ext',
             SenderType     => 'system',
             TicketID       => $Param{TicketID},
             HistoryType    => 'SendCustomerNotification',
@@ -789,13 +602,10 @@ sub _SendNotification {
         );
 
         # ticket event
-        $Self->{TicketObject}->EventHandler(
-            Event => 'ArticleCustomerNotification',
-            Data  => {
-                TicketID  => $Param{TicketID},
-                ArticleID => $Param{ArticleID},
-            },
-            UserID => $Param{UserID},
+        $Self->{TicketObject}->TicketEventHandlerPost(
+            Event    => 'ArticleCustomerNotification',
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID},
         );
     }
 
