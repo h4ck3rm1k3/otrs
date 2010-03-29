@@ -1,8 +1,8 @@
 # --
-# Kernel/System/State.pm - All ticket state related functions
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Kernel/System/State.pm - All state related function should be here eventually
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: State.pm,v 1.54 2011/06/19 20:28:11 mb Exp $
+# $Id: State.pm,v 1.39.2.1 2010/03/29 17:49:59 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,12 +15,10 @@ use strict;
 use warnings;
 
 use Kernel::System::Valid;
-use Kernel::System::Time;
-use Kernel::System::SysConfig;
 use Kernel::System::CacheInternal;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.54 $) [1];
+$VERSION = qw($Revision: 1.39.2.1 $) [1];
 
 =head1 NAME
 
@@ -28,7 +26,7 @@ Kernel::System::State - state lib
 
 =head1 SYNOPSIS
 
-All ticket state functions.
+All state functions.
 
 =head1 PUBLIC INTERFACE
 
@@ -92,8 +90,6 @@ sub new {
     for (qw(DBObject ConfigObject LogObject MainObject EncodeObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
-
-    # create addititional objects
     $Self->{ValidObject}         = Kernel::System::Valid->new(%Param);
     $Self->{CacheInternalObject} = Kernel::System::CacheInternal->new(
         %Param,
@@ -136,7 +132,7 @@ sub StateAdd {
 
     # store data
     return if !$Self->{DBObject}->Do(
-        SQL => 'INSERT INTO ticket_state (name, valid_id, type_id, comments,'
+        SQL => 'INSERT INTO ticket_state (name, valid_id, type_id, comments, '
             . ' create_time, create_by, change_time, change_by)'
             . ' VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
         Bind => [
@@ -157,7 +153,8 @@ sub StateAdd {
     return if !$ID;
 
     # delete cache
-    $Self->{CacheInternalObject}->CleanUp();
+    $Self->{CacheInternalObject}->Delete( Key => 'StateGet::Name::' . $Param{Name}, );
+    $Self->{CacheInternalObject}->Delete( Key => 'StateGet::ID::' . $ID, );
 
     return $ID;
 }
@@ -172,19 +169,6 @@ get state attributes
 
     my %State = $StateObject->StateGet(
         ID    => 123,
-    );
-
-returns
-
-    my %State = (
-        Name       => "new",
-        ID         => 1,
-        TypeName   => "new",
-        TypeID     => 1,
-        ValidID    => 1,
-        CreateTime => "2010-11-29 11:04:04",
-        ChangeTime => "2010-11-29 11:04:04",
-        Comment    => "New ticket created by customer.",
     );
 
 =cut
@@ -211,8 +195,8 @@ sub StateGet {
 
     # sql
     my @Bind;
-    my $SQL = 'SELECT ts.id, ts.name, ts.valid_id, ts.comments, ts.type_id, tst.name,'
-        . ' ts.change_time, ts.create_time'
+    my $SQL = 'SELECT ts.id, ts.name, ts.valid_id, ts.comments, ts.type_id, tst.name, '
+        . ' ts.change_time, ts.create_time '
         . ' FROM ticket_state ts, ticket_state_type tst WHERE ts.type_id = tst.id AND ';
     if ( $Param{Name} ) {
         $SQL .= ' ts.name = ?';
@@ -261,13 +245,12 @@ sub StateGet {
 update state attributes
 
     $StateObject->StateUpdate(
-        ID             => 123,
-        Name           => 'New State',
-        Comment        => 'some comment',
-        ValidID        => 1,
-        TypeID         => 1,
-        CheckSysConfig => 0,   # (optional) default 1
-        UserID         => 123,
+        ID      => 123,
+        Name    => 'New State',
+        Comment => 'some comment',
+        ValidID => 1,
+        TypeID  => 1,
+        UserID  => 123,
     );
 
 =cut
@@ -283,11 +266,6 @@ sub StateUpdate {
         }
     }
 
-    # check CheckSysConfig param
-    if ( !defined $Param{CheckSysConfig} ) {
-        $Param{CheckSysConfig} = 1;
-    }
-
     # sql
     return if !$Self->{DBObject}->Do(
         SQL => 'UPDATE ticket_state SET name = ?, comments = ?, type_id = ?, '
@@ -300,41 +278,28 @@ sub StateUpdate {
     );
 
     # delete cache
-    $Self->{CacheInternalObject}->CleanUp();
-
-    # create a time object locally, needed for the local SysConfigObject
-    my $TimeObject = Kernel::System::Time->new( %{$Self} );
-
-    # check all sysconfig options
-    if ( $Param{CheckSysConfig} ) {
-
-        # create a sysconfig object locally for performance reasons
-        my $SysConfigObject = Kernel::System::SysConfig->new(
-            %{$Self},
-            TimeObject => $TimeObject,
-        );
-
-        # check all sysconfig options and correct them automatically if neccessary
-        $SysConfigObject->ConfigItemCheckAll();
-    }
+    $Self->{CacheInternalObject}->Delete( Key => 'StateGet::Name::' . $Param{Name}, );
+    $Self->{CacheInternalObject}->Delete( Key => 'StateGet::ID::' . $Param{ID} );
 
     return 1;
 }
 
 =item StateGetStatesByType()
 
-get list of states for a type or a list of state types.
+get list of state types
 
-Get all states with state type open and new:
-(available: new, open, closed, pending reminder, pending auto, removed, merged)
+    get all states with state type open and new
+    (available: new, open, closed, pending reminder, pending auto,
+    removed, merged)
 
     my @List = $StateObject->StateGetStatesByType(
         StateType => ['open', 'new'],
         Result    => 'ID', # HASH|ID|Name
     );
 
-Get all state types used by config option named like
-Ticket::ViewableStateType for "Viewable" state types.
+    get all state types used by config option named like
+
+    Ticket::ViewableStateType for "Viewable" state types
 
     my %List = $StateObject->StateGetStatesByType(
         Type   => 'Viewable',
@@ -411,12 +376,11 @@ sub StateGetStatesByType {
             push @StateType, $Param{StateType};
         }
     }
-    my $SQL = ''
-        . 'SELECT ts.id, ts.name, tst.name'
-        . ' FROM ticket_state ts, ticket_state_type tst'
-        . ' WHERE tst.id = ts.type_id'
-        . " AND tst.name IN ('${\(join '\', \'', sort @StateType)}' )"
-        . " AND ts.valid_id IN ( ${\(join ', ', $Self->{ValidObject}->ValidIDsGet())} )";
+    my $SQL = "SELECT ts.id, ts.name, tst.name  "
+        . " FROM ticket_state ts, ticket_state_type tst WHERE "
+        . " tst.id = ts.type_id AND "
+        . " tst.name IN ('${\(join '\', \'', sort @StateType)}' ) AND "
+        . " ts.valid_id IN ( ${\(join ', ', $Self->{ValidObject}->ValidIDsGet())} )";
     return if !$Self->{DBObject}->Prepare( SQL => $SQL );
 
     while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
@@ -449,7 +413,7 @@ sub StateGetStatesByType {
 
 =item StateList()
 
-get state list as a hash of ID, Name pairs
+get state list
 
     my %List = $StateObject->StateList(
         UserID => 123,
@@ -463,20 +427,6 @@ get state list as a hash of ID, Name pairs
     my %List = $StateObject->StateList(
         UserID => 123,
         Valid  => 0,
-    );
-
-returns
-
-    my %List = (
-        1 => "new",
-        2 => "closed successful",
-        3 => "closed unsuccessful",
-        4 => "open",
-        5 => "removed",
-        6 => "pending reminder",
-        7 => "pending auto close+",
-        8 => "pending auto close-",
-        9 => "merged",
     );
 
 =cut
@@ -495,11 +445,6 @@ sub StateList {
         $Valid = 0;
     }
 
-    # check cache
-    my $CacheKey = 'StateList::' . $Valid;
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-    return %{$Cache} if $Cache;
-
     # sql
     my $SQL = 'SELECT id, name FROM ticket_state';
     if ($Valid) {
@@ -510,104 +455,15 @@ sub StateList {
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         $Data{ $Row[0] } = $Row[1];
     }
-
-    # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Data );
-
     return %Data;
-}
-
-=item StateLookup()
-
-returns the id or the name of a state
-
-    my $StateID = $StateObject->StateLookup(
-        State => 'closed successful',
-    );
-
-    my $State = $StateObject->StateLookup(
-        StateID => 2,
-    );
-
-=cut
-
-sub StateLookup {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{State} && !$Param{StateID} ) {
-        $Self->{LogObject}->Log( State => 'error', Message => 'Need State or StateID!' );
-        return;
-    }
-
-    # check cache
-    my $CacheKey;
-    my $Key;
-    my $Value;
-    if ( $Param{State} ) {
-        $Key      = 'State';
-        $Value    = $Param{State};
-        $CacheKey = 'StateLookup::Name::' . $Param{State};
-    }
-    else {
-        $Key      = 'StateID';
-        $Value    = $Param{StateID};
-        $CacheKey = 'StateLookup::ID::' . $Param{StateID};
-    }
-
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-    return $Cache if $Cache;
-
-    # db query
-    my $SQL;
-    my @Bind;
-    if ( $Param{State} ) {
-        $SQL = 'SELECT id FROM ticket_state WHERE name = ?';
-        push @Bind, \$Param{State};
-    }
-    else {
-        $SQL = 'SELECT name FROM ticket_state WHERE id = ?';
-        push @Bind, \$Param{StateID};
-    }
-    return if !$Self->{DBObject}->Prepare( SQL => $SQL, Bind => \@Bind );
-    my $Data;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        $Data = $Row[0];
-    }
-
-    # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => $Data );
-
-    # check if data exists
-    if ( !defined $Data ) {
-        $Self->{LogObject}->Log(
-            State   => 'error',
-            Message => "No $Key for $Value found!",
-        );
-        return;
-    }
-
-    return $Data;
 }
 
 =item StateTypeList()
 
-get state type list as a hash of ID, Name pairs
+get state type list
 
     my %ListType = $StateObject->StateTypeList(
         UserID => 123,
-    );
-
-returns
-
-    my %ListType = (
-        1 => "new",
-        2 => "open",
-        3 => "closed",
-        4 => "pending reminder",
-        5 => "pending auto",
-        6 => "removed",
-        7 => "merged",
     );
 
 =cut
@@ -621,11 +477,6 @@ sub StateTypeList {
         return;
     }
 
-    # check cache
-    my $CacheKey = 'StateTypeList';
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-    return %{$Cache} if $Cache;
-
     # sql
     return if !$Self->{DBObject}->Prepare(
         SQL => 'SELECT id, name FROM ticket_state_type',
@@ -634,87 +485,7 @@ sub StateTypeList {
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         $Data{ $Row[0] } = $Row[1];
     }
-
-    # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Data );
-
     return %Data;
-}
-
-=item StateTypeLookup()
-
-returns the id or the name of a state type
-
-    my $StateTypeID = $StateTypeObject->StateTypeLookup(
-        StateType => 'pending auto',
-    );
-
-or
-
-    my $StateType = $StateTypeObject->StateTypeLookup(
-        StateTypeID => 1,
-    );
-
-=cut
-
-sub StateTypeLookup {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{StateType} && !$Param{StateTypeID} ) {
-        $Self->{LogObject}
-            ->Log( StateType => 'error', Message => 'Need StateType or StateTypeID!' );
-        return;
-    }
-
-    # check cache
-    my $CacheKey;
-    my $Key;
-    my $Value;
-    if ( $Param{StateType} ) {
-        $Key      = 'StateType';
-        $Value    = $Param{StateType};
-        $CacheKey = 'StateTypeLookup::Name::' . $Param{StateType};
-    }
-    else {
-        $Key      = 'StateTypeID';
-        $Value    = $Param{StateTypeID};
-        $CacheKey = 'StateTypeLookup::ID::' . $Param{StateTypeID};
-    }
-
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-    return $Cache if $Cache;
-
-    # db query
-    my $SQL;
-    my @Bind;
-    if ( $Param{StateType} ) {
-        $SQL = 'SELECT id FROM ticket_state_type WHERE name = ?';
-        push @Bind, \$Param{StateType};
-    }
-    else {
-        $SQL = 'SELECT name FROM ticket_state_type WHERE id = ?';
-        push @Bind, \$Param{StateTypeID};
-    }
-    return if !$Self->{DBObject}->Prepare( SQL => $SQL, Bind => \@Bind );
-    my $Data;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        $Data = $Row[0];
-    }
-
-    # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => $Data );
-
-    # check if data exists
-    if ( !defined $Data ) {
-        $Self->{LogObject}->Log(
-            StateType => 'error',
-            Message   => "No $Key for $Value found!",
-        );
-        return;
-    }
-
-    return $Data;
 }
 
 1;
@@ -723,16 +494,16 @@ sub StateTypeLookup {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.54 $ $Date: 2011/06/19 20:28:11 $
+$Revision: 1.39.2.1 $ $Date: 2010/03/29 17:49:59 $
 
 =cut
