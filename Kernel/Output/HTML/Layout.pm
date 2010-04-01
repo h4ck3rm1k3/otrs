@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/Layout.pm - provides generic HTML output
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Layout.pm,v 1.380 2012/01/23 13:45:30 mg Exp $
+# $Id: Layout.pm,v 1.218.2.1 2010/04/01 18:11:54 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -11,6 +11,8 @@
 
 package Kernel::Output::HTML::Layout;
 
+use lib '../../';
+
 use strict;
 use warnings;
 
@@ -18,11 +20,8 @@ use Kernel::Language;
 use Kernel::System::HTMLUtils;
 use Kernel::System::JSON;
 
-use Mail::Address;
-use URI::Escape qw();
-
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.380 $) [1];
+$VERSION = qw($Revision: 1.218.2.1 $) [1];
 
 =head1 NAME
 
@@ -30,7 +29,7 @@ Kernel::Output::HTML::Layout - all generic html functions
 
 =head1 SYNOPSIS
 
-All generic html functions. E. g. to get options fields, template processing, ...
+All generic html finctions. E. g. to get options fields, template processing, ...
 
 =head1 PUBLIC INTERFACE
 
@@ -78,7 +77,7 @@ create a new object
         LogObject     => $LogObject,
         MainObject    => $MainObject,
         TimeObject    => $TimeObject,
-        ParamObject   => $RequestObject,
+        RequestObject => $RequestObject,
         EncodeObject  => $EncodeObject,
         Lang          => 'de',
     );
@@ -116,7 +115,7 @@ sub new {
 
     # create additional objects
     $Self->{HTMLUtilsObject} = Kernel::System::HTMLUtils->new( %{$Self} );
-    $Self->{JSONObject}      = Kernel::System::JSON->new( %{$Self} );
+    $Self->{JSONObject}      = Kernel::System::JSON->new();
 
     # reset block data
     delete $Self->{BlockData};
@@ -125,7 +124,6 @@ sub new {
     if ( !$Self->{UserTheme} ) {
         $Self->{UserTheme} = $Self->{ConfigObject}->Get('DefaultTheme');
     }
-
     if ( $Self->{ConfigObject}->Get('TimeZoneUser') && $Self->{UserTimeZone} ) {
         $Self->{UserTimeObject} = Kernel::System::Time->new(%Param);
     }
@@ -199,7 +197,8 @@ sub new {
     $Self->{FilterText} = $Self->{ConfigObject}->Get('Frontend::Output::FilterText');
 
     # check browser (defaut is IE because I don't have IE)
-    $Self->{Browser} = 'Unknown';
+    $Self->{BrowserWrap} = 'physical';
+    $Self->{Browser}     = 'Unknown';
 
     $Self->{BrowserJavaScriptSupport} = 1;
     $Self->{BrowserRichText}          = 1;
@@ -216,9 +215,10 @@ sub new {
             || $HttpUserAgent =~ /internet\sexplorer\/([0-9.]+)/
             )
         {
-            $Self->{Browser} = 'MSIE';
+            $Self->{Browser}     = 'MSIE';
+            $Self->{BrowserWrap} = 'physical';
 
-            # For IE 5.5 - 8.0, we break the header in a special way that makes
+            # For IE 5.5, we break the header in a special way that makes
             # things work. I don't really want to know.
             if ( $1 =~ /(\d)\.(\d)/ ) {
                 $Self->{BrowserMajorVersion} = $1;
@@ -233,40 +233,16 @@ sub new {
                 {
                     $Self->{BrowserBreakDispositionHeader} = 1;
                 }
-
-#
-# In IE up to version 8, there is a technical limitation for < 32
-#   CSS file links. Subsequent links will be ignored. Therefore
-#   the loader must be activated for delivering CSS to this browser.
-#   The loader will concatenate and minify the files, resulting in
-#   very few CSS file links.
-#   See also http://social.msdn.microsoft.com/Forums/en-US/iewebdevelopment/thread/ad1b6e88-bbfa-4cc4-9e95-3889b82a7c1d.
-#
-                if ( $1 <= 8 ) {
-                    $Self->{ConfigObject}->Set(
-                        Key   => 'Loader::Enabled::CSS',
-                        Value => 1,
-                    );
-                }
             }
         }
 
         # safari
         elsif ( $HttpUserAgent =~ /safari/ ) {
-            $Self->{Browser} = 'Safari';
+            $Self->{Browser}     = 'Safari';
+            $Self->{BrowserWrap} = 'hard';
 
-            # if it's an iPad/iPhone with iOS5 the rte can be enabled
-            if ( $HttpUserAgent =~ /(ipad|iphone);.*cpu.*os 5_/ ) {
-                $Self->{BrowserRichText} = 1;
-            }
-
-            # on iphone (with older iOS) disable rich text editor
-            elsif ( $HttpUserAgent =~ /iphone\sos/ ) {
-                $Self->{BrowserRichText} = 0;
-            }
-
-            # on ipad (with older iOS) disable rich text editor
-            elsif ( $HttpUserAgent =~ /ipad;\s/ ) {
+            # on iphone disable rich text editor
+            if ( $HttpUserAgent =~ /iphone\sos/ ) {
                 $Self->{BrowserRichText} = 0;
             }
 
@@ -274,16 +250,12 @@ sub new {
             elsif ( $HttpUserAgent =~ /android/ ) {
                 $Self->{BrowserRichText} = 0;
             }
-
-            # chrome
-            elsif ( $HttpUserAgent =~ /chrome/ ) {
-                $Self->{Browser} = 'Chrome';
-            }
         }
 
         # konqueror
         elsif ( $HttpUserAgent =~ /konqueror/ ) {
-            $Self->{Browser} = 'Konqueror';
+            $Self->{Browser}     = 'Konqueror';
+            $Self->{BrowserWrap} = 'hard';
 
             # on konquerer disable rich text editor
             $Self->{BrowserRichText} = 0;
@@ -291,17 +263,20 @@ sub new {
 
         # mozilla
         elsif ( $HttpUserAgent =~ /^mozilla/ ) {
-            $Self->{Browser} = 'Mozilla';
+            $Self->{Browser}     = 'Mozilla';
+            $Self->{BrowserWrap} = 'hard';
         }
 
         # opera
         elsif ( $HttpUserAgent =~ /^opera.*/ ) {
-            $Self->{Browser} = 'Opera';
+            $Self->{Browser}     = 'Opera';
+            $Self->{BrowserWrap} = 'hard';
         }
 
         # netscape
         elsif ( $HttpUserAgent =~ /netscape/ ) {
-            $Self->{Browser} = 'Netscape';
+            $Self->{Browser}     = 'Netscape';
+            $Self->{BrowserWrap} = 'hard';
         }
 
         # w3m
@@ -374,43 +349,27 @@ sub new {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message =>
-                "No existing template directory found ('$Self->{TemplateDir}')!.
-                Default theme used instead.",
+                "No existing template directory found ('$Self->{TemplateDir}')! Check your Home in Kernel/Config.pm",
         );
-
-        # Set TemplateDir to 'Standard' as a fallback and check if it exists.
-        $Theme = 'Standard';
-        $Self->{TemplateDir} = $Self->{ConfigObject}->Get('TemplateDir') . '/HTML/' . $Theme;
-        if ( !-e $Self->{TemplateDir} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message =>
-                    "No existing template directory found ('$Self->{TemplateDir}')! Check your Home in Kernel/Config.pm",
-            );
-            $Self->FatalDie();
-        }
+        $Self->FatalDie();
     }
 
+# FRAMEWORK-2.5: define $Env{"Images"} (only for compat till 2.5, use $Config{"Frontend::ImagePath"})
+    $Self->{Images} = $Self->{ConfigObject}->Get('Frontend::ImagePath');
+
     # load sub layout files
-    my $Dir = $Self->{ConfigObject}->Get('TemplateDir') . '/HTML';
+    my $Dir = $Self->{ConfigObject}->Get('TemplateDir') . '/HTML/';
     if ( -e $Dir ) {
-        my @Files = $Self->{MainObject}->DirectoryRead(
-            Directory => $Dir,
-            Filter    => 'Layout*.pm',
-        );
+        my @Files = glob("$Dir/Layout*.pm");
         for my $File (@Files) {
             if ( $File !~ /Layout.pm$/ ) {
-                $File =~ s{\A.*\/(.+?).pm\z}{$1}xms;
+                $File =~ s/^.*\/(.+?).pm$/$1/g;
                 if ( !$Self->{MainObject}->Require("Kernel::Output::HTML::$File") ) {
                     $Self->FatalError();
                 }
                 push @ISA, "Kernel::Output::HTML::$File";
             }
         }
-    }
-
-    if ( $Self->{SessionID} && $Self->{UserChallengeToken} ) {
-        $Self->{ChallengeTokenParam} = "ChallengeToken=$Self->{UserChallengeToken};";
     }
 
     return $Self;
@@ -457,31 +416,20 @@ sub Block {
 
 =item Output()
 
-generates HTML output based on a template file.
+use a dtl template and get html back
 
-Using a template file:
+using a template file
 
     my $HTML = $LayoutObject->Output(
         TemplateFile => 'AdminLog',
         Data         => \%Param,
     );
 
-Using a template string:
+using a template string
 
     my $HTML = $LayoutObject->Output(
         Template => '<b>$QData{"SomeKey"}</b>',
         Data     => \%Param,
-    );
-
-Additional parameters:
-
-KeepScriptTags - this causes <!-- dtl:js_on_document_complete --> blocks NOT
-to be replaced. This is important to be able to generate snippets which can be cached.
-
-    my $HTML = $LayoutObject->Output(
-        TemplateFile   => 'AdminLog',
-        Data           => \%Param,
-        KeepScriptTags => 1,
     );
 
 =cut
@@ -591,37 +539,32 @@ sub Output {
         TemplateFile => $Param{TemplateFile} || '',
     );
 
-    # Improve dtl performance of large pages, see also bug#7267.
-    # Thanks to Stelios Gikas <stelios.gikas@noris.net>!
-    my @OutputLines = split /\n/, $Output;
-    for my $Output (@OutputLines) {
-
-        # do time translation (with seconds)
-        $Output =~ s{
+    # do time translation (with seconds)
+    $Output =~ s{
         \$TimeLong{"(.*?)"}
     }
     {
         $Self->{LanguageObject}->FormatTimeString($1);
     }egx;
 
-        # do time translation (without seconds)
-        $Output =~ s{
+    # do time translation (without seconds)
+    $Output =~ s{
         \$TimeShort{"(.*?)"}
     }
     {
         $Self->{LanguageObject}->FormatTimeString($1, undef, 'NoSeconds');
     }egx;
 
-        # do date translation
-        $Output =~ s{
+    # do date translation
+    $Output =~ s{
         \$Date{"(.*?)"}
     }
     {
         $Self->{LanguageObject}->FormatTimeString($1, 'DateFormatShort');
     }egx;
 
-        # do translation
-        $Output =~ s{
+    # do translation
+    $Output =~ s{
         \$Text{"(.*?)"}
     }
     {
@@ -630,7 +573,7 @@ sub Output {
         );
     }egx;
 
-        $Output =~ s{
+    $Output =~ s{
         \$JSText{"(.*?)"}
     }
     {
@@ -640,8 +583,8 @@ sub Output {
         );
     }egx;
 
-        # do html quote
-        $Output =~ s{
+    # do html quote
+    $Output =~ s{
         \$Quote{"(.*?)"}
     }
     {
@@ -656,9 +599,6 @@ sub Output {
             $Self->Ascii2Html(Text => $Text);
         }
     }egx;
-
-    }
-    $Output = join "\n", @OutputLines;
 
     # rewrite forms, add challenge token : <form action="index.pl" method="get">
     if ( $Self->{SessionID} && $Self->{UserChallengeToken} ) {
@@ -696,7 +636,7 @@ sub Output {
                 $AHref.$Target.$End.$RealEnd;
             }
             else {
-                $AHref.$Target.';'.$Self->{SessionName}.'='.$Self->{SessionID}.$End.$RealEnd;
+                $AHref.$Target.'&'.$Self->{SessionName}.'='.$Self->{SessionID}.$End.$RealEnd;
             }
         }iegxs;
 
@@ -710,7 +650,7 @@ sub Output {
             my $End = $3;
             if (lc $Target =~ m{^http s? :}smx || !$Self->{SessionID} ||
                 $Target !~ /\.(pl|php|cgi|fcg|fcgi|fpl)(\?|$)/ ||
-                $Target =~ /\Q$Self->{SessionName}\E=/) {
+                $Target =~ /\Q$Self->{SessionName}\E/) {
                 $AHref.$Target.$End;
             }
             else {
@@ -734,6 +674,33 @@ sub Output {
         }iegx;
     }
 
+    # do correct direction
+    if ( $Self->{TextDirection} && $Self->{TextDirection} eq 'rtl' ) {
+        $Output =~ s{
+            <(table.+?)>
+        }
+        {
+            my $Table = $1;
+            if ($Table !~ /dir=/) {
+                "<$Table dir=\"".$Self->{TextDirection}."\">";
+            }
+            else {
+                "<$Table>";
+            }
+        }iegx;
+        $Output =~ s{
+            align="(left|right)"
+        }
+        {
+            if ($1 =~ /left/i) {
+                "align=\"right\"";
+            }
+            else {
+                "align=\"left\"";
+            }
+        }iegx;
+    }
+
     # custom post filters
     if ( $Self->{FilterElementPost} ) {
         my %Filters = %{ $Self->{FilterElementPost} };
@@ -753,42 +720,6 @@ sub Output {
         }
     }
 
-    # Cut out all dtl:js_on_document_complete tags. These will be inserted to the
-    #   place with the js_on_document_complete_placeholder in the page footer if
-    #   it is present.
-    # This must be done after the post output filters, so that they can also inject
-    #   and mofiy existing script tags.
-
-    if ( !$Param{KeepScriptTags} ) {
-
-        # find document ready
-        $Output =~ s{
-                <!--\s{0,1}dtl:js_on_document_complete\s{0,1}-->(.+?)<!--\s{0,1}dtl:js_on_document_complete\s{0,1}-->
-        }
-        {
-                if (!$Self->{JSOnDocumentComplete}->{$1}) {
-                    $Self->{JSOnDocumentComplete}->{$1} = 1;
-                    $Self->{EnvRef}->{JSOnDocumentComplete} .= $Self->_RemoveScriptTags(Code => $1);
-                }
-                "";
-        }segxm;
-
-        # replace document ready placeholder (only if it's not included via $Include{""})
-        if ( !$Param{Include} ) {
-            $Output =~ s{
-                <!--\s{0,1}dtl:js_on_document_complete_placeholder\s{0,1}-->
-            }
-            {
-                if ( $Self->{EnvRef}->{JSOnDocumentComplete} ) {
-                    $Self->{EnvRef}->{JSOnDocumentComplete};
-                }
-                else {
-                    "";
-                }
-            }segxm;
-        }
-    }
-
     return $Output;
 }
 
@@ -805,18 +736,14 @@ Encode perl data structure to JSON string
 
 sub JSONEncode {
     my ( $Self, %Param ) = @_;
+    my $JSON = '';
 
-    # check for needed data
-    return if !$Param{Data};
-
-    # get JSON encoded data
-    my $JSON = $Self->{JSONObject}->Encode(
+    $JSON = $Self->{JSONObject}->Encode(
         Data => $Param{Data},
-    ) || '""';
+    );
 
-    # remove trailing and trailing double quotes if requested
     if ( $Param{NoQuotes} ) {
-        $JSON =~ s{ \A "(.*)" \z }{$1}smx;
+        $JSON =~ s{^"(.*)"$}{$1}smx;
     }
 
     return $JSON;
@@ -839,8 +766,10 @@ return html for browser to redirect
 sub Redirect {
     my ( $Self, %Param ) = @_;
 
+    my $SessionIDCookie = '';
+    my $Cookies         = '';
+
     # add cookies if exists
-    my $Cookies = '';
     if ( $Self->{SetCookies} && $Self->{ConfigObject}->Get('SessionUseCookie') ) {
         for ( keys %{ $Self->{SetCookies} } ) {
             $Cookies .= "Set-Cookie: $Self->{SetCookies}->{$_}\n";
@@ -938,11 +867,9 @@ sub Redirect {
 sub Login {
     my ( $Self, %Param ) = @_;
 
-    # set Action parameter for the loader
-    $Self->{Action} = 'Login';
+    my $Output = '';
 
     # add cookies if exists
-    my $Output = '';
     if ( $Self->{SetCookies} && $Self->{ConfigObject}->Get('SessionUseCookie') ) {
         for ( keys %{ $Self->{SetCookies} } ) {
             $Output .= "Set-Cookie: $Self->{SetCookies}->{$_}\n";
@@ -954,6 +881,24 @@ sub Login {
         $Param{Motd} = $Self->Output( TemplateFile => 'Motd', Data => \%Param );
     }
 
+    # get language options
+    if ( $Self->{ConfigObject}->Get('LanguageSelectionLogin') ) {
+
+        # get language options
+        $Param{Language} = $Self->BuildSelection(
+            Data       => $Self->{ConfigObject}->Get('DefaultUsedLanguages'),
+            Name       => 'Lang',
+            SelectedID => $Self->{UserLanguage},
+            OnChange   => 'submit()',
+            HTMLQuote  => 0,
+        );
+        $Self->Block(
+            Name => 'Language',
+            Data => \%Param,
+        );
+
+    }
+
     # get lost password y
     if (
         $Self->{ConfigObject}->Get('LostPassword')
@@ -961,66 +906,8 @@ sub Login {
         )
     {
         $Self->Block(
-            Name => 'LostPasswordLink',
-            Data => \%Param,
-        );
-
-        $Self->Block(
             Name => 'LostPassword',
             Data => \%Param,
-        );
-    }
-
-   # Generate the minified CSS and JavaScript files and the tags referencing them (see LayoutLoader)
-    $Self->LoaderCreateAgentCSSCalls();
-    $Self->LoaderCreateAgentJSCalls();
-
-    # Add header logo, if configured
-    if ( defined $Self->{ConfigObject}->Get('AgentLogo') ) {
-        my %AgentLogo = %{ $Self->{ConfigObject}->Get('AgentLogo') };
-        my %Data;
-
-        for my $CSSStatement ( keys %AgentLogo ) {
-            if ( $CSSStatement eq 'URL' ) {
-                my $WebPath = '';
-                if ( $AgentLogo{$CSSStatement} !~ /(http|ftp|https):\//i ) {
-                    $WebPath = $Self->{ConfigObject}->Get('Frontend::WebPath');
-                }
-                $Data{'URL'} = 'url(' . $WebPath . $AgentLogo{$CSSStatement} . ')';
-            }
-            else {
-                $Data{$CSSStatement} = $AgentLogo{$CSSStatement};
-            }
-        }
-
-        $Self->Block(
-            Name => 'HeaderLogoCSS',
-            Data => \%Data,
-        );
-    }
-
-    # add login logo, if configured
-    if ( defined $Self->{ConfigObject}->Get('AgentLoginLogo') ) {
-        my %AgentLoginLogo = %{ $Self->{ConfigObject}->Get('AgentLoginLogo') };
-        my %Data;
-
-        for my $CSSStatement ( keys %AgentLoginLogo ) {
-            if ( $CSSStatement eq 'URL' ) {
-                my $WebPath = $Self->{ConfigObject}->Get('Frontend::WebPath');
-                $Data{'URL'} = 'url(' . $WebPath . $AgentLoginLogo{$CSSStatement} . ')';
-            }
-            else {
-                $Data{$CSSStatement} = $AgentLoginLogo{$CSSStatement};
-            }
-        }
-
-        $Self->Block(
-            Name => 'LoginLogoCSS',
-            Data => \%Data,
-        );
-
-        $Self->Block(
-            Name => 'LoginLogo'
         );
     }
 
@@ -1141,6 +1028,10 @@ sub Error {
             Type => 'Error',
             What => $_
         ) || '';
+        $Param{$Backend} = $Self->Ascii2Html(
+            Text           => $Param{$Backend},
+            HTMLResultMode => 1,
+        );
     }
     if ( !$Param{BackendMessage} && !$Param{BackendTraceback} ) {
         $Self->{LogObject}->Log(
@@ -1153,19 +1044,16 @@ sub Error {
                 Type => 'Error',
                 What => $_
             ) || '';
+            $Param{$Backend} = $Self->Ascii2Html(
+                Text           => $Param{$Backend},
+                HTMLResultMode => 1,
+            );
         }
     }
     if ( !$Param{Message} ) {
         $Param{Message} = $Param{BackendMessage};
     }
     $Param{Message} =~ s/^(.{80}).*$/$1\[\.\.\]/gs;
-
-    if ( $Param{BackendTraceback} ) {
-        $Self->Block(
-            Name => 'ShowBackendTraceback',
-            Data => \%Param,
-        );
-    }
 
     # create & return output
     return $Self->Output( TemplateFile => 'Error', Data => \%Param );
@@ -1183,6 +1071,10 @@ sub Warning {
         Type => 'Error',
         What => 'Message',
         ) || '';
+    $Param{BackendMessage} = $Self->Ascii2Html(
+        Text           => $Param{BackendMessage},
+        HTMLResultMode => 1,
+    );
 
     if ( !$Param{Message} ) {
         $Param{Message} = $Param{BackendMessage};
@@ -1199,30 +1091,29 @@ create notify lines
     infos, the text will be translated
 
     my $Output = $LayoutObject->Notify(
-        Priority => 'Warning',
+        Priority => 'warning',
         Info => 'Some Info Message',
     );
 
     data with link, the text will be translated
 
     my $Output = $LayoutObject->Notify(
-        Priority  => 'Warning',
-        Data      => '$Text{"Some DTL Stuff"}',
-        Link      => 'http://example.com/',
-        LinkClass => 'some_CSS_class',              # optional
+        Priority => 'warning',
+        Data => '$Text{"Some DTL Stuff"}',
+        Link => 'http://example.com/',
     );
 
     errors, the text will be translated
 
     my $Output = $LayoutObject->Notify(
-        Priority => 'Error',
+        Priority => 'error',
         Info => 'Some Error Message',
     );
 
     errors from log backend, if no error extists, a '' will be returned
 
     my $Output = $LayoutObject->Notify(
-        Priority => 'Error',
+        Priority => 'error',
     );
 
 =cut
@@ -1246,23 +1137,25 @@ sub Notify {
         # return if we have nothing to show
         return '' if !$Param{Info};
     }
-
-    my $BoxClass = 'Notice';
-
     if ( $Param{Info} ) {
         $Param{Info} =~ s/\n//g;
     }
     if ( $Param{Priority} && $Param{Priority} eq 'Error' ) {
-        $BoxClass = 'Error';
+        $Self->Block(
+            Name => 'Error',
+            Data => {},
+        );
     }
-
+    else {
+        $Self->Block(
+            Name => 'Warning',
+            Data => {},
+        );
+    }
     if ( $Param{Link} ) {
         $Self->Block(
             Name => 'LinkStart',
-            Data => {
-                LinkStart => $Param{Link},
-                LinkClass => $Param{LinkClass} || '',
-            },
+            Data => { LinkStart => $Param{Link}, },
         );
     }
     if ( $Param{Data} ) {
@@ -1283,91 +1176,16 @@ sub Notify {
             Data => { LinkStop => '</a>', },
         );
     }
-    return $Self->Output(
-        TemplateFile => 'Notify',
-        Data         => {
-            %Param,
-            BoxClass => $BoxClass,
-        },
-    );
+    return $Self->Output( TemplateFile => 'Notify', Data => \%Param );
 }
-
-=item Header()
-
-generates the HTML for the page begin in the Agent interface.
-
-    my $Output = $LayoutObject->Header(
-        Type              => 'Small',                # (optional) '' (Default, full header) or 'Small' (blank header)
-        ShowToolbarItems  => 0,                      # (optional) default 1 (0|1)
-        ShowPrefLink      => 0,                      # (optional) default 1 (0|1)
-        ShowLogoutButton  => 0,                      # (optional) default 1 (0|1)
-    );
-
-=cut
 
 sub Header {
     my ( $Self, %Param ) = @_;
 
+    my $Output = '';
     my $Type = $Param{Type} || '';
 
-    # check params
-    if ( !defined $Param{ShowToolbarItems} ) {
-        $Param{ShowToolbarItems} = 1;
-    }
-
-    if ( !defined $Param{ShowPrefLink} ) {
-        $Param{ShowPrefLink} = 1;
-    }
-
-    # do not show preferences link if the preferences module is disabled
-    my $Modules = $Self->{ConfigObject}->Get('Frontend::Module');
-    if ( !$Modules->{AgentPreferences} ) {
-        $Param{ShowPrefLink} = 0;
-    }
-
-    if ( !defined $Param{ShowLogoutButton} ) {
-        $Param{ShowLogoutButton} = 1;
-    }
-
-    # set rtl if needed
-    if ( $Self->{TextDirection} && $Self->{TextDirection} eq 'rtl' ) {
-        $Param{BodyClass} = 'RTL';
-    }
-    elsif ( $Self->{ConfigObject}->Get('Frontend::DebugMode') ) {
-        $Self->Block(
-            Name => 'DebugRTLButton',
-        );
-    }
-
-   # Generate the minified CSS and JavaScript files and the tags referencing them (see LayoutLoader)
-    $Self->LoaderCreateAgentCSSCalls();
-
-    # Add header logo, if configured
-    if ( defined $Self->{ConfigObject}->Get('AgentLogo') ) {
-        my %AgentLogo = %{ $Self->{ConfigObject}->Get('AgentLogo') };
-        my %Data;
-
-        for my $CSSStatement ( keys %AgentLogo ) {
-            if ( $CSSStatement eq 'URL' ) {
-                my $WebPath = '';
-                if ( $AgentLogo{$CSSStatement} !~ /(http|ftp|https):\//i ) {
-                    $WebPath = $Self->{ConfigObject}->Get('Frontend::WebPath');
-                }
-                $Data{'URL'} = 'url(' . $WebPath . $AgentLogo{$CSSStatement} . ')';
-            }
-            else {
-                $Data{$CSSStatement} = $AgentLogo{$CSSStatement};
-            }
-        }
-
-        $Self->Block(
-            Name => 'HeaderLogoCSS',
-            Data => \%Data,
-        );
-    }
-
     # add cookies if exists
-    my $Output = '';
     if ( $Self->{SetCookies} && $Self->{ConfigObject}->Get('SessionUseCookie') ) {
         for ( keys %{ $Self->{SetCookies} } ) {
             $Output .= "Set-Cookie: $Self->{SetCookies}->{$_}\n";
@@ -1393,10 +1211,15 @@ sub Header {
         $Param{Title} = $Self->{ConfigObject}->Get('Frontend::Module')->{ $Self->{Action} }->{Title}
             || '';
     }
-    for my $Word (qw(Value Title Area)) {
+    for my $Word (qw(Area Title Value)) {
         if ( $Param{$Word} ) {
-            $Param{TitleArea} .= $Self->{LanguageObject}->Get( $Param{$Word} ) . ' - ';
+            $Param{TitleArea} .= ' :: ' . $Self->{LanguageObject}->Get( $Param{$Word} );
         }
+    }
+
+    # create the user login info (usually visible right on the top of the page)
+    if ( !$Self->{UserLoginIdentifier} ) {
+        $Self->{UserLoginIdentifier} = $Self->{UserLogin} ? "($Self->{UserEmail})" : '';
     }
 
     # run header meta modules
@@ -1407,82 +1230,9 @@ sub Header {
 
             # load and run module
             next if !$Self->{MainObject}->Require( $Jobs{$Job}->{Module} );
-            my $Object = $Jobs{$Job}->{Module}->new(
-                %{$Self},
-                LayoutObject => $Self,
-            );
+            my $Object = $Jobs{$Job}->{Module}->new( %{$Self}, LayoutObject => $Self );
             next if !$Object;
             $Object->Run( %Param, Config => $Jobs{$Job} );
-        }
-    }
-
-    # run tool bar item modules
-    if ( $Self->{UserID} && $Self->{UserType} eq 'User' ) {
-        my $ToolBarModule = $Self->{ConfigObject}->Get('Frontend::ToolBarModule');
-        if ( $Param{ShowToolbarItems} && ref $ToolBarModule eq 'HASH' ) {
-            my %Modules;
-            my %Jobs = %{$ToolBarModule};
-            for my $Job ( sort keys %Jobs ) {
-
-                # load and run module
-                next if !$Self->{MainObject}->Require( $Jobs{$Job}->{Module} );
-                my $Object = $Jobs{$Job}->{Module}->new(
-                    %{$Self},
-                    LayoutObject => $Self,
-                );
-                next if !$Object;
-                %Modules = ( $Object->Run( %Param, Config => $Jobs{$Job} ), %Modules );
-            }
-
-            # show tool bar items
-            my $ToolBarShown = 0;
-            for my $Key ( sort keys %Modules ) {
-                next if !%{ $Modules{$Key} };
-
-                # show tool bar wrapper
-                if ( !$ToolBarShown ) {
-                    $ToolBarShown = 1;
-                    $Self->Block(
-                        Name => 'ToolBar',
-                        Data => \%Param,
-                    );
-                }
-                $Self->Block(
-                    Name => $Modules{$Key}->{Block},
-                    Data => {
-                        %{ $Modules{$Key} },
-                        AccessKeyReference => $Modules{$Key}->{AccessKey}
-                        ? " ($Modules{$Key}->{AccessKey})"
-                        : '',
-                    },
-                );
-            }
-        }
-
-        # show logged in notice
-        if ( $Param{ShowPrefLink} ) {
-            $Self->Block(
-                Name => 'Login',
-                Data => \%Param,
-            );
-        }
-        else {
-            $Self->Block(
-                Name => 'LoginWithoutLink',
-                Data => \%Param,
-            );
-        }
-
-        # show logout button (if registered)
-        if (
-            $Param{ShowLogoutButton}
-            && $Self->{ConfigObject}->Get('Frontend::Module')->{Logout}
-            )
-        {
-            $Self->Block(
-                Name => 'Logout',
-                Data => \%Param,
-            );
         }
     }
 
@@ -1498,43 +1248,10 @@ sub Header {
 sub Footer {
     my ( $Self, %Param ) = @_;
 
-    my $Type          = $Param{Type}           || '';
-    my $HasDatepicker = $Self->{HasDatepicker} || 0;
+    my $Type = $Param{Type} || '';
 
-   # Generate the minified CSS and JavaScript files and the tags referencing them (see LayoutLoader)
-    $Self->LoaderCreateAgentJSCalls();
-
-    # get datepicker data, if needed in module
-    if ($HasDatepicker) {
-        my $VacationDays     = $Self->DatepickerGetVacationDays();
-        my $VacationDaysJSON = $Self->JSONEncode(
-            Data => $VacationDays
-        );
-
-        my $TextDirection = $Self->{LanguageObject}->{TextDirection} || '';
-
-        $Self->Block(
-            Name => 'DatepickerData',
-            Data => {
-                VacationDays => $VacationDaysJSON,
-                IsRTLLanguage => ( $TextDirection eq 'rtl' ) ? 1 : 0,
-            },
-        );
-    }
-
-    # NewTicketInNewWindow
-    if ( $Self->{ConfigObject}->Get('NewTicketInNewWindow::Enabled') ) {
-        $Self->Block(
-            Name => 'NewTicketInNewWindow'
-        );
-    }
-
-    # Banner
-    if ( !$Self->{ConfigObject}->Get('Secure::DisableBanner') ) {
-        $Self->Block(
-            Name => 'Banner'
-        );
-    }
+    # unless explicitly specified, we set the footer width to use the whole space
+    $Param{Width} ||= '100%';
 
     # create & return output
     return $Self->Output( TemplateFile => "Footer$Type", Data => \%Param );
@@ -1592,13 +1309,8 @@ sub PrintHeader {
     }
     for my $Word (qw(Area Title Value)) {
         if ( $Param{$Word} ) {
-            $Param{TitleArea} .= ' - ' . $Self->{LanguageObject}->Get( $Param{$Word} );
+            $Param{TitleArea} .= " :: " . $Self->{LanguageObject}->Get( $Param{$Word} );
         }
-    }
-
-    # set rtl if needed
-    if ( $Self->{TextDirection} && $Self->{TextDirection} eq 'rtl' ) {
-        $Param{BodyClass} = 'RTL';
     }
 
     my $Output = $Self->Output( TemplateFile => 'PrintHeader', Data => \%Param );
@@ -1613,7 +1325,7 @@ sub PrintHeader {
 sub PrintFooter {
     my ( $Self, %Param ) = @_;
 
-    $Param{Host} = $Self->Ascii2Html( Text => $ENV{SERVER_NAME} . $ENV{REQUEST_URI} );
+    $Param{Host} = $Self->Ascii2Html( Text => $ENV{SERVER_NAME} . $ENV{REQUEST_URI}, );
     $Param{Host} =~ s/&amp;/&/ig;
 
     # create & return output
@@ -1708,11 +1420,11 @@ sub Ascii2Html {
 
     # max width
     if ( $Param{Max} ) {
-        ${$Text} =~ s/^(.{$Param{Max}}).+?$/$1\[\.\.\.\]/gs;
+        ${$Text} =~ s/^(.{$Param{Max}}).+?$/$1\[\.\.\]/gs;
     }
 
     # newline
-    if ( $Param{NewLine} && length( ${$Text} ) < 140_000 ) {
+    if ( $Param{NewLine} && length($Text) < 140_000 ) {
         ${$Text} =~ s/(\n\r|\r\r\n|\r\n)/\n/g;
         ${$Text} =~ s/\r/\n/g;
         ${$Text} =~ s/(.{4,$Param{NewLine}})(?:\s|\z)/$1\n/gm;
@@ -1866,13 +1578,9 @@ sub HTMLLinkQuote {
 
 =item LinkEncode()
 
-perform URL encoding on query string parameter names or values.
+do some url encoding - e. g. replace + with %2B in links
 
-    my $ParamValueEncoded = $LayoutObject->LinkEncode($ParamValue);
-
-Don't encode entire URLs, because this will make them invalid
-(?, & and ; will be encoded as well). Only pass one parameter name
-or value at a time.
+    my $URLEncoded = $LayoutObject->LinkEncode($URL);
 
 =cut
 
@@ -1881,21 +1589,32 @@ sub LinkEncode {
 
     return if !defined $Link;
 
-    return URI::Escape::uri_escape_utf8($Link);
+    $Link =~ s/&/%26/g;
+    $Link =~ s/=/%3D/g;
+    $Link =~ s/\!/%21/g;
+    $Link =~ s/"/%22/g;
+    $Link =~ s/\#/%23/g;
+    $Link =~ s/\$/%24/g;
+    $Link =~ s/'/%27/g;
+    $Link =~ s/,/%2C/g;
+    $Link =~ s/\+/%2B/g;
+    $Link =~ s/\?/%3F/g;
+    $Link =~ s/\|/%7C/g;
+    $Link =~ s/\//\%2F/g;
+    $Link =~ s/§/\%A7/g;
+    $Link =~ s/ /\+/g;
+    $Link =~ s/:/\%3A/g;
+    $Link =~ s/;/\%3B/g;
+    $Link =~ s/@/\%40/g;
+    return $Link;
 }
 
 sub CustomerAgeInHours {
     my ( $Self, %Param ) = @_;
 
     my $Age = defined( $Param{Age} ) ? $Param{Age} : return;
-    my $Space     = $Param{Space} || '<br/>';
-    my $AgeStrg   = '';
-    my $HourDsc   = 'h';
-    my $MinuteDsc = 'm';
-    if ( $Self->{ConfigObject}->Get('TimeShowCompleteDescription') ) {
-        $HourDsc   = 'hour';
-        $MinuteDsc = 'minute';
-    }
+    my $Space = $Param{Space} || '<br/>';
+    my $AgeStrg = '';
     if ( $Age =~ /^-(.*)/ ) {
         $Age     = $1;
         $AgeStrg = '-';
@@ -1904,14 +1623,24 @@ sub CustomerAgeInHours {
     # get hours
     if ( $Age >= 3600 ) {
         $AgeStrg .= int( ( $Age / 3600 ) ) . ' ';
-        $AgeStrg .= $Self->{LanguageObject}->Get($HourDsc);
+        if ( int( ( $Age / 3600 ) % 24 ) > 1 ) {
+            $AgeStrg .= $Self->{LanguageObject}->Get('hours');
+        }
+        else {
+            $AgeStrg .= $Self->{LanguageObject}->Get('hour');
+        }
         $AgeStrg .= $Space;
     }
 
     # get minutes (just if age < 1 day)
     if ( $Age <= 3600 || int( ( $Age / 60 ) % 60 ) ) {
         $AgeStrg .= int( ( $Age / 60 ) % 60 ) . ' ';
-        $AgeStrg .= $Self->{LanguageObject}->Get($MinuteDsc);
+        if ( int( ( $Age / 60 ) % 60 ) > 1 ) {
+            $AgeStrg .= $Self->{LanguageObject}->Get('minutes');
+        }
+        else {
+            $AgeStrg .= $Self->{LanguageObject}->Get('minute');
+        }
     }
     return $AgeStrg;
 }
@@ -1920,16 +1649,8 @@ sub CustomerAge {
     my ( $Self, %Param ) = @_;
 
     my $Age = defined( $Param{Age} ) ? $Param{Age} : return;
-    my $Space     = $Param{Space} || '<br/>';
-    my $AgeStrg   = '';
-    my $DayDsc    = 'd';
-    my $HourDsc   = 'h';
-    my $MinuteDsc = 'm';
-    if ( $Self->{ConfigObject}->Get('TimeShowCompleteDescription') ) {
-        $DayDsc    = 'day';
-        $HourDsc   = 'hour';
-        $MinuteDsc = 'minute';
-    }
+    my $Space = $Param{Space} || '<br/>';
+    my $AgeStrg = '';
     if ( $Age =~ /^-(.*)/ ) {
         $Age     = $1;
         $AgeStrg = '-';
@@ -1938,21 +1659,36 @@ sub CustomerAge {
     # get days
     if ( $Age >= 86400 ) {
         $AgeStrg .= int( ( $Age / 3600 ) / 24 ) . ' ';
-        $AgeStrg .= $Self->{LanguageObject}->Get($DayDsc);
+        if ( int( ( $Age / 3600 ) / 24 ) > 1 ) {
+            $AgeStrg .= $Self->{LanguageObject}->Get('days');
+        }
+        else {
+            $AgeStrg .= $Self->{LanguageObject}->Get('day');
+        }
         $AgeStrg .= $Space;
     }
 
     # get hours
     if ( $Age >= 3600 ) {
         $AgeStrg .= int( ( $Age / 3600 ) % 24 ) . ' ';
-        $AgeStrg .= $Self->{LanguageObject}->Get($HourDsc);
+        if ( int( ( $Age / 3600 ) % 24 ) > 1 ) {
+            $AgeStrg .= $Self->{LanguageObject}->Get('hours');
+        }
+        else {
+            $AgeStrg .= $Self->{LanguageObject}->Get('hour');
+        }
         $AgeStrg .= $Space;
     }
 
     # get minutes (just if age < 1 day)
     if ( $Self->{ConfigObject}->Get('TimeShowAlwaysLong') || $Age < 86400 ) {
         $AgeStrg .= int( ( $Age / 60 ) % 60 ) . ' ';
-        $AgeStrg .= $Self->{LanguageObject}->Get($MinuteDsc);
+        if ( int( ( $Age / 60 ) % 60 ) > 1 ) {
+            $AgeStrg .= $Self->{LanguageObject}->Get('minutes');
+        }
+        else {
+            $AgeStrg .= $Self->{LanguageObject}->Get('minute');
+        }
     }
     return $AgeStrg;
 }
@@ -1964,7 +1700,6 @@ build a html option element based on given data
     my $HTML = $LayoutObject->BuildSelection(
         Data       => $ArrayRef,             # use $HashRef, $ArrayRef or $ArrayHashRef (see below)
         Name       => 'TheName',             # name of element
-        ID         => 'HTMLID',              # (optional) the HTML ID for this element, if not provided, the name will be used as ID as well
         Multiple   => 0,                     # (optional) default 0 (0|1)
         Size       => 1,                     # (optional) default 1 element size
         Class      => 'class',               # (optional) a css class
@@ -1988,13 +1723,12 @@ build a html option element based on given data
         Max            => 100,               # (optional) default 100 max size of the shown value
         HTMLQuote      => 0,                 # (optional) default 1 (0|1) disable html quote
         Title          => 'Tooltip Text',    # (optional) string will be shown as Tooltip on mouseover
-        OptionTitle    => 1,                 # (optional) default 0 (0|1) show title attribute (the option value) on every option element
     );
 
     my $HashRef = {
-        Key1 => 'Value1',
-        Key2 => 'Value2',
-        Key3 => 'Value3',
+        'Key1' => 'Value1',
+        'Key2' => 'Value2',
+        'Key3' => 'Value3',
     };
 
     my $ArrayRef = [
@@ -2006,21 +1740,21 @@ build a html option element based on given data
 
     my $ArrayHashRef = [
         {
-            Key   => '1',
+            Key => '1',
             Value => 'Value1',
         },
         {
-            Key      => '2',
-            Value    => 'Value1::Subvalue1',
+            Key => '2',
+            Value => 'Value1::Subvalue1',
             Selected => 1,
         },
         {
-            Key   => '3',
+            Key => '3',
             Value => 'Value1::Subvalue2',
         },
         {
-            Key      => '4',
-            Value    => 'Value2',
+            Key => '4',
+            Value => 'Value2',
             Disabled => 1,
         }
     ];
@@ -2036,15 +1770,6 @@ sub BuildSelection {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
-    }
-
-    # The parameters 'Ajax' and 'OnChange' are exclusive
-    if ( $Param{Ajax} && $Param{OnChange} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "The parameters 'OnChange' and 'Ajax' exclude each other!"
-        );
-        return;
     }
 
     # set OnChange if AJAX is used
@@ -2063,11 +1788,10 @@ sub BuildSelection {
             );
             $Self->FatalError();
         }
-        my $Selector = $Param{ID} || $Param{Name};
-        $Param{OnChange} = "Core.AJAX.FormUpdate($('#"
-            . $Selector . "'), '" . $Param{Ajax}->{Subaction} . "',"
+        $Param{OnChange} = "Core.AJAXUpdate('" . $Param{Ajax}->{Subaction} . "',"
             . " '$Param{Name}',"
             . " ['"
+            . join( "', '", @{ $Param{Ajax}->{Depend} } ) . "'], ['"
             . join( "', '", @{ $Param{Ajax}->{Update} } ) . "']);";
     }
 
@@ -2088,8 +1812,8 @@ sub BuildSelection {
     my $String = $Self->_BuildSelectionOutput(
         AttributeRef => $AttributeRef,
         DataRef      => $DataRef,
-        OptionTitle  => $Param{OptionTitle},
     );
+    $String .= "<a id=\"AJAXImage$Param{Name}\"></a>\n";
     return $String;
 }
 
@@ -2097,11 +1821,11 @@ sub NoPermission {
     my ( $Self, %Param ) = @_;
 
     my $WithHeader = $Param{WithHeader} || 'yes';
-    $Param{Message} = 'Insufficient Rights.' if ( !$Param{Message} );
+    my $Output = '';
+    $Param{Message} = 'No Permission!' if ( !$Param{Message} );
 
     # create output
-    my $Output;
-    $Output = $Self->Header( Title => 'Insufficient Rights' ) if ( $WithHeader eq 'yes' );
+    $Output = $Self->Header( Title => 'No Permission' ) if ( $WithHeader eq 'yes' );
     $Output .= $Self->Output( TemplateFile => 'NoPermission', Data => \%Param );
     $Output .= $Self->Footer() if ( $WithHeader eq 'yes' );
 
@@ -2264,21 +1988,20 @@ sub ReturnValue {
 returns browser output to display/download a attachment
 
     $HTML = $LayoutObject->Attachment(
-        Type        => 'inline',        # optional, default: attachment, possible: inline|attachment
-        Filename    => 'FileName.png',  # optional
+        Type        => 'inline', # inline|attachment
+        Filename    => 'FileName.png',
         ContentType => 'image/png',
         Content     => $Content,
     );
 
-    or for AJAX html snippets
+    or
 
     $HTML = $LayoutObject->Attachment(
-        Type        => 'inline',        # optional, default: attachment, possible: inline|attachment
-        Filename    => 'FileName.html', # optional
-        ContentType => 'text/html',
-        Charset     => 'utf-8',         # optional
+        Type        => 'inline', # inline|attachment
+        Filename    => 'FileName.png',
+        ContentType => 'image/png',
         Content     => $Content,
-        NoCache     => 1,               # optional
+        NoCache     => 1,
     );
 
 =cut
@@ -2360,7 +2083,7 @@ sub Attachment {
     }
 
     # reset binmode, don't use utf8
-    binmode STDOUT, ':bytes';
+    binmode STDOUT;
 
     return $Output;
 }
@@ -2378,17 +2101,13 @@ generates a page nav bar
         Action      => 'AgentXXX',  # e. g. 'Action=' . $Self->{LayoutObject}->{Action}
         Link        => $Link,       # e. g. 'Subaction=View;'
         AJAXReplace => 'IDElement', # IDElement which should be replaced
-        IDPrefix    => 'Tickets',   # Prefix for the id parameter
     );
 
     return values of hash
 
         TotalHits  # total hits
-        Result     # shown items e. g. "1-5" or "16-30"
-        SiteNavBar # html for page nav bar e. g. "1 2 3 4"
-
-        ResultLong     # shown items e. g. "1-5 of 32" or "16-30 of 64"
-        SiteNavBarLong # html for page nav bar e. g. "Page: 1 2 3 4"
+        Result     # shown items e. g. 1-5 or 16-30
+        SiteNavBar # html for page nav bar
 
 =cut
 
@@ -2400,8 +2119,7 @@ sub PageNavBar {
     $Param{StartHit} = 0 if ( !$Param{AllHits} );
     my $Pages = int( ( $Param{AllHits} / $Param{PageShown} ) + 0.99999 );
     my $Page  = int( ( $Param{StartHit} / $Param{PageShown} ) + 0.99999 );
-    my $WindowSize = $Param{WindowSize} || 5;
-    my $IDPrefix   = $Param{IDPrefix}   || 'Generic';
+    my $WindowSize = $Param{WindowSize} || 15;
 
     # build Results (1-5 or 16-30)
     if ( $Param{AllHits} >= ( $Param{StartHit} + $Param{PageShown} ) ) {
@@ -2413,7 +2131,7 @@ sub PageNavBar {
 
     # check total hits
     if ( $Limit == $Param{AllHits} ) {
-        $Param{TotalHits} = "<span class=\"PaginationLimit\">$Param{AllHits}</span>";
+        $Param{TotalHits} = "<font color=red>$Param{AllHits}</font>";
     }
     else {
         $Param{TotalHits} = $Param{AllHits};
@@ -2436,36 +2154,20 @@ sub PageNavBar {
                 = $Baselink
                 . "StartWindow=$WindowStart;StartHit="
                 . ( ( ( $i - 1 ) * $Param{PageShown} ) + 1 );
-            my $SelectedPage = "";
-            my $PageNumber   = $i;
-
-            if ( $Page == $i ) {
-                $SelectedPage = " class=\"Selected\"";
-            }
-
+            my $AJAXReplace = '';
             if ( $Param{AJAXReplace} ) {
-                $Self->Block(
-                    Name => 'PageAjax',
-                    Data => {
-                        BaselinkAll  => $BaselinkAll,
-                        AjaxReplace  => $Param{AJAXReplace},
-                        PageNumber   => $PageNumber,
-                        IDPrefix     => $IDPrefix,
-                        SelectedPage => $SelectedPage
-                    },
-                );
+                $AJAXReplace
+                    = "onclick=\"Core.AJAXContentUpdate('$Param{AJAXReplace}', '$BaselinkAll'); return false;\" ";
+            }
+            $Param{SearchNavBar}
+                .= " <a name=\"OverviewControl\" href=\"$BaselinkAll\" $AJAXReplace";
+            if ( $Page == $i ) {
+                $Param{SearchNavBar} .= 'style="text-decoration:underline"><b>' . $i . '</b>';
             }
             else {
-                $Self->Block(
-                    Name => 'Page',
-                    Data => {
-                        BaselinkAll  => $BaselinkAll,
-                        PageNumber   => $PageNumber,
-                        IDPrefix     => $IDPrefix,
-                        SelectedPage => $SelectedPage
-                    },
-                );
+                $Param{SearchNavBar} .= '>' . $i;
             }
+            $Param{SearchNavBar} .= '</a> ';
         }
 
         # over window ">>" and ">|"
@@ -2473,242 +2175,64 @@ sub PageNavBar {
             my $StartWindow     = $WindowStart + $WindowSize + 1;
             my $LastStartWindow = int( $Pages / $WindowSize );
             my $BaselinkAllBack = $Baselink . "StartHit=" . ( $i - 1 ) * $Param{PageShown};
+            my $AJAXReplaceBack = '';
+            if ( $Param{AJAXReplace} ) {
+                $AJAXReplaceBack
+                    = "onclick=\"Core.AJAXContentUpdate('$Param{AJAXReplace}', '$BaselinkAllBack'); return false;\" ";
+            }
+            $Param{SearchNavBar}
+                .= "&nbsp;<a href=\"$BaselinkAllBack\" $AJAXReplaceBack>&gt;&gt;</a>&nbsp;";
             my $BaselinkAllNext
                 = $Baselink . "StartHit=" . ( ( $Param{PageShown} * ( $Pages - 1 ) ) + 1 );
-
+            my $AJAXReplaceNext = '';
             if ( $Param{AJAXReplace} ) {
-                $Self->Block(
-                    Name => 'PageForwardAjax',
-                    Data => {
-                        BaselinkAllBack => $BaselinkAllBack,
-                        BaselinkAllNext => $BaselinkAllNext,
-                        AjaxReplace     => $Param{AJAXReplace},
-                        IDPrefix        => $IDPrefix,
-                    },
-                );
+                $AJAXReplaceNext
+                    = "onclick=\"Core.AJAXContentUpdate('$Param{AJAXReplace}', '$BaselinkAllNext'); return false;\" ";
             }
-            else {
-                $Self->Block(
-                    Name => 'PageForward',
-                    Data => {
-                        BaselinkAllBack => $BaselinkAllBack,
-                        BaselinkAllNext => $BaselinkAllNext,
-                        IDPrefix        => $IDPrefix,
-                    },
-                );
-            }
-
+            $Param{SearchNavBar} .= " <a href=\"$BaselinkAllNext\" $AJAXReplaceNext>&gt;|</a> ";
             $i = 99999999;
         }
 
         # over window "<<" and "|<"
         elsif ( $i < $WindowStart && ( $i - 1 ) < $Pages ) {
             my $StartWindow     = $WindowStart - $WindowSize - 1;
-            my $BaselinkAllBack = $Baselink . 'StartHit=1;StartWindow=1';
-            my $BaselinkAllNext
-                = $Baselink . 'StartHit=' . ( ( $WindowStart - 1 ) * ( $Param{PageShown} ) + 1 );
-
+            my $BaselinkAllBack = $Baselink . "StartHit=1;StartWindow=1";
+            my $AJAXReplaceBack = '';
             if ( $Param{AJAXReplace} ) {
-                $Self->Block(
-                    Name => 'PageBackAjax',
-                    Data => {
-                        BaselinkAllBack => $BaselinkAllBack,
-                        BaselinkAllNext => $BaselinkAllNext,
-                        AjaxReplace     => $Param{AJAXReplace},
-                        IDPrefix        => $IDPrefix,
-                    },
-                );
+                $AJAXReplaceBack
+                    = "onclick=\"Core.AJAXContentUpdate('$Param{AJAXReplace}', '$BaselinkAllBack'); return false;\" ";
             }
-            else {
-                $Self->Block(
-                    Name => 'PageBack',
-                    Data => {
-                        BaselinkAllBack => $BaselinkAllBack,
-                        BaselinkAllNext => $BaselinkAllNext,
-                        IDPrefix        => $IDPrefix,
-                    },
-                );
+            $Param{SearchNavBar}
+                .= " <a href=\"$BaselinkAllBack\" $AJAXReplaceBack>|&lt;</a>&nbsp;";
+            my $BaselinkAllNext
+                = $Baselink . "StartHit=" . ( ( $WindowStart - 1 ) * ( $Param{PageShown} ) + 1 );
+            my $AJAXReplaceNext = '';
+            if ( $Param{AJAXReplace} ) {
+                $AJAXReplaceNext
+                    = "onclick=\"Core.AJAXContentUpdate('$Param{AJAXReplace}', '$BaselinkAllNext'); return false;\" ";
             }
-
+            $Param{SearchNavBar}
+                .= " <a href=\"$BaselinkAllNext\" $AJAXReplaceNext>&lt;&lt;</a>&nbsp;";
             $i = $WindowStart - 1;
         }
     }
 
-    $Param{SearchNavBar} = $Self->Output(
-        TemplateFile   => 'Pagination',
-        KeepScriptTags => $Param{KeepScriptTags},
-    );
-
-    # only show total amount of pages if there is more than one
-    if ( $Pages > 1 ) {
-        $Param{NavBarLong} = "- \$Text{\"Page\"}: $Param{SearchNavBar}";
-    }
-    else {
-        $Param{SearchNavBar} = '';
-    }
-
     # return data
     return (
-        TotalHits      => $Param{TotalHits},
-        Result         => $Param{Results},
-        ResultLong     => "$Param{Results} \$Text{\"of\"} $Param{TotalHits}",
-        SiteNavBar     => $Param{SearchNavBar},
-        SiteNavBarLong => $Param{NavBarLong},
-        Link           => $Param{Link},
+        TotalHits  => $Param{TotalHits},
+        Result     => $Param{Results},
+        SiteNavBar => $Param{SearchNavBar},
+        Link       => $Param{Link},
     );
 }
 
 sub NavigationBar {
     my ( $Self, %Param ) = @_;
 
+    my $Output = '';
     if ( !$Param{Type} ) {
         $Param{Type} = $Self->{ModuleReg}->{NavBarName} || 'Ticket';
     }
-
-    # create menu items
-    my %NavBar;
-    my $FrontendModuleConfig = $Self->{ConfigObject}->Get('Frontend::Module');
-
-    for my $Module ( sort keys %{$FrontendModuleConfig} ) {
-        my %Hash = %{ $FrontendModuleConfig->{$Module} };
-        next if !$Hash{NavBar};
-        next if ref $Hash{NavBar} ne 'ARRAY';
-
-        my @Items = @{ $Hash{NavBar} };
-        for my $Item (@Items) {
-            next if !$Item->{NavBar};
-            $Item->{CSS} = '';
-
-            # highlight active area link
-            if (
-                ( $Item->{Type} && $Item->{Type} eq 'Menu' )
-                && ( $Item->{NavBar} && $Item->{NavBar} eq $Param{Type} )
-                )
-            {
-                $Item->{CSS} .= ' Selected';
-            }
-
-            # get permissions from module if no permissions are defined for the icon
-            if ( !$Item->{GroupRo} && !$Item->{Group} ) {
-                if ( $Hash{GroupRo} ) {
-                    $Item->{GroupRo} = $Hash{GroupRo};
-                }
-                if ( $Hash{Group} ) {
-                    $Item->{Group} = $Hash{Group};
-                }
-            }
-
-            # check shown permission
-            my $Shown = 0;
-            for my $Permission (qw(GroupRo Group)) {
-
-                # array access restriction
-                if ( $Item->{$Permission} && ref $Item->{$Permission} eq 'ARRAY' ) {
-                    for ( @{ $Item->{$Permission} } ) {
-                        my $Key = 'UserIs' . $Permission . '[' . $_ . ']';
-                        if ( $Self->{$Key} && $Self->{$Key} eq 'Yes' ) {
-                            $Shown = 1;
-                            last;
-                        }
-                    }
-                }
-
-                # scalar access restriction
-                elsif ( $Item->{$Permission} ) {
-                    my $Key = 'UserIs' . $Permission . '[' . $Item->{$Permission} . ']';
-                    if ( $Self->{$Key} && $Self->{$Key} eq 'Yes' ) {
-                        $Shown = 1;
-                        last;
-                    }
-                }
-
-                # no access restriction
-                elsif ( !$Item->{GroupRo} && !$Item->{Group} ) {
-                    $Shown = 1;
-                    last;
-                }
-            }
-            next if !$Shown;
-
-            # set prio of item
-            my $Key = ( $Item->{Block} || '' ) . sprintf( "%07d", $Item->{Prio} );
-            for ( 1 .. 51 ) {
-                last if !$NavBar{$Key};
-
-                $Item->{Prio}++;
-                $Key = ( $Item->{Block} || '' ) . sprintf( "%07d", $Item->{Prio} );
-            }
-
-            # show as main menu
-            if ( $Item->{Type} eq 'Menu' ) {
-                $NavBar{$Key} = $Item;
-            }
-
-            # show as sub of main menu
-            else {
-                $NavBar{Sub}->{ $Item->{NavBar} }->{$Key} = $Item;
-            }
-        }
-    }
-
-    # run menu item modules
-    if ( ref $Self->{ConfigObject}->Get('Frontend::NavBarModule') eq 'HASH' ) {
-        my %Jobs = %{ $Self->{ConfigObject}->Get('Frontend::NavBarModule') };
-        for my $Job ( sort keys %Jobs ) {
-
-            # load module
-            next if !$Self->{MainObject}->Require( $Jobs{$Job}->{Module} );
-            my $Object = $Jobs{$Job}->{Module}->new(
-                %{$Self},
-                LayoutObject => $Self,
-            );
-            next if !$Object;
-
-            # run module
-            %NavBar = ( %NavBar, $Object->Run( %Param, Config => $Jobs{$Job} ) );
-        }
-    }
-
-    # show nav bar
-    for my $Key ( sort keys %NavBar ) {
-        next if $Key eq 'Sub';
-        next if !%{ $NavBar{$Key} };
-        my $Item = $NavBar{$Key};
-        $Item->{NameForID} = $Item->{Name};
-        $Item->{NameForID} =~ s/[ &;]//ig;
-        my $Sub = $NavBar{Sub}->{ $Item->{NavBar} };
-
-        $Self->Block(
-            Name => 'ItemArea',    #$NavBar{$_}->{Block} || 'Item',
-            Data => {
-                %$Item,
-                AccessKeyReference => $Item->{AccessKey} ? " ($Item->{AccessKey})" : '',
-            },
-        );
-
-        # show sub menu
-        next if !$Sub;
-        $Self->Block(
-            Name => 'ItemAreaSub',
-            Data => $Item,
-        );
-        for my $Key ( sort keys %{$Sub} ) {
-            my $ItemSub = $Sub->{$Key};
-            $ItemSub->{NameForID} = $ItemSub->{Name};
-            $ItemSub->{NameForID} =~ s/[ &;]//ig;
-            $ItemSub->{NameTop} = $Item->{NameForID};
-            $Self->Block(
-                Name => 'ItemAreaSubItem',    #$Item->{Block} || 'Item',
-                Data => {
-                    %$ItemSub,
-                    AccessKeyReference => $ItemSub->{AccessKey} ? " ($ItemSub->{AccessKey})" : '',
-                },
-            );
-        }
-    }
-
-    # create & return output
-    my $Output = $Self->Output( TemplateFile => 'AgentNavigationBar', Data => \%Param );
 
     # run notification modules
     my $FrontendNotifyModuleConfig = $Self->{ConfigObject}->Get('Frontend::NotifyModule');
@@ -2729,7 +2253,117 @@ sub NavigationBar {
         }
     }
 
-    # run nav bar modules
+    # create menu items
+    my %NavBarModule;
+    my $FrontendModuleConfig = $Self->{ConfigObject}->Get('Frontend::Module');
+
+    MODULE:
+    for my $Module ( sort keys %{$FrontendModuleConfig} ) {
+        my %Hash = %{ $FrontendModuleConfig->{$Module} };
+        next MODULE if !$Hash{NavBar} || ref $Hash{NavBar} ne 'ARRAY';
+
+        my @Items = @{ $Hash{NavBar} };
+        for my $Item (@Items) {
+            if (
+                ( $Item->{NavBar} && $Item->{NavBar} eq $Param{Type} )
+                || ( $Item->{Type} && $Item->{Type} eq 'Menu' )
+                || !$Item->{NavBar}
+                )
+            {
+
+                # highligt avtive area link
+                if (
+                    ( $Item->{Type} && $Item->{Type} eq 'Menu' )
+                    && ( $Item->{NavBar} && $Item->{NavBar} eq $Param{Type} )
+                    )
+                {
+                    next if !$Self->{ConfigObject}->Get('Frontend::NavBarStyle::ShowSelectedArea');
+                    $Item->{ItemAreaCSSSuffix} = 'active';
+                }
+
+                # get permissions from module if no permissions are defined for the icon
+                if ( !$Item->{GroupRo} && !$Item->{Group} ) {
+                    if ( $Hash{GroupRo} ) {
+                        $Item->{GroupRo} = $Hash{GroupRo};
+                    }
+                    if ( $Hash{Group} ) {
+                        $Item->{Group} = $Hash{Group};
+                    }
+                }
+
+                # check shown permission
+                my $Shown = 0;
+                for my $Permission (qw(GroupRo Group)) {
+
+                    # array access restriction
+                    if ( $Item->{$Permission} && ref $Item->{$Permission} eq 'ARRAY' ) {
+                        for ( @{ $Item->{$Permission} } ) {
+                            my $Key = 'UserIs' . $Permission . '[' . $_ . ']';
+                            if ( $Self->{$Key} && $Self->{$Key} eq 'Yes' ) {
+                                $Shown = 1;
+                            }
+                        }
+                    }
+
+                    # scalar access restriction
+                    elsif ( $Item->{$Permission} ) {
+                        my $Key = 'UserIs' . $Permission . '[' . $Item->{$Permission} . ']';
+                        if ( $Self->{$Key} && $Self->{$Key} eq 'Yes' ) {
+                            $Shown = 1;
+                        }
+                    }
+
+                    # no access restriction
+                    elsif ( !$Item->{GroupRo} && !$Item->{Group} ) {
+                        $Shown = 1;
+                    }
+                }
+                next if !$Shown;
+
+                my $Key = ( $Item->{Block} || '' ) . sprintf( "%07d", $Item->{Prio} );
+                for ( 1 .. 51 ) {
+                    last if !$NavBarModule{$Key};
+
+                    $Item->{Prio}++;
+                    $Key = ( $Item->{Block} || '' ) . sprintf( "%07d", $Item->{Prio} );
+                }
+                $NavBarModule{$Key} = $Item;
+            }
+        }
+    }
+
+    # run menu item modules
+    if ( ref $Self->{ConfigObject}->Get('Frontend::NavBarModule') eq 'HASH' ) {
+        my %Jobs = %{ $Self->{ConfigObject}->Get('Frontend::NavBarModule') };
+        for my $Job ( sort keys %Jobs ) {
+
+            # load module
+            next if !$Self->{MainObject}->Require( $Jobs{$Job}->{Module} );
+            my $Object = $Jobs{$Job}->{Module}->new(
+                %{$Self},
+                LayoutObject => $Self,
+            );
+
+            # run module
+            %NavBarModule = ( %NavBarModule, $Object->Run( %Param, Config => $Jobs{$Job} ) );
+        }
+    }
+
+    my $NavBarType = $Self->{ConfigObject}->Get('Frontend::NavBarStyle') || 'Classic';
+    $Self->Block(
+        Name => $NavBarType,
+        Data => \%Param,
+    );
+    for ( sort keys %NavBarModule ) {
+        next if !%{ $NavBarModule{$_} };
+        $Self->Block(
+            Name => $NavBarModule{$_}->{Block} || 'Item',
+            Data => $NavBarModule{$_},
+        );
+    }
+
+    # create & return output
+    $Output = $Self->Output( TemplateFile => 'AgentNavigationBar', Data => \%Param ) . $Output;
     if ( $Self->{ModuleReg}->{NavBarModule} ) {
 
         # run navbar modules
@@ -2741,7 +2375,6 @@ sub NavigationBar {
             %{$Self},
             LayoutObject => $Self,
         );
-        next if !$Object;
 
         # run module
         $Output .= $Object->Run( %Param, Config => \%Jobs );
@@ -2749,13 +2382,74 @@ sub NavigationBar {
     return $Output;
 }
 
-sub TransformDateSelection {
+sub WindowTabStart {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Param{Tab} || ( $Param{Tab} && ref $Param{Tab} ne 'ARRAY' ) ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'Need Tab as ARRAY ref in WindowTabStart()!',
+        );
+        $Self->FatalError();
+    }
+
+    $Self->Block(
+        Name => 'WindowTabStart',
+        Data => \%Param,
+    );
+
+    my @Tabs = @{ $Param{Tab} };
+    my $Size = int( 100 / ( $#Tabs + 1 ) );
+    for my $Hash (@Tabs) {
+        $Hash->{Size} = $Size;
+        if ( $Hash->{Ready} ) {
+            $Hash->{Image} = 'ready.png';
+        }
+        else {
+            $Hash->{Image} = 'notready.png';
+        }
+        $Self->Block(
+            Name => 'Tab',
+            Data => { %{$Hash}, },
+        );
+    }
+    return $Self->Output( TemplateFile => 'AgentWindowTab', Data => \%Param );
+}
+
+sub WindowTabStop {
+    my ( $Self, %Param ) = @_;
+
+    $Self->Block(
+        Name => 'WindowTabStop',
+        Data => \%Param,
+    );
+
+    if ( $Param{Layer0Footer} ) {
+        for my $Hash ( @{ $Param{Layer0Footer} } ) {
+            $Self->Block(
+                Name => 'Layer0Footer',
+                Data => { %{$Hash}, },
+            );
+        }
+    }
+    if ( $Param{Layer1Footer} ) {
+        for my $Hash ( @{ $Param{Layer1Footer} } ) {
+            $Self->Block(
+                Name => 'Layer1Footer',
+                Data => { %{$Hash}, },
+            );
+        }
+    }
+    return $Self->Output( TemplateFile => 'AgentWindowTab', Data => \%Param );
+}
+
+sub TransfromDateSelection {
     my ( $Self, %Param ) = @_;
 
     # get key prefix
     my $Prefix = $Param{Prefix} || '';
 
-    # time zone translation if needed
+    # time zone translation
     if ( $Self->{ConfigObject}->Get('TimeZoneUser') && $Self->{UserTimeZone} ) {
         my $TimeStamp = $Self->{TimeObject}->TimeStamp2SystemTime(
             String => $Param{ $Prefix . 'Year' } . '-'
@@ -2773,7 +2467,7 @@ sub TransformDateSelection {
             $Param{ $Prefix . 'Day' },
             $Param{ $Prefix . 'Month' },
             $Param{ $Prefix . 'Year' }
-        ) = $Self->{UserTimeObject}->SystemTime2Date( SystemTime => $TimeStamp );
+        ) = $Self->{UserTimeObject}->SystemTime2Date( SystemTime => $TimeStamp, );
     }
 
     # reset prefix
@@ -2791,20 +2485,10 @@ sub BuildDateSelection {
     my $Format         = defined( $Param{Format} ) ? $Param{Format} : 'DateInputFormatLong';
     my $Area           = $Param{Area} || 'Agent';
     my $Optional       = $Param{ $Prefix . 'Optional' } || 0;
-    my $Required       = $Param{ $Prefix . 'Required' } || 0;
     my $Used           = $Param{ $Prefix . 'Used' } || 0;
-    my $Class          = $Param{ $Prefix . 'Class' } || '';
-
-    # Defines, if the date selection should be validated on client side with JS
-    my $Validate = $Param{Validate} || 0;
-
-    # Validate that the date is in the future (e. g. pending times)
-    my $ValidateDateInFuture = $Param{ValidateDateInFuture} || 0;
-
     my ( $s, $m, $h, $D, $M, $Y ) = $Self->{UserTimeObject}->SystemTime2Date(
         SystemTime => $Self->{UserTimeObject}->SystemTime() + $DiffTime,
     );
-    my $DatepickerHTML = '';
 
     # time zone translation
     if (
@@ -2831,7 +2515,7 @@ sub BuildDateSelection {
             $Param{ $Prefix . 'Day' },
             $Param{ $Prefix . 'Month' },
             $Param{ $Prefix . 'Year' }
-        ) = $Self->{UserTimeObject}->SystemTime2Date( SystemTime => $TimeStamp );
+        ) = $Self->{UserTimeObject}->SystemTime2Date( SystemTime => $TimeStamp, );
     }
 
     # year
@@ -2848,21 +2532,17 @@ sub BuildDateSelection {
             }
         }
         $Param{Year} = $Self->BuildSelection(
-            Name        => $Prefix . 'Year',
-            Data        => \%Year,
-            SelectedID  => int( $Param{ $Prefix . 'Year' } || $Y ),
-            Translation => 0,
-            Class       => $Validate ? 'Validate_DateYear' : '',
-            Title       => $Self->{LanguageObject}->Get('Year'),
+            Name                => $Prefix . 'Year',
+            Data                => \%Year,
+            SelectedID          => int( $Param{ $Prefix . 'Year' } || $Y ),
+            LanguageTranslation => 0,
         );
     }
     else {
-        $Param{Year} = "<input type=\"text\" "
-            . ( $Validate ? "class=\"Validate_DateYear $Class\" " : "class=\"$Class\" " )
-            . "name=\"${Prefix}Year\" id=\"${Prefix}Year\" size=\"4\" maxlength=\"4\" "
-            . "title=\""
-            . $Self->{LanguageObject}->Get('Year')
-            . "\" value=\""
+        $Param{Year} = "<input id=\"" . $Prefix . "Year\" " . "type=\"text\" name=\""
+            . $Prefix
+            . "Year\" size=\"4\" maxlength=\"4\" "
+            . "value=\""
             . sprintf( "%02d", ( $Param{ $Prefix . 'Year' } || $Y ) ) . "\"/>";
     }
 
@@ -2874,32 +2554,21 @@ sub BuildDateSelection {
             $Month{$_} = $Tmp;
         }
         $Param{Month} = $Self->BuildSelection(
-            Name        => $Prefix . 'Month',
-            Data        => \%Month,
-            SelectedID  => int( $Param{ $Prefix . 'Month' } || $M ),
-            Translation => 0,
-            Class       => $Validate ? 'Validate_DateMonth' : '',
-            Title       => $Self->{LanguageObject}->Get('Month'),
+            Name                => $Prefix . 'Month',
+            Data                => \%Month,
+            SelectedID          => int( $Param{ $Prefix . 'Month' } || $M ),
+            LanguageTranslation => 0,
         );
     }
     else {
         $Param{Month}
-            = "<input type=\"text\" "
-            . ( $Validate ? "class=\"Validate_DateMonth $Class\" " : "class=\"$Class\" " )
-            . "name=\"${Prefix}Month\" id=\"${Prefix}Month\" size=\"2\" maxlength=\"2\" "
-            . "title=\""
-            . $Self->{LanguageObject}->Get('Month')
-            . "\" value=\""
+            = "<input type=\"text\" name=\""
+            . $Prefix
+            . "Month\" id=\""
+            . $Prefix
+            . "Month\" size=\"2\" maxlength=\"2\" "
+            . "value=\""
             . sprintf( "%02d", ( $Param{ $Prefix . 'Month' } || $M ) ) . "\"/>";
-    }
-
-    my $DateValidateClasses = '';
-    if ($Validate) {
-        $DateValidateClasses
-            .= "Validate_DateDay Validate_DateYear_${Prefix}Year Validate_DateMonth_${Prefix}Month";
-        if ($ValidateDateInFuture) {
-            $DateValidateClasses .= " Validate_DateInFuture";
-        }
     }
 
     # day
@@ -2910,21 +2579,17 @@ sub BuildDateSelection {
             $Day{$_} = $Tmp;
         }
         $Param{Day} = $Self->BuildSelection(
-            Name        => $Prefix . 'Day',
-            Data        => \%Day,
-            SelectedID  => int( $Param{ $Prefix . 'Day' } || $D ),
-            Translation => 0,
-            Class       => "$DateValidateClasses $Class",
-            Title       => $Self->{LanguageObject}->Get('Day'),
+            Name                => $Prefix . 'Day',
+            Data                => \%Day,
+            SelectedID          => int( $Param{ $Prefix . 'Day' } || $D ),
+            LanguageTranslation => 0,
         );
     }
     else {
-        $Param{Day} = "<input type=\"text\" "
-            . "class=\"$DateValidateClasses $Class\" "
-            . "name=\"${Prefix}Day\" id=\"${Prefix}Day\" size=\"2\" maxlength=\"2\" "
-            . "title=\""
-            . $Self->{LanguageObject}->Get('Day')
-            . "\" value=\""
+        $Param{Day} = "<input type=\"text\" name=\""
+            . $Prefix
+            . "Day\" id=\"" . $Prefix . "Day\" size=\"2\" maxlength=\"2\" "
+            . "value=\""
             . sprintf( "%02d", ( $Param{ $Prefix . 'Day' } || $D ) ) . "\"/>";
     }
     if ( $Format eq 'DateInputFormatLong' ) {
@@ -2942,18 +2607,14 @@ sub BuildDateSelection {
                 SelectedID => defined( $Param{ $Prefix . 'Hour' } )
                 ? int( $Param{ $Prefix . 'Hour' } )
                 : int($h),
-                Translation => 0,
-                Class       => $Validate ? ( 'Validate_DateHour ' . $Class ) : $Class,
-                Title       => $Self->{LanguageObject}->Get('Hours'),
+                LanguageTranslation => 0,
             );
         }
         else {
-            $Param{Hour} = "<input type=\"text\" "
-                . ( $Validate ? "class=\"Validate_DateHour $Class\" " : "class=\"$Class\" " )
-                . "name=\"${Prefix}Hour\" id=\"${Prefix}Hour\" size=\"2\" maxlength=\"2\" "
-                . "title=\""
-                . $Self->{LanguageObject}->Get('Hours')
-                . "\" value=\""
+            $Param{Hour} = "<input type=\"text\" name=\""
+                . $Prefix
+                . "Hour\" id=\"" . $Prefix . "Hour\" size=\"2\" maxlength=\"2\" "
+                . "value=\""
                 . sprintf(
                 "%02d",
                 ( defined( $Param{ $Prefix . 'Hour' } ) ? int( $Param{ $Prefix . 'Hour' } ) : $h )
@@ -2974,18 +2635,14 @@ sub BuildDateSelection {
                 SelectedID => defined( $Param{ $Prefix . 'Minute' } )
                 ? int( $Param{ $Prefix . 'Minute' } )
                 : int($m),
-                Translation => 0,
-                Class       => $Validate ? ( 'Validate_DateMinute ' . $Class ) : $Class,
-                Title       => $Self->{LanguageObject}->Get('Minutes'),
+                LanguageTranslation => 0,
             );
         }
         else {
-            $Param{Minute} = "<input type=\"text\" "
-                . ( $Validate ? "class=\"Validate_DateMinute $Class\" " : "class=\"$Class\" " )
-                . "name=\"${Prefix}Minute\" id=\"${Prefix}Minute\" size=\"2\" maxlength=\"2\" "
-                . "title=\""
-                . $Self->{LanguageObject}->Get('Minutes')
-                . "\" value=\""
+            $Param{Minute} = "<input type=\"text\" name=\""
+                . $Prefix
+                . "Minute\" id=\"" . $Prefix . "Minute\" size=\"2\" maxlength=\"2\" "
+                . "value=\""
                 . sprintf(
                 "%02d",
                 (
@@ -2996,44 +2653,19 @@ sub BuildDateSelection {
                 ) . "\"/>";
         }
     }
-
-    # Get first day of the week
-    my $WeekDayStart = $Self->{ConfigObject}->Get('CalendarWeekDayStart') || 1;
-
-    # Datepicker
-    $DatepickerHTML = '<!--dtl:js_on_document_complete--><script type="text/javascript">//<![CDATA[
-        Core.UI.Datepicker.Init({
-            Day: $(\'#' . $Prefix . 'Day\'),
-            Month: $(\'#' . $Prefix . 'Month\'),
-            Year: $(\'#' . $Prefix . 'Year\'),
-            Hour: $(\'#' . $Prefix . 'Hour\'),
-            Minute: $(\'#' . $Prefix . 'Minute\'),
-            DateInFuture: ' . ( $ValidateDateInFuture ? 'true' : 'false' ) . ',
-            WeekDayStart: ' . $WeekDayStart . '
-        });
-    //]]></script>
-    <!--dtl:js_on_document_complete-->';
-
     my $Output;
 
     # optional checkbox
     if ($Optional) {
-        my $Checked       = '';
-        my $ValidateClass = '';
+        my $Checked = '';
         if ($Used) {
             $Checked = ' checked="checked"';
-        }
-        if ($Required) {
-            $ValidateClass = ' class="Validate_Required"';
         }
         $Output .= "<input type=\"checkbox\" name=\""
             . $Prefix
             . "Used\" id=\"" . $Prefix . "Used\" value=\"1\""
             . $Checked
-            . $ValidateClass
-            . " title=\""
-            . $Self->{LanguageObject}->Get('Check to activate this date')
-            . "\" />&nbsp;";
+            . "/>&nbsp;";
     }
 
     # date format
@@ -3044,11 +2676,33 @@ sub BuildDateSelection {
         %Param,
     );
 
-    # add Datepicker HTML to output
-    $Output .= $DatepickerHTML;
+    # show calendar lookup
+    if ( $Self->{BrowserJavaScriptSupport} ) {
+        if ( $Area eq 'Agent' && $Self->{ConfigObject}->Get('TimeCalendarLookup') ) {
 
-    # set global var to true to add a block to the footer later
-    $Self->{HasDatepicker} = 1;
+            # loas site preferences
+            $Self->Output(
+                TemplateFile => 'HeaderSmall',
+                Data         => {},
+            );
+            $Output .= $Self->Output(
+                TemplateFile => 'AgentCalendarSmallIcon',
+                Data => { Prefix => $Prefix, }
+            );
+        }
+        elsif ( $Area eq 'Customer' && $Self->{ConfigObject}->Get('TimeCalendarLookup') ) {
+
+            # loas site preferences
+            $Self->Output(
+                TemplateFile => 'CustomerHeaderSmall',
+                Data         => {},
+            );
+            $Output .= $Self->Output(
+                TemplateFile => 'CustomerCalendarSmallIcon',
+                Data => { Prefix => $Prefix, }
+            );
+        }
+    }
 
     return $Output;
 }
@@ -3057,10 +2711,7 @@ sub CustomerLogin {
     my ( $Self, %Param ) = @_;
 
     my $Output = '';
-    $Param{TitleArea} = $Self->{LanguageObject}->Get('Login') . ' - ';
-
-    # set Action parameter for the loader
-    $Self->{Action} = 'CustomerLogin';
+    $Param{TitleArea} = ' :: ' . $Self->{LanguageObject}->Get('Login');
 
     # add cookies if exists
     if ( $Self->{SetCookies} && $Self->{ConfigObject}->Get('SessionUseCookie') ) {
@@ -3069,10 +2720,18 @@ sub CustomerLogin {
         }
     }
 
-    # check if message should be shown
-    if ( $Param{Message} ) {
+    # get language options
+    if ( $Self->{ConfigObject}->Get('CustomerPanelLanguage') ) {
+        $Param{Language} = $Self->BuildSelection(
+            Data                => $Self->{ConfigObject}->Get('DefaultUsedLanguages'),
+            Name                => 'Lang',
+            SelectedID          => $Self->{UserLanguage},
+            OnChange            => 'submit()',
+            HTMLQuote           => 0,
+            LanguageTranslation => 0,
+        );
         $Self->Block(
-            Name => 'Message',
+            Name => 'Language',
             Data => \%Param,
         );
     }
@@ -3084,10 +2743,6 @@ sub CustomerLogin {
         'Kernel::System::CustomerAuth::DB'
         )
     {
-        $Self->Block(
-            Name => 'LostPasswordLink',
-            Data => \%Param,
-        );
         $Self->Block(
             Name => 'LostPassword',
             Data => \%Param,
@@ -3102,44 +2757,8 @@ sub CustomerLogin {
         )
     {
         $Self->Block(
-            Name => 'CreateAccountLink',
-            Data => \%Param,
-        );
-        $Self->Block(
             Name => 'CreateAccount',
             Data => \%Param,
-        );
-    }
-
-   # Generate the minified CSS and JavaScript files and the tags referencing them (see LayoutLoader)
-    $Self->LoaderCreateCustomerCSSCalls();
-    $Self->LoaderCreateCustomerJSCalls();
-
-    # Add header logo, if configured
-    if ( defined $Self->{ConfigObject}->Get('CustomerLogo') ) {
-        my %CustomerLogo = %{ $Self->{ConfigObject}->Get('CustomerLogo') };
-        my %Data;
-
-        for my $CSSStatement ( keys %CustomerLogo ) {
-            if ( $CSSStatement eq 'URL' ) {
-                my $WebPath = '';
-                if ( $CustomerLogo{$CSSStatement} !~ /(http|ftp|https):\//i ) {
-                    $WebPath = $Self->{ConfigObject}->Get('Frontend::WebPath');
-                }
-                $Data{'URL'} = 'url(' . $WebPath . $CustomerLogo{$CSSStatement} . ')';
-            }
-            else {
-                $Data{$CSSStatement} = $CustomerLogo{$CSSStatement};
-            }
-        }
-
-        $Self->Block(
-            Name => 'HeaderLogoCSS',
-            Data => \%Data,
-        );
-
-        $Self->Block(
-            Name => 'HeaderLogo',
         );
     }
 
@@ -3155,10 +2774,10 @@ sub CustomerLogin {
 sub CustomerHeader {
     my ( $Self, %Param ) = @_;
 
+    my $Output = '';
     my $Type = $Param{Type} || '';
 
     # add cookies if exists
-    my $Output = '';
     if ( $Self->{SetCookies} && $Self->{ConfigObject}->Get('SessionUseCookie') ) {
         for ( keys %{ $Self->{SetCookies} } ) {
             $Output .= "Set-Cookie: $Self->{SetCookies}->{$_}\n";
@@ -3200,22 +2819,14 @@ sub CustomerHeader {
             = $Self->{ConfigObject}->Get('PublicFrontend::Module')->{ $Self->{Action} }->{Title}
             || '';
     }
-    for my $Word (qw(Value Title Area)) {
+    for my $Word (qw(Area Title Value)) {
         if ( $Param{$Word} ) {
-            $Param{TitleArea} .= $Self->{LanguageObject}->Get( $Param{$Word} ) . ' - ';
+            $Param{TitleArea} .= ' :: ' . $Self->{LanguageObject}->Get( $Param{$Word} );
         }
     }
 
-    my $Frontend;
-    if ( $Self->{ConfigObject}->Get('CustomerFrontend::Module')->{ $Self->{Action} } ) {
-        $Frontend = 'Customer';
-    }
-    else {
-        $Frontend = 'Public';
-    }
-
-    # run header meta modules for customer and public frontends
-    my $HeaderMetaModule = $Self->{ConfigObject}->Get( $Frontend . 'Frontend::HeaderMetaModule' );
+    # run header meta modules
+    my $HeaderMetaModule = $Self->{ConfigObject}->Get('CustomerFrontend::HeaderMetaModule');
     if ( ref $HeaderMetaModule eq 'HASH' ) {
         my %Jobs = %{$HeaderMetaModule};
         for my $Job ( sort keys %Jobs ) {
@@ -3228,53 +2839,8 @@ sub CustomerHeader {
         }
     }
 
-    # set rtl if needed
-    if ( $Self->{TextDirection} && $Self->{TextDirection} eq 'rtl' ) {
-        $Param{BodyClass} = 'RTL';
-    }
-    elsif ( $Self->{ConfigObject}->Get('Frontend::DebugMode') ) {
-        $Self->Block(
-            Name => 'DebugRTLButton',
-        );
-    }
-
-    # Add header logo, if configured
-    if ( defined $Self->{ConfigObject}->Get('CustomerLogo') ) {
-        my %CustomerLogo = %{ $Self->{ConfigObject}->Get('CustomerLogo') };
-        my %Data;
-
-        for my $CSSStatement ( keys %CustomerLogo ) {
-            if ( $CSSStatement eq 'URL' ) {
-                my $WebPath = '';
-                if ( $CustomerLogo{$CSSStatement} !~ /(http|ftp|https):\//i ) {
-                    $WebPath = $Self->{ConfigObject}->Get('Frontend::WebPath');
-                }
-                $Data{'URL'} = 'url(' . $WebPath . $CustomerLogo{$CSSStatement} . ')';
-            }
-            else {
-                $Data{$CSSStatement} = $CustomerLogo{$CSSStatement};
-            }
-        }
-
-        $Self->Block(
-            Name => 'HeaderLogoCSS',
-            Data => \%Data,
-        );
-
-        $Self->Block(
-            Name => 'HeaderLogo',
-        );
-    }
-
-    # Generate the minified CSS and JavaScript files
-    # and the tags referencing them (see LayoutLoader)
-    $Self->LoaderCreateCustomerCSSCalls();
-
     # create & return output
-    $Output .= $Self->Output(
-        TemplateFile => "CustomerHeader$Type",
-        Data         => \%Param,
-    );
+    $Output .= $Self->Output( TemplateFile => "CustomerHeader$Type", Data => \%Param );
 
     # remove the version tag from the header if configured
     $Self->_DisableBannerCheck( OutputRef => \$Output );
@@ -3285,36 +2851,18 @@ sub CustomerHeader {
 sub CustomerFooter {
     my ( $Self, %Param ) = @_;
 
-    my $Type          = $Param{Type}           || '';
-    my $HasDatepicker = $Self->{HasDatepicker} || 0;
+    my $Type = $Param{Type} || '';
 
-    # Generate the minified CSS and JavaScript files
-    # and the tags referencing them (see LayoutLoader)
-    $Self->LoaderCreateCustomerJSCalls();
-
-    # get datepicker data, if needed in module
-    if ($HasDatepicker) {
-        my $VacationDays     = $Self->DatepickerGetVacationDays();
-        my $VacationDaysJSON = $Self->JSONEncode(
-            Data => $VacationDays,
-        );
-
-        my $TextDirection = $Self->{LanguageObject}->{TextDirection} || '';
-
-        $Self->Block(
-            Name => 'DatepickerData',
-            Data => {
-                VacationDays => $VacationDaysJSON,
-                IsRTLLanguage => ( $TextDirection eq 'rtl' ) ? 1 : 0,
-            },
-        );
-    }
-
-    # Banner
-    if ( !$Self->{ConfigObject}->Get('Secure::DisableBanner') ) {
-        $Self->Block(
-            Name => 'Banner',
-        );
+    # unless explicitly specified, we set the footer width to the defaults, which are:
+    # 800 pixel for the standard footer
+    # 100% for any others (small)
+    if ( !$Param{Width} ) {
+        if ( $Type eq '' ) {
+            $Param{Width} = '800';
+        }
+        else {
+            $Param{Width} = '100%';
+        }
     }
 
     # create & return output
@@ -3344,68 +2892,21 @@ sub CustomerNavigationBar {
     # create menu items
     my %NavBarModule;
     my $FrontendModuleConfig = $Self->{ConfigObject}->Get('CustomerFrontend::Module');
-
     for my $Module ( sort keys %{$FrontendModuleConfig} ) {
         my %Hash = %{ $FrontendModuleConfig->{$Module} };
-        next if !$Hash{NavBar};
-        next if ref $Hash{NavBar} ne 'ARRAY';
-
-        my @Items = @{ $Hash{NavBar} };
-        for my $Item (@Items) {
-            next if !$Item;
-
-            # check permissions
-            my $Shown = 0;
-
-            # get permissions from module if no permissions are defined for the icon
-            if ( !$Item->{GroupRo} && !$Item->{Group} ) {
-                if ( $Hash{GroupRo} ) {
-                    $Item->{GroupRo} = $Hash{GroupRo};
-                }
-                if ( $Hash{Group} ) {
-                    $Item->{Group} = $Hash{Group};
-                }
-            }
-
-            # check shown permission
-            for my $Permission (qw(GroupRo Group)) {
-
-                # array access restriction
-                if ( $Item->{$Permission} && ref $Item->{$Permission} eq 'ARRAY' ) {
-                    for my $Type ( @{ $Item->{$Permission} } ) {
-                        my $Key = 'UserIs' . $Permission . '[' . $Type . ']';
-                        if ( $Self->{$Key} && $Self->{$Key} eq 'Yes' ) {
-                            $Shown = 1;
-                            last;
-                        }
+        if ( $Hash{NavBar} && ref $Hash{NavBar} eq 'ARRAY' ) {
+            my @Items = @{ $Hash{NavBar} };
+            for my $Item (@Items) {
+                for ( 1 .. 51 ) {
+                    if ( $NavBarModule{ sprintf( "%07d", $Item->{Prio} ) } ) {
+                        $Item->{Prio}++;
                     }
-                }
-
-                # scalar access restriction
-                elsif ( $Item->{$Permission} ) {
-                    my $Key = 'UserIs' . $Permission . '[' . $Item->{$Permission} . ']';
-                    if ( $Self->{$Key} && $Self->{$Key} eq 'Yes' ) {
-                        $Shown = 1;
+                    if ( !$NavBarModule{ sprintf( "%07d", $Item->{Prio} ) } ) {
                         last;
                     }
                 }
-
-                # no access restriction
-                elsif ( !$Item->{GroupRo} && !$Item->{Group} ) {
-                    $Shown = 1;
-                    last;
-                }
+                $NavBarModule{ sprintf( "%07d", $Item->{Prio} ) } = $Item;
             }
-            next if !$Shown;
-
-            # set prio of item
-            my $Key = sprintf( "%07d", $Item->{Prio} );
-            for ( 1 .. 51 ) {
-                last if !$NavBarModule{$Key};
-
-                $Item->{Prio}++;
-            }
-            $NavBarModule{ sprintf( "%07d", $Item->{Prio} ) } = $Item;
         }
     }
 
@@ -3433,37 +2934,11 @@ sub CustomerNavigationBar {
         }
     }
 
-    my $Total   = keys %NavBarModule;
-    my $Counter = 0;
-
-    # Only highlight the first matched navigation entry. If there are several entries
-    #   with the same Action and Subaction, it cannot be determined which one was used.
-    #   Therefore we just highlight the first one.
-    my $SelectedFlag;
-
-    for my $Item ( sort keys %NavBarModule ) {
-        next if !%{ $NavBarModule{$Item} };
-        $Counter++;
-
-        # highlight active link
-        $NavBarModule{$Item}->{Class} = '';
-        if ( $NavBarModule{$Item}->{Link} ) {
-            if (
-                !$SelectedFlag
-                && $NavBarModule{$Item}->{Link} =~ /Action=$Self->{Action}/
-                && $NavBarModule{$Item}->{Link} =~ /$Self->{Subaction}/     # Subaction can be empty
-                )
-            {
-                $NavBarModule{$Item}->{Class} .= ' Selected';
-                $SelectedFlag = 1;
-            }
-        }
-        if ( $Counter == $Total ) {
-            $NavBarModule{$Item}->{Class} .= ' Last';
-        }
+    for ( sort keys %NavBarModule ) {
+        next if !%{ $NavBarModule{$_} };
         $Self->Block(
-            Name => $NavBarModule{$Item}->{Block} || 'Item',
-            Data => $NavBarModule{$Item},
+            Name => $NavBarModule{$_}->{Block} || 'Item',
+            Data => $NavBarModule{$_},
         );
     }
 
@@ -3497,29 +2972,6 @@ sub CustomerNavigationBar {
         $Param{UserLoginIdentifier} = $Self->{UserLoginIdentifier};
     }
 
-    # only on valid session
-    if ( $Self->{UserID} ) {
-
-        # show logout button (if registered)
-        if ( $FrontendModuleConfig->{Logout} ) {
-            $Self->Block(
-                Name => 'Logout',
-                Data => \%Param,
-            );
-        }
-
-        # show preferences button (if registered)
-        if ( $FrontendModuleConfig->{CustomerPreferences} ) {
-            if ( $Self->{Action} eq 'CustomerPreferences' ) {
-                $Param{Class} = 'Selected';
-            }
-            $Self->Block(
-                Name => 'Preferences',
-                Data => \%Param,
-            );
-        }
-    }
-
     # create & return output
     return $Self->Output( TemplateFile => 'CustomerNavigationBar', Data => \%Param );
 }
@@ -3533,6 +2985,10 @@ sub CustomerError {
             Type => 'Error',
             What => $_
         ) || '';
+        $Param{ 'Backend' . $_ } = $Self->Ascii2Html(
+            Text           => $Param{ 'Backend' . $_ },
+            HTMLResultMode => 1,
+        );
     }
     if ( !$Param{BackendMessage} && !$Param{BackendTraceback} ) {
         $Self->{LogObject}->Log(
@@ -3544,6 +3000,10 @@ sub CustomerError {
                 Type => 'Error',
                 What => $_
             ) || '';
+            $Param{ 'Backend' . $_ } = $Self->Ascii2Html(
+                Text           => $Param{ 'Backend' . $_ },
+                HTMLResultMode => 1,
+            );
         }
     }
 
@@ -3567,6 +3027,10 @@ sub CustomerWarning {
         Type => 'Error',
         What => 'Message',
         ) || '';
+    $Param{BackendMessage} = $Self->Ascii2Html(
+        Text           => $Param{BackendMessage},
+        HTMLResultMode => 1,
+    );
 
     if ( !$Param{Message} ) {
         $Param{Message} = $Param{BackendMessage};
@@ -3687,9 +3151,6 @@ sub RichTextDocumentComplete {
         $Param{String} =~ s/<body/<body dir="$Self->{TextDirection}"/i;
     }
 
-    # filter links in response
-    $Param{String} = $Self->HTMLLinkQuote( String => $Param{String} );
-
     return $Param{String};
 }
 
@@ -3720,7 +3181,7 @@ sub _RichTextReplaceLinkOfInlineContent {
 
     # replace image link with content id for uploaded images
     ${ $Param{String} } =~ s{
-        (<img.+?src=("|'))[^>]+ContentID=(.+?)("|')([^>]+>)
+        (<img.+?src=("|')).+?ContentID=(.+?)("|')(.*?>)
     }
     {
         $1 . 'cid:' . $3 . $4 . $5;
@@ -3731,17 +3192,17 @@ sub _RichTextReplaceLinkOfInlineContent {
 
 =end Internal:
 
-=item RichTextDocumentSafetyCheck()
+=item RichTextDocumentSaftyCheck()
 
-check if content is safety
+check if content is safty
 
-    $HTMLBody = $LayoutObject->RichTextDocumentSafetyCheck(
+    $HTMLBody = $LayoutObject->RichTextDocumentSaftyCheck(
         String => $HTMLBody,
     );
 
 =cut
 
-sub RichTextDocumentSafetyCheck {
+sub RichTextDocumentSaftyCheck {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
@@ -3752,8 +3213,8 @@ sub RichTextDocumentSafetyCheck {
         }
     }
 
-    # safety check
-    my %Safety = $Self->{HTMLUtilsObject}->Safety(
+    # safty check
+    my %Safty = $Self->{HTMLUtilsObject}->Safty(
         String       => \$Param{String},
         NoApplet     => 1,
         NoObject     => 1,
@@ -3761,11 +3222,11 @@ sub RichTextDocumentSafetyCheck {
         NoIntSrcLoad => 0,
         NoExtSrcLoad => 1,
         NoJavaScript => 1,
-        Debug        => $Self->{Debug},
+        Debug        => 1,
     );
 
-    # return if no safety change has been done
-    return $Param{String} if !$Safety{Replaced};
+    # return if no safty change has been done
+    return $Param{String} if !$Safty{Replaced};
 
     # generate blocker message
     my $Message = $Self->Output(
@@ -3773,16 +3234,16 @@ sub RichTextDocumentSafetyCheck {
     );
 
     # add it on top of page
-    if ( ${ $Safety{String} } =~ /<body.*?/si ) {
-        ${ $Safety{String} } =~ s/(<body.*?>)/$1\n$Message/si;
+    if ( ${ $Safty{String} } =~ /<body.*?/si ) {
+        ${ $Safty{String} } =~ s/(<body.*?>)/$1\n$Message/si;
     }
 
     # add it to end of page
     else {
-        ${ $Safety{String} } = $Message . ${ $Safety{String} };
+        ${ $Safty{String} } = $Message . ${ $Safty{String} };
     }
 
-    return ${ $Safety{String} };
+    return ${ $Safty{String} };
 }
 
 =item RichTextDocumentServe()
@@ -3844,9 +3305,9 @@ sub RichTextDocumentServe {
         String => $Param{Data}->{Content},
     );
 
-    # safety check
+    # safty check
     if ( !$Param{LoadInlineContent} ) {
-        $Param{Data}->{Content} = $Self->RichTextDocumentSafetyCheck(
+        $Param{Data}->{Content} = $Self->RichTextDocumentSaftyCheck(
             String => $Param{Data}->{Content},
         );
     }
@@ -3854,7 +3315,7 @@ sub RichTextDocumentServe {
     # build base url for inline images
     my $SessionID = '';
     if ( $Self->{SessionID} && !$Self->{SessionIDCookie} ) {
-        $SessionID = ';' . $Self->{SessionName} . '=' . $Self->{SessionID};
+        $SessionID = '&' . $Self->{SessionName} . '=' . $Self->{SessionID};
     }
 
     # replace inline images in content with runtime url to images
@@ -3885,40 +3346,6 @@ sub RichTextDocumentServe {
         # return new runtime url
         $Start . $ContentID . $End;
     }egxi;
-
-    # bug #5053
-    # inline images using Content-Location as identifier instead of Content-ID even RFC2557
-    # http://www.ietf.org/rfc/rfc2557.txt
-
-    # find matching attachment and replace it with runtlime url to image
-    for my $AttachmentID ( keys %{ $Param{Attachments} } ) {
-        next if !$Param{Attachments}->{$AttachmentID}->{ContentID};
-
-        # content id cleanup
-        $Param{Attachments}->{$AttachmentID}->{ContentID} =~ s/^<//;
-        $Param{Attachments}->{$AttachmentID}->{ContentID} =~ s/>$//;
-
-        $Param{Data}->{Content} =~ s{
-        (=|"|')(\Q$Param{Attachments}->{$AttachmentID}->{ContentID}\E)("|'|>|\/>|\s)
-    }
-    {
-        my $Start= $1;
-        my $ContentID = $2;
-        my $End = $3;
-
-        # improve html quality
-        if ( $Start ne '"' && $Start ne '\'' ) {
-            $Start .= '"';
-        }
-        if ( $End ne '"' && $End ne '\'' ) {
-            $End = '"' . $End;
-        }
-
-        # return new runtime url
-        $ContentID = $AttachmentLink . $AttachmentID . ';' . $SessionID;
-        $Start . $ContentID . $End;
-    }egxi;
-    }
 
     return %{ $Param{Data} };
 }
@@ -4075,8 +3502,10 @@ sub _BlockTemplatesReplace {
                         Layer => $BlockLayer{ $Block->{Name} },
                         Name  => $Block->{Name},
                         Data  => $Self->_Output(
-                            Template => $BlockTemplates{ $Block->{Name} },
-                            Data     => $Block->{Data},
+                            Template => "\n<!--start $Block->{Name}-->"
+                                . $BlockTemplates{ $Block->{Name} }
+                                . "<!--stop $Block->{Name} -->",
+                            Data => $Block->{Data},
                         ),
                     }
                 );
@@ -4119,62 +3548,72 @@ sub _Output {
         Template => \$TemplateString,
         TemplateFile => $Param{TemplateFile} || '',
     );
+    my $ID = 0;
+    my %LayerHash;
+    my $OldLayer = 1;
+    for my $Block (@BR) {
 
-    # check if a block structure exists
-    if ( scalar @BR ) {
-
-        # process structure
-        my $BlockStructure;
-        my $LastLayer = $BR[-1]->{Layer};
-        for my $Block (
-            reverse
-            {
-                Data  => $TemplateString,
-                Layer => 0,
-                Name  => 'TemplateString',
-            },
-            @BR
-            )
-        {
-
-            # process and remove substructure (if exists)
-            if (
-                $Block->{Layer} < $LastLayer
-                && ref $BlockStructure->{ $Block->{Layer} + 1 } eq 'HASH'
-                )
-            {
-                for my $SubLayer ( keys %{ $BlockStructure->{ $Block->{Layer} + 1 } } ) {
-                    my $SubLayerString = join '',
-                        @{ $BlockStructure->{ $Block->{Layer} + 1 }->{$SubLayer} };
-                    $Block->{Data}
-                        =~ s{ <!-- [ ] dtl:place_block: $SubLayer [ ] --> }{$SubLayerString}xms;
-                }
-                undef $BlockStructure->{ $Block->{Layer} + 1 };
-            }
-
-            # for safety - clean up old same-level structures
-            elsif ( $Block->{Layer} > $LastLayer ) {
-                undef $BlockStructure->{ $Block->{Layer} };
-            }
-
-            # add to structure
-            unshift @{ $BlockStructure->{ $Block->{Layer} }->{ $Block->{Name} } }, $Block->{Data};
-            $LastLayer = $Block->{Layer};
+        # reset layer counter if we switched on layer lower
+        if ( $Block->{Layer} > $OldLayer ) {
+            $LayerHash{ $Block->{Layer} } = 0;
         }
 
-        # assign result
-        $TemplateString = $BlockStructure->{0}->{TemplateString}->[0];
+        # count current layer
+        $LayerHash{ $Block->{Layer} }++;
 
+        # create current id (1:2:3)
+        undef $ID;
+        for ( my $i = 1; $i <= $Block->{Layer}; $i++ ) {
+            if ( defined $ID ) {
+                $ID .= ':';
+            }
+            if ( defined $LayerHash{$i} ) {
+                $ID .= $LayerHash{$i};
+            }
+        }
+
+        # add block counter to template blocks
+        if ( $Block->{Layer} == 1 ) {
+            $TemplateString =~ s{
+                ( <!--\s{0,1}dtl:place_block:$Block->{Name})(\s{0,1}-->)
+            }
+            {
+                "$1:".$LayerHash{$Block->{Layer}}.$2;
+            }segxm;
+        }
+
+        # add block counter to in block blocks
+        $Block->{Data} =~ s{
+            (<!--\s{0,1}dtl:place_block:.+?)(\s{0,1}-->)
+        }
+        {
+            "$1:$ID:-$2";
+        }segxm;
+
+        # count up place_block counter
+        $ID =~ s/^(.*:)(\d+)$/$1-/g;
+
+        my $NewID = '';
+        if ( $ID =~ /^(.*:)(\d+)$/ ) {
+            $NewID = $1 . ( $2 + 1 );
+        }
+        elsif ( $ID =~ /^(\d+)$/ ) {
+            $NewID = ( $1 + 1 );
+        }
+        elsif ( $ID =~ /^(.*:)-$/ ) {
+            $NewID = $ID;
+        }
+
+        $TemplateString =~ s{
+            <!--\sdtl:place_block:$Block->{Name}:$ID\s-->
+        }
+        {$Block->{Data}<!-- dtl:place_block:$Block->{Name}:$NewID -->}sxm;
+        $OldLayer = $Block->{Layer};
     }
 
     # remove empty blocks and block preferences
     if ( $Param{BlockReplace} ) {
-        my @TemplateBlocks = split '<!-- dtl:place_block:', $TemplateString;
-        $TemplateString = shift @TemplateBlocks || '';
-        for my $TemplateBlock (@TemplateBlocks) {
-            $TemplateBlock =~ s{ \A .+? [ ] --> }{}xms;
-            $TemplateString .= $TemplateBlock;
-        }
+        $TemplateString =~ s{ <!--\s{0,1}dtl:place_block:.+?\s{0,1}--> }{}sgxm;
     }
 
     # process template
@@ -4183,8 +3622,76 @@ sub _Output {
 
         #        # add missing new line (striped from split)
         #        $Line .= "\n";
+        if ( $Line =~ /<dtl/ ) {
 
-        # variable & env & config replacement
+            # do template set (<dtl set $Data{"adasd"} = "lala">)
+            # do system call (<dtl system-call $Data{"adasd"} = "uptime">)
+            $Line =~ s{
+                <dtl\W(system-call|set)\W\$(Data|Env|Config)\{\"(.+?)\"\}\W=\W\"(.+?)\">
+            }
+            {
+                my $Data = '';
+                if ($1 eq 'set') {
+                    $Data = $4;
+                }
+                else {
+                    open my $System, " $4 | " or print STDERR "Can't open $4: $!";
+                    $Data = do { local $/; <$System> };
+                    close $System;
+                }
+
+                $GlobalRef->{$2}->{$3} = $Data;
+                # output replace with nothing!
+                '';
+            }egx;
+
+            # do template if dynamic
+            $Line =~ s{
+                <dtl\Wif\W\(\$(Env|Data|Text|Config)\{\"(.*)\"\}\W(eq|ne|=~|!~)\W\"(.*)\"\)\W\{\W\$(Data|Env|Text)\{\"(.*)\"\}\W=\W\"(.*)\";\W\}>
+            }
+            {
+                my $Type    = $1 || '';
+                my $TypeKey = $2 || '';
+                my $Con     = $3 || '';
+                my $ConVal  = defined $4 ? $4 : '';
+                my $IsType  = $5 || '';
+                my $IsKey   = $6 || '';
+                my $IsValue = $7 || '';
+                # do ne actions
+                if ($Type eq 'Text') {
+                    my $Tmp = $Self->{LanguageObject}->Get($TypeKey) || '';
+                    if (eval '($Tmp '.$Con.' $ConVal)') {
+                        $GlobalRef->{$IsType}->{$IsKey} = $IsValue;
+                        # output replace with nothing!
+                        '';
+                    }
+                }
+                elsif ($Type eq 'Env' || $Type eq 'Data') {
+                    my $Tmp = $GlobalRef->{$Type}->{$TypeKey};
+                    if ( !defined $Tmp ) {
+                        $Tmp = '';
+                    }
+                    if (eval '($Tmp '.$Con.' $ConVal)') {
+                        $GlobalRef->{$IsType}->{$IsKey} = $IsValue;
+                        # output replace with nothing!
+                        '';
+                    }
+                    else {
+                        # output replace with nothing!
+                        '';
+                    }
+                }
+                elsif ($Type eq 'Config') {
+                    my $Tmp = $Self->{ConfigObject}->Get($TypeKey);
+                    if ( defined $Tmp && eval '($Tmp '.$Con.' $ConVal)') {
+                        $GlobalRef->{$IsType}->{$IsKey} = $IsValue;
+                        '';
+                    }
+                }
+            }egx;
+        }
+
+        # variable & env & config replacement (three times)
         my $Regexp = 1;
         while ($Regexp) {
             $Regexp = $Line =~ s{
@@ -4272,7 +3779,6 @@ sub _Output {
                 elsif ($1 eq 'Include') {
                     $Self->Output(
                         %Param,
-                        Include => 1,
                         TemplateFile => $2,
                     );
                 }
@@ -4299,9 +3805,9 @@ create the option hash
     );
 
     my $OptionRef = {
-        Sort         => 'numeric',
+        Sort => 'numeric',
         PossibleNone => 0,
-        Max          => 100,
+        Max => 100,
     }
 
 =cut
@@ -4309,8 +3815,9 @@ create the option hash
 sub _BuildSelectionOptionRefCreate {
     my ( $Self, %Param ) = @_;
 
-    # set SelectedID option
     my $OptionRef = {};
+
+    # set SelectedID option
     if ( defined $Param{SelectedID} ) {
         if ( ref $Param{SelectedID} eq 'ARRAY' ) {
             for my $Key ( @{ $Param{SelectedID} } ) {
@@ -4418,9 +3925,9 @@ create the attribute hash
     );
 
     my $AttributeRef = {
-        name     => 'TheName',
+        name => 'TheName',
         multiple => undef,
-        size     => 5,
+        size => 5,
     }
 
 =cut
@@ -4780,8 +4287,9 @@ create the html string
 sub _BuildSelectionOutput {
     my ( $Self, %Param ) = @_;
 
-    # start generation, if AttributeRef and DataRef was found
     my $String;
+
+    # start generation, if AttributeRef and DataRef was found
     if ( $Param{AttributeRef} && $Param{DataRef} ) {
 
         # generate <select> row
@@ -4813,11 +4321,7 @@ sub _BuildSelectionOutput {
             elsif ( $Row->{Disabled} ) {
                 $SelectedDisabled = ' disabled="disabled"';
             }
-            my $OptionTitle = '';
-            if ( $Param{OptionTitle} ) {
-                $OptionTitle = ' title="' . $Value . '"';
-            }
-            $String .= "  <option value=\"$Key\"$SelectedDisabled$OptionTitle>$Value</option>\n";
+            $String .= "  <option value=\"$Key\"$SelectedDisabled>$Value</option>\n";
         }
         $String .= '</select>';
     }
@@ -4835,58 +4339,7 @@ sub _DisableBannerCheck {
                 ^ X-Powered-By: .+? Open \s Ticket \s Request \s System \s \(http .+? \)$ \n
             }{}smx;
 
-    return 1;
-}
-
-=item _RemoveScriptTags()
-
-This function will remove the surrounding <script> tags of a
-piece of JavaScript code, if they are present, and return the result.
-
-    my $CodeContent = $LayoutObject->_RemoveScriptTags(Code => $SomeCode);
-
-=cut
-
-sub _RemoveScriptTags {
-    my ( $Self, %Param ) = @_;
-
-    my $Code = $Param{Code} || '';
-
-    if ( $Code =~ m/<script/ ) {
-
-        # cut out dtl block comments of already replaced dtl blocks
-        $Code =~ s{
-            ^
-            <!--
-            \/?
-            \w+
-            -->
-            \r?\n
-        }{}smxg;
-
-        # cut out opening script tags
-        $Code =~ s{
-            <script[^>]+>
-            (?:\s*<!--)?
-            (?:\s*//\s*<!\[CDATA\[)?
-        }
-        {}smxg;
-
-        # cut out closing script tags
-        $Code =~ s{
-            (?:-->\s*)?
-            (?://\s*\]\]>\s*)?
-            </script>
-        }{}smxg;
-
-    }
-    return $Code;
-}
-
-#COMPAT: to 3.0.x and lower (can be removed later)
-sub TransfromDateSelection {
-    my $Self = shift;
-    return $Self->TransformDateSelection(@_);
+    return 1
 }
 
 1;
@@ -4897,14 +4350,14 @@ sub TransfromDateSelection {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.380 $ $Date: 2012/01/23 13:45:30 $
+$Revision: 1.218.2.1 $ $Date: 2010/04/01 18:11:54 $
 
 =cut
