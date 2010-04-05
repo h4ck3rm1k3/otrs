@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 # --
-# bin/otrs.setPassword.pl - Changes or Sets password for a user
+# bin/otrs.AddGroup.pl - add new system groups
 # Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
 # --
-# $Id: otrs.setPassword.pl,v 1.1 2009/11/03 16:13:38 mn Exp $
+# $Id: otrs.AddGroup.pl,v 1.1 2010/04/05 10:12:20 mb Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -24,61 +24,56 @@
 use strict;
 use warnings;
 
-# use ../ as lib location
 use File::Basename;
 use FindBin qw($RealBin);
 use lib dirname($RealBin);
 use lib dirname($RealBin) . "/Kernel/cpan-lib";
 
-use Getopt::Std;
 use Kernel::Config;
 use Kernel::System::Encode;
 use Kernel::System::Log;
 use Kernel::System::DB;
-use Kernel::System::User;
+use Kernel::System::Group;
 use Kernel::System::Main;
-use Kernel::System::Time;
 
-my $VERSION = qw($Revision: 1.1 $) [1];
+my %Param;
+my %CommonObject;
+my %opts;
 
-my %Opts = ();
-getopt( 'h', \%Opts );
-if ( $Opts{h} ) {
-    print "otrs.setPassword <Revision $VERSION> - set a new agent password\n";
-    print "Copyright (C) 2001-2009 OTRS AG, http://otrs.org/\n";
-    print "usage: otrs.setPassword user password\n";
+use Getopt::Std;
+getopts( 'c:n:h', \%opts );
+
+if ( $opts{h} ) {
+    print STDERR "Usage: bin/otrs.AddGroup [-c <comment>] -n <groupname>\n";
+    exit;
+}
+
+if ( !$opts{n} ) {
+    print STDERR "ERROR: Need -n groupname\n";
     exit 1;
 }
 
 # create common objects
-my %CommonObject = ();
-$CommonObject{ConfigObject} = Kernel::Config->new(%CommonObject);
+$CommonObject{ConfigObject} = Kernel::Config->new();
 $CommonObject{EncodeObject} = Kernel::System::Encode->new(%CommonObject);
-$CommonObject{LogObject}    = Kernel::System::Log->new(
-    %CommonObject,
-    LogPrefix => 'otrs.setPassword',
-);
+$CommonObject{LogObject}  = Kernel::System::Log->new( %CommonObject, LogPrefix => 'otrs.AddGroup' );
 $CommonObject{MainObject} = Kernel::System::Main->new(%CommonObject);
-$CommonObject{TimeObject} = Kernel::System::Time->new(%CommonObject);
 $CommonObject{DBObject}   = Kernel::System::DB->new(%CommonObject);
-$CommonObject{UserObject} = Kernel::System::User->new(%CommonObject);
+$CommonObject{GroupObject} = Kernel::System::Group->new(%CommonObject);
 
-my $User = shift;
-my $Pw   = shift;
+# user id of the person adding the record
+$Param{UserID} = '1';
 
-if ( !$User ) {
-    print STDERR "ERROR: need user ARG[1]\n";
-    exit 1;
+# Validrecord
+$Param{ValidID} = '1';
+$Param{Comment} = $opts{c} || '';
+$Param{Name}    = $opts{n} || '';
+
+if ( my $GID = $CommonObject{GroupObject}->GroupAdd(%Param) ) {
+    print "Group '$opts{n}' added. Group id is '$GID'\n";
 }
-if ( !$Pw ) {
-    print STDERR "ERROR: need password ARG[1]\n";
-    exit 1;
+else {
+    print STDERR "ERROR: Can't add group\n";
 }
 
-# user id of the person Changing the record
-$CommonObject{UserObject}->SetPassword(
-    UserLogin => $User,
-    PW        => $Pw,
-);
-
-exit 0;
+exit(0);
