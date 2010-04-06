@@ -1,26 +1,44 @@
 # --
 # Encode.t - Encode tests
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Encode.t,v 1.9 2011/08/12 09:06:15 mg Exp $
+# $Id: Encode.t,v 1.3.4.1 2010/04/06 04:03:13 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-use strict;
-use warnings;
-use vars (qw($Self));
-
-use Kernel::Config;
-
-# create local objects
-my $ConfigObject = Kernel::Config->new();
-
-my $EncodeObject = Kernel::System::Encode->new(
-    ConfigObject => $ConfigObject,
+# EncodeInternalUsed tests
+my @Tests = (
+    {
+        Name    => 'EncodeInternalUsed()',
+        Charset => 'UTF-8',
+        Result  => 'utf-8',
+    },
+    {
+        Name    => 'EncodeInternalUsed()',
+        Charset => 'UTF8',
+        Result  => 'utf-8',
+    },
+    {
+        Name    => 'EncodeInternalUsed()',
+        Charset => 'utF8',
+        Result  => 'utf-8',
+    },
 );
+for my $Test (@Tests) {
+    $Self->{ConfigObject}->Set(
+        Key   => 'DefaultCharset',
+        Value => $Test->{Charset},
+    );
+    my $Charset = $Self->{EncodeObject}->EncodeInternalUsed();
+    $Self->Is(
+        $Charset,
+        $Test->{Result},
+        $Test->{Name} . " ($Test->{Charset})",
+    );
+}
 
 # Convert tests
 {
@@ -85,7 +103,7 @@ my $EncodeObject = Kernel::System::Encode->new(
         },
     );
     for my $Test (@Tests) {
-        my $Result = $EncodeObject->Convert(
+        my $Result = $Self->{EncodeObject}->Convert(
             Text  => $Test->{Input},
             From  => $Test->{InputCharset},
             To    => $Test->{ResultCharset},
@@ -95,10 +113,14 @@ my $EncodeObject = Kernel::System::Encode->new(
         $Self->True(
             $IsUTF8 eq $Test->{UTF8},
             $Test->{Name} . " is_utf8",
+
+            #$Test->{Name} . " is_utf8 ($Test->{Input})",
         );
         $Self->True(
             $Result eq $Test->{Result},
             $Test->{Name},
+
+            #$Test->{Name} . " ($Test->{Input})",
         );
     }
 }
