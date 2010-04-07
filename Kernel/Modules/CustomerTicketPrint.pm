@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/CustomerTicketPrint.pm - print layout for customer interface
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerTicketPrint.pm,v 1.48 2011/12/12 10:52:00 mg Exp $
+# $Id: CustomerTicketPrint.pm,v 1.30.2.1 2010/04/07 21:20:55 dz Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,12 +17,9 @@ use warnings;
 use Kernel::System::CustomerUser;
 use Kernel::System::User;
 use Kernel::System::PDF;
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.48 $) [1];
+$VERSION = qw($Revision: 1.30.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -32,27 +29,18 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for my $Needed (
+    for (
         qw(ParamObject DBObject TicketObject LayoutObject LogObject QueueObject ConfigObject MainObject)
         )
     {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+        if ( !$Self->{$_} ) {
+            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
         }
     }
 
     $Self->{CustomerUserObject} = Kernel::System::CustomerUser->new(%Param);
     $Self->{UserObject}         = Kernel::System::User->new(%Param);
     $Self->{PDFObject}          = Kernel::System::PDF->new(%Param);
-    $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new(%Param);
-    $Self->{BackendObject}      = Kernel::System::DynamicField::Backend->new(%Param);
-
-    # get the configuration to check for printable objects
-    $Self->{Config} = $Self->{ConfigObject}->Get("Ticket::Frontend::CustomerTicketZoom");
-
-    # get dynamic field config for frontend module
-    $Self->{DynamicFieldFilter}
-        = $Self->{ConfigObject}->Get("Ticket::Frontend::CustomerTicketPrint")->{DynamicField};
 
     return $Self;
 }
@@ -65,16 +53,16 @@ sub Run {
 
     # check needed stuff
     if ( !$Self->{TicketID} ) {
-        return $Self->{LayoutObject}->ErrorScreen( Message => 'Need TicketID!' );
+        return $Self->{LayoutObject}->Error( Message => 'Need TicketID!' );
     }
     $QueueID = $Self->{TicketObject}->TicketQueueID( TicketID => $Self->{TicketID} );
     if ( !$QueueID ) {
-        return $Self->{LayoutObject}->ErrorScreen( Message => 'Need TicketID!' );
+        return $Self->{LayoutObject}->Error( Message => 'Need TicketID!' );
     }
 
     # check permissions
     if (
-        !$Self->{TicketObject}->TicketCustomerPermission(
+        !$Self->{TicketObject}->CustomerPermission(
             Type     => 'ro',
             TicketID => $Self->{TicketID},
             UserID   => $Self->{UserID}
@@ -87,21 +75,19 @@ sub Run {
     }
 
     # get content
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Self->{TicketID},
-        DynamicFields => 0,
-    );
+    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Self->{TicketID} );
     my @CustomerArticleTypes = $Self->{TicketObject}->ArticleTypeList( Type => 'Customer' );
     my @ArticleBox = $Self->{TicketObject}->ArticleContentIndex(
         TicketID                   => $Self->{TicketID},
         ArticleType                => \@CustomerArticleTypes,
         StripPlainBodyAsAttachment => 1,
-        UserID                     => $Self->{UserID},
-        DynamicFields              => 0,
+    );
+    $Ticket{TicketTimeUnits} = $Self->{TicketObject}->TicketAccountedTimeGet(
+        TicketID => $Ticket{TicketID},
     );
 
     # customer info
-    my %CustomerData;
+    my %CustomerData = ();
     if ( $Ticket{CustomerUserID} ) {
         %CustomerData = $Self->{CustomerUserObject}->CustomerUserDataGet(
             User => $Ticket{CustomerUserID},
@@ -206,8 +192,14 @@ sub Run {
             TicketData => \%Ticket,
         );
 
-        # output ticket dynamic fields
-        $Self->_PDFOutputTicketDynamicFields(
+        # output ticket freetext fields
+        $Self->_PDFOutputTicketFreeText(
+            PageData   => \%Page,
+            TicketData => \%Ticket,
+        );
+
+        # output ticket freetime fields
+        $Self->_PDFOutputTicketFreeTime(
             PageData   => \%Page,
             TicketData => \%Ticket,
         );
@@ -279,9 +271,9 @@ sub _PDFOutputTicketInfos {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(PageData TicketData)) {
-        if ( !defined( $Param{$Needed} ) ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Needed!" );
+    for (qw(PageData TicketData)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
@@ -289,36 +281,31 @@ sub _PDFOutputTicketInfos {
     my %Page   = %{ $Param{PageData} };
 
     # create left table
-    my $TableLeft;
-
-    # add ticket data, respecting AttributesView configuration
-    for my $Attribute (qw(State Priority Queue Owner)) {
-        if ( $Self->{Config}->{AttributesView}->{$Attribute} ) {
-            my $Row = {
-                Key   => $Self->{LayoutObject}->{LanguageObject}->Get($Attribute) . ':',
-                Value => $Self->{LayoutObject}->{LanguageObject}->Get( $Ticket{$Attribute} )
-                    || $Ticket{$Attribute},
-            };
-            push( @{$TableLeft}, $Row );
-        }
-    }
-
-    # add ticket responsible
-    if (
-        $Self->{ConfigObject}->Get('Ticket::Responsible')
-        &&
-        $Self->{Config}->{AttributesView}->{Responsible}
-        )
-    {
-        my $Row = {
-            Key   => $Self->{LayoutObject}->{LanguageObject}->Get('Responsible') . ':',
-            Value => $Ticket{Responsible},
-        };
-        push( @{$TableLeft}, $Row );
-    }
+    my $TableLeft = [
+        {
+            Key   => $Self->{LayoutObject}->{LanguageObject}->Get('State') . ':',
+            Value => $Self->{LayoutObject}->{LanguageObject}->Get( $Ticket{State} ),
+        },
+        {
+            Key   => $Self->{LayoutObject}->{LanguageObject}->Get('Priority') . ':',
+            Value => $Self->{LayoutObject}->{LanguageObject}->Get( $Ticket{Priority} ),
+        },
+        {
+            Key   => $Self->{LayoutObject}->{LanguageObject}->Get('Queue') . ':',
+            Value => $Ticket{Queue},
+        },
+        {
+            Key   => $Self->{LayoutObject}->{LanguageObject}->Get('Lock') . ':',
+            Value => $Self->{LayoutObject}->{LanguageObject}->Get( $Ticket{Lock} ),
+        },
+        {
+            Key   => $Self->{LayoutObject}->{LanguageObject}->Get('CustomerID') . ':',
+            Value => $Ticket{CustomerID},
+        },
+    ];
 
     # add type row, if feature is enabled
-    if ( $Self->{ConfigObject}->Get('Ticket::Type') && $Self->{Config}->{AttributesView}->{Type} ) {
+    if ( $Self->{ConfigObject}->Get('Ticket::Type') ) {
         my $Row = {
             Key   => $Self->{LayoutObject}->{LanguageObject}->Get('Type') . ':',
             Value => $Ticket{Type},
@@ -326,22 +313,13 @@ sub _PDFOutputTicketInfos {
         push( @{$TableLeft}, $Row );
     }
 
-    # add service row, if feature is enabled
-    if (
-        $Self->{ConfigObject}->Get('Ticket::Service')
-        && $Self->{Config}->{AttributesView}->{Service}
-        )
-    {
+    # add service and sla row, if feature is enabled
+    if ( $Self->{ConfigObject}->Get('Ticket::Service') ) {
         my $RowService = {
             Key => $Self->{LayoutObject}->{LanguageObject}->Get('Service') . ':',
             Value => $Ticket{Service} || '-',
         };
         push( @{$TableLeft}, $RowService );
-    }
-
-    # add sla row, if feature is enabled
-    if ( $Self->{ConfigObject}->Get('Ticket::Service') && $Self->{Config}->{AttributesView}->{SLA} )
-    {
         my $RowSLA = {
             Key => $Self->{LayoutObject}->{LanguageObject}->Get('SLA') . ':',
             Value => $Ticket{SLA} || '-',
@@ -352,10 +330,6 @@ sub _PDFOutputTicketInfos {
     # create right table
     my $TableRight = [
         {
-            Key   => $Self->{LayoutObject}->{LanguageObject}->Get('CustomerID') . ':',
-            Value => $Ticket{CustomerID},
-        },
-        {
             Key   => $Self->{LayoutObject}->{LanguageObject}->Get('Age') . ':',
             Value => $Self->{LayoutObject}->{LanguageObject}->Get( $Ticket{Age} ),
         },
@@ -365,6 +339,14 @@ sub _PDFOutputTicketInfos {
                 Template => '$TimeLong{"$Data{"Created"}"}',
                 Data     => \%Ticket,
             ),
+        },
+        {
+            Key   => $Self->{LayoutObject}->{LanguageObject}->Get('Accounted time') . ':',
+            Value => $Ticket{TicketTimeUnits},
+        },
+        {
+            Key   => $Self->{LayoutObject}->{LanguageObject}->Get('Pending till') . ':',
+            Value => $Ticket{PendingUntil},
         },
     ];
 
@@ -421,13 +403,13 @@ sub _PDFOutputTicketInfos {
     return 1;
 }
 
-sub _PDFOutputTicketDynamicFields {
+sub _PDFOutputTicketFreeText {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(PageData TicketData)) {
-        if ( !defined( $Param{$Needed} ) ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Needed!" );
+    for (qw(PageData TicketData)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
@@ -438,47 +420,21 @@ sub _PDFOutputTicketDynamicFields {
     my %TableParam;
     my $Row = 0;
 
-    # get the dynamic fields for ticket object
-    my $DynamicField = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid       => 1,
-        ObjectType  => ['Ticket'],
-        FieldFilter => $Self->{DynamicFieldFilter} || {},
-    );
-
     # generate table
-    # cycle trough the activated Dynamic Fields for ticket object
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{$DynamicField} ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+    for ( 1 .. 16 ) {
+        if ( $Ticket{"TicketFreeText$_"} ne "" ) {
+            $TableParam{CellData}[$Row][0]{Content} = $Ticket{"TicketFreeKey$_"} . ':';
+            $TableParam{CellData}[$Row][0]{Font}    = 'ProportionalBold';
+            $TableParam{CellData}[$Row][1]{Content} = $Ticket{"TicketFreeText$_"};
 
-        my $Value = $Self->{BackendObject}->ValueGet(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            ObjectID           => $Ticket{TicketID},
-        );
-
-        next DYNAMICFIELD if !$Value;
-        next DYNAMICFIELD if $Value eq "";
-
-        # get print string for this dynamic field
-        my $ValueStrg = $Self->{BackendObject}->DisplayValueRender(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            Value              => $Value,
-            HTMLOutput         => 0,
-            LayoutObject       => $Self->{LayoutObject},
-        );
-        $TableParam{CellData}[$Row][0]{Content}
-            = $Self->{LayoutObject}->{LanguageObject}->Get( $DynamicFieldConfig->{Label} ) . ':';
-        $TableParam{CellData}[$Row][0]{Font}    = 'ProportionalBold';
-        $TableParam{CellData}[$Row][1]{Content} = $ValueStrg->{Value};
-
-        $Row++;
-        $Output = 1;
+            $Row++;
+            $Output = 1;
+        }
     }
-
     $TableParam{ColumnData}[0]{Width} = 80;
     $TableParam{ColumnData}[1]{Width} = 431;
 
-    # output ticket dynamic fields
+    # output ticket freetext
     if ($Output) {
 
         # set new position
@@ -489,7 +445,99 @@ sub _PDFOutputTicketDynamicFields {
 
         # output headline
         $Self->{PDFObject}->Text(
-            Text     => $Self->{LayoutObject}->{LanguageObject}->Get('Ticket Dynamic Fields'),
+            Text     => $Self->{LayoutObject}->{LanguageObject}->Get('TicketFreeText'),
+            Height   => 7,
+            Type     => 'Cut',
+            Font     => 'ProportionalBoldItalic',
+            FontSize => 7,
+            Color    => '#666666',
+        );
+
+        # set new position
+        $Self->{PDFObject}->PositionSet(
+            Move => 'relativ',
+            Y    => -4,
+        );
+
+        # table params
+        $TableParam{Type}            = 'Cut';
+        $TableParam{Border}          = 0;
+        $TableParam{FontSize}        = 6;
+        $TableParam{BackgroundColor} = '#DDDDDD';
+        $TableParam{Padding}         = 1;
+        $TableParam{PaddingTop}      = 3;
+        $TableParam{PaddingBottom}   = 3;
+
+        # output table
+        for ( $Page{PageCount} .. $Page{MaxPages} ) {
+
+            # output table (or a fragment of it)
+            %TableParam = $Self->{PDFObject}->Table( %TableParam, );
+
+            # stop output or output next page
+            if ( $TableParam{State} ) {
+                last;
+            }
+            else {
+                $Self->{PDFObject}->PageNew(
+                    %Page, FooterRight => $Page{PageText} . ' ' . $Page{PageCount},
+                );
+                $Page{PageCount}++;
+            }
+        }
+    }
+    return 1;
+}
+
+sub _PDFOutputTicketFreeTime {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(PageData TicketData)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
+    my $Output = 0;
+    my %Ticket = %{ $Param{TicketData} };
+    my %Page   = %{ $Param{PageData} };
+
+    my %TableParam;
+    my $Row = 0;
+
+    # generate table
+    for ( 1 .. 6 ) {
+        if ( $Ticket{"TicketFreeTime$_"} ) {
+            my $TicketFreeTimeKey = $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $_ ) || '';
+            my $TicketFreeTime = $Ticket{"TicketFreeTime$_"};
+
+            $TableParam{CellData}[$Row][0]{Content} = $TicketFreeTimeKey . ':';
+            $TableParam{CellData}[$Row][0]{Font}    = 'ProportionalBold';
+            $TableParam{CellData}[$Row][1]{Content} = $Self->{LayoutObject}->Output(
+                Template => '$TimeLong{"$Data{"TicketFreeTime"}"}',
+                Data => { TicketFreeTime => $TicketFreeTime, },
+            );
+
+            $Row++;
+            $Output = 1;
+        }
+    }
+    $TableParam{ColumnData}[0]{Width} = 80;
+    $TableParam{ColumnData}[1]{Width} = 431;
+
+    # output ticket freetime
+    if ($Output) {
+
+        # set new position
+        $Self->{PDFObject}->PositionSet(
+            Move => 'relativ',
+            Y    => -15,
+        );
+
+        # output headline
+        $Self->{PDFObject}->Text(
+            Text     => $Self->{LayoutObject}->{LanguageObject}->Get('TicketFreeTime'),
             Height   => 7,
             Type     => 'Cut',
             Font     => 'ProportionalBoldItalic',
@@ -537,9 +585,9 @@ sub _PDFOutputCustomerInfos {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(PageData CustomerData)) {
-        if ( !defined( $Param{$Needed} ) ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Needed!" );
+    for (qw(PageData CustomerData)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
@@ -629,9 +677,9 @@ sub _PDFOutputArticles {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(PageData ArticleData)) {
-        if ( !defined( $Param{$Needed} ) ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Needed!" );
+    for (qw(PageData ArticleData)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
@@ -697,12 +745,12 @@ sub _PDFOutputArticles {
             Y    => 2,
         );
 
-        for my $Parameter (qw(From To Cc Subject)) {
-            if ( $Article{$Parameter} ) {
+        for (qw(From To Cc Subject)) {
+            if ( $Article{$_} ) {
                 $TableParam1{CellData}[$Row][0]{Content}
-                    = $Self->{LayoutObject}->{LanguageObject}->Get($Parameter) . ':';
+                    = $Self->{LayoutObject}->{LanguageObject}->Get($_) . ':';
                 $TableParam1{CellData}[$Row][0]{Font}    = 'ProportionalBold';
-                $TableParam1{CellData}[$Row][1]{Content} = $Article{$Parameter};
+                $TableParam1{CellData}[$Row][1]{Content} = $Article{$_};
                 $Row++;
             }
         }
@@ -715,51 +763,22 @@ sub _PDFOutputArticles {
         );
         $TableParam1{CellData}[$Row][1]{Content}
             .= ' ' . $Self->{LayoutObject}->{LanguageObject}->Get('by');
-        $TableParam1{CellData}[$Row][1]{Content}
-            .= ' ' . $Self->{LayoutObject}->{LanguageObject}->Get( $Article{SenderType} );
+        $TableParam1{CellData}[$Row][1]{Content} .= ' ' . $Article{SenderType};
         $Row++;
+        for ( 1 .. 3 ) {
 
-        # get the dynamic fields for ticket object
-        my $DynamicField = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-            Valid       => 1,
-            ObjectType  => ['Article'],
-            FieldFilter => $Self->{DynamicFieldFilter} || {},
-        );
-
-        # generate table
-        # cycle trough the activated Dynamic Fields for ticket object
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{$DynamicField} ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-            my $Value = $Self->{BackendObject}->ValueGet(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                ObjectID           => $Article{ArticleID},
-            );
-
-            next DYNAMICFIELD if !$Value;
-            next DYNAMICFIELD if $Value eq "";
-
-            # get print string for this dynamic field
-            my $ValueStrg = $Self->{BackendObject}->DisplayValueRender(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                Value              => $Value,
-                HTMLOutput         => 0,
-                LayoutObject       => $Self->{LayoutObject},
-            );
-            $TableParam1{CellData}[$Row][0]{Content}
-                = $Self->{LayoutObject}->{LanguageObject}->Get( $DynamicFieldConfig->{Label} )
-                . ':';
-            $TableParam1{CellData}[$Row][0]{Font}    = 'ProportionalBold';
-            $TableParam1{CellData}[$Row][1]{Content} = $ValueStrg->{Value};
-            $Row++;
+            if ( $Article{"ArticleFreeText$_"} ) {
+                $TableParam1{CellData}[$Row][0]{Content} = $Article{"ArticleFreeKey$_"} . ':';
+                $TableParam1{CellData}[$Row][0]{Font}    = 'ProportionalBold';
+                $TableParam1{CellData}[$Row][1]{Content} = $Article{"ArticleFreeText$_"};
+                $Row++;
+            }
         }
 
         $TableParam1{CellData}[$Row][0]{Content}
             = $Self->{LayoutObject}->{LanguageObject}->Get('Type') . ':';
-        $TableParam1{CellData}[$Row][0]{Font} = 'ProportionalBold';
-        $TableParam1{CellData}[$Row][1]{Content}
-            = $Self->{LayoutObject}->{LanguageObject}->Get( $Article{ArticleType} );
+        $TableParam1{CellData}[$Row][0]{Font}    = 'ProportionalBold';
+        $TableParam1{CellData}[$Row][1]{Content} = $Article{ArticleType};
         $Row++;
 
         if ($Attachments) {
@@ -841,140 +860,61 @@ sub _PDFOutputArticles {
 sub _HTMLMask {
     my ( $Self, %Param ) = @_;
 
-    # output state
-    if ( $Self->{Config}->{AttributesView}->{State} ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'TicketState',
-            Data => { %Param, },
-        );
-    }
-
-    # output priority
-    if ( $Self->{Config}->{AttributesView}->{Priority} ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'TicketPriority',
-            Data => { %Param, },
-        );
-    }
-
-    # output queue
-    if ( $Self->{Config}->{AttributesView}->{Queue} ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'TicketQueue',
-            Data => { %Param, },
-        );
-    }
-
     # output type, if feature is enabled
-    if ( $Self->{ConfigObject}->Get('Ticket::Type') && $Self->{Config}->{AttributesView}->{Type} ) {
+    if ( $Self->{ConfigObject}->Get('Ticket::Type') ) {
         $Self->{LayoutObject}->Block(
             Name => 'TicketType',
             Data => { %Param, },
         );
     }
 
-    # output service, if feature is enabled
-    if (
-        $Self->{ConfigObject}->Get('Ticket::Service')
-        && $Self->{Config}->{AttributesView}->{Service}
-        )
-    {
+    # output service and sla, if feature is enabled
+    if ( $Self->{ConfigObject}->Get('Ticket::Service') ) {
         $Self->{LayoutObject}->Block(
             Name => 'TicketService',
             Data => {
                 Service => $Param{Service} || '-',
+                SLA     => $Param{SLA}     || '-',
             },
         );
     }
 
-    # output sla, if feature is enabled
-    if ( $Self->{ConfigObject}->Get('Ticket::Service') && $Self->{Config}->{AttributesView}->{SLA} )
-    {
-        $Self->{LayoutObject}->Block(
-            Name => 'TicketSLA',
-            Data => {
-                SLA => $Param{SLA} || '-',
-            },
-        );
-    }
-
-    # output owner
-    if ( $Self->{Config}->{AttributesView}->{Owner} ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'TicketOwner',
-            Data => { %Param, },
-        );
-    }
-
-    # output responsible
-    if ( $Self->{Config}->{AttributesView}->{Responsible} ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'TicketResponsible',
-            Data => { %Param, },
-        );
-    }
-
-    # get the dynamic fields for ticket object
-    my $DynamicField = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid       => 1,
-        ObjectType  => ['Ticket'],
-        FieldFilter => $Self->{DynamicFieldFilter} || {},
-    );
-
-    # flag to control the header print
-    my $HeaderFlag = 0;
-
-    # cycle trough the activated Dynamic Fields for ticket object
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{$DynamicField} ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-        my $Value = $Self->{BackendObject}->ValueGet(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            ObjectID           => $Param{TicketID},
-        );
-
-        next DYNAMICFIELD if !$Value;
-        next DYNAMICFIELD if $Value eq "";
-
-        # get print string for this dynamic field
-        my $ValueStrg = $Self->{BackendObject}->DisplayValueRender(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            Value              => $Value,
-            HTMLOutput         => 1,
-            ValueMaxChars      => 20,
-            LayoutObject       => $Self->{LayoutObject},
-        );
-
-        # display the header only once
-        if ( !$HeaderFlag ) {
+    # ticket free text
+    for my $Count ( 1 .. 16 ) {
+        if ( $Param{ 'TicketFreeText' . $Count } ) {
             $Self->{LayoutObject}->Block(
-                Name => 'TicketDynamicFieldHeader',
-                Data => {},
+                Name => 'TicketFreeText' . $Count,
+                Data => {%Param},
             );
-            $HeaderFlag = 1;
+            $Self->{LayoutObject}->Block(
+                Name => 'TicketFreeText',
+                Data => {
+                    %Param,
+                    TicketFreeKey  => $Param{ 'TicketFreeKey' . $Count },
+                    TicketFreeText => $Param{ 'TicketFreeText' . $Count },
+                    Count          => $Count,
+                },
+            );
         }
+    }
 
-        my $Label = $DynamicFieldConfig->{Label};
-
-        $Self->{LayoutObject}->Block(
-            Name => 'TicketDynamicField',
-            Data => {
-                Label => $Label,
-                Value => $ValueStrg->{Value},
-                Title => $ValueStrg->{Title},
-            },
-        );
-
-        # example of dynamic fields order customization
-        $Self->{LayoutObject}->Block(
-            Name => 'TicketDynamicField_' . $DynamicFieldConfig->{Name},
-            Data => {
-                Label => $Label,
-                Value => $ValueStrg->{Value},
-                Title => $ValueStrg->{Title},
-            },
-        );
+    # ticket free time
+    for my $Count ( 1 .. 6 ) {
+        if ( $Param{ 'TicketFreeTime' . $Count } ) {
+            $Self->{LayoutObject}->Block(
+                Name => 'TicketFreeTime' . $Count,
+                Data => {%Param},
+            );
+            $Self->{LayoutObject}->Block(
+                Name => 'TicketFreeTime',
+                Data => {
+                    %Param,
+                    TicketFreeTimeKey => $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Count ),
+                    TicketFreeTime    => $Param{ 'TicketFreeTime' . $Count },
+                    Count             => $Count,
+                },
+            );
+        }
     }
 
     # build article stuff
@@ -1033,67 +973,43 @@ sub _HTMLMask {
         );
 
         # do some strips && quoting
-        for my $Parameter (qw(From To Cc Subject)) {
-            if ( $Article{$Parameter} ) {
+        for (qw(From To Cc Subject)) {
+            if ( $Article{$_} ) {
                 $Self->{LayoutObject}->Block(
                     Name => 'Row',
                     Data => {
-                        Key   => $Parameter,
-                        Value => $Article{$Parameter},
+                        Key   => $_,
+                        Value => $Article{$_},
                     },
                 );
             }
         }
 
-        # get the dynamic fields for ticket object
-        my $DynamicField = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-            Valid       => 1,
-            ObjectType  => ['Article'],
-            FieldFilter => $Self->{DynamicFieldFilter} || {},
-        );
-
-        # cycle trough the activated Dynamic Fields for ticket object
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{$DynamicField} ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-            my $Value = $Self->{BackendObject}->ValueGet(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                ObjectID           => $Article{ArticleID},
+        # show accounted article time
+        if ( $Self->{ConfigObject}->Get('Ticket::ZoomTimeDisplay') ) {
+            my $ArticleTime = $Self->{TicketObject}->ArticleAccountedTimeGet(
+                ArticleID => $Article{ArticleID},
             );
-
-            next DYNAMICFIELD if !$Value;
-            next DYNAMICFIELD if $Value eq "";
-
-            # get print string for this dynamic field
-            my $ValueStrg = $Self->{BackendObject}->DisplayValueRender(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                Value              => $Value,
-                HTMLOutput         => 1,
-                ValueMaxChars      => 20,
-                LayoutObject       => $Self->{LayoutObject},
-            );
-
-            my $Label = $DynamicFieldConfig->{Label};
-
             $Self->{LayoutObject}->Block(
-                Name => 'ArticleDynamicField',
+                Name => 'Row',
                 Data => {
-                    Label => $Label,
-                    Value => $ValueStrg->{Value},
-                    Title => $ValueStrg->{Title},
+                    Key   => 'Time',
+                    Value => $ArticleTime,
                 },
             );
+        }
 
-            # example of dynamic fields order customization
-            #            $Self->{LayoutObject}->Block(
-            #                Name => 'ArticleDynamicField_' . $DynamicFieldConfig->{Name},
-            #                Data => {
-            #                    Label => $Label,
-            #                    Value => $ValueStrg->{Value},
-            #                    Title => $ValueStrg->{Title},
-            #                },
-            #            );
+        # show article free text
+        for ( 1 .. 3 ) {
+            if ( $Article{"ArticleFreeText$_"} ) {
+                $Self->{LayoutObject}->Block(
+                    Name => 'ArticleFreeText',
+                    Data => {
+                        Key   => $Article{"ArticleFreeKey$_"},
+                        Value => $Article{"ArticleFreeText$_"},
+                    },
+                );
+            }
         }
     }
 
