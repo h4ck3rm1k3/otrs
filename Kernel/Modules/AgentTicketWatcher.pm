@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AgentTicketWatcher.pm - a ticketwatcher module
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketWatcher.pm,v 1.18 2012/01/24 00:08:45 cr Exp $
+# $Id: AgentTicketWatcher.pm,v 1.11.2.1 2010/04/12 23:08:30 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -13,10 +13,9 @@ package Kernel::Modules::AgentTicketWatcher;
 
 use strict;
 use warnings;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.18 $) [1];
+$VERSION = qw($Revision: 1.11.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -39,48 +38,28 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     # ------------------------------------------------------------ #
-    # check if feature is active
+    # check if feature is aktive
     # ------------------------------------------------------------ #
     if ( !$Self->{ConfigObject}->Get('Ticket::Watcher') ) {
-        return $Self->{LayoutObject}->ErrorScreen( Message => 'Feature is not active', );
+        return $Self->{LayoutObject}->ErrorScreen( Message => 'Feature is not aktive', );
     }
 
     # ------------------------------------------------------------ #
     # check access
     # ------------------------------------------------------------ #
-    my @Groups;
+    my @Groups = ();
     if ( $Self->{ConfigObject}->Get('Ticket::WatcherGroup') ) {
         @Groups = @{ $Self->{ConfigObject}->Get('Ticket::WatcherGroup') };
     }
-    my $Access = 1;
-    if (@Groups) {
-        $Access = 0;
+    my $Access = 0;
+    if ( !@Groups ) {
+        $Access = 1;
+    }
+    else {
         for my $Group (@Groups) {
             if ( $Self->{LayoutObject}->{"UserIsGroup[$Group]"} eq 'Yes' ) {
                 $Access = 1;
             }
-        }
-    }
-    if ( !$Access ) {
-        return $Self->{Layout}->NoPermission();
-    }
-
-    # get ACL restrictions
-    $Self->{TicketObject}->TicketAcl(
-        Data          => '-',
-        TicketID      => $Self->{TicketID},
-        ReturnType    => 'Action',
-        ReturnSubType => '-',
-        UserID        => $Self->{UserID},
-    );
-    my %AclAction = $Self->{TicketObject}->TicketAclActionData();
-
-    # check if ACL resctictions if exist
-    if ( IsHashRefWithData( \%AclAction ) ) {
-
-        # show error screen if ACL prohibits this action
-        if ( defined $AclAction{ $Self->{Action} } && $AclAction{ $Self->{Action} } eq '0' ) {
-            return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
         }
     }
 
@@ -88,9 +67,6 @@ sub Run {
     # subscribe a ticket
     # ------------------------------------------------------------ #
     if ( $Self->{Subaction} eq 'Subscribe' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
 
         # set subscribe
         my $Subscribe = $Self->{TicketObject}->TicketWatchSubscribe(
@@ -111,10 +87,6 @@ sub Run {
     # unsubscribe a ticket
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Unsubscribe' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Unsubscribe = $Self->{TicketObject}->TicketWatchUnsubscribe(
             TicketID    => $Self->{TicketID},
             WatchUserID => $Self->{UserID},
@@ -129,7 +101,7 @@ sub Run {
         if ( $Self->{LastScreenView} =~ m/^Action=AgentTicketZoom/ ) {
 
             # checks if the user has permissions to see the ticket
-            my $Access = $Self->{TicketObject}->TicketPermission(
+            my $Access = $Self->{TicketObject}->Permission(
                 Type     => 'ro',
                 TicketID => $Self->{TicketID},
                 UserID   => $Self->{UserID},
@@ -139,8 +111,10 @@ sub Run {
                 # generate output
                 return $Self->{LayoutObject}->Redirect( OP => $Self->{LastScreenOverview} );
             }
+            else {
+                return $Self->{LayoutObject}->Redirect( OP => $Self->{LastScreenView} );
+            }
         }
-        return $Self->{LayoutObject}->Redirect( OP => $Self->{LastScreenView} );
     }
 }
 
