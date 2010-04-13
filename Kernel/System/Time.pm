@@ -2,7 +2,7 @@
 # Kernel/System/Time.pm - time functions
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Time.pm,v 1.57 2010/12/01 13:41:07 bes Exp $
+# $Id: Time.pm,v 1.53.2.1 2010/04/13 00:38:17 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Time::Local;
 
 use vars qw(@ISA $VERSION);
 
-$VERSION = qw($Revision: 1.57 $) [1];
+$VERSION = qw($Revision: 1.53.2.1 $) [1];
 
 =head1 NAME
 
@@ -111,8 +111,7 @@ returns a time stamp in "yyyy-mm-dd 23:59:59" format.
         SystemTime => $SystemTime,
     );
 
-If you need the short format "23:59:59" for dates that are "today",
-pass the Type parameter like this:
+If you need the short format "23:59:59" if the date is today (if needed).
 
     my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
         SystemTime => $SystemTime,
@@ -435,7 +434,7 @@ sub MailTimeStamp {
 
 =item WorkingTime()
 
-get the working time in seconds between these times
+get the working time in secondes between this times
 
     my $WorkingTime = $TimeObject->WorkingTime(
         StartTime => $Created,
@@ -512,14 +511,14 @@ sub WorkingTime {
             0 => 'Sun',
         );
 
-        # count nothing because of vacation
+        # count noting because of vacation
         if (
             $TimeVacationDays->{$Month}->{$Day}
             || $TimeVacationDaysOneTime->{$Year}->{$Month}->{$Day}
             )
         {
 
-            # do nothing
+            # do noting
         }
         else {
             if ( $TimeWorkingHours->{ $LDay{$WDay} } ) {
@@ -566,7 +565,7 @@ sub WorkingTime {
 
 =item DestinationTime()
 
-get the destination time (working time cal.) from start plus some time in seconds
+get the destination time (working time cal.) from start plus some time in secondes
 
     my $DestinationTime = $TimeObject->DestinationTime(
         StartTime => $Created,
@@ -645,14 +644,14 @@ sub DestinationTime {
             0 => 'Sun',
         );
 
-        # count nothing because of vacation
+        # count noting becouse of vacation
         if (
             $TimeVacationDays->{$Month}->{$Day}
             || $TimeVacationDaysOneTime->{$Year}->{$Month}->{$Day}
             )
         {
 
-            # do nothing
+            # do noting
             if ($FirstTurn) {
                 $First           = 1;
                 $DestinationTime = $Self->Date2SystemTime(
@@ -855,16 +854,16 @@ sub VacationCheck {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.57 $ $Date: 2010/12/01 13:41:07 $
+$Revision: 1.53.2.1 $ $Date: 2010/04/13 00:38:17 $
 
 =cut
