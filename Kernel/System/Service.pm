@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Service.pm - all service function
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Service.pm,v 1.50 2012/01/13 08:16:55 ub Exp $
+# $Id: Service.pm,v 1.39.2.1 2010/04/13 17:31:45 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -16,11 +16,9 @@ use warnings;
 
 use Kernel::System::CheckItem;
 use Kernel::System::Valid;
-use Kernel::System::Cache;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.50 $) [1];
+$VERSION = qw($Revision: 1.39.2.1 $) [1];
 
 =head1 NAME
 
@@ -89,7 +87,6 @@ sub new {
     }
     $Self->{CheckItemObject} = Kernel::System::CheckItem->new( %{$Self} );
     $Self->{ValidObject}     = Kernel::System::Valid->new( %{$Self} );
-    $Self->{CacheObject}     = Kernel::System::Cache->new( %{$Self} );
 
     # load generator preferences module
     my $GeneratorModule = $Self->{ConfigObject}->Get('Service::PreferencesModule')
@@ -97,9 +94,6 @@ sub new {
     if ( $Self->{MainObject}->Require($GeneratorModule) ) {
         $Self->{PreferencesObject} = $GeneratorModule->new(%Param);
     }
-
-    # set the cache TTL (in seconds)
-    $Self->{CacheTTL} = 3600;
 
     return $Self;
 }
@@ -177,7 +171,7 @@ sub ServiceList {
         INVALIDNAME:
         for my $InvalidName ( keys %ServiceInvalidList ) {
 
-            if ( $ServiceList{$ServiceID} =~ m{ \A \Q$InvalidName\E :: }xms ) {
+            if ( $ServiceList{$ServiceID} =~ m{ \A $InvalidName :: }xms ) {
                 delete $ServiceList{$ServiceID};
                 last INVALIDNAME;
             }
@@ -185,147 +179,6 @@ sub ServiceList {
     }
 
     return %ServiceList;
-}
-
-=item ServiceListGet()
-
-return a list of services with the complete list of attributes for each service
-
-    my $ServiceList = $ServiceObject->ServiceListGet(
-        Valid  => 0,   # (optional) default 1 (0|1)
-        UserID => 1,
-    );
-
-    returns
-
-    $ServiceList = [
-        {
-            ServiceID  => 1,
-            ParentID   => 0,
-            Name       => 'MyService',
-            NameShort  => 'MyService',
-            ValidID    => 1,
-            Comment    => 'Some Comment'
-            CreateTime => '2011-02-08 15:08:00',
-            ChangeTime => '2011-06-11 17:22:00',
-            CreateBy   => 1,
-            ChangeBy   => 1,
-        },
-        {
-            ServiceID  => 2,
-            ParentID   => 1,
-            Name       => 'MyService::MySubService',
-            NameShort  => 'MySubService',
-            ValidID    => 1,
-            Comment    => 'Some Comment'
-            CreateTime => '2011-02-08 15:08:00',
-            ChangeTime => '2011-06-11 17:22:00',
-            CreateBy   => 1,
-            ChangeBy   => 1,
-        },
-        # ...
-    ];
-
-=cut
-
-sub ServiceListGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{UserID} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need UserID!',
-        );
-        return;
-    }
-
-    # check valid param
-    if ( !defined $Param{Valid} ) {
-        $Param{Valid} = 1;
-    }
-
-    # check cached resutls
-    my $CacheKey = 'Cache::ServiceListGet::Valid::' . $Param{Valid};
-    my $Cache    = $Self->{CacheObject}->Get(
-        Type => 'Service',
-        Key  => $CacheKey,
-    );
-
-    # return cache if any
-    if ( defined $Cache ) {
-        return $Cache;
-    }
-
-    # create SQL query
-    my $SQL = 'SELECT id, name, valid_id, comments, create_time, create_by, change_time, change_by '
-        . 'FROM service';
-
-    if ( $Param{Valid} ) {
-        $SQL .= ' WHERE valid_id IN (' . join ', ', $Self->{ValidObject}->ValidIDsGet() . ')';
-    }
-
-    $SQL .= ' ORDER BY name';
-
-    # ask database
-    $Self->{DBObject}->Prepare(
-        SQL => $SQL,
-    );
-
-    # fetch the result
-    my @ServiceList;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        my %ServiceData;
-        $ServiceData{ServiceID}  = $Row[0];
-        $ServiceData{Name}       = $Row[1];
-        $ServiceData{ValidID}    = $Row[2];
-        $ServiceData{Comment}    = $Row[3] || '';
-        $ServiceData{CreateTime} = $Row[4];
-        $ServiceData{CreateBy}   = $Row[5];
-        $ServiceData{ChangeTime} = $Row[6];
-        $ServiceData{ChangeBy}   = $Row[7];
-
-        # add service data to service list
-        push @ServiceList, \%ServiceData;
-    }
-
-    for my $ServiceData (@ServiceList) {
-
-        # create short name and parentid
-        $ServiceData->{NameShort} = $ServiceData->{Name};
-        if ( $ServiceData->{Name} =~ m{ \A (.*) :: (.+?) \z }xms ) {
-            $ServiceData->{NameShort} = $2;
-
-            # lookup parent
-            my $ServiceID = $Self->ServiceLookup(
-                Name => $1,
-            );
-            $ServiceData->{ParentID} = $ServiceID;
-        }
-
-        # get service preferences
-        my %Preferences = $Self->ServicePreferencesGet(
-            ServiceID => $ServiceData->{ServiceID},
-        );
-
-        # merge hash
-        if (%Preferences) {
-            %{$ServiceData} = ( %{$ServiceData}, %Preferences );
-        }
-    }
-
-    if (@ServiceList) {
-
-        # set cache
-        $Self->{CacheObject}->Set(
-            Type  => 'Service',
-            Key   => $CacheKey,
-            Value => \@ServiceList,
-            TTL   => $Self->{CacheTTL},
-        );
-    }
-
-    return \@ServiceList;
 }
 
 =item ServiceGet()
@@ -349,48 +202,20 @@ Return
         UserID    => 1,
     );
 
-    my %ServiceData = $ServiceObject->ServiceGet(
-        Name    => 'Service::SubService',
-        UserID  => 1,
-    );
-
 =cut
 
 sub ServiceGet {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    if ( !$Param{UserID} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Need UserID!",
-        );
-        return;
-    }
-
-    # either ServiceID or Name must be passed
-    if ( !$Param{ServiceID} && !$Param{Name} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need ServiceID or Name!',
-        );
-        return;
-    }
-
-    # check that not both ServiceID and Name are given
-    if ( $Param{ServiceID} && $Param{Name} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need either ServiceID OR Name - not both!',
-        );
-        return;
-    }
-
-    # lookup the ServiceID
-    if ( $Param{Name} ) {
-        $Param{ServiceID} = $Self->ServiceLookup(
-            Name => $Param{Name},
-        );
+    for my $Argument (qw(ServiceID UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
     }
 
     # get service from db
@@ -426,7 +251,7 @@ sub ServiceGet {
 
     # create short name and parentid
     $ServiceData{NameShort} = $ServiceData{Name};
-    if ( $ServiceData{Name} =~ m{ \A (.*) :: (.+?) \z }xms ) {
+    if ( $ServiceData{Name} =~ /^(.*)::(.+?)$/ ) {
         $ServiceData{NameShort} = $2;
 
         # lookup parent
@@ -560,7 +385,7 @@ sub ServiceAdd {
     }
 
     # check service name
-    if ( $Param{Name} =~ m{ :: }xms ) {
+    if ( $Param{Name} =~ /::/ ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Can't add service! Invalid Service name '$Param{Name}'!",
@@ -624,10 +449,6 @@ sub ServiceAdd {
     delete $Self->{ 'Cache::ServiceLookup::ID::' . $ServiceID };
     delete $Self->{ 'Cache::ServiceLookup::Name::' . $Param{FullName} };
 
-    $Self->{CacheObject}->CleanUp(
-        Type => 'Service',
-    );
-
     return $ServiceID;
 }
 
@@ -673,7 +494,7 @@ sub ServiceUpdate {
     }
 
     # check service name
-    if ( $Param{Name} =~ m{ :: }xms ) {
+    if ( $Param{Name} =~ /::/ ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Can't update service! Invalid Service name '$Param{Name}'!",
@@ -684,21 +505,9 @@ sub ServiceUpdate {
     # get old name of service
     my $OldServiceName = $Self->ServiceLookup( ServiceID => $Param{ServiceID}, );
 
-    if ( !$OldServiceName ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't update service! Service '$Param{ServiceID}' does not exist.",
-        );
-        return;
-    }
-
     # reset cache
     delete $Self->{ 'Cache::ServiceLookup::ID::' . $Param{ServiceID} };
     delete $Self->{ 'Cache::ServiceLookup::Name::' . $OldServiceName };
-
-    $Self->{CacheObject}->CleanUp(
-        Type => 'Service',
-    );
 
     # create full name
     $Param{FullName} = $Param{Name};
@@ -716,7 +525,7 @@ sub ServiceUpdate {
         }
 
         # check, if selected parent was a child of this service
-        if ( $Param{FullName} =~ m{ \A ( \Q$OldServiceName\E ) :: }xms ) {
+        if ( $Param{FullName} =~ /^(\Q$OldServiceName\E)::/ ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
                 Message  => 'Can\'t update service! Invalid parent was selected.'
@@ -774,7 +583,7 @@ sub ServiceUpdate {
 
     # update childs
     for my $Child (@Childs) {
-        $Child->{Name} =~ s{ \A ( \Q$OldServiceName\E ) :: }{$Param{FullName}::}xms;
+        $Child->{Name} =~ s/^(\Q$OldServiceName\E)::/$Param{FullName}::/;
         $Self->{DBObject}->Do(
             SQL => 'UPDATE service SET name = ? WHERE id = ?',
             Bind => [ \$Child->{Name}, \$Child->{ServiceID} ],
@@ -1064,10 +873,6 @@ set service preferences
 sub ServicePreferencesSet {
     my $Self = shift;
 
-    $Self->{CacheObject}->CleanUp(
-        Type => 'Service',
-    );
-
     return $Self->{PreferencesObject}->ServicePreferencesSet(@_);
 }
 
@@ -1088,95 +893,22 @@ sub ServicePreferencesGet {
     return $Self->{PreferencesObject}->ServicePreferencesGet(@_);
 }
 
-=item ServiceParentsGet()
-
-return an ordered list all parent service IDs for the given service from the root parent to the
-current service parent
-
-    my $ServiceParentsList = $ServiceObject->ServiceParentsGet(
-        ServiceID => 123,
-        UserID    => 1,
-    );
-
-    returns
-
-    $ServiceParentsList = [ 1, 2, ...];
-
-=cut
-
-sub ServiceParentsGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(UserID ServiceID)) {
-        if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Need $Needed!',
-            );
-            return;
-        }
-    }
-
-    # get the list of services
-    my $ServiceList = $Self->ServiceListGet(
-        Valid  => 0,
-        UserID => 1,
-    );
-
-    # get a service lookup table
-    my %ServiceLoockup;
-    SERVICE:
-    for my $ServiceData ( @{$ServiceList} ) {
-        next SERVICE if !$ServiceData;
-        next SERVICE if !IsHashRefWithData($ServiceData);
-        next SERVICE if !$ServiceData->{ServiceID};
-
-        $ServiceLoockup{ $ServiceData->{ServiceID} } = $ServiceData;
-    }
-
-    # exit if ServiceID is invalid
-    return if !$ServiceLoockup{ $Param{ServiceID} };
-
-    # to store the return structure
-    my @ServiceParents;
-
-    # get the ServiceParentID from the requested service
-    my $ServiceParentID = $ServiceLoockup{ $Param{ServiceID} }->{ParentID};
-
-    # get all partents for the requested service
-    while ($ServiceParentID) {
-
-        # add service parent ID to the return structure
-        push @ServiceParents, $ServiceParentID;
-
-        # set next ServiceParentID (the parent of the current parent)
-        $ServiceParentID = $ServiceLoockup{$ServiceParentID}->{ParentID} || 0;
-
-    }
-
-    # reverse the return array to get the list ordered from old to joung (in parent context)
-    my @ReversedServiceParents = reverse @ServiceParents;
-
-    return \@ReversedServiceParents;
-}
-
 1;
 
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.50 $ $Date: 2012/01/13 08:16:55 $
+$Revision: 1.39.2.1 $ $Date: 2010/04/13 17:31:45 $
 
 =cut
