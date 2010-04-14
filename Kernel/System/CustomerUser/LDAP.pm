@@ -1,8 +1,8 @@
 # --
 # Kernel/System/CustomerUser/LDAP.pm - some customer user functions in LDAP
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: LDAP.pm,v 1.62 2011/01/27 21:52:28 cg Exp $
+# $Id: LDAP.pm,v 1.53.2.1 2010/04/14 19:34:57 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -19,7 +19,7 @@ use Net::LDAP;
 use Kernel::System::Cache;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.62 $) [1];
+$VERSION = qw($Revision: 1.53.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -40,23 +40,11 @@ sub new {
     $Self->{UserSearchListLimit} = $Self->{CustomerUserMap}->{CustomerUserSearchListLimit} || 200;
 
     # get ldap preferences
-    $Self->{Die} = 0;
     if ( defined $Self->{CustomerUserMap}->{Params}->{Die} ) {
         $Self->{Die} = $Self->{CustomerUserMap}->{Params}->{Die};
     }
-
-    # params
-    if ( $Self->{CustomerUserMap}->{Params}->{Params} ) {
-        $Self->{Params} = $Self->{CustomerUserMap}->{Params}->{Params};
-    }
-
-    # Net::LDAP new params
-    elsif ( $Self->{ConfigObject}->Get( 'AuthModule::LDAP::Params' . $Param{Count} ) ) {
-        $Self->{Params} = $Self->{ConfigObject}->Get( 'AuthModule::LDAP::Params' . $Param{Count} );
-    }
-    else
-    {
-        $Self->{Params} = {};
+    else {
+        $Self->{Die} = 1;
     }
 
     # host
@@ -129,45 +117,13 @@ sub new {
     # ldap filter always used
     $Self->{AlwaysFilter} = $Self->{CustomerUserMap}->{Params}->{AlwaysFilter} || '';
 
-    $Self->{ExcludePrimaryCustomerID}
-        = $Self->{CustomerUserMap}->{CustomerUserExcludePrimaryCustomerID} || 0;
-    $Self->{SearchPrefix} = $Self->{CustomerUserMap}->{CustomerUserSearchPrefix};
-    if ( !defined $Self->{SearchPrefix} ) {
-        $Self->{SearchPrefix} = '';
+    # Net::LDAP new params
+    if ( $Self->{CustomerUserMap}->{Params}->{Params} ) {
+        $Self->{Params} = $Self->{CustomerUserMap}->{Params}->{Params};
     }
-    $Self->{SearchSuffix} = $Self->{CustomerUserMap}->{CustomerUserSearchSuffix};
-    if ( !defined $Self->{SearchSuffix} ) {
-        $Self->{SearchSuffix} = '*';
+    else {
+        $Self->{Params} = {};
     }
-
-    # charset settings
-    $Self->{SourceCharset} = $Self->{CustomerUserMap}->{Params}->{SourceCharset} || '';
-    $Self->{DestCharset}   = $Self->{CustomerUserMap}->{Params}->{DestCharset}   || '';
-
-    # cache object
-    if ( $Self->{CustomerUserMap}->{CacheTTL} ) {
-        $Self->{CacheObject} = Kernel::System::Cache->new( %{$Self} );
-
-        # set cache type
-        $Self->{CacheType} = 'CustomerUser' . $Param{Count};
-    }
-
-    # get valid filter if used
-    $Self->{ValidFilter} = $Self->{CustomerUserMap}->{CustomerUserValidFilter} || '';
-
-    # connect first if Die is enabled, make sure that connection is possible, else die
-    if ( $Self->{Die} ) {
-        return if !$Self->_Connect();
-    }
-
-    return $Self;
-}
-
-sub _Connect {
-    my ( $Self, %Param ) = @_;
-
-    # return if connection is already open
-    return 1 if $Self->{LDAP};
 
     # ldap connect and bind (maybe with SearchUserDN and SearchUserPw)
     $Self->{LDAP} = Net::LDAP->new( $Self->{Host}, %{ $Self->{Params} } );
@@ -183,12 +139,10 @@ sub _Connect {
             return;
         }
     }
-    my $Result;
+    my $Result = '';
     if ( $Self->{SearchUserDN} && $Self->{SearchUserPw} ) {
-        $Result = $Self->{LDAP}->bind(
-            dn       => $Self->{SearchUserDN},
-            password => $Self->{SearchUserPw},
-        );
+        $Result
+            = $Self->{LDAP}->bind( dn => $Self->{SearchUserDN}, password => $Self->{SearchUserPw} );
     }
     else {
         $Result = $Self->{LDAP}->bind();
@@ -196,16 +150,43 @@ sub _Connect {
     if ( $Result->code ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'First bind failed! ' . $Result->error(),
+            Message  => "First bind failed! " . $Result->error(),
         );
         $Self->{LDAP}->disconnect;
         return;
     }
-    return 1;
+
+    $Self->{SourceCharset} = $Self->{CustomerUserMap}->{Params}->{SourceCharset} || '';
+    $Self->{DestCharset}   = $Self->{CustomerUserMap}->{Params}->{DestCharset}   || '';
+    $Self->{ExcludePrimaryCustomerID}
+        = $Self->{CustomerUserMap}->{CustomerUserExcludePrimaryCustomerID} || 0;
+    $Self->{SearchPrefix} = $Self->{CustomerUserMap}->{CustomerUserSearchPrefix};
+    if ( !defined $Self->{SearchPrefix} ) {
+        $Self->{SearchPrefix} = '';
+    }
+    $Self->{SearchSuffix} = $Self->{CustomerUserMap}->{CustomerUserSearchSuffix};
+    if ( !defined $Self->{SearchSuffix} ) {
+        $Self->{SearchSuffix} = '*';
+    }
+
+    # cache object
+    if ( $Self->{CustomerUserMap}->{CacheTTL} ) {
+        $Self->{CacheObject} = Kernel::System::Cache->new( %{$Self} );
+
+        # set cache type
+        $Self->{CacheType} = 'CustomerUser' . $Param{Count};
+    }
+
+    # get valid filter if used
+    $Self->{ValidFilter} = $Self->{CustomerUserMap}->{CustomerUserValidFilter} || '';
+
+    return $Self;
 }
 
 sub CustomerName {
     my ( $Self, %Param ) = @_;
+
+    my $Name = '';
 
     # check needed stuff
     if ( !$Param{UserLogin} ) {
@@ -222,17 +203,15 @@ sub CustomerName {
     }
 
     # check cache
-    my $Name = '';
     if ( $Self->{CacheObject} ) {
         my $Name = $Self->{CacheObject}->Get(
             Type => $Self->{CacheType},
-            Key  => 'CustomerName::' . $Param{UserLogin},
+            Key  => 'CustomerName::' . $Filter,
         );
-        return $Name if defined $Name;
+        if ( defined $Name ) {
+            return $Name;
+        }
     }
-
-    # create ldap connect
-    return if !$Self->_Connect();
 
     # perform user search
     my $Result = $Self->{LDAP}->search(
@@ -240,7 +219,6 @@ sub CustomerName {
         scope     => $Self->{SScope},
         filter    => $Filter,
         sizelimit => $Self->{UserSearchListLimit},
-        attrs     => $Self->{CustomerUserMap}->{CustomerUserNameFields},
     );
     if ( $Result->code ) {
         $Self->{LogObject}->Log(
@@ -251,12 +229,12 @@ sub CustomerName {
     }
     for my $Entry ( $Result->all_entries ) {
         for my $Field ( @{ $Self->{CustomerUserMap}->{CustomerUserNameFields} } ) {
-            if ( defined $Entry->get_value($Field) ) {
+            if ( defined( $Entry->get_value($Field) ) ) {
                 if ( !$Name ) {
-                    $Name = $Self->_ConvertFrom( $Entry->get_value($Field) );
+                    $Name = $Self->_Convert( $Entry->get_value($Field) );
                 }
                 else {
-                    $Name .= ' ' . $Self->_ConvertFrom( $Entry->get_value($Field) );
+                    $Name .= ' ' . $Self->_Convert( $Entry->get_value($Field) );
                 }
             }
         }
@@ -266,7 +244,7 @@ sub CustomerName {
     if ( $Self->{CacheObject} ) {
         $Self->{CacheObject}->Set(
             Type  => $Self->{CacheType},
-            Key   => 'CustomerName::' . $Param{UserLogin},
+            Key   => 'CustomerName::' . $Filter,
             Value => $Name,
             TTL   => $Self->{CustomerUserMap}->{CacheTTL},
         );
@@ -341,14 +319,10 @@ sub CustomerSearch {
             Type => $Self->{CacheType},
             Key  => 'CustomerSearch::' . $Filter,
         );
-        return %{$Users} if $Users;
+        if ($Users) {
+            return %{$Users};
+        }
     }
-
-    # create ldap connect
-    return if !$Self->_Connect();
-
-    # combine needed attrs
-    my @attrs = ( @{ $Self->{CustomerUserMap}->{CustomerUserListFields} }, $Self->{CustomerKey} );
 
     # perform user search
     my $Result = $Self->{LDAP}->search(
@@ -356,7 +330,6 @@ sub CustomerSearch {
         scope     => $Self->{SScope},
         filter    => $Filter,
         sizelimit => $Self->{UserSearchListLimit},
-        attrs     => \@attrs,
     );
 
     # log ldap errors
@@ -366,21 +339,21 @@ sub CustomerSearch {
             Message  => $Result->error,
         );
     }
-    my %Users;
+    my %Users = ();
     for my $entry ( $Result->all_entries ) {
         my $CustomerString = '';
         for my $Field ( @{ $Self->{CustomerUserMap}->{CustomerUserListFields} } ) {
-            my $Value = $Self->_ConvertFrom( $entry->get_value($Field) );
+            my $Value = $Self->_Convert( $entry->get_value($Field) );
             if ($Value) {
-                if ( $Field =~ /^targetaddress$/i ) {
+                if ( $_ =~ /^targetaddress$/i ) {
                     $Value =~ s/SMTP:(.*)/$1/;
                 }
                 $CustomerString .= $Value . ' ';
             }
         }
         $CustomerString =~ s/^(.*)\s(.+?\@.+?\..+?)(\s|)$/"$1" <$2>/;
-        if ( defined $entry->get_value( $Self->{CustomerKey} ) ) {
-            $Users{ $Self->_ConvertFrom( $entry->get_value( $Self->{CustomerKey} ) ) }
+        if ( defined( $entry->get_value( $Self->{CustomerKey} ) ) ) {
+            $Users{ $Self->_Convert( $entry->get_value( $Self->{CustomerKey} ) ) }
                 = $CustomerString;
         }
     }
@@ -393,7 +366,6 @@ sub CustomerSearch {
                 scope     => $Self->{SScope},
                 filter    => 'memberUid=' . $Filter2,
                 sizelimit => $Self->{UserSearchListLimit},
-                attrs     => ['1.1'],
             );
             if ( !$Result2->all_entries ) {
                 delete $Users{$Filter2};
@@ -435,14 +407,10 @@ sub CustomerUserList {
             Type => $Self->{CacheType},
             Key  => "CustomerUserList::$Filter",
         );
-        return %{$Users} if $Users;
+        if ($Users) {
+            return %{$Users};
+        }
     }
-
-    # create ldap connect
-    return if !$Self->_Connect();
-
-    # combine needed attrs
-    my @attrs = ( $Self->{CustomerKey}, $Self->{CustomerID} );
 
     # perform user search
     my $Result = $Self->{LDAP}->search(
@@ -450,7 +418,6 @@ sub CustomerUserList {
         scope     => $Self->{SScope},
         filter    => $Filter,
         sizelimit => $Self->{UserSearchListLimit},
-        attrs     => \@attrs,
     );
 
     # log ldap errors
@@ -460,16 +427,14 @@ sub CustomerUserList {
             Message  => $Result->error(),
         );
     }
-    my %Users;
+    my %Users = ();
     for my $entry ( $Result->all_entries ) {
         my $CustomerString = '';
-        for my $Field (@attrs) {
+        for my $Field (qw(CustomerKey CustomerID)) {
             $CustomerString
-                .= $Self->_ConvertFrom( $entry->get_value($Field) )
-                . ' ';
+                .= $Self->_Convert( $entry->get_value( $Self->{CustomerUserMap}->{$Field} ) ) . ' ';
         }
-        $Users{ $Self->_ConvertFrom( $entry->get_value( $Self->{CustomerKey} ) ) }
-            = $CustomerString;
+        $Users{ $Self->_Convert( $entry->get_value( $Self->{CustomerKey} ) ) } = $CustomerString;
     }
 
     # check if user need to be in a group!
@@ -480,7 +445,6 @@ sub CustomerUserList {
                 scope     => $Self->{SScope},
                 filter    => 'memberUid=' . $Filter2,
                 sizelimit => $Self->{UserSearchListLimit},
-                attrs     => ['1.1'],
             );
             if ( !$Result2->all_entries ) {
                 delete $Users{$Filter2};
@@ -515,7 +479,9 @@ sub CustomerIDs {
             Type => $Self->{CacheType},
             Key  => "CustomerIDs::$Param{User}",
         );
-        return @{$CustomerIDs} if $CustomerIDs;
+        if ($CustomerIDs) {
+            return @{$CustomerIDs};
+        }
     }
 
     # get customer data
@@ -578,10 +544,11 @@ sub CustomerUserDataGet {
     }
 
     # perform user search
-    my @attrs;
+    my $attrs = '';
     for my $Entry ( @{ $Self->{CustomerUserMap}->{Map} } ) {
-        push( @attrs, $Entry->[2] );
+        $attrs .= "\'$Entry->[2]\',";
     }
+    $attrs = substr $attrs, 0, -1;
     my $Filter = "($Self->{CustomerKey}=$Param{User})";
 
     # prepare filter
@@ -595,18 +562,17 @@ sub CustomerUserDataGet {
             Type => $Self->{CacheType},
             Key  => 'CustomerUserDataGet::' . $Param{User},
         );
-        return %{$Data} if $Data;
+        if ($Data) {
+            return %{$Data};
+        }
     }
-
-    # create ldap connect
-    return if !$Self->_Connect();
 
     # perform search
     my $Result = $Self->{LDAP}->search(
         base   => $Self->{BaseDN},
         scope  => $Self->{SScope},
         filter => $Filter,
-        attrs  => \@attrs,
+        attrs  => $attrs,
     );
 
     # log ldap errors
@@ -626,7 +592,7 @@ sub CustomerUserDataGet {
 
     # get customer user info
     for my $Entry ( @{ $Self->{CustomerUserMap}->{Map} } ) {
-        my $Value = $Self->_ConvertFrom( $Result2->get_value( $Entry->[2] ) ) || '';
+        my $Value = $Self->_Convert( $Result2->get_value( $Entry->[2] ) ) || '';
         if ( $Value && $Entry->[2] =~ /^targetaddress$/i ) {
             $Value =~ s/SMTP:(.*)/$1/;
         }
@@ -634,7 +600,9 @@ sub CustomerUserDataGet {
     }
 
     # check data
-    return if !$Data{UserLogin};
+    if ( !$Data{UserLogin} ) {
+        return;
+    }
 
     # compat!
     $Data{UserID} = $Data{UserLogin};
@@ -755,15 +723,13 @@ sub SearchPreferences {
     return $Self->{PreferencesObject}->SearchPreferences(%Param);
 }
 
-sub _ConvertFrom {
+sub _Convert {
     my ( $Self, $Text ) = @_;
-
-    return if !defined $Text;
 
     if ( !$Self->{SourceCharset} || !$Self->{DestCharset} ) {
         return $Text;
     }
-
+    return if !defined $Text;
     return $Self->{EncodeObject}->Convert(
         Text => $Text,
         From => $Self->{SourceCharset},
@@ -774,13 +740,11 @@ sub _ConvertFrom {
 sub _ConvertTo {
     my ( $Self, $Text ) = @_;
 
-    return if !defined $Text;
-
     if ( !$Self->{SourceCharset} || !$Self->{DestCharset} ) {
-        $Self->{EncodeObject}->EncodeInput( \$Text );
+        $Self->{EncodeObject}->Encode( \$Text );
         return $Text;
     }
-
+    return if !defined $Text;
     return $Self->{EncodeObject}->Convert(
         Text => $Text,
         To   => $Self->{SourceCharset},

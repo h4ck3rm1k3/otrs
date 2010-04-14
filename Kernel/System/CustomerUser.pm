@@ -1,8 +1,8 @@
 # --
 # Kernel/System/CustomerUser.pm - some customer user functions
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerUser.pm,v 1.63 2011/03/24 17:47:48 en Exp $
+# $Id: CustomerUser.pm,v 1.55.2.1 2010/04/14 19:34:55 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::CustomerCompany;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.63 $) [1];
+$VERSION = qw($Revision: 1.55.2.1 $) [1];
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ Kernel::System::CustomerUser - customer user lib
 
 =head1 SYNOPSIS
 
-All customer user functions. E. g. to add and update customer users.
+All customer user functions. E. g. to add and updated user and other functions.
 
 =head1 PUBLIC INTERFACE
 
@@ -95,7 +95,7 @@ sub new {
     # load customer user backend module
     for my $Count ( '', 1 .. 10 ) {
 
-        # next if customer backend is not used
+        # next if customer backend is used
         next if !$Self->{ConfigObject}->Get("CustomerUser$Count");
 
         my $GenericModule = $Self->{ConfigObject}->Get("CustomerUser$Count")->{Module};
@@ -119,32 +119,21 @@ sub new {
 
 return customer source list
 
-    my %List = $CustomerUserObject->CustomerSourceList(
-        ReadOnly => 0 # optional, 1 returns only RO backends, 0 returns writable, if not passed returns all backends
-    );
+    my %List = $CustomerUserObject->CustomerSourceList();
 
 =cut
 
 sub CustomerSourceList {
     my ( $Self, %Param ) = @_;
 
-    my %Data;
-    SOURCE:
-    for my $Count ( '', 1 .. 10 ) {
+    my %Data = ();
+    for ( '', 1 .. 10 ) {
 
-        # next if customer backend is not used
-        next SOURCE if !$Self->{ConfigObject}->Get("CustomerUser$Count");
-        if ( defined $Param{ReadOnly} ) {
-            my $CustomerBackendConfig = $Self->{ConfigObject}->Get("CustomerUser$Count");
-            if ( $Param{ReadOnly} ) {
-                next SOURCE if !$CustomerBackendConfig->{ReadOnly};
-            }
-            else {
-                next SOURCE if $CustomerBackendConfig->{ReadOnly};
-            }
-        }
-        $Data{"CustomerUser$Count"} = $Self->{ConfigObject}->Get("CustomerUser$Count")->{Name}
-            || "No Name $Count";
+        # next if customer backend is used
+        next if !$Self->{ConfigObject}->Get("CustomerUser$_");
+
+        $Data{"CustomerUser$_"} = $Self->{ConfigObject}->Get("CustomerUser$_")->{Name}
+            || "No Name $_";
     }
     return %Data;
 }
@@ -179,14 +168,14 @@ sub CustomerSearch {
         $Param{Search} =~ s/\s+$//;
     }
 
-    my %Data;
-    for my $Count ( '', 1 .. 10 ) {
+    my %Data = ();
+    for ( '', 1 .. 10 ) {
 
-        # next if customer backend is not used
-        next if !$Self->{"CustomerUser$Count"};
+        # next if customer backend is used
+        next if !$Self->{"CustomerUser$_"};
 
         # get customer search result of backend and merge it
-        my %SubData = $Self->{"CustomerUser$Count"}->CustomerSearch(%Param);
+        my %SubData = $Self->{"CustomerUser$_"}->CustomerSearch(%Param);
         %Data = ( %SubData, %Data );
     }
     return %Data;
@@ -205,14 +194,14 @@ return a hash with all users (depreciated)
 sub CustomerUserList {
     my ( $Self, %Param ) = @_;
 
-    my %Data;
-    for my $Count ( '', 1 .. 10 ) {
+    my %Data = ();
+    for ( '', 1 .. 10 ) {
 
-        # next if customer backend is not used
-        next if !$Self->{"CustomerUser$Count"};
+        # next if customer backend is used
+        next if !$Self->{"CustomerUser$_"};
 
         # get customer list result of backend and merge it
-        my %SubData = $Self->{"CustomerUser$Count"}->CustomerUserList(%Param);
+        my %SubData = $Self->{"CustomerUser$_"}->CustomerUserList(%Param);
         %Data = ( %Data, %SubData );
     }
     return %Data;
@@ -231,13 +220,13 @@ get customer user name
 sub CustomerName {
     my ( $Self, %Param ) = @_;
 
-    for my $Count ( '', 1 .. 10 ) {
+    for ( '', 1 .. 10 ) {
 
-        # next if customer backend is not used
-        next if !$Self->{"CustomerUser$Count"};
+        # next if customer backend is used
+        next if !$Self->{"CustomerUser$_"};
 
         # get customer name and return it
-        my $Name = $Self->{"CustomerUser$Count"}->CustomerName(%Param);
+        my $Name = $Self->{"CustomerUser$_"}->CustomerName(%Param);
         if ($Name) {
             return $Name;
         }
@@ -258,13 +247,13 @@ get customer user customer ids
 sub CustomerIDs {
     my ( $Self, %Param ) = @_;
 
-    for my $Count ( '', 1 .. 10 ) {
+    for ( '', 1 .. 10 ) {
 
-        # next if customer backend is not used
-        next if !$Self->{"CustomerUser$Count"};
+        # next if customer backend is used
+        next if !$Self->{"CustomerUser$_"};
 
         # get customer id's and return it
-        my @CustomerIDs = $Self->{"CustomerUser$Count"}->CustomerIDs(%Param);
+        my @CustomerIDs = $Self->{"CustomerUser$_"}->CustomerIDs(%Param);
         if (@CustomerIDs) {
             return @CustomerIDs;
         }
@@ -285,13 +274,13 @@ get user data (UserLogin, UserFirstname, UserLastname, UserEmail, ...)
 sub CustomerUserDataGet {
     my ( $Self, %Param ) = @_;
 
-    for my $Count ( '', 1 .. 10 ) {
+    for ( '', 1 .. 10 ) {
 
-        # next if customer backend is not used
-        next if !$Self->{"CustomerUser$Count"};
+        # next if customer backend is used
+        next if !$Self->{"CustomerUser$_"};
 
         # next if no customer got found
-        my %Customer = $Self->{"CustomerUser$Count"}->CustomerUserDataGet( %Param, );
+        my %Customer = $Self->{"CustomerUser$_"}->CustomerUserDataGet( %Param, );
         next if !%Customer;
 
         # add preferences defaults
@@ -311,10 +300,10 @@ sub CustomerUserDataGet {
         }
 
         # check if customer company support is enabled and get company data
-        my %Company;
+        my %Company = ();
         if (
             $Self->{ConfigObject}->Get("CustomerCompany")
-            && $Self->{ConfigObject}->Get("CustomerUser$Count")->{CustomerCompanySupport}
+            && $Self->{ConfigObject}->Get("CustomerUser$_")->{CustomerCompanySupport}
             )
         {
             %Company = $Self->{CustomerCompanyObject}->CustomerCompanyGet(
@@ -326,8 +315,8 @@ sub CustomerUserDataGet {
         return (
             %Company,
             %Customer,
-            Source        => "CustomerUser$Count",
-            Config        => $Self->{ConfigObject}->Get("CustomerUser$Count"),
+            Source        => "CustomerUser$_",
+            Config        => $Self->{ConfigObject}->Get("CustomerUser$_"),
             CompanyConfig => $Self->{ConfigObject}->Get("CustomerCompany"),
         );
     }
@@ -402,7 +391,7 @@ sub CustomerUserUpdate {
     }
 
     # check for UserLogin-renaming and if new UserLogin already exists...
-    if ( $Param{ID} && ( lc $Param{UserLogin} ne lc $Param{ID} ) ) {
+    if ( ( $Param{ID} ) && ( $Param{UserLogin} ne $Param{ID} ) ) {
         my %User = $Self->CustomerUserDataGet( User => $Param{UserLogin} );
         if (%User) {
             $Self->{LogObject}->Log(
@@ -441,7 +430,7 @@ sub SetPassword {
 
     # check needed stuff
     if ( !$Param{UserLogin} ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => 'User UserLogin!' );
+        $Self->{LogObject}->Log( Priority => 'error', Message => "User UserLogin!" );
         return;
     }
 
@@ -472,9 +461,9 @@ generate a random password
 =cut
 
 sub GenerateRandomPassword {
-    my ( $Self, %Param ) = @_;
+    my $Self = shift;
 
-    return $Self->{CustomerUser}->GenerateRandomPassword(%Param);
+    return $Self->{CustomerUser}->GenerateRandomPassword(@_);
 }
 
 =item SetPreferences()
@@ -572,7 +561,7 @@ sub SearchPreferences {
     my %Data;
     for my $Count ( '', 1 .. 10 ) {
 
-        # next if customer backend is not used
+        # next if customer backend is used
         next if !$Self->{"CustomerUser$Count"};
 
         # get customer search result of backend and merge it
@@ -682,16 +671,16 @@ sub TokenCheck {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.63 $ $Date: 2011/03/24 17:47:48 $
+$Revision: 1.55.2.1 $ $Date: 2010/04/14 19:34:55 $
 
 =cut
