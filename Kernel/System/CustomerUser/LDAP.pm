@@ -1,8 +1,8 @@
 # --
 # Kernel/System/CustomerUser/LDAP.pm - some customer user functions in LDAP
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: LDAP.pm,v 1.62 2011/01/27 21:52:28 cg Exp $
+# $Id: LDAP.pm,v 1.57.2.1 2010/04/14 19:40:58 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -19,7 +19,7 @@ use Net::LDAP;
 use Kernel::System::Cache;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.62 $) [1];
+$VERSION = qw($Revision: 1.57.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -43,20 +43,6 @@ sub new {
     $Self->{Die} = 0;
     if ( defined $Self->{CustomerUserMap}->{Params}->{Die} ) {
         $Self->{Die} = $Self->{CustomerUserMap}->{Params}->{Die};
-    }
-
-    # params
-    if ( $Self->{CustomerUserMap}->{Params}->{Params} ) {
-        $Self->{Params} = $Self->{CustomerUserMap}->{Params}->{Params};
-    }
-
-    # Net::LDAP new params
-    elsif ( $Self->{ConfigObject}->Get( 'AuthModule::LDAP::Params' . $Param{Count} ) ) {
-        $Self->{Params} = $Self->{ConfigObject}->Get( 'AuthModule::LDAP::Params' . $Param{Count} );
-    }
-    else
-    {
-        $Self->{Params} = {};
     }
 
     # host
@@ -240,7 +226,6 @@ sub CustomerName {
         scope     => $Self->{SScope},
         filter    => $Filter,
         sizelimit => $Self->{UserSearchListLimit},
-        attrs     => $Self->{CustomerUserMap}->{CustomerUserNameFields},
     );
     if ( $Result->code ) {
         $Self->{LogObject}->Log(
@@ -347,16 +332,12 @@ sub CustomerSearch {
     # create ldap connect
     return if !$Self->_Connect();
 
-    # combine needed attrs
-    my @attrs = ( @{ $Self->{CustomerUserMap}->{CustomerUserListFields} }, $Self->{CustomerKey} );
-
     # perform user search
     my $Result = $Self->{LDAP}->search(
         base      => $Self->{BaseDN},
         scope     => $Self->{SScope},
         filter    => $Filter,
         sizelimit => $Self->{UserSearchListLimit},
-        attrs     => \@attrs,
     );
 
     # log ldap errors
@@ -372,7 +353,7 @@ sub CustomerSearch {
         for my $Field ( @{ $Self->{CustomerUserMap}->{CustomerUserListFields} } ) {
             my $Value = $Self->_ConvertFrom( $entry->get_value($Field) );
             if ($Value) {
-                if ( $Field =~ /^targetaddress$/i ) {
+                if ( $_ =~ /^targetaddress$/i ) {
                     $Value =~ s/SMTP:(.*)/$1/;
                 }
                 $CustomerString .= $Value . ' ';
@@ -393,7 +374,6 @@ sub CustomerSearch {
                 scope     => $Self->{SScope},
                 filter    => 'memberUid=' . $Filter2,
                 sizelimit => $Self->{UserSearchListLimit},
-                attrs     => ['1.1'],
             );
             if ( !$Result2->all_entries ) {
                 delete $Users{$Filter2};
@@ -441,16 +421,12 @@ sub CustomerUserList {
     # create ldap connect
     return if !$Self->_Connect();
 
-    # combine needed attrs
-    my @attrs = ( $Self->{CustomerKey}, $Self->{CustomerID} );
-
     # perform user search
     my $Result = $Self->{LDAP}->search(
         base      => $Self->{BaseDN},
         scope     => $Self->{SScope},
         filter    => $Filter,
         sizelimit => $Self->{UserSearchListLimit},
-        attrs     => \@attrs,
     );
 
     # log ldap errors
@@ -463,9 +439,9 @@ sub CustomerUserList {
     my %Users;
     for my $entry ( $Result->all_entries ) {
         my $CustomerString = '';
-        for my $Field (@attrs) {
+        for my $Field (qw(CustomerKey CustomerID)) {
             $CustomerString
-                .= $Self->_ConvertFrom( $entry->get_value($Field) )
+                .= $Self->_ConvertFrom( $entry->get_value( $Self->{CustomerUserMap}->{$Field} ) )
                 . ' ';
         }
         $Users{ $Self->_ConvertFrom( $entry->get_value( $Self->{CustomerKey} ) ) }
@@ -480,7 +456,6 @@ sub CustomerUserList {
                 scope     => $Self->{SScope},
                 filter    => 'memberUid=' . $Filter2,
                 sizelimit => $Self->{UserSearchListLimit},
-                attrs     => ['1.1'],
             );
             if ( !$Result2->all_entries ) {
                 delete $Users{$Filter2};
@@ -578,10 +553,11 @@ sub CustomerUserDataGet {
     }
 
     # perform user search
-    my @attrs;
+    my $attrs = '';
     for my $Entry ( @{ $Self->{CustomerUserMap}->{Map} } ) {
-        push( @attrs, $Entry->[2] );
+        $attrs .= "\'$Entry->[2]\',";
     }
+    $attrs = substr $attrs, 0, -1;
     my $Filter = "($Self->{CustomerKey}=$Param{User})";
 
     # prepare filter
@@ -606,7 +582,7 @@ sub CustomerUserDataGet {
         base   => $Self->{BaseDN},
         scope  => $Self->{SScope},
         filter => $Filter,
-        attrs  => \@attrs,
+        attrs  => $attrs,
     );
 
     # log ldap errors

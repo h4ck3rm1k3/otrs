@@ -2,7 +2,7 @@
 # Kernel/System/CustomerUser/DB.pm - some customer user functions
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: DB.pm,v 1.86 2010/11/25 11:09:01 mg Exp $
+# $Id: DB.pm,v 1.80.2.1 2010/04/14 19:40:58 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,14 +15,13 @@ use strict;
 use warnings;
 
 use Crypt::PasswdMD5 qw(unix_md5_crypt);
-use Digest::SHA::PurePerl qw(sha1_hex sha256_hex);
 
 use Kernel::System::CheckItem;
 use Kernel::System::Valid;
 use Kernel::System::Cache;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.86 $) [1];
+$VERSION = qw($Revision: 1.80.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -114,8 +113,6 @@ sub new {
         $Self->{NotParentDBObject} = 1;
     }
 
-    $Self->{CaseSensitive} = $Self->{CustomerUserMap}->{Params}->{CaseSensitive} || 0;
-
     return $Self;
 }
 
@@ -154,12 +151,7 @@ sub CustomerName {
     else {
 
         $UserLogin = $Self->{DBObject}->Quote($UserLogin);
-        if ( $Self->{CaseSensitive} ) {
-            $SQL .= "$Self->{CustomerKey} = '$UserLogin'";
-        }
-        else {
-            $SQL .= "LOWER($Self->{CustomerKey}) = LOWER('$UserLogin')";
-        }
+        $SQL .= "LOWER($Self->{CustomerKey}) = LOWER('$UserLogin')";
     }
 
     # check cache
@@ -226,9 +218,6 @@ sub CustomerSearch {
         $SQL .= " , first_name, last_name, email ";
     }
 
-    # get like escape string needed for some databases (e.g. oracle)
-    my $LikeEscapeString = $Self->{DBObject}->GetDatabaseFunction('LikeEscapeString');
-
     # build SQL string 2/2
     $SQL .= " FROM $Self->{CustomerTable} WHERE ";
     if ( $Param{Search} ) {
@@ -255,12 +244,7 @@ sub CustomerSearch {
                     $SQLExt .= ' OR ';
                 }
                 my $PostMasterSearch = $Self->{DBObject}->Quote( $Param{PostMasterSearch}, 'Like' );
-                if ( $Self->{CaseSensitive} ) {
-                    $SQLExt .= " $Field LIKE '$PostMasterSearch' $LikeEscapeString ";
-                }
-                else {
-                    $SQLExt .= " LOWER($Field) LIKE LOWER('$PostMasterSearch') $LikeEscapeString ";
-                }
+                $SQLExt .= " LOWER($Field) LIKE LOWER('$PostMasterSearch') ";
             }
             $SQL .= $SQLExt;
         }
@@ -280,12 +264,7 @@ sub CustomerSearch {
         else {
             $UserLogin = $Self->{DBObject}->Quote( $UserLogin, 'Like' );
             $UserLogin =~ s/\*/%/g;
-            if ( $Self->{CaseSensitive} ) {
-                $SQL .= "$Self->{CustomerKey} LIKE '$UserLogin' $LikeEscapeString";
-            }
-            else {
-                $SQL .= "LOWER($Self->{CustomerKey}) LIKE LOWER('$UserLogin') $LikeEscapeString";
-            }
+            $SQL .= "LOWER($Self->{CustomerKey}) LIKE LOWER('$UserLogin')";
         }
     }
 
@@ -475,13 +454,7 @@ sub CustomerUserDataGet {
         $SQL .= "$Self->{CustomerKey} = " . $Self->{DBObject}->Quote( $User, 'Integer' );
     }
     else {
-        if ( $Self->{CaseSensitive} ) {
-            $SQL .= "$Self->{CustomerKey} = '" . $Self->{DBObject}->Quote($User) . "'";
-        }
-        else {
-            $SQL
-                .= "LOWER($Self->{CustomerKey}) = LOWER('" . $Self->{DBObject}->Quote($User) . "')";
-        }
+        $SQL .= "LOWER($Self->{CustomerKey}) = LOWER('" . $Self->{DBObject}->Quote($User) . "')";
     }
 
     # get initial data
@@ -541,13 +514,8 @@ sub CustomerUserAdd {
     }
 
     # check needed stuff
-    ENTRY:
     for my $Entry ( @{ $Self->{CustomerUserMap}->{Map} } ) {
         if ( !$Param{ $Entry->[0] } && $Entry->[4] ) {
-
-            # skip UserLogin, will be checked later
-            next ENTRY if ( $Entry->[0] eq 'UserLogin' );
-
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Entry->[0]!" );
             return;
         }
@@ -833,7 +801,7 @@ sub SetPassword {
     }
 
     # crypt with md5 crypt
-    elsif ( $CryptType eq 'md5' || !$CryptType ) {
+    else {
 
         # encode output, needed by unix_md5_crypt() only non utf8 signs
         $Self->{EncodeObject}->EncodeOutput( \$Pw );
@@ -841,26 +809,6 @@ sub SetPassword {
 
         $CryptedPw = unix_md5_crypt( $Pw, $Login );
         $Self->{EncodeObject}->EncodeInput( \$CryptedPw );
-    }
-
-    # crypt with sha1
-    elsif ( $CryptType eq 'sha1' ) {
-
-        # encode output, needed by sha1_hex() only non utf8 signs
-        $Self->{EncodeObject}->EncodeOutput( \$Pw );
-
-        $CryptedPw = sha1_hex($Pw);
-    }
-
-    # crypt with sha2
-    # if CrypType is set to anything else, including sha2
-    else {
-
-        # encode output, needed by sha256_hex() only non utf8 signs
-        $Self->{EncodeObject}->EncodeOutput( \$Pw );
-
-        $CryptedPw = sha256_hex($Pw);
-
     }
 
     # update db
@@ -889,17 +837,10 @@ sub SetPassword {
                 .= "$Param{LoginCol} = " . $Self->{DBObject}->Quote( $Param{UserLogin}, 'Integer' );
         }
         else {
-            if ( $Self->{CaseSensitive} ) {
-                $SQL .= "$Param{LoginCol} = '"
-                    . $Self->{DBObject}->Quote( $Param{UserLogin} ) . "'";
-            }
-            else {
-                $SQL .= "LOWER($Param{LoginCol}) = LOWER('"
-                    . $Self->{DBObject}->Quote( $Param{UserLogin} ) . "')";
-            }
+            $SQL .= "LOWER($Param{LoginCol}) = LOWER('"
+                . $Self->{DBObject}->Quote( $Param{UserLogin} ) . "')";
 
         }
-
         return if !$Self->{DBObject}->Do( SQL => $SQL );
 
         # log notice
