@@ -1,8 +1,8 @@
 # --
 # Kernel/System/PDF.pm - PDF lib
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: PDF.pm,v 1.47 2011/05/09 13:31:44 mb Exp $
+# $Id: PDF.pm,v 1.41.2.1 2010/04/14 16:51:40 bes Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.47 $) [1];
+$VERSION = qw($Revision: 1.41.2.1 $) [1];
 
 =head1 NAME
 
@@ -93,17 +93,6 @@ sub new {
         return;
     }
     elsif (
-
-        # version 2.x or newer exports a proper version number
-        $PDF::API2::VERSION =~ m{^(\d)\..*}mx
-        && ( $1 > 1 )
-        )
-    {
-        return $Self;
-    }
-    elsif (
-
-        # versions 0.73 and lower have a special Version.pm
         $PDF::API2::Version::VERSION =~ m{^(\d)\.(\d\d).*}mx
         && ( $1 > 0 || ( $1 eq 0 && $2 >= 57 ) )
         )
@@ -113,8 +102,7 @@ sub new {
     else {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message =>
-                "PDF support activated in SysConfig but PDF::API2 0.57 or newer is required. Found version $PDF::API2::Version::VERSION.",
+            Message => "PDF support activated in SysConfig but PDF::API2 0.57 or newer is required!"
         );
         return;
     }
@@ -203,10 +191,6 @@ sub DocumentNew {
         'Subject'  => $Self->{Document}->{Title},
     );
 
-    # add font directory
-    my $FontDir = $Self->{ConfigObject}->Get('Home') . '/var/fonts';
-    $Self->{PDF}->addFontDirs($FontDir);
-
     if ( !$Param{Testfonts} ) {
 
         # get font config
@@ -216,8 +200,7 @@ sub DocumentNew {
         for my $FontType ( keys %FontFiles ) {
             $Self->{Font}->{$FontType} = $Self->{PDF}->ttfont(
                 $FontFiles{$FontType},
-                -encode     => $Self->{Document}->{Encode},
-                -unicodemap => 1,
+                -encode => $Self->{Document}->{Encode},
             );
         }
     }
@@ -226,13 +209,11 @@ sub DocumentNew {
         # set testfont (only used in unitests)
         $Self->{Font}->{Testfont1} = $Self->{PDF}->corefont(
             'Helvetica',
-            -encode     => $Self->{Document}->{Encode},
-            -unicodemap => 1,
+            -encode => $Self->{Document}->{Encode},
         );
         $Self->{Font}->{Testfont2} = $Self->{PDF}->ttfont(
             'DejaVuSans.ttf',
-            -encode     => $Self->{Document}->{Encode},
-            -unicodemap => 1,
+            -encode => $Self->{Document}->{Encode},
         );
 
         # get font config
@@ -2152,7 +2133,7 @@ sub _TableBlockNextCalculate {
     my $ColumnStart = 'NULL';
     my $ColumnStop  = 0;
 
-    # calculate, what cells can output (what cells are active)
+    # calculate, what cells can output (what cells are aktive)
     my $RowCounter = 0;
     for my $Row ( @{ $Param{CellData} } ) {
 
@@ -2164,7 +2145,7 @@ sub _TableBlockNextCalculate {
             }
         }
 
-        # now calculate, what cells can output (what cells are active)
+        # now calculate, what cells can output (what cells are aktive)
         for ( my $ColumnCounter = 0; $ColumnCounter < scalar @$Row; $ColumnCounter++ ) {
 
             # calculate RowStart and ColumnStart
@@ -2451,7 +2432,7 @@ sub _TableCellOutput {
 
 =item _TableCellOnCount()
 
-count all active cells
+count all aktive cells
 
    Return
        $CellCount
@@ -3533,14 +3514,14 @@ sub _CurPositionGet {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.47 $ $Date: 2011/05/09 13:31:44 $
+$Revision: 1.41.2.1 $ $Date: 2010/04/14 16:51:40 $
 
 =cut
