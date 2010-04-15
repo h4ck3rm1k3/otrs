@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Email.pm - the global email send module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Email.pm,v 1.75 2011/06/07 07:24:56 jb Exp $
+# $Id: Email.pm,v 1.68.2.1 2010/04/15 19:50:07 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Crypt;
 use Kernel::System::HTMLUtils;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.75 $) [1];
+$VERSION = qw($Revision: 1.68.2.1 $) [1];
 
 =head1 NAME
 
@@ -224,13 +224,7 @@ sub Send {
             CryptType    => $Param{Crypt}->{Type},
             MainObject   => $Self->{MainObject},
         );
-        if ( !$CryptObject ) {
-            $Self->{LogObject}->Log(
-                Message  => 'Not possible to create crypt object',
-                Priority => 'error',
-            );
-            return;
-        }
+        return !$CryptObject;
 
         my $Body = $CryptObject->Crypt(
             Message => $Param{Body},
@@ -251,9 +245,8 @@ sub Send {
 
     # loop
     if ( $Param{Loop} ) {
-        $Header{'X-Loop'}          = 'yes';
-        $Header{'Precedence:'}     = 'bulk';
-        $Header{'Auto-Submitted:'} = "auto-generated";
+        $Header{'X-Loop'} = 'yes';
+        $Header{Precedence} = 'bulk';
     }
 
     # do some encode
@@ -298,10 +291,8 @@ sub Send {
     my $Product = $Self->{ConfigObject}->Get('Product');
     my $Version = $Self->{ConfigObject}->Get('Version');
 
-    if ( !$Self->{ConfigObject}->Get('Secure::DisableBanner') ) {
-        $Header{'X-Mailer'}     = "$Product Mail Service ($Version)";
-        $Header{'X-Powered-By'} = 'OTRS - Open Ticket Request System (http://otrs.org/)';
-    }
+    $Header{'X-Mailer'}     = "$Product Mail Service ($Version)";
+    $Header{'X-Powered-By'} = 'OTRS - Open Ticket Request System (http://otrs.org/)';
     $Header{Type} = $Param{MimeType} || 'text/plain';
 
     # define email encoding
@@ -467,13 +458,7 @@ sub Send {
             MainObject   => $Self->{MainObject},
             CryptType    => $Param{Sign}->{Type},
         );
-        if ( !$CryptObject ) {
-            $Self->{LogObject}->Log(
-                Message  => 'Not possible to create crypt object',
-                Priority => 'error',
-            );
-            return;
-        }
+        return if !$CryptObject;
 
         if ( $Param{Sign}->{Type} eq 'PGP' ) {
 
@@ -532,16 +517,16 @@ sub Send {
             $T =~ s/\x0A/\x0D\x0A/g;
             $T =~ s/\x0D+/\x0D/g;
             my $Sign = $CryptObject->Sign(
-                Message  => $T,
-                Filename => $Param{Sign}->{Key},
-                Type     => 'Detached',
+                Message => $T,
+                Hash    => $Param{Sign}->{Key},
+                Type    => 'Detached',
             );
             if ($Sign) {
                 use MIME::Parser;
-                my $Parser = MIME::Parser->new();
+                my $Parser = new MIME::Parser;
                 $Parser->output_to_core('ALL');
 
-                $Parser->output_dir( $Self->{ConfigObject}->Get('TempDir') );
+                #        $Parser->output_dir($Self->{ConfigObject}->Get('TempDir'));
                 $Entity = $Parser->parse_data( $Header . $Sign );
             }
         }
@@ -615,14 +600,7 @@ sub Send {
             MainObject   => $Self->{MainObject},
             CryptType    => $Param{Crypt}->{Type},
         );
-
-        if ( !$CryptObject ) {
-            $Self->{LogObject}->Log(
-                Message  => 'Failed creation of crypt object',
-                Priority => 'error',
-            );
-            return;
-        }
+        return !$CryptObject;
 
         # make_multipart -=> one attachment for encryption
         $Entity->make_multipart( 'mixed;', Force => 1, );
@@ -637,13 +615,13 @@ sub Send {
 
         # crypt it
         my $Crypt = $CryptObject->Crypt(
-            Message  => $Entity->parts(0)->as_string(),
-            Filename => $Param{Crypt}->{Key},
+            Message => $Entity->parts(0)->as_string(),
+            Hash    => $Param{Crypt}->{Key},
         );
         use MIME::Parser;
-        my $Parser = MIME::Parser->new();
+        my $Parser = new MIME::Parser;
 
-        $Parser->output_dir( $Self->{ConfigObject}->Get('TempDir') );
+        #        $Parser->output_dir($Self->{ConfigObject}->Get('TempDir'));
         $Entity = $Parser->parse_data( $Header . $Crypt );
     }
 
@@ -708,13 +686,7 @@ sub Send {
         Body    => \$Param{Body},
     );
 
-    if ( !$Sent ) {
-        $Self->{LogObject}->Log(
-            Message  => "Error sending message",
-            Priority => 'info',
-        );
-        return;
-    }
+    return if !$Sent;
 
     return ( \$Param{Header}, \$Param{Body} );
 }
@@ -875,16 +847,16 @@ sub _MessageIDCreate {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.75 $ $Date: 2011/06/07 07:24:56 $
+$Revision: 1.68.2.1 $ $Date: 2010/04/15 19:50:07 $
 
 =cut
