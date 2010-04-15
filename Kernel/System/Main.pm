@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Main.pm - main core components
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Main.pm,v 1.61 2011/11/28 16:44:14 mh Exp $
+# $Id: Main.pm,v 1.42.2.1 2010/04/15 06:47:12 mae Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -16,13 +16,11 @@ use warnings;
 
 use Digest::MD5 qw(md5_hex);
 use Data::Dumper;
-use File::stat;
-use Unicode::Normalize;
-use Carp qw(confess);
+
 use Kernel::System::Encode;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.61 $) [1];
+$VERSION = qw($Revision: 1.42.2.1 $) [1];
 
 =head1 NAME
 
@@ -30,7 +28,7 @@ Kernel::System::Main - main object
 
 =head1 SYNOPSIS
 
-All main functions to load modules, die, and handle files.
+All main functions to load modules or to die.
 
 =head1 PUBLIC INTERFACE
 
@@ -97,10 +95,9 @@ sub Require {
     my ( $Self, $Module ) = @_;
 
     if ( !$Module ) {
-	confess "No module passed";
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Need module!' ,
+            Message  => 'Need module!',
         );
         return;
     }
@@ -261,15 +258,15 @@ sub FilenameCleanUp {
 to read files from file system
 
     my $ContentSCALARRef = $MainObject->FileRead(
-        Directory => 'c:\some\location\me_to',
-        Filename  => 'alal.xml',
+        Directory => 'c:\some\location',
+        Filename  => 'me_to/alal.xml',
         # or Location
         Location  => 'c:\some\location\me_to\alal.xml'
     );
 
     my $ContentARRAYRef = $MainObject->FileRead(
-        Directory => 'c:\some\location\me_to',
-        Filename  => 'alal.xml',
+        Directory => 'c:\some\location',
+        Filename  => 'me_to/alal.xml',
         # or Location
         Location  => 'c:\some\location\me_to\alal.xml'
 
@@ -277,8 +274,8 @@ to read files from file system
     );
 
     my $ContentSCALARRef = $MainObject->FileRead(
-        Directory       => 'c:\some\location\me_to',
-        Filename        => 'alal.xml',
+        Directory       => 'c:\some\location',
+        Filename        => 'me_to/alal.xml',
         # or Location
         Location        => 'c:\some\location\me_to\alal.xml'
 
@@ -321,7 +318,7 @@ sub FileRead {
         if ( !$Param{DisableWarnings} ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => "File '$Param{Location}' doesn't exist!"
+                Message  => "File '$Param{Location}' doesn't exists!"
             );
         }
         return;
@@ -334,7 +331,7 @@ sub FileRead {
     }
 
     # return if file can not open
-    if ( !open $FH, $Mode, $Param{Location} ) {
+    if ( !open( $FH, $Mode, $Param{Location} ) ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Can't open '$Param{Location}': $!",
@@ -343,7 +340,7 @@ sub FileRead {
     }
 
     # lock file (Shared Lock)
-    if ( !flock $FH, 1 ) {
+    if ( !flock( $FH, 1 ) ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Can't lock '$Param{Location}': $!",
@@ -352,7 +349,7 @@ sub FileRead {
 
     # enable binmode
     if ( !$Param{Mode} || $Param{Mode} =~ m{ \A binmode }xmsi ) {
-        binmode $FH;
+        binmode($FH);
     }
 
     # read file as array
@@ -441,7 +438,7 @@ sub FileWrite {
 
     # return if file can not open
     my $FH;
-    if ( !open $FH, $Mode, $Param{Location} ) {
+    if ( !open( $FH, $Mode, $Param{Location} ) ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Can't write '$Param{Location}': $!",
@@ -450,7 +447,7 @@ sub FileWrite {
     }
 
     # lock file (Exclusive Lock)
-    if ( !flock $FH, 2 ) {
+    if ( !flock( $FH, 2 ) ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Can't lock '$Param{Location}': $!",
@@ -458,7 +455,7 @@ sub FileWrite {
     }
 
     # empty file first (needed if file is open by '+<')
-    truncate $FH, 0;
+    truncate( $FH, 0 );
 
     # enable binmode
     if ( !$Param{Mode} || lc $Param{Mode} eq 'binmode' ) {
@@ -467,25 +464,16 @@ sub FileWrite {
         $Self->{EncodeObject}->EncodeOutput( $Param{Content} );
 
         # set file handle to binmode
-        binmode $FH;
+        binmode($FH);
     }
 
-    # write file if content is not undef
-    if ( defined ${ $Param{Content} } ) {
-        print $FH ${ $Param{Content} };
-    }
-
-    # write empty file if content is undef
-    else {
-        print $FH '';
-    }
-
-    # close the filehandle
-    close $FH;
+    # write file and close it
+    print $FH ${ $Param{Content} };
+    close($FH);
 
     # set permission
     if ( $Param{Permission} ) {
-        if ( length $Param{Permission} == 3 ) {
+        if ( length( $Param{Permission} ) == 3 ) {
             $Param{Permission} = "0$Param{Permission}";
         }
         chmod( oct( $Param{Permission} ), $Param{Location} );
@@ -540,7 +528,7 @@ sub FileDelete {
         if ( !$Param{DisableWarnings} ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => "File '$Param{Location}' doesn't exist!"
+                Message  => "File '$Param{Location}' doesn't exists!"
             );
         }
         return;
@@ -560,73 +548,9 @@ sub FileDelete {
     return 1;
 }
 
-=item FileGetMTime()
-
-get timestamp of file change time
-
-    my $FileMTime = $MainObject->FileGetMTime(
-        Directory => 'c:\some\location',
-        Filename  => 'me_to/alal.xml',
-        # or Location
-        Location  => 'c:\some\location\me_to\alal.xml'
-    );
-
-=cut
-
-sub FileGetMTime {
-    my ( $Self, %Param ) = @_;
-
-    my $FH;
-    if ( $Param{Filename} && $Param{Directory} ) {
-
-        # filename clean up
-        $Param{Filename} = $Self->FilenameCleanUp(
-            Filename => $Param{Filename},
-            Type => $Param{Type} || 'Local',    # Local|Attachment|MD5
-        );
-        $Param{Location} = "$Param{Directory}/$Param{Filename}";
-    }
-    elsif ( $Param{Location} ) {
-
-        # filename clean up
-        $Param{Location} =~ s{//}{/}xmsg;
-    }
-    else {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need Filename and Directory or Location!',
-        );
-
-    }
-
-    # check if file exists
-    if ( !-e $Param{Location} ) {
-        if ( !$Param{DisableWarnings} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "File '$Param{Location}' doesn't exist!"
-            );
-        }
-        return;
-    }
-
-    # get file metadata
-    my $Stat = stat( $Param{Location} );
-
-    if ( !$Stat ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Cannot stat file '$Param{Location}': $!"
-        );
-        return;
-    }
-
-    return $Stat->mtime;
-}
-
 =item MD5sum()
 
-get a md5 sum of a file or a string
+get a md5 sum of a file or an string
 
     my $MD5Sum = $MainObject->MD5sum(
         Filename => '/path/to/me_to_alal.xml',
@@ -647,10 +571,7 @@ sub MD5sum {
     my ( $Self, %Param ) = @_;
 
     if ( !$Param{Filename} && !$Param{String} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need Filename or String!',
-        );
+        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need Filename or String!' );
         return;
     }
 
@@ -658,7 +579,7 @@ sub MD5sum {
     if ( $Param{Filename} && !-e $Param{Filename} ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "File '$Param{Filename}' doesn't exist!",
+            Message  => "File '$Param{Filename}' doesn't exists!",
         );
         return;
     }
@@ -668,17 +589,17 @@ sub MD5sum {
 
         # open file
         my $FH;
-        if ( !open $FH, '<', $Param{Filename} ) {
+        if ( !open( $FH, '<', $Param{Filename} ) ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => "Can't read '$Param{Filename}': $!",
+                Message  => "Can't write '$Param{Filename}': $!",
             );
             return;
         }
 
-        binmode $FH;
+        binmode($FH);
         my $MD5sum = Digest::MD5->new()->addfile($FH)->hexdigest();
-        close $FH;
+        close($FH);
 
         return $MD5sum;
     }
@@ -755,7 +676,12 @@ sub Dump {
     # strings as latin1/8bit instead of utf8. Use Storable module used for
     # workaround.
     # -> http://rt.cpan.org/Ticket/Display.html?id=28607
-    if ( $Self->Require('Storable') && $Type eq 'binary' ) {
+    if (
+        $Self->{EncodeObject}->CharsetInternal()
+        && $Self->Require('Storable')
+        && $Type eq 'binary'
+        )
+    {
 
         # Clone the data because we need to disable the utf8 flag in all
         # reference variables and we want not to do this in the orig.
@@ -828,138 +754,12 @@ sub _Dump {
         return;
     }
 
-    # data is a ref reference
-    if ( ref ${$Data} eq 'REF' ) {
-
-        # start recursion
-        $Self->_Dump( ${$Data} );
-
-        return;
-    }
-
     $Self->{LogObject}->Log(
         Priority => 'error',
         Message  => "Unknown ref '" . ref( ${$Data} ) . "'!",
     );
 
     return;
-}
-
-=item DirectoryRead()
-
-reads a directory and returns an array with results.
-
-    my @FilesInDirectory = $MainObject->DirectoryRead(
-        Directory => '/tmp',
-        Filter    => 'Filenam*',
-    );
-
-    my @FilesInDirectory = $MainObject->DirectoryRead(
-        Directory => $Path,
-        Filter    => '*',
-    );
-
-You can pass several additional filters at once:
-
-    my @FilesInDirectory = $MainObject->DirectoryRead(
-        Directory => '/tmp',
-        Filter    => \@MyFilters,
-    );
-
-The result strings are absolute paths, and they are converted to the
-internally used charset utf-8, if it is configured.
-
-Use the 'Silent' parameter to suppress log messages when a directory
-does not have to exist:
-
-    my @FilesInDirectory = $MainObject->DirectoryRead(
-        Directory => '/special/optional/directory/',
-        Filter    => '*',
-        Silent    => 1,     # will not log errors if the directory does not exist
-    );
-
-=cut
-
-sub DirectoryRead {
-    my ( $Self, %Param ) = @_;
-
-    # check needed params
-    for my $Needed (qw(Directory Filter)) {
-        if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
-                Message  => "Needed $Needed: $!",
-                Priority => 'error',
-            );
-            return;
-        }
-    }
-
-    # if directory doesn't exists stop
-    if ( !-d $Param{Directory} && !$Param{Silent} ) {
-        $Self->{LogObject}->Log(
-            Message  => "Directory doesn't exist: $Param{Directory}: $!",
-            Priority => 'error',
-        );
-        return;
-    }
-
-    # check Filter param
-    if ( ref $Param{Filter} ne '' && ref $Param{Filter} ne 'ARRAY' ) {
-        $Self->{LogObject}->Log(
-            Message  => 'Filter param need to be scalar or array ref!',
-            Priority => 'error',
-        );
-        return;
-    }
-
-    # prepare non array filter
-    if ( ref $Param{Filter} ne 'ARRAY' ) {
-        $Param{Filter} = [ $Param{Filter} ];
-    }
-
-    # executes glob for every filter
-    my @GlobResults;
-    my %Seen;
-
-    for my $Filter ( @{ $Param{Filter} } ) {
-        my @Glob = glob "$Param{Directory}/$Filter";
-
-        # look for repeated values
-        for my $GlobName (@Glob) {
-            next if !-e $GlobName;
-            if ( !$Seen{$GlobName} ) {
-                push @GlobResults, $GlobName;
-                $Seen{$GlobName} = 1;
-            }
-        }
-    }
-
-    # if clean results
-    return if !@GlobResults;
-
-    # compose normalize every name in the file list
-    my @Results;
-    for my $Filename (@GlobResults) {
-
-        # first convert filename to utf-8 if utf-8 is used internally
-        $Filename = $Self->{EncodeObject}->Convert2CharsetInternal(
-            Text => $Filename,
-            From => 'utf-8',
-        );
-
-        # second, convert it to combined normalization form (NFC), if it is an utf-8 string
-        # this has to be done because MacOS stores filenames as NFD on HFS+ partitions,
-        #   leading to data inconsistencies
-        if ( Encode::is_utf8($Filename) ) {
-            $Filename = Unicode::Normalize::NFC($Filename);
-        }
-
-        push @Results, $Filename;
-    }
-
-    # always sort the result
-    return sort @Results;
-
 }
 
 1;
@@ -970,16 +770,16 @@ sub DirectoryRead {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.61 $ $Date: 2011/11/28 16:44:14 $
+$Revision: 1.42.2.1 $ $Date: 2010/04/15 06:47:12 $
 
 =cut
