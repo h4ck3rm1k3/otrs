@@ -2,7 +2,7 @@
 # Kernel/System/JSON.pm - Wrapper functions for encoding and decoding JSON
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: JSON.pm,v 1.7 2010/08/31 09:26:00 mg Exp $
+# $Id: JSON.pm,v 1.1.2.1 2010/04/15 10:43:34 mae Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use JSON;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.7 $) [1];
+$VERSION = qw($Revision: 1.1.2.1 $) [1];
 
 =head1 NAME
 
@@ -51,11 +51,7 @@ create a JSON object
         EncodeObject => $EncodeObject,
     );
 
-    my $JSONObject = Kernel::System::JSON->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
+    my $JSONObject = Kernel::System::JSON->new();
 
 =cut
 
@@ -82,9 +78,8 @@ sub new {
 
 Encode a perl data structure to a JSON string.
 
-    my $JSONString = $JSONObject->Encode(
-        Data     => $Data,
-        SortKeys => 1,    (optional) (0|1) default 0, to sort the keys of the json data
+    $JSONObject->Encode(
+        Data => $Data,
     );
 
 =cut
@@ -101,26 +96,22 @@ sub Encode {
         return;
     }
 
-    # sort the keys of the JSON data
-    if ( $Param{SortKeys} ) {
-        $Self->{JSONObject}->canonical( [1] );
-    }
-
     # get JSON-encoded presentation of perl structure
     my $JSONEncoded = $Self->{JSONObject}->encode( $Param{Data} ) || '""';
 
     return $JSONEncoded;
 }
 
-=item Decode()
-
-Decode a JSON string to a perl data structure.
-
-    my $PerlStructurScalar = $JSONObject->Decode(
-        Data => $JSONString,
-    );
-
-=cut
+# function is not used yet
+#=item Decode()
+#
+#Decode a JSON string to a perl data structure.
+#
+#    $JSONObject->Decode(
+#        Data => $JSONString,
+#    );
+#
+#=cut
 
 sub Decode {
     my ( $Self, %Param ) = @_;
@@ -129,40 +120,9 @@ sub Decode {
     return if !defined $Param{Data};
 
     # decode JSON encoded to perl structure
-    my $Scalar = $Self->{JSONObject}->decode( $Param{Data} );
+    my $scalar = $Self->{JSONObject}->decode( $Param{Data} );
 
-    return $Scalar;
-}
-
-=item True()
-
-returns a constant that can be mapped to a boolean true value
-in JSON rather than a string with "true".
-
-    my $TrueConstant = $JSONObject->True();
-
-    my $TrueJS = $JSONObject->Encode(
-        Data => $TrueConstant,
-    );
-
-This will return the string 'true'.
-If you pass the perl string 'true' to JSON, it will return '"true"'
-as a JavaScript string instead.
-
-=cut
-
-sub True {
-    return JSON::true();
-}
-
-=item False()
-
-like C<True()>, but for a false boolean value.
-
-=cut
-
-sub False {
-    return JSON::false();
+    return $scalar;
 }
 
 1;
@@ -171,14 +131,14 @@ sub False {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.7 $ $Date: 2010/08/31 09:26:00 $
+$Revision: 1.1.2.1 $ $Date: 2010/04/15 10:43:34 $
 
 =cut
