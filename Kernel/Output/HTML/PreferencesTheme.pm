@@ -2,7 +2,7 @@
 # Kernel/Output/HTML/PreferencesTheme.pm
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: PreferencesTheme.pm,v 1.11 2010/04/19 18:58:23 martin Exp $
+# $Id: PreferencesTheme.pm,v 1.10.2.1 2010/04/19 18:55:41 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = qw($Revision: 1.10.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -56,7 +56,7 @@ sub Param {
         }
     }
 
-    my @Params;
+    my @Params = ();
     push(
         @Params,
         {
