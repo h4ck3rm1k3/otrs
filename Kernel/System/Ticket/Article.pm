@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Ticket/Article.pm - global article module for OTRS kernel
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Article.pm,v 1.307 2012/01/17 16:04:38 mab Exp $
+# $Id: Article.pm,v 1.246.2.1 2010/04/21 16:51:31 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,12 +18,9 @@ use Kernel::System::HTMLUtils;
 use Kernel::System::PostMaster::LoopProtection;
 use Kernel::System::TemplateGenerator;
 use Kernel::System::Notification;
-use Kernel::System::EmailParser;
-
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.307 $) [1];
+$VERSION = qw($Revision: 1.246.2.1 $) [1];
 
 =head1 NAME
 
@@ -61,7 +58,7 @@ create an article
         HistoryComment   => 'Some free text!',
         UserID           => 123,
         NoAgentNotify    => 0,                                      # if you don't want to send agent notifications
-        AutoResponseType => 'auto reply'                            # auto reject|auto follow up|auto reply/new ticket|auto remove
+        AutoResponseType => 'auto reply'                            # auto reject|auto follow up|auto follow up|auto remove
 
         ForceNotificationToUserID   => [ 1, 43, 56 ],               # if you want to force somebody
         ExcludeNotificationToUserID => [ 43,56 ],                   # if you want full exclude somebody from notfications,
@@ -154,19 +151,6 @@ sub ArticleCreate {
         }
     }
 
-    # for the event handler, before any actions have taken place
-    my %OldTicketData = $Self->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 1,
-    );
-
-    my $HTMLUtilsObject = Kernel::System::HTMLUtils->new(
-        LogObject    => $Self->{LogObject},
-        ConfigObject => $Self->{ConfigObject},
-        MainObject   => $Self->{MainObject},
-        EncodeObject => $Self->{EncodeObject},
-    );
-
     # add 'no body' if there is no body there!
     my @AttachmentConvert;
     if ( !$Param{Body} ) {
@@ -187,6 +171,12 @@ sub ArticleCreate {
         # get ascii body
         $Param{MimeType} = 'text/plain';
         $Param{ContentType} =~ s/html/plain/i;
+        my $HTMLUtilsObject = Kernel::System::HTMLUtils->new(
+            LogObject    => $Self->{LogObject},
+            ConfigObject => $Self->{ConfigObject},
+            MainObject   => $Self->{MainObject},
+            EncodeObject => $Self->{EncodeObject},
+        );
         $Param{Body} = $HTMLUtilsObject->ToAscii(
             String => $Param{Body},
         );
@@ -268,21 +258,6 @@ sub ArticleCreate {
         return;
     }
 
-    # check for base64 encoded images in html body and upload them
-    for my $Attachment (@AttachmentConvert) {
-
-        if (
-            $Attachment->{ContentType} eq "text/html; charset=\"$Param{Charset}\""
-            && $Attachment->{Filename} eq 'file-2'
-            )
-        {
-            $HTMLUtilsObject->EmbeddedImagesExtract(
-                DocumentRef    => \$Attachment->{Content},
-                AttachmentsRef => \@AttachmentConvert,
-            );
-        }
-    }
-
     # add converted attachments
     for my $Attachment (@AttachmentConvert) {
         $Self->ArticleWriteAttachment(
@@ -316,14 +291,13 @@ sub ArticleCreate {
     $Self->EventHandler(
         Event => 'ArticleCreate',
         Data  => {
-            ArticleID     => $ArticleID,
-            TicketID      => $Param{TicketID},
-            OldTicketData => \%OldTicketData,
+            ArticleID => $ArticleID,
+            TicketID  => $Param{TicketID},
         },
         UserID => $Param{UserID},
     );
 
-    # reset unlock if needed
+    # reset escalation if needed
     if ( !$Param{SenderType} ) {
         $Param{SenderType} = $Self->ArticleSenderTypeLookup( SenderTypeID => $Param{SenderTypeID} );
     }
@@ -331,7 +305,7 @@ sub ArticleCreate {
         $Param{ArticleType} = $Self->ArticleTypeLookup( ArticleTypeID => $Param{ArticleTypeID} );
     }
 
-    # reset unlock time if customer sent an update
+    # reset escalation time if customer send an update
     if ( $Param{SenderType} eq 'customer' ) {
 
         # check if latest article comes from customer
@@ -382,10 +356,7 @@ sub ArticleCreate {
     # send no agent notification!?
     return $ArticleID if $Param{NoAgentNotify};
 
-    my %Ticket = $Self->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
+    my %Ticket = $Self->TicketGet( TicketID => $Param{TicketID} );
 
     # remember already sent agent notifications
     my %AlreadySent;
@@ -508,9 +479,6 @@ sub ArticleCreate {
                     Notify   => 1,
                     Result   => 'ARRAY',
                 );
-
-                # add also owner to be notified
-                push @OwnerIDs, $Ticket{OwnerID};
             }
             for my $UserID (@OwnerIDs) {
                 next if !$UserID;
@@ -737,11 +705,11 @@ sub ArticleGetTicketIDOfMessageID {
     # one found
     return $TicketID if $Count == 1;
 
-    # more then one found! that should not be, a message_id should be unique!
+    # more the one found! that should not be, a message_id should be uniq!
     $Self->{LogObject}->Log(
         Priority => 'notice',
         Message  => "The MessageID '$Param{MessageID}' is in your database "
-            . "more then one time! That should not be, a message_id should be unique!",
+            . "more the one time! That should not be, a message_id should be uniq!",
     );
     return;
 }
@@ -984,7 +952,7 @@ get a article type list
         Result => 'ARRAY', # optional, ARRAY|HASH
     );
 
-    # to get only article types visible for customers
+    # to get just customer shown article types
     my @ArticleTypeList = $TicketObject->ArticleTypeList(
         Result => 'ARRAY',    # optional, ARRAY|HASH
         Type   => 'Customer', # optional to get only customer viewable article types
@@ -1019,11 +987,98 @@ sub ArticleTypeList {
     return @Array;
 }
 
+=item ArticleFreeTextGet()
+
+get _possible_ article free text options
+
+Note: the current value is accessible over ArticleGet()
+
+    my $HashRef = $TicketObject->ArticleFreeTextGet(
+        Type      => 'ArticleFreeText3',
+        ArticleID => 123,
+        UserID    => 123, # or CustomerUserID
+    );
+
+    my $HashRef = $TicketObject->ArticleFreeTextGet(
+        Type   => 'ArticleFreeText3',
+        UserID => 123, # or CustomerUserID
+    );
+
+    # fill up with existing values
+    my $HashRef = $TicketObject->ArticleFreeTextGet(
+        Type   => 'ArticleFreeText3',
+        FillUp => 1,
+        UserID => 123, # or CustomerUserID
+    );
+
+=cut
+
+sub ArticleFreeTextGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value} || '';
+    my $Key   = $Param{Key}   || '';
+
+    # check needed stuff
+    for (qw(Type)) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
+    if ( !$Param{UserID} && !$Param{CustomerUserID} ) {
+        $Self->{LogObject}->Log( Priority => 'error', Message => "Need UserID or CustomerUserID!" );
+        return;
+    }
+
+    # get config
+    my %Data;
+    if ( ref $Self->{ConfigObject}->Get( $Param{Type} ) eq 'HASH' ) {
+        %Data = %{ $Self->{ConfigObject}->Get( $Param{Type} ) };
+    }
+
+    # check existing
+    if ( $Param{FillUp} ) {
+        my $Counter = $Param{Type};
+        $Counter =~ s/^.*(\d)$/$1/;
+        if ( %Data && $Param{Type} =~ /text/i ) {
+            $Self->{DBObject}->Prepare( SQL => "SELECT distinct(a_freetext$Counter) FROM article" );
+            while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+                if ( $Row[0] && !$Data{ $Row[0] } ) {
+                    $Data{ $Row[0] } = $Row[0];
+                }
+            }
+        }
+        elsif (%Data) {
+            $Self->{DBObject}->Prepare( SQL => "SELECT distinct(a_freekey$Counter) FROM article" );
+            while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+                if ( $Row[0] && !$Data{ $Row[0] } ) {
+                    $Data{ $Row[0] } = $Row[0];
+                }
+            }
+        }
+    }
+
+    # workflow
+    my $ACL = $Self->TicketAcl(
+        %Param,
+        ReturnType    => 'Ticket',
+        ReturnSubType => $Param{Type},
+        Data          => \%Data,
+    );
+    if ($ACL) {
+        my %Hash = $Self->TicketAclData();
+        return \%Hash;
+    }
+
+    # /workflow
+    return if !%Data;
+    return \%Data;
+}
+
 =item ArticleFreeTextSet()
 
-DEPRECATED. This function will be removed in a future version of OTRS, don't use it any more!
-
-set an article free text field
+set article free text
 
     my $Success = $TicketObject->ArticleFreeTextSet(
         TicketID  => 123,
@@ -1050,104 +1105,27 @@ sub ArticleFreeTextSet {
         }
     }
 
-    # check if update is needed
-    my %Article = $Self->ArticleGet(
-        ArticleID     => $Param{ArticleID},
-        DynamicFields => 1,
+    # db quote for key an value
+    for (qw(Counter)) {
+        $Param{$_} = $Self->{DBObject}->Quote( $Param{$_}, 'Integer' );
+    }
+
+    # db update
+    return if !$Self->{DBObject}->Do(
+        SQL => "UPDATE article SET a_freekey$Param{Counter} = ?, a_freetext$Param{Counter} = ?, "
+            . " change_time = current_timestamp, change_by = ? WHERE id = ?",
+        Bind => [ \$Param{Key}, \$Param{Value}, \$Param{UserID}, \$Param{ArticleID} ],
     );
 
-    my $Value = '';
-    my $Key   = '';
-
-    if ( defined $Param{Value} ) {
-        $Value = $Param{Value};
-    }
-    else {
-        $Value = $Article{ 'ArticleFreeText' . $Param{Counter} };
-    }
-
-    if ( defined $Param{Key} ) {
-        $Key = $Param{Key};
-    }
-    else {
-        $Key = $Article{ 'ArticleFreeKey' . $Param{Counter} };
-    }
-
-    my $UpdateValue;
-    my $UpdateKey;
-
-    # update if old Value was null and new Value is not null
-    if ( defined $Value && !defined $Article{"ArticleFreeText$Param{Counter}"} ) {
-        $UpdateValue = 1;
-    }
-
-    # update if old Key was null and new Key is not null
-    if ( defined $Key && !defined $Article{"ArticleFreeKey$Param{Counter}"} ) {
-        $UpdateKey = 1;
-    }
-
-    # check if last value was not null
-    if (
-        defined $Article{"ArticleFreeText$Param{Counter}"}
-        && defined $Article{"ArticleFreeKey$Param{Counter}"}
-        )
-    {
-
-        # no opration is needed if old and new registers are the same on both Key and Value
-        if (
-            $Value  eq $Article{"ArticleFreeText$Param{Counter}"}
-            && $Key eq $Article{"ArticleFreeKey$Param{Counter}"}
-            )
-        {
-            return 1;
-        }
-
-        # update Value field if is different form the old one
-        if ( $Value ne $Article{"ArticleFreeText$Param{Counter}"} ) {
-            $UpdateValue = 1;
-        }
-
-        # update Key field if is different form the old one
-        if ( $Key ne $Article{"ArticleFreeKey$Param{Counter}"} ) {
-            $UpdateKey = 1;
-        }
-    }
-
-    # set the ArticleFreeText as a DynamicField
-    if ($UpdateValue) {
-        my $DynamicFieldConfig = $Self->{DynamicFieldObject}->DynamicFieldGet(
-            Name => "ArticleFreeText$Param{Counter}",
-        );
-
-        my $Success = $Self->{DynamicFieldBackendObject}->ValueSet(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            ObjectID           => $Param{ArticleID},
-            Value              => $Value,
-            UserID             => $Param{UserID},
-        );
-
-        return if !$Success;
-    }
-
-    # set the ArticleFreeKey as a DynamicField
-    if ($UpdateKey) {
-        my $DynamicFieldConfig = $Self->{DynamicFieldObject}->DynamicFieldGet(
-            Name => "ArticleFreeKey$Param{Counter}",
-        );
-
-        my $Success = $Self->{DynamicFieldBackendObject}->ValueSet(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            ObjectID           => $Param{ArticleID},
-            Value              => $Key,
-            UserID             => $Param{UserID},
-        );
-
-        return if !$Success;
-    }
-
-    # clear ticket cache
-    delete $Self->{ 'Cache::GetTicket' . $Param{TicketID} };
-
+    # event
+    $Self->EventHandler(
+        Event => 'ArticleFreeTextUpdate',
+        Data  => {
+            TicketID  => $Param{TicketID},
+            ArticleID => $Param{ArticleID},
+        },
+        UserID => $Param{UserID},
+    );
     return 1;
 }
 
@@ -1156,9 +1134,7 @@ sub ArticleFreeTextSet {
 get last customer article
 
     my %Article = $TicketObject->ArticleLastCustomerArticle(
-        TicketID      => 123,
-        Extended      => 1,      # 0 or 1, see ArticleGet(),
-        DynamicFields => 1,      # 0 or 1, see ArticleGet(),
+        TicketID => 123,
     );
 
 =cut
@@ -1177,11 +1153,7 @@ sub ArticleLastCustomerArticle {
 
     # get article data
     if (@Index) {
-        return $Self->ArticleGet(
-            ArticleID     => $Index[-1],
-            Extended      => $Param{Extended},
-            DynamicFields => $Param{DynamicFields},
-        );
+        return $Self->ArticleGet( ArticleID => $Index[-1], Extended => $Param{Extended} );
     }
 
     # get whole article index
@@ -1196,22 +1168,14 @@ sub ArticleLastCustomerArticle {
 
     # second try, return latest non internal article
     for my $ArticleID ( reverse @Index ) {
-        my %Article = $Self->ArticleGet(
-            ArticleID     => $ArticleID,
-            Extended      => $Param{Extended},
-            DynamicFields => $Param{DynamicFields},
-        );
+        my %Article = $Self->ArticleGet( ArticleID => $ArticleID );
         if ( $Article{StateType} eq 'merged' || $Article{ArticleType} !~ /int/ ) {
             return %Article;
         }
     }
 
     # third try, if we got no internal article, return the latest one
-    return $Self->ArticleGet(
-        ArticleID     => $Index[-1],
-        Extended      => $Param{Extended},
-        DynamicFields => $Param{DynamicFields},
-    );
+    return $Self->ArticleGet( ArticleID => $Index[-1] );
 }
 
 =item ArticleFirstArticle()
@@ -1219,8 +1183,7 @@ sub ArticleLastCustomerArticle {
 get first article
 
     my %Article = $TicketObject->ArticleFirstArticle(
-        TicketID      => 123,
-        DynamicFields => 1,     # 0 or 1, see ArticleGet()
+        TicketID => 123,
     );
 
 =cut
@@ -1245,16 +1208,12 @@ sub ArticleFirstArticle {
         );
         return;
     }
-    return $Self->ArticleGet(
-        ArticleID     => $Index[0],
-        Extended      => $Param{Extended},
-        DynamicFields => $Param{DynamicFields},
-    );
+    return $Self->ArticleGet( ArticleID => $Index[0], Extended => $Param{Extended} );
 }
 
 =item ArticleIndex()
 
-returns an array with article IDs
+returns an array with article id's
 
     my @ArticleIDs = $TicketObject->ArticleIndex(
         TicketID => 123,
@@ -1304,9 +1263,7 @@ sub ArticleIndex {
 returns an array with hash ref (hash contains result of ArticleGet())
 
     my @ArticleBox = $TicketObject->ArticleContentIndex(
-        TicketID      => 123,
-        DynamicFields => 1,         # 0 or 1, default 1. To include or not the dynamic field values on the return structure.
-        UserID        => 1,
+        TicketID => 123,
     );
 
 or with "StripPlainBodyAsAttachment => 1" feature to not include first
@@ -1314,7 +1271,6 @@ attachment / body and html body as attachment
 
     my @ArticleBox = $TicketObject->ArticleContentIndex(
         TicketID                   => 123,
-        UserID                     => 1,
         StripPlainBodyAsAttachment => 1,
     );
 
@@ -1323,7 +1279,6 @@ attachment / body as attachment (html body will be shown as attachment)
 
     my @ArticleBox = $TicketObject->ArticleContentIndex(
         TicketID                   => 123,
-        UserID                     => 1,
         StripPlainBodyAsAttachment => 2,
     );
 
@@ -1332,18 +1287,17 @@ only with given article types
 
     my @ArticleBox = $TicketObject->ArticleContentIndex(
         TicketID    => 123,
-        UserID      => 1,
         ArticleType => [ $ArticleType1, $ArticleType2 ],
     );
 
-example of how to access the hash ref
+examplie how to access the hash ref
 
     for my $Article (@ArticleBox) {
         print "From: $Article->{From}\n";
     }
 
-Note: If an attachment with html body content is available, the attachment id
-is returned as 'AttachmentIDOfHTMLBody' in hash ref.
+Note: If a attachment with html body content is available, the attachment id
+it's given as 'AttachmentIDOfHTMLBody' in hash ref.
 
 =cut
 
@@ -1351,18 +1305,13 @@ sub ArticleContentIndex {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(TicketID UserID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
+    if ( !$Param{TicketID} ) {
+        $Self->{LogObject}->Log( Priority => 'error', Message => 'Need TicketID!' );
+        return;
     }
-
     my @ArticleBox = $Self->ArticleGet(
-        TicketID      => $Param{TicketID},
-        ArticleType   => $Param{ArticleType},
-        UserID        => $Param{UserID},
-        DynamicFields => $Param{DynamicFields},
+        TicketID    => $Param{TicketID},
+        ArticleType => $Param{ArticleType},
     );
 
     # article attachments of each article
@@ -1370,12 +1319,88 @@ sub ArticleContentIndex {
 
         # get attachment index (without attachments)
         my %AtmIndex = $Self->ArticleAttachmentIndex(
-            ContentPath                => $Article->{ContentPath},
-            ArticleID                  => $Article->{ArticleID},
-            StripPlainBodyAsAttachment => $Param{StripPlainBodyAsAttachment},
-            Article                    => $Article,
-            UserID                     => $Param{UserID},
+            ContentPath => $Article->{ContentPath},
+            ArticleID   => $Article->{ArticleID},
         );
+
+        # stript plain attachments and e. g. html attachments
+        if ( $Param{StripPlainBodyAsAttachment} ) {
+
+            # plain attachment mime type vs. html attachment mime type check
+            # remove plain body, rename html attachment
+            my $AttachmentIDPlain = 0;
+            my $AttachmentIDHTML  = 0;
+            for my $AttachmentID ( keys %AtmIndex ) {
+                my %File = %{ $AtmIndex{$AttachmentID} };
+
+                # find plain attachment
+                if (
+                    $File{Filename} eq 'file-1'
+                    && $File{ContentType} =~ /text\/plain/i
+                    )
+                {
+                    $AttachmentIDPlain = $AttachmentID;
+                }
+
+                # find html attachment
+                #  o file-[12], is plain+html attachment
+                #  o file-1.html, is only html attachment
+                if (
+                    ( $File{Filename} =~ /^file-[12]$/ || $File{Filename} eq 'file-1.html' )
+                    && $File{ContentType} =~ /text\/html/i
+                    )
+                {
+                    $AttachmentIDHTML = $AttachmentID;
+                }
+            }
+            if ($AttachmentIDHTML) {
+                delete $AtmIndex{$AttachmentIDPlain};
+
+                # only strip html body attachment by "1"
+                if ( $Param{StripPlainBodyAsAttachment} eq 1 ) {
+                    delete $AtmIndex{$AttachmentIDHTML};
+                }
+                $Article->{AttachmentIDOfHTMLBody} = $AttachmentIDHTML;
+            }
+
+            # plain body size vs. attched body size check
+            # and remove attachment if it's email body
+            if ( !$AttachmentIDHTML ) {
+                my $AttachmentIDPlain = 0;
+                my %AttachmentFilePlain;
+                for my $AttachmentID ( keys %AtmIndex ) {
+                    my %File = %{ $AtmIndex{$AttachmentID} };
+
+                    # remember, file-1 got defined by parsing if no filename was given
+                    if (
+                        $File{Filename} eq 'file-1'
+                        && $File{ContentType} =~ /text\/plain/i
+                        )
+                    {
+                        $AttachmentIDPlain   = $AttachmentID;
+                        %AttachmentFilePlain = %File;
+                        last;
+                    }
+                }
+
+                # plain attachment detected and remove it from attachment index
+                if (%AttachmentFilePlain) {
+
+                    # check body size vs. attachment size to be sure
+                    my $BodySize = bytes::length( $Article->{Body} );
+
+                    # check size by tolerance of 1.1 factor (because of charset difs)
+                    if (
+                        $BodySize / 1.1 < $AttachmentFilePlain{FilesizeRaw}
+                        && $BodySize * 1.1 > $AttachmentFilePlain{FilesizeRaw}
+                        )
+                    {
+                        delete $AtmIndex{$AttachmentIDPlain};
+                    }
+                }
+            }
+
+        }
         $Article->{Atms} = \%AtmIndex;
     }
     return @ArticleBox;
@@ -1386,9 +1411,8 @@ sub ArticleContentIndex {
 returns article data
 
     my %Article = $TicketObject->ArticleGet(
-        ArticleID     => 123,
-        DynamicFields => 1,      # Optional. To include the dynamic field values for this article on the return structure.
-        UserID        => 123,
+        ArticleID => 123,
+        UserID    => 123,
     );
 
 Article:
@@ -1413,11 +1437,8 @@ Article:
     ArticleFreeKey1-3
     ArticleFreeText-3
 
-    # If DynamicFields => 1 was passed, you'll get an entry like this for each dynamic field:
-    DynamicField_X     => 'value_x',
-
 Ticket:
-    - see TicketGet() for ticket attributes -
+    - see TicketGet() for ticket attributes-
 
 returns articles in array / hash by given ticket id
 
@@ -1427,23 +1448,12 @@ returns articles in array / hash by given ticket id
     );
 
 returns articles in array / hash by given ticket id but
-only requested article types
+only requestet article types
 
     my @ArticleIndex = $TicketObject->ArticleGet(
         TicketID    => 123,
         ArticleType => [ $ArticleType1, $ArticleType2 ],
         UserID      => 123,
-    );
-
-returns articles in array / hash by given ticket id but
-only requested article sender types (could be useful when
-trying to exclude autoreplies sent by system sender from
-certain views)
-
-    my @ArticleIndex = $TicketObject->ArticleGet(
-        TicketID            => 123,
-        ArticleSenderType   => [ $ArticleSenderType1, $ArticleSenderType2 ],
-        UserID              => 123,
     );
 
 to get extended ticket attributes, use param Extended - see TicketGet() for extended attributes -
@@ -1452,15 +1462,6 @@ to get extended ticket attributes, use param Extended - see TicketGet() for exte
         TicketID => 123,
         UserID   => 123,
         Extended => 1,
-    );
-
-to get only a dedicated count you can use Limit and Order attributes
-
-    my @ArticleIndex = $TicketObject->ArticleGet(
-        TicketID => 123,
-        UserID   => 123,
-        Order    => 'DESC', # DESC,ASC - default is ASC
-        Limit    => 5,
     );
 
 =cut
@@ -1473,8 +1474,6 @@ sub ArticleGet {
         $Self->{LogObject}->Log( Priority => 'error', Message => 'Need ArticleID or TicketID!' );
         return;
     }
-
-    my $FetchDynamicFields = $Param{DynamicFields} ? 1 : 0;
 
     # article type lookup
     my $ArticleTypeSQL = '';
@@ -1495,25 +1494,6 @@ sub ArticleGet {
         }
     }
 
-    # sender type lookup
-    my $SenderTypeSQL = '';
-    if ( $Param{ArticleSenderType} && ref $Param{ArticleSenderType} eq 'ARRAY' ) {
-        for ( @{ $Param{ArticleSenderType} } ) {
-            if ( $Self->ArticleSenderTypeLookup( SenderType => $_ ) ) {
-                if ($SenderTypeSQL) {
-                    $SenderTypeSQL .= ',';
-                }
-                $SenderTypeSQL .= $Self->{DBObject}->Quote(
-                    $Self->ArticleSenderTypeLookup( SenderType => $_ ),
-                    'Integer',
-                );
-            }
-        }
-        if ($SenderTypeSQL) {
-            $SenderTypeSQL = " AND sa.article_sender_type_id IN ($SenderTypeSQL)";
-        }
-    }
-
     # sql query
     my @Content;
     my @Bind;
@@ -1523,9 +1503,19 @@ sub ArticleGet {
         . ' sa.a_content_type, sa.create_by, st.tn, article_sender_type_id, st.customer_id, '
         . ' st.until_time, st.ticket_priority_id, st.customer_user_id, st.user_id, '
         . ' st.responsible_user_id, sa.article_type_id, '
-        . ' st.ticket_answered, '
+        . ' sa.a_freekey1, sa.a_freetext1, sa.a_freekey2, sa.a_freetext2, '
+        . ' sa.a_freekey3, sa.a_freetext3, st.ticket_answered, '
         . ' sa.incoming_time, sa.id, '
+        . ' st.freekey1, st.freetext1, st.freekey2, st.freetext2,'
+        . ' st.freekey3, st.freetext3, st.freekey4, st.freetext4,'
+        . ' st.freekey5, st.freetext5, st.freekey6, st.freetext6,'
+        . ' st.freekey7, st.freetext7, st.freekey8, st.freetext8, '
+        . ' st.freekey9, st.freetext9, st.freekey10, st.freetext10, '
+        . ' st.freekey11, st.freetext11, st.freekey12, st.freetext12, '
+        . ' st.freekey13, st.freetext13, st.freekey14, st.freetext14, '
+        . ' st.freekey15, st.freetext15, st.freekey16, st.freetext16, '
         . ' st.ticket_lock_id, st.title, st.escalation_update_time, '
+        . ' st.freetime1 , st.freetime2, st.freetime3, st.freetime4, st.freetime5, st.freetime6, '
         . ' st.type_id, st.service_id, st.sla_id, st.escalation_response_time, '
         . ' st.escalation_solution_time, st.escalation_time, st.change_time '
         . ' FROM article sa, ticket st WHERE ';
@@ -1544,36 +1534,24 @@ sub ArticleGet {
     if ($ArticleTypeSQL) {
         $SQL .= $ArticleTypeSQL;
     }
+    $SQL .= ' ORDER BY sa.create_time, sa.id ASC';
 
-    # add sender types
-    if ($SenderTypeSQL) {
-        $SQL .= $SenderTypeSQL;
-    }
-
-    # set order
-    if ( $Param{Order} && $Param{Order} eq 'DESC' ) {
-        $SQL .= ' ORDER BY sa.create_time DESC, sa.id DESC';
-    }
-    else {
-        $SQL .= ' ORDER BY sa.create_time, sa.id ASC';
-    }
-
-    return if !$Self->{DBObject}->Prepare( SQL => $SQL, Bind => \@Bind, Limit => $Param{Limit} );
+    return if !$Self->{DBObject}->Prepare( SQL => $SQL, Bind => \@Bind );
     my %Ticket;
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         my %Data;
-        $Data{ArticleID}                = $Row[27];
+        $Data{ArticleID}                = $Row[33];
         $Data{TicketID}                 = $Row[0];
         $Ticket{TicketID}               = $Data{TicketID};
-        $Data{Title}                    = $Row[29];
+        $Data{Title}                    = $Row[67];
         $Ticket{Title}                  = $Data{Title};
-        $Data{EscalationTime}           = $Row[36];
+        $Data{EscalationTime}           = $Row[80];
         $Ticket{EscalationTime}         = $Data{EscalationTime};
-        $Data{EscalationUpdateTime}     = $Row[30];
+        $Data{EscalationUpdateTime}     = $Row[68];
         $Ticket{EscalationUpdateTime}   = $Data{EscalationUpdateTime};
-        $Data{EscalationResponseTime}   = $Row[34];
+        $Data{EscalationResponseTime}   = $Row[78];
         $Ticket{EscalationResponseTime} = $Data{EscalationResponseTime};
-        $Data{EscalationSolutionTime}   = $Row[35];
+        $Data{EscalationSolutionTime}   = $Row[79];
         $Ticket{EscalationSolutionTime} = $Data{EscalationSolutionTime};
         $Data{From}                     = $Row[1];
         $Data{To}                       = $Row[2];
@@ -1585,8 +1563,6 @@ sub ArticleGet {
         $Data{References}               = $Row[8];
         $Data{Body}                     = $Row[9];
         $Ticket{CreateTimeUnix}         = $Row[10];
-        $Ticket{AgeTimeUnix}            = $Self->{TimeObject}->SystemTime()
-            - $Self->{TimeObject}->TimeStamp2SystemTime( String => $Row[13] );
         $Ticket{Created}
             = $Self->{TimeObject}->SystemTime2TimeStamp( SystemTime => $Ticket{CreateTimeUnix} );
         $Data{PriorityID}   = $Row[20];
@@ -1595,12 +1571,12 @@ sub ArticleGet {
         $Ticket{StateID}    = $Row[11];
         $Data{QueueID}      = $Row[12];
         $Ticket{QueueID}    = $Row[12];
-        $Data{Created}      = $Self->{TimeObject}->SystemTime2TimeStamp( SystemTime => $Row[26] );
+        $Data{Created}      = $Self->{TimeObject}->SystemTime2TimeStamp( SystemTime => $Row[32] );
         $Data{ContentType}  = $Row[14];
         $Data{CreatedBy}    = $Row[15];
         $Data{TicketNumber} = $Row[16];
         $Data{SenderTypeID} = $Row[17];
-        $Ticket{Changed}    = $Row[37];
+        $Ticket{Changed}    = $Row[81];
 
         if ( $Data{ContentType} && $Data{ContentType} =~ /charset=/i ) {
             $Data{Charset} = $Data{ContentType};
@@ -1632,15 +1608,59 @@ sub ArticleGet {
         $Data{ResponsibleID}       = $Row[23] || 1;
         $Ticket{ResponsibleID}     = $Row[23] || 1;
         $Data{ArticleTypeID}       = $Row[24];
-        $Data{IncomingTime}        = $Row[26];
+        $Data{ArticleFreeKey1}     = $Row[25];
+        $Data{ArticleFreeText1}    = $Row[26];
+        $Data{ArticleFreeKey2}     = $Row[27];
+        $Data{ArticleFreeText2}    = $Row[28];
+        $Data{ArticleFreeKey3}     = $Row[29];
+        $Data{ArticleFreeText3}    = $Row[30];
+        $Data{TicketFreeKey1}      = $Row[34];
+        $Data{TicketFreeText1}     = $Row[35];
+        $Data{TicketFreeKey2}      = $Row[36];
+        $Data{TicketFreeText2}     = $Row[37];
+        $Data{TicketFreeKey3}      = $Row[38];
+        $Data{TicketFreeText3}     = $Row[39];
+        $Data{TicketFreeKey4}      = $Row[40];
+        $Data{TicketFreeText4}     = $Row[41];
+        $Data{TicketFreeKey5}      = $Row[42];
+        $Data{TicketFreeText5}     = $Row[43];
+        $Data{TicketFreeKey6}      = $Row[44];
+        $Data{TicketFreeText6}     = $Row[45];
+        $Data{TicketFreeKey7}      = $Row[46];
+        $Data{TicketFreeText7}     = $Row[47];
+        $Data{TicketFreeKey8}      = $Row[48];
+        $Data{TicketFreeText8}     = $Row[49];
+        $Data{TicketFreeKey9}      = $Row[50];
+        $Data{TicketFreeText9}     = $Row[51];
+        $Data{TicketFreeKey10}     = $Row[52];
+        $Data{TicketFreeText10}    = $Row[53];
+        $Data{TicketFreeKey11}     = $Row[54];
+        $Data{TicketFreeText11}    = $Row[55];
+        $Data{TicketFreeKey12}     = $Row[56];
+        $Data{TicketFreeText12}    = $Row[57];
+        $Data{TicketFreeKey13}     = $Row[58];
+        $Data{TicketFreeText13}    = $Row[59];
+        $Data{TicketFreeKey14}     = $Row[60];
+        $Data{TicketFreeText14}    = $Row[61];
+        $Data{TicketFreeKey15}     = $Row[62];
+        $Data{TicketFreeText15}    = $Row[63];
+        $Data{TicketFreeKey16}     = $Row[64];
+        $Data{TicketFreeText16}    = $Row[65];
+        $Data{TicketFreeTime1}     = $Row[69];
+        $Data{TicketFreeTime2}     = $Row[70];
+        $Data{TicketFreeTime3}     = $Row[71];
+        $Data{TicketFreeTime4}     = $Row[72];
+        $Data{TicketFreeTime5}     = $Row[73];
+        $Data{TicketFreeTime6}     = $Row[74];
+        $Data{IncomingTime}        = $Row[32];
         $Data{RealTillTimeNotUsed} = $Row[19];
-        $Ticket{LockID}            = $Row[28];
-        $Data{TypeID}              = $Row[31];
-        $Ticket{TypeID}            = $Row[31];
-        $Data{ServiceID}           = $Row[32];
-        $Ticket{ServiceID}         = $Row[32];
-        $Data{SLAID}               = $Row[33];
-        $Ticket{SLAID}             = $Row[33];
+        $Ticket{LockID}            = $Row[66];
+        $Data{TypeID}              = $Row[75];
+        $Ticket{TypeID}            = $Row[75];
+        $Data{ServiceID}           = $Row[76];
+        $Ticket{ServiceID}         = $Row[76];
+        $Data{SLAID}               = $Row[77];
+        $Ticket{SLAID}             = $Row[77];
 
         # fill up dynamic varaibles
         $Data{Age} = $Self->{TimeObject}->SystemTime() - $Ticket{CreateTimeUnix};
@@ -1651,122 +1671,26 @@ sub ArticleGet {
             $Data{$Key} =~ s/\n|\r//g;
         }
 
-        #        # cleanup time stamps (some databases are using e. g. 2008-02-25 22:03:00.000000
-        #        # and 0000-00-00 00:00:00 time stamps)
-        #        for my $Time ( 1 .. 6 ) {
-        #            my $Key = 'TicketFreeTime' . $Time;
-        #            next if !$Data{$Key};
-        #            if ( $Data{$Key} eq '0000-00-00 00:00:00' ) {
-        #                $Data{$Key} = '';
-        #                next;
-        #            }
-        #            $Data{$Key} =~ s/^(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d)\..+?$/$1/;
-        #        }
+        # cleanup time stamps (some databases are using e. g. 2008-02-25 22:03:00.000000
+        # and 0000-00-00 00:00:00 time stamps)
+        for my $Time ( 1 .. 6 ) {
+            my $Key = 'TicketFreeTime' . $Time;
+            next if !$Data{$Key};
+            if ( $Data{$Key} eq '0000-00-00 00:00:00' ) {
+                $Data{$Key} = '';
+                next;
+            }
+            $Data{$Key} =~ s/^(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d)\..+?$/$1/;
+        }
 
         push @Content, { %Ticket, %Data };
-    }
-
-    # checl if need to return dynamic fields
-    if ($FetchDynamicFields) {
-
-        my $DynamicFieldArticleList = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-            ObjectType => 'Article'
-        );
-
-        my $DynamicFieldTicketList = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-            ObjectType => 'Ticket'
-        );
-
-        for my $Article (@Content) {
-            DYNAMICFIELD:
-            for my $DynamicFieldConfig ( @{$DynamicFieldArticleList} ) {
-
-                # validate each dynamic field
-                next DYNAMICFILED if !$DynamicFieldConfig;
-                next DYNAMICFILED if !IsHashRefWithData($DynamicFieldConfig);
-                next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
-                next DYNAMICFIELD if !IsHashRefWithData( $DynamicFieldConfig->{Config} );
-
-                # get the current value for each dynamic field
-                my $Value = $Self->{DynamicFieldBackendObject}->ValueGet(
-                    DynamicFieldConfig => $DynamicFieldConfig,
-                    ObjectID           => $Article->{ArticleID},
-                );
-
-                # set the dynamic field name and value into the ticket hash
-                $Article->{ 'DynamicField_' . $DynamicFieldConfig->{Name} } = $Value;
-
-                # check if field is ArticleFreeKey[1-3] or ArticleFreeText[1-3]
-                # Compatibility feature can be removed on further versions
-                if (
-                    $DynamicFieldConfig->{Name} =~ m{
-                        \A
-                        (
-                            ArticleFree
-                            (?:
-                                (?:Text|Key)
-                                (?:[1-3])
-                            )
-                        )
-                        \z
-                    }smxi
-                    )
-                {
-
-                    # Set field for 3.0 and 2.4 compatibility
-                    $Article->{ $DynamicFieldConfig->{Name} } = $Value;
-                }
-            }
-
-            DYNAMICFIELD:
-            for my $DynamicFieldConfig ( @{$DynamicFieldTicketList} ) {
-
-                # validate each dynamic field
-                next DYNAMICFILED if !$DynamicFieldConfig;
-                next DYNAMICFILED if !IsHashRefWithData($DynamicFieldConfig);
-                next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
-                next DYNAMICFIELD if !IsHashRefWithData( $DynamicFieldConfig->{Config} );
-
-                # get the current value for each dynamic field
-                my $Value = $Self->{DynamicFieldBackendObject}->ValueGet(
-                    DynamicFieldConfig => $DynamicFieldConfig,
-                    ObjectID           => $Article->{TicketID},
-                );
-
-                # set the dynamic field name and value into the ticket hash
-                $Article->{ 'DynamicField_' . $DynamicFieldConfig->{Name} } = $Value;
-
-                # check if field is TicketFreeKey[1-16], TicketFreeText[1-6] or TicketFreeTime[1-6]
-                # Compatibility feature can be removed on further versions
-                if (
-                    $DynamicFieldConfig->{Name} =~ m{
-                        \A
-                        (
-                            TicketFree
-                            (?:
-                                (?:Text|Key)
-                                (?:1[0-6]|[1-9])
-                                |
-                                (?:Time [1-6])
-                            )
-                        )
-                        \z
-                    }smxi
-                    )
-                {
-
-                    # Set field for 3.0 and 2.4 compatibility
-                    $Article->{ $DynamicFieldConfig->{Name} } = $Value;
-                }
-            }
-        }
     }
 
     # return if content is empty
     if ( !@Content ) {
 
         # log only if there is not article type filter to be sure that there is no article
-        if ( !$ArticleTypeSQL && !$SenderTypeSQL ) {
+        if ( !$ArticleTypeSQL ) {
             if ( $Param{ArticleID} ) {
                 $Self->{LogObject}->Log(
                     Priority => 'error',
@@ -1818,7 +1742,7 @@ sub ArticleGet {
     $Ticket{StateType} = $StateData{TypeName};
     $Ticket{State}     = $StateData{Name};
 
-    # get escalation attributes
+    # get esclation attributes
     my %Escalation = $Self->TicketEscalationDateCalculation(
         Ticket => \%Ticket,
         UserID => $Param{UserID} || 1,
@@ -1882,34 +1806,6 @@ sub ArticleGet {
         }
         $Part->{StateType} = $StateData{TypeName};
         $Part->{State}     = $StateData{Name};
-
-        # add real name lines
-        my $EmailParser = Kernel::System::EmailParser->new( %{$Self}, Mode => 'Standalone' );
-        for my $Key (qw( From To Cc)) {
-            next if !$Part->{$Key};
-
-            # check if it's a queue
-            if ( $Part->{$Key} !~ /@/ ) {
-                $Part->{ $Key . 'Realname' } = $Part->{$Key};
-                next;
-            }
-
-            # strip out real names
-            my $Realname = '';
-            for my $EmailSplit ( $EmailParser->SplitAddressLine( Line => $Part->{$Key} ) ) {
-                my $Name = $EmailParser->GetRealname( Email => $EmailSplit );
-                if ( !$Name ) {
-                    $Name = $EmailParser->GetEmailAddress( Email => $EmailSplit );
-                }
-                next if !$Name;
-                if ($Realname) {
-                    $Realname .= ', ';
-                }
-                $Realname .= $Name;
-            }
-
-            $Part->{ $Key . 'Realname' } = $Realname;
-        }
     }
 
     if ( $Param{ArticleID} ) {
@@ -1948,14 +1844,13 @@ sub _ArticleGetId {
         $SQL .= 'a_subject = ? AND ';
         push @Bind, \$Param{Subject};
     }
-    $SQL .= ' incoming_time = ? ORDER BY id DESC';
+    $SQL .= ' incoming_time = ?';
     push @Bind, \$Param{IncomingTime};
 
     # start query
     return if !$Self->{DBObject}->Prepare(
-        SQL   => $SQL,
-        Bind  => \@Bind,
-        Limit => 1,
+        SQL  => $SQL,
+        Bind => \@Bind,
     );
     my $ID;
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
@@ -1968,9 +1863,9 @@ sub _ArticleGetId {
 
 =item ArticleUpdate()
 
-update an article
+update a article item
 
-Note: Keys "Body", "Subject", "From", "To", "Cc", "ArticleType" and "SenderType" are implemented.
+Note: Key "Body", "Subject", "From", "To", "Cc", "ArticleType" or "SenderType" is implemented.
 
     my $Success = $TicketObject->ArticleUpdate(
         ArticleID => 123,
@@ -2146,18 +2041,6 @@ sub ArticleSend {
     $Param{Body} =~ s/(\r\n|\n\r)/\n/g;
     $Param{Body} =~ s/\r/\n/g;
 
-    # check for base64 images in body and process them
-    my $HTMLUtilsObject = Kernel::System::HTMLUtils->new(
-        LogObject    => $Self->{LogObject},
-        ConfigObject => $Self->{ConfigObject},
-        MainObject   => $Self->{MainObject},
-        EncodeObject => $Self->{EncodeObject},
-    );
-    $HTMLUtilsObject->EmbeddedImagesExtract(
-        DocumentRef => \$Param{Body},
-        AttachmentsRef => $Param{Attachment} || [],
-    );
-
     # create article
     my $Time      = $Self->{TimeObject}->SystemTime();
     my $Random    = rand 999999;
@@ -2177,10 +2060,6 @@ sub ArticleSend {
 
     # return if no mail was able to send
     if ( !$HeadRef || !$BodyRef ) {
-        $Self->{LogObject}->Log(
-            Message  => "Impossible to send message to: $Param{'To'} .",
-            Priority => 'error',
-        );
         return;
     }
 
@@ -2315,9 +2194,6 @@ sub SendAgentNotification {
         }
     }
 
-    # return if no notification is active
-    return 1 if $Self->{SendNoNotification};
-
     # Check if agent recevies notifications for actions done by himself.
     if (
         !$Self->{ConfigObject}->Get('AgentSelfNotifyOnAction')
@@ -2345,20 +2221,6 @@ sub SendAgentNotification {
     # check recipients
     return if !$User{UserEmail};
     return if $User{UserEmail} !~ /@/;
-
-    # get ticket object to check state
-    my %Ticket = $Self->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    if (
-        $Ticket{StateType} eq 'closed' &&
-        $Param{Type} eq 'NewTicket'
-        )
-    {
-        return;
-    }
 
     my $TemplateGeneratorObject = Kernel::System::TemplateGenerator->new(
         MainObject         => $Self->{MainObject},
@@ -2420,8 +2282,6 @@ sub SendAgentNotification {
 
 =item SendCustomerNotification()
 
-DEPRECATED. This function is incompatible with the rich text editor, don't use it any more!
-
 send a customer notification via email
 
     my $ArticleID = $TicketObject->SendCustomerNotification(
@@ -2449,14 +2309,8 @@ sub SendCustomerNotification {
         }
     }
 
-    # return if no notification is active
-    return 1 if $Self->{SendNoNotification};
-
     # get old article for quoteing
-    my %Article = $Self->ArticleLastCustomerArticle(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 1,
-    );
+    my %Article = $Self->ArticleLastCustomerArticle( TicketID => $Param{TicketID} );
 
     # check if notification should be send
     my %Queue = $Self->{QueueObject}->QueueGet( ID => $Article{QueueID} );
@@ -2582,10 +2436,7 @@ sub SendCustomerNotification {
     $Notification{Body} =~ s/<OTRS_QUEUE>/$Param{Queue}/gi if ( $Param{Queue} );
 
     # ticket data
-    my %Ticket = $Self->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 1,
-    );
+    my %Ticket = $Self->TicketGet( TicketID => $Param{TicketID} );
     for ( keys %Ticket ) {
         if ( defined $Ticket{$_} ) {
             $Notification{Body}    =~ s/<OTRS_TICKET_$_>/$Ticket{$_}/gi;
@@ -2777,17 +2628,11 @@ sub SendAutoResponse {
         }
     }
 
-    # return if no notification is active
-    return 1 if $Self->{SendNoNotification};
-
     # get orig email header
     my %OrigHeader = %{ $Param{OrigHeader} };
 
     # get ticket
-    my %Ticket = $Self->TicketGet(
-        TicketID => $Param{TicketID},
-        DynamicFields => 0,    # not needed here, TemplateGenerator will fetch the ticket on its own
-    );
+    my %Ticket = $Self->TicketGet( TicketID => $Param{TicketID} );
 
     # get auto default responses
     my $TemplateGeneratorObject = Kernel::System::TemplateGenerator->new(
@@ -2842,14 +2687,14 @@ sub SendAutoResponse {
             TicketID    => $Param{TicketID},
             HistoryType => 'Misc',
             Name        => "Sent no auto-response because the sender doesn't want "
-                . "an auto-response (e. g. loop or precedence header)",
+                . "a auto-response (e. g. loop or precedence header)",
             CreateUserID => $Param{UserID},
         );
         $Self->{LogObject}->Log(
             Priority => 'notice',
             Message  => "Sent no '$Param{AutoResponseType}' for Ticket ["
                 . "$Ticket{TicketNumber}] ($OrigHeader{From}) because the "
-                . "sender doesn't want an auto-response (e. g. loop or precedence header)"
+                . "sender doesn't want a auto-response (e. g. loop or precedence header)"
         );
         return;
     }
@@ -2871,7 +2716,7 @@ sub SendAutoResponse {
             CreateUserID => $Param{UserID},
         );
 
-        # log
+        # do log
         $Self->{LogObject}->Log(
             Priority => 'notice',
             Message  => "Sent no '$Param{AutoResponseType}' for Ticket ["
@@ -2896,14 +2741,14 @@ sub SendAutoResponse {
             TicketID     => $Param{TicketID},
             CreateUserID => $Param{UserID},
             HistoryType  => 'Misc',
-            Name         => 'Sent no auto response - no valid email address found in From field.',
+            Name         => 'Sent not auto response, no valid email in From.',
         );
 
         # log
         $Self->{LogObject}->Log(
             Priority => 'notice',
-            Message  => "Sent no auto response to '$OrigHeader{From}' because of"
-                . " invalid From address.",
+            Message  => "Sent not auto response to '$OrigHeader{From}' because of"
+                . " invalid From address",
         );
         return 1;
     }
@@ -2917,14 +2762,14 @@ sub SendAutoResponse {
             TicketID     => $Param{TicketID},
             CreateUserID => $Param{UserID},
             HistoryType  => 'Misc',
-            Name         => 'Sent no auto response, SendNoAutoResponseRegExp matched.',
+            Name         => 'Sent not auto response, SendNoAutoResponseRegExp is matching.',
         );
 
         # log
         $Self->{LogObject}->Log(
             Priority => 'notice',
-            Message  => "Sent no auto response to '$OrigHeader{From}' because config"
-                . " option SendNoAutoResponseRegExp (/$NoAutoRegExp/i) matched.",
+            Message  => "Sent not auto response to '$OrigHeader{From}' because config"
+                . " option SendNoAutoResponseRegExp (/$NoAutoRegExp/i) is matching!",
         );
         return 1;
     }
@@ -3004,7 +2849,7 @@ set article flags
 
     my $Success = $TicketObject->ArticleFlagSet(
         ArticleID => 123,
-        Key       => 'Seen',
+        Key       => 'seen',
         Value     => 1,
         UserID    => 123,
     );
@@ -3045,9 +2890,8 @@ sub ArticleFlagSet {
 
     # event
     my %Article = $Self->ArticleGet(
-        ArticleID     => $Param{ArticleID},
-        UserID        => $Param{UserID},
-        DynamicFields => 0,
+        ArticleID => $Param{ArticleID},
+        UserID    => $Param{UserID},
     );
     $Self->EventHandler(
         Event => 'ArticleFlagSet',
@@ -3099,9 +2943,8 @@ sub ArticleFlagDelete {
 
     # event
     my %Article = $Self->ArticleGet(
-        ArticleID     => $Param{ArticleID},
-        UserID        => $Param{UserID},
-        DynamicFields => 0,
+        ArticleID => $Param{ArticleID},
+        UserID    => $Param{UserID},
     );
     $Self->EventHandler(
         Event => 'ArticleFlagDelete',
@@ -3219,7 +3062,7 @@ sub ArticleAccountedTimeDelete {
 
 =item ArticleDelete()
 
-delete an article, its plain message, and all attachments
+delete all article, attachments and plain message of a ticket
 
     my $Success = $TicketObject->ArticleDelete(
         ArticleID => 123,
@@ -3228,7 +3071,7 @@ delete an article, its plain message, and all attachments
 
 =item ArticleDeletePlain()
 
-delete a plain article
+delete a artile plain message
 
     my $Success = $TicketObject->ArticleDeletePlain(
         ArticleID => 123,
@@ -3246,7 +3089,7 @@ delete all attachments of an article
 
 =item ArticleWritePlain()
 
-write a plain email to storage
+write an plain email to storage
 
     my $Success = $TicketObject->ArticleWritePlain(
         ArticleID => 123,
@@ -3256,7 +3099,7 @@ write a plain email to storage
 
 =item ArticlePlain()
 
-get plain article/email
+get plain message/email
 
     my $PlainMessage = $TicketObject->ArticlePlain(
         ArticleID => 123,
@@ -3277,7 +3120,14 @@ write an article attachment to storage
         UserID             => 123,
     );
 
-You also can use "Force => 1" to not check if a filename already exists, it force to use the given file name. Otherwise a new file name like "oldfile-2.html" is used.
+=item ArticleAttachmentIndex()
+
+get article attachment index as hash (ID => hashref (Filename, Filesize, ContentID (if exists), ContentAlternative(if exists) ))
+
+    my %Index = $TicketObject->ArticleAttachmentIndex(
+        ArticleID => 123,
+        UserID    => 123,
+    );
 
 =item ArticleAttachment()
 
@@ -3285,228 +3135,26 @@ get article attachment (Content, ContentType, Filename and optional ContentID, C
 
     my %Attachment = $TicketObject->ArticleAttachment(
         ArticleID => 123,
-        FileID    => 1,   # as returned by ArticleAttachmentIndex
+        FileID    => 1,
         UserID    => 123,
     );
-
-returns:
-
-    my %Attachment = (
-        Content            => "xxxx",     # actual attachment contents
-        ContentAlternative => "",
-        ContentID          => "",
-        ContentType        => "application/pdf",
-        Filename           => "StdAttachment-Test1.pdf",
-        Filesize           => "4.6 KBytes",
-        FilesizeRaw        => 4722,
-    );
-
-=item ArticleAttachmentIndex()
-
-get article attachment index as hash
-
- (ID => hashref (Filename, Filesize, ContentID (if exists), ContentAlternative(if exists) ))
-
-    my %Index = $TicketObject->ArticleAttachmentIndex(
-        ArticleID => 123,
-        UserID    => 123,
-    );
-
-or with "StripPlainBodyAsAttachment => 1" feature to not include first
-attachment (not include text body, html body as attachment and inline attachments)
-
-    my %Index = $TicketObject->ArticleAttachmentIndex(
-        ArticleID                  => 123,
-        UserID                     => 123,
-        Article                    => \%Article,
-        StripPlainBodyAsAttachment => 1,
-    );
-
-or with "StripPlainBodyAsAttachment => 2" feature to not include first
-attachment (not include text body as attachment)
-
-    my %Index = $TicketObject->ArticleAttachmentIndex(
-        ArticleID                  => 123,
-        UserID                     => 123,
-        Article                    => \%Article,
-        StripPlainBodyAsAttachment => 2,
-    );
-
-or with "StripPlainBodyAsAttachment => 3" feature to not include first
-attachment (not include text body and html body as attachment)
-
-    my %Index = $TicketObject->ArticleAttachmentIndex(
-        ArticleID                  => 123,
-        UserID                     => 123,
-        Article                    => \%Article,
-        StripPlainBodyAsAttachment => 3,
-    );
-
-returns:
-
-    my %Index = {
-        '1' => {
-            'ContentAlternative' => '',
-            'ContentID' => '',
-            'Filesize' => '4.6 KBytes',
-            'ContentType' => 'application/pdf',
-            'Filename' => 'StdAttachment-Test1.pdf',
-            'FilesizeRaw' => 4722
-        },
-        '2' => {
-            'ContentAlternative' => '',
-            'ContentID' => '',
-            'Filesize' => '183 Bytes',
-            'ContentType' => 'text/html; charset="utf-8"',
-            'Filename' => 'file-2',
-            'FilesizeRaw' => 183
-        },
-    };
 
 =cut
-
-sub ArticleAttachmentIndex {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(ArticleID UserID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # get attachment index from backend
-    my %Attachments = $Self->ArticleAttachmentIndexRaw(%Param);
-
-    # stript plain attachments and e. g. html attachments
-    if ( $Param{StripPlainBodyAsAttachment} && $Param{Article} ) {
-
-        # plain attachment mime type vs. html attachment mime type check
-        # remove plain body, rename html attachment
-        my $AttachmentIDPlain = 0;
-        my $AttachmentIDHTML  = 0;
-        for my $AttachmentID ( sort keys %Attachments ) {
-            my %File = %{ $Attachments{$AttachmentID} };
-
-            # find plain attachment
-            if (
-                !$AttachmentIDPlain
-                &&
-                $File{Filename} eq 'file-1'
-                && $File{ContentType} =~ /text\/plain/i
-                )
-            {
-                $AttachmentIDPlain = $AttachmentID;
-            }
-
-            # find html attachment
-            #  o file-[12], is plain+html attachment
-            #  o file-1.html, is only html attachment
-            if (
-                !$AttachmentIDHTML
-                &&
-                ( $File{Filename} =~ /^file-[12]$/ || $File{Filename} eq 'file-1.html' )
-                && $File{ContentType} =~ /text\/html/i
-                )
-            {
-                $AttachmentIDHTML = $AttachmentID;
-            }
-        }
-        if ($AttachmentIDHTML) {
-            delete $Attachments{$AttachmentIDPlain};
-
-            # remove any files with content-id from attachment list and listed in html body
-            if ( $Param{StripPlainBodyAsAttachment} eq 1 ) {
-
-                # get html body
-                my %Attachment = $Self->ArticleAttachment(
-                    ArticleID => $Param{ArticleID},
-                    FileID    => $AttachmentIDHTML,
-                    UserID    => $Param{UserID},
-                );
-
-                for my $AttachmentID ( sort keys %Attachments ) {
-                    my %File = %{ $Attachments{$AttachmentID} };
-                    next if !$File{ContentID};
-
-                    # content id cleanup
-                    $File{ContentID} =~ s/^<//;
-                    $File{ContentID} =~ s/>$//;
-                    if ( $File{ContentID} && $Attachment{Content} =~ /\Q$File{ContentID}\E/i ) {
-                        delete $Attachments{$AttachmentID};
-                    }
-                }
-            }
-
-            # only strip html body attachment by "1" or "3"
-            if (
-                $Param{StripPlainBodyAsAttachment} eq 1
-                || $Param{StripPlainBodyAsAttachment} eq 3
-                )
-            {
-                delete $Attachments{$AttachmentIDHTML};
-            }
-            $Param{Article}->{AttachmentIDOfHTMLBody} = $AttachmentIDHTML;
-        }
-
-        # plain body size vs. attched body size check
-        # and remove attachment if it's email body
-        if ( !$AttachmentIDHTML ) {
-            my $AttachmentIDPlain = 0;
-            my %AttachmentFilePlain;
-            for my $AttachmentID ( keys %Attachments ) {
-                my %File = %{ $Attachments{$AttachmentID} };
-
-                # remember, file-1 got defined by parsing if no filename was given
-                if (
-                    $File{Filename} eq 'file-1'
-                    && $File{ContentType} =~ /text\/plain/i
-                    )
-                {
-                    $AttachmentIDPlain   = $AttachmentID;
-                    %AttachmentFilePlain = %File;
-                    last;
-                }
-            }
-
-            # plain attachment detected and remove it from attachment index
-            if (%AttachmentFilePlain) {
-
-                # check body size vs. attachment size to be sure
-                my $BodySize = bytes::length( $Param{Article}->{Body} );
-
-                # check size by tolerance of 1.1 factor (because of charset difs)
-                if (
-                    $BodySize / 1.1 < $AttachmentFilePlain{FilesizeRaw}
-                    && $BodySize * 1.1 > $AttachmentFilePlain{FilesizeRaw}
-                    )
-                {
-                    delete $Attachments{$AttachmentIDPlain};
-                }
-            }
-        }
-    }
-
-    return %Attachments;
-}
-
-1;
 
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.307 $ $Date: 2012/01/17 16:04:38 $
+$Revision: 1.246.2.1 $ $Date: 2010/04/21 16:51:31 $
 
 =cut
