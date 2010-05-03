@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Stats.pm - all stats core functions
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Stats.pm,v 1.112 2011/12/23 14:37:19 mb Exp $
+# $Id: Stats.pm,v 1.89.2.1 2010/05/03 17:02:43 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -16,15 +16,10 @@ use warnings;
 
 use MIME::Base64;
 use Date::Pcalc qw(:all);
-
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.112 $) [1];
-
-=head1 NAME
-
-Kernel::System::Stats - stats lib
+$VERSION = qw($Revision: 1.89.2.1 $) [1];
 
 =head1 SYNOPSIS
 
@@ -70,8 +65,6 @@ create an object
     );
     my $GroupObject = Kernel::System::Group->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        MainObject   => $MainObject,
         LogObject    => $LogObject,
         DBObject     => $DBObject,
     );
@@ -112,7 +105,7 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # check object list for completeness
+    # check objects list for completeness
     for my $Object (
         qw(
         ConfigObject LogObject UserID GroupObject UserObject TimeObject MainObject CSVObject
@@ -243,7 +236,7 @@ sub StatsGet {
         )
         )
     {
-        if ( defined $StatsXML->{$Key}->[1]->{Content} ) {
+        if ( defined $StatsXML->{$Key}[1]->{Content} ) {
             $Stat{$Key} = $StatsXML->{$Key}->[1]->{Content};
         }
     }
@@ -260,7 +253,7 @@ sub StatsGet {
     }
 
     # get the configuration elements of the dynamic stats
-    # %Allowed is used to avoid double selection in different forms
+    # %Allowed is used to avoid douple selection in different forms
     my %Allowed;
     my %TimeAllowed;
     my $TimeElement = $Self->{ConfigObject}->Get('Stats::TimeElement') || 'Time';
@@ -341,7 +334,7 @@ sub StatsGet {
                         );
                     }
 
-                    # settings for working with time elements
+                    # stettings for working with time elements
                     for (
                         qw(TimeStop TimeStart TimeRelativeUnit
                         TimeRelativeCount TimeScaleCount
@@ -430,7 +423,7 @@ sub StatsUpdate {
                     $StatXML{$Key}->[$Index]->{SelectedValues}->[$SubIndex]->{Content} = $Value;
                 }
 
-                # stetting for working with time elements
+                # stettings for working with time elements
                 for (qw(TimeStop TimeStart TimeRelativeUnit TimeRelativeCount TimeScaleCount)) {
                     if ( $Ref->{$_} ) {
                         $StatXML{$Key}->[$Index]->{$_} = $Ref->{$_};
@@ -530,10 +523,7 @@ sub StatsDelete {
     $Self->_DeleteCache( StatID => $Param{StatID} );
 
     # get list of installed stats files
-    my @StatsFileList = $Self->{MainObject}->DirectoryRead(
-        Directory => $Self->{StatsTempDir},
-        Filter    => '*.xml.installed',
-    );
+    my @StatsFileList = glob $Self->{StatsTempDir} . '*.xml.installed';
 
     # delete the .installed file in temp dir
     FILE:
@@ -690,7 +680,7 @@ sub SumBuild {
                 $Value =~ s{ \s+ \z }{}xms;
                 $Value =~ s{ , }{.}xms;
 
-                # add value to summary
+                # add value to summery
                 if ( $Value =~ m{^-?\d+(\.\d+)?$} ) {
                     $Sum += $Value;
                 }
@@ -711,8 +701,7 @@ sub SumBuild {
             INDEX2:
             for my $Index2 ( 1 .. $#{ $Data[$Index1] } ) {
 
-                # make sure we have a value to add
-                $Data[$Index1][$Index2] = 0 if !defined $Data[$Index1][$Index2];
+                next INDEX2 if !$Data[$Index1][$Index2];
 
                 # extract the value
                 my $Value = $Data[$Index1][$Index2];
@@ -722,7 +711,7 @@ sub SumBuild {
                 $Value =~ s{ \s+ \z }{}xms;
                 $Value =~ s{ , }{.}xms;
 
-                # add value to summary
+                # add value to summery
                 if ( $Value =~ m{^-?\d+(\.\d+)?$} ) {
                     $SumRow[$Index2] += $Value;
                 }
@@ -731,6 +720,7 @@ sub SumBuild {
 
         push @Data, \@SumRow;
     }
+
     return \@Data;
 }
 
@@ -786,7 +776,7 @@ sub GenerateGraph {
     }
 
     # remove first y/x position
-    my $Xlabel = shift @{$HeadArrayRef};
+    my $XLable = shift @{$HeadArrayRef};
 
     # get first col for legend
     my @YLine;
@@ -799,29 +789,10 @@ sub GenerateGraph {
     my @PData = ( $HeadArrayRef, @StatArray );
     my ( $XSize, $YSize ) = split( m{x}x, $Param{GraphSize} );
     my $graph = $GDBackend->new( $XSize || 550, $YSize || 350 );
-
-    # set fonts so we can use non-latin characters
-    my $FontDir    = $Self->{ConfigObject}->Get('Home') . '/var/fonts/';
-    my $TitleFont  = $FontDir . 'DejaVuSans-Bold.ttf';
-    my $LegendFont = $FontDir . 'DejaVuSans.ttf';
-    $graph->set_title_font( $TitleFont, 14 );
-
-    # there are different font options for different font types
-    if ( $GDBackend eq 'GD::Graph::pie' ) {
-        $graph->set_value_font( $LegendFont, 9 );
-    }
-    else {
-        $graph->set_values_font( $LegendFont, 9 );
-        $graph->set_legend_font( $LegendFont, 9 );
-        $graph->set_x_label_font( $LegendFont, 9 );
-        $graph->set_y_label_font( $LegendFont, 9 );
-        $graph->set_x_axis_font( $LegendFont, 9 );
-        $graph->set_y_axis_font( $LegendFont, 9 );
-    }
     $graph->set(
-        x_label => $Xlabel,
+        x_label => $XLable,
 
-        #        y_label => 'Ylabel',
+        #        y_label => 'YLable',
         title => $Param{Title},
 
         #        y_max_value => 20,
@@ -863,42 +834,19 @@ sub GenerateGraph {
         $graph->set_legend(@YLine);
     }
 
-    # investigate the possible output types
-    my @OutputTypeList = $graph->export_format();
-
-    # transfer array to hash
-    my %OutputTypes;
-    for my $OutputType (@OutputTypeList) {
-        $OutputTypes{$OutputType} = 1;
-    }
-
-    # select output type
-    my $Ext;
-    if ( $OutputTypes{'png'} ) {
+    # plot graph
+    my $Ext = '';
+    if ( !$graph->can('png') ) {
         $Ext = 'png';
     }
-    elsif ( $OutputTypes{'gif'} ) {
-        $Ext = 'gif';
-    }
-    elsif ( $OutputTypes{'jpeg'} ) {
-        $Ext = 'jpeg';
-    }
-
-    # error handling
-    if ( !$Ext ) {
-
+    else {
+        $Ext = $graph->export_format;
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message =>
-                "The support of png, jpeg and gif output is not activated in the GD CPAN module!",
+            Message  => "Can't write png! Write: $Ext",
         );
-
-        return;
     }
-
-    # create graph
     my $Content = eval { $graph->plot( \@PData )->$Ext() };
-
     return $Content;
 }
 
@@ -977,7 +925,7 @@ sub CompletenessCheck {
         Priority => 'Error'
     };
     $Notify[15] = {
-        Info     => 'Your reporting time interval is too small, please use a larger time scale!',
+        Info     => 'Your reporting time interval is to small, please use a larger time scale!',
         Priority => 'Error'
     };
     $Notify[16] = {
@@ -1167,7 +1115,7 @@ sub CompletenessCheck {
             }
         }
 
-        # check if the timeperiod is too big or the time scale too small
+        # check if the timeperiod is to big or the time scale to small
         # used only for fixed time values
         # remark time functions should be exportet in external functions (tr)
         if ( $Param{Section} eq 'All' && $StatData{StatType} eq 'dynamic' ) {
@@ -1647,12 +1595,10 @@ sub Import {
     {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "Object $StatsXML->{Object}->[1]->{Content} doesn't exist!"
+            Message  => "Object $StatsXML->{Object}[1]{Content} doesn't exists!"
         );
         return;
     }
-
-    # static statistic
     if (
         $StatsXML->{StatType}->[1]->{Content}
         && $StatsXML->{StatType}->[1]->{Content} eq 'static'
@@ -1662,36 +1608,20 @@ sub Import {
         $FileLocation =~ s{::}{\/}gx;
         $FileLocation = $Self->{ConfigObject}->Get('Home') . '/' . $FileLocation . '.pm';
 
-        # if no inline file is given in the stats definition
-        if ( !$StatsXML->{File}->[1]->{Content} ) {
-
-            # get the file name
-            $FileLocation =~ s{ \A .*? ( [^/]+ ) \. pm  \z }{$1}xms;
-
-            # set the file name
-            $StatsXML->{File}->[1]->{Content} = $FileLocation;
-        }
-
-        # write file if it is included in the stats definition
-        elsif ( open my $Filehandle, '>', $FileLocation ) {
-
+        # write file
+        if ( open my $Filehandle, '>', $FileLocation ) {
             print STDERR "Notice: Install $FileLocation ($StatsXML->{File}[1]{Permission})!\n";
             if ( $StatsXML->{File}->[1]->{Encode} && $StatsXML->{File}->[1]->{Encode} eq 'Base64' )
             {
                 $StatsXML->{File}->[1]->{Content}
                     = decode_base64( $StatsXML->{File}->[1]->{Content} );
                 $Self->{EncodeObject}->EncodeOutput(
-                    \$StatsXML->{File}->[1]->{Content}
+                    \$StatsXML->{File}[1]{Content}
                 );
             }
 
-            # set utf8 or bin mode
-            if ( $StatsXML->{File}->[1]->{Content} =~ /use\sutf8;/ ) {
-                open $Filehandle, '>:utf8', $FileLocation;
-            }
-            else {
-                binmode $Filehandle;
-            }
+            # set bin mode
+            binmode $Filehandle;
             print $Filehandle $StatsXML->{File}->[1]->{Content};
             close $Filehandle;
 
@@ -1699,13 +1629,13 @@ sub Import {
             if ( length( $StatsXML->{File}->[1]->{Permission} ) == 3 ) {
                 $StatsXML->{File}->[1]->{Permission} = "0$StatsXML->{File}->[1]->{Permission}";
             }
-            chmod( oct( $StatsXML->{File}->[1]->{Permission} ), $FileLocation );
+            chmod( oct( $StatsXML->{File}[1]{Permission} ), $FileLocation );
             $StatsXML->{File}->[1]->{Content} = $StatsXML->{File}->[1]->{File};
 
-            delete $StatsXML->{File}->[1]->{File};
-            delete $StatsXML->{File}->[1]->{Location};
-            delete $StatsXML->{File}->[1]->{Permission};
-            delete $StatsXML->{File}->[1]->{Encode};
+            delete $StatsXML->{File}[1]{File};
+            delete $StatsXML->{File}[1]{Location};
+            delete $StatsXML->{File}[1]{Permission};
+            delete $StatsXML->{File}[1]{Encode};
         }
     }
 
@@ -1787,7 +1717,7 @@ sub GetParams {
     my $Stat = $Self->StatsGet( StatID => $Param{StatID} );
 
     # static
-    # don't remove this if clause, because is required for otrs.GenerateStats.pl
+    # don't remove this if clause, because is required for mkStats.pl
     my @Params;
     if ( $Stat->{StatType} eq 'static' ) {
 
@@ -1932,7 +1862,7 @@ sub StringAndTimestamp2Filename {
 insert the stat number get the stat id
 
     my $StatID = $StatsObject->StatNumber2StatID(
-        StatNumber => 11212,
+        StatNumber => 11212
     );
 
 =cut
@@ -1950,7 +1880,7 @@ sub StatNumber2StatID {
 
     my @Key = $Self->{XMLObject}->XMLHashSearch(
         Type => 'Stats',
-        What => [ { "[%]{'otrs_stats'}[%]{'StatNumber'}[%]{'Content'}" => $Param{StatNumber} } ],
+        What => [ { "[%]{'otrs_stats'}[%]{'StatNumber'}[%]{'Content'}" => $Param{StatNumber}, }, ],
     );
     if ( @Key && $#Key < 1 ) {
         return $Key[0];
@@ -1986,10 +1916,7 @@ sub StatsInstall {
     $Self->StatsCleanUp();
 
     # get list of stats files
-    my @StatsFileList = $Self->{MainObject}->DirectoryRead(
-        Directory => $Self->{StatsTempDir},
-        Filter    => $Param{FilePrefix} . '*.xml',
-    );
+    my @StatsFileList = glob $Self->{StatsTempDir} . $Param{FilePrefix} . '*.xml';
 
     # import the stats
     my $InstalledPostfix = '.installed';
@@ -2038,10 +1965,7 @@ sub StatsUninstall {
     $Param{FilePrefix} = $Param{FilePrefix} ? $Param{FilePrefix} . '-' : '';
 
     # get list of installed stats files
-    my @StatsFileList = $Self->{MainObject}->DirectoryRead(
-        Directory => $Self->{StatsTempDir},
-        Filter    => $Param{FilePrefix} . '*.xml.installed',
-    );
+    my @StatsFileList = glob $Self->{StatsTempDir} . $Param{FilePrefix} . '*.xml.installed';
 
     # delete the stats
     for my $File ( sort @StatsFileList ) {
@@ -2131,7 +2055,7 @@ sub _GenerateStaticStats {
         return;
     }
 
-    # load static module
+    # load static modul
     my $ObjectModule = $Param{ObjectModule};
     return if !$Self->{MainObject}->Require($ObjectModule);
     my $StatObject = $ObjectModule->new( %{$Self} );
@@ -2150,7 +2074,7 @@ sub _GenerateStaticStats {
         @Result = $Self->_GetResultCache( Filename => $Filename );
     }
 
-    # try to get data if nothing is there
+    # try to get data if noting is there
     if ( !@Result ) {
 
         # run stats function
@@ -2315,7 +2239,7 @@ sub _GenerateDynamicStats {
                 $TitleTimeStop  = $Element->{TimeStop};
             }
 
-            # Select All function needed from otrs.GenerateStats.pl and fixed values of the frontend
+            # Select All function needed from mkStats.pl and fixed values of the frontend
             elsif ( !$Element->{SelectedValues}[0] ) {
                 my @Values = keys( %{ $Element->{Values} } );
                 $Element->{SelectedValues} = \@Values;
@@ -3214,10 +3138,7 @@ sub _DeleteCache {
         $Path .= '/';
     }
 
-    my @Files = $Self->{MainObject}->DirectoryRead(
-        Directory => $Path,
-        Filter    => 'Stats' . $Param{StatID} . '-*.cache',
-    );
+    my @Files = glob $Path . 'Stats' . $Param{StatID} . '-*.cache';
 
     for my $File (@Files) {
         unlink $File;
@@ -3266,7 +3187,7 @@ sub _AutomaticSampleImport {
             # check filesize
             #            my $Filesize = -s $Directory.$Filename;
             #            if ($Filesize > $MaxFilesize) {
-            #                print "File: $Filename too big! max. $MaxFilesize byte allowed.\n";
+            #                print "File: $Filename to big! max. $MaxFilesize byte allowed.\n";
             #                $CommonObject{LogObject}->Log(
             #                    Priority => 'error',
             #                    Message => "Can't file imported: $Directory.$Filename",
@@ -3344,14 +3265,14 @@ sub _GetCacheString {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =head1 VERSION
 
-$Revision: 1.112 $ $Date: 2011/12/23 14:37:19 $
+$Revision: 1.89.2.1 $ $Date: 2010/05/03 17:02:43 $
 
 =cut
