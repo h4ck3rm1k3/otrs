@@ -1,8 +1,8 @@
 # --
 # Kernel/System/DB.pm - the global database wrapper to support different databases
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: DB.pm,v 1.144 2011/12/12 16:23:14 jp Exp $
+# $Id: DB.pm,v 1.119.2.1 2010/05/11 11:58:23 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,12 +15,11 @@ use strict;
 use warnings;
 
 use DBI;
-use Carp qw(cluck);
+
 use Kernel::System::Time;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.144 $) [1];
+$VERSION = qw($Revision: 1.119.2.1 $) [1];
 
 =head1 NAME
 
@@ -89,28 +88,23 @@ sub new {
     # 0=off; 1=updates; 2=+selects; 3=+Connects;
     $Self->{Debug} = $Param{Debug} || 0;
 
-    # get needed objects
-    for my $Needed (qw(ConfigObject LogObject MainObject EncodeObject)) {
-        if ( $Param{$Needed} ) {
-            $Self->{$Needed} = $Param{$Needed};
+    # check needed objects
+    for (qw(ConfigObject LogObject MainObject EncodeObject)) {
+        if ( $Param{$_} ) {
+            $Self->{$_} = $Param{$_};
         }
         else {
-            die "Got no $Needed!";
+            die "Got no $_!";
         }
     }
 
-    if ( $Param{TimeObject} ) {
-        $Self->{TimeObject} = $Param{TimeObject};
-    }
-    else {
-        $Self->{TimeObject} = Kernel::System::Time->new( %{$Self} );
-    }
+    # time object
+    $Self->{TimeObject} = Kernel::System::Time->new( %{$Self} );
 
     # get config data
     $Self->{DSN}  = $Param{DatabaseDSN}  || $Self->{ConfigObject}->Get('DatabaseDSN');
     $Self->{USER} = $Param{DatabaseUser} || $Self->{ConfigObject}->Get('DatabaseUser');
     $Self->{PW}   = $Param{DatabasePw}   || $Self->{ConfigObject}->Get('DatabasePw');
-
     $Self->{SlowLog} = $Param{'Database::SlowLog'}
         || $Self->{ConfigObject}->Get('Database::SlowLog');
 
@@ -124,12 +118,7 @@ sub new {
         $Self->{'DB::Type'} = 'mysql';
     }
     elsif ( $Self->{DSN} =~ /:pg/i ) {
-        if ( $Self->{ConfigObject}->Get('DatabasePostgresqlBefore82') ) {
-            $Self->{'DB::Type'} = 'postgresql_before_8_2';
-        }
-        else {
-            $Self->{'DB::Type'} = 'postgresql';
-        }
+        $Self->{'DB::Type'} = 'postgresql';
     }
     elsif ( $Self->{DSN} =~ /:oracle/i ) {
         $Self->{'DB::Type'} = 'oracle';
@@ -188,41 +177,6 @@ sub new {
         }
     }
 
-    # Check for registered listener objects
-    $Self->{DBListeners} = [];
-
-    my $DBListeners = $Self->{ConfigObject}->Get('DB::DBListener');
-
-    if ( IsHashRefWithData($DBListeners) ) {
-
-        KEY:
-        for my $Key ( sort keys %{$DBListeners} ) {
-
-            if ( IsHashRefWithData( $DBListeners->{$Key} ) && $DBListeners->{$Key}->{Object} ) {
-                my $Object = $DBListeners->{$Key}->{Object};
-                if ( !$Self->{MainObject}->Require($Object) ) {
-                    $Self->{'LogObject'}->Log(
-                        'Priority' => 'error',
-                        'Message'  => "Could not load module $Object",
-                    );
-
-                    next KEY;
-                }
-                my $Instance = $Object->new(%Param);
-                if ( ref $Instance ne $Object ) {
-                    $Self->{'LogObject'}->Log(
-                        'Priority' => 'error',
-                        'Message'  => "Could not instantiate module $Object",
-                    );
-
-                    next KEY;
-                }
-
-                push @{ $Self->{DBListeners} }, $Instance;
-            }
-        }
-    }
-
     # do database connect
     if ( !$Param{AutoConnectNo} ) {
         return if !$Self->Connect();
@@ -259,7 +213,6 @@ sub Connect {
         $Self->{PW},
         $Self->{Backend}->{'DB::Attribute'},
     );
-
     if ( !$Self->{dbh} ) {
         $Self->{LogObject}->Log(
             Caller   => 1,
@@ -268,11 +221,9 @@ sub Connect {
         );
         return;
     }
-
     if ( $Self->{Backend}->{'DB::Connect'} ) {
         $Self->Do( SQL => $Self->{Backend}->{'DB::Connect'} );
     }
-
     return $Self->{dbh};
 }
 
@@ -300,7 +251,6 @@ sub Disconnect {
     if ( $Self->{dbh} ) {
         $Self->{dbh}->disconnect();
     }
-
     return 1;
 }
 
@@ -371,7 +321,6 @@ sub Quote {
         Priority => 'error',
         Message  => "Invalid quote type '$Type'!",
     );
-
     return;
 }
 
@@ -435,20 +384,19 @@ sub Do {
             }
         }
     }
+    if ( !$Self->{ConfigObject}->Get('TimeZone') ) {
 
-    # Replace current_timestamp with real time stamp.
-    # - This avoids time inconsistencies of app and db server
-    # - This avoids timestamp problems in Postgresql servers where
-    #   the timestamp is sometimes 1 second off the perl timestamp.
-    my $Timestamp = $Self->{TimeObject}->CurrentTimestamp();
-    $Param{SQL} =~ s{
-        (?<= \s | \( | , )  # lookahead
-        current_timestamp   # replace current_timestamp by 'yyyy-mm-dd hh:mm:ss'
-        (?=  \s | \) | , )  # lookbehind
+        # timestamp workaround (if needed)
+        if ( $Self->{Backend}->{'DB::CurrentTimestamp'} ) {
+            $Param{SQL} =~ s/current_timestamp/$Self->{Backend}->{'DB::CurrentTimestamp'}/g;
+        }
     }
-    {
-        '$Timestamp'
-    }xmsg;
+    else {
+
+        # replace current_timestamp
+        my $Timestamp = $Self->{TimeObject}->CurrentTimestamp();
+        $Param{SQL} =~ s/(\s|\(|,| )current_timestamp(\s|\)|,| )/$1'$Timestamp'$2/g;
+    }
 
     # debug
     if ( $Self->{Debug} > 0 ) {
@@ -470,10 +418,6 @@ sub Do {
         );
     }
 
-    for my $DBListener ( @{ $Self->{DBListeners} } ) {
-        $DBListener->PreDo( SQL => $Param{SQL}, Bind => \@Array );
-    }
-
     # send sql to database
     if ( !$Self->{dbh}->do( $Param{SQL}, undef, @Array ) ) {
         $Self->{LogObject}->Log(
@@ -483,11 +427,6 @@ sub Do {
         );
         return;
     }
-
-    for my $DBListener ( @{ $Self->{DBListeners} } ) {
-        $DBListener->PostDo( SQL => $Param{SQL}, Bind => \@Array );
-    }
-
     return 1;
 }
 
@@ -520,7 +459,7 @@ you also can use DBI bind values, required for large strings:
     my $Var1 = 'dog1';
     my $Var2 = 'dog2';
 
-    $DBObject->Prepare(
+    $DBObject->Do(
         SQL    => "SELECT id, name, content FROM table WHERE name_a = ? AND name_b = ?",
         Encode => [ 1, 1, 0 ],
         Bind   => [ \$Var1, \$Var2 ],
@@ -601,10 +540,6 @@ sub Prepare {
         }
     }
 
-    for my $DBListener ( @{ $Self->{DBListeners} } ) {
-        $DBListener->PrePrepare( SQL => $SQL, Bind => \@Array );
-    }
-
     # do
     if ( !( $Self->{Cursor} = $Self->{dbh}->prepare($SQL) ) ) {
         $Self->{LogObject}->Log(
@@ -616,17 +551,12 @@ sub Prepare {
     }
 
     if ( !$Self->{Cursor}->execute(@Array) ) {
-	cluck "DB error ";
         $Self->{LogObject}->Log(
             Caller   => 1,
             Priority => 'Error',
             Message  => "$DBI::errstr, SQL: '$SQL'",
         );
         return;
-    }
-
-    for my $DBListener ( @{ $Self->{DBListeners} } ) {
-        $DBListener->PostPrepare( SQL => $SQL, Bind => \@Array );
     }
 
     # slow log feature
@@ -708,41 +638,6 @@ sub FetchrowArray {
     return @Row;
 }
 
-=item SelectAll()
-
-returns all available records of a SELECT statement.
-In essence, this calls Prepare() and FetchrowArray() to get all records.
-
-    my $ResultAsArrayRef = $DBObject->SelectAll(
-        SQL   => "SELECT id, name FROM table",
-        Limit => 10
-    );
-
-You can pass the same arguments as to the Prepare() method.
-
-Returns undef (if query failed), or an array ref (if query was successful):
-
-  my $ResultAsArrayRef = [
-    [ 1, 'itemOne' ],
-    [ 2, 'itemTwo' ],
-    [ 3, 'itemThree' ],
-    [ 4, 'itemFour' ],
-  ];
-
-=cut
-
-sub SelectAll {
-    my ( $Self, %Param ) = @_;
-
-    return if !$Self->Prepare(%Param);
-
-    my @Records;
-    while ( my @Row = $Self->FetchrowArray() ) {
-        push @Records, \@Row;
-    }
-    return \@Records;
-}
-
 =item GetDatabaseFunction()
 
 to get database functions like
@@ -758,7 +653,6 @@ to get database functions like
     o ShellCommit
     o ShellConnect
     o Connect
-    o LikeEscapeString
 
     my $What = $DBObject->GetDatabaseFunction('DirectBlob');
 
@@ -801,10 +695,9 @@ generate database-specific sql syntax (e. g. CREATE TABLE ...)
 sub SQLProcessor {
     my ( $Self, %Param ) = @_;
 
-    my @SQL;
+    my @SQL = ();
     if ( $Param{Database} && ref $Param{Database} eq 'ARRAY' ) {
-
-        my @Table;
+        my @Table = ();
         for my $Tag ( @{ $Param{Database} } ) {
 
             # create table
@@ -829,6 +722,7 @@ sub SQLProcessor {
                 push @Table, $Tag;
             }
 
+            #            elsif ( $Tag->{Tag} eq 'UniqueColumn' && $Tag->{TagType} eq 'Start' ) {
             elsif ( $Tag->{Tag} eq 'UniqueColumn' ) {
                 push @Table, $Tag;
             }
@@ -843,6 +737,7 @@ sub SQLProcessor {
                 push @Table, $Tag;
             }
 
+            #            elsif ( $Tag->{Tag} eq 'IndexColumn' && $Tag->{TagType} eq 'Start' ) {
             elsif ( $Tag->{Tag} eq 'IndexColumn' ) {
                 push @Table, $Tag;
             }
@@ -916,7 +811,6 @@ sub SQLProcessor {
             }
         }
     }
-
     return @SQL;
 }
 
@@ -937,7 +831,6 @@ sub SQLProcessorPost {
         undef $Self->{Backend}->{Post};
         return @Return;
     }
-
     return ();
 }
 
@@ -971,9 +864,7 @@ sub GetTableData {
 
         $SQL .= " WHERE valid_id IN ( ${\(join ', ', @ValidIDs)} )";
     }
-
     $Self->Prepare( SQL => $SQL );
-
     while ( my @Row = $Self->FetchrowArray() ) {
         if ( $Row[3] ) {
             if ($Clamp) {
@@ -995,7 +886,6 @@ sub GetTableData {
             $Data{ $Row[0] } = $Row[1];
         }
     }
-
     return %Data;
 }
 
@@ -1051,19 +941,16 @@ sub QueryCondition {
         }
     }
 
-    # get like escape string needed for some databases (e.g. oracle)
-    my $LikeEscapeString = $Self->GetDatabaseFunction('LikeEscapeString');
-
     # search prefix/suffix check
     my $SearchPrefix = $Param{SearchPrefix} || '';
     my $SearchSuffix = $Param{SearchSuffix} || '';
 
-    # remove leading/trailing spaces
+    # remove leading/tailing spaces
     $Param{Value} =~ s/^\s+//g;
     $Param{Value} =~ s/\s+$//g;
 
     # add base brackets
-    if ( $Param{Value} !~ /^(?<!\\)\(/ || $Param{Value} !~ /(?<!\\)\)$/ ) {
+    if ( $Param{Value} !~ /^\(/ || $Param{Value} !~ /\)$/ ) {
         $Param{Value} = '(' . $Param{Value} . ')';
     }
 
@@ -1088,16 +975,16 @@ sub QueryCondition {
     $Param{Value} =~ s/\+/&&/g;
 
     # replace AND by &&
-    $Param{Value} =~ s/(\s|(?<!\\)\)|(?<!\\)\()AND(\s|(?<!\\)\(|(?<!\\)\))/$1&&$2/g;
+    $Param{Value} =~ s/(\s|\)|\()AND(\s|\(|\))/$1&&$2/g;
 
     # replace OR by ||
-    $Param{Value} =~ s/(\s|(?<!\\)\)|(?<!\\)\()OR(\s|(?<!\\)\(|(?<!\\)\))/$1||$2/g;
+    $Param{Value} =~ s/(\s|\)|\()OR(\s|\(|\))/$1||$2/g;
 
     # replace * with % (for SQL)
     $Param{Value} =~ s/\*/%/g;
 
-    # remove double %% (also if there is only whitespace in between)
-    $Param{Value} =~ s/%\s*%/%/g;
+    # remove double %%
+    $Param{Value} =~ s/%%/%/g;
 
     # replace '%!%' by '!%' (done if * is added by search frontend)
     $Param{Value} =~ s/\%!\%/!%/g;
@@ -1105,13 +992,13 @@ sub QueryCondition {
     # replace '%!' by '!%' (done if * is added by search frontend)
     $Param{Value} =~ s/\%!/!%/g;
 
-    # remove leading/trailing conditions
-    $Param{Value} =~ s/(&&|\|\|)(?<!\\)\)$/)/g;
-    $Param{Value} =~ s/^(?<!\\)\((&&|\|\|)/(/g;
+    # remove leading/tailing conditions
+    $Param{Value} =~ s/(&&|\|\|)\)$/)/g;
+    $Param{Value} =~ s/^\((&&|\|\|)/(/g;
 
     # clean up not needed spaces in condistions
-    $Param{Value} =~ s/(\s((?<!\\)\(|(?<!\\)\)|\||&))/$2/g;
-    $Param{Value} =~ s/(((?<!\\)\(|(?<!\\)\)|\||&)\s)/$2/g;
+    $Param{Value} =~ s/(\s(\(|\)|\||&))/$2/g;
+    $Param{Value} =~ s/((\(|\)|\||&)\s)/$2/g;
 
     # use extended condition mode
     # 1. replace " " by "&&"
@@ -1137,57 +1024,16 @@ sub QueryCondition {
     my $SQL   = '';
     my $Word  = '';
     my $Not   = 0;
-
-    my $SpecialCharacters = $Self->_SpecialCharactersGet();
-
-    POSITION:
     for my $Position ( 0 .. $#Array ) {
 
         # find word
-        if (
-
-            # if the previous element was '\\', the current element has to be added as word
-            # so that search queries like '\(Test\)' (searching for round brackets) work
-            (
-                $Position > 0
-                && $Array[ $Position - 1 ] eq '\\'
-                && $SpecialCharacters->{ $Array[$Position] }
-            )
-
-            # "default" case: don't add brackets, etc. to a word being searched for
-            || $Array[$Position] !~ /(\(|\)|\!|\|)/
-            )
-        {
-            if ( $Array[$Position] =~ m{&} ) {
-                if (
-                    !(
-                        (
-                            $Array[ $Position - 1 ]
-                            && $Array[ $Position - 1 ] =~ m{&}
-                        )
-                        ||
-                        (
-                            $Array[ $Position + 1 ]
-                            && $Array[ $Position + 1 ] =~ m{&}
-                        )
-                    )
-                    )
-                {
-                    $Word .= $Array[$Position];
-                    next POSITION;
-                }
-            }
-            else {
-                $Word .= $Array[$Position];
-                next POSITION;
-            }
+        if ( $Array[$Position] !~ /(\(|\)|\!|\||&)/ ) {
+            $Word .= $Array[$Position];
+            next;
         }
 
         # if word exists, do something with it
         if ($Word) {
-
-            # remove escape characters from $Word
-            $Word =~ s{\\}{}smxg;
 
             # replace word if it's an "some expression" expression
             if ( $Expression{$Word} ) {
@@ -1199,19 +1045,11 @@ sub QueryCondition {
             $Word =~ s/\*/%/g;
             $Word =~ s/%%/%/g;
             $Word =~ s/%%/%/g;
-
-            # perform quoting depending on query type
-            if ( $Word =~ m/%/ ) {
-                $Word = $Self->Quote( $Word, 'Like' );
-            }
-            else {
-                $Word = $Self->Quote($Word);
-            }
+            $Word = $Self->Quote( $Word, 'Like' );
 
             # if it's a NOT LIKE condition
             if ( $Array[$Position] eq '!' || $Not ) {
                 $Not = 0;
-
                 my $SQLA;
                 for my $Key (@Keys) {
                     if ($SQLA) {
@@ -1220,7 +1058,7 @@ sub QueryCondition {
 
                     # check if like is used
                     my $Type = 'NOT LIKE';
-                    if ( $Word !~ m/%/ ) {
+                    if ( $Word !~ /%/ ) {
                         $Type = '!=';
                     }
 
@@ -1233,10 +1071,6 @@ sub QueryCondition {
                     }
                     else {
                         $SQLA .= "LOWER($Key) $Type LOWER('$Word')";
-                    }
-
-                    if ( $Type eq 'NOT LIKE' ) {
-                        $SQLA .= " $LikeEscapeString";
                     }
                 }
                 $SQL .= '(' . $SQLA . ') ';
@@ -1252,7 +1086,7 @@ sub QueryCondition {
 
                     # check if like is used
                     my $Type = 'LIKE';
-                    if ( $Word !~ m/%/ ) {
+                    if ( $Word !~ /%/ ) {
                         $Type = '=';
                     }
 
@@ -1265,10 +1099,6 @@ sub QueryCondition {
                     }
                     else {
                         $SQLA .= "LOWER($Key) $Type LOWER('$Word')";
-                    }
-
-                    if ( $Type eq 'LIKE' ) {
-                        $SQLA .= " $LikeEscapeString";
                     }
                 }
                 $SQL .= '(' . $SQLA . ') ';
@@ -1293,14 +1123,7 @@ sub QueryCondition {
         }
 
         # add ( or ) for query
-        if (
-
-            # if the previous element was '\\', don't handle the current one as an SQL bracket
-            # (it was a bracket to search for)
-            ( $Position == 0 || $Array[ $Position - 1 ] ne '\\' )
-            && $Array[$Position] =~ /(\(|\))/
-            )
-        {
+        if ( $Array[$Position] =~ /(\(|\))/ ) {
             $SQL .= $Array[$Position];
 
             # remember for syntax check
@@ -1326,44 +1149,7 @@ sub QueryCondition {
         );
         return;
     }
-
     return $SQL;
-}
-
-=item QueryStringEscape()
-
-escapes special characters within a query string
-
-    my $QueryStringEscaped = $DBObject->QueryStringEscape(
-        QueryString => 'customer with (brackets) and & and -',
-    );
-
-    Result would be a string in which all special characters are escaped.
-    Special characters are those which are returned by _SpecialCharactersGet().
-
-    $QueryStringEscaped = 'customer with \(brackets\) and \& and \-';
-
-=cut
-
-sub QueryStringEscape {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Key (qw(QueryString)) {
-        if ( !defined $Param{$Key} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # Merge all special characters into one string, separated by \\
-    my $SpecialCharacters = '\\' . join '\\', keys %{ $Self->_SpecialCharactersGet() };
-
-    # Use above string of special characters as character class
-    # note: already escaped special characters won't be escaped again
-    $Param{QueryString} =~ s{(?<!\\)([$SpecialCharacters])}{\\$1}smxg;
-
-    return $Param{QueryString};
 }
 
 =begin Internal:
@@ -1420,7 +1206,6 @@ sub _TypeCheck {
             Message  => "Unknown data type '$Tag->{Type}'!",
         );
     }
-
     return 1;
 }
 
@@ -1433,21 +1218,7 @@ sub _NameCheck {
             Message  => "Table names should not have more the 30 chars ($Tag->{Name})!",
         );
     }
-
     return 1;
-}
-
-sub _SpecialCharactersGet {
-    my ( $Self, %Param ) = @_;
-
-    my %SpecialCharacter = (
-        '(' => 1,
-        ')' => 1,
-        '&' => 1,
-        '-' => 1,
-    );
-
-    return \%SpecialCharacter;
 }
 
 sub DESTROY {
@@ -1470,16 +1241,16 @@ sub DESTROY {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.144 $ $Date: 2011/12/12 16:23:14 $
+$Revision: 1.119.2.1 $ $Date: 2010/05/11 11:58:23 $
 
 =cut
