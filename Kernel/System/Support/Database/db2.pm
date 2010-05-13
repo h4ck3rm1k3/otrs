@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/db2.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: db2.pm,v 1.10 2010/02/09 21:29:16 ub Exp $
+# $Id: db2.pm,v 1.11 2010/05/13 15:55:10 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,9 +15,10 @@ use strict;
 use warnings;
 
 use Kernel::System::XML;
+use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.11 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -32,7 +33,8 @@ sub new {
     }
 
     # create additional objects
-    $Self->{XMLObject} = Kernel::System::XML->new( %{$Self} );
+    $Self->{XMLObject}  = Kernel::System::XML->new( %{$Self} );
+    $Self->{TimeObject} = Kernel::System::Time->new( %{$Self} );
 
     return $Self;
 }
@@ -140,6 +142,48 @@ sub _TableCheck {
             Check       => 'Critical',
         };
     }
+    return $Data;
+}
+
+sub _CurrentTimestampCheck {
+    my ( $Self, %Param ) = @_;
+    my $Data   = {};
+    my $DbTime = '';
+
+    # Current Timestamp check
+    my $Check   = '';
+    my $Message = '';
+    $Self->{DBObject}->Prepare( SQL => "SELECT current_timestamp" );
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        $DbTime = $Row[0];
+    }
+    my $TimeApplicationServer = $Self->{TimeObject}->SystemTime();
+    my $TimeDatabaseServer    = $Self->{TimeObject}->TimeStamp2SystemTime(
+        String => $DbTime,
+    );
+
+    my $TimeDifference = 0;
+    my $Range          = 10;
+    $TimeDifference = $TimeApplicationServer - $TimeDatabaseServer;
+    if ( ( $TimeDifference >= ( $Range * -1 ) ) && ( $TimeDifference <= $Range ) ) {
+        $Check = 'OK';
+        $Message
+            = 'There are no difference between application server time and database server time.';
+    }
+    else {
+        $Check = 'Failed';
+        $Message
+            = 'There are a material difference ('
+            . $TimeDifference
+            . ' seconds) between application server and database server time.';
+    }
+
+    $Data = {
+        Name        => 'Current Timestamp Check',
+        Description => 'Check "System Time" vs "Current Timestamp".',
+        Comment     => $Message,
+        Check       => $Check,
+    };
     return $Data;
 }
 1;

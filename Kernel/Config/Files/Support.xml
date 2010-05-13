@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: Support.xml,v 1.6 2010/02/09 21:29:16 ub Exp $</CVS>
+    <CVS>$Id: Support.xml,v 1.7 2010/05/13 15:53:37 cg Exp $</CVS>
     <ConfigItem Name="Frontend::Module###AdminSupport" Required="1" Valid="1">
         <Description Lang="en">Frontend module registration for the AdminSystemStatus object in the admin area.</Description>Description>
         <Description Lang="de">Frontendmodul-Registration des AdminSystemStatus-Objekts im Admin-Bereich.</Description>Description>
@@ -38,6 +38,7 @@
         <Setting>
             <Hash>
                 <Item Key="TableCheck">1</Item>
+                <Item Key="CurrentTimestampCheck">1</Item>
             </Hash>
         </Setting>
     </ConfigItem>
@@ -49,6 +50,7 @@
         <Setting>
             <Hash>
                 <Item Key="TableCheck">1</Item>
+                <Item Key="CurrentTimestampCheck">1</Item>
                 <Item Key="VersionCheck">1</Item>
             </Hash>
         </Setting>
@@ -67,6 +69,7 @@
                 <Item Key="UTF8ClientCheck">1</Item>
                 <Item Key="UTF8DatabaseCheck">1</Item>
                 <Item Key="UTF8TableCheck">1</Item>
+                <Item Key="CurrentTimestampCheck">1</Item>
                 <Item Key="VersionCheck">1</Item>
             </Hash>
         </Setting>
@@ -83,6 +86,7 @@
                 <Item Key="OracleHomeCheck">1</Item>
                 <Item Key="NLSLangCheck">1</Item>
                 <Item Key="NLSDateFormatSelectCheck">1</Item>
+                <Item Key="CurrentTimestampCheck">1</Item>
             </Hash>
         </Setting>
     </ConfigItem>
@@ -97,6 +101,7 @@
                 <Item Key="DateStyleCheck">1</Item>
                 <Item Key="UTF8ServerCheck">1</Item>
                 <Item Key="UTF8ClientCheck">1</Item>
+                <Item Key="CurrentTimestampCheck">1</Item>
                 <Item Key="VersionCheck">1</Item>
             </Hash>
         </Setting>
