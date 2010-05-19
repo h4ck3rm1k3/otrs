@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/oracle.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: oracle.pm,v 1.20 2010/05/13 15:57:33 cg Exp $
+# $Id: oracle.pm,v 1.21 2010/05/19 18:54:16 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::XML;
 use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.20 $) [1];
+$VERSION = qw($Revision: 1.21 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -270,7 +270,7 @@ sub _CurrentTimestampCheck {
     # Current Timestamp check
     my $Check   = '';
     my $Message = '';
-    $Self->{DBObject}->Prepare( SQL => "SELECT current_timestamp" );
+    $Self->{DBObject}->Prepare( SQL => "SELECT current_timestamp FROM DUAL" );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         $DbTime = $Row[0];
     }
