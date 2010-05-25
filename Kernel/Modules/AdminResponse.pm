@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AdminResponse.pm - provides admin std response module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminResponse.pm,v 1.53 2011/12/23 14:26:57 mg Exp $
+# $Id: AdminResponse.pm,v 1.31.2.1 2010/05/25 18:16:39 dz Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,13 +14,13 @@ package Kernel::Modules::AdminResponse;
 use strict;
 use warnings;
 
-use Kernel::System::StandardResponse;
+use Kernel::System::StdResponse;
 use Kernel::System::StdAttachment;
 use Kernel::System::Valid;
 use Kernel::System::HTMLUtils;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.53 $) [1];
+$VERSION = qw($Revision: 1.31.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -30,379 +30,214 @@ sub new {
     bless( $Self, $Type );
 
     # check all needed objects
-    for my $Needed (qw(ParamObject DBObject LayoutObject ConfigObject LogObject)) {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    for (qw(ParamObject DBObject LayoutObject ConfigObject LogObject)) {
+        if ( !$Self->{$_} ) {
+            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
         }
     }
-    $Self->{StandardResponseObject} = Kernel::System::StandardResponse->new(%Param);
-    $Self->{StdAttachmentObject}    = Kernel::System::StdAttachment->new(%Param);
-    $Self->{ValidObject}            = Kernel::System::Valid->new(%Param);
-    $Self->{HTMLUtilsObject}        = Kernel::System::HTMLUtils->new(%Param);
-
+    $Self->{StdResponseObject}   = Kernel::System::StdResponse->new(%Param);
+    $Self->{StdAttachmentObject} = Kernel::System::StdAttachment->new(%Param);
+    $Self->{ValidObject}         = Kernel::System::Valid->new(%Param);
+    $Self->{HTMLUtilsObject}     = Kernel::System::HTMLUtils->new(%Param);
     return $Self;
 }
 
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    # ------------------------------------------------------------ #
-    # change
-    # ------------------------------------------------------------ #
-    if ( $Self->{Subaction} eq 'Change' ) {
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' ) || '';
-        my %Data = $Self->{StandardResponseObject}->StandardResponseGet( ID => $ID, );
+    $Param{Subaction} = $Self->{Subaction} || '';
+    $Param{NextScreen} = 'AdminResponse';
 
-        my @SelectedAttachment;
-        my %SelectedAttachmentData = $Self->{StdAttachmentObject}->StdAttachmentsByResponseID(
-            ID => $ID,
-        );
-        for my $Key ( keys %SelectedAttachmentData ) {
-            push @SelectedAttachment, $Key;
-        }
+    my @Params = ( 'ID', 'Name', 'Comment', 'ValidID', 'Response' );
+    my %GetParam;
+    for (@Params) {
+        $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ ) || '';
+    }
 
+    # get composed charset
+    $GetParam{Charset} = $Self->{LayoutObject}->{UserCharset};
+
+    # get composed content type
+    my $TextType = 'plain';
+    if ( $Self->{ConfigObject}->Get('Frontend::RichText') ) {
+        $TextType = 'html';
+    }
+    $GetParam{ContentType} = 'text/' . $TextType . '; charset=' . $GetParam{Charset};
+
+    # get response attachment data
+    my %AttachmentData = $Self->{StdAttachmentObject}->GetAllStdAttachments( Valid => 1 );
+    my %SelectedAttachmentData = ();
+    if ( $GetParam{ID} ) {
+        %SelectedAttachmentData
+            = $Self->{StdAttachmentObject}->StdAttachmentsByResponseID( ID => $GetParam{ID}, );
+    }
+
+    # ------------------------------------------------------------ #
+    # get data 2 form
+    # ------------------------------------------------------------ #
+    if ( $Param{Subaction} eq 'Change' ) {
+        $Param{ID} = $Self->{ParamObject}->GetParam( Param => 'ID' ) || '';
+        my %ResponseData = $Self->{StdResponseObject}->StdResponseGet( ID => $Param{ID} );
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Self->_Edit(
-            Action => 'Change',
-            %Data,
-            SelectedAttachments => \@SelectedAttachment,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminResponse',
-            Data         => \%Param,
+        $Output .= $Self->_Mask(
+            %ResponseData,
+            %Param,
+            Attachments         => \%AttachmentData,
+            SelectedAttachments => \%SelectedAttachmentData,
         );
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
 
     # ------------------------------------------------------------ #
-    # change action
+    # update action
     # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'ChangeAction' ) {
+    elsif ( $Param{Subaction} eq 'ChangeAction' ) {
 
         # challenge token check for write action
         $Self->{LayoutObject}->ChallengeTokenCheck();
 
+        my $Update = $Self->{StdResponseObject}->StdResponseUpdate(
+            %GetParam,
+            UserID => $Self->{UserID},
+        );
+        if ( !$Update ) {
+            return $Self->{LayoutObject}->ErrorScreen();
+        }
+
+        # update attachments to response
         my @NewIDs = $Self->{ParamObject}->GetArray( Param => 'IDs' );
-        my ( %GetParam, %Errors );
-        for my $Parameter (qw(ID Name Comment ValidID Response)) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
-        }
-
-        # get composed content type
-        $GetParam{ContentType} = 'text/plain';
-        if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-            $GetParam{ContentType} = 'text/html';
-        }
-
-        # check needed data
-        for my $Needed (qw(Name ValidID)) {
-            if ( !$GetParam{$Needed} ) {
-                $Errors{ $Needed . 'Invalid' } = 'ServerError';
-            }
-        }
-
-        # if no errors occurred
-        if ( !%Errors ) {
-
-            # update group
-            if (
-                $Self->{StandardResponseObject}
-                ->StandardResponseUpdate( %GetParam, UserID => $Self->{UserID} )
-                )
-            {
-
-                # update attachments to response
-                $Self->{StdAttachmentObject}->StdAttachmentSetResponses(
-                    AttachmentIDsRef => \@NewIDs,
-                    ID               => $GetParam{ID},
-                    UserID           => $Self->{UserID},
-                );
-
-                $Self->_Overview();
-                my $Output = $Self->{LayoutObject}->Header();
-                $Output .= $Self->{LayoutObject}->NavigationBar();
-                $Output .= $Self->{LayoutObject}->Notify( Info => 'Response updated!' );
-                $Output .= $Self->{LayoutObject}->Output(
-                    TemplateFile => 'AdminResponse',
-                    Data         => \%Param,
-                );
-                $Output .= $Self->{LayoutObject}->Footer();
-                return $Output;
-            }
-        }
-
-        # someting has gone wrong
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->{LayoutObject}->Notify( Priority => 'Error' );
-        $Self->_Edit(
-            Action              => 'Change',
-            Errors              => \%Errors,
-            SelectedAttachments => \@NewIDs,
-            %GetParam,
+        $Self->{StdAttachmentObject}->SetStdAttachmentsOfResponseID(
+            AttachmentIDsRef => \@NewIDs,
+            ID               => $GetParam{ID},
+            UserID           => $Self->{UserID},
         );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminResponse',
-            Data         => \%Param,
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
+        return $Self->{LayoutObject}->Redirect( OP => "Action=$Param{NextScreen}" );
     }
 
     # ------------------------------------------------------------ #
-    # add
+    # add new response
     # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'Add' ) {
-        my %GetParam;
-        $GetParam{Name} = $Self->{ParamObject}->GetParam( Param => 'Name' );
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Self->_Edit(
-            Action => 'Add',
-            %GetParam,
-        );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminResponse',
-            Data         => \%Param,
-        );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
-    }
-
-    # ------------------------------------------------------------ #
-    # add action
-    # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'AddAction' ) {
+    elsif ( $Param{Subaction} eq 'AddAction' ) {
 
         # challenge token check for write action
         $Self->{LayoutObject}->ChallengeTokenCheck();
 
+        my $Id = $Self->{StdResponseObject}->StdResponseAdd(
+            %GetParam,
+            UserID => $Self->{UserID},
+        );
+        if ( !$Id ) {
+            return $Self->{LayoutObject}->ErrorScreen();
+        }
+
+        # add attachments to response
         my @NewIDs = $Self->{ParamObject}->GetArray( Param => 'IDs' );
-        my ( %GetParam, %Errors );
-        for my $Parameter (qw(ID Name Comment ValidID Response)) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
-        }
-
-        # get composed content type
-        $GetParam{ContentType} = 'text/plain';
-        if ( $Self->{LayoutObject}->{BrowserRichText} ) {
-            $GetParam{ContentType} = 'text/html';
-        }
-
-        # check needed data
-        for my $Needed (qw(Name ValidID)) {
-            if ( !$GetParam{$Needed} ) {
-                $Errors{ $Needed . 'Invalid' } = 'ServerError';
-            }
-        }
-
-        # if no errors occurred
-        if ( !%Errors ) {
-
-            # add response
-            my $StandardResponseID
-                = $Self->{StandardResponseObject}
-                ->StandardResponseAdd( %GetParam, UserID => $Self->{UserID} );
-            if ($StandardResponseID) {
-                $Self->_Overview();
-                my $Output = $Self->{LayoutObject}->Header();
-                $Output .= $Self->{LayoutObject}->NavigationBar();
-                $Output .= $Self->{LayoutObject}->Notify( Info => 'Response added!' );
-                $Output .= $Self->{LayoutObject}->Output(
-                    TemplateFile => 'AdminResponse',
-                    Data         => \%Param,
-                );
-                $Output .= $Self->{LayoutObject}->Footer();
-                return $Output;
-            }
-        }
-
-        # someting has gone wrong
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->{LayoutObject}->Notify( Priority => 'Error' );
-        $Self->_Edit(
-            Action              => 'Add',
-            Errors              => \%Errors,
-            SelectedAttachments => \@NewIDs,
-            %GetParam,
+        $Self->{StdAttachmentObject}->SetStdAttachmentsOfResponseID(
+            AttachmentIDsRef => \@NewIDs,
+            ID               => $Id,
+            UserID           => $Self->{UserID},
         );
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminResponse',
-            Data         => \%Param,
+
+        # show next page
+        return $Self->{LayoutObject}->Redirect(
+            OP => "Action=AdminQueueResponses&Subaction=Response&ID=$Id",
         );
-        $Output .= $Self->{LayoutObject}->Footer();
-        return $Output;
     }
 
     # ------------------------------------------------------------ #
-    # delete action
+    # delete response
     # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'Delete' ) {
+    elsif ( $Param{Subaction} eq 'Delete' ) {
 
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
-
-        my $Delete = $Self->{StandardResponseObject}->StandardResponseDelete(
-            ID => $ID,
+        my $Delete = $Self->{StdResponseObject}->StdResponseDelete(
+            ID => $GetParam{ID},
         );
         if ( !$Delete ) {
             return $Self->{LayoutObject}->ErrorScreen();
         }
 
-        return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
+        # show next page
+        return $Self->{LayoutObject}->Redirect( OP => "Action=AdminResponse" );
     }
 
-    # ------------------------------------------------------------
-    # overview
-    # ------------------------------------------------------------
+    # ------------------------------------------------------------ #
+    # else ! print form
+    # ------------------------------------------------------------ #
     else {
-        $Self->_Overview();
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AdminResponse',
-            Data         => \%Param,
+        $Output .= $Self->_Mask(
+            Subaction           => 'Add',
+            Attachments         => \%AttachmentData,
+            SelectedAttachments => \%SelectedAttachmentData,
         );
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
 }
 
-sub _Edit {
+sub _Mask {
     my ( $Self, %Param ) = @_;
 
-    $Self->{LayoutObject}->Block(
-        Name => 'Overview',
-        Data => \%Param,
-    );
-
-    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-    $Self->{LayoutObject}->Block( Name => 'ActionOverview' );
-
-    # get valid list
-    my %ValidList        = $Self->{ValidObject}->ValidList();
-    my %ValidListReverse = reverse %ValidList;
-
-    $Param{ValidOption} = $Self->{LayoutObject}->BuildSelection(
-        Data       => \%ValidList,
+    # build ValidID string
+    $Param{'ValidOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
+        Data       => { $Self->{ValidObject}->ValidList(), },
         Name       => 'ValidID',
-        SelectedID => $Param{ValidID} || $ValidListReverse{valid},
-        Class      => 'Validate_Required ' . ( $Param{Errors}->{'ValidIDInvalid'} || '' ),
+        SelectedID => $Param{ValidID},
     );
 
-    my %AttachmentData = $Self->{StdAttachmentObject}->StdAttachmentList( Valid => 1 );
-    $Param{AttachmentOption} = $Self->{LayoutObject}->BuildSelection(
-        Data         => \%AttachmentData,
-        Name         => 'IDs',
-        Multiple     => 1,
-        Size         => 6,
-        Translation  => 0,
-        PossibleNone => 1,
-        SelectedID   => $Param{SelectedAttachments},
-    );
-
-    $Self->{LayoutObject}->Block(
-        Name => 'OverviewUpdate',
+    # build ResponseOption string
+    $Param{'ResponseOption'} = $Self->{LayoutObject}->OptionStrgHashRef(
         Data => {
-            %Param,
-            %{ $Param{Errors} },
+            $Self->{DBObject}->GetTableData(
+                What  => 'id, name, id',
+                Valid => 0,
+                Clamp => 1,
+                Table => 'standard_response',
+                )
         },
+        Name       => 'ID',
+        Size       => 15,
+        SelectedID => $Param{ID},
     );
 
-    # shows header
-    if ( $Param{Action} eq 'Change' ) {
-        $Self->{LayoutObject}->Block( Name => 'HeaderEdit' );
+    my %SecondDataTmp = %{ $Param{Attachments} };
+    my %DataTmp       = %{ $Param{SelectedAttachments} };
+    $Param{AttachmentOption} .= "<SELECT NAME=\"IDs\" SIZE=3 multiple>\n";
+    for my $ID ( sort keys %SecondDataTmp ) {
+        $Param{AttachmentOption} .= "<OPTION ";
+        for ( sort keys %DataTmp ) {
+            if ( $_ eq $ID ) {
+                $Param{AttachmentOption} .= 'selected';
+            }
+        }
+        $Param{AttachmentOption} .= " VALUE=\"$ID\">$SecondDataTmp{$ID}</OPTION>\n";
     }
-    else {
-        $Self->{LayoutObject}->Block( Name => 'HeaderAdd' );
-    }
+    $Param{AttachmentOption} .= "</SELECT>\n";
 
     # add rich text editor
-    if ( $Self->{LayoutObject}->{BrowserRichText} ) {
+    if ( $Self->{ConfigObject}->Get('Frontend::RichText') ) {
         $Self->{LayoutObject}->Block(
             Name => 'RichText',
             Data => \%Param,
         );
 
-        # reformat from plain to html
-        if ( $Param{ContentType} && $Param{ContentType} =~ /text\/plain/i ) {
-            $Param{Response} = $Self->{HTMLUtilsObject}->ToHTML(
-                String => $Param{Response},
+        # reformat response if necessary
+        if ( $Param{ContentType} && $Param{ContentType} =~ /^text\/plain/ ) {
+            $Param{Response} = $Self->{LayoutObject}->Ascii2Html(
+                Text           => $Param{Response},
+                NewLine        => $Self->{ConfigObject}->Get('DefaultViewNewLine'),
+                HTMLResultMode => 1,
             );
         }
     }
-    else {
-
-        # reformat from html to plain
-        if ( $Param{ContentType} && $Param{ContentType} =~ /text\/html/i ) {
-            $Param{Response} = $Self->{HTMLUtilsObject}->ToAscii(
-                String => $Param{Response},
-            );
-        }
-    }
-    return 1;
-}
-
-sub _Overview {
-    my ( $Self, %Param ) = @_;
-
-    $Self->{LayoutObject}->Block(
-        Name => 'Overview',
-        Data => \%Param,
-    );
-
-    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-    $Self->{LayoutObject}->Block( Name => 'ActionAdd' );
-
-    $Self->{LayoutObject}->Block(
-        Name => 'OverviewResult',
-        Data => \%Param,
-    );
-    my %List = $Self->{StandardResponseObject}->StandardResponseList(
-        UserID => 1,
-        Valid  => 0,
-    );
-
-    # if there are any results, they are shown
-    if (%List) {
-
-        # get valid list
-        my %ValidList = $Self->{ValidObject}->ValidList();
-        for my $ID ( sort { $List{$a} cmp $List{$b} } keys %List ) {
-
-            my %Data = $Self->{StandardResponseObject}->StandardResponseGet( ID => $ID, );
-            my @SelectedAttachment;
-            my %SelectedAttachmentData = $Self->{StdAttachmentObject}->StdAttachmentsByResponseID(
-                ID => $ID,
-            );
-            for my $Key ( keys %SelectedAttachmentData ) {
-                push @SelectedAttachment, $Key;
-            }
-            $Self->{LayoutObject}->Block(
-                Name => 'OverviewResultRow',
-                Data => {
-                    Valid => $ValidList{ $Data{ValidID} },
-                    %Data,
-                    Attachments => scalar @SelectedAttachment,
-                },
-            );
-        }
+    elsif ( $Param{ContentType} =~ /^text\/html/ ) {
+        $Param{Response} = $Self->{HTMLUtilsObject}->ToAscii( String => $Param{Response} )
     }
 
-    # otherwise it displays a no data found message
-    else {
-        $Self->{LayoutObject}->Block(
-            Name => 'NoDataFoundMsg',
-            Data => {},
-        );
-    }
-
-    return 1;
+    return $Self->{LayoutObject}->Output( TemplateFile => 'AdminResponseForm', Data => \%Param );
 }
 
 1;
