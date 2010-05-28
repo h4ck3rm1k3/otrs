@@ -1,8 +1,8 @@
 # --
 # Kernel/Language.pm - provides multi language support
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Language.pm,v 1.79 2011/08/12 09:06:15 mg Exp $
+# $Id: Language.pm,v 1.68.2.1 2010/05/28 08:58:19 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
 
-$VERSION = qw($Revision: 1.79 $) [1];
+$VERSION = qw($Revision: 1.68.2.1 $) [1];
 
 =head1 NAME
 
@@ -125,15 +125,14 @@ sub new {
     @ISA = ("Kernel::Language::$Self->{UserLanguage}");
 
     # execute translation map
-    if ( eval { $Self->Data() } ) {
+    $Self->Data();
 
-        # debug info
-        if ( $Self->{Debug} > 0 ) {
-            $Self->{LogObject}->Log(
-                Priority => 'Debug',
-                Message  => "Kernel::Language::$Self->{UserLanguage} load ... done."
-            );
-        }
+    # debug info
+    if ( $Self->{Debug} > 0 ) {
+        $Self->{LogObject}->Log(
+            Priority => 'Debug',
+            Message  => "Kernel::Language::$Self->{UserLanguage} load ... done."
+        );
     }
 
     # load action text catalog ...
@@ -144,10 +143,7 @@ sub new {
 
         # looking to addition translation files
         my $Home  = $Self->{ConfigObject}->Get('Home') . '/';
-        my @Files = $Self->{MainObject}->DirectoryRead(
-            Directory => $Home . "Kernel/Language/",
-            Filter    => "$Self->{UserLanguage}_*.pm",
-        );
+        my @Files = glob( $Home . "Kernel/Language/$Self->{UserLanguage}_*.pm" );
         for my $File (@Files) {
 
             # get module name based on file name
@@ -170,22 +166,20 @@ sub new {
                     Priority => 'Error',
                     Message  => "Sorry, can't load $File! " . "Check the $File (perl -cw)!",
                 );
-                next;
             }
 
             # add module to ISA
             @ISA = ($File);
 
             # execute translation map
-            if ( eval { $Self->Data() } ) {
+            $Self->Data();
 
-                # debug info
-                if ( $Self->{Debug} > 0 ) {
-                    $Self->{LogObject}->Log(
-                        Priority => 'Debug',
-                        Message  => "$File load ... done."
-                    );
-                }
+            # debug info
+            if ( $Self->{Debug} > 0 ) {
+                $Self->{LogObject}->Log(
+                    Priority => 'Debug',
+                    Message  => "$File load ... done."
+                );
             }
         }
 
@@ -196,15 +190,14 @@ sub new {
             @ISA = ($CustomTranslationModule);
 
             # execute translation map
-            if ( eval { $Self->Data() } ) {
+            $Self->Data();
 
-                # debug info
-                if ( $Self->{Debug} > 0 ) {
-                    $Self->{LogObject}->Log(
-                        Priority => 'Debug',
-                        Message  => "Kernel::Language::$Self->{UserLanguage}_Custom load ... done."
-                    );
-                }
+            # debug info
+            if ( $Self->{Debug} > 0 ) {
+                $Self->{LogObject}->Log(
+                    Priority => 'Debug',
+                    Message  => "Kernel::Language::$Self->{UserLanguage}_Custom load ... done."
+                );
             }
         }
     }
@@ -216,8 +209,9 @@ sub new {
 
     # get source file charset
     # what charset shoud I use (take it from translation file)!
-    if ( $Self->{Charset} && ref $Self->{Charset} eq 'ARRAY' ) {
-        $Self->{TranslationCharset} = $Self->{Charset}->[-1];
+    if ( $Self->{Charset} ) {
+        my @Chatsets = @{ $Self->{Charset} };
+        $Self->{TranslationCharset} = $Chatsets[-1];
     }
 
     return $Self;
@@ -229,26 +223,20 @@ Translate a string.
 
     my $Text = $LanguageObject->Get('Hello');
 
-    Example: (the quoting looks strange, but is in fact correct!)
-
-    my $String = 'History::NewTicket", "2011031110000023", "Postmaster", "3 normal", "open", "9';
-
-    my $TranslatedString = $LanguageObject->Get( $String );
-
 =cut
 
 sub Get {
     my ( $Self, $What ) = @_;
+    my @Dyn = ();
 
     # check
     return if !defined $What;
     return '' if $What eq '';
 
     # check dyn spaces
-    my @Dyn;
-    if ( $What && $What =~ /^(.+?)",\s{0,1}"(.*?)$/ ) {
+    if ( $What && $What =~ /^(.+?)", "(.*?)$/ ) {
         $What = $1;
-        @Dyn = split( /",\s{0,1}"/, $2 );
+        @Dyn = split( /", "/, $2 );
     }
 
     # check wanted param and returns the
@@ -269,19 +257,18 @@ sub Get {
             # remember that charset convert is already done
             $Self->{TranslationConvert}->{$What} = 1;
 
-            # convert
-            $Self->{Translation}->{$What} = $Self->{EncodeObject}->Convert(
+            # convert it
+            $Self->{Translation}->{$What} = $Self->CharsetConvert(
                 Text => $Self->{Translation}->{$What},
                 From => $Self->{TranslationCharset},
-                To   => $Self->{ReturnCharset},
             );
         }
         my $Text = $Self->{Translation}->{$What};
         if (@Dyn) {
-            for ( 0 .. $#Dyn ) {
+            for ( 0 .. 3 ) {
 
                 # be careful $Dyn[$_] can be 0! bug#3826
-                last if !defined $Dyn[$_];
+                last if ( !defined $Dyn[$_] );
 
                 if ( $Dyn[$_] =~ /Time\((.*)\)/ ) {
                     $Dyn[$_] = $Self->Time(
@@ -311,10 +298,10 @@ sub Get {
     }
 
     if (@Dyn) {
-        for ( 0 .. $#Dyn ) {
+        for ( 0 .. 3 ) {
 
             # be careful $Dyn[$_] can be 0! bug#3826
-            last if !defined $Dyn[$_];
+            last if ( !defined $Dyn[$_] );
 
             if ( $Dyn[$_] =~ /Time\((.*)\)/ ) {
                 $Dyn[$_] = $Self->Time(
@@ -336,13 +323,12 @@ sub Get {
 
 Get date format in used language formate (based on translation file).
 
-    my $Date = $LanguageObject->FormatTimeString('2009-12-12 12:12:12', 'DateFormat');
+    my $Date = $LanguageObject->FormatTimeString('2005-12-12 12:12:12', 'DateFormat');
 
 =cut
 
 sub FormatTimeString {
     my ( $Self, $String, $Config, $Short ) = @_;
-
     return '' if !$String;
 
     if ( !$Config ) {
@@ -394,7 +380,7 @@ sub FormatTimeString {
 =item GetRecommendedCharset()
 
 Returns the recommended charset for frontend (based on translation
-file or utf-8).
+file or from DefaultCharset (from Kernel/Config.pm) is utf-8).
 
     my $Charset = $LanguageObject->GetRecommendedCharset().
 
@@ -404,13 +390,17 @@ sub GetRecommendedCharset {
     my $Self = shift;
 
     # should I use default frontend charset (e. g. utf-8)?
-    my $Charset = $Self->{EncodeObject}->EncodeInternalUsed();
-    return $Charset if $Charset;
+    if ( $Self->{EncodeObject}->EncodeFrontendUsed() ) {
+        return $Self->{EncodeObject}->EncodeFrontendUsed();
+    }
 
     # if not, what charset shoud I use (take it from translation file)?
-    return $Self->{Charset}->[-1] if $Self->{Charset};
+    if ( $Self->{Charset} ) {
+        my @Chatsets = @{ $Self->{Charset} };
+        return $Chatsets[-1];
+    }
 
-    return 'utf-8';
+    return $Self->{ConfigObject}->Get('DefaultCharset') || 'iso-8859-1';
 }
 
 =item GetPossibleCharsets()
@@ -430,7 +420,7 @@ sub GetPossibleCharsets {
 
 =item Time()
 
-Returns a time string in language format (based on translation file).
+Returns a time string in language formate (based on translation file).
 
     $Time = $LanguageObject->Time(
         Action => 'GET',
@@ -445,10 +435,10 @@ Returns a time string in language format (based on translation file).
     $TimeLong = $LanguageObject->Time(
         Action => 'RETURN',
         Format => 'DateFormatLong',
-        Year   => 1977,
-        Month  => 10,
-        Day    => 27,
-        Hour   => 20,
+        Year => 1977,
+        Month => 10,
+        Day => 27,
+        Hour => 20,
         Minute => 10,
         Second => 05,
     );
@@ -469,14 +459,14 @@ sub Time {
     my ( $s, $m, $h, $D, $M, $Y, $wd, $yd, $dst );
 
     # set or get time
-    if ( lc $Param{Action} eq 'get' ) {
+    if ( $Param{Action} =~ /^GET$/i ) {
         my @DAYS = qw/Sun Mon Tue Wed Thu Fri Sat/;
         my @MONS = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
         ( $s, $m, $h, $D, $M, $Y, $wd, $yd, $dst ) = $Self->{TimeObject}->SystemTime2Date(
             SystemTime => $Self->{TimeObject}->SystemTime(),
         );
     }
-    elsif ( lc $Param{Action} eq 'return' ) {
+    elsif ( $Param{Action} =~ /^RETURN$/i ) {
         $s = $Param{Second} || 0;
         $m = $Param{Minute} || 0;
         $h = $Param{Hour}   || 0;
@@ -486,7 +476,7 @@ sub Time {
     }
 
     # do replace
-    if ( ( lc $Param{Action} eq 'get' ) || ( lc $Param{Action} eq 'return' ) ) {
+    if ( $Param{Action} =~ /^(GET|RETURN)$/i ) {
         my @DAYS = qw/Sun Mon Tue Wed Thu Fri Sat/;
         my @MONS = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
         my $Time = '';
@@ -516,22 +506,51 @@ sub Time {
     return $ReturnString;
 }
 
+=item CharsetConvert()
+
+Converts charset from a source string (if no To is given, the the
+GetRecommendedCharset() will be used).
+
+    my $Text = $LanguageObject->CharsetConvert(
+        Text => $String,
+        From => 'iso-8859-15',
+        To   => 'utf-8',
+    );
+
+=cut
+
+sub CharsetConvert {
+    my ( $Self, %Param ) = @_;
+
+    my $Text = defined $Param{Text} ? $Param{Text} : return;
+    my $From = $Param{From} || return $Text;
+    my $To = $Param{To} || $Self->{ReturnCharset} || return $Text;
+    $From =~ s/'|"//g;
+
+    # encode
+    return $Self->{EncodeObject}->Convert(
+        From => $From,
+        To   => $To,
+        Text => $Text,
+    );
+}
+
 1;
 
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.79 $ $Date: 2011/08/12 09:06:15 $
+$Revision: 1.68.2.1 $ $Date: 2010/05/28 08:58:19 $
 
 =cut
