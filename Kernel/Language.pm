@@ -1,8 +1,8 @@
 # --
 # Kernel/Language.pm - provides multi language support
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Language.pm,v 1.79 2011/08/12 09:06:15 mg Exp $
+# $Id: Language.pm,v 1.73.2.1 2010/05/28 08:59:14 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
 
-$VERSION = qw($Revision: 1.79 $) [1];
+$VERSION = qw($Revision: 1.73.2.1 $) [1];
 
 =head1 NAME
 
@@ -144,10 +144,7 @@ sub new {
 
         # looking to addition translation files
         my $Home  = $Self->{ConfigObject}->Get('Home') . '/';
-        my @Files = $Self->{MainObject}->DirectoryRead(
-            Directory => $Home . "Kernel/Language/",
-            Filter    => "$Self->{UserLanguage}_*.pm",
-        );
+        my @Files = glob( $Home . "Kernel/Language/$Self->{UserLanguage}_*.pm" );
         for my $File (@Files) {
 
             # get module name based on file name
@@ -229,12 +226,6 @@ Translate a string.
 
     my $Text = $LanguageObject->Get('Hello');
 
-    Example: (the quoting looks strange, but is in fact correct!)
-
-    my $String = 'History::NewTicket", "2011031110000023", "Postmaster", "3 normal", "open", "9';
-
-    my $TranslatedString = $LanguageObject->Get( $String );
-
 =cut
 
 sub Get {
@@ -278,7 +269,7 @@ sub Get {
         }
         my $Text = $Self->{Translation}->{$What};
         if (@Dyn) {
-            for ( 0 .. $#Dyn ) {
+            for ( 0 .. 2 ) {
 
                 # be careful $Dyn[$_] can be 0! bug#3826
                 last if !defined $Dyn[$_];
@@ -311,7 +302,7 @@ sub Get {
     }
 
     if (@Dyn) {
-        for ( 0 .. $#Dyn ) {
+        for ( 0 .. 2 ) {
 
             # be careful $Dyn[$_] can be 0! bug#3826
             last if !defined $Dyn[$_];
@@ -394,7 +385,7 @@ sub FormatTimeString {
 =item GetRecommendedCharset()
 
 Returns the recommended charset for frontend (based on translation
-file or utf-8).
+file or from DefaultCharset (from Kernel/Config.pm) is utf-8).
 
     my $Charset = $LanguageObject->GetRecommendedCharset().
 
@@ -410,7 +401,7 @@ sub GetRecommendedCharset {
     # if not, what charset shoud I use (take it from translation file)?
     return $Self->{Charset}->[-1] if $Self->{Charset};
 
-    return 'utf-8';
+    return $Self->{ConfigObject}->Get('DefaultCharset') || 'iso-8859-1';
 }
 
 =item GetPossibleCharsets()
@@ -450,7 +441,6 @@ Returns a time string in language format (based on translation file).
         Day    => 27,
         Hour   => 20,
         Minute => 10,
-        Second => 05,
     );
 
 =cut
@@ -516,22 +506,24 @@ sub Time {
     return $ReturnString;
 }
 
+=end Internal:
+
 1;
 
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.79 $ $Date: 2011/08/12 09:06:15 $
+$Revision: 1.73.2.1 $ $Date: 2010/05/28 08:59:14 $
 
 =cut
