@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/db2.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: db2.pm,v 1.11 2010/05/13 15:55:10 cg Exp $
+# $Id: db2.pm,v 1.12 2010/05/28 07:27:55 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::XML;
 use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = qw($Revision: 1.12 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -168,14 +168,14 @@ sub _CurrentTimestampCheck {
     if ( ( $TimeDifference >= ( $Range * -1 ) ) && ( $TimeDifference <= $Range ) ) {
         $Check = 'OK';
         $Message
-            = 'There are no difference between application server time and database server time.';
+            = 'There is no difference between application server time and database server time.';
     }
     else {
         $Check = 'Failed';
         $Message
-            = 'There are a material difference ('
+            = 'There is a material difference ('
             . $TimeDifference
-            . ' seconds) between application server and database server time.';
+            . " seconds) between application server ($TimeApplicationServer) and database server ($TimeDatabaseServer) time.";
     }
 
     $Data = {
