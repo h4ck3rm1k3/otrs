@@ -1,8 +1,8 @@
 # --
 # Kernel/System/TemplateGenerator.pm - generate salutations, signatures and responses
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: TemplateGenerator.pm,v 1.58 2011/11/25 10:33:22 mg Exp $
+# $Id: TemplateGenerator.pm,v 1.43.2.1 2010/05/31 14:42:04 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,16 +18,12 @@ use Kernel::System::HTMLUtils;
 use Kernel::System::Salutation;
 use Kernel::System::Signature;
 use Kernel::System::SystemAddress;
-use Kernel::System::StandardResponse;
+use Kernel::System::StdResponse;
 use Kernel::System::Notification;
 use Kernel::System::AutoResponse;
-use Kernel::Language;
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.58 $) [1];
+$VERSION = qw($Revision: 1.43.2.1 $) [1];
 
 =head1 NAME
 
@@ -148,24 +144,13 @@ sub new {
 
     $Self->{RichText} = $Self->{ConfigObject}->Get('Frontend::RichText');
 
-    $Self->{HTMLUtilsObject}        = Kernel::System::HTMLUtils->new(%Param);
-    $Self->{SalutationObject}       = Kernel::System::Salutation->new(%Param);
-    $Self->{SignatureObject}        = Kernel::System::Signature->new(%Param);
-    $Self->{SystemAddressObject}    = Kernel::System::SystemAddress->new(%Param);
-    $Self->{StandardResponseObject} = Kernel::System::StandardResponse->new(%Param);
-    $Self->{NotificationObject}     = Kernel::System::Notification->new(%Param);
-    $Self->{AutoResponseObject}     = Kernel::System::AutoResponse->new(%Param);
-    $Self->{DynamicFieldObject}     = Kernel::System::DynamicField->new(%Param);
-    $Self->{BackendObject}          = Kernel::System::DynamicField::Backend->new(
-        TimeObject => $Self->{TicketObject}->{TimeObject},
-        %Param
-    );
-
-    # get the dynamic fields for ticket object
-    $Self->{DynamicField} = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid      => 1,
-        ObjectType => ['Ticket'],
-    );
+    $Self->{HTMLUtilsObject}     = Kernel::System::HTMLUtils->new(%Param);
+    $Self->{SalutationObject}    = Kernel::System::Salutation->new(%Param);
+    $Self->{SignatureObject}     = Kernel::System::Signature->new(%Param);
+    $Self->{SystemAddressObject} = Kernel::System::SystemAddress->new(%Param);
+    $Self->{StdResponseObject}   = Kernel::System::StdResponse->new(%Param);
+    $Self->{NotificationObject}  = Kernel::System::Notification->new(%Param);
+    $Self->{AutoResponseObject}  = Kernel::System::AutoResponse->new(%Param);
 
     return $Self;
 }
@@ -197,10 +182,7 @@ sub Salutation {
     }
 
     # get  queue
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
+    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
 
     # get salutation
     my %Queue = $Self->{QueueObject}->QueueGet(
@@ -287,10 +269,7 @@ sub Signature {
     # get salutation ticket based
     my %Queue;
     if ( $Param{TicketID} ) {
-        my %Ticket = $Self->{TicketObject}->TicketGet(
-            TicketID      => $Param{TicketID},
-            DynamicFields => 0,
-        );
+        my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
         %Queue = $Self->{QueueObject}->QueueGet(
             ID => $Ticket{QueueID},
         );
@@ -330,8 +309,8 @@ sub Signature {
         Text     => $Signature{Text},
         TicketID => $Param{TicketID} || '',
         Data     => $Param{Data},
-        QueueID  => $Param{QueueID},
         UserID   => $Param{UserID},
+        QueueID  => $Param{QueueID},
     );
 
     # add urls
@@ -342,82 +321,6 @@ sub Signature {
     }
 
     return $SignatureText;
-}
-
-=item Sender()
-
-generate sender address (FROM string) for emails
-
-my $Sender = $TemplateGeneratorObject->Sender(
-        QueueID    => 123,
-        UserID     => 123,
-    );
-
-returns:
-
-    "John Doe at Super Support <support@example.com>"
-
-=cut
-
-sub Sender {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw( UserID QueueID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # get sender attributes
-    my %Address = $Self->{QueueObject}->GetSystemAddress( QueueID => $Param{QueueID} );
-
-    # check config for agent real name
-    my $UseAgentRealName = $Self->{ConfigObject}->Get('Ticket::DefineEmailFrom');
-    if ( $UseAgentRealName && $UseAgentRealName =~ /^(AgentName|AgentNameSystemAddressName)$/ ) {
-
-        # get data from current agent
-        my %UserData = $Self->{UserObject}->GetUserData(
-            UserID        => $Param{UserID},
-            NoOutOfOffice => 1,
-        );
-
-        # set real name with user name
-        if ( $UseAgentRealName eq 'AgentName' ) {
-
-            # check for user data
-            if ( $UserData{UserLastname} && $UserData{UserFirstname} ) {
-
-                # rewrite RealName
-                $Address{RealName} = "$UserData{UserFirstname} $UserData{UserLastname}";
-            }
-        }
-
-        # set real name with user name
-        if ( $UseAgentRealName eq 'AgentNameSystemAddressName' ) {
-
-            # check for user data
-            if ( $UserData{UserLastname} && $UserData{UserFirstname} ) {
-
-                # rewrite RealName
-                my $Separator = ' ' . $Self->{ConfigObject}->Get('Ticket::DefineEmailFromSeparator')
-                    || '';
-                $Address{RealName} = $UserData{UserFirstname} . ' ' . $UserData{UserLastname}
-                    . $Separator . ' ' . $Address{RealName};
-            }
-        }
-
-    }
-
-    # prepare realname quote
-    if ( $Address{RealName} =~ /(,|@|\(|\)|:)/ && $Address{RealName} !~ /^("|')/ ) {
-        $Address{RealName} =~ s/"/\"/g;
-        $Address{RealName} = '"' . $Address{RealName} . '"';
-    }
-    my $Sender = "$Address{RealName} <$Address{Email}>";
-
-    return $Sender;
 }
 
 =item Response()
@@ -432,7 +335,7 @@ generate response
     );
 
 returns
-    StandardResponse
+    StdResponse
     Salutation
     Signature
 
@@ -450,16 +353,13 @@ sub Response {
     }
 
     # get  queue
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
+    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
 
     # get salutation
     my %Queue = $Self->{QueueObject}->QueueGet(
         ID => $Ticket{QueueID},
     );
-    my %Response = $Self->{StandardResponseObject}->StandardResponseGet(
+    my %Response = $Self->{StdResponseObject}->StdResponseGet(
         ID => $Param{ResponseID},
     );
 
@@ -493,10 +393,9 @@ sub Response {
     my $Signature = $Self->Signature(%Param);
 
     return (
-        StandardResponse => $ResponseText,
-        StdResponse      => $ResponseText,
-        Salutation       => $Salutation,
-        Signature        => $Signature,
+        StdResponse => $ResponseText,
+        Salutation  => $Salutation,
+        Signature   => $Signature,
     );
 }
 
@@ -509,11 +408,10 @@ generate attributes
         ArticleID  => 123,
         ResponseID => 123
         UserID     => 123,
-        Action     => 'Forward', # Possible values are Reply and Forward, Reply is default.
     );
 
 returns
-    StandardResponse
+    StdResponse
     Salutation
     Signature
 
@@ -530,24 +428,63 @@ sub Attributes {
         }
     }
 
-    # get queue
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
+    # get  queue
+    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
 
     # prepare subject ...
     $Param{Data}->{Subject} = $Self->{TicketObject}->TicketSubjectBuild(
         TicketNumber => $Ticket{TicketNumber},
-        Subject      => $Param{Data}->{Subject} || '',
-        Action       => $Param{Action} || '',
+        Subject => $Param{Data}->{Subject} || '',
     );
 
-    # get sender address
-    $Param{Data}->{From} = $Self->Sender(
-        QueueID => $Ticket{QueueID},
-        UserID  => $Param{UserID},
-    );
+    # get sender attributes
+    my %Address = $Self->{QueueObject}->GetSystemAddress( QueueID => $Ticket{QueueID} );
+
+    # check config for agent real name
+    my $UseAgentRealName = $Self->{ConfigObject}->Get('Ticket::DefineEmailFrom');
+    if ( $UseAgentRealName && $UseAgentRealName =~ /^(AgentName|AgentNameSystemAddressName)$/ ) {
+
+        # get data from current agent
+        my %UserData = $Self->{UserObject}->GetUserData(
+            UserID => $Param{UserID},
+        );
+
+        # set real name with user name
+        if ( $UseAgentRealName eq 'AgentName' ) {
+
+            # check for user data
+            if ( $UserData{UserLastname} && $UserData{UserFirstname} ) {
+
+                # rewrite RealName
+                $Address{RealName} = "$UserData{UserFirstname} $UserData{UserLastname}";
+            }
+        }
+
+        # set real name with user name
+        if ( $UseAgentRealName eq 'AgentNameSystemAddressName' ) {
+
+            # check for user data
+            if ( $UserData{UserLastname} && $UserData{UserFirstname} ) {
+
+                # rewrite RealName
+                my $Separator = $Self->{ConfigObject}->Get('Ticket::DefineEmailFromSeparator')
+                    || '';
+                $Address{RealName} = "$UserData{UserFirstname} $UserData{UserLastname}";
+                $Address{RealName} .= "$Separator $Address{RealName}";
+            }
+        }
+
+    }
+
+    # prepare realname quote
+    if ( $Address{RealName} =~ /(,|@|\(|\)|:)/ && $Address{RealName} !~ /^("|')/ ) {
+        $Address{RealName} =~ s/"/\"/g;
+        $Address{RealName} = '"' . $Address{RealName} . '"';
+    }
+    $Param{Data}->{SenderAddress}  = $Address{Email};
+    $Param{Data}->{SenderRealname} = $Address{RealName};
+    $Param{Data}->{From}           = "$Address{RealName} <$Address{Email}>";
+
     return %{ $Param{Data} };
 }
 
@@ -593,10 +530,7 @@ sub AutoResponse {
     }
 
     # get ticket
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
+    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
 
     # get auto default responses
     my %AutoResponse = $Self->{AutoResponseObject}->AutoResponseGetByTypeQueueID(
@@ -606,10 +540,9 @@ sub AutoResponse {
 
     return if !%AutoResponse;
 
-    # get old article for quoting
+    # get old article for quoteing
     my %Article = $Self->{TicketObject}->ArticleLastCustomerArticle(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
+        TicketID => $Param{TicketID},
     );
 
     for (qw(From To Cc Subject Body)) {
@@ -758,16 +691,10 @@ sub NotificationAgent {
     }
 
     # get ticket
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
+    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
 
-    # get old article for quoting
-    my %Article = $Self->{TicketObject}->ArticleLastCustomerArticle(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
+    # get old article for quoteing
+    my %Article = $Self->{TicketObject}->ArticleLastCustomerArticle( TicketID => $Param{TicketID} );
 
     for (qw(From To Cc Subject Body)) {
         if ( !$Param{CustomerMessageParams}->{$_} ) {
@@ -835,7 +762,6 @@ sub NotificationAgent {
         Data        => $Param{CustomerMessageParams},
         TicketID    => $Param{TicketID},
         UserID      => $Param{UserID},
-        Language    => $Language,
     );
     $Notification{Subject} = $Self->_Replace(
         RichText    => 0,
@@ -844,7 +770,6 @@ sub NotificationAgent {
         Data        => $Param{CustomerMessageParams},
         TicketID    => $Param{TicketID},
         UserID      => $Param{UserID},
-        Language    => $Language,
     );
 
     # prepare subject (insert old subject)
@@ -925,15 +850,7 @@ sub NotificationCustomer {
         }
     }
 
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    my %Queue;
-    if ( $Param{QueueID} ) {
-        %Queue = $Self->{QueueObject}->QueueGet( ID => $Param{QueueID} );
-    }
+    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
 
     my %User;
 
@@ -961,7 +878,6 @@ sub NotificationCustomer {
             Text     => $Notification{$_},
             TicketID => $Param{TicketID},
             UserID   => $Param{UserID},
-            Language => $Language,
         );
     }
 
@@ -998,26 +914,8 @@ sub _Replace {
 
     my %Ticket;
     if ( $Param{TicketID} ) {
-        %Ticket = $Self->{TicketObject}->TicketGet(
-            TicketID      => $Param{TicketID},
-            DynamicFields => 1,
-        );
+        %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
     }
-
-    # translate ticket values if needed
-    if ( $Param{Language} ) {
-        my $LanguageObject = Kernel::Language->new(
-            MainObject   => $Self->{MainObject},
-            ConfigObject => $Self->{ConfigObject},
-            EncodeObject => $Self->{EncodeObject},
-            LogObject    => $Self->{LogObject},
-            UserLanguage => $Param{Language},
-        );
-        for my $Field (qw(Type State StateType Lock Priority)) {
-            $Ticket{$Field} = $LanguageObject->Get( $Ticket{$Field} );
-        }
-    }
-
     my %Queue;
     if ( $Param{QueueID} ) {
         %Queue = $Self->{QueueObject}->QueueGet( ID => $Param{QueueID} );
@@ -1034,11 +932,10 @@ sub _Replace {
     $Tag = $Start . 'OTRS_';
     if ( $Param{RecipientID} ) {
         my %Recipient = $Self->{UserObject}->GetUserData(
-            UserID        => $Param{RecipientID},
-            NoOutOfOffice => 1,
+            UserID => $Param{RecipientID},
         );
 
-        # html quoting of content
+        # html quoteing of content
         if ( $Param{RichText} ) {
             for ( keys %Recipient ) {
                 next if !$Recipient{$_};
@@ -1059,11 +956,10 @@ sub _Replace {
     $Tag = $Start . 'OTRS_OWNER_';
     if ( $Ticket{OwnerID} ) {
         my %Owner = $Self->{UserObject}->GetUserData(
-            UserID        => $Ticket{OwnerID},
-            NoOutOfOffice => 1,
+            UserID => $Ticket{OwnerID},
         );
 
-        # html quoting of content
+        # html quoteing of content
         if ( $Param{RichText} ) {
             for ( keys %Owner ) {
                 next if !$Owner{$_};
@@ -1087,11 +983,10 @@ sub _Replace {
     $Tag = $Start . 'OTRS_RESPONSIBLE_';
     if ( $Ticket{ResponsibleID} ) {
         my %Responsible = $Self->{UserObject}->GetUserData(
-            UserID        => $Ticket{ResponsibleID},
-            NoOutOfOffice => 1,
+            UserID => $Ticket{ResponsibleID},
         );
 
-        # html quoting of content
+        # html quoteing of content
         if ( $Param{RichText} ) {
             for ( keys %Responsible ) {
                 next if !$Responsible{$_};
@@ -1112,13 +1007,10 @@ sub _Replace {
     $Param{Text} =~ s/$Tag.+?$End/-/gi;
 
     $Tag = $Start . 'OTRS_Agent_';
-    my $Tag2        = $Start . 'OTRS_CURRENT_';
-    my %CurrentUser = $Self->{UserObject}->GetUserData(
-        UserID        => $Param{UserID},
-        NoOutOfOffice => 1,
-    );
+    my $Tag2 = $Start . 'OTRS_CURRENT_';
+    my %CurrentUser = $Self->{UserObject}->GetUserData( UserID => $Param{UserID} );
 
-    # html quoting of content
+    # html quoteing of content
     if ( $Param{RichText} ) {
         for ( keys %CurrentUser ) {
             next if !$CurrentUser{$_};
@@ -1146,30 +1038,13 @@ sub _Replace {
     # ticket data
     $Tag = $Start . 'OTRS_TICKET_';
 
-    # html quoting of content
+    # html quoteing of content
     if ( $Param{RichText} ) {
         for ( keys %Ticket ) {
             next if !$Ticket{$_};
             $Ticket{$_} = $Self->{HTMLUtilsObject}->ToHTML(
                 String => $Ticket{$_},
             );
-        }
-    }
-
-    # cycle trough the activated Dynamic Fields for this screen
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-        # get the readable value for each dynamic field
-        my $ValueStrg = $Self->{BackendObject}->ReadableValueRender(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            Value              => $Ticket{ 'DynamicField_' . $DynamicFieldConfig->{Name} },
-        );
-
-        # replace ticket content with the value from ReadableValueRender (if any)
-        if ( IsHashRefWithData($ValueStrg) ) {
-            $Ticket{ 'DynamicField_' . $DynamicFieldConfig->{Name} } = $ValueStrg->{Value};
         }
     }
 
@@ -1195,7 +1070,7 @@ sub _Replace {
     # get customer params and replace it with <OTRS_CUSTOMER_...
     my %Data = %{ $Param{Data} };
 
-    # html quoting of content
+    # html quoteing of content
     if ( $Param{RichText} ) {
         for ( keys %Data ) {
             next if !$Data{$_};
@@ -1249,10 +1124,10 @@ sub _Replace {
                 }
                 chomp $NewOldBody;
 
-                # html quoting of content
+                # html quoteing of content
                 if ( $Param{RichText} && $NewOldBody ) {
 
-                    # remove trailing new lines
+                    # remove tailing new lines
                     for ( 1 .. 10 ) {
                         $NewOldBody =~ s/(<br\/>)\s{0,20}$//gs;
                     }
@@ -1299,10 +1174,10 @@ sub _Replace {
             }
             chomp $NewOldBody;
 
-            # html quoting of content
+            # html quoteing of content
             if ( $Param{RichText} && $NewOldBody ) {
 
-                # remove trailing new lines
+                # remove tailing new lines
                 for ( 1 .. 10 ) {
                     $NewOldBody =~ s/(<br\/>)\s{0,20}$//gs;
                 }
@@ -1359,7 +1234,7 @@ sub _Replace {
             # remove email addresses
             $From =~ s/&lt;.*&gt;|<.*>|\(.*\)|\"|&quot;|;|,//g;
 
-            # remove leading/trailing spaces
+            # remove leading/tailing spaces
             $From =~ s/^\s+//g;
             $From =~ s/\s+$//g;
         }
@@ -1376,7 +1251,7 @@ sub _Replace {
             User => $Ticket{CustomerUserID},
         );
 
-        # html quoting of content
+        # html quoteing of content
         if ( $Param{RichText} ) {
             for ( keys %CustomerUser ) {
                 next if !$CustomerUser{$_};
@@ -1409,16 +1284,16 @@ sub _Replace {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
+did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.58 $ $Date: 2011/11/25 10:33:22 $
+$Revision: 1.43.2.1 $ $Date: 2010/05/31 14:42:04 $
 
 =cut
