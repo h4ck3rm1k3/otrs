@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<otrs_package version="1.0">
+    <CVS>$Id: iPhoneHandle.sopm,v 1.0 2010/04/28 00:08:47 ub Exp $</CVS>
+    <Name>iPhoneHandle</Name>
+    <Version>0.0.0</Version>
+    <Framework>2.4.x</Framework>
+    <Vendor>OTRS AG</Vendor>
+    <URL>http://otrs.org/</URL>
+    <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
+    <Description Lang="en">The iPhoneHandle package.</Description>
+    <Description Lang="de">Das iPhoneHandle Paket.</Description>
+    <Filelist>
+        <File Permission="644" Location="Kernel/System/JSON.pm"/>
+    </Filelist>
+</otrs_package>
