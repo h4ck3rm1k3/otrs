@@ -7,9 +7,15 @@
     <Vendor>OTRS AG</Vendor>
     <URL>http://otrs.org/</URL>
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
-    <Description Lang="en">The iPhoneHandle package.</Description>
+    <Description Lang="en">The iPhoneHandle Package.</Description>
     <Description Lang="de">Das iPhoneHandle Paket.</Description>
     <Filelist>
+        <File Permission="644" Location="Kernel/cpan-lib/JSON/JSON.pm"/>
+        <File Permission="644" Location="Kernel/cpan-lib/JSON/PP.pm"/>
+        <File Permission="644" Location="Kernel/cpan-lib/JSON/PP5005.pm"/>
+        <File Permission="644" Location="Kernel/cpan-lib/JSON/PP56.pm"/>
+        <File Permission="644" Location="Kernel/cpan-lib/JSON/PP58.pm"/>
+        <File Permission="644" Location="Kernel/cpan-lib/JSON/PP/Boolean.pm"/>
         <File Permission="644" Location="Kernel/System/JSON.pm"/>
     </Filelist>
 </otrs_package>
