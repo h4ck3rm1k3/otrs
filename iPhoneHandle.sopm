@@ -10,7 +10,7 @@
     <Description Lang="en">The iPhoneHandle Package.</Description>
     <Description Lang="de">Das iPhoneHandle Paket.</Description>
     <Filelist>
-        <File Permission="755" Location="Kernel/bin/cgi-bin/json.pl"/>
+        <File Permission="755" Location="bin/cgi-bin/json.pl"/>
         <File Permission="644" Location="Kernel/cpan-lib/JSON.pm"/>
         <File Permission="644" Location="Kernel/cpan-lib/JSON/PP.pm"/>
         <File Permission="644" Location="Kernel/cpan-lib/JSON/PP5005.pm"/>
