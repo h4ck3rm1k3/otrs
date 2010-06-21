@@ -3,7 +3,7 @@
 # bin/cgi-bin/json.pl - json handle
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: json.pl,v 1.1 2010/06/21 15:32:32 martin Exp $
+# $Id: json.pl,v 1.2 2010/06/21 18:20:12 cr Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -48,12 +48,13 @@ use Kernel::System::CustomerUser;
 use Kernel::System::Ticket;
 use Kernel::System::LinkObject;
 use Kernel::System::JSON;
+use Kernel::Config;
 use Kernel::Language;
 
 use Kernel::System::Web::Request;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.1 $) [1];
+$VERSION = qw($Revision: 1.2 $) [1];
 
 my $Self = Core->new();
 print "Content-Type: text/plain; \n";
@@ -68,7 +69,17 @@ sub new {
     # allocate new hash for object
     my $Self = {%Param};
     bless( $Self, $Type );
+    $Self->{ConfigObject} = Kernel::Config->new();
+    my $SystemVersion = $Self->{ConfigObject}->Get('Version');
 
+    # check for any version staring with 2.4
+    if ( $SystemVersion =~ m|\A(2\.4).*|xms ) {
+        $Self->{'API3X'} = 0;
+    }
+    else {
+        $Self->{'API3X'} = 1;
+    }
+    print "$Self->{'API3X'}";
     return $Self;
 }
 
@@ -1085,12 +1096,14 @@ sub TicketList {
 
     $Article{PriorityColor} = $Color{ $Article{PriorityID} };
 
-    my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
-        TicketID => $Param{TicketID},
-        UserID   => $Param{UserID},
-    );
-    if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
-        $Article{Seen} = 1;
+    if ( $Self->{'API3X'} ) {
+        my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID},
+        );
+        if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
+            $Article{Seen} = 1;
+        }
     }
 
     # strip out all data
@@ -1118,12 +1131,14 @@ sub TicketGet {
 
     my %Ticket = $Self->{TicketObject}->TicketGet(%Param);
 
-    my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
-        TicketID => $Param{TicketID},
-        UserID   => $Param{UserID},
-    );
-    if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
-        $Ticket{Seen} = 1;
+    if ( $Self->{'API3X'} ) {
+        my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID},
+        );
+        if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
+            $Ticket{Seen} = 1;
+        }
     }
     else {
 
@@ -1131,20 +1146,22 @@ sub TicketGet {
         my $ArticleAllSeen = 1;
         my @Index = $Self->{TicketObject}->ArticleIndex( TicketID => $Ticket{TicketID} );
         for my $ArticleID (@Index) {
-            my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
-                ArticleID => $ArticleID,
-                UserID    => $Param{UserID},
-            );
+            if ( $Self->{'API3X'} ) {
+                my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
+                    ArticleID => $ArticleID,
+                    UserID    => $Param{UserID},
+                );
 
-            # last if article was not shown
-            if ( !$ArticleFlag{Seen} && !$ArticleFlag{seen} ) {
-                $ArticleAllSeen = 0;
-                last;
+                # last if article was not shown
+                if ( !$ArticleFlag{Seen} && !$ArticleFlag{seen} ) {
+                    $ArticleAllSeen = 0;
+                    last;
+                }
             }
         }
 
         # mark ticket as seen if all article are shown
-        if ($ArticleAllSeen) {
+        if ( $ArticleAllSeen && $Self->{'API3X'} ) {
             $Self->{TicketObject}->TicketFlagSet(
                 TicketID => $Ticket{TicketID},
                 Key      => 'Seen',
@@ -1183,41 +1200,46 @@ sub ArticleGet {
 
     my %Article = $Self->{TicketObject}->ArticleGet(%Param);
 
-    # check if article is seen
-    my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
-        ArticleID => $Param{ArticleID},
-        UserID    => $Param{UserID},
-    );
-    if ( $ArticleFlag{seen} || $ArticleFlag{Seen} ) {
-        $Article{Seen} = 1;
-    }
+    if ( $Self->{'API3X'} ) {
 
-    # mark shown article as seen
-    $Self->{TicketObject}->ArticleFlagSet(
-        ArticleID => $Param{ArticleID},
-        Key       => 'Seen',
-        Value     => 1,
-        UserID    => $Param{UserID},
-    );
+        # check if article is seen
+        my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
+            ArticleID => $Param{ArticleID},
+            UserID    => $Param{UserID},
+        );
+        if ( $ArticleFlag{seen} || $ArticleFlag{Seen} ) {
+            $Article{Seen} = 1;
+        }
+
+        # mark shown article as seen
+        $Self->{TicketObject}->ArticleFlagSet(
+            ArticleID => $Param{ArticleID},
+            Key       => 'Seen',
+            Value     => 1,
+            UserID    => $Param{UserID},
+        );
+    }
 
     # check if ticket need to be marked as seen
     my $ArticleAllSeen = 1;
     my @Index = $Self->{TicketObject}->ArticleIndex( TicketID => $Article{TicketID} );
     for my $ArticleID (@Index) {
-        my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
-            ArticleID => $ArticleID,
-            UserID    => $Param{UserID},
-        );
+        if ( $Self->{'API3X'} ) {
+            my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
+                ArticleID => $ArticleID,
+                UserID    => $Param{UserID},
+            );
 
-        # last if article was not shown
-        if ( !$ArticleFlag{Seen} && !$ArticleFlag{seen} ) {
-            $ArticleAllSeen = 0;
-            last;
+            # last if article was not shown
+            if ( !$ArticleFlag{Seen} && !$ArticleFlag{seen} ) {
+                $ArticleAllSeen = 0;
+                last;
+            }
         }
     }
 
     # mark ticket as seen if all article are shown
-    if ($ArticleAllSeen) {
+    if ( $ArticleAllSeen && $Self->{'API3X'} ) {
         $Self->{TicketObject}->TicketFlagSet(
             TicketID => $Article{TicketID},
             Key      => 'Seen',
