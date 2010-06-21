@@ -3,7 +3,7 @@
 # bin/cgi-bin/json.pl - json handle
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: json.pl,v 1.2 2010/06/21 18:20:12 cr Exp $
+# $Id: json.pl,v 1.3 2010/06/21 18:24:33 cr Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -54,7 +54,7 @@ use Kernel::Language;
 use Kernel::System::Web::Request;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.2 $) [1];
+$VERSION = qw($Revision: 1.3 $) [1];
 
 my $Self = Core->new();
 print "Content-Type: text/plain; \n";
@@ -79,7 +79,6 @@ sub new {
     else {
         $Self->{'API3X'} = 1;
     }
-    print "$Self->{'API3X'}";
     return $Self;
 }
 
