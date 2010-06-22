@@ -4,6 +4,7 @@
     <Name>iPhoneHandle</Name>
     <Version>0.0.0</Version>
     <Framework>2.4.x</Framework>
+    <Framework>3.0.x</Framework>
     <Vendor>OTRS AG</Vendor>
     <URL>http://otrs.org/</URL>
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
