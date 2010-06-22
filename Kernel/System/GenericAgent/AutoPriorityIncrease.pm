@@ -1,8 +1,8 @@
 # --
 # Kernel/System/GenericAgent/AutoPriorityIncrease.pm - generic agent auto priority increase
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AutoPriorityIncrease.pm,v 1.12 2011/11/25 10:19:42 mg Exp $
+# $Id: AutoPriorityIncrease.pm,v 1.9.2.1 2010/06/22 13:02:11 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Priority;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.9.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -57,10 +57,7 @@ sub Run {
     $Param{New}->{TimeInterval} = $Param{New}->{TimeInterval} * 60;
 
     # get ticket data
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        %Param,
-        DynamicFields => 0,
-    );
+    my %Ticket = $Self->{TicketObject}->TicketGet(%Param);
     my @HistoryLines = $Self->{TicketObject}->HistoryGet( %Param, UserID => 1 );
 
     # find latest auto priority update
@@ -117,7 +114,7 @@ sub Run {
             "Increase priority of (Ticket=$Ticket{TicketNumber}/TicketID=$Ticket{TicketID}) to $Priority!",
     );
 
-    $Self->{TicketObject}->TicketPrioritySet(
+    $Self->{TicketObject}->PrioritySet(
         TicketID   => $Param{TicketID},
         PriorityID => ( $Ticket{PriorityID} + 1 ),
         UserID     => 1,
