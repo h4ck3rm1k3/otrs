@@ -3,7 +3,7 @@
 # bin/cgi-bin/json.pl - json handle
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: json.pl,v 1.4 2010/06/21 21:06:18 cr Exp $
+# $Id: json.pl,v 1.5 2010/06/22 09:24:38 martin Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -54,7 +54,7 @@ use Kernel::Language;
 use Kernel::System::Web::Request;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.4 $) [1];
+$VERSION = qw($Revision: 1.5 $) [1];
 
 my $Self = Core->new();
 print "Content-Type: text/plain; \n";
@@ -1250,6 +1250,12 @@ sub ArticleGet {
             Value    => 1,
             UserID   => $Param{UserID},
         );
+    }
+
+    # add accounted time
+    my $AccountedTime = $Self->{TicketObject}->ArticleAccountedTimeGet(%Param);
+    if ( defined $AccountedTime ) {
+        $Article{AccountedTime} = $AccountedTime;
     }
 
     # strip out all data
