@@ -18,6 +18,7 @@
         <File Permission="644" Location="Kernel/cpan-lib/JSON/PP56.pm"/>
         <File Permission="644" Location="Kernel/cpan-lib/JSON/PP58.pm"/>
         <File Permission="644" Location="Kernel/cpan-lib/JSON/PP/Boolean.pm"/>
+        <File Permission="644" Location="Kernel/System/iPhone.pm"/>
         <File Permission="644" Location="Kernel/System/JSON.pm"/>
     </Filelist>
 </otrs_package>
