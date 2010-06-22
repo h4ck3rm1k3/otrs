@@ -3,7 +3,7 @@
 # bin/cgi-bin/json.pl - json handle
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: json.pl,v 1.5 2010/06/22 09:24:38 martin Exp $
+# $Id: json.pl,v 1.6 2010/06/22 14:58:45 cr Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -54,7 +54,7 @@ use Kernel::Language;
 use Kernel::System::Web::Request;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.5 $) [1];
+$VERSION = qw($Revision: 1.6 $) [1];
 
 my $Self = Core->new();
 print "Content-Type: text/plain; \n";
@@ -73,15 +73,13 @@ sub new {
     my $SystemVersion = $Self->{ConfigObject}->Get('Version');
 
     # check for any version staring with 2.4
-    if ( $SystemVersion =~ m|\A(2\.4).*|xms ) {
+    if ( $SystemVersion =~ m{\A (?: 2\.4 ) .* }xms ) {
         $Self->{'API3X'} = 0;
     }
     else {
-        if ( $SystemVersion =~ m|\A(3\.).*|xms ) {
+        $Self->{'API3X'} = 0;
+        if ( $SystemVersion =~ m{\A (?: 3\. ) .* }xms ) {
             $Self->{'API3X'} = 1;
-        }
-        else {
-            $Self->{'API3X'} = 0;
         }
     }
     return $Self;
