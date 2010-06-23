@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AgentTicketHistory.pm - ticket history
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketHistory.pm,v 1.22 2012/01/24 00:08:45 cr Exp $
+# $Id: AgentTicketHistory.pm,v 1.14.2.1 2010/06/23 23:40:37 dz Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -13,10 +13,9 @@ package Kernel::Modules::AgentTicketHistory;
 
 use strict;
 use warnings;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.22 $) [1];
+$VERSION = qw($Revision: 1.14.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -26,9 +25,9 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for my $Needed (qw(DBObject TicketObject LayoutObject LogObject UserObject ConfigObject)) {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    for (qw(DBObject TicketObject LayoutObject LogObject UserObject ConfigObject)) {
+        if ( !$Self->{$_} ) {
+            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
         }
     }
     return $Self;
@@ -49,10 +48,10 @@ sub Run {
 
     # check permissions
     if (
-        !$Self->{TicketObject}->TicketPermission(
+        !$Self->{TicketObject}->Permission(
             Type     => 'ro',
             TicketID => $Self->{TicketID},
-            UserID   => $Self->{UserID},
+            UserID   => $Self->{UserID}
         )
         )
     {
@@ -60,27 +59,6 @@ sub Run {
         # error screen, don't show ticket
         return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
     }
-
-    # get ACL restrictions
-    $Self->{TicketObject}->TicketAcl(
-        Data          => '-',
-        TicketID      => $Self->{TicketID},
-        ReturnType    => 'Action',
-        ReturnSubType => '-',
-        UserID        => $Self->{UserID},
-    );
-    my %AclAction = $Self->{TicketObject}->TicketAclActionData();
-
-    # check if ACL resctictions if exist
-    if ( IsHashRefWithData( \%AclAction ) ) {
-
-        # show error screen if ACL prohibits this action
-        if ( defined $AclAction{ $Self->{Action} } && $AclAction{ $Self->{Action} } eq '0' ) {
-            return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
-        }
-    }
-
-    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Self->{TicketID} );
 
     my @Lines = $Self->{TicketObject}->HistoryGet(
         TicketID => $Self->{TicketID},
@@ -103,63 +81,70 @@ sub Run {
         my %Data = %{$DataTmp};
 
         # replace text
-        if ( $Data{Name} && $Data{Name} =~ m/^%%/x ) {
+        if ( $Data{Name} && $Data{Name} =~ /^%%/ ) {
             my %Info = ();
-            $Data{Name} =~ s/^%%//xg;
-            my @Values = split( /%%/x, $Data{Name} );
+            $Data{Name} =~ s/^%%//g;
+            my @Values = split( /%%/, $Data{Name} );
             $Data{Name} = '';
-            for my $Value (@Values) {
+            for (@Values) {
                 if ( $Data{Name} ) {
                     $Data{Name} .= "\", ";
                 }
-                $Data{Name} .= "\"$Value";
+                $Data{Name} .= "\"$_";
             }
             if ( !$Data{Name} ) {
                 $Data{Name} = '" ';
             }
-            $Data{Name} = $Self->{LayoutObject}->{LanguageObject}->Get(
-                'History::' . $Data{HistoryType} . '", ' . $Data{Name}
-            );
+
+            my $OtherData = '';
+            if ( $Data{HistoryType} ne 'Misc' ) {
+                $Data{Name} = $Self->{LayoutObject}->{LanguageObject}->Get(
+                    'History::' . $Data{HistoryType} .
+                        '", ' . $Data{Name}
+                );
+            }
+            else {
+                $Data{Name} =~ s{\A\"}{}xms;
+                if ( $Data{Name} =~ m{\A(.*) \((.*?)\)\z}xms ) {
+                    $Data{Name} = $1;
+                    $OtherData = '", "' . $2;
+                    $Data{Name} =~ s{(.+)\s\z}{$1}xms;
+                }
+                else {
+                }
+                $Data{Name} = $Self->{LayoutObject}->{LanguageObject}->Get(
+                    $Data{Name} . $OtherData
+                );
+            }
 
             # remove not needed place holder
-            $Data{Name} =~ s/\%s//xg;
+            $Data{Name} =~ s/\%s//g;
         }
 
+        # seperate each searchresult line by using several css
+        if ( $Counter % 2 ) {
+            $Data{css} = 'searchpassive';
+        }
+        else {
+            $Data{css} = 'searchactive';
+        }
         $Self->{LayoutObject}->Block(
             Name => 'Row',
             Data => {%Data},
         );
-
-        if ( $Data{ArticleID} ne "0" ) {
-            $Self->{LayoutObject}->Block(
-                Name => 'ShowLinkZoom',
-                Data => {%Data},
-            );
-        }
-        else {
-            $Self->{LayoutObject}->Block(
-                Name => 'NoLinkZoom',
-            );
-
-        }
     }
 
     # build page
-    my $Output = $Self->{LayoutObject}->Header(
-        Value => $Tn,
-        Type  => 'Small',
-    );
+    my $Output = $Self->{LayoutObject}->Header( Value => $Tn );
+    $Output .= $Self->{LayoutObject}->NavigationBar();
     $Output .= $Self->{LayoutObject}->Output(
         TemplateFile => 'AgentTicketHistory',
         Data         => {
             TicketNumber => $Tn,
             TicketID     => $Self->{TicketID},
-            Title        => $Ticket{Title},
         },
     );
-    $Output .= $Self->{LayoutObject}->Footer(
-        Type => 'Small',
-    );
+    $Output .= $Self->{LayoutObject}->Footer();
 
     return $Output;
 }

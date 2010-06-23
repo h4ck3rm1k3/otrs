@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Ticket/Event/Test.pm - test event module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Test.pm,v 1.12 2011/11/25 10:14:18 mg Exp $
+# $Id: Test.pm,v 1.9.2.1 2010/06/23 23:40:37 dz Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.9.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -36,48 +36,35 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(Data Event Config)) {
+    for (qw(TicketID Event Config)) {
         if ( !$Param{$_} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
-    for (qw(TicketID)) {
-        if ( !$Param{Data}->{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_ in Data!" );
-            return;
-        }
-    }
-
     if ( $Param{Event} eq 'TicketCreate' ) {
-        my %Ticket = $Self->{TicketObject}->TicketGet(
-            TicketID      => $Param{Data}->{TicketID},
-            DynamicFields => 0,
-        );
+        my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
         if ( $Ticket{State} eq 'Test' ) {
 
             # do some stuff
             $Self->{TicketObject}->HistoryAdd(
-                TicketID     => $Param{Data}->{TicketID},
+                TicketID     => $Param{TicketID},
                 CreateUserID => $Param{UserID},
                 HistoryType  => 'Misc',
-                Name         => 'Some Info about Changes!',
+                Name         => '%%Some Info about Changes!',
             );
         }
     }
-    elsif ( $Param{Event} eq 'TicketQueueUpdate' ) {
-        my %Ticket = $Self->{TicketObject}->TicketGet(
-            TicketID      => $Param{Data}->{TicketID},
-            DynamicFields => 0,
-        );
+    elsif ( $Param{Event} eq 'MoveTicket' ) {
+        my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
         if ( $Ticket{Queue} eq 'Test' ) {
 
             # do some stuff
             $Self->{TicketObject}->HistoryAdd(
-                TicketID     => $Param{Data}->{TicketID},
+                TicketID     => $Param{TicketID},
                 CreateUserID => $Param{UserID},
                 HistoryType  => 'Misc',
-                Name         => 'Some Info about Changes!',
+                Name         => '%%Some Info about Changes!',
             );
         }
     }
