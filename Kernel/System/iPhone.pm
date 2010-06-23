@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.2 2010/06/22 22:04:14 cr Exp $
+# $Id: iPhone.pm,v 1.3 2010/06/23 12:34:12 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.2 $) [1];
+$VERSION = qw($Revision: 1.3 $) [1];
 
 use Kernel::System::Log;
 use Kernel::Language;
@@ -43,8 +43,8 @@ sub new {
 
     # check needed objects
     for (
-        qw(ConfigObject UserObject  GroupObject QueueObject        ServiceObject  TypeObject
-        StateObject  LockObject  SLAObject   CustomerUserObject TicketObject   LinkObject )
+        qw(ConfigObject UserObject GroupObject QueueObject ServiceObject TypeObject
+        StateObject LockObject SLAObject CustomerUserObject TicketObject LinkObject )
         )
     {
         $Self->{$_} = $Param{$_} || die "Got no $_! object";
@@ -68,7 +68,6 @@ sub new {
         }
     }
     return $Self;
-
 }
 
 sub ScreenConfig {
@@ -207,6 +206,35 @@ sub ScreenConfig {
     return \%Config;
 }
 
+=item Badges()
+
+Get Badges ticket counts for Watched, Locked and Reposible for tickets
+
+    my @Result = $iPhoneObject->Badges(
+        UserID          => 1,
+    );
+
+    # a result could be
+
+    @Result = (
+        Locked => {
+            All => 1,
+            New => 1,
+        },
+
+        Watched => {       # Optional if feature is enabled
+            All => 2,
+            New => 0,
+        },
+
+        Responsible => {   # Optional if feature is enabled
+            All => 1,
+            New => 1,
+        },
+    );
+
+=cut
+
 sub Badges {
     my ( $Self, %Param ) = @_;
 
@@ -240,6 +268,8 @@ sub Badges {
                 }
         };
     }
+
+    # responsible
     if ( $Self->{ConfigObject}->Get('Ticket::Responsible') ) {
         my $Count = $Self->{TicketObject}->TicketSearch(
             Result         => 'COUNT',
@@ -269,6 +299,7 @@ sub Badges {
         };
     }
 
+    # watched
     if ( $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
 
         # check access
@@ -1133,6 +1164,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.2 2010/06/22 22:04:14 cr Exp $
+$Id: iPhone.pm,v 1.3 2010/06/23 12:34:12 cr Exp $
 
 =cut
