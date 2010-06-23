@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.3 2010/06/23 12:34:12 cr Exp $
+# $Id: iPhone.pm,v 1.4 2010/06/23 22:07:33 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.3 $) [1];
+$VERSION = qw($Revision: 1.4 $) [1];
 
 use Kernel::System::Log;
 use Kernel::Language;
@@ -31,6 +31,159 @@ All iPhone functions.
 =head1 PUBLIC INTERFACE
 
 =over 4
+
+=cut
+
+=item new()
+
+    create an object
+
+        use Kernel::Config;
+        use Kernel::System::Encode;
+        use Kernel::System::Log;
+        use Kernel::System::Time;
+        use Kernel::System::Main;
+        use Kernel::System::DB;
+        use Kernel::System::User;
+        use Kernel::System::Group;
+        use Kernel::System::Queue;
+        use Kernel::System::Service;
+        use Kernel::System::Type;
+        use Kernel::System::State;
+        use Kernel::System::Lock;
+        use Kernel::System::SLA;
+        use Kernel::System::CustomerUser;
+        use Kernel::System::Ticket;
+        use Kernel::System::LinkObject;
+
+        my $ConfigObject = Kernel::Config->new();
+        my $EncodeObject = Kernel::System::Encode->new(
+            ConfigObject => $ConfigObject,
+        );
+        my $LogObject = Kernel::System::Log->new(
+            ConfigObject => $ConfigObject,
+            EncodeObject => $EncodeObject,
+        );
+        my $TimeObject = Kernel::System::Time->new(
+            ConfigObject => $ConfigObject,
+            LogObject    => $LogObject,
+        );
+        my $MainObject = Kernel::System::Main->new(
+            ConfigObject => $ConfigObject,
+            EncodeObject => $EncodeObject,
+            LogObject    => $LogObject,
+        );
+        my $DBObject = Kernel::System::DB->new(
+            ConfigObject => $ConfigObject,
+            EncodeObject => $EncodeObject,
+            LogObject    => $LogObject,
+            MainObject   => $MainObject,
+        );
+        my $UserObject = Kernel::System::User->new(
+            ConfigObject => $ConfigObject,
+            LogObject    => $LogObject,
+            MainObject   => $MainObject,
+            TimeObject   => $TimeObject,
+            DBObject     => $DBObject,
+            EncodeObject => $EncodeObject,
+        );
+        my $GroupObject = Kernel::System::Group->new(
+            ConfigObject => $ConfigObject,
+            LogObject    => $LogObject,
+            DBObject     => $DBObject,
+            MainObject   => $MainObject,
+            EncodeObject => $EncodeObject,
+        );
+        my $QueueObject = Kernel::System::Queue->new(
+            ConfigObject        => $ConfigObject,
+            LogObject           => $LogObject,
+            DBObject            => $DBObject,
+            MainObject          => $MainObject,
+            EncodeObject        => $EncodeObject,
+            GroupObject         => $GroupObject, # if given
+            CustomerGroupObject => $CustomerGroupObject, # if given
+        );
+        my $ServiceObject = Kernel::System::Service->new(
+            ConfigObject => $ConfigObject,
+            EncodeObject => $EncodeObject,
+            LogObject    => $LogObject,
+            DBObject     => $DBObject,
+            MainObject   => $MainObject,
+        );
+        my $TypeObject = Kernel::System::Type->new(
+            ConfigObject => $ConfigObject,
+            LogObject    => $LogObject,
+            DBObject     => $DBObject,
+            MainObject   => $MainObject,
+            EncodeObject => $EncodeObject,
+        );
+        my $StateObject = Kernel::System::State->new(
+            ConfigObject => $ConfigObject,
+            LogObject    => $LogObject,
+            DBObject     => $DBObject,
+            MainObject   => $MainObject,
+            EncodeObject => $EncodeObject,
+        );
+        my $LockObject = Kernel::System::Lock->new(
+            ConfigObject => $ConfigObject,
+            LogObject    => $LogObject,
+            DBObject     => $DBObject,
+            MainObject   => $MainObject,
+            EncodeObject => $EncodeObject,
+        );
+        my $SLAObject = Kernel::System::SLA->new(
+            ConfigObject => $ConfigObject,
+            EncodeObject => $EncodeObject,
+            LogObject    => $LogObject,
+            DBObject     => $DBObject,
+            MainObject   => $MainObject,
+        );
+        my $CustomerUserObject = Kernel::System::CustomerUser->new(
+            ConfigObject => $ConfigObject,
+            LogObject    => $LogObject,
+            DBObject     => $DBObject,
+            MainObject   => $MainObject,
+            EncodeObject => $EncodeObject,
+        );
+        my $TicketObject = Kernel::System::Ticket->new(
+            ConfigObject       => $ConfigObject,
+            LogObject          => $LogObject,
+            DBObject           => $DBObject,
+            MainObject         => $MainObject,
+            TimeObject         => $TimeObject,
+            EncodeObject       => $EncodeObject,
+            GroupObject        => $GroupObject,        # if given
+            CustomerUserObject => $CustomerUserObject, # if given
+            QueueObject        => $QueueObject,        # if given
+        );
+        my $LinkObject = Kernel::System::LinkObject->new(
+            ConfigObject => $ConfigObject,
+            LogObject    => $LogObject,
+            DBObject     => $DBObject,
+            TimeObject   => $TimeObject,
+            MainObject   => $MainObject,
+            EncodeObject => $EncodeObject,
+        );
+        my $iPhoneObject = Kernel::System::iPhone->new(
+            ConfigObject       => $ConfigObject,
+            LogObject          => $LogObject,
+            DBObject           => $DBObject,
+            MainObject         => $MainObject,
+            TimeObject         => $TimeObject,
+            EncodeObject       => $EncodeObject,
+            GroupObject        => $GroupObject,
+            CustomerUserObject => $CustomerUserObject,
+            QueueObject        => $QueueObject,
+            UserObject         => $UserObject,
+            QueueObject        => $QueueObject,
+            ServiceObject      => $ServiceObject,
+            TypeObject         => $TypeObject,
+            StateObject        => $StateObject,
+            LockObject         => $LockObject,
+            SLAObject          => $SLAObject,
+            TicketObject       => $TicketObject,
+            Linkbject          => $LinkObject,
+        );
 
 =cut
 
@@ -357,6 +510,113 @@ sub Badges {
     return @Data;
 }
 
+=item EscalationView()
+
+Get the number of tikets on estalation status by state type or las customer article information from
+each ticket in escalation status within a filter, if the "Filter" argument is specified.
+
+    my @Result = $iPhoneObject->EscalationView(
+        UserID  => 1,
+
+        # OrderBy and SortBy (optional)
+        OrderBy => 'Down',  # Down|Up
+        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            StateType                      => "Today",
+            NumberOfTickets                => 2,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "Tomorrow",
+            NumberOfTickets                => 2,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "NextWeek",
+            NumberOfTickets                => 2,
+            NumberOfTicketsWithNewMessages => 0
+        },
+    );
+
+    my @Result = $iPhoneObject->EscalationView(
+        UserID  => 1,
+        Filter  => "Today",
+
+        #Limit (optional) set to 100 by default, if not spcified
+        Limit   => 50,
+
+        # OrderBy and SortBy (optional)
+        OrderBy => 'Down',  # Down|Up
+        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            Age                              => 1596,
+            ArticleID                        => 923,
+            ArticleType                      => "phone",
+            Body                             => "Testing for escalation",
+            Charset                          => "utf-8",
+            ContentCharset                   => "utf-8",
+            ContentType                      => "text/plain;",
+            charset                          => "utf-8",
+            Created                          => "2010-06-23 11:46:15",
+            CreatedBy                        => 1,
+            FirstResponseTime                => -1296,
+            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+            FirstResponseTimeDestinationTime => 1277311874,
+            FirstResponseTimeEscalation      => 1,
+            FirstResponseTimeWorkingTime     => -1260,
+            From                             => "customer@otrs.org",
+            IncomingTime                     => 1277311575,
+            Lock                             => "unlock",
+            MimeType                         => "text/plain",
+            Owner                            => "Agent1",
+            Priority                         => "3 normal",
+            PriorityColor                    => "#cdcdcd",
+            Queue                            => "Junk",
+            Responsible                      => "Agent1",
+            SenderType                       => "customer",
+            SolutionTime                     => -1296,
+            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+            SolutionTimeDestinationTime      => 1277311874,
+            SolutionTimeEscalation           => 1,
+            SolutionTimeWorkingTime          => -1260,
+            State                            => "open",
+            Subject                          => "Escalation Test",
+            TicketFreeKey13                  => "CriticalityID",
+            TicketFreeKey14                  => "ImpactID",
+            TicketID                         => 176,
+            TicketNumber                     => 2010062310000015,
+            Title                            => "Escalation Test",
+            To                               => "Junk",
+            Type                             => "Incident",
+            UntilTime                        => 0,
+            UpdateTime                       => -1295,
+            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+            UpdateTimeDestinationTime        => 1277311875,
+            UpdateTimeEscalation             => 1,
+            UpdateTimeWorkingTime            => -1260,
+            Seen                             => 1, # only on otrs 3.x framework
+
+        },
+    );
+
+=cut
+
 sub EscalationView {
     my ( $Self, %Param ) = @_;
 
@@ -457,6 +717,108 @@ sub EscalationView {
     return @States;
 }
 
+=item StatusView()
+
+Get the number of tikets by status (open or closed) or last customer article information from each
+ticket in each status within an specified filter, if the "Filter" argument is specified.
+
+    my @Result = $iPhoneObject->StatusView(
+        UserID  => 1,
+
+        # OrderBy and SortBy (optional)
+        OrderBy => 'Down',  # Down|Up
+        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            StateType                      => "Open",
+            NumberOfTickets                => 2,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "Closed",
+            NumberOfTickets                => 1,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+    );
+
+    my @Result = $iPhoneObject->StatusView(
+        UserID  => 1,
+        Filter  => "Open",
+
+        #Limit (optional) set to 100 by default, if not spcified
+        Limit   => 50,
+
+        # OrderBy and SortBy (optional)
+        OrderBy => 'Down',  # Down|Up
+        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+             Age                              => 1596,
+            ArticleID                        => 923,
+            ArticleType                      => "phone",
+            Body                             => "This is an open ticket",
+            Charset                          => "utf-8",
+            ContentCharset                   => "utf-8",
+            ContentType                      => "text/plain;",
+            charset                          => "utf-8",
+            Created                          => "2010-06-23 11:46:15",
+            CreatedBy                        => 1,
+            FirstResponseTime                => -1296,
+            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+            FirstResponseTimeDestinationTime => 1277311874,
+            FirstResponseTimeEscalation      => 1,
+            FirstResponseTimeWorkingTime     => -1260,
+            From                             => "customer@otrs.org",
+            IncomingTime                     => 1277311575,
+            Lock                             => "unlock",
+            MimeType                         => "text/plain",
+            Owner                            => "Agent1",
+            Priority                         => "3 normal",
+            PriorityColor                    => "#cdcdcd",
+            Queue                            => "Junk",
+            Responsible                      => "Agent1",
+            SenderType                       => "customer",
+            SolutionTime                     => -1296,
+            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+            SolutionTimeDestinationTime      => 1277311874,
+            SolutionTimeEscalation           => 1,
+            SolutionTimeWorkingTime          => -1260,
+            State                            => "open",
+            Subject                          => "Open Ticket Test",
+            TicketFreeKey13                  => "CriticalityID",
+            TicketFreeKey14                  => "ImpactID",
+            TicketID                         => 176,
+            TicketNumber                     => 2010062310000015,
+            Title                            => "Open Ticket Test",
+            To                               => "Junk",
+            Type                             => "Incident",
+            UntilTime                        => 0,
+            UpdateTime                       => -1295,
+            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+            UpdateTimeDestinationTime        => 1277311875,
+            UpdateTimeEscalation             => 1,
+            UpdateTimeWorkingTime            => -1260,
+            Seen                             => 1, # only on otrs 3.x framework
+
+        },
+    );
+
+=cut
+
 sub StatusView {
     my ( $Self, %Param ) = @_;
 
@@ -530,6 +892,118 @@ sub StatusView {
     }
     return @States;
 }
+
+=item LockedView()
+
+Get the number of locked tikets by status type (all, new, reminder, reminder reached ) or last
+customer article information from each locked ticket in each status within an specified filter, if
+the "Filter" argument is specified.
+
+    my @Result = $iPhoneObject->LockedView(
+        UserID  => 1,
+
+        # OrderBy and SortBy (optional)
+        OrderBy => 'Down',  # Down|Up
+        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            StateType                      => "All",
+            NumberOfTickets                => 2,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "New,
+            NumberOfTickets                => 1,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "Reminder,
+            NumberOfTickets                => 0,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "ReminderReached,
+            NumberOfTickets                => 1,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+    );
+
+    my @Result = $iPhoneObject->LockedView(
+        UserID  => 1,
+        Filter  => "New",
+
+        #Limit (optional) set to 100 by default, if not spcified
+        Limit   => 50,
+
+        # OrderBy and SortBy (optional)
+        OrderBy => 'Down',  # Down|Up
+        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            Age                              => 1596,
+            ArticleID                        => 923,
+            ArticleType                      => "phone",
+            Body                             => "This is an open ticket",
+            Charset                          => "utf-8",
+            ContentCharset                   => "utf-8",
+            ContentType                      => "text/plain;",
+            charset                          => "utf-8",
+            Created                          => "2010-06-23 11:46:15",
+            CreatedBy                        => 1,
+            FirstResponseTime                => -1296,
+            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+            FirstResponseTimeDestinationTime => 1277311874,
+            FirstResponseTimeEscalation      => 1,
+            FirstResponseTimeWorkingTime     => -1260,
+            From                             => "customer@otrs.org",
+            IncomingTime                     => 1277311575,
+            Lock                             => "lock",
+            MimeType                         => "text/plain",
+            Owner                            => "Agent1",
+            Priority                         => "3 normal",
+            PriorityColor                    => "#cdcdcd",
+            Queue                            => "Junk",
+            Responsible                      => "Agent1",
+            SenderType                       => "customer",
+            SolutionTime                     => -1296,
+            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+            SolutionTimeDestinationTime      => 1277311874,
+            SolutionTimeEscalation           => 1,
+            SolutionTimeWorkingTime          => -1260,
+            State                            => "open",
+            Subject                          => "Open Ticket Test",
+            TicketFreeKey13                  => "CriticalityID",
+            TicketFreeKey14                  => "ImpactID",
+            TicketID                         => 176,
+            TicketNumber                     => 2010062310000015,
+            Title                            => "Open Ticket Test",
+            To                               => "Junk",
+            Type                             => "Incident",
+            UntilTime                        => 0,
+            UpdateTime                       => -1295,
+            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+            UpdateTimeDestinationTime        => 1277311875,
+            UpdateTimeEscalation             => 1,
+            UpdateTimeWorkingTime            => -1260,
+            Seen                             => 1, # only on otrs 3.x framework
+        },
+    );
+
+=cut
 
 sub LockedView {
     my ( $Self, %Param ) = @_;
@@ -638,6 +1112,118 @@ sub LockedView {
     return @States;
 }
 
+=item WatchedView()
+
+Get the number of watched tikets by status type (all, new, reminder, reminder reached ) or last
+custmer article information from each watched ticket in each status within an specified filter, if
+the "Filter" argument is specified.
+
+    my @Result = $iPhoneObject->WatchedView(
+        UserID  => 1,
+
+        # OrderBy and SortBy (optional)
+        OrderBy => 'Down',  # Down|Up
+        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            StateType                      => "All",
+            NumberOfTickets                => 2,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "New,
+            NumberOfTickets                => 1,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "Reminder,
+            NumberOfTickets                => 0,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "ReminderReached,
+            NumberOfTickets                => 1,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+    );
+
+    my @Result = $iPhoneObject->WatchedView(
+        UserID  => 1,
+        Filter  => "New",
+
+        #Limit (optional) set to 100 by default, if not spcified
+        Limit   => 50,
+
+        # OrderBy and SortBy (optional)
+        OrderBy => 'Down',  # Down|Up
+        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            Age                              => 1596,
+            ArticleID                        => 923,
+            ArticleType                      => "phone",
+            Body                             => "This is an open ticket",
+            Charset                          => "utf-8",
+            ContentCharset                   => "utf-8",
+            ContentType                      => "text/plain;",
+            charset                          => "utf-8",
+            Created                          => "2010-06-23 11:46:15",
+            CreatedBy                        => 1,
+            FirstResponseTime                => -1296,
+            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+            FirstResponseTimeDestinationTime => 1277311874,
+            FirstResponseTimeEscalation      => 1,
+            FirstResponseTimeWorkingTime     => -1260,
+            From                             => "customer@otrs.org",
+            IncomingTime                     => 1277311575,
+            Lock                             => "lock",
+            MimeType                         => "text/plain",
+            Owner                            => "Agent1",
+            Priority                         => "3 normal",
+            PriorityColor                    => "#cdcdcd",
+            Queue                            => "Junk",
+            Responsible                      => "Agent1",
+            SenderType                       => "customer",
+            SolutionTime                     => -1296,
+            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+            SolutionTimeDestinationTime      => 1277311874,
+            SolutionTimeEscalation           => 1,
+            SolutionTimeWorkingTime          => -1260,
+            State                            => "open",
+            Subject                          => "Open Ticket Test",
+            TicketFreeKey13                  => "CriticalityID",
+            TicketFreeKey14                  => "ImpactID",
+            TicketID                         => 176,
+            TicketNumber                     => 2010062310000015,
+            Title                            => "Open Ticket Test",
+            To                               => "Junk",
+            Type                             => "Incident",
+            UntilTime                        => 0,
+            UpdateTime                       => -1295,
+            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+            UpdateTimeDestinationTime        => 1277311875,
+            UpdateTimeEscalation             => 1,
+            UpdateTimeWorkingTime            => -1260,
+            Seen                             => 1, # only on otrs 3.x framework
+        },
+    );
+
+=cut
+
 sub WatchedView {
     my ( $Self, %Param ) = @_;
 
@@ -744,6 +1330,119 @@ sub WatchedView {
     }
     return @States;
 }
+
+=item ResponsibleView()
+
+Get the number of locked or unlocked tikets where the user is responsible for by status type
+(all, new, reminder, reminder reached ) or last customer article information from each ticket where
+the user is responsible for  in each status within an specified filter, if the "Filter" argument is
+specified.
+
+    my @Result = $iPhoneObject->ResponsibleView(
+        UserID  => 1,
+
+        # OrderBy and SortBy (optional)
+        OrderBy => 'Down',  # Down|Up
+        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            StateType                      => "All",
+            NumberOfTickets                => 2,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "New,
+            NumberOfTickets                => 1,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "Reminder,
+            NumberOfTickets                => 0,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+        {
+            StateType                      => "ReminderReached,
+            NumberOfTickets                => 1,
+            NumberOfTicketsWithNewMessages => 0,
+        },
+    );
+
+    my @Result = $iPhoneObject->ResponsibleView(
+        UserID  => 1,
+        Filter  => "New",
+
+        #Limit (optional) set to 100 by default, if not spcified
+        Limit   => 50,
+
+        # OrderBy and SortBy (optional)
+        OrderBy => 'Down',  # Down|Up
+        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            Age                              => 1596,
+            ArticleID                        => 923,
+            ArticleType                      => "phone",
+            Body                             => "This is an open ticket",
+            Charset                          => "utf-8",
+            ContentCharset                   => "utf-8",
+            ContentType                      => "text/plain;",
+            charset                          => "utf-8",
+            Created                          => "2010-06-23 11:46:15",
+            CreatedBy                        => 1,
+            FirstResponseTime                => -1296,
+            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+            FirstResponseTimeDestinationTime => 1277311874,
+            FirstResponseTimeEscalation      => 1,
+            FirstResponseTimeWorkingTime     => -1260,
+            From                             => "customer@otrs.org",
+            IncomingTime                     => 1277311575,
+            Lock                             => "lock",
+            MimeType                         => "text/plain",
+            Owner                            => "Agent1",
+            Priority                         => "3 normal",
+            PriorityColor                    => "#cdcdcd",
+            Queue                            => "Junk",
+            Responsible                      => "Agent1",
+            SenderType                       => "customer",
+            SolutionTime                     => -1296,
+            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+            SolutionTimeDestinationTime      => 1277311874,
+            SolutionTimeEscalation           => 1,
+            SolutionTimeWorkingTime          => -1260,
+            State                            => "open",
+            Subject                          => "Open Ticket Test",
+            TicketFreeKey13                  => "CriticalityID",
+            TicketFreeKey14                  => "ImpactID",
+            TicketID                         => 176,
+            TicketNumber                     => 2010062310000015,
+            Title                            => "Open Ticket Test",
+            To                               => "Junk",
+            Type                             => "Incident",
+            UntilTime                        => 0,
+            UpdateTime                       => -1295,
+            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+            UpdateTimeDestinationTime        => 1277311875,
+            UpdateTimeEscalation             => 1,
+            UpdateTimeWorkingTime            => -1260,
+            Seen                             => 1, # only on otrs 3.x framework
+        },
+    );
+
+=cut
 
 sub ResponsibleView {
     my ( $Self, %Param ) = @_;
@@ -854,6 +1553,112 @@ sub ResponsibleView {
     return
 }
 
+=item QueueView()
+
+Get the number of viewable tikets by queue as well as basic queue information, or las customer
+article information from each ticket within an specified queue, if the "Queue" argument is
+specified.
+
+    my @Result = $iPhoneObject->QueueView(
+        UserID  => 1,
+
+        # OrderBy and SortBy (optional)
+        OrderBy => 'Down',  # Down|Up
+        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            QueueName                      => "Junk",
+            NumberOfTickets                => 2,
+            NumberOfTicketsWithNewMessages => 0,
+            QueueID                        => 3,
+            Comment                        => "All junk tickets."
+        },
+        {
+            QueueName                      => "Misc",
+            NumberOfTickets                => 1,
+            NumberOfTicketsWithNewMessages => 0,
+            QueueID                        => 4,
+            Comment                        => "All misc tickets."
+        },
+    );
+
+    my @Result = $iPhoneObject->QueueView(
+        UserID   => 1,
+        QueueID  => 4,
+
+        #Limit (optional) set to 100 by default, if not spcified
+        Limit    => 50,
+
+        # OrderBy and SortBy (optional)
+        OrderBy  => 'Down',  # Down|Up
+        SortBy   => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            Age                              => 1596,
+            ArticleID                        => 923,
+            ArticleType                      => "phone",
+            Body                             => "This is an open ticket",
+            Charset                          => "utf-8",
+            ContentCharset                   => "utf-8",
+            ContentType                      => "text/plain;",
+            charset                          => "utf-8",
+            Created                          => "2010-06-23 11:46:15",
+            CreatedBy                        => 1,
+            FirstResponseTime                => -1296,
+            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+            FirstResponseTimeDestinationTime => 1277311874,
+            FirstResponseTimeEscalation      => 1,
+            FirstResponseTimeWorkingTime     => -1260,
+            From                             => "customer@otrs.org",
+            IncomingTime                     => 1277311575,
+            Lock                             => "lock",
+            MimeType                         => "text/plain",
+            Owner                            => "Agent1",
+            Priority                         => "3 normal",
+            PriorityColor                    => "#cdcdcd",
+            Queue                            => "Misc",
+            Responsible                      => "Agent1",
+            SenderType                       => "customer",
+            SolutionTime                     => -1296,
+            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+            SolutionTimeDestinationTime      => 1277311874,
+            SolutionTimeEscalation           => 1,
+            SolutionTimeWorkingTime          => -1260,
+            State                            => "open",
+            Subject                          => "Open Ticket Test",
+            TicketFreeKey13                  => "CriticalityID",
+            TicketFreeKey14                  => "ImpactID",
+            TicketID                         => 176,
+            TicketNumber                     => 2010062310000015,
+            Title                            => "Open Ticket Test",
+            To                               => "Junk",
+            Type                             => "Incident",
+            UntilTime                        => 0,
+            UpdateTime                       => -1295,
+            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+            UpdateTimeDestinationTime        => 1277311875,
+            UpdateTimeEscalation             => 1,
+            UpdateTimeWorkingTime            => -1260,
+            Seen                             => 1, # only on otrs 3.x framework
+        },
+    );
+
+=cut
+
 sub QueueView {
     my ( $Self, %Param ) = @_;
 
@@ -948,6 +1753,70 @@ sub QueueView {
     return @Queues;
 }
 
+=item TicketList()
+
+Get the last customer article information of a ticket
+
+    my @Result = $iPhoneObject->TicketList(
+        UserID   => 1,
+        TicketID  => 176,
+    );
+
+    #a result could be
+
+    @Resutl = (
+        {
+            Age                              => 1596,
+            ArticleID                        => 923,
+            ArticleType                      => "phone",
+            Body                             => "This is an open ticket",
+            Charset                          => "utf-8",
+            ContentCharset                   => "utf-8",
+            ContentType                      => "text/plain;",
+            charset                          => "utf-8",
+            Created                          => "2010-06-23 11:46:15",
+            CreatedBy                        => 1,
+            FirstResponseTime                => -1296,
+            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+            FirstResponseTimeDestinationTime => 1277311874,
+            FirstResponseTimeEscalation      => 1,
+            FirstResponseTimeWorkingTime     => -1260,
+            From                             => "customer@otrs.org",
+            IncomingTime                     => 1277311575,
+            Lock                             => "lock",
+            MimeType                         => "text/plain",
+            Owner                            => "Agent1",
+            Priority                         => "3 normal",
+            PriorityColor                    => "#cdcdcd",
+            Queue                            => "Misc",
+            Responsible                      => "Agent1",
+            SenderType                       => "customer",
+            SolutionTime                     => -1296,
+            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+            SolutionTimeDestinationTime      => 1277311874,
+            SolutionTimeEscalation           => 1,
+            SolutionTimeWorkingTime          => -1260,
+            State                            => "open",
+            Subject                          => "Open Ticket Test",
+            TicketFreeKey13                  => "CriticalityID",
+            TicketFreeKey14                  => "ImpactID",
+            TicketID                         => 176,
+            TicketNumber                     => 2010062310000015,
+            Title                            => "Open Ticket Test",
+            To                               => "Junk",
+            Type                             => "Incident",
+            UntilTime                        => 0,
+            UpdateTime                       => -1295,
+            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+            UpdateTimeDestinationTime        => 1277311875,
+            UpdateTimeEscalation             => 1,
+            UpdateTimeWorkingTime            => -1260,
+            Seen                             => 1, # only on otrs 3.x framework
+        },
+    );
+
+=cut
+
 sub TicketList {
     my ( $Self, %Param ) = @_;
 
@@ -980,7 +1849,7 @@ sub TicketList {
         = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix PriorityID StateID
         QueueID SenderTypeID OwnerID ResponsibleID ArticleTypeID ArticleFreeKey1
         ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1 ArticleFreeText2
-        ArticleFreeText3IncomingTime RealTillTimeNotUsed LockID TypeID ServiceID SLAID
+        ArticleFreeText3 IncomingTime RealTillTimeNotUsed LockID TypeID ServiceID SLAID
         StateType ArchiveFlag UnlockTimeout Changed
     );
 
@@ -1053,7 +1922,12 @@ sub TicketGet {
 
     # strip out all data
     my @Delete
-        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix PriorityID StateID QueueID SenderTypeID OwnerID ResponsibleID ArticleTypeID ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1 ArticleFreeText2 ArticleFreeText3IncomingTime RealTillTimeNotUsed LockID TypeID ServiceID SLAID StateType ArchiveFlag UnlockTimeout Changed);
+        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix PriorityID StateID
+        QueueID SenderTypeID OwnerID ResponsibleID ArticleTypeID ArticleFreeKey1
+        ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1 ArticleFreeText2 ArticleFreeText3
+        IncomingTime RealTillTimeNotUsed LockID TypeID ServiceID SLAID StateType ArchiveFlag
+        UnlockTimeout Changed
+    );
 
     for my $Key (@Delete) {
         delete $Ticket{$Key};
@@ -1164,6 +2038,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.3 2010/06/23 12:34:12 cr Exp $
+$Id: iPhone.pm,v 1.4 2010/06/23 22:07:33 cr Exp $
 
 =cut
