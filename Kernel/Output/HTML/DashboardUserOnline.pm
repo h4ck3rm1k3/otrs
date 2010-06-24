@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/DashboardUserOnline.pm
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: DashboardUserOnline.pm,v 1.20 2011/04/05 12:04:34 mb Exp $
+# $Id: DashboardUserOnline.pm,v 1.7.2.1 2010/06/24 18:13:20 dz Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::AuthSession;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.20 $) [1];
+$VERSION = qw($Revision: 1.7.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -46,7 +46,7 @@ sub new {
     # remember filter
     if ( $Self->{Filter} ) {
 
-        # update session
+        # update ssession
         $Self->{SessionObject}->UpdateSessionID(
             SessionID => $Self->{SessionID},
             Key       => $PreferencesKey,
@@ -71,7 +71,7 @@ sub new {
 
     $Self->{PageShown} = $Self->{LayoutObject}->{ $Self->{PrefKey} } || $Self->{Config}->{Limit};
 
-    $Self->{StartHit} = int( $Self->{ParamObject}->GetParam( Param => 'StartHit' ) || 1 );
+    $Self->{StartHit} = int $Self->{ParamObject}->GetParam( Param => 'StartHit' ) || 1;
 
     $Self->{CacheKey} = $Self->{Name};
 
@@ -95,8 +95,7 @@ sub Preferences {
                 20 => '20',
                 25 => '25',
             },
-            SelectedID  => $Self->{PageShown},
-            Translation => 0,
+            SelectedID => $Self->{PageShown},
         },
     );
 
@@ -151,7 +150,7 @@ sub Run {
         for (@Sessions) {
             my %Data = $Self->{SessionObject}->GetSessionIDData( SessionID => $_ );
 
-            # use agent instead of user
+            # use agent instand of user
             if ( $Data{UserType} eq 'User' ) {
                 $Data{UserType} = 'Agent';
             }
@@ -182,11 +181,14 @@ sub Run {
         );
     }
 
-    # set css class
-    my %Summary;
-    $Summary{ $Self->{Filter} . '::Selected' } = 'Selected';
-
     # filter bar
+    $Self->{LayoutObject}->SetEnv(
+        Key   => 'Color',
+        Value => 'searchactive',
+    );
+    my %Summary;
+    $Summary{ $Self->{Filter} . '::Style' } = 'text-decoration:none';
+
     $Self->{LayoutObject}->Block(
         Name => 'ContentSmallUserOnlineFilter',
         Data => {
@@ -199,17 +201,15 @@ sub Run {
 
     # add page nav bar
     my $Total    = $Online->{UserCount}->{ $Self->{Filter} } || 0;
-    my $LinkPage = 'Subaction=Element;Name=' . $Self->{Name} . ';Filter=' . $Self->{Filter} . ';';
+    my $LinkPage = 'Subaction=Element&Name=' . $Self->{Name} . '&Filter=' . $Self->{Filter} . '&';
     my %PageNav  = $Self->{LayoutObject}->PageNavBar(
-        StartHit       => $Self->{StartHit},
-        PageShown      => $Self->{PageShown},
-        AllHits        => $Total || 1,
-        Action         => 'Action=' . $Self->{LayoutObject}->{Action},
-        Link           => $LinkPage,
-        WindowSize     => 5,
-        AJAXReplace    => 'Dashboard' . $Self->{Name},
-        IDPrefix       => 'Dashboard' . $Self->{Name},
-        KeepScriptTags => $Param{AJAX},
+        StartHit    => $Self->{StartHit},
+        PageShown   => $Self->{PageShown},
+        AllHits     => $Total || 1,
+        Action      => 'Action=' . $Self->{LayoutObject}->{Action},
+        Link        => $LinkPage,
+        WindowSize  => 5,
+        AJAXReplace => $Self->{Name},
     );
     $Self->{LayoutObject}->Block(
         Name => 'ContentSmallTicketGenericFilterNavBar',
@@ -255,7 +255,6 @@ sub Run {
             %{ $Self->{Config} },
             Name => $Self->{Name},
         },
-        KeepScriptTags => $Param{AJAX},
     );
 
     return $Content;

@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/DashboardTicketGeneric.pm
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: DashboardTicketGeneric.pm,v 1.45 2012/01/12 18:34:21 cr Exp $
+# $Id: DashboardTicketGeneric.pm,v 1.20.2.1 2010/06/24 18:13:20 dz Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.45 $) [1];
+$VERSION = qw($Revision: 1.20.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -42,7 +42,7 @@ sub new {
     # remember filter
     if ( $Self->{Filter} ) {
 
-        # update session
+        # update ssession
         $Self->{SessionObject}->UpdateSessionID(
             SessionID => $Self->{SessionID},
             Key       => $PreferencesKey,
@@ -67,7 +67,7 @@ sub new {
 
     $Self->{PageShown} = $Self->{LayoutObject}->{ $Self->{PrefKey} } || $Self->{Config}->{Limit};
 
-    $Self->{StartHit} = int( $Self->{ParamObject}->GetParam( Param => 'StartHit' ) || 1 );
+    $Self->{StartHit} = int $Self->{ParamObject}->GetParam( Param => 'StartHit' ) || 1;
 
     $Self->{CacheKey}
         = $Self->{Name} . '-'
@@ -95,8 +95,7 @@ sub Preferences {
                 20 => '20',
                 25 => '25',
             },
-            SelectedID  => $Self->{PageShown},
-            Translation => 0,
+            SelectedID => $Self->{PageShown},
         },
     );
 
@@ -129,41 +128,20 @@ sub Run {
 
     # get all search base attributes
     my %TicketSearch;
-    my %DynamicFieldsParameters;
     my @Params = split /;/, $Self->{Config}->{Attributes};
     for my $String (@Params) {
         next if !$String;
         my ( $Key, $Value ) = split /=/, $String;
 
-        # push ARRAYREF attributes directly in an ARRAYREF
-        if (
-            $Key
-            =~ /^(StateType|StateTypeIDs|Queues|QueueIDs|Types|TypeIDs|States|StateIDs|Priorities|PriorityIDs|Services|ServiceIDs|SLAs|SLAIDs|Locks|LockIDs|OwnerIDs|ResponsibleIDs|WatchUserIDs|ArchiveFlags)$/
-            )
-        {
+        if ( $Key eq 'StateType' ) {
             push @{ $TicketSearch{$Key} }, $Value;
         }
-
-        # check if parameter is a dynamic field and capture dynamic filed name (with DynamicField_)
-        # in $1 and the Operator in $2
-        # possible Dynamic Fields options include:
-        #   DyamicField_NameX_Equals=123;
-        #   DyamicField_NameX_Like=value*;
-        #   DyamicField_NameX_GreaterThan=2001-01-01 01:01:01;
-        #   DyamicField_NameX_GreaterThanEquals=2001-01-01 01:01:01;
-        #   DyamicField_NameX_LowerThan=2002-02-02 02:02:02;
-        #   DyamicField_NameX_LowerThanEquals=2002-02-02 02:02:02;
-        elsif ( $Key =~ m{\A (DynamicField_.+?) _ (.+?) \z}sxm ) {
-            $DynamicFieldsParameters{$1}->{$2} = $Value;
-        }
-
         elsif ( !defined $TicketSearch{$Key} ) {
             $TicketSearch{$Key} = $Value;
         }
         elsif ( !ref $TicketSearch{$Key} ) {
             my $ValueTmp = $TicketSearch{$Key};
             $TicketSearch{$Key} = [$ValueTmp];
-            push @{ $TicketSearch{$Key} }, $Value;
         }
         else {
             push @{ $TicketSearch{$Key} }, $Value;
@@ -171,7 +149,6 @@ sub Run {
     }
     %TicketSearch = (
         %TicketSearch,
-        %DynamicFieldsParameters,
         Permission => $Self->{Config}->{Permission} || 'ro',
         UserID => $Self->{UserID},
     );
@@ -186,7 +163,7 @@ sub Run {
     my %TicketSearchSummary = (
         Locked => {
             OwnerIDs => [ $Self->{UserID}, ],
-            Locks => [ 'lock', 'tmp_lock' ],
+            Locks    => ['lock'],
         },
         Watcher => {
             WatchUserIDs => [ $Self->{UserID}, ],
@@ -205,10 +182,6 @@ sub Run {
             Locks    => undef,
         },
     );
-
-    if ( defined $TicketSearch{QueueIDs} || defined $TicketSearch{Queues} ) {
-        delete $TicketSearchSummary{MyQueues};
-    }
 
     # check cache
     my $TicketIDs = $Self->{CacheObject}->Get(
@@ -235,7 +208,7 @@ sub Run {
         Key  => $Self->{CacheKey} . '-Summary',
     );
 
-    # if no cache or new list result, do count lookup
+    # if no cache ot new list result, do count lookup
     if ( !$Summary || !$CacheUsed ) {
         for my $Type ( sort keys %TicketSearchSummary ) {
             next if !$TicketSearchSummary{$Type};
@@ -263,10 +236,12 @@ sub Run {
         );
     }
 
-    # set css class
-    $Summary->{ $Self->{Filter} . '::Selected' } = 'Selected';
-
     # get filter ticket counts
+    $Self->{LayoutObject}->SetEnv(
+        Key   => 'Color',
+        Value => 'searchactive',
+    );
+    $Summary->{ $Self->{Filter} . '::Style' } = 'text-decoration:none';
     $Self->{LayoutObject}->Block(
         Name => 'ContentLargeTicketGenericFilter',
         Data => {
@@ -300,30 +275,17 @@ sub Run {
         );
     }
 
-    # show only myqueues if we have the filter
-    if ( $TicketSearchSummary{MyQueues} ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'ContentLargeTicketGenericFilterMyQueues',
-            Data => {
-                %{ $Self->{Config} },
-                Name => $Self->{Name},
-                %{$Summary},
-            },
-        );
-    }
-
     # add page nav bar
     my $Total    = $Summary->{ $Self->{Filter} } || 0;
-    my $LinkPage = 'Subaction=Element;Name=' . $Self->{Name} . ';Filter=' . $Self->{Filter} . ';';
+    my $LinkPage = 'Subaction=Element&Name=' . $Self->{Name} . '&Filter=' . $Self->{Filter} . '&';
     my %PageNav  = $Self->{LayoutObject}->PageNavBar(
-        StartHit       => $Self->{StartHit},
-        PageShown      => $Self->{PageShown},
-        AllHits        => $Total || 1,
-        Action         => 'Action=' . $Self->{LayoutObject}->{Action},
-        Link           => $LinkPage,
-        AJAXReplace    => 'Dashboard' . $Self->{Name},
-        IDPrefix       => 'Dashboard' . $Self->{Name},
-        KeepScriptTags => $Param{AJAX},
+        StartHit    => $Self->{StartHit},
+        PageShown   => $Self->{PageShown},
+        AllHits     => $Total || 1,
+        Action      => 'Action=' . $Self->{LayoutObject}->{Action},
+        Link        => $LinkPage,
+        WindowSize  => 10,
+        AJAXReplace => $Self->{Name},
     );
     $Self->{LayoutObject}->Block(
         Name => 'ContentLargeTicketGenericFilterNavBar',
@@ -340,9 +302,8 @@ sub Run {
         $Count++;
         next if $Count < $Self->{StartHit};
         my %Ticket = $Self->{TicketObject}->TicketGet(
-            TicketID      => $TicketID,
-            UserID        => $Self->{UserID},
-            DynamicFields => 0,
+            TicketID => $TicketID,
+            UserID   => $Self->{UserID},
         );
 
         # create human age
@@ -359,28 +320,10 @@ sub Run {
             );
         }
 
-        # show ticket
         $Self->{LayoutObject}->Block(
             Name => 'ContentLargeTicketGenericRow',
             Data => \%Ticket,
         );
-
-        # show ticket flags
-        my @TicketMetaItems = $Self->{LayoutObject}->TicketMetaItems(
-            Ticket => \%Ticket,
-        );
-        for my $Item (@TicketMetaItems) {
-            $Self->{LayoutObject}->Block(
-                Name => 'ContentLargeTicketGenericRowMeta',
-                Data => {},
-            );
-            if ($Item) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'ContentLargeTicketGenericRowMetaImage',
-                    Data => $Item,
-                );
-            }
-        }
     }
 
     # show "none" if no ticket is available
@@ -398,7 +341,6 @@ sub Run {
             Name => $Self->{Name},
             %{$Summary},
         },
-        KeepScriptTags => $Param{AJAX},
     );
 
     return $Content;
