@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AgentTicketSearch.pm - Utilities for tickets
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketSearch.pm,v 1.142 2012/01/18 17:06:19 sb Exp $
+# $Id: AgentTicketSearch.pm,v 1.84.2.1 2010/06/24 18:47:32 dz Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,12 +22,9 @@ use Kernel::System::SLA;
 use Kernel::System::State;
 use Kernel::System::Type;
 use Kernel::System::CSV;
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.142 $) [1];
+$VERSION = qw($Revision: 1.84.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -53,9 +50,6 @@ sub new {
     $Self->{SLAObject}           = Kernel::System::SLA->new(%Param);
     $Self->{TypeObject}          = Kernel::System::Type->new(%Param);
     $Self->{CSVObject}           = Kernel::System::CSV->new(%Param);
-    $Self->{LockObject}          = Kernel::System::Lock->new(%Param);
-    $Self->{DynamicFieldObject}  = Kernel::System::DynamicField->new(%Param);
-    $Self->{BackendObject}       = Kernel::System::DynamicField::Backend->new(%Param);
 
     # if we need to do a fulltext search on an external mirror database
     if ( $Self->{ConfigObject}->Get('Core::MirrorDB::DSN') ) {
@@ -82,23 +76,6 @@ sub new {
 
     $Self->{Config} = $Self->{ConfigObject}->Get("Ticket::Frontend::$Self->{Action}");
 
-    # get dynamic field config for frontend module
-    $Self->{DynamicFieldFilter} = $Self->{Config}->{DynamicField};
-
-    # get the dynamic fields for ticket object
-    $Self->{DynamicField} = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid       => 1,
-        ObjectType  => ['Ticket'],
-        FieldFilter => $Self->{DynamicFieldFilter} || {},
-    );
-
-    # get the ticket dynamic fields for CSV display
-    $Self->{CSVDynamicField} = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid       => 1,
-        ObjectType  => ['Ticket'],
-        FieldFilter => $Self->{Config}->{SearchCSVDynamicField} || {},
-    );
-
     return $Self;
 }
 
@@ -108,7 +85,7 @@ sub Run {
     my $Output;
 
     # get config data
-    $Self->{StartHit} = int( $Self->{ParamObject}->GetParam( Param => 'StartHit' ) || 1 );
+    $Self->{StartHit} = int $Self->{ParamObject}->GetParam( Param => 'StartHit' ) || 1;
     $Self->{SearchLimit} = $Self->{Config}->{SearchLimit} || 500;
     $Self->{SortBy} = $Self->{ParamObject}->GetParam( Param => 'SortBy' )
         || $Self->{Config}->{'SortBy::Default'}
@@ -130,7 +107,7 @@ sub Run {
         );
         return $Self->{LayoutObject}->Attachment(
             Filename    => 'OpenSearchDescriptionTicketNumber.xml',
-            ContentType => 'application/opensearchdescription+xml',
+            ContentType => "text/xml",
             Content     => $Output,
             Type        => 'inline',
         );
@@ -142,7 +119,7 @@ sub Run {
         );
         return $Self->{LayoutObject}->Attachment(
             Filename    => 'OpenSearchDescriptionFulltext.xml',
-            ContentType => 'application/opensearchdescription+xml',
+            ContentType => "text/xml",
             Content     => $Output,
             Type        => 'inline',
         );
@@ -166,11 +143,6 @@ sub Run {
             Name      => $Self->{Profile},
             UserLogin => $Self->{UserLogin},
         );
-
-        # convert attributes
-        if ( $GetParam{ShownAttributes} && ref $GetParam{ShownAttributes} eq 'ARRAY' ) {
-            $GetParam{ShownAttributes} = join ';', @{ $GetParam{ShownAttributes} };
-        }
     }
 
     # get search string params (get submitted params)
@@ -179,7 +151,47 @@ sub Run {
             qw(TicketNumber Title From To Cc Subject Body CustomerID CustomerUserLogin StateType
             Agent ResultForm TimeSearchType ChangeTimeSearchType CloseTimeSearchType UseSubQueues
             ArticleTimeSearchType SearchInArchive
-            Fulltext ShownAttributes
+            Fulltext
+            TicketFreeTime1
+            TicketFreeTime1Start TicketFreeTime1StartDay TicketFreeTime1StartMonth
+            TicketFreeTime1StartYear
+            TicketFreeTime1Stop TicketFreeTime1StopDay TicketFreeTime1StopMonth
+            TicketFreeTime1StopYear
+            TicketFreeTime2
+            TicketFreeTime2Start TicketFreeTime2StartDay TicketFreeTime2StartMonth
+            TicketFreeTime2StartYear
+            TicketFreeTime2Stop TicketFreeTime2StopDay TicketFreeTime2StopMonth
+            TicketFreeTime2StopYear
+            TicketFreeTime3
+            TicketFreeTime3Start TicketFreeTime3StartDay TicketFreeTime3StartMonth
+            TicketFreeTime3StartYear
+            TicketFreeTime3Stop TicketFreeTime3StopDay TicketFreeTime3StopMonth
+            TicketFreeTime3StopYear
+            TicketFreeTime4
+            TicketFreeTime4Start TicketFreeTime4StartDay TicketFreeTime4StartMonth
+            TicketFreeTime4StartYear
+            TicketFreeTime4Stop TicketFreeTime4StopDay TicketFreeTime4StopMonth
+            TicketFreeTime4StopYear
+            TicketFreeTime5
+            TicketFreeTime5Start TicketFreeTime5StartDay TicketFreeTime5StartMonth
+            TicketFreeTime5StartYear
+            TicketFreeTime5Stop TicketFreeTime5StopDay TicketFreeTime5StopMonth
+            TicketFreeTime5StopYear
+            TicketFreeTime6
+            TicketFreeTime6Start TicketFreeTime6StartDay TicketFreeTime6StartMonth
+            TicketFreeTime6StartYear
+            TicketFreeTime6Stop TicketFreeTime6StopDay TicketFreeTime6StopMonth
+            TicketFreeTime6StopYear
+            TicketFreeTime7
+            TicketFreeTime7Start TicketFreeTime7StartDay TicketFreeTime7StartMonth
+            TicketFreeTime7StartYear
+            TicketFreeTime7Stop TicketFreeTime7StopDay TicketFreeTime7StopMonth
+            TicketFreeTime7StopYear
+            TicketFreeTime8
+            TicketFreeTime8Start TicketFreeTime8StartDay TicketFreeTime8StartMonth
+            TicketFreeTime8StartYear
+            TicketFreeTime8Stop TicketFreeTime8StopDay TicketFreeTime8StopMonth
+            TicketFreeTime8StopYear
             ArticleCreateTimePointFormat ArticleCreateTimePoint
             ArticleCreateTimePointStart
             ArticleCreateTimeStart ArticleCreateTimeStartDay ArticleCreateTimeStartMonth
@@ -222,7 +234,15 @@ sub Run {
         for (
             qw(StateIDs StateTypeIDs QueueIDs PriorityIDs OwnerIDs
             CreatedQueueIDs CreatedUserIDs WatchUserIDs ResponsibleIDs
-            TypeIDs ServiceIDs SLAIDs LockIDs)
+            TypeIDs ServiceIDs SLAIDs
+            TicketFreeKey1 TicketFreeText1 TicketFreeKey2 TicketFreeText2
+            TicketFreeKey3 TicketFreeText3 TicketFreeKey4 TicketFreeText4
+            TicketFreeKey5 TicketFreeText5 TicketFreeKey6 TicketFreeText6
+            TicketFreeKey7 TicketFreeText7 TicketFreeKey8 TicketFreeText8
+            TicketFreeKey9 TicketFreeText9 TicketFreeKey10 TicketFreeText10
+            TicketFreeKey11 TicketFreeText11 TicketFreeKey12 TicketFreeText12
+            TicketFreeKey13 TicketFreeText13 TicketFreeKey14 TicketFreeText14
+            TicketFreeKey15 TicketFreeText15 TicketFreeKey16 TicketFreeText16)
             )
         {
 
@@ -234,68 +254,48 @@ sub Run {
         }
     }
 
-    # get Dynamic fields form param object
-    # cycle trough the activated Dynamic Fields for this screen
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-        # extract the dynamic field value form the web request
-        my $DynamicFieldValue = $Self->{BackendObject}->SearchFieldValueGet(
-            DynamicFieldConfig     => $DynamicFieldConfig,
-            ParamObject            => $Self->{ParamObject},
-            ReturnProfileStructure => 1,
-            LayoutObject           => $Self->{LayoutObject},
-        );
-
-        # set the comple value structure in GetParam to store it later in the search profile
-        if ( IsHashRefWithData($DynamicFieldValue) ) {
-            %GetParam = ( %GetParam, %{$DynamicFieldValue} );
-        }
-    }
-
     # get article create time option
     if ( !$GetParam{ArticleTimeSearchType} ) {
-        $GetParam{'ArticleTimeSearchType::None'} = 1;
+        $GetParam{'ArticleTimeSearchType::None'} = 'checked="checked"';
     }
     elsif ( $GetParam{ArticleTimeSearchType} eq 'TimePoint' ) {
-        $GetParam{'ArticleTimeSearchType::TimePoint'} = 1;
+        $GetParam{'ArticleTimeSearchType::TimePoint'} = 'checked="checked"';
     }
     elsif ( $GetParam{ArticleTimeSearchType} eq 'TimeSlot' ) {
-        $GetParam{'ArticleTimeSearchType::TimeSlot'} = 1;
+        $GetParam{'ArticleTimeSearchType::TimeSlot'} = 'checked="checked"';
     }
 
     # get create time option
     if ( !$GetParam{TimeSearchType} ) {
-        $GetParam{'TimeSearchType::None'} = 1;
+        $GetParam{'TimeSearchType::None'} = 'checked="checked"';
     }
     elsif ( $GetParam{TimeSearchType} eq 'TimePoint' ) {
-        $GetParam{'TimeSearchType::TimePoint'} = 1;
+        $GetParam{'TimeSearchType::TimePoint'} = 'checked="checked"';
     }
     elsif ( $GetParam{TimeSearchType} eq 'TimeSlot' ) {
-        $GetParam{'TimeSearchType::TimeSlot'} = 1;
+        $GetParam{'TimeSearchType::TimeSlot'} = 'checked="checked"';
     }
 
     # get change time option
     if ( !$GetParam{ChangeTimeSearchType} ) {
-        $GetParam{'ChangeTimeSearchType::None'} = 1;
+        $GetParam{'ChangeTimeSearchType::None'} = 'checked="checked"';
     }
     elsif ( $GetParam{ChangeTimeSearchType} eq 'TimePoint' ) {
-        $GetParam{'ChangeTimeSearchType::TimePoint'} = 1;
+        $GetParam{'ChangeTimeSearchType::TimePoint'} = 'checked="checked"';
     }
     elsif ( $GetParam{ChangeTimeSearchType} eq 'TimeSlot' ) {
-        $GetParam{'ChangeTimeSearchType::TimeSlot'} = 1;
+        $GetParam{'ChangeTimeSearchType::TimeSlot'} = 'checked="checked"';
     }
 
     # get close time option
     if ( !$GetParam{CloseTimeSearchType} ) {
-        $GetParam{'CloseTimeSearchType::None'} = 1;
+        $GetParam{'CloseTimeSearchType::None'} = 'checked="checked"';
     }
     elsif ( $GetParam{CloseTimeSearchType} eq 'TimePoint' ) {
-        $GetParam{'CloseTimeSearchType::TimePoint'} = 1;
+        $GetParam{'CloseTimeSearchType::TimePoint'} = 'checked="checked"';
     }
     elsif ( $GetParam{CloseTimeSearchType} eq 'TimeSlot' ) {
-        $GetParam{'CloseTimeSearchType::TimeSlot'} = 1;
+        $GetParam{'CloseTimeSearchType::TimeSlot'} = 'checked="checked"';
     }
 
     # set result form env
@@ -339,21 +339,17 @@ sub Run {
                 UserLogin => $Self->{UserLogin},
             );
 
-            # convert attributes
-            if ( $GetParam{ShownAttributes} && ref $GetParam{ShownAttributes} eq '' ) {
-                $GetParam{ShownAttributes} = [ split /;/, $GetParam{ShownAttributes} ];
-            }
-
             # insert new profile params
             for my $Key ( keys %GetParam ) {
-                next if !$GetParam{$Key};
-                $Self->{SearchProfileObject}->SearchProfileAdd(
-                    Base      => 'TicketSearch',
-                    Name      => $Self->{Profile},
-                    Key       => $Key,
-                    Value     => $GetParam{$Key},
-                    UserLogin => $Self->{UserLogin},
-                );
+                if ( $GetParam{$Key} ) {
+                    $Self->{SearchProfileObject}->SearchProfileAdd(
+                        Base      => 'TicketSearch',
+                        Name      => $Self->{Profile},
+                        Key       => $Key,
+                        Value     => $GetParam{$Key},
+                        UserLogin => $Self->{UserLogin},
+                    );
+                }
             }
         }
 
@@ -381,7 +377,7 @@ sub Run {
                     = $GetParam{ArticleCreateTimeStartYear} . '-'
                     . $GetParam{ArticleCreateTimeStartMonth} . '-'
                     . $GetParam{ArticleCreateTimeStartDay}
-                    . ' 00:00:00';
+                    . ' 00:00:01';
             }
             if (
                 $GetParam{ArticleCreateTimeStopDay}
@@ -434,7 +430,7 @@ sub Run {
         # get create time settings
         if ( !$GetParam{TimeSearchType} ) {
 
-            # do nothing with time stuff
+            # do noting with time stuff
         }
         elsif ( $GetParam{TimeSearchType} eq 'TimeSlot' ) {
             for (qw(Month Day)) {
@@ -455,7 +451,7 @@ sub Run {
                     = $GetParam{TicketCreateTimeStartYear} . '-'
                     . $GetParam{TicketCreateTimeStartMonth} . '-'
                     . $GetParam{TicketCreateTimeStartDay}
-                    . ' 00:00:00';
+                    . ' 00:00:01';
             }
             if (
                 $GetParam{TicketCreateTimeStopDay}
@@ -505,10 +501,10 @@ sub Run {
             }
         }
 
-        # get change time settings
+        # get close time settings
         if ( !$GetParam{ChangeTimeSearchType} ) {
 
-            # do nothing on time stuff
+            # do noting ont time stuff
         }
         elsif ( $GetParam{ChangeTimeSearchType} eq 'TimeSlot' ) {
             for (qw(Month Day)) {
@@ -529,7 +525,7 @@ sub Run {
                     = $GetParam{TicketChangeTimeStartYear} . '-'
                     . $GetParam{TicketChangeTimeStartMonth} . '-'
                     . $GetParam{TicketChangeTimeStartDay}
-                    . ' 00:00:00';
+                    . ' 00:00:01';
             }
             if (
                 $GetParam{TicketChangeTimeStopDay}
@@ -582,7 +578,7 @@ sub Run {
         # get close time settings
         if ( !$GetParam{CloseTimeSearchType} ) {
 
-            # do nothing on time stuff
+            # do noting ont time stuff
         }
         elsif ( $GetParam{CloseTimeSearchType} eq 'TimeSlot' ) {
             for (qw(Month Day)) {
@@ -603,7 +599,7 @@ sub Run {
                     = $GetParam{TicketCloseTimeStartYear} . '-'
                     . $GetParam{TicketCloseTimeStartMonth} . '-'
                     . $GetParam{TicketCloseTimeStartDay}
-                    . ' 00:00:00';
+                    . ' 00:00:01';
             }
             if (
                 $GetParam{TicketCloseTimeStopDay}
@@ -653,32 +649,46 @@ sub Run {
             }
         }
 
-        # Special behaviour for the fulltext search toolbar module:
-        # - Check full text string to see if contents is a ticket number.
-        # - If exists and not in print or CSV mode, redirect to the ticket.
-        # See http://bugs.otrs.org/show_bug.cgi?id=4238 for details.
-        #   The original problem was that tickets with customer reply will be
-        #   found by a fulltext search (ticket number is in the subjects), but
-        #   'new' tickets will not be found.
-        if (
-            $GetParam{Fulltext}
-            && $Self->{ParamObject}->GetParam( Param => 'CheckTicketNumberAndRedirect' )
-            && $GetParam{ResultForm} ne 'Normal'
-            && $GetParam{ResultForm} ne 'Print'
-            )
-        {
-            my $TicketID = $Self->{TicketObjectSearch}->TicketIDLookup(
-                TicketNumber => $GetParam{Fulltext},
-                UserID       => $Self->{UserID},
-            );
-            if ($TicketID) {
-                return $Self->{LayoutObject}->Redirect(
-                    OP => "Action=AgentTicketZoom;TicketID=$TicketID",
-                );
+        # free time
+        for ( 1 .. 6 ) {
+            if ( !$GetParam{ 'TicketFreeTime' . $_ } ) {
+                for my $Type (qw(Year Month Day)) {
+                    $GetParam{ 'TicketFreeTime' . $_ . 'Start' . $Type } = undef;
+                    $GetParam{ 'TicketFreeTime' . $_ . 'Stop' . $Type }  = undef;
+                }
+                $GetParam{ 'TicketFreeTime' . $_ . 'NewerDate' } = undef;
+                $GetParam{ 'TicketFreeTime' . $_ . 'OlderDate' } = undef;
+            }
+            else {
+                $GetParam{ 'TicketFreeTime' . $_ } = 'checked="checked"';
+                if (
+                    $GetParam{ 'TicketFreeTime' . $_ . 'StartDay' }
+                    && $GetParam{ 'TicketFreeTime' . $_ . 'StartMonth' }
+                    && $GetParam{ 'TicketFreeTime' . $_ . 'StartYear' }
+                    )
+                {
+                    $GetParam{ 'TicketFreeTime' . $_ . 'NewerDate' }
+                        = $GetParam{ 'TicketFreeTime' . $_ . 'StartYear' } . '-'
+                        . $GetParam{ 'TicketFreeTime' . $_ . 'StartMonth' } . '-'
+                        . $GetParam{ 'TicketFreeTime' . $_ . 'StartDay' }
+                        . ' 00:00:01';
+                }
+                if (
+                    $GetParam{ 'TicketFreeTime' . $_ . 'StopDay' }
+                    && $GetParam{ 'TicketFreeTime' . $_ . 'StopMonth' }
+                    && $GetParam{ 'TicketFreeTime' . $_ . 'StopYear' }
+                    )
+                {
+                    $GetParam{ 'TicketFreeTime' . $_ . 'OlderDate' }
+                        = $GetParam{ 'TicketFreeTime' . $_ . 'StopYear' } . '-'
+                        . $GetParam{ 'TicketFreeTime' . $_ . 'StopMonth' } . '-'
+                        . $GetParam{ 'TicketFreeTime' . $_ . 'StopDay' }
+                        . ' 23:59:59';
+                }
             }
         }
 
-        # prepare full text search
+        # prepare fulltext search
         if ( $GetParam{Fulltext} ) {
             $GetParam{ContentSearch} = 'OR';
             for (qw(From To Cc Subject Body)) {
@@ -701,39 +711,6 @@ sub Run {
             }
         }
 
-        my %AttributeLookup;
-
-        # create attibute lookup table
-        for my $Attribute ( @{ $GetParam{ShownAttributes} || [] } ) {
-            $AttributeLookup{$Attribute} = 1;
-        }
-
-        # dynamic fields search parameters for ticket search
-        my %DynamicFieldSearchParameters;
-
-        # cycle trough the activated Dynamic Fields for this screen
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-            next DYNAMICFIELD
-                if !$AttributeLookup{ 'LabelSearch_DynamicField_' . $DynamicFieldConfig->{Name} };
-
-            # extract the dynamic field value form the profile
-            my $SearchParameter = $Self->{BackendObject}->SearchFieldParameterBuild(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                Profile            => \%GetParam,
-                LayoutObject       => $Self->{LayoutObject},
-            );
-
-            # set search parameter
-            if ( defined $SearchParameter ) {
-                $DynamicFieldSearchParameters{ 'DynamicField_' . $DynamicFieldConfig->{Name} }
-                    = $SearchParameter->{Parameter};
-            }
-
-            # set value to display
-        }
-
         # perform ticket search
         my @ViewableTicketIDs = $Self->{TicketObjectSearch}->TicketSearch(
             Result              => 'ARRAY',
@@ -746,7 +723,6 @@ sub Run {
             ContentSearchSuffix => '*',
             FullTextIndex       => 1,
             %GetParam,
-            %DynamicFieldSearchParameters,
         );
 
         # CSV output
@@ -758,9 +734,8 @@ sub Run {
 
                 # get first article data
                 my %Data = $Self->{TicketObjectSearch}->ArticleFirstArticle(
-                    TicketID      => $_,
-                    Extended      => 1,
-                    DynamicFields => 1,
+                    TicketID => $_,
+                    Extended => 1,
                 );
 
                 $Data{Age} = $Self->{LayoutObject}->CustomerAge( Age => $Data{Age}, Space => ' ' );
@@ -768,8 +743,7 @@ sub Run {
                 # get whole article (if configured!)
                 if ( $Self->{Config}->{SearchArticleCSVTree} ) {
                     my @Article = $Self->{TicketObjectSearch}->ArticleGet(
-                        TicketID      => $_,
-                        DynamicFields => 0,
+                        TicketID => $_,
                     );
                     for my $Articles (@Article) {
                         if ( $Articles->{Body} ) {
@@ -805,67 +779,18 @@ sub Run {
                 # csv quote
                 if ( !@CSVHead ) {
                     @CSVHead = @{ $Self->{Config}->{SearchCSVData} };
-
-                    # include the selected dynamic fields on CVS resutls
-                    DYNAMICFIELD:
-                    for my $DynamicFieldConfig ( @{ $Self->{CSVDynamicField} } ) {
-                        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-                        next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
-                        next DYNAMICFIELD if $DynamicFieldConfig->{Name} eq '';
-
-                        push @CSVHead, 'DynamicField_' . $DynamicFieldConfig->{Name};
-                    }
                 }
                 my @Data;
                 for (@CSVHead) {
-
-                    # check if header is a dynamic field and get the value from dynamic field
-                    # backend
-                    if ( $_ =~ m{\A DynamicField_ ( [a-zA-Z\d]+ ) \z}xms ) {
-
-                        # loop over the dynamic fields configured for CSV output
-                        DYNAMICFIELD:
-                        for my $DynamicFieldConfig ( @{ $Self->{CSVDynamicField} } ) {
-                            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-                            next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
-
-                            # skip all fields that does not match with current field name ($1)
-                            # with out the 'DynamicField_' prefix
-                            next DYNAMICFIELD if $DynamicFieldConfig->{Name} ne $1;
-
-                            # get the value as for print (to corretly display)
-                            my $ValueStrg = $Self->{BackendObject}->DisplayValueRender(
-                                DynamicFieldConfig => $DynamicFieldConfig,
-                                Value              => $Info{$_},
-                                HTMLOutput         => 0,
-                                LayoutObject       => $Self->{LayoutObject},
-                            );
-                            push @Data, $ValueStrg->{Value};
-
-                            # terminate the DYNAMICFIELD loop
-                            last DYNAMICFIELD;
-                        }
-                    }
-
-                    # otherwise retreive data from article
-                    else {
-                        push @Data, $Info{$_};
-                    }
+                    push @Data, $Info{$_};
                 }
                 push @CSVData, \@Data;
             }
 
-            # get Separator from language file
-            my $UserCSVSeparator = $Self->{LayoutObject}->{LanguageObject}->{Separator};
-
-            if ( $Self->{ConfigObject}->Get('PreferencesGroups')->{CSVSeparator}->{Active} ) {
-                my %UserData = $Self->{UserObject}->GetUserData( UserID => $Self->{UserID} );
-                $UserCSVSeparator = $UserData{UserCSVSeparator};
-            }
             my $CSV = $Self->{CSVObject}->Array2CSV(
                 Head      => \@CSVHead,
                 Data      => \@CSVData,
-                Separator => $UserCSVSeparator,
+                Separator => $Self->{UserCSVSeparator},
             );
 
             # return csv to download
@@ -885,17 +810,11 @@ sub Run {
         }
         elsif ( $GetParam{ResultForm} eq 'Print' ) {
 
-            use Kernel::System::PDF;
-            $Self->{PDFObject} = Kernel::System::PDF->new( %{$Self} );
-
             my @PDFData;
             for (@ViewableTicketIDs) {
 
                 # get first article data
-                my %Data = $Self->{TicketObjectSearch}->ArticleFirstArticle(
-                    TicketID      => $_,
-                    DynamicFields => 1,
-                );
+                my %Data = $Self->{TicketObjectSearch}->ArticleFirstArticle( TicketID => $_ );
 
                 # customer info
                 my %CustomerData;
@@ -929,6 +848,8 @@ sub Run {
                 $UserInfo{CustomerName} = '(' . $UserInfo{CustomerName} . ')'
                     if ( $UserInfo{CustomerName} );
 
+                use Kernel::System::PDF;
+                $Self->{PDFObject} = Kernel::System::PDF->new( %{$Self} );
                 if ( $Self->{PDFObject} ) {
                     my %Info = ( %Data, %UserInfo );
                     my $Created = $Self->{LayoutObject}->Output(
@@ -987,52 +908,47 @@ sub Run {
                     $MaxPages = 100;
                 }
 
+                # create the header
                 my $CellData;
+                $CellData->[0]->[0]->{Content} = $Self->{ConfigObject}->Get('Ticket::Hook');
+                $CellData->[0]->[0]->{Font}    = 'ProportionalBold';
+                $CellData->[0]->[1]->{Content}
+                    = $Self->{LayoutObject}->{LanguageObject}->Get('Created');
+                $CellData->[0]->[1]->{Font} = 'ProportionalBold';
+                $CellData->[0]->[2]->{Content}
+                    = $Self->{LayoutObject}->{LanguageObject}->Get('From');
+                $CellData->[0]->[2]->{Font} = 'ProportionalBold';
+                $CellData->[0]->[3]->{Content}
+                    = $Self->{LayoutObject}->{LanguageObject}->Get('Subject');
+                $CellData->[0]->[3]->{Font} = 'ProportionalBold';
+                $CellData->[0]->[4]->{Content}
+                    = $Self->{LayoutObject}->{LanguageObject}->Get('State');
+                $CellData->[0]->[4]->{Font} = 'ProportionalBold';
+                $CellData->[0]->[5]->{Content}
+                    = $Self->{LayoutObject}->{LanguageObject}->Get('Queue');
+                $CellData->[0]->[5]->{Font} = 'ProportionalBold';
+                $CellData->[0]->[6]->{Content}
+                    = $Self->{LayoutObject}->{LanguageObject}->Get('Owner');
+                $CellData->[0]->[6]->{Font} = 'ProportionalBold';
+                $CellData->[0]->[7]->{Content}
+                    = $Self->{LayoutObject}->{LanguageObject}->Get('CustomerID');
+                $CellData->[0]->[7]->{Font} = 'ProportionalBold';
 
-                # verify if there are tickets to show
-                if (@PDFData) {
-
-                    # create the header
-                    $CellData->[0]->[0]->{Content} = $Self->{ConfigObject}->Get('Ticket::Hook');
-                    $CellData->[0]->[0]->{Font}    = 'ProportionalBold';
-                    $CellData->[0]->[1]->{Content}
-                        = $Self->{LayoutObject}->{LanguageObject}->Get('Created');
-                    $CellData->[0]->[1]->{Font} = 'ProportionalBold';
-                    $CellData->[0]->[2]->{Content}
-                        = $Self->{LayoutObject}->{LanguageObject}->Get('From');
-                    $CellData->[0]->[2]->{Font} = 'ProportionalBold';
-                    $CellData->[0]->[3]->{Content}
-                        = $Self->{LayoutObject}->{LanguageObject}->Get('Subject');
-                    $CellData->[0]->[3]->{Font} = 'ProportionalBold';
-                    $CellData->[0]->[4]->{Content}
-                        = $Self->{LayoutObject}->{LanguageObject}->Get('State');
-                    $CellData->[0]->[4]->{Font} = 'ProportionalBold';
-                    $CellData->[0]->[5]->{Content}
-                        = $Self->{LayoutObject}->{LanguageObject}->Get('Queue');
-                    $CellData->[0]->[5]->{Font} = 'ProportionalBold';
-                    $CellData->[0]->[6]->{Content}
-                        = $Self->{LayoutObject}->{LanguageObject}->Get('Owner');
-                    $CellData->[0]->[6]->{Font} = 'ProportionalBold';
-                    $CellData->[0]->[7]->{Content}
-                        = $Self->{LayoutObject}->{LanguageObject}->Get('CustomerID');
-                    $CellData->[0]->[7]->{Font} = 'ProportionalBold';
-
-                    # create the content array
-                    my $CounterRow = 1;
-                    for my $Row (@PDFData) {
-                        my $CounterColumn = 0;
-                        for my $Content ( @{$Row} ) {
-                            $CellData->[$CounterRow]->[$CounterColumn]->{Content} = $Content;
-                            $CounterColumn++;
-                        }
-                        $CounterRow++;
+                # create the content array
+                my $CounterRow = 1;
+                for my $Row (@PDFData) {
+                    my $CounterColumn = 0;
+                    for my $Content ( @{$Row} ) {
+                        $CellData->[$CounterRow]->[$CounterColumn]->{Content} = $Content;
+                        $CounterColumn++;
                     }
+                    $CounterRow++;
                 }
 
-                # otherwise, show 'No ticket data found' message
-                else {
+                # output 'No Result', if no content was given
+                if ( !$CellData->[0]->[0] ) {
                     $CellData->[0]->[0]->{Content}
-                        = $Self->{LayoutObject}->{LanguageObject}->Get('No ticket data found.');
+                        = $Self->{LayoutObject}->{LanguageObject}->Get('No Result!');
                 }
 
                 # page params
@@ -1109,7 +1025,6 @@ sub Run {
                     $Param{Warning} = '$Text{"Reached max. count of %s search hits!", "'
                         . $Self->{SearchLimit} . '"}';
                 }
-
                 $Output .= $Self->{LayoutObject}->Output(
                     TemplateFile => 'AgentTicketSearchResultPrint',
                     Data         => \%Param,
@@ -1133,32 +1048,32 @@ sub Run {
             $Self->{Filter} = $Self->{ParamObject}->GetParam( Param => 'Filter' ) || '';
             $Self->{View}   = $Self->{ParamObject}->GetParam( Param => 'View' )   || '';
 
-            # show tickets
+            # show ticket's
             my $LinkPage = 'Filter='
-                . $Self->{LayoutObject}->LinkEncode( $Self->{Filter} )
-                . ';View=' . $Self->{LayoutObject}->LinkEncode( $Self->{View} )
-                . ';SortBy=' . $Self->{LayoutObject}->LinkEncode( $Self->{SortBy} )
-                . ';OrderBy=' . $Self->{LayoutObject}->LinkEncode( $Self->{OrderBy} )
+                . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{Filter} )
+                . ';View=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{View} )
+                . ';SortBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{SortBy} )
+                . ';OrderBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{OrderBy} )
                 . ';Profile=' . $Self->{Profile} . ';TakeLastSearch=1;Subaction=Search'
-                . ';';
+                . '&';
             my $LinkSort = 'Filter='
-                . $Self->{LayoutObject}->LinkEncode( $Self->{Filter} )
-                . ';View=' . $Self->{LayoutObject}->LinkEncode( $Self->{View} )
+                . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{Filter} )
+                . ';View=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{View} )
                 . ';Profile=' . $Self->{Profile} . ';TakeLastSearch=1;Subaction=Search'
-                . ';';
+                . '&';
             my $LinkFilter = 'TakeLastSearch=1;Subaction=Search;Profile='
-                . $Self->{LayoutObject}->LinkEncode( $Self->{Profile} )
-                . ';';
+                . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{Profile} )
+                . '&';
             my $LinkBack = 'Subaction=LoadProfile;Profile='
-                . $Self->{LayoutObject}->LinkEncode( $Self->{Profile} )
+                . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{Profile} )
                 . ';TakeLastSearch=1&';
 
             my $FilterLink
-                = 'SortBy=' . $Self->{LayoutObject}->LinkEncode( $Self->{SortBy} )
-                . ';OrderBy=' . $Self->{LayoutObject}->LinkEncode( $Self->{OrderBy} )
-                . ';View=' . $Self->{LayoutObject}->LinkEncode( $Self->{View} )
+                = 'SortBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{SortBy} )
+                . ';OrderBy=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{OrderBy} )
+                . ';View=' . $Self->{LayoutObject}->Ascii2Html( Text => $Self->{View} )
                 . ';Profile=' . $Self->{Profile} . ';TakeLastSearch=1;Subaction=Search'
-                . ';';
+                . '&';
             $Output .= $Self->{LayoutObject}->TicketListShow(
                 TicketIDs => \@ViewableTicketIDs,
                 Total     => scalar @ViewableTicketIDs,
@@ -1170,7 +1085,6 @@ sub Run {
                 LinkSort   => $LinkSort,
                 LinkFilter => $LinkFilter,
                 LinkBack   => $LinkBack,
-                Profile    => $Self->{Profile},
 
                 TitleName => 'Search Result',
                 Bulk      => 1,
@@ -1179,8 +1093,6 @@ sub Run {
                 Filter     => $Self->{Filter},
                 FilterLink => $FilterLink,
 
-                OrderBy => $Self->{OrderBy},
-                SortBy  => $Self->{SortBy},
             );
 
             # build footer
@@ -1188,1017 +1100,746 @@ sub Run {
             return $Output;
         }
     }
-    elsif ( $Self->{Subaction} eq 'AJAXProfileDelete' ) {
-        my $Profile = $Self->{ParamObject}->GetParam( Param => 'Profile' );
 
-        # remove old profile stuff
-        $Self->{SearchProfileObject}->SearchProfileDelete(
-            Base      => 'TicketSearch',
-            Name      => $Profile,
-            UserLogin => $Self->{UserLogin},
-        );
-        my $Output = $Self->{LayoutObject}->JSONEncode(
-            Data => 1,
-        );
-        return $Self->{LayoutObject}->Attachment(
-            NoCache     => 1,
-            ContentType => 'text/html',
-            Content     => $Output,
-            Type        => 'inline'
-        );
-    }
-    elsif ( $Self->{Subaction} eq 'AJAX' ) {
-        my $Profile = $Self->{ParamObject}->GetParam( Param => 'Profile' ) || '';
-        my $EmptySearch = $Self->{ParamObject}->GetParam( Param => 'EmptySearch' );
-        if ( !$Profile ) {
-            $EmptySearch = 1;
-        }
-        my %GetParam = $Self->{SearchProfileObject}->SearchProfileGet(
-            Base      => 'TicketSearch',
-            Name      => $Profile,
-            UserLogin => $Self->{UserLogin},
-        );
+    # empty search site
+    else {
 
-        # convert attributes
-        if ( $GetParam{ShownAttributes} && ref $GetParam{ShownAttributes} eq 'ARRAY' ) {
-            $GetParam{ShownAttributes} = join ';', @{ $GetParam{ShownAttributes} };
-        }
+        # delete profile
+        if ( $Self->{EraseTemplate} && $Self->{Profile} ) {
 
-        # if no profile is used, set default params of default attributes
-        if ( !$Profile ) {
-            if ( $Self->{Config}->{Defaults} ) {
-                for my $Key ( sort keys %{ $Self->{Config}->{Defaults} } ) {
-                    next if !$Self->{Config}->{Defaults}->{$Key};
-                    next if $Key eq 'DynamicField';
-
-                    if ( $Key =~ /^(Ticket|Article)(Create|Change|Close)/ ) {
-                        my @Items = split /;/, $Self->{Config}->{Defaults}->{$Key};
-                        for my $Item (@Items) {
-                            my ( $Key, $Value ) = split /=/, $Item;
-                            $GetParam{$Key} = $Value;
-                        }
-                    }
-                    else {
-                        $GetParam{$Key} = $Self->{Config}->{Defaults}->{$Key};
-                    }
-                }
-            }
-        }
-        my @Attributes = (
-            {
-                Key   => 'TicketNumber',
-                Value => 'Ticket Number',
-            },
-            {
-                Key   => 'Fulltext',
-                Value => 'Fulltext',
-            },
-            {
-                Key   => 'Title',
-                Value => 'Title',
-            },
-            {
-                Key      => '',
-                Value    => '-',
-                Disabled => 1,
-            },
-            {
-                Key   => 'From',
-                Value => 'From',
-            },
-            {
-                Key   => 'To',
-                Value => 'To',
-            },
-            {
-                Key   => 'Cc',
-                Value => 'Cc',
-            },
-            {
-                Key   => 'Subject',
-                Value => 'Subject',
-            },
-            {
-                Key   => 'Body',
-                Value => 'Body',
-            },
-            {
-                Key      => '',
-                Value    => '-',
-                Disabled => 1,
-            },
-            {
-                Key   => 'CustomerID',
-                Value => 'CustomerID',
-            },
-            {
-                Key   => 'CustomerUserLogin',
-                Value => 'Customer User Login',
-            },
-            {
-                Key   => 'StateIDs',
-                Value => 'State',
-            },
-            {
-                Key   => 'QueueIDs',
-                Value => 'Queue',
-            },
-            {
-                Key   => 'PriorityIDs',
-                Value => 'Priority',
-            },
-            {
-                Key   => 'OwnerIDs',
-                Value => 'Owner',
-            },
-            {
-                Key   => 'CreatedQueueIDs',
-                Value => 'Created in Queue',
-            },
-            {
-                Key   => 'CreatedUserIDs',
-                Value => 'Created by',
-            },
-        );
-        if ( $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
-            push @Attributes, (
-                {
-                    Key   => 'WatchUserIDs',
-                    Value => 'Watcher',
-                },
+            # remove old profile stuff
+            $Self->{SearchProfileObject}->SearchProfileDelete(
+                Base      => 'TicketSearch',
+                Name      => $Self->{Profile},
+                UserLogin => $Self->{UserLogin},
             );
-        }
-        if ( $Self->{ConfigObject}->Get('Ticket::Responsible') ) {
-            push @Attributes, (
-                {
-                    Key   => 'ResponsibleIDs',
-                    Value => 'Responsible',
-                },
-            );
-        }
-        if ( $Self->{ConfigObject}->Get('Ticket::Type') ) {
-            push @Attributes, (
-                {
-                    Key   => 'TypeIDs',
-                    Value => 'Type',
-                },
-            );
-        }
-        if ( $Self->{ConfigObject}->Get('Ticket::Service') ) {
-            push @Attributes, (
-                {
-                    Key   => 'ServiceIDs',
-                    Value => 'Service',
-                },
-                {
-                    Key   => 'SLAIDs',
-                    Value => 'SLA',
-                },
-            );
+            %GetParam = ();
+            $Self->{Profile} = '';
         }
 
-        my $DynamicFieldSeparator = 1;
+        # generate search mask
+        my $Output = $Self->{LayoutObject}->Header();
 
-        # create dynamic fields seaarch options for attribute select
-        # cycle trough the activated Dynamic Fields for this screen
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-            next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
-            next DYNAMICFIELD if $DynamicFieldConfig->{Name} eq '';
-
-            # create a separator for dynamic fields attributes
-            if ($DynamicFieldSeparator) {
-                push @Attributes, (
-                    {
-                        Key      => '',
-                        Value    => '-',
-                        Disabled => 1,
-                    },
-                );
-
-                $DynamicFieldSeparator = 0;
-            }
-
-            push @Attributes, (
-                {
-                    Key   => 'Search_DynamicField_' . $DynamicFieldConfig->{Name},
-                    Value => $Self->{LayoutObject}->{LanguageObject}->Get(
-                        $DynamicFieldConfig->{Label}
-                    ),
-                },
-            );
-        }
-
-        # create a separator if a dynamic field attribute was pushed
-        if ( !$DynamicFieldSeparator ) {
-            push @Attributes, (
-                {
-                    Key      => '',
-                    Value    => '-',
-                    Disabled => 1,
-                },
-            );
-        }
-
-        # create HTML strings for all dynamic fields
-        my %DynamicFieldHTML;
-
-        # cycle trough the activated Dynamic Fields for this screen
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-            # get field html
-            $DynamicFieldHTML{ $DynamicFieldConfig->{Name} } =
-                $Self->{BackendObject}->SearchFieldRender(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                Profile            => \%GetParam,
-                DefaultValue =>
-                    $Self->{Config}->{Defaults}->{DynamicField}->{ $DynamicFieldConfig->{Name} },
-                LayoutObject => $Self->{LayoutObject},
-                );
-        }
-
-        push @Attributes, (
-            {
-                Key   => 'LockIDs',
-                Value => 'Lock',
-            },
-            {
-                Key   => 'TicketCreateTimePoint',
-                Value => 'Ticket Create Time (before/after)',
-            },
-            {
-                Key   => 'TicketCreateTimeSlot',
-                Value => 'Ticket Create Time (between)',
-            },
-            {
-                Key   => 'TicketChangeTimePoint',
-                Value => 'Ticket Change Time (before/after)',
-            },
-            {
-                Key   => 'TicketChangeTimeSlot',
-                Value => 'Ticket Change Time (between)',
-            },
-            {
-                Key   => 'TicketCloseTimePoint',
-                Value => 'Ticket Close Time (before/after)',
-            },
-            {
-                Key   => 'TicketCloseTimeSlot',
-                Value => 'Ticket Close Time (between)',
-            },
-            {
-                Key   => 'ArticleCreateTimePoint',
-                Value => 'Article Create Time (before/after)',
-            },
-            {
-                Key   => 'ArticleCreateTimeSlot',
-                Value => 'Article Create Time (between)',
-            },
-        );
-        if ( $Self->{ConfigObject}->Get('Ticket::ArchiveSystem') ) {
-            push @Attributes, (
-                {
-                    Key   => 'SearchInArchive',
-                    Value => 'Archive Search',
-                },
-            );
-        }
-        $Param{AttributesStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data     => \@Attributes,
-            Name     => 'Attribute',
-            Multiple => 0,
-        );
-        $Param{AttributesOrigStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data     => \@Attributes,
-            Name     => 'AttributeOrig',
-            Multiple => 0,
-        );
-
-        # get user of own groups
-        my %ShownUsers = $Self->{UserObject}->UserList(
-            Type  => 'Long',
-            Valid => 1,
-        );
-        if ( !$Self->{ConfigObject}->Get('Ticket::ChangeOwnerToEveryone') ) {
-            my %Involved = $Self->{GroupObject}->GroupMemberInvolvedList(
+        # get free text config options
+        my %TicketFreeText;
+        for ( 1 .. 16 ) {
+            $TicketFreeText{"TicketFreeKey$_"} = $Self->{TicketObject}->TicketFreeTextGet(
+                Type   => "TicketFreeKey$_",
+                FillUp => 1,
+                Action => $Self->{Action},
                 UserID => $Self->{UserID},
-                Type   => 'ro',
             );
-            for my $UserID ( keys %ShownUsers ) {
-                if ( !$Involved{$UserID} ) {
-                    delete $ShownUsers{$UserID};
-                }
-            }
-        }
-        $Param{UserStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data       => \%ShownUsers,
-            Name       => 'OwnerIDs',
-            Multiple   => 1,
-            Size       => 5,
-            SelectedID => $GetParam{OwnerIDs},
-        );
-        $Param{CreatedUserStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data       => \%ShownUsers,
-            Name       => 'CreatedUserIDs',
-            Multiple   => 1,
-            Size       => 5,
-            SelectedID => $GetParam{CreatedUserIDs},
-        );
-        if ( $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
-            $Param{WatchUserStrg} = $Self->{LayoutObject}->BuildSelection(
-                Data       => \%ShownUsers,
-                Name       => 'WatchUserIDs',
-                Multiple   => 1,
-                Size       => 5,
-                SelectedID => $GetParam{WatchUserIDs},
+            $TicketFreeText{"TicketFreeText$_"} = $Self->{TicketObject}->TicketFreeTextGet(
+                Type   => "TicketFreeText$_",
+                FillUp => 1,
+                Action => $Self->{Action},
+                UserID => $Self->{UserID},
             );
         }
-        if ( $Self->{ConfigObject}->Get('Ticket::Responsible') ) {
-            $Param{ResponsibleStrg} = $Self->{LayoutObject}->BuildSelection(
-                Data       => \%ShownUsers,
-                Name       => 'ResponsibleIDs',
-                Multiple   => 1,
-                Size       => 5,
-                SelectedID => $GetParam{ResponsibleIDs},
-            );
-        }
-
-        # build service string
-        if ( $Self->{ConfigObject}->Get('Ticket::Service') ) {
-
-            # get list type
-            my $TreeView = 0;
-            if ( $Self->{ConfigObject}->Get('Ticket::Frontend::ListType') eq 'tree' ) {
-                $TreeView = 1;
-            }
-            my %Service = $Self->{ServiceObject}->ServiceList( UserID => $Self->{UserID}, );
-            $Param{ServicesStrg} = $Self->{LayoutObject}->BuildSelection(
-                Data        => \%Service,
-                Name        => 'ServiceIDs',
-                SelectedID  => $GetParam{ServiceIDs},
-                TreeView    => $TreeView,
-                Sort        => 'TreeView',
-                Size        => 5,
-                Multiple    => 1,
-                Translation => 0,
-                Max         => 200,
-            );
-            my %SLA = $Self->{SLAObject}->SLAList( UserID => $Self->{UserID}, );
-            $Param{SLAsStrg} = $Self->{LayoutObject}->BuildSelection(
-                Data        => \%SLA,
-                Name        => 'SLAIDs',
-                SelectedID  => $GetParam{SLAIDs},
-                Sort        => 'AlphanumericValue',
-                Size        => 5,
-                Multiple    => 1,
-                Translation => 0,
-                Max         => 200,
-            );
-        }
-
-        $Param{ResultFormStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                Normal => 'Normal',
-                Print  => 'Print',
-                CSV    => 'CSV',
-            },
-            Name => 'ResultForm',
-            SelectedID => $GetParam{ResultForm} || 'Normal',
+        my %TicketFreeTextHTML = $Self->{LayoutObject}->AgentFreeText(
+            NullOption => 1,
+            Ticket     => \%GetParam,
+            Config     => \%TicketFreeText,
         );
+        $Output .= $Self->{LayoutObject}->NavigationBar();
+        $Output .= $Self->MaskForm( %GetParam, %TicketFreeTextHTML, Profile => $Self->{Profile}, );
+        $Output .= $Self->{LayoutObject}->Footer();
+        return $Output;
+    }
+}
 
-        if ( $Self->{ConfigObject}->Get('Ticket::ArchiveSystem') ) {
+sub MaskForm {
+    my ( $Self, %Param ) = @_;
 
-            $Param{SearchInArchiveStrg} = $Self->{LayoutObject}->BuildSelection(
-                Data => {
-                    ArchivedTickets    => 'Archived tickets',
-                    NotArchivedTickets => 'Unarchived tickets',
-                    AllTickets         => 'All tickets',
-                },
-                Name => 'SearchInArchive',
-                SelectedID => $GetParam{SearchInArchive} || 'NotArchivedTickets',
-            );
-        }
-
-        my %Profiles = $Self->{SearchProfileObject}->SearchProfileList(
-            Base      => 'TicketSearch',
-            UserLogin => $Self->{UserLogin},
-        );
-        delete $Profiles{''};
-        delete $Profiles{'last-search'};
-        if ($EmptySearch) {
-            $Profiles{''} = '-';
-        }
-        else {
-            $Profiles{'last-search'} = '-';
-        }
-        $Param{ProfilesStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data       => \%Profiles,
-            Name       => 'Profile',
-            ID         => 'SearchProfile',
-            SelectedID => $Profile,
-        );
-
-        $Param{StatesStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                $Self->{StateObject}->StateList(
-                    UserID => $Self->{UserID},
-                    Action => $Self->{Action},
-                ),
-            },
-            Name       => 'StateIDs',
-            Multiple   => 1,
-            Size       => 5,
-            SelectedID => $GetParam{StateIDs},
-        );
-        my %AllQueues = $Self->{QueueObject}->GetAllQueues(
+    # get user of own groups
+    my %ShownUsers = $Self->{UserObject}->UserList(
+        Type  => 'Long',
+        Valid => 1,
+    );
+    if ( !$Self->{ConfigObject}->Get('Ticket::ChangeOwnerToEveryone') ) {
+        my %Involved = $Self->{GroupObject}->GroupMemberInvolvedList(
             UserID => $Self->{UserID},
             Type   => 'ro',
         );
-        $Param{QueuesStrg} = $Self->{LayoutObject}->AgentQueueListOption(
-            Data               => \%AllQueues,
-            Size               => 5,
-            Multiple           => 1,
-            Name               => 'QueueIDs',
-            SelectedIDRefArray => $GetParam{QueueIDs},
-            OnChangeSubmit     => 0,
-        );
-        $Param{CreatedQueuesStrg} = $Self->{LayoutObject}->AgentQueueListOption(
-            Data               => \%AllQueues,
-            Size               => 5,
-            Multiple           => 1,
-            Name               => 'CreatedQueueIDs',
-            SelectedIDRefArray => $GetParam{CreatedQueueIDs},
-            OnChangeSubmit     => 0,
-        );
-        $Param{PrioritiesStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                $Self->{PriorityObject}->PriorityList(
-                    UserID => $Self->{UserID},
-                    Action => $Self->{Action},
-                ),
-            },
-            Name       => 'PriorityIDs',
-            Multiple   => 1,
-            Size       => 5,
-            SelectedID => $GetParam{PriorityIDs},
-        );
-        $Param{LocksStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                $Self->{LockObject}->LockList(
-                    UserID => $Self->{UserID},
-                    Action => $Self->{Action},
-                ),
-            },
-            Name       => 'LockIDs',
-            Multiple   => 1,
-            Size       => 5,
-            SelectedID => $GetParam{LockIDs},
-        );
-
-        $Param{ArticleCreateTimePoint} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                1  => ' 1',
-                2  => ' 2',
-                3  => ' 3',
-                4  => ' 4',
-                5  => ' 5',
-                6  => ' 6',
-                7  => ' 7',
-                8  => ' 8',
-                9  => ' 9',
-                10 => '10',
-                11 => '11',
-                12 => '12',
-                13 => '13',
-                14 => '14',
-                15 => '15',
-                16 => '16',
-                17 => '17',
-                18 => '18',
-                19 => '19',
-                20 => '20',
-                21 => '21',
-                22 => '22',
-                23 => '23',
-                24 => '24',
-                25 => '25',
-                26 => '26',
-                27 => '27',
-                28 => '28',
-                29 => '29',
-                30 => '30',
-                31 => '31',
-                32 => '32',
-                33 => '33',
-                34 => '34',
-                35 => '35',
-                36 => '36',
-                37 => '37',
-                38 => '38',
-                39 => '39',
-                40 => '40',
-                41 => '41',
-                42 => '42',
-                43 => '43',
-                44 => '44',
-                45 => '45',
-                46 => '46',
-                47 => '47',
-                48 => '48',
-                49 => '49',
-                50 => '50',
-                51 => '51',
-                52 => '52',
-                53 => '53',
-                54 => '54',
-                55 => '55',
-                56 => '56',
-                57 => '57',
-                58 => '58',
-                59 => '59',
-            },
-            Name       => 'ArticleCreateTimePoint',
-            SelectedID => $GetParam{ArticleCreateTimePoint},
-        );
-        $Param{ArticleCreateTimePointStart} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                'Last'   => 'last',
-                'Before' => 'before',
-            },
-            Name => 'ArticleCreateTimePointStart',
-            SelectedID => $GetParam{ArticleCreateTimePointStart} || 'Last',
-        );
-        $Param{ArticleCreateTimePointFormat} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                minute => 'minute(s)',
-                hour   => 'hour(s)',
-                day    => 'day(s)',
-                week   => 'week(s)',
-                month  => 'month(s)',
-                year   => 'year(s)',
-            },
-            Name       => 'ArticleCreateTimePointFormat',
-            SelectedID => $GetParam{ArticleCreateTimePointFormat},
-        );
-        $Param{ArticleCreateTimeStart} = $Self->{LayoutObject}->BuildDateSelection(
-            %GetParam,
-            Prefix   => 'ArticleCreateTimeStart',
-            Format   => 'DateInputFormat',
-            DiffTime => -( ( 60 * 60 * 24 ) * 30 ),
-        );
-        $Param{ArticleCreateTimeStop} = $Self->{LayoutObject}->BuildDateSelection(
-            %GetParam,
-            Prefix => 'ArticleCreateTimeStop',
-            Format => 'DateInputFormat',
-        );
-        $Param{TicketCreateTimePoint} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                1  => ' 1',
-                2  => ' 2',
-                3  => ' 3',
-                4  => ' 4',
-                5  => ' 5',
-                6  => ' 6',
-                7  => ' 7',
-                8  => ' 8',
-                9  => ' 9',
-                10 => '10',
-                11 => '11',
-                12 => '12',
-                13 => '13',
-                14 => '14',
-                15 => '15',
-                16 => '16',
-                17 => '17',
-                18 => '18',
-                19 => '19',
-                20 => '20',
-                21 => '21',
-                22 => '22',
-                23 => '23',
-                24 => '24',
-                25 => '25',
-                26 => '26',
-                27 => '27',
-                28 => '28',
-                29 => '29',
-                30 => '30',
-                31 => '31',
-                32 => '32',
-                33 => '33',
-                34 => '34',
-                35 => '35',
-                36 => '36',
-                37 => '37',
-                38 => '38',
-                39 => '39',
-                40 => '40',
-                41 => '41',
-                42 => '42',
-                43 => '43',
-                44 => '44',
-                45 => '45',
-                46 => '46',
-                47 => '47',
-                48 => '48',
-                49 => '49',
-                50 => '50',
-                51 => '51',
-                52 => '52',
-                53 => '53',
-                54 => '54',
-                55 => '55',
-                56 => '56',
-                57 => '57',
-                58 => '58',
-                59 => '59',
-            },
-            Name       => 'TicketCreateTimePoint',
-            SelectedID => $GetParam{TicketCreateTimePoint},
-        );
-        $Param{TicketCreateTimePointStart} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                'Last'   => 'last',
-                'Before' => 'before',
-            },
-            Name => 'TicketCreateTimePointStart',
-            SelectedID => $GetParam{TicketCreateTimePointStart} || 'Last',
-        );
-        $Param{TicketCreateTimePointFormat} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                minute => 'minute(s)',
-                hour   => 'hour(s)',
-                day    => 'day(s)',
-                week   => 'week(s)',
-                month  => 'month(s)',
-                year   => 'year(s)',
-            },
-            Name       => 'TicketCreateTimePointFormat',
-            SelectedID => $GetParam{TicketCreateTimePointFormat},
-        );
-        $Param{TicketCreateTimeStart} = $Self->{LayoutObject}->BuildDateSelection(
-            %GetParam,
-            Prefix   => 'TicketCreateTimeStart',
-            Format   => 'DateInputFormat',
-            DiffTime => -( ( 60 * 60 * 24 ) * 30 ),
-        );
-        $Param{TicketCreateTimeStop} = $Self->{LayoutObject}->BuildDateSelection(
-            %GetParam,
-            Prefix => 'TicketCreateTimeStop',
-            Format => 'DateInputFormat',
-        );
-
-        $Param{TicketChangeTimePoint} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                1  => ' 1',
-                2  => ' 2',
-                3  => ' 3',
-                4  => ' 4',
-                5  => ' 5',
-                6  => ' 6',
-                7  => ' 7',
-                8  => ' 8',
-                9  => ' 9',
-                10 => '10',
-                11 => '11',
-                12 => '12',
-                13 => '13',
-                14 => '14',
-                15 => '15',
-                16 => '16',
-                17 => '17',
-                18 => '18',
-                19 => '19',
-                20 => '20',
-                21 => '21',
-                22 => '22',
-                23 => '23',
-                24 => '24',
-                25 => '25',
-                26 => '26',
-                27 => '27',
-                28 => '28',
-                29 => '29',
-                30 => '30',
-                31 => '31',
-                32 => '32',
-                33 => '33',
-                34 => '34',
-                35 => '35',
-                36 => '36',
-                37 => '37',
-                38 => '38',
-                39 => '39',
-                40 => '40',
-                41 => '41',
-                42 => '42',
-                43 => '43',
-                44 => '44',
-                45 => '45',
-                46 => '46',
-                47 => '47',
-                48 => '48',
-                49 => '49',
-                50 => '50',
-                51 => '51',
-                52 => '52',
-                53 => '53',
-                54 => '54',
-                55 => '55',
-                56 => '56',
-                57 => '57',
-                58 => '58',
-                59 => '59',
-            },
-            Name       => 'TicketChangeTimePoint',
-            SelectedID => $GetParam{TicketChangeTimePoint},
-        );
-        $Param{TicketChangeTimePointStart} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                'Last'   => 'last',
-                'Before' => 'before',
-            },
-            Name => 'TicketChangeTimePointStart',
-            SelectedID => $GetParam{TicketChangeTimePointStart} || 'Last',
-        );
-        $Param{TicketChangeTimePointFormat} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                minute => 'minute(s)',
-                hour   => 'hour(s)',
-                day    => 'day(s)',
-                week   => 'week(s)',
-                month  => 'month(s)',
-                year   => 'year(s)',
-            },
-            Name       => 'TicketChangeTimePointFormat',
-            SelectedID => $GetParam{TicketChangeTimePointFormat},
-        );
-        $Param{TicketChangeTimeStart} = $Self->{LayoutObject}->BuildDateSelection(
-            %GetParam,
-            Prefix   => 'TicketChangeTimeStart',
-            Format   => 'DateInputFormat',
-            DiffTime => -( ( 60 * 60 * 24 ) * 30 ),
-        );
-        $Param{TicketChangeTimeStop} = $Self->{LayoutObject}->BuildDateSelection(
-            %GetParam,
-            Prefix => 'TicketChangeTimeStop',
-            Format => 'DateInputFormat',
-        );
-
-        $Param{TicketCloseTimePoint} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                1  => ' 1',
-                2  => ' 2',
-                3  => ' 3',
-                4  => ' 4',
-                5  => ' 5',
-                6  => ' 6',
-                7  => ' 7',
-                8  => ' 8',
-                9  => ' 9',
-                10 => '10',
-                11 => '11',
-                12 => '12',
-                13 => '13',
-                14 => '14',
-                15 => '15',
-                16 => '16',
-                17 => '17',
-                18 => '18',
-                19 => '19',
-                20 => '20',
-                21 => '21',
-                22 => '22',
-                23 => '23',
-                24 => '24',
-                25 => '25',
-                26 => '26',
-                27 => '27',
-                28 => '28',
-                29 => '29',
-                30 => '30',
-                31 => '31',
-                32 => '32',
-                33 => '33',
-                34 => '34',
-                35 => '35',
-                36 => '36',
-                37 => '37',
-                38 => '38',
-                39 => '39',
-                40 => '40',
-                41 => '41',
-                42 => '42',
-                43 => '43',
-                44 => '44',
-                45 => '45',
-                46 => '46',
-                47 => '47',
-                48 => '48',
-                49 => '49',
-                50 => '50',
-                51 => '51',
-                52 => '52',
-                53 => '53',
-                54 => '54',
-                55 => '55',
-                56 => '56',
-                57 => '57',
-                58 => '58',
-                59 => '59',
-            },
-            Name       => 'TicketCloseTimePoint',
-            SelectedID => $GetParam{TicketCloseTimePoint},
-        );
-        $Param{TicketCloseTimePointStart} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                'Last'   => 'last',
-                'Before' => 'before',
-            },
-            Name => 'TicketCloseTimePointStart',
-            SelectedID => $GetParam{TicketCloseTimePointStart} || 'Last',
-        );
-        $Param{TicketCloseTimePointFormat} = $Self->{LayoutObject}->BuildSelection(
-            Data => {
-                minute => 'minute(s)',
-                hour   => 'hour(s)',
-                day    => 'day(s)',
-                week   => 'week(s)',
-                month  => 'month(s)',
-                year   => 'year(s)',
-            },
-            Name       => 'TicketCloseTimePointFormat',
-            SelectedID => $GetParam{TicketCloseTimePointFormat},
-        );
-        $Param{TicketCloseTimeStart} = $Self->{LayoutObject}->BuildDateSelection(
-            %GetParam,
-            Prefix   => 'TicketCloseTimeStart',
-            Format   => 'DateInputFormat',
-            DiffTime => -( ( 60 * 60 * 24 ) * 30 ),
-        );
-        $Param{TicketCloseTimeStop} = $Self->{LayoutObject}->BuildDateSelection(
-            %GetParam,
-            Prefix => 'TicketCloseTimeStop',
-            Format => 'DateInputFormat',
-        );
-        my %GetParamBackup = %GetParam;
-        for my $Key (qw(TicketClose TicketChange TicketCreate ArticleCreate)) {
-            for my $SubKey (qw(TimeStart TimeStop TimePoint TimePointStart TimePointFormat)) {
-                delete $GetParam{ $Key . $SubKey };
-                delete $GetParamBackup{ $Key . $SubKey };
+        for my $UserID ( keys %ShownUsers ) {
+            if ( !$Involved{$UserID} ) {
+                delete $ShownUsers{$UserID};
             }
         }
+    }
+    $Param{UserStrg} = $Self->{LayoutObject}->BuildSelection(
+        Data       => \%ShownUsers,
+        Name       => 'OwnerIDs',
+        Multiple   => 1,
+        Size       => 5,
+        SelectedID => $Param{OwnerIDs},
+    );
+    $Param{CreatedUserStrg} = $Self->{LayoutObject}->BuildSelection(
+        Data       => \%ShownUsers,
+        Name       => 'CreatedUserIDs',
+        Multiple   => 1,
+        Size       => 5,
+        SelectedID => $Param{CreatedUserIDs},
+    );
+    $Param{ResultFormStrg} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            Normal => 'Normal',
+            Print  => 'Print',
+            CSV    => 'CSV',
+        },
+        Name => 'ResultForm',
+        SelectedID => $Param{ResultForm} || 'Normal',
+    );
 
-        # build type string
-        if ( $Self->{ConfigObject}->Get('Ticket::Type') ) {
-            my %Type = $Self->{TypeObject}->TypeList( UserID => $Self->{UserID}, );
-            $Param{TypesStrg} = $Self->{LayoutObject}->BuildSelection(
-                Data        => \%Type,
-                Name        => 'TypeIDs',
-                SelectedID  => $GetParam{TypeIDs},
-                Sort        => 'AlphanumericValue',
-                Size        => 3,
-                Multiple    => 1,
-                Translation => 0,
-            );
-        }
+    if ( $Self->{ConfigObject}->Get('Ticket::ArchiveSystem') ) {
 
-        # html search mask output
-        $Self->{LayoutObject}->Block(
-            Name => 'SearchAJAX',
+        $Param{SearchInArchiveStrg} = $Self->{LayoutObject}->BuildSelection(
             Data => {
-                %Param,
-                %GetParam,
-                EmptySearch => $EmptySearch
+                ArchivedTickets    => 'Search in archived tickets only',
+                NotArchivedTickets => 'Search in not archived tickets only',
+                AllTickets         => 'Search in all tickets',
             },
-        );
-
-        # output Dynamic fields blocks
-        # cycle trough the activated Dynamic Fields for this screen
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-            # skip fields that HTML could not be retrieved
-            next DYNAMICFIELD if !IsHashRefWithData(
-                $DynamicFieldHTML{ $DynamicFieldConfig->{Name} }
-            );
-
-            $Self->{LayoutObject}->Block(
-                Name => 'DynamicField',
-                Data => {
-                    Label => $DynamicFieldHTML{ $DynamicFieldConfig->{Name} }->{Label},
-                    Field => $DynamicFieldHTML{ $DynamicFieldConfig->{Name} }->{Field},
-                },
-            );
-        }
-
-        # comapt. map for attributes
-        my %Map = (
-            TimeSearchType        => 'TicketCreate',
-            ChangeTimeSearchType  => 'TicketChange',
-            CloseTimeSearchType   => 'TicketClose',
-            ArticleTimeSearchType => 'ArticleCreate',
-        );
-        for my $Key ( keys %Map ) {
-            next if !$GetParamBackup{$Key};
-            if ( $GetParamBackup{$Key} eq 'TimePoint' ) {
-                $GetParamBackup{ $Map{$Key} . 'TimePoint' } = 1;
-            }
-            elsif ( $GetParamBackup{$Key} eq 'TimeSlot' ) {
-                $GetParamBackup{ $Map{$Key} . 'TimeSlot' } = 1;
-            }
-        }
-
-        # show attributes
-        my @ShownAttributes;
-        if ( $GetParamBackup{ShownAttributes} ) {
-            @ShownAttributes = split /;/, $GetParamBackup{ShownAttributes};
-        }
-        my %AlreadyShown;
-        for my $Item (@Attributes) {
-            my $Key = $Item->{Key};
-            next if !$Key;
-
-            # check if shown
-            if (@ShownAttributes) {
-                my $Show = 0;
-                for my $ShownAttribute (@ShownAttributes) {
-                    if ( 'Label' . $Key eq $ShownAttribute ) {
-                        $Show = 1;
-                        last;
-                    }
-                }
-                next if !$Show;
-            }
-            else {
-                next if !defined $GetParamBackup{$Key};
-                next if $GetParamBackup{$Key} eq '';
-            }
-
-            # show attribute
-            next if $AlreadyShown{$Key};
-            $AlreadyShown{$Key} = 1;
-            $Self->{LayoutObject}->Block(
-                Name => 'SearchAJAXShow',
-                Data => {
-                    Attribute => $Key,
-                },
-            );
-        }
-
-        # if no attribute is shown, show fulltext search
-        if ( !$Profile ) {
-            if ( $Self->{Config}->{Defaults} ) {
-                for my $Key ( sort keys %{ $Self->{Config}->{Defaults} } ) {
-                    next if $AlreadyShown{$Key};
-                    $AlreadyShown{$Key} = 1;
-                    $Self->{LayoutObject}->Block(
-                        Name => 'SearchAJAXShow',
-                        Data => {
-                            Attribute => $Key,
-                        },
-                    );
-                }
-            }
-            else {
-                $Self->{LayoutObject}->Block(
-                    Name => 'SearchAJAXShow',
-                    Data => {
-                        Attribute => 'Fulltext',
-                    },
-                );
-            }
-        }
-
-        my $Output .= $Self->{LayoutObject}->Output(
-            TemplateFile => 'AgentTicketSearch',
-            Data         => \%Param,
-        );
-        return $Self->{LayoutObject}->Attachment(
-            NoCache     => 1,
-            ContentType => 'text/html',
-            Charset     => $Self->{LayoutObject}->{UserCharset},
-            Content     => $Output,
-            Type        => 'inline'
+            Name => 'SearchInArchive',
+            SelectedID => $Param{SearchInArchive} || 'NotArchivedTickets',
         );
     }
 
-    # show default search screen
-    $Output = $Self->{LayoutObject}->Header();
-    $Output .= $Self->{LayoutObject}->NavigationBar();
+    $Param{ProfilesStrg} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            '', '-',
+            $Self->{SearchProfileObject}->SearchProfileList(
+                Base      => 'TicketSearch',
+                UserLogin => $Self->{UserLogin},
+            ),
+        },
+        Name       => 'Profile',
+        SelectedID => $Param{Profile},
+    );
+    $Param{StatesStrg} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            $Self->{StateObject}->StateList(
+                UserID => $Self->{UserID},
+                Action => $Self->{Action},
+            ),
+        },
+        Name       => 'StateIDs',
+        Multiple   => 1,
+        Size       => 5,
+        SelectedID => $Param{StateIDs},
+    );
+    my %AllQueues = $Self->{QueueObject}->GetAllQueues(
+        UserID => $Self->{UserID},
+        Type   => 'ro',
+    );
+    $Param{QueuesStrg} = $Self->{LayoutObject}->AgentQueueListOption(
+        Data           => \%AllQueues,
+        Size           => 5,
+        Multiple       => 1,
+        Name           => 'QueueIDs',
+        SelectedID     => $Param{QueueIDs},
+        OnChangeSubmit => 0,
+    );
+    $Param{CreatedQueuesStrg} = $Self->{LayoutObject}->AgentQueueListOption(
+        Data           => \%AllQueues,
+        Size           => 5,
+        Multiple       => 1,
+        Name           => 'CreatedQueueIDs',
+        SelectedID     => $Param{CreatedQueueIDs},
+        OnChangeSubmit => 0,
+    );
+    $Param{PrioritiesStrg} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            $Self->{PriorityObject}->PriorityList(
+                UserID => $Self->{UserID},
+                Action => $Self->{Action},
+            ),
+        },
+        Name       => 'PriorityIDs',
+        Multiple   => 1,
+        Size       => 5,
+        SelectedID => $Param{PriorityIDs},
+    );
+
+    $Param{ArticleCreateTimePoint} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            1  => ' 1',
+            2  => ' 2',
+            3  => ' 3',
+            4  => ' 4',
+            5  => ' 5',
+            6  => ' 6',
+            7  => ' 7',
+            8  => ' 8',
+            9  => ' 9',
+            10 => '10',
+            11 => '11',
+            12 => '12',
+            13 => '13',
+            14 => '14',
+            15 => '15',
+            16 => '16',
+            17 => '17',
+            18 => '18',
+            19 => '19',
+            20 => '20',
+            21 => '21',
+            22 => '22',
+            23 => '23',
+            24 => '24',
+            25 => '25',
+            26 => '26',
+            27 => '27',
+            28 => '28',
+            29 => '29',
+            30 => '30',
+            31 => '31',
+            32 => '32',
+            33 => '33',
+            34 => '34',
+            35 => '35',
+            36 => '36',
+            37 => '37',
+            38 => '38',
+            39 => '39',
+            40 => '40',
+            41 => '41',
+            42 => '42',
+            43 => '43',
+            44 => '44',
+            45 => '45',
+            46 => '46',
+            47 => '47',
+            48 => '48',
+            49 => '49',
+            50 => '50',
+            51 => '51',
+            52 => '52',
+            53 => '53',
+            54 => '54',
+            55 => '55',
+            56 => '56',
+            57 => '57',
+            58 => '58',
+            59 => '59',
+        },
+        Name       => 'ArticleCreateTimePoint',
+        SelectedID => $Param{ArticleCreateTimePoint},
+    );
+    $Param{ArticleCreateTimePointStart} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            'Last'   => 'last',
+            'Before' => 'before',
+        },
+        Name => 'ArticleCreateTimePointStart',
+        SelectedID => $Param{ArticleCreateTimePointStart} || 'Last',
+    );
+    $Param{ArticleCreateTimePointFormat} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            minute => 'minute(s)',
+            hour   => 'hour(s)',
+            day    => 'day(s)',
+            week   => 'week(s)',
+            month  => 'month(s)',
+            year   => 'year(s)',
+        },
+        Name       => 'ArticleCreateTimePointFormat',
+        SelectedID => $Param{ArticleCreateTimePointFormat},
+    );
+    $Param{ArticleCreateTimeStart} = $Self->{LayoutObject}->BuildDateSelection(
+        %Param,
+        Prefix   => 'ArticleCreateTimeStart',
+        Format   => 'DateInputFormat',
+        DiffTime => -( ( 60 * 60 * 24 ) * 30 ),
+    );
+    $Param{ArticleCreateTimeStop} = $Self->{LayoutObject}->BuildDateSelection(
+        %Param,
+        Prefix => 'ArticleCreateTimeStop',
+        Format => 'DateInputFormat',
+    );
+    $Param{TicketCreateTimePoint} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            1  => ' 1',
+            2  => ' 2',
+            3  => ' 3',
+            4  => ' 4',
+            5  => ' 5',
+            6  => ' 6',
+            7  => ' 7',
+            8  => ' 8',
+            9  => ' 9',
+            10 => '10',
+            11 => '11',
+            12 => '12',
+            13 => '13',
+            14 => '14',
+            15 => '15',
+            16 => '16',
+            17 => '17',
+            18 => '18',
+            19 => '19',
+            20 => '20',
+            21 => '21',
+            22 => '22',
+            23 => '23',
+            24 => '24',
+            25 => '25',
+            26 => '26',
+            27 => '27',
+            28 => '28',
+            29 => '29',
+            30 => '30',
+            31 => '31',
+            32 => '32',
+            33 => '33',
+            34 => '34',
+            35 => '35',
+            36 => '36',
+            37 => '37',
+            38 => '38',
+            39 => '39',
+            40 => '40',
+            41 => '41',
+            42 => '42',
+            43 => '43',
+            44 => '44',
+            45 => '45',
+            46 => '46',
+            47 => '47',
+            48 => '48',
+            49 => '49',
+            50 => '50',
+            51 => '51',
+            52 => '52',
+            53 => '53',
+            54 => '54',
+            55 => '55',
+            56 => '56',
+            57 => '57',
+            58 => '58',
+            59 => '59',
+        },
+        Name       => 'TicketCreateTimePoint',
+        SelectedID => $Param{TicketCreateTimePoint},
+    );
+    $Param{TicketCreateTimePointStart} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            'Last'   => 'last',
+            'Before' => 'before',
+        },
+        Name => 'TicketCreateTimePointStart',
+        SelectedID => $Param{TicketCreateTimePointStart} || 'Last',
+    );
+    $Param{TicketCreateTimePointFormat} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            minute => 'minute(s)',
+            hour   => 'hour(s)',
+            day    => 'day(s)',
+            week   => 'week(s)',
+            month  => 'month(s)',
+            year   => 'year(s)',
+        },
+        Name       => 'TicketCreateTimePointFormat',
+        SelectedID => $Param{TicketCreateTimePointFormat},
+    );
+    $Param{TicketCreateTimeStart} = $Self->{LayoutObject}->BuildDateSelection(
+        %Param,
+        Prefix   => 'TicketCreateTimeStart',
+        Format   => 'DateInputFormat',
+        DiffTime => -( ( 60 * 60 * 24 ) * 30 ),
+    );
+    $Param{TicketCreateTimeStop} = $Self->{LayoutObject}->BuildDateSelection(
+        %Param,
+        Prefix => 'TicketCreateTimeStop',
+        Format => 'DateInputFormat',
+    );
+
+    for ( 1 .. 6 ) {
+        $Param{ 'TicketFreeTime' . $_ . 'Start' } = $Self->{LayoutObject}->BuildDateSelection(
+            %Param,
+            Prefix   => 'TicketFreeTime' . $_ . 'Start',
+            Format   => 'DateInputFormat',
+            DiffTime => -( ( 60 * 60 * 24 ) * 30 ),
+        );
+        $Param{ 'TicketFreeTime' . $_ . 'Stop' } = $Self->{LayoutObject}->BuildDateSelection(
+            %Param,
+            Prefix   => 'TicketFreeTime' . $_ . 'Stop',
+            Format   => 'DateInputFormat',
+            DiffTime => +( ( 60 * 60 * 24 ) * 30 ),
+        );
+    }
+
+    $Param{TicketChangeTimePoint} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            1  => ' 1',
+            2  => ' 2',
+            3  => ' 3',
+            4  => ' 4',
+            5  => ' 5',
+            6  => ' 6',
+            7  => ' 7',
+            8  => ' 8',
+            9  => ' 9',
+            10 => '10',
+            11 => '11',
+            12 => '12',
+            13 => '13',
+            14 => '14',
+            15 => '15',
+            16 => '16',
+            17 => '17',
+            18 => '18',
+            19 => '19',
+            20 => '20',
+            21 => '21',
+            22 => '22',
+            23 => '23',
+            24 => '24',
+            25 => '25',
+            26 => '26',
+            27 => '27',
+            28 => '28',
+            29 => '29',
+            30 => '30',
+            31 => '31',
+            32 => '32',
+            33 => '33',
+            34 => '34',
+            35 => '35',
+            36 => '36',
+            37 => '37',
+            38 => '38',
+            39 => '39',
+            40 => '40',
+            41 => '41',
+            42 => '42',
+            43 => '43',
+            44 => '44',
+            45 => '45',
+            46 => '46',
+            47 => '47',
+            48 => '48',
+            49 => '49',
+            50 => '50',
+            51 => '51',
+            52 => '52',
+            53 => '53',
+            54 => '54',
+            55 => '55',
+            56 => '56',
+            57 => '57',
+            58 => '58',
+            59 => '59',
+        },
+        Name       => 'TicketChangeTimePoint',
+        SelectedID => $Param{TicketChangeTimePoint},
+    );
+    $Param{TicketChangeTimePointStart} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            'Last'   => 'last',
+            'Before' => 'before',
+        },
+        Name => 'TicketChangeTimePointStart',
+        SelectedID => $Param{TicketChangeTimePointStart} || 'Last',
+    );
+    $Param{TicketChangeTimePointFormat} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            minute => 'minute(s)',
+            hour   => 'hour(s)',
+            day    => 'day(s)',
+            week   => 'week(s)',
+            month  => 'month(s)',
+            year   => 'year(s)',
+        },
+        Name       => 'TicketChangeTimePointFormat',
+        SelectedID => $Param{TicketChangeTimePointFormat},
+    );
+    $Param{TicketChangeTimeStart} = $Self->{LayoutObject}->BuildDateSelection(
+        %Param,
+        Prefix   => 'TicketChangeTimeStart',
+        Format   => 'DateInputFormat',
+        DiffTime => -( ( 60 * 60 * 24 ) * 30 ),
+    );
+    $Param{TicketChangeTimeStop} = $Self->{LayoutObject}->BuildDateSelection(
+        %Param,
+        Prefix => 'TicketChangeTimeStop',
+        Format => 'DateInputFormat',
+    );
+
+    $Param{TicketCloseTimePoint} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            1  => ' 1',
+            2  => ' 2',
+            3  => ' 3',
+            4  => ' 4',
+            5  => ' 5',
+            6  => ' 6',
+            7  => ' 7',
+            8  => ' 8',
+            9  => ' 9',
+            10 => '10',
+            11 => '11',
+            12 => '12',
+            13 => '13',
+            14 => '14',
+            15 => '15',
+            16 => '16',
+            17 => '17',
+            18 => '18',
+            19 => '19',
+            20 => '20',
+            21 => '21',
+            22 => '22',
+            23 => '23',
+            24 => '24',
+            25 => '25',
+            26 => '26',
+            27 => '27',
+            28 => '28',
+            29 => '29',
+            30 => '30',
+            31 => '31',
+            32 => '32',
+            33 => '33',
+            34 => '34',
+            35 => '35',
+            36 => '36',
+            37 => '37',
+            38 => '38',
+            39 => '39',
+            40 => '40',
+            41 => '41',
+            42 => '42',
+            43 => '43',
+            44 => '44',
+            45 => '45',
+            46 => '46',
+            47 => '47',
+            48 => '48',
+            49 => '49',
+            50 => '50',
+            51 => '51',
+            52 => '52',
+            53 => '53',
+            54 => '54',
+            55 => '55',
+            56 => '56',
+            57 => '57',
+            58 => '58',
+            59 => '59',
+        },
+        Name       => 'TicketCloseTimePoint',
+        SelectedID => $Param{TicketCloseTimePoint},
+    );
+    $Param{TicketCloseTimePointStart} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            'Last'   => 'last',
+            'Before' => 'before',
+        },
+        Name => 'TicketCloseTimePointStart',
+        SelectedID => $Param{TicketCloseTimePointStart} || 'Last',
+    );
+    $Param{TicketCloseTimePointFormat} = $Self->{LayoutObject}->BuildSelection(
+        Data => {
+            minute => 'minute(s)',
+            hour   => 'hour(s)',
+            day    => 'day(s)',
+            week   => 'week(s)',
+            month  => 'month(s)',
+            year   => 'year(s)',
+        },
+        Name       => 'TicketCloseTimePointFormat',
+        SelectedID => $Param{TicketCloseTimePointFormat},
+    );
+    $Param{TicketCloseTimeStart} = $Self->{LayoutObject}->BuildDateSelection(
+        %Param,
+        Prefix   => 'TicketCloseTimeStart',
+        Format   => 'DateInputFormat',
+        DiffTime => -( ( 60 * 60 * 24 ) * 30 ),
+    );
+    $Param{TicketCloseTimeStop} = $Self->{LayoutObject}->BuildDateSelection(
+        %Param,
+        Prefix => 'TicketCloseTimeStop',
+        Format => 'DateInputFormat',
+    );
+
+    for ( 1 .. 6 ) {
+        $Param{ 'TicketFreeTime' . $_ . 'Start' } = $Self->{LayoutObject}->BuildDateSelection(
+            %Param,
+            Prefix   => 'TicketFreeTime' . $_ . 'Start',
+            Format   => 'DateInputFormat',
+            DiffTime => -( ( 60 * 60 * 24 ) * 30 ),
+        );
+        $Param{ 'TicketFreeTime' . $_ . 'Stop' } = $Self->{LayoutObject}->BuildDateSelection(
+            %Param,
+            Prefix   => 'TicketFreeTime' . $_ . 'Stop',
+            Format   => 'DateInputFormat',
+            DiffTime => +( ( 60 * 60 * 24 ) * 30 ),
+        );
+    }
+
+    # html search mask output
     $Self->{LayoutObject}->Block(
         Name => 'Search',
-        Data => \%Param,
+        Data => { %Param, },
     );
-    $Output .= $Self->{LayoutObject}->Output(
+
+    # build type string
+    if ( $Self->{ConfigObject}->Get('Ticket::Type') ) {
+        my %Type = $Self->{TypeObject}->TypeList( UserID => $Self->{UserID}, );
+        $Param{TypesStrg} = $Self->{LayoutObject}->BuildSelection(
+            Data        => \%Type,
+            Name        => 'TypeIDs',
+            SelectedID  => $Param{TypeIDs},
+            Sort        => 'AlphanumericValue',
+            Size        => 3,
+            Multiple    => 1,
+            Translation => 0,
+        );
+        $Self->{LayoutObject}->Block(
+            Name => 'TicketType',
+            Data => {%Param},
+        );
+    }
+
+    # build service string
+    if ( $Self->{ConfigObject}->Get('Ticket::Service') ) {
+
+        # get list type
+        my $TreeView = 0;
+        if ( $Self->{ConfigObject}->Get('Ticket::Frontend::ListType') eq 'tree' ) {
+            $TreeView = 1;
+        }
+        my %Service = $Self->{ServiceObject}->ServiceList( UserID => $Self->{UserID}, );
+        $Param{ServicesStrg} = $Self->{LayoutObject}->BuildSelection(
+            Data        => \%Service,
+            Name        => 'ServiceIDs',
+            SelectedID  => $Param{ServiceIDs},
+            TreeView    => $TreeView,
+            Sort        => 'TreeView',
+            Size        => 5,
+            Multiple    => 1,
+            Translation => 0,
+            Max         => 200,
+        );
+        my %SLA = $Self->{SLAObject}->SLAList( UserID => $Self->{UserID}, );
+        $Param{SLAsStrg} = $Self->{LayoutObject}->BuildSelection(
+            Data        => \%SLA,
+            Name        => 'SLAIDs',
+            SelectedID  => $Param{SLAIDs},
+            Sort        => 'AlphanumericValue',
+            Size        => 5,
+            Multiple    => 1,
+            Translation => 0,
+            Max         => 200,
+        );
+        $Self->{LayoutObject}->Block(
+            Name => 'TicketService',
+            Data => {%Param},
+        );
+    }
+    if (
+        $Self->{ConfigObject}->Get('Ticket::Watcher')
+        || $Self->{ConfigObject}->Get('Ticket::Responsible')
+        )
+    {
+        $Self->{LayoutObject}->Block( Name => 'TicketResponsibleWatcher', );
+        if ( $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
+            $Self->{LayoutObject}->Block(
+                Name => 'TicketResponsibleWatcherHeaderOn',
+                Data => { Headline => 'Watcher', },
+            );
+            my $SelectStrg = $Self->{LayoutObject}->BuildSelection(
+                Data        => \%ShownUsers,
+                Name        => 'WatchUserIDs',
+                SelectedID  => $Param{WatchUserIDs},
+                Sort        => 'AlphanumericValue',
+                Size        => 5,
+                Multiple    => 1,
+                Translation => 0,
+            );
+            $Self->{LayoutObject}->Block(
+                Name => 'TicketResponsibleWatcherBodyOn',
+                Data => { %Param, SelectStrg => $SelectStrg, },
+            );
+        }
+        else {
+            $Self->{LayoutObject}->Block( Name => 'TicketResponsibleWatcherHeaderOff', );
+            $Self->{LayoutObject}->Block( Name => 'TicketResponsibleWatcherBodyOff', );
+        }
+        if ( $Self->{ConfigObject}->Get('Ticket::Responsible') ) {
+            $Self->{LayoutObject}->Block(
+                Name => 'TicketResponsibleWatcherHeaderOn',
+                Data => { Headline => 'Responsible', },
+            );
+            my $SelectStrg = $Self->{LayoutObject}->BuildSelection(
+                Data        => \%ShownUsers,
+                Name        => 'ResponsibleIDs',
+                SelectedID  => $Param{ResponsibleIDs},
+                Sort        => 'AlphanumericValue',
+                Size        => 5,
+                Multiple    => 1,
+                Translation => 0,
+            );
+            $Self->{LayoutObject}->Block(
+                Name => 'TicketResponsibleWatcherBodyOn',
+                Data => { %Param, SelectStrg => $SelectStrg, },
+            );
+        }
+        else {
+            $Self->{LayoutObject}->Block( Name => 'TicketResponsibleWatcherHeaderOff', );
+            $Self->{LayoutObject}->Block( Name => 'TicketResponsibleWatcherBodyOff', );
+        }
+    }
+    for my $Count ( 1 .. 16 ) {
+        next if !$Self->{Config}->{TicketFreeText}->{$Count};
+        $Self->{LayoutObject}->Block(
+            Name => 'TicketFreeText',
+            Data => {
+                TicketFreeKeyField  => $Param{ 'TicketFreeKeyField' . $Count },
+                TicketFreeTextField => $Param{ 'TicketFreeTextField' . $Count },
+                Count               => $Count,
+            },
+        );
+        $Self->{LayoutObject}->Block(
+            Name => 'TicketFreeText' . $Count,
+            Data => { %Param, },
+        );
+    }
+    for my $Count ( 1 .. 6 ) {
+        next if !$Self->{Config}->{TicketFreeTime}->{$Count};
+        $Self->{LayoutObject}->Block(
+            Name => 'TicketFreeTime',
+            Data => {
+                TicketFreeTimeKey   => $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Count ),
+                TicketFreeTime      => $Param{ 'TicketFreeTime' . $Count },
+                TicketFreeTimeStart => $Param{ 'TicketFreeTime' . $Count . 'Start' },
+                TicketFreeTimeStop  => $Param{ 'TicketFreeTime' . $Count . 'Stop' },
+                Count               => $Count,
+            },
+        );
+        $Self->{LayoutObject}->Block(
+            Name => 'TicketFreeTime' . $Count,
+            Data => { %Param, Count => $Count, },
+        );
+    }
+    if ( $Self->{Config}->{ArticleCreateTime} ) {
+        $Self->{LayoutObject}->Block(
+            Name => 'ArticleCreateTime',
+            Data => {%Param},
+        );
+    }
+
+    if ( $Self->{ConfigObject}->Get('Ticket::ArchiveSystem') ) {
+        $Self->{LayoutObject}->Block(
+            Name => 'SearchInArchive',
+            Data => {%Param},
+        );
+    }
+
+    my $Output = $Self->{LayoutObject}->Output(
         TemplateFile => 'AgentTicketSearch',
         Data         => \%Param,
     );
-    $Output .= $Self->{LayoutObject}->Footer();
     return $Output;
 }
 
