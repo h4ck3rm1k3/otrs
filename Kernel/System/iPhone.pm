@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.5 2010/06/24 03:08:53 cr Exp $
+# $Id: iPhone.pm,v 1.6 2010/06/24 21:27:51 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Log;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.5 $) [1];
+$VERSION = qw($Revision: 1.6 $) [1];
 
 =head1 NAME
 
@@ -462,114 +462,225 @@ sub ScreenConfig {
             Title    => $LanguageObject->Get('Add Note'),
             Elements => [
                 {
-                    Name      => 'Subject',
-                    Title     => $LanguageObject->Get('Subject'),
-                    Type      => 'Input',
-                    Min       => 1,
-                    Max       => 250,
-                    Mandatory => 1,
-                    Default   => '',
+                    Name        => 'Subject',
+                    Title       => $LanguageObject->Get('Subject'),
+                    DataType    => 'Text',
+                    ViewType    => 'Input',
+                    Min         => 1,
+                    Max         => 250,
+                    Mandatory   => 1,
+                    Placeholder => 'Note',
                 },
                 {
-                    Name      => 'Body',
-                    Title     => $LanguageObject->Get('Body'),
-                    Type      => 'Text',
+                    Name      => 'Text',
+                    Title     => $LanguageObject->Get('Text'),
+                    DataType  => 'Text',
+                    ViewType  => 'TextArea',
                     Min       => 1,
                     Max       => 20_000,
                     Mandatory => 1,
                     Default   => '',
                 },
+                {
+                    Name     => 'NoteType',
+                    Title    => $LanguageObject->Get('Note type'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
+                    Options  => {
+                        %{ $Self->_GetNoteTypes( %Param, ) }
+                    },
+                    Mandatory => 1,
+                    Default   => 'note-internal',
+                },
+                {
+                    Name      => 'TimeUnits',
+                    Title     => $LanguageObject->Get('Time units (work units)'),
+                    DataType  => 'Text',
+                    ViewType  => 'Input',
+                    Min       => 1,
+                    Max       => 10,
+                    Mandatory => 0,
+                    Default   => '',
+                },
+
+                #                {
+                #                    Name      => 'Subject',
+                #                    Title     => $LanguageObject->Get('Subject'),
+                #                    Type      => 'Input',
+                #                    Min       => 1,
+                #                    Max       => 250,
+                #                    Mandatory => 1,
+                #                    Default   => '',
+                #                },
+                #                {
+                #                    Name      => 'Body',
+                #                    Title     => $LanguageObject->Get('Body'),
+                #                    Type      => 'Text',
+                #                    Min       => 1,
+                #                    Max       => 20_000,
+                #                    Mandatory => 1,
+                #                    Default   => '',
+                #                },
             ],
         },
         Close => {
             Title    => $LanguageObject->Get('Close'),
             Elements => [
                 {
-                    Name      => 'Subject',
-                    Title     => $LanguageObject->Get('Subject'),
-                    Type      => 'Input',
-                    Min       => 1,
-                    Max       => 250,
-                    Mandatory => 1,
-                    Default   => '',
+                    Name        => 'Subject',
+                    Title       => $LanguageObject->Get('Subject'),
+                    DataType    => 'Text',
+                    ViewType    => 'Input',
+                    Min         => 1,
+                    Max         => 250,
+                    Mandatory   => 1,
+                    Placeholder => 'Close',
                 },
                 {
-                    Name      => 'Body',
-                    Title     => $LanguageObject->Get('Body'),
-                    Type      => 'Text',
+                    Name      => 'Text',
+                    Title     => $LanguageObject->Get('Text'),
+                    DataType  => 'Text',
+                    ViewType  => 'TextArea',
                     Min       => 1,
                     Max       => 20_000,
                     Mandatory => 1,
                     Default   => '',
                 },
                 {
-                    Name    => 'State',
-                    Title   => $LanguageObject->Get('State'),
-                    Type    => 'Option',
-                    Options => {
-
-                        #                        $Self->{TicketObject}->TicketStateList(
-                        #                            Action   => $Param{Action},
-                        #                            QueueID  => $Param{QueueID},
-                        #                            TicketID => $Param{TicketID},
-                        #                            UserID   => $Param{UserID},
-                        #                        ),
+                    Name     => 'NoteType',
+                    Title    => $LanguageObject->Get('Note type'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
+                    Options  => {
+                        %{ $Self->_GetNoteTypes( %Param, ) }
                     },
+                    Mandatory => 1,
+                    Default   => 'note-internal',
+                },
+                {
+                    Name     => 'NextTicketState',
+                    Title    => $LanguageObject->Get('Next Ticket State'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
+
+                    # this options are just for testing
+                    Options => {
+                        $Self->{StateObject}->StateList(
+                            UserID => $Param{UserID},
+                        ),
+                    },
+                    Mandatory => 1,
+                    Default   => '',
+                },
+                {
+                    Name      => 'TimeUnits',
+                    Title     => $LanguageObject->Get('Time units (work units)'),
+                    DataType  => 'Text',
+                    ViewType  => 'Input',
+                    Min       => 1,
+                    Max       => 10,
                     Mandatory => 0,
                     Default   => '',
                 },
+
+           #                {
+           #                    Name      => 'Subject',
+           #                    Title     => $LanguageObject->Get('Subject'),
+           #                    Type      => 'Input',
+           #                    Min       => 1,
+           #                    Max       => 250,
+           #                    Mandatory => 1,
+           #                    Default   => '',
+           #                },
+           #                {
+           #                    Name      => 'Body',
+           #                    Title     => $LanguageObject->Get('Body'),
+           #                    Type      => 'Text',
+           #                    Min       => 1,
+           #                    Max       => 20_000,
+           #                    Mandatory => 1,
+           #                    Default   => '',
+           #                },
+           #                {
+           #                    Name    => 'State',
+           #                    Title   => $LanguageObject->Get('State'),
+           #                    Type    => 'Option',
+           #                    Options => {
+           #
+           #                        #                        $Self->{TicketObject}->TicketStateList(
+           #                        #                            Action   => $Param{Action},
+           #                        #                            QueueID  => $Param{QueueID},
+           #                        #                            TicketID => $Param{TicketID},
+           #                        #                            UserID   => $Param{UserID},
+           #                        #                        ),
+           #                    },
+           #                    Mandatory => 0,
+           #                    Default   => '',
+           #                },
             ],
         },
         Compose => {
             Title    => $LanguageObject->Get('Compose'),
             Elements => [
-                {
-                    Name      => 'To',
-                    Title     => $LanguageObject->Get('To'),
-                    Type      => 'Input',
-                    Min       => 1,
-                    Max       => 250,
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name      => 'Subject',
-                    Title     => $LanguageObject->Get('Subject'),
-                    Type      => 'Input',
-                    Min       => 1,
-                    Max       => 250,
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name      => 'Body',
-                    Title     => $LanguageObject->Get('Body'),
-                    Type      => 'Text',
-                    Min       => 1,
-                    Max       => 20_000,
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name    => 'State',
-                    Title   => $LanguageObject->Get('State'),
-                    Type    => 'Option',
-                    Options => {
 
-                        #                        $Self->{TicketObject}->TicketStateList(
-                        #                            Action   => $Param{Action},
-                        #                            QueueID  => $Param{QueueID},
-                        #                            TicketID => $Param{TicketID},
-                        #                            UserID   => $Param{UserID},
-                        #                        ),
-                    },
-                    Mandatory => 0,
-                    Default   => '',
-                },
+           #                {
+           #                    Name      => 'To',
+           #                    Title     => $LanguageObject->Get('To'),
+           #                    Type      => 'Input',
+           #                    Min       => 1,
+           #                    Max       => 250,
+           #                    Mandatory => 1,
+           #                    Default   => '',
+           #                },
+           #                {
+           #                    Name      => 'Subject',
+           #                    Title     => $LanguageObject->Get('Subject'),
+           #                    Type      => 'Input',
+           #                    Min       => 1,
+           #                    Max       => 250,
+           #                    Mandatory => 1,
+           #                    Default   => '',
+           #                },
+           #                {
+           #                    Name      => 'Body',
+           #                    Title     => $LanguageObject->Get('Body'),
+           #                    Type      => 'Text',
+           #                    Min       => 1,
+           #                    Max       => 20_000,
+           #                    Mandatory => 1,
+           #                    Default   => '',
+           #                },
+           #                {
+           #                    Name    => 'State',
+           #                    Title   => $LanguageObject->Get('State'),
+           #                    Type    => 'Option',
+           #                    Options => {
+           #
+           #                        #                        $Self->{TicketObject}->TicketStateList(
+           #                        #                            Action   => $Param{Action},
+           #                        #                            QueueID  => $Param{QueueID},
+           #                        #                            TicketID => $Param{TicketID},
+           #                        #                            UserID   => $Param{UserID},
+           #                        #                        ),
+           #                    },
+           #                    Mandatory => 0,
+           #                    Default   => '',
+           #                },
             ],
         },
     );
     return \%Config;
+}
+
+sub ResponsesGet {
+    my ( $Self, %Param ) = @_;
+    if ( !$Param{QueueID} ) {
+        return
+    }
+
+    # fetch all std. responses
+    my %StdResponses = $Self->{QueueObject}->GetStdResponses( QueueID => $Param{QueueID} );
+    return \%StdResponses;
 }
 
 =item Badges()
@@ -2339,6 +2450,23 @@ sub _GetTos {
     return \%NewTos;
 }
 
+sub _GetNoteTypes {
+
+    # ready for iPhone
+    my ( $Self, %Param ) = @_;
+
+    $Self->{Config} = $Self->{ConfigObject}->Get('Ticket::Frontend::AgentTicketFreeText');
+    my %DefaultNoteTypes = %{ $Self->{Config}->{ArticleTypes} };
+
+    my %NoteTypes = $Self->{TicketObject}->ArticleTypeList( Result => 'HASH' );
+    for ( keys %NoteTypes ) {
+        if ( !$DefaultNoteTypes{ $NoteTypes{$_} } ) {
+            delete $NoteTypes{$_};
+        }
+    }
+    return \%NoteTypes;
+}
+
 1;
 
 =back
@@ -2355,6 +2483,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.5 2010/06/24 03:08:53 cr Exp $
+$Id: iPhone.pm,v 1.6 2010/06/24 21:27:51 cr Exp $
 
 =cut
