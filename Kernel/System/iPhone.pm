@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.4 2010/06/23 22:07:33 cr Exp $
+# $Id: iPhone.pm,v 1.5 2010/06/24 03:08:53 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,11 +14,11 @@ package Kernel::System::iPhone;
 use strict;
 use warnings;
 
-use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.4 $) [1];
-
 use Kernel::System::Log;
 use Kernel::Language;
+
+use vars qw(@ISA $VERSION);
+$VERSION = qw($Revision: 1.5 $) [1];
 
 =head1 NAME
 
@@ -228,23 +228,234 @@ sub ScreenConfig {
 
     my $LanguageObject = Kernel::Language->new( %{$Self}, UserLanguage => $Param{Language} );
 
+    #    my $HttpType = $Self->{ConfigObject}->Get('HttpType');
+    #    my $FQDN = $Self->{ConfigObject}->Get('FQDN');
+    #    my $ScriptAlias = $Self->{ConfigObject}->Get('ScriptAlias');
+    #
+    #    # sould be retreived by the config?
+    #    my $Handle = 'json.pl'
+    #
+    #    my $ActionURL = $HttpType . '://' . $FQDN . '/' . $ScriptAlias . $Handle . '?' ;
+
     my %Config = (
         Phone => {
-            Title    => 'New Phone Ticket',
+            Title    => $LanguageObject->Get('New Phone Ticket'),
             Elements => [
                 {
-                    Name  => '',
-                    Title => '',
-                    Type  => '',
-                    Min   =>,
-                    Max   =>,
+                    Name     => 'Type',
+                    Title    => $LanguageObject->Get('Type'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
 
-                    #                    Options => {
-                    #                    },
-                    #                    OptionsURL => {
-                    Mandatory =>,
-                    Default   =>,
+                    # this options are just for testing
+                    Options => {
+                        $Self->{TicketObject}->TicketTypeList(
+                            UserID => $Param{UserID},
+                        ),
+                    },
+                    Mandatory => 1,
+                    Default   => '',
                 },
+                {
+                    Name     => 'From',
+                    Title    => $LanguageObject->Get('From'),
+                    Datatype => 'Text',
+                    ViewType => 'AutoCompletion',
+
+                    # the list of customers URL is not jet implemented
+                    #OptionsURL => $ActionURL . "List of customers",
+                    # other option is to use function
+                    Options => {
+                        $Self->{CustomerUserObject}->CustomerSearch(
+                            UserLogin => '*',
+                        ),
+                    },
+                    Mandatory => 1,
+                    Default   => '',
+                },
+                {
+                    Name     => 'To',
+                    Title    => $LanguageObject->Get('To'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
+                    Options  => {
+
+                        #%{$Self->_GetTos( %Param, ) },
+                        # this options are just for testing
+                        $Self->{QueueObject}->GetAllQueues(
+                            UserID => $Param{UserID},
+                            Type   => 'rw',
+                        ),
+                    },
+                    Mandatory => 1,
+                    Default   => '',
+                },
+                {
+                    Name     => 'Service',
+                    Title    => $LanguageObject->Get('Service'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
+                    Options  => {
+
+                        #%{ $Self->_GetServices( %Param, ) }
+                        # this options are just for testig
+                        $Self->{ServiceObject}->ServiceList(
+                            UserID => $Param{UserID},
+                        ),
+                    },
+                    Mandatory => 0,
+                    Default   => '',
+                },
+                {
+                    Name     => 'SLA',
+                    Title    => $LanguageObject->Get('SLA'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
+                    Options  => {
+
+                        #%{ $Self->_GetSLAs( %Param, ) }
+                        # this options are just for testing
+                        $Self->{SLAObject}->SLAList(
+                            UserID => $Param{UserID},
+                        ),
+                    },
+                    Mandatory => 0,
+                    Default   => '',
+                },
+                {
+                    Name     => 'Owner',
+                    Title    => $LanguageObject->Get('Owner'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
+                    Options  => {
+
+                        # this options are just for testing
+                        $Self->{UserObject}->UserList(
+                            Type  => 'Short',
+                            Valid => 1,
+                        ),
+                    },
+                    Mandatory => 0,
+                    Default   => '',
+                },
+                {
+                    Name     => 'Responsible',
+                    Title    => $LanguageObject->Get('Responsible'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
+                    Options  => {
+
+                        # this options are just for testing
+                        $Self->{UserObject}->UserList(
+                            Type  => 'Short',
+                            Valid => 1,
+                        ),
+                    },
+                    Mandatory => 0,
+                    Default   => '',
+                },
+                {
+                    Name      => 'Subject',
+                    Title     => $LanguageObject->Get('Subject'),
+                    DataType  => 'Text',
+                    ViewType  => 'Input',
+                    Min       => 1,
+                    Max       => 250,
+                    Mandatory => 1,
+                    Default   => '',
+                },
+                {
+                    Name      => 'Text',
+                    Title     => $LanguageObject->Get('Text'),
+                    DataType  => 'Text',
+                    ViewType  => 'TextArea',
+                    Min       => 1,
+                    Max       => 20_000,
+                    Mandatory => 1,
+                    Default   => '',
+                },
+                {
+                    Name      => 'CustomerID',
+                    Title     => $LanguageObject->Get('CustomerID'),
+                    DataType  => 'Text',
+                    ViewType  => 'Input',
+                    Min       => 1,
+                    Max       => 150,
+                    Mandatory => 0,
+                    Default   => '',
+                },
+                {
+                    Name     => 'NextTicketState',
+                    Title    => $LanguageObject->Get('Next Ticket State'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
+
+                    # this options are just for testing
+                    Options => {
+                        $Self->{StateObject}->StateList(
+                            UserID => $Param{UserID},
+                        ),
+                    },
+                    Mandatory => 1,
+                    Default   => '',
+                },
+                {
+                    Name      => 'PemdingDate',
+                    Title     => $LanguageObject->Get('Pending Date (for pending* states)'),
+                    Datatype  => 'DateTime',
+                    Viewtype  => 'Picker',
+                    Mandatory => 0,
+                    Default   => '',
+                },
+                {
+                    Name     => 'Priority',
+                    Title    => $LanguageObject->Get('Priority'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
+
+                    # this options are just for testing
+                    Options => {
+                        $Self->{TicketObject}->PriorityList(
+                            UserID => $Param{UserID},
+                        ),
+                    },
+                    Mandatory => 1,
+                    Default   => '',
+                },
+                {
+                    Name      => 'DueDate',
+                    Title     => $LanguageObject->Get('Pending Date (for pending* states)'),
+                    Datatype  => 'DateTime',
+                    Viewtype  => 'Picker',
+                    Mandatory => 0,
+                    Default   => '',
+                },
+                {
+                    Name      => 'TimeUnits',
+                    Title     => $LanguageObject->Get('Time units (work units)'),
+                    DataType  => 'Text',
+                    ViewType  => 'Input',
+                    Min       => 1,
+                    Max       => 10,
+                    Mandatory => 0,
+                    Default   => '',
+                },
+
+                #            {
+                #                    Name  => '',
+                #                    Title => '',
+                #                    Type  => '',
+                #                    Min   =>,
+                #                    Max   =>,
+                #
+                #                    #                    Options => {
+                #                    #                    },
+                #                    #                    OptionsURL => {
+                #                    Mandatory =>,
+                #                    Default   =>,
+                #                #},
+                #            },
+
             ],
         },
         Note => {
@@ -296,12 +507,13 @@ sub ScreenConfig {
                     Title   => $LanguageObject->Get('State'),
                     Type    => 'Option',
                     Options => {
-                        $Self->{TicketObject}->TicketStateList(
-                            Action   => $Param{Action},
-                            QueueID  => $Param{QueueID},
-                            TicketID => $Param{TicketID},
-                            UserID   => $Param{UserID},
-                        ),
+
+                        #                        $Self->{TicketObject}->TicketStateList(
+                        #                            Action   => $Param{Action},
+                        #                            QueueID  => $Param{QueueID},
+                        #                            TicketID => $Param{TicketID},
+                        #                            UserID   => $Param{UserID},
+                        #                        ),
                     },
                     Mandatory => 0,
                     Default   => '',
@@ -343,12 +555,13 @@ sub ScreenConfig {
                     Title   => $LanguageObject->Get('State'),
                     Type    => 'Option',
                     Options => {
-                        $Self->{TicketObject}->TicketStateList(
-                            Action   => $Param{Action},
-                            QueueID  => $Param{QueueID},
-                            TicketID => $Param{TicketID},
-                            UserID   => $Param{UserID},
-                        ),
+
+                        #                        $Self->{TicketObject}->TicketStateList(
+                        #                            Action   => $Param{Action},
+                        #                            QueueID  => $Param{QueueID},
+                        #                            TicketID => $Param{TicketID},
+                        #                            UserID   => $Param{UserID},
+                        #                        ),
                     },
                     Mandatory => 0,
                     Default   => '',
@@ -2004,7 +2217,12 @@ sub ArticleGet {
 
     # strip out all data
     my @Delete
-        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix PriorityID StateID QueueID SenderTypeID OwnerID ResponsibleID ArticleTypeID ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1 ArticleFreeText2 ArticleFreeText3IncomingTime RealTillTimeNotUsed LockID TypeID ServiceID SLAID StateType ArchiveFlag UnlockTimeout Changed);
+        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix PriorityID StateID
+        QueueID SenderTypeID OwnerID ResponsibleID ArticleTypeID ArticleFreeKey1
+        ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1 ArticleFreeText2 ArticleFreeText3
+        IncomingTime RealTillTimeNotUsed LockID TypeID ServiceID SLAID StateType ArchiveFlag
+        UnlockTimeout Changed
+    );
 
     for my $Key (@Delete) {
         delete $Article{$Key};
@@ -2020,6 +2238,105 @@ sub ArticleGet {
     }
 
     return %Article;
+}
+
+sub _GetServices {
+    my ( $Self, %Param ) = @_;
+
+    my %Service = ();
+
+    # get service
+    if ( ( $Param{QueueID} || $Param{TicketID} ) && $Param{CustomerUserID} ) {
+        %Service = $Self->{TicketObject}->TicketServiceList(
+            %Param,
+            Action => $Self->{Action},
+            UserID => $Self->{UserID},
+        );
+    }
+    return \%Service;
+}
+
+sub _GetSLAs {
+    my ( $Self, %Param ) = @_;
+
+    my %SLA = ();
+
+    # get sla
+    if ( $Param{ServiceID} && $Param{Services} && %{ $Param{Services} } ) {
+        if ( $Param{Services}->{ $Param{ServiceID} } ) {
+            %SLA = $Self->{TicketObject}->TicketSLAList(
+                %Param,
+                Action => $Self->{Action},
+                UserID => $Self->{UserID},
+            );
+        }
+    }
+    return \%SLA;
+}
+
+sub _GetTos {
+    my ( $Self, %Param ) = @_;
+
+    # check own selection
+    my %NewTos = ();
+    if ( $Self->{ConfigObject}->{'Ticket::Frontend::NewQueueOwnSelection'} ) {
+        %NewTos = %{ $Self->{ConfigObject}->{'Ticket::Frontend::NewQueueOwnSelection'} };
+    }
+    else {
+
+        # SelectionType Queue or SystemAddress?
+        my %Tos = ();
+        if ( $Self->{ConfigObject}->Get('Ticket::Frontend::NewQueueSelectionType') eq 'Queue' ) {
+            %Tos = $Self->{TicketObject}->MoveList(
+                Type    => 'create',
+                Action  => $Self->{Action},
+                QueueID => $Self->{QueueID},
+                UserID  => $Self->{UserID},
+            );
+        }
+        else {
+            %Tos = $Self->{DBObject}->GetTableData(
+                Table => 'system_address',
+                What  => 'queue_id, id',
+                Valid => 1,
+                Clamp => 1,
+            );
+        }
+
+        # get create permission queues
+        my %UserGroups = $Self->{GroupObject}->GroupMemberList(
+            UserID => $Self->{UserID},
+            Type   => 'create',
+            Result => 'HASH',
+            Cached => 1,
+        );
+
+        # build selection string
+        for my $QueueID ( keys %Tos ) {
+            my %QueueData = $Self->{QueueObject}->QueueGet( ID => $QueueID );
+
+            # permission check, can we create new tickets in queue
+            next if !$UserGroups{ $QueueData{GroupID} };
+
+            my $String = $Self->{ConfigObject}->Get('Ticket::Frontend::NewQueueSelectionString')
+                || '<Realname> <<Email>> - Queue: <Queue>';
+            $String =~ s/<Queue>/$QueueData{Name}/g;
+            $String =~ s/<QueueComment>/$QueueData{Comment}/g;
+            if ( $Self->{ConfigObject}->Get('Ticket::Frontend::NewQueueSelectionType') ne 'Queue' )
+            {
+                my %SystemAddressData = $Self->{SystemAddress}->SystemAddressGet(
+                    ID => $Tos{$QueueID},
+                );
+                $String =~ s/<Realname>/$SystemAddressData{Realname}/g;
+                $String =~ s/<Email>/$SystemAddressData{Name}/g;
+            }
+            $NewTos{$QueueID} = $String;
+        }
+    }
+
+    # add empty selection
+    $NewTos{''} = '-';
+    return \%NewTos;
 }
 
 1;
@@ -2038,6 +2355,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.4 2010/06/23 22:07:33 cr Exp $
+$Id: iPhone.pm,v 1.5 2010/06/24 03:08:53 cr Exp $
 
 =cut
