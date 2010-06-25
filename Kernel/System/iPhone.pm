@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.7 2010/06/25 03:01:43 cr Exp $
+# $Id: iPhone.pm,v 1.8 2010/06/25 16:06:03 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Log;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.7 $) [1];
+$VERSION = qw($Revision: 1.8 $) [1];
 
 =head1 NAME
 
@@ -400,7 +400,7 @@ sub ScreenConfig {
                     Default   => '',
                 },
                 {
-                    Name      => 'PemdingDate',
+                    Name      => 'PendingDate',
                     Title     => $LanguageObject->Get('Pending Date (for pending* states)'),
                     Datatype  => 'DateTime',
                     Viewtype  => 'Picker',
@@ -710,7 +710,7 @@ sub ScreenConfig {
                     Default   => '',
                 },
                 {
-                    Name      => 'PemdingDate',
+                    Name      => 'PendingDate',
                     Title     => $LanguageObject->Get('Pending Date (for pending* states)'),
                     Datatype  => 'DateTime',
                     Viewtype  => 'Picker',
@@ -2588,6 +2588,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.7 2010/06/25 03:01:43 cr Exp $
+$Id: iPhone.pm,v 1.8 2010/06/25 16:06:03 cr Exp $
 
 =cut
