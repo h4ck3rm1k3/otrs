@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.6 2010/06/24 21:27:51 cr Exp $
+# $Id: iPhone.pm,v 1.7 2010/06/25 03:01:43 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Log;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.6 $) [1];
+$VERSION = qw($Revision: 1.7 $) [1];
 
 =head1 NAME
 
@@ -424,7 +424,7 @@ sub ScreenConfig {
                 },
                 {
                     Name      => 'DueDate',
-                    Title     => $LanguageObject->Get('Pending Date (for pending* states)'),
+                    Title     => $LanguageObject->Get('Due Date (for pending* states)'),
                     Datatype  => 'DateTime',
                     Viewtype  => 'Picker',
                     Mandatory => 0,
@@ -622,6 +622,111 @@ sub ScreenConfig {
         Compose => {
             Title    => $LanguageObject->Get('Compose'),
             Elements => [
+
+                {
+                    Name      => 'From',
+                    Title     => $LanguageObject->Get('From'),
+                    DataType  => 'Text',
+                    ViewType  => 'Input',
+                    Min       => 1,
+                    Max       => 50,
+                    Mandatory => 1,
+
+                    # define a RedonlyFieldto
+                    # ReadOnly  => 1,
+                    # get from address from ticket
+                    Default => '',
+                },
+                {
+                    Name      => 'To',
+                    Title     => $LanguageObject->Get(''),
+                    DataType  => 'Text',
+                    ViewType  => 'EMail',
+                    Min       => 1,
+                    Max       => 50,
+                    Mandatory => 0,
+
+                    # must be retrieved from the ticket
+                    Default => '',
+                },
+
+                {
+                    Name      => 'Cc',
+                    Title     => $LanguageObject->Get('Cc'),
+                    DataType  => 'Text',
+                    ViewType  => 'EMail',
+                    Min       => 1,
+                    Max       => 50,
+                    Mandatory => 0,
+                    Default   => '',
+                },
+                {
+                    Name      => 'Bcc',
+                    Title     => $LanguageObject->Get('Bcc'),
+                    DataType  => 'Text',
+                    ViewType  => 'EMail',
+                    Min       => 1,
+                    Max       => 50,
+                    Mandatory => 0,
+                    Default   => '',
+                },
+                {
+                    Name      => 'Subject',
+                    Title     => $LanguageObject->Get('Subject'),
+                    DataType  => 'Text',
+                    ViewType  => 'Input',
+                    Min       => 1,
+                    Max       => 250,
+                    Mandatory => 1,
+
+                    # must be retieved from ticket
+                    Default => '',
+                },
+                {
+                    Name      => 'Text',
+                    Title     => $LanguageObject->Get('Text'),
+                    DataType  => 'Text',
+                    ViewType  => 'TextArea',
+                    Min       => 1,
+                    Max       => 20_000,
+                    Mandatory => 1,
+
+                    # must be retieved from the selected response
+                    Default => '',
+                },
+                {
+                    Name     => 'NextTicketState',
+                    Title    => $LanguageObject->Get('Next Ticket State'),
+                    Datatype => 'Text',
+                    Viewtype => 'Picker',
+
+                    # this options are just for testing
+                    Options => {
+                        $Self->{StateObject}->StateList(
+                            UserID => $Param{UserID},
+                        ),
+                    },
+                    Mandatory => 1,
+                    Default   => '',
+                },
+                {
+                    Name      => 'PemdingDate',
+                    Title     => $LanguageObject->Get('Pending Date (for pending* states)'),
+                    Datatype  => 'DateTime',
+                    Viewtype  => 'Picker',
+                    Mandatory => 0,
+                    Default   => '',
+                },
+                {
+                    Name      => 'TimeUnits',
+                    Title     => $LanguageObject->Get('Time units (work units)'),
+                    DataType  => 'Text',
+                    ViewType  => 'Input',
+                    Min       => 1,
+                    Max       => 10,
+                    Mandatory => 0,
+                    Default   => '',
+                },
 
            #                {
            #                    Name      => 'To',
@@ -2483,6 +2588,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.6 2010/06/24 21:27:51 cr Exp $
+$Id: iPhone.pm,v 1.7 2010/06/25 03:01:43 cr Exp $
 
 =cut
