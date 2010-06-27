@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.9 2010/06/26 17:01:23 cr Exp $
+# $Id: iPhone.pm,v 1.10 2010/06/27 14:42:36 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Log;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.9 $) [1];
+$VERSION = qw($Revision: 1.10 $) [1];
 
 =head1 NAME
 
@@ -262,7 +262,7 @@ sub ScreenConfig {
                     Name     => 'CustomerID',
                     Title    => $LanguageObject->Get('From customer'),
                     Datatype => 'Text',
-                    ViewType => 'AutoCompletion',
+                    Viewtype => 'AutoCompletion',
 
                     # the list of customers URL is not jet implemented
                     #OptionsURL => $ActionURL . "List of customers",
@@ -367,8 +367,8 @@ sub ScreenConfig {
                 {
                     Name      => 'Subject',
                     Title     => $LanguageObject->Get('Subject'),
-                    DataType  => 'Text',
-                    ViewType  => 'Input',
+                    Datatype  => 'Text',
+                    Viewtype  => 'Input',
                     Min       => 1,
                     Max       => 250,
                     Mandatory => 1,
@@ -377,8 +377,8 @@ sub ScreenConfig {
                 {
                     Name      => 'Body',
                     Title     => $LanguageObject->Get('Text'),
-                    DataType  => 'Text',
-                    ViewType  => 'TextArea',
+                    Datatype  => 'Text',
+                    Viewtype  => 'TextArea',
                     Min       => 1,
                     Max       => 20_000,
                     Mandatory => 1,
@@ -387,8 +387,8 @@ sub ScreenConfig {
                 {
                     Name      => 'CustomerID',
                     Title     => $LanguageObject->Get('CustomerID'),
-                    DataType  => 'Text',
-                    ViewType  => 'Input',
+                    Datatype  => 'Text',
+                    Viewtype  => 'Input',
                     Min       => 1,
                     Max       => 150,
                     Mandatory => 0,
@@ -443,8 +443,8 @@ sub ScreenConfig {
                 {
                     Name      => 'TimeUnits',
                     Title     => $LanguageObject->Get('Time units (work units)'),
-                    DataType  => 'Text',
-                    ViewType  => 'Input',
+                    Datatype  => 'Text',
+                    Viewtype  => 'Input',
                     Min       => 1,
                     Max       => 10,
                     Mandatory => 0,
@@ -485,8 +485,8 @@ sub ScreenConfig {
                 {
                     Name        => 'Subject',
                     Title       => $LanguageObject->Get('Subject'),
-                    DataType    => 'Text',
-                    ViewType    => 'Input',
+                    Datatype    => 'Text',
+                    Viewtype    => 'Input',
                     Min         => 1,
                     Max         => 250,
                     Mandatory   => 1,
@@ -495,8 +495,8 @@ sub ScreenConfig {
                 {
                     Name      => 'Body',
                     Title     => $LanguageObject->Get('Text'),
-                    DataType  => 'Text',
-                    ViewType  => 'TextArea',
+                    Datatype  => 'Text',
+                    Viewtype  => 'TextArea',
                     Min       => 1,
                     Max       => 20_000,
                     Mandatory => 1,
@@ -516,8 +516,8 @@ sub ScreenConfig {
                 {
                     Name      => 'TimeUnits',
                     Title     => $LanguageObject->Get('Time units (work units)'),
-                    DataType  => 'Text',
-                    ViewType  => 'Input',
+                    Datatype  => 'Text',
+                    Viewtype  => 'Input',
                     Min       => 1,
                     Max       => 10,
                     Mandatory => 0,
@@ -562,8 +562,8 @@ sub ScreenConfig {
                 {
                     Name        => 'Subject',
                     Title       => $LanguageObject->Get('Subject'),
-                    DataType    => 'Text',
-                    ViewType    => 'Input',
+                    Datatype    => 'Text',
+                    Viewtype    => 'Input',
                     Min         => 1,
                     Max         => 250,
                     Mandatory   => 1,
@@ -572,8 +572,8 @@ sub ScreenConfig {
                 {
                     Name      => 'Body',
                     Title     => $LanguageObject->Get('Text'),
-                    DataType  => 'Text',
-                    ViewType  => 'TextArea',
+                    Datatype  => 'Text',
+                    Viewtype  => 'TextArea',
                     Min       => 1,
                     Max       => 20_000,
                     Mandatory => 1,
@@ -608,8 +608,8 @@ sub ScreenConfig {
                 {
                     Name      => 'TimeUnits',
                     Title     => $LanguageObject->Get('Time units (work units)'),
-                    DataType  => 'Text',
-                    ViewType  => 'Input',
+                    Datatype  => 'Text',
+                    Viewtype  => 'Input',
                     Min       => 1,
                     Max       => 10,
                     Mandatory => 0,
@@ -671,8 +671,8 @@ sub ScreenConfig {
                 {
                     Name      => 'From',
                     Title     => $LanguageObject->Get('From'),
-                    DataType  => 'Text',
-                    ViewType  => 'Input',
+                    Datatype  => 'Text',
+                    Viewtype  => 'Input',
                     Min       => 1,
                     Max       => 50,
                     Mandatory => 1,
@@ -685,8 +685,8 @@ sub ScreenConfig {
                 {
                     Name      => 'To',
                     Title     => $LanguageObject->Get('To'),
-                    DataType  => 'Text',
-                    ViewType  => 'EMail',
+                    Datatype  => 'Text',
+                    Viewtype  => 'EMail',
                     Min       => 1,
                     Max       => 50,
                     Mandatory => 0,
@@ -698,8 +698,8 @@ sub ScreenConfig {
                 {
                     Name      => 'Cc',
                     Title     => $LanguageObject->Get('Cc'),
-                    DataType  => 'Text',
-                    ViewType  => 'EMail',
+                    Datatype  => 'Text',
+                    Viewtype  => 'EMail',
                     Min       => 1,
                     Max       => 50,
                     Mandatory => 0,
@@ -708,8 +708,8 @@ sub ScreenConfig {
                 {
                     Name      => 'Bcc',
                     Title     => $LanguageObject->Get('Bcc'),
-                    DataType  => 'Text',
-                    ViewType  => 'EMail',
+                    Datatype  => 'Text',
+                    Viewtype  => 'EMail',
                     Min       => 1,
                     Max       => 50,
                     Mandatory => 0,
@@ -718,8 +718,8 @@ sub ScreenConfig {
                 {
                     Name      => 'Subject',
                     Title     => $LanguageObject->Get('Subject'),
-                    DataType  => 'Text',
-                    ViewType  => 'Input',
+                    Datatype  => 'Text',
+                    Viewtype  => 'Input',
                     Min       => 1,
                     Max       => 250,
                     Mandatory => 1,
@@ -748,8 +748,8 @@ sub ScreenConfig {
                 {
                     Name      => 'Body',
                     Title     => $LanguageObject->Get('Text'),
-                    DataType  => 'Text',
-                    ViewType  => 'TextArea',
+                    Datatype  => 'Text',
+                    Viewtype  => 'TextArea',
                     Min       => 1,
                     Max       => 20_000,
                     Mandatory => 1,
@@ -783,8 +783,8 @@ sub ScreenConfig {
                 {
                     Name      => 'TimeUnits',
                     Title     => $LanguageObject->Get('Time units (work units)'),
-                    DataType  => 'Text',
-                    ViewType  => 'Input',
+                    Datatype  => 'Text',
+                    Viewtype  => 'Input',
                     Min       => 1,
                     Max       => 10,
                     Mandatory => 0,
@@ -901,8 +901,8 @@ sub ScreenConfig {
                 {
                     Name      => 'Subject',
                     Title     => $LanguageObject->Get('Subject'),
-                    DataType  => 'Text',
-                    ViewType  => 'Input',
+                    Datatype  => 'Text',
+                    Viewtype  => 'Input',
                     Min       => 1,
                     Max       => 250,
                     Mandatory => 1,
@@ -913,8 +913,8 @@ sub ScreenConfig {
                 {
                     Name      => 'Body',
                     Title     => $LanguageObject->Get('Text'),
-                    DataType  => 'Text',
-                    ViewType  => 'TextArea',
+                    Datatype  => 'Text',
+                    Viewtype  => 'TextArea',
                     Min       => 1,
                     Max       => 20_000,
                     Mandatory => 1,
@@ -938,8 +938,8 @@ sub ScreenConfig {
                 {
                     Name      => 'TimeUnits',
                     Title     => $LanguageObject->Get('Time units (work units)'),
-                    DataType  => 'Text',
-                    ViewType  => 'Input',
+                    Datatype  => 'Text',
+                    Viewtype  => 'Input',
                     Min       => 1,
                     Max       => 10,
                     Mandatory => 0,
@@ -2772,6 +2772,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.9 2010/06/26 17:01:23 cr Exp $
+$Id: iPhone.pm,v 1.10 2010/06/27 14:42:36 cr Exp $
 
 =cut
