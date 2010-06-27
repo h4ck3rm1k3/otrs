@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.10 2010/06/27 14:42:36 cr Exp $
+# $Id: iPhone.pm,v 1.11 2010/06/27 15:09:00 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Log;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.11 $) [1];
 
 =head1 NAME
 
@@ -262,7 +262,7 @@ sub ScreenConfig {
                     Name     => 'CustomerID',
                     Title    => $LanguageObject->Get('From customer'),
                     Datatype => 'Text',
-                    Viewtype => 'AutoCompletion',
+                    Viewtype => 'AutoCompletion',
 
                     # the list of customers URL is not jet implemented
                     #OptionsURL => $ActionURL . "List of customers",
@@ -2772,6 +2772,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.10 2010/06/27 14:42:36 cr Exp $
+$Id: iPhone.pm,v 1.11 2010/06/27 15:09:00 cr Exp $
 
 =cut
