@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/LayoutTicket.pm - provides generic ticket HTML output
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: LayoutTicket.pm,v 1.140 2011/12/14 19:03:14 mb Exp $
+# $Id: LayoutTicket.pm,v 1.69.2.1 2010/06/28 21:38:42 sb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,57 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.140 $) [1];
+$VERSION = qw($Revision: 1.69.2.1 $) [1];
+
+sub TicketStdResponseString {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(StdResponsesRef TicketID ArticleID)) {
+        if ( !$Param{$_} ) {
+            return "Need $_ in TicketStdResponseString()";
+        }
+    }
+
+    # get StdResponsesStrg
+    if ( $Self->{ConfigObject}->Get('Ticket::Frontend::StdResponsesMode') eq 'Form' ) {
+
+        # build html string
+        $Param{StdResponsesStrg}
+            .= '<form action="'
+            . $Self->{CGIHandle}
+            . '" method="post">'
+            . '<input type="hidden" name="Action" value="AgentTicketCompose"/>'
+            . '<input type="hidden" name="ArticleID" value="'
+            . $Param{ArticleID} . '"/>'
+            . '<input type="hidden" name="TicketID" value="'
+            . $Param{TicketID} . '"/>'
+            . $Self->BuildSelection(
+            Name => 'ResponseID',
+            Data => $Param{StdResponsesRef},
+            ) . '<input class="button" type="submit" value="$Text{"Compose"}"/></form>';
+    }
+    else {
+        my %StdResponses = %{ $Param{StdResponsesRef} };
+        $Param{StdResponsesStrg} .= "\n<ul>";
+        for ( sort { $StdResponses{$a} cmp $StdResponses{$b} } keys %StdResponses ) {
+
+            # build html string
+            $Param{StdResponsesStrg}
+                .= "\n<li><a href=\"$Self->{Baselink}"
+                . "Action=AgentTicketCompose;"
+                . "ResponseID=$_;TicketID=$Param{TicketID};ArticleID=$Param{ArticleID}\" "
+                . 'onmouseover="window.status=\'$Text{"Compose"}\'; return true;" '
+                . 'onmouseout="window.status=\'\';">'
+                .
+
+                # html quote
+                $Self->Ascii2Html( Text => $StdResponses{$_} ) . "</a></li>";
+        }
+        $Param{StdResponsesStrg} .= "\n</ul>";
+    }
+    return $Param{StdResponsesStrg};
+}
 
 sub AgentCustomerViewTable {
     my ( $Self, %Param ) = @_;
@@ -152,6 +202,11 @@ sub AgentCustomerViewTable {
             next if !$Run;
 
             $CustomerItemCount++;
+            if ( ( $CustomerItemCount / 2 ) !~ /\./ ) {
+                $Self->Block(
+                    Name => 'CustomerItem',
+                );
+            }
         }
     }
 
@@ -168,23 +223,20 @@ sub AgentCustomerViewTable {
 # !! DONT USE THIS FUNCTION !! Use BuildSelection() instead.
 #
 # Due to compatibility reason this function is still in use and will be removed
-# in a future release.
+# in a further release.
 
 sub AgentQueueListOption {
     my ( $Self, %Param ) = @_;
 
-    my $Size           = $Param{Size}                      ? "size='$Param{Size}'"  : '';
-    my $MaxLevel       = defined( $Param{MaxLevel} )       ? $Param{MaxLevel}       : 10;
-    my $SelectedID     = defined( $Param{SelectedID} )     ? $Param{SelectedID}     : '';
-    my $Selected       = defined( $Param{Selected} )       ? $Param{Selected}       : '';
-    my $CurrentQueueID = defined( $Param{CurrentQueueID} ) ? $Param{CurrentQueueID} : '';
-    my $Class          = defined( $Param{Class} )          ? $Param{Class}          : '';
+    my $Size       = $Param{Size}                  ? "size='$Param{Size}'" : '';
+    my $MaxLevel   = defined( $Param{MaxLevel} )   ? $Param{MaxLevel}      : 10;
+    my $SelectedID = defined( $Param{SelectedID} ) ? $Param{SelectedID}    : '';
+    my $Selected   = defined( $Param{Selected} )   ? $Param{Selected}      : '';
     my $SelectedIDRefArray = $Param{SelectedIDRefArray} || '';
-    my $Multiple       = $Param{Multiple}                  ? 'multiple = "multiple"' : '';
-    my $OptionTitle    = defined( $Param{OptionTitle} )    ? $Param{OptionTitle}     : 0;
-    my $OnChangeSubmit = defined( $Param{OnChangeSubmit} ) ? $Param{OnChangeSubmit}  : '';
+    my $Multiple = $Param{Multiple} ? 'multiple = "multiple"' : '';
+    my $OnChangeSubmit = defined( $Param{OnChangeSubmit} ) ? $Param{OnChangeSubmit} : '';
     if ($OnChangeSubmit) {
-        $OnChangeSubmit = " onchange=\"submit();\"";
+        $OnChangeSubmit = " onchange=\"submit()\"";
     }
     else {
         $OnChangeSubmit = '';
@@ -206,12 +258,10 @@ sub AgentQueueListOption {
             );
             $Self->FatalError();
         }
-        $Param{OnChange}
-            = "Core.AJAX.FormUpdate($('#"
-            . $Param{Name} . "'), '"
-            . $Param{Ajax}->{Subaction} . "',"
+        $Param{OnChange} = "Core.AJAXUpdate('" . $Param{Ajax}->{Subaction} . "',"
             . " '$Param{Name}',"
             . " ['"
+            . join( "', '", @{ $Param{Ajax}->{Depend} } ) . "'], ['"
             . join( "', '", @{ $Param{Ajax}->{Update} } ) . "']);";
     }
 
@@ -221,28 +271,15 @@ sub AgentQueueListOption {
 
     # just show a simple list
     if ( $Self->{ConfigObject}->Get('Ticket::Frontend::ListType') eq 'list' ) {
-        $Param{MoveQueuesStrg} = $Self->BuildSelection(
-            %Param,
-            HTMLQuote     => 0,
-            SelectedID    => $Param{SelectedID} || $Param{SelectedIDRefArray} || '',
-            SelectedValue => $Param{Selected},
-            Translation   => 0,
-        );
+        $Param{MoveQueuesStrg} = $Self->BuildSelection( %Param, HTMLQuote => 0, );
         return $Param{MoveQueuesStrg};
     }
 
     # build tree list
     $Param{MoveQueuesStrg}
-        = '<select name="'
-        . $Param{Name}
-        . '" id="'
-        . $Param{Name}
-        . '" class="'
-        . $Class
-        . "\" $Size $Multiple $OnChangeSubmit>\n";
+        = '<select name="' . $Param{Name} . "\" $Size $Multiple $OnChangeSubmit>\n";
     my %UsedData;
     my %Data;
-
     if ( $Param{Data} && ref $Param{Data} eq 'HASH' ) {
         %Data = %{ $Param{Data} };
     }
@@ -286,18 +323,9 @@ sub AgentQueueListOption {
                 # useful for ACLs and complex permission settings
                 for my $Index ( 0 .. ( scalar @Queue - 2 ) ) {
                     if ( !$DisabledQueueAlreadyUsed{ $Queue[$Index] } ) {
-                        my $DSpace               = '&nbsp;&nbsp;' x $Index;
-                        my $OptionTitleHTMLValue = '';
-                        if ($OptionTitle) {
-                            my $HTMLValue = $Self->{HTMLUtilsObject}->ToHTML(
-                                String => $Queue[$Index],
-                            );
-                            $OptionTitleHTMLValue = ' title="' . $HTMLValue . '"';
-                        }
+                        my $DSpace = '&nbsp;&nbsp;' x $Index;
                         $Param{MoveQueuesStrg}
-                            .= '<option value="-" disabled="disabled"'
-                            . $OptionTitleHTMLValue
-                            . '>'
+                            .= '<option value="-" disabled="disabled">'
                             . $DSpace
                             . $Queue[$Index]
                             . "</option>\n";
@@ -307,14 +335,7 @@ sub AgentQueueListOption {
             }
 
             # create selectable elements
-            my $String               = $Space . $Queue[-1];
-            my $OptionTitleHTMLValue = '';
-            if ($OptionTitle) {
-                my $HTMLValue = $Self->{HTMLUtilsObject}->ToHTML(
-                    String => $Queue[-1],
-                );
-                $OptionTitleHTMLValue = ' title="' . $HTMLValue . '"';
-            }
+            my $String = $Space . $Queue[-1];
             if (
                 $SelectedID  eq $_
                 || $Selected eq $Param{Data}->{$_}
@@ -322,33 +343,322 @@ sub AgentQueueListOption {
                 )
             {
                 $Param{MoveQueuesStrg}
-                    .= '<option selected="selected" value="'
-                    . $_ . '"'
-                    . $OptionTitleHTMLValue . '>'
-                    . $String
-                    . "</option>\n";
-            }
-            elsif ( $CurrentQueueID eq $_ )
-            {
-                $Param{MoveQueuesStrg}
-                    .= '<option value="-" disabled="disabled"'
-                    . $OptionTitleHTMLValue . '>'
-                    . $String
-                    . "</option>\n";
+                    .= '<option selected="selected" value="' . $_ . '">' . $String . "</option>\n";
             }
             else {
-                $Param{MoveQueuesStrg}
-                    .= '<option value="'
-                    . $_ . '"'
-                    . $OptionTitleHTMLValue . '>'
-                    . $String
-                    . "</option>\n";
+                $Param{MoveQueuesStrg} .= '<option value="' . $_ . '">' . $String . "</option>\n";
             }
         }
     }
     $Param{MoveQueuesStrg} .= "</select>\n";
+    $Param{MoveQueuesStrg} .= "<a id=\"AJAXImage$Param{Name}\"></a>\n";
 
     return $Param{MoveQueuesStrg};
+}
+
+sub AgentFreeText {
+    my ( $Self, %Param ) = @_;
+
+    my %NullOption;
+    my %SelectData;
+    my %Ticket;
+    my %Config;
+    if ( $Param{NullOption} ) {
+
+        #        $NullOption{''} = '-';
+        $SelectData{Size}     = 3;
+        $SelectData{Multiple} = 1;
+    }
+    if ( $Param{Ticket} ) {
+        %Ticket = %{ $Param{Ticket} };
+    }
+    if ( $Param{Config} ) {
+        %Config = %{ $Param{Config} };
+    }
+    my %Data;
+    for ( 1 .. 16 ) {
+
+        # key
+        if ( ref $Config{"TicketFreeKey$_"} eq 'HASH' && %{ $Config{"TicketFreeKey$_"} } ) {
+            my $Counter = 0;
+            my $LastKey = '';
+            for ( keys %{ $Config{"TicketFreeKey$_"} } ) {
+                $Counter++;
+                $LastKey = $_;
+            }
+            if ( $Counter == 1 && $Param{NullOption} ) {
+                if ($LastKey) {
+                    $Data{"TicketFreeKeyField$_"} = $Config{"TicketFreeKey$_"}->{$LastKey};
+                }
+            }
+            elsif ( $Counter > 1 ) {
+                $Data{"TicketFreeKeyField$_"} = $Self->BuildSelection(
+                    Data => { %NullOption, %{ $Config{"TicketFreeKey$_"} }, },
+                    Name => "TicketFreeKey$_",
+                    SelectedID          => $Ticket{"TicketFreeKey$_"},
+                    LanguageTranslation => 0,
+                    HTMLQuote           => 1,
+                    %SelectData,
+                );
+            }
+            else {
+                if ($LastKey) {
+                    $Data{"TicketFreeKeyField$_"}
+                        = $Config{"TicketFreeKey$_"}->{$LastKey}
+                        . '<input type="hidden" name="TicketFreeKey'
+                        . $_
+                        . '" value="'
+                        . $Self->Ascii2Html( Text => $LastKey ) . '"/>';
+                }
+            }
+        }
+        else {
+            if ( defined $Ticket{"TicketFreeKey$_"} ) {
+                if ( ref $Ticket{"TicketFreeKey$_"} eq 'ARRAY' ) {
+                    if ( $Ticket{"TicketFreeKey$_"}->[0] ) {
+                        $Ticket{"TicketFreeKey$_"} = $Ticket{"TicketFreeKey$_"}->[0];
+                    }
+                    else {
+                        $Ticket{"TicketFreeKey$_"} = '';
+                    }
+                }
+                $Data{"TicketFreeKeyField$_"}
+                    = '<input type="text" name="TicketFreeKey'
+                    . $_
+                    . '" value="'
+                    . $Self->Ascii2Html( Text => $Ticket{"TicketFreeKey$_"} )
+                    . '" size="18"/>';
+            }
+            else {
+                $Data{"TicketFreeKeyField$_"}
+                    = '<input type="text" name="TicketFreeKey' . $_ . '" value="" size="18"/>';
+            }
+        }
+
+        # value
+        if ( ref $Config{"TicketFreeText$_"} eq 'HASH' ) {
+            $Data{"TicketFreeTextField$_"} = $Self->BuildSelection(
+                Data => { %NullOption, %{ $Config{"TicketFreeText$_"} }, },
+                Name => "TicketFreeText$_",
+                SelectedID          => $Ticket{"TicketFreeText$_"},
+                LanguageTranslation => 0,
+                HTMLQuote           => 1,
+                %SelectData,
+            );
+        }
+        else {
+            if ( defined $Ticket{"TicketFreeText$_"} ) {
+                if ( ref $Ticket{"TicketFreeText$_"} eq 'ARRAY' ) {
+                    if ( $Ticket{"TicketFreeText$_"}->[0] ) {
+                        $Ticket{"TicketFreeText$_"} = $Ticket{"TicketFreeText$_"}->[0];
+                    }
+                    else {
+                        $Ticket{"TicketFreeText$_"} = '';
+                    }
+                }
+                $Data{"TicketFreeTextField$_"}
+                    = '<input type="text" name="TicketFreeText'
+                    . $_
+                    . '" value="'
+                    . $Self->Ascii2Html( Text => $Ticket{"TicketFreeText$_"} )
+                    . '" size="30"/>';
+            }
+            else {
+                $Data{"TicketFreeTextField$_"}
+                    = '<input type="text" name="TicketFreeText' . $_ . '" value="" size="30"/>';
+            }
+        }
+        $Data{"TicketFreeTextField$_"}
+            .= '<font color="red" size="-2">$Text{"$Data{"TicketFreeTextField'
+            . $_
+            . ' invalid"}"}</font>';
+    }
+    return %Data;
+}
+
+sub AgentFreeDate {
+    my ( $Self, %Param ) = @_;
+
+    my %NullOption;
+    my %SelectData;
+    my %Ticket;
+    my %Config;
+    if ( $Param{NullOption} ) {
+        $SelectData{Size}     = 3;
+        $SelectData{Multiple} = 1;
+    }
+    if ( $Param{Ticket} ) {
+        %Ticket = %{ $Param{Ticket} };
+    }
+    if ( $Param{Config} ) {
+        %Config = %{ $Param{Config} };
+    }
+    my %Data;
+    for my $Count ( 1 .. 6 ) {
+        my %TimePeriod;
+        if ( $Self->{ConfigObject}->Get( 'TicketFreeTimePeriod' . $Count ) ) {
+            %TimePeriod = %{ $Self->{ConfigObject}->Get( 'TicketFreeTimePeriod' . $Count ) };
+        }
+        $Data{ 'TicketFreeTime' . $Count } = $Self->BuildDateSelection(
+            %Param,
+            %Ticket,
+            Prefix   => 'TicketFreeTime' . $Count,
+            Format   => 'DateInputFormatLong',
+            DiffTime => $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Count ) || 0,
+            %TimePeriod,
+        );
+    }
+    return %Data;
+}
+
+sub TicketArticleFreeText {
+    my ( $Self, %Param ) = @_;
+
+    my %NullOption;
+    my %SelectData;
+    my %Article;
+    my %Config;
+    if ( $Param{NullOption} ) {
+        $SelectData{Size}     = 3;
+        $SelectData{Multiple} = 1;
+    }
+    if ( $Param{Article} ) {
+        %Article = %{ $Param{Article} };
+    }
+    if ( $Param{Config} ) {
+        %Config = %{ $Param{Config} };
+    }
+    my %Data;
+    for ( 1 .. 3 ) {
+
+        # key
+        if ( ref $Config{"ArticleFreeKey$_"} eq 'HASH' && %{ $Config{"ArticleFreeKey$_"} } ) {
+            my $Counter = 0;
+            my $LastKey = '';
+            for ( keys %{ $Config{"ArticleFreeKey$_"} } ) {
+                $Counter++;
+                $LastKey = $_;
+            }
+            if ( $Counter == 1 && $Param{NullOption} ) {
+                if ($LastKey) {
+                    $Data{"ArticleFreeKeyField$_"} = $Config{"ArticleFreeKey$_"}->{$LastKey};
+                }
+            }
+            elsif ( $Counter > 1 ) {
+                $Data{"ArticleFreeKeyField$_"} = $Self->BuildSelection(
+                    Data => { %NullOption, %{ $Config{"ArticleFreeKey$_"} }, },
+                    Name => "ArticleFreeKey$_",
+                    SelectedID          => $Article{"ArticleFreeKey$_"},
+                    LanguageTranslation => 0,
+                    HTMLQuote           => 1,
+                    %SelectData,
+                );
+            }
+            else {
+                if ($LastKey) {
+                    $Data{"ArticleFreeKeyField$_"}
+                        = $Config{"ArticleFreeKey$_"}->{$LastKey}
+                        . '<input type="hidden" name="ArticleFreeKey'
+                        . $_
+                        . '" value="'
+                        . $Self->Ascii2Html( Text => $LastKey ) . '"/>';
+                }
+            }
+        }
+        else {
+            if ( defined $Article{"ArticleFreeKey$_"} ) {
+                if ( ref $Article{"ArticleFreeKey$_"} eq 'ARRAY' ) {
+                    if ( $Article{"ArticleFreeKey$_"}->[0] ) {
+                        $Article{"ArticleFreeKey$_"} = $Article{"ArticleFreeKey$_"}->[0];
+                    }
+                    else {
+                        $Article{"ArticleFreeKey$_"} = '';
+                    }
+                }
+                $Data{"ArticleFreeKeyField$_"}
+                    = '<input type="text" name="ArticleFreeKey'
+                    . $_
+                    . '" value="'
+                    . $Self->Ascii2Html( Text => $Article{"ArticleFreeKey$_"} )
+                    . '" size="18"/>';
+            }
+            else {
+                $Data{"ArticleFreeKeyField$_"}
+                    = '<input type="text" name="ArticleFreeKey' . $_ . '" value="" size="18"/>';
+            }
+        }
+
+        # value
+        if ( ref $Config{"ArticleFreeText$_"} eq 'HASH' ) {
+            $Data{"ArticleFreeTextField$_"} = $Self->BuildSelection(
+                Data => { %NullOption, %{ $Config{"ArticleFreeText$_"} }, },
+                Name => "ArticleFreeText$_",
+                SelectedID          => $Article{"ArticleFreeText$_"},
+                LanguageTranslation => 0,
+                HTMLQuote           => 1,
+                %SelectData,
+            );
+        }
+        else {
+            if ( defined $Article{"ArticleFreeText$_"} ) {
+                if ( ref $Article{"ArticleFreeText$_"} eq 'ARRAY' ) {
+                    if ( $Article{"ArticleFreeText$_"}->[0] ) {
+                        $Article{"ArticleFreeText$_"} = $Article{"ArticleFreeText$_"}->[0];
+                    }
+                    else {
+                        $Article{"ArticleFreeText$_"} = '';
+                    }
+                }
+                $Data{"ArticleFreeTextField$_"}
+                    = '<input type="text" name="ArticleFreeText'
+                    . $_
+                    . '" value="'
+                    . $Self->Ascii2Html( Text => $Article{"ArticleFreeText$_"} )
+                    . '" size="30"/>';
+            }
+            else {
+                $Data{"ArticleFreeTextField$_"}
+                    = '<input type="text" name="ArticleFreeText' . $_ . '" value="" size="30"/>';
+            }
+        }
+    }
+    return %Data;
+}
+
+sub CustomerFreeDate {
+    my ( $Self, %Param ) = @_;
+
+    my %NullOption;
+    my %SelectData;
+    my %Ticket;
+    my %Config;
+    if ( $Param{NullOption} ) {
+        $SelectData{Size}     = 3;
+        $SelectData{Multiple} = 1;
+    }
+    if ( $Param{Ticket} ) {
+        %Ticket = %{ $Param{Ticket} };
+    }
+    if ( $Param{Config} ) {
+        %Config = %{ $Param{Config} };
+    }
+    my %Data;
+    for my $Count ( 1 .. 6 ) {
+        my %TimePeriod;
+        if ( $Self->{ConfigObject}->Get( 'TicketFreeTimePeriod' . $Count ) ) {
+            %TimePeriod = %{ $Self->{ConfigObject}->Get( 'TicketFreeTimePeriod' . $Count ) };
+        }
+        $Data{ 'TicketFreeTime' . $Count } = $Self->BuildDateSelection(
+            Area => 'Customer',
+            %Param,
+            %Ticket,
+            Prefix   => 'TicketFreeTime' . $Count,
+            Format   => 'DateInputFormatLong',
+            DiffTime => $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Count ) || 0,
+            %TimePeriod,
+        );
+    }
+    return %Data;
 }
 
 =item ArticleQuote()
@@ -366,7 +676,7 @@ for forward or split, get body and attach all attachments
         AttachmentsInclude => 1,
     );
 
-or just for including inline documents to upload cache
+of just for including inline documents to upload cache
 
     my $HTMLBody = $LayoutObject->ArticleQuote(
         TicketID           => 123,
@@ -399,12 +709,10 @@ sub ArticleQuote {
         # check for html body
         my @ArticleBox = $Self->{TicketObject}->ArticleContentIndex(
             TicketID                   => $Param{TicketID},
-            StripPlainBodyAsAttachment => 3,
-            UserID                     => $Self->{UserID},
-            DynamicFields              => 0,
+            StripPlainBodyAsAttachment => 1,
         );
 
-        my %NotInlineAttachments;
+        my @NotInlineAttachments;
         ARTICLE:
         for my $ArticleTmp (@ArticleBox) {
 
@@ -417,9 +725,8 @@ sub ArticleQuote {
             my %AttachmentHTML = $Self->{TicketObject}->ArticleAttachment(
                 ArticleID => $ArticleTmp->{ArticleID},
                 FileID    => $ArticleTmp->{AttachmentIDOfHTMLBody},
-                UserID    => $Self->{UserID},
             );
-            my $Charset = $AttachmentHTML{ContentType} || '';
+            my $Charset = $AttachmentHTML{ContentType};
             $Charset =~ s/.+?charset=("|'|)(\w+)/$2/gi;
             $Charset =~ s/"|'//g;
             $Charset =~ s/(.+?);.*/$1/g;
@@ -442,7 +749,8 @@ sub ArticleQuote {
             );
 
             # display inline images if exists
-            my $SessionID = '';
+            my %Attachments = %{ $ArticleTmp->{Atms} };
+            my $SessionID   = '';
             if ( $Self->{SessionID} && !$Self->{SessionIDCookie} ) {
                 $SessionID = ';' . $Self->{SessionName} . '=' . $Self->{SessionID};
             }
@@ -454,8 +762,6 @@ sub ArticleQuote {
                 . ';ContentID=';
 
             # search inline documents in body and add it to upload cache
-            my %Attachments = %{ $ArticleTmp->{Atms} };
-            my %AttachmentAlreadyUsed;
             $Body =~ s{
                 (=|"|')cid:(.*?)("|'|>|\/>|\s)
             }
@@ -474,98 +780,55 @@ sub ArticleQuote {
 
                 # find attachment to include
                 ATMCOUNT:
-                for my $AttachmentID ( sort keys %Attachments ) {
+                for my $AttachmentID ( keys %Attachments ) {
 
-                    # next is cid is not matchin
-                    if ( lc $Attachments{$AttachmentID}->{ContentID} ne lc "<$ContentID>" ) {
+                    # remember not included real attachments
+                    if ( $Attachments{$AttachmentID}->{ContentID} !~ /^<$ContentID>$/i ) {
+                        push @NotInlineAttachments, $AttachmentID;
                         next ATMCOUNT;
                     }
 
-                    # get whole attachment
+                    # add to upload cache
                     my %AttachmentPicture = $Self->{TicketObject}->ArticleAttachment(
                         ArticleID => $Param{ArticleID},
                         FileID    => $AttachmentID,
-                        UserID    => $Self->{UserID},
                     );
 
                     # content id cleanup
                     $AttachmentPicture{ContentID} =~ s/^<//;
                     $AttachmentPicture{ContentID} =~ s/>$//;
 
-                    # find cid, add attachment URL and remeber, file is already uploaded
-                    $ContentID = $AttachmentLink . $Self->LinkEncode( $AttachmentPicture{ContentID} );
-
-                    # add to upload cache if not uploaded and remember
-                    if (!$AttachmentAlreadyUsed{$AttachmentID}) {
-
-                        # remember
-                        $AttachmentAlreadyUsed{$AttachmentID} = 1;
-
-                        # write attachment to upload cache
-                        $Param{UploadCacheObject}->FormIDAddFile(
-                            FormID      => $Param{FormID},
-                            Disposition => 'inline',
-                            %{ $Attachments{$AttachmentID} },
-                            %AttachmentPicture,
-                        );
+                    $Param{UploadCacheObject}->FormIDAddFile(
+                        FormID      => $Param{FormID},
+                        Disposition => 'inline',
+                        %{ $Attachments{$AttachmentID} },
+                        %AttachmentPicture,
+                    );
+                    my @Attachments = $Param{UploadCacheObject}->FormIDGetAllFilesMeta(
+                        FormID => $Param{FormID},
+                    );
+                    CONTENTIDRETURN:
+                    for my $Attachment (@Attachments) {
+                        next CONTENTIDRETURN
+                            if $Attachments{$AttachmentID}->{Filename} ne $Attachment->{Filename};
+                        $ContentID = $AttachmentLink . $Attachment->{ContentID};
+                        last CONTENTIDRETURN;
                     }
+                    last ATMCOUNT;
                 }
 
                 # return link
                 $Start . $ContentID . $End;
             }egxi;
 
-            # find inlines images using Content-Location instead of Content-ID
-            for my $AttachmentID ( sort keys %Attachments ) {
-
-                next if !$Attachments{$AttachmentID}->{ContentID};
-
-                # get whole attachment
-                my %AttachmentPicture = $Self->{TicketObject}->ArticleAttachment(
-                    ArticleID => $Param{ArticleID},
-                    FileID    => $AttachmentID,
-                    UserID    => $Self->{UserID},
-                );
-
-                # content id cleanup
-                $AttachmentPicture{ContentID} =~ s/^<//;
-                $AttachmentPicture{ContentID} =~ s/>$//;
-
-                $Body =~ s{
-                    ("|')(\Q$AttachmentPicture{ContentID}\E)("|'|>|\/>|\s)
+            # attach also other attachments (add all if no "cid:" was in html reply)
+            my @Attachments = $Param{UploadCacheObject}->FormIDGetAllFilesMeta(
+                FormID => $Param{FormID},
+            );
+            if ( !@Attachments ) {
+                for my $Index ( keys %Attachments ) {
+                    push @NotInlineAttachments, $Index;
                 }
-                {
-                    my $Start= $1;
-                    my $ContentID = $2;
-                    my $End = $3;
-
-                    # find cid, add attachment URL and remeber, file is already uploaded
-                    $ContentID = $AttachmentLink . $Self->LinkEncode( $AttachmentPicture{ContentID} );
-
-                    # add to upload cache if not uploaded and remember
-                    if (!$AttachmentAlreadyUsed{$AttachmentID}) {
-
-                        # remember
-                        $AttachmentAlreadyUsed{$AttachmentID} = 1;
-
-                        # write attachment to upload cache
-                        $Param{UploadCacheObject}->FormIDAddFile(
-                            FormID      => $Param{FormID},
-                            Disposition => 'inline',
-                            %{ $Attachments{$AttachmentID} },
-                            %AttachmentPicture,
-                        );
-                    }
-
-                    # return link
-                    $Start . $ContentID . $End;
-                }egxi;
-            }
-
-            # find not inline images
-            for my $AttachmentID ( sort keys %Attachments ) {
-                next if $AttachmentAlreadyUsed{$AttachmentID};
-                $NotInlineAttachments{$AttachmentID} = 1;
             }
 
             # do no more article
@@ -574,7 +837,7 @@ sub ArticleQuote {
 
         # attach also other attachments on article forward
         if ( $Body && $Param{AttachmentsInclude} ) {
-            for my $AttachmentID ( sort keys %NotInlineAttachments ) {
+            for my $AttachmentID (@NotInlineAttachments) {
                 my %Attachment = $Self->{TicketObject}->ArticleAttachment(
                     ArticleID => $Param{ArticleID},
                     FileID    => $AttachmentID,
@@ -588,14 +851,12 @@ sub ArticleQuote {
                 );
             }
         }
+
         return $Body if $Body;
     }
 
     # as fallback use text body for quote
-    my %Article = $Self->{TicketObject}->ArticleGet(
-        ArticleID     => $Param{ArticleID},
-        DynamicFields => 0,
-    );
+    my %Article = $Self->{TicketObject}->ArticleGet( ArticleID => $Param{ArticleID} );
 
     # check if original content isn't text/plain or text/html, don't use it
     if ( !$Article{ContentType} ) {
@@ -644,6 +905,7 @@ sub ArticleQuote {
 
     # return body as plain text
     return $Article{Body};
+
 }
 
 sub TicketListShow {
@@ -673,12 +935,11 @@ sub TicketListShow {
         Value     => $View,
     );
 
-    # update preferences if needed
-    my $Key = 'UserTicketOverview' . $Env->{Action};
-    if ( !$Self->{ConfigObject}->Get('DemoSystem') && $Self->{$Key} ne $View ) {
+    # update preferences
+    if ( !$Self->{ConfigObject}->Get('DemoSystem') ) {
         $Self->{UserObject}->SetPreferences(
             UserID => $Self->{UserID},
-            Key    => $Key,
+            Key    => 'UserTicketOverview' . $Env->{Action},
             Value  => $View,
         );
     }
@@ -704,30 +965,12 @@ sub TicketListShow {
             $Self->{LogObject}->Log(
                 Priority => 'error',
                 Message  => "No Config option found for view mode $View, took $Key instead!",
+                Message  => 'Need Depend Param Ajax option!',
             );
             $View = $Key;
             last;
         }
     }
-
-    # load overview backend module
-    if ( !$Self->{MainObject}->Require( $Backends->{$View}->{Module} ) ) {
-        return $Env->{LayoutObject}->FatalError();
-    }
-    my $Object = $Backends->{$View}->{Module}->new( %{$Env} );
-    return if !$Object;
-
-    # run action row backend module
-    $Param{ActionRow} = $Object->ActionRow(
-        %Param,
-        Config => $Backends->{$View},
-    );
-
-    # run overview backend module
-    $Param{SortOrderBar} = $Object->SortOrderBar(
-        %Param,
-        Config => $Backends->{$View},
-    );
 
     # check start option, if higher then tickets available, set
     # it to the last ticket page (Thanks to Stefan Schmidt!)
@@ -745,7 +988,7 @@ sub TicketListShow {
         %Data = %{ $Config->{$Group}->{Data} };
     }
 
-    # calculate max. shown per page
+    # calculate max. sown page
     if ( $StartHit > $Param{Total} ) {
         my $Pages = int( ( $Param{Total} / $PageShown ) + 0.99999 );
         $StartHit = ( ( $Pages - 1 ) * $PageShown ) + 1;
@@ -760,18 +1003,15 @@ sub TicketListShow {
         AllHits   => $Param{Total} || 0,
         Action    => 'Action=' . $Env->{LayoutObject}->{Action},
         Link      => $Param{LinkPage},
-        IDPrefix  => $Env->{LayoutObject}->{Action},
     );
 
-    # build shown ticket per page
+    # build shown ticket a page
     $Param{RequestedURL}    = "Action=$Self->{Action}";
     $Param{Group}           = $Group;
-    $Param{PreferencesKey}  = $PageShownPreferencesKey;
     $Param{PageShownString} = $Self->BuildSelection(
-        Name        => $PageShownPreferencesKey,
-        SelectedID  => $PageShown,
-        Translation => 0,
-        Data        => \%Data,
+        Name       => $PageShownPreferencesKey,
+        SelectedID => $PageShown,
+        Data       => \%Data,
     );
 
     # nav bar at the beginning of a overview
@@ -803,10 +1043,16 @@ sub TicketListShow {
         );
         my $Count = 0;
         for my $Filter (@NavBarFilters) {
-            $Count++;
-            if ( $Count == scalar @NavBarFilters ) {
-                $Filter->{CSS} = 'Last';
+            if ($Count) {
+                $Env->{LayoutObject}->Block(
+                    Name => 'OverviewNavBarFilterItemSplit',
+                    Data => {
+                        %Param,
+                        %{$Filter},
+                    },
+                );
             }
+            $Count++;
             $Env->{LayoutObject}->Block(
                 Name => 'OverviewNavBarFilterItem',
                 Data => {
@@ -875,18 +1121,6 @@ sub TicketListShow {
             Name => 'OverviewNavBarPageNavBar',
             Data => \%PageNav,
         );
-
-        # don't show context settings in AJAX case (e. g. in customer ticket history),
-        #   because the submit with page reload will not work there
-        if ( !$Param{AJAX} ) {
-            $Env->{LayoutObject}->Block(
-                Name => 'ContextSettings',
-                Data => {
-                    %PageNav,
-                    %Param,
-                },
-            );
-        }
     }
 
     if ( $Param{NavBar} ) {
@@ -910,7 +1144,14 @@ sub TicketListShow {
         $OutputRaw .= $OutputNavBar;
     }
 
-    # run overview backend module
+    # load module
+    if ( !$Self->{MainObject}->Require( $Backends->{$View}->{Module} ) ) {
+        return $Env->{LayoutObject}->FatalError();
+    }
+    my $Object = $Backends->{$View}->{Module}->new( %{$Env} );
+    return if !$Object;
+
+    # run module
     my $Output = $Object->Run(
         %Param,
         Config    => $Backends->{$View},
@@ -918,7 +1159,6 @@ sub TicketListShow {
         StartHit  => $StartHit,
         PageShown => $PageShown,
         AllHits   => $Param{Total} || 0,
-        Output    => $Param{Output} || '',
     );
     if ( !$Param{Output} ) {
         $Env->{LayoutObject}->Print( Output => \$Output );
@@ -927,12 +1167,29 @@ sub TicketListShow {
         $OutputRaw .= $Output;
     }
 
-    return $OutputRaw;
-}
+    # nav bar at the end of a overview
+    $Env->{LayoutObject}->Block(
+        Name => 'OverviewNavBar',
+        Data => \%Param,
+    );
+    if (%PageNav) {
+        $Env->{LayoutObject}->Block(
+            Name => 'OverviewNavBarPageNavBar',
+            Data => \%PageNav,
+        );
+    }
+    my $OutputNavBarSmall = $Env->{LayoutObject}->Output(
+        TemplateFile => 'AgentTicketOverviewNavBarSmall',
+        Data         => { %Param, },
+    );
+    if ( !$Param{Output} ) {
+        $Env->{LayoutObject}->Print( Output => \$OutputNavBarSmall );
+    }
+    else {
+        $OutputRaw .= $OutputNavBarSmall;
+    }
 
-sub TicketMetaItemsCount {
-    my ( $Self, %Param ) = @_;
-    return ( 'Priority', 'New Article' );
+    return $OutputRaw;
 }
 
 sub TicketMetaItems {
@@ -945,65 +1202,71 @@ sub TicketMetaItems {
     # return attributes
     my @Result;
 
-    # show priority
-    push @Result, {
+    # show ticket flags
+    if (1) {
+        my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
+            TicketID => $Param{Ticket}->{TicketID},
+            UserID   => $Self->{UserID},
+        );
 
-        #            Image => $Image,
-        Title      => $Param{Ticket}->{Priority},
-        Class      => 'Flag',
-        ClassSpan  => 'PriorityID-' . $Param{Ticket}->{PriorityID},
-        ClassTable => 'Flags',
-    };
+        # show if now message is in there
+        if ( !$TicketFlag{Seen} ) {
 
-    # show new article
-    my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
-        TicketID => $Param{Ticket}->{TicketID},
-        UserID   => $Self->{UserID},
-    );
-
-    # show if new message is in there
-    if ( $TicketFlag{Seen} ) {
-        push @Result, undef;
-    }
-    else {
-
-        # just show ticket flags if agent belongs to the ticket
-        my $ShowMeta;
-        if (
-            $Self->{UserID} == $Param{Ticket}->{OwnerID}
-            || $Self->{UserID} == $Param{Ticket}->{ResponsibleID}
-            )
-        {
-            $ShowMeta = 1;
-        }
-        if ( !$ShowMeta && $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
-            my %Watch = $Self->{TicketObject}->TicketWatchGet(
-                TicketID => $Param{Ticket}->{TicketID},
-            );
-            if ( $Watch{ $Self->{UserID} } ) {
+            # just show ticket flags if agent belongs to the ticket
+            my $ShowMeta;
+            if (
+                $Self->{UserID} == $Param{Ticket}->{OwnerID}
+                || $Self->{UserID} == $Param{Ticket}->{ResponsibleID}
+                )
+            {
                 $ShowMeta = 1;
             }
-        }
+            if ( !$ShowMeta && $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
+                my %Watch = $Self->{TicketObject}->TicketWatchGet(
+                    TicketID => $Param{Ticket}->{TicketID},
+                );
+                if ( $Watch{ $Self->{UserID} } ) {
+                    $ShowMeta = 1;
+                }
+            }
 
-        # show ticket flags
-        my $Image = 'meta-new-inactive.png';
-        if ($ShowMeta) {
-            $Image = 'meta-new.png';
+            # show ticket flags
+            my $Image = 'meta-new-inactive.png';
+            if ($ShowMeta) {
+                $Image = 'meta-new.png';
+            }
             push @Result, {
-                Image      => $Image,
-                Title      => 'Unread article(s) available',
-                Class      => 'UnreadArticles',
-                ClassSpan  => 'UnreadArticles Important',
-                ClassTable => 'UnreadArticles',
+                Image => $Image,
+                Title => 'New Article!',
+            };
+        }
+    }
+
+    # show if it's locked
+    if ( 0 && $Param{Ticket}->{Lock} eq 'lock' ) {
+        if ( $Param{Ticket}->{OwnerID} == $Self->{UserID} ) {
+            push @Result, {
+                Image => 'meta-lock-own.gif',
+                Title => 'Locked by you!',
             };
         }
         else {
             push @Result, {
-                Image      => $Image,
-                Title      => 'Unread article(s) available',
-                Class      => 'UnreadArticles',
-                ClassSpan  => 'UnreadArticles Unimportant',
-                ClassTable => 'UnreadArticles',
+                Image => 'meta-lock.gif',
+                Title => 'Locked by somebody else!',
+            };
+        }
+    }
+
+    # check if it get watched
+    if ( 0 && $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
+        my %Watch = $Self->{TicketObject}->TicketWatchGet(
+            TicketID => $Param{Ticket}->{TicketID},
+        );
+        if ( $Watch{ $Self->{UserID} } ) {
+            push @Result, {
+                Image => 'meta-watch.gif',
+                Title => 'Watched by you!',
             };
         }
     }
