@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<otrs_config version="1.0" init="Application">
+    <CVS>$Id: iPhone.xml,v 1.1 2010/06/29 04:56:26 cr Exp $</CVS>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TicketType" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the ticket type (Ticket::Type needs to be activated).</Description>
+        <Description Lang="de">Wenn der Ticket-Typ gesetzt werden soll (Ticket::Type muss aktiv sein).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###Service" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the service (Ticket::Service needs to be activated).</Description>
+        <Description Lang="de">Wenn der Service gesetzt werden soll (Ticket::Service muss aktiv sein).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###Owner" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the owner.</Description>
+        <Description Lang="de">Wenn der Besitzer gesetzt werden soll.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###Responsible" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the responsible (Ticket::Responsible needs to be activated).</Description>
+        <Description Lang="de">Wenn der Verantwortliche gesetzt werden soll (Ticket::Responsible muss aktiv sein).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###CustomerID" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the CustomerID.</Description>
+        <Description Lang="de">Wenn der CustomerID gesetzt werden soll.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###State" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the state of a ticket.</Description>
+        <Description Lang="de">Wenn der zustand gesetzt werden soll.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###StateDefault" Required="0" Valid="1">
+        <Description Lang="en">Default next state.</Description>
+        <Description Lang="de">Standardmäßig ausgewählter nächster Status.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <String Regex="">open</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###PriorityDefault" Required="0" Valid="1">
+        <Description Lang="en">Default priority options.</Description>
+        <Description Lang="de">Default Auswahl der Priorität.</Description>
+        <Group>Ticket</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <String Regex="">3 normal</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TimeUnits" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the time units of a ticket.</Description>
+        <Description Lang="de">Wenn die zeiteinheiten gesetzt werden soll.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TicketFreeText" Required="0" Valid="1">
+        <Description Lang="en">Shown ticket free text options. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Description Lang="de">Angezeigte Ticket-Frei-Text-Felder. Mögliche Einstellungen: 0 = Deaktiviert, 1 = Aktiviert, 2 = Aktiviert und Pflichtfeld.</Description>
+        <Group>Ticket</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+                <Item Key="4">0</Item>
+                <Item Key="5">0</Item>
+                <Item Key="6">0</Item>
+                <Item Key="7">0</Item>
+                <Item Key="8">0</Item>
+                <Item Key="9">0</Item>
+                <Item Key="10">0</Item>
+                <Item Key="11">0</Item>
+                <Item Key="12">0</Item>
+                <Item Key="13">0</Item>
+                <Item Key="14">0</Item>
+                <Item Key="15">0</Item>
+                <Item Key="16">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TicketFreeTime" Required="0" Valid="1">
+        <Description Lang="en">Shown ticket free time options. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Description Lang="de">Angezeigte Ticket-Frei-Time-Felder. Mögliche Einstellungen: 0 = Deaktiviert, 1 = Aktiviert, 2 = Aktiviert und Pflichtfeld.</Description>
+        <Group>Ticket</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+                <Item Key="4">0</Item>
+                <Item Key="5">0</Item>
+                <Item Key="6">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###ArticleFreeText" Required="0" Valid="1">
+        <Description Lang="en">Shown article free text options.</Description>
+        <Description Lang="de">Gezeigte Artikel-Frei-Text-Felder.</Description>
+        <Group>Ticket</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+
+<!--
+
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###TicketType" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the ticket type (Ticket::Type needs to be activated).</Description>
+        <Description Lang="de">Wenn der Ticket-Typ gesetzt werden soll (Ticket::Type muss aktiv sein).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Service" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the service (Ticket::Service needs to be activated).</Description>
+        <Description Lang="de">Wenn der Service gesetzt werden soll (Ticket::Service muss aktiv sein).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Owner" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the owner.</Description>
+        <Description Lang="de">Wenn der Besitzer gesetzt werden soll.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Responsible" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the responsible.</Description>
+        <Description Lang="de">Wenn der Verantwortliche gesetzt werden soll.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###State" Required="0" Valid="1">
+        <Description Lang="en">Would you like to set the state of a ticket if a note is created by an agent?</Description>
+        <Description Lang="de">Soll der Status eines Tickets gesetzt werden können, wenn eine Notiz durch einen Agent angelegt wird?</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###StateType" Required="1" Valid="1">
+        <Description Lang="en">Default next states after adding a note.</Description>
+        <Description Lang="de">Nächstmögliche Status nach dem Hinzufügen einer Notiz.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Array>
+                <Item>open</Item>
+                <Item>closed</Item>
+                <Item>pending reminder</Item>
+                <Item>pending auto</Item>
+            </Array>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###StateDefault" Required="0" Valid="0">
+        <Description Lang="en">Default next state.</Description>
+        <Description Lang="de">Standardmäßig ausgewählter nächster Status.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <String Regex="">open</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Note" Required="0" Valid="1">
+        <Description Lang="en">Show note fields.</Description>
+        <Description Lang="de">Eingabemöglichkeit für Notiz.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Subject" Required="0" Valid="1">
+        <Description Lang="en">Default note subject.</Description>
+        <Description Lang="de">Standardtext im Betreff einer Notiz.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <String Regex="">$Text{"Note"}</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Body" Required="0" Valid="1">
+        <Description Lang="en">Default note text.</Description>
+        <Description Lang="de">Standardtext im Textfeld einer Notiz.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <TextArea></TextArea>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###InvolvedAgent" Required="0" Valid="0">
+        <Description Lang="en">Show selection of involved agents.</Description>
+        <Description Lang="de">Auswahl der involvierten Agents anzeigen.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###InformAgent" Required="0" Valid="0">
+        <Description Lang="en">Show selection of agents to inform (all agents with note permissions on the queue/ticket).</Description>
+        <Description Lang="de">Auswahl der zu informierenden Agents anzeigen (alle Agenten mit "notiz" Rechten am Ticket/Queue).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###ArticleTypeDefault" Required="0" Valid="1">
+        <Description Lang="en">Default note type.</Description>
+        <Description Lang="de">Voreingestellter Notiztyp.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <String Regex="">note-internal</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###ArticleTypes" Required="0" Valid="1">
+        <Description Lang="en">Specify the different note types, that you want to use in your system.</Description>
+        <Description Lang="de">Hier können die verschiedenen Notiz-Typen festgelegt werden, die innerhalb des Systems verwendet werden sollen.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="note-internal">1</Item>
+                <Item Key="note-external">1</Item>
+                <Item Key="note-report">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Priority" Required="0" Valid="0">
+        <Description Lang="en">Show priority options.</Description>
+        <Description Lang="de">Möglichkeit der Auswahl für die Priorität.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###PriorityDefault" Required="0" Valid="0">
+        <Description Lang="en">Default priority options.</Description>
+        <Description Lang="de">Default Auswahl der Priorität.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <String Regex="">3 normal</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Title" Required="0" Valid="1">
+        <Description Lang="en">Show title fields.</Description>
+        <Description Lang="de">Eingabemöglichkeit für Title.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###TicketFreeText" Required="0" Valid="1">
+        <Description Lang="en">Shown ticket free text options. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Description Lang="de">Angezeigte Ticket-Frei-Text-Felder. Mögliche Einstellungen: 0 = Deaktiviert, 1 = Aktiviert, 2 = Aktiviert und Pflichtfeld.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+                <Item Key="4">0</Item>
+                <Item Key="5">0</Item>
+                <Item Key="6">0</Item>
+                <Item Key="7">0</Item>
+                <Item Key="8">0</Item>
+                <Item Key="9">0</Item>
+                <Item Key="10">0</Item>
+                <Item Key="11">0</Item>
+                <Item Key="12">0</Item>
+                <Item Key="13">0</Item>
+                <Item Key="14">0</Item>
+                <Item Key="15">0</Item>
+                <Item Key="16">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###TicketFreeTime" Required="0" Valid="1">
+        <Description Lang="en">Shown ticket free time options. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Description Lang="de">Angezeigte Ticket-Frei-Time-Felder. Mögliche Einstellungen: 0 = Deaktiviert, 1 = Aktiviert, 2 = Aktiviert und Pflichtfeld.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+                <Item Key="4">0</Item>
+                <Item Key="5">0</Item>
+                <Item Key="6">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###ArticleFreeText" Required="0" Valid="1">
+        <Description Lang="en">Shown article free text options.</Description>
+        <Description Lang="de">Gezeigte Artikel-Frei-Text-Felder.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###HistoryType" Required="0" Valid="1">
+        <Description Lang="en">History type for this action.</Description>
+        <Description Lang="de">Historientyp für diese Aktion.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <String Regex="">AddNote</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###HistoryComment" Required="0" Valid="1">
+        <Description Lang="en">History comment for this action.</Description>
+        <Description Lang="de">Historienkommentar für diese Aktion.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <String Regex="">%%Note</String>
+        </Setting>
+    </ConfigItem>
+-->
+
+</otrs_config>
