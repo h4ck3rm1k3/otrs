@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.11 2010/06/27 15:09:00 cr Exp $
+# $Id: iPhone.pm,v 1.12 2010/06/29 05:03:50 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Log;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.11 $) [1];
+$VERSION = qw($Revision: 1.12 $) [1];
 
 =head1 NAME
 
@@ -226,16 +226,18 @@ sub new {
 sub ScreenConfig {
     my ( $Self, %Param ) = @_;
 
+    $Self->{LanguageObject} = Kernel::Language->new( %{$Self}, UserLanguage => $Param{Language} );
     my $LanguageObject = Kernel::Language->new( %{$Self}, UserLanguage => $Param{Language} );
 
-    #    my $HttpType = $Self->{ConfigObject}->Get('HttpType');
-    #    my $FQDN = $Self->{ConfigObject}->Get('FQDN');
-    #    my $ScriptAlias = $Self->{ConfigObject}->Get('ScriptAlias');
-    #
-    #    # sould be retreived by the config?
-    #    my $Handle = 'json.pl'
-    #
-    #    my $ActionURL = $HttpType . '://' . $FQDN . '/' . $ScriptAlias . $Handle . '?' ;
+    my $HttpType    = $Self->{ConfigObject}->Get('HttpType');
+    my $FQDN        = $Self->{ConfigObject}->Get('FQDN');
+    my $ScriptAlias = $Self->{ConfigObject}->Get('ScriptAlias');
+    my $Credentials = 'User=' . $Param{UserID} . '&Password=';     #. $Param{Password};
+         #    # sould be retreived by the config?
+    my $Handle = 'json.pl';
+
+    $Self->{ActionURL} = $HttpType . '://' . $FQDN . '/' . $ScriptAlias . $Handle . '?'
+        . $Credentials;
 
     # ------------------------------------------------------------ #
     # New Phone Ticket Screen
@@ -243,232 +245,8 @@ sub ScreenConfig {
 
     if ( $Param{Screen} eq 'Phone' ) {
         my %Config = (
-
-            #Phone => {
             Title    => $LanguageObject->Get('New Phone Ticket'),
-            Elements => [
-                {
-                    Name     => 'TypeID',
-                    Title    => $LanguageObject->Get('Type'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-                    Options  => {
-                        %{ $Self->_GetTypes(%Param) },
-                    },
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name     => 'CustomerID',
-                    Title    => $LanguageObject->Get('From customer'),
-                    Datatype => 'Text',
-                    Viewtype => 'AutoCompletion',
-
-                    # the list of customers URL is not jet implemented
-                    #OptionsURL => $ActionURL . "List of customers",
-                    # other option is to use function
-                    Options => {
-                        $Self->{CustomerUserObject}->CustomerSearch(
-                            UserLogin => '*',
-                        ),
-                    },
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name     => 'QueueID',
-                    Title    => $LanguageObject->Get('To queue'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-
-                    # change for a URL depening on fileds QueueID and CustomerUserLogin
-                    Options => {
-                        %{
-                            $Self->_GetTos(
-                                %Param,
-                                QueueID => 1,
-                                )
-                            },
-                    },
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name     => 'ServiceID',
-                    Title    => $LanguageObject->Get('Service'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-                    Options  => {
-
-                        # change for a URL depening on fileds QueueID and CustomerUserLogin
-                        %{
-                            $Self->_GetServices(
-                                %Param,
-                                QueueID => 1,
-                                )
-                            }
-
-                            # this options are just for testig
-                            #$Self->{ServiceObject}->ServiceList(
-                            #    UserID => $Param{UserID},
-                            #),
-                    },
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name     => 'SLAID',
-                    Title    => $LanguageObject->Get('SLA'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-                    Options  => {
-
-                        #%{ $Self->_GetSLAs( %Param, ) }
-                        # this options are just for testing
-                        $Self->{SLAObject}->SLAList(
-                            UserID => $Param{UserID},
-                        ),
-                    },
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name     => 'OwnerID',
-                    Title    => $LanguageObject->Get('Owner'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-                    Options  => {
-
-                        # this options are just for testing
-                        $Self->{UserObject}->UserList(
-                            Type  => 'Short',
-                            Valid => 1,
-                        ),
-                    },
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name     => 'ResponsibleID',
-                    Title    => $LanguageObject->Get('Responsible'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-                    Options  => {
-
-                        # this options are just for testing
-                        $Self->{UserObject}->UserList(
-                            Type  => 'Short',
-                            Valid => 1,
-                        ),
-                    },
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name      => 'Subject',
-                    Title     => $LanguageObject->Get('Subject'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'Input',
-                    Min       => 1,
-                    Max       => 250,
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name      => 'Body',
-                    Title     => $LanguageObject->Get('Text'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'TextArea',
-                    Min       => 1,
-                    Max       => 20_000,
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name      => 'CustomerID',
-                    Title     => $LanguageObject->Get('CustomerID'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'Input',
-                    Min       => 1,
-                    Max       => 150,
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name     => 'NextStateID',
-                    Title    => $LanguageObject->Get('Next Ticket State'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-
-                    # this options are just for testing
-                    Options => {
-                        $Self->{StateObject}->StateList(
-                            UserID => $Param{UserID},
-                        ),
-                    },
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name      => 'PendingDate',
-                    Title     => $LanguageObject->Get('Pending Date (for pending* states)'),
-                    Datatype  => 'DateTime',
-                    Viewtype  => 'Picker',
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name     => 'PriorityID',
-                    Title    => $LanguageObject->Get('Priority'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-
-                    # this options are just for testing
-                    Options => {
-                        $Self->{TicketObject}->PriorityList(
-                            UserID => $Param{UserID},
-                        ),
-                    },
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name      => 'DueDate',
-                    Title     => $LanguageObject->Get('Due Date (for pending* states)'),
-                    Datatype  => 'DateTime',
-                    Viewtype  => 'Picker',
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name      => 'TimeUnits',
-                    Title     => $LanguageObject->Get('Time units (work units)'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'Input',
-                    Min       => 1,
-                    Max       => 10,
-                    Mandatory => 0,
-                    Default   => '',
-                },
-
-                #            {
-                #                    Name  => '',
-                #                    Title => '',
-                #                    Type  => '',
-                #                    Min   =>,
-                #                    Max   =>,
-                #
-                #                    #                    Options => {
-                #                    #                    },
-                #                    #                    OptionsURL => {
-                #                    Mandatory =>,
-                #                    Default   =>,
-                #                #},
-                #            },
-
-            ],
-
-            #},
+            Elements => $Self->_GetPhoneViewElements(%Param),
         );
         return \%Config;
     }
@@ -2639,6 +2417,8 @@ sub _GetTypes {
     # get type
     %Type = $Self->{TicketObject}->TicketTypeList(
         %Param,
+        Action => $Param{Action},
+        UserID => $Param{UserID},
     );
     return \%Type;
 }
@@ -2756,6 +2536,289 @@ sub _GetNoteTypes {
     return \%NoteTypes;
 }
 
+sub _GetPhoneViewElements {
+    my ( $Self, %Param ) = @_;
+
+    my @ScreenElements;
+
+    # get screen configuration options for iphone from sysconfig
+    $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketPhone');
+
+    # type
+    if ( $Self->{ConfigObject}->Get('Ticket::Type') && $Self->{Config}->{TicketType} ) {
+        my $TypeElements = [
+            {
+                Name     => 'TypeID',
+                Title    => $Self->{LanguageObject}->Get('Type'),
+                Datatype => 'Text',
+                Viewtype => 'Picker',
+                Options  => {
+                    %{
+                        $Self->_GetTypes(
+                            %Param,
+                            UserID => $Param{UserID},
+                            )
+                        },
+                },
+                Mandatory => 1,
+                Default   => '',
+            },
+        ];
+
+        push @ScreenElements, $TypeElements;
+    }
+
+    # from, to
+    my $FlowElements = [
+        {
+            Name       => 'UserLogin',
+            Title      => $Self->{LanguageObject}->Get('From customer'),
+            Datatype   => 'Text',
+            Viewtype   => 'AutoCompletion',
+            OptionsURL => "$Self->{ActionURL}" . "&Object=CustomerUserObject"
+                . "&Method=CustomerSearch&Data={%22Search%22:#{%22UserLogin%22}",
+        },
+        Mandatory => 1,
+        Default   => '',
+    },
+        {
+        Name     => 'QueueID',
+        Title    => $Self->{LanguageObject}->Get('To queue'),
+        Datatype => 'Text',
+        Viewtype => 'Picker',
+
+        # change for a URL depening on fileds QueueID and CustomerUserLogin
+        Options => {
+            %{
+                $Self->_GetTos(
+                    %Param,
+                    QueueID => 1,
+                    )
+                },
+        },
+        Mandatory => 1,
+        Default   => '',
+        },
+    ];
+push @ScreenElements, $FlowElements;
+
+# service, sla
+if ( $Self->{ConfigObject}->Get('Ticket::Service') && $Self->{Config}->{Service} ) {
+    my $ServiceElements = [
+        {
+            Name     => 'ServiceID',
+            Title    => $Self->{LanguageObject}->Get('Service'),
+            Datatype => 'Text',
+            Viewtype => 'Picker',
+            Options  => {
+
+                # change for a URL depening on fileds QueueID and CustomerUserLogin
+                %{
+                    $Self->_GetServices(
+                        %Param,
+                        QueueID => 1,
+                        )
+                    }
+
+                    # this options are just for testig
+                    #$Self->{ServiceObject}->ServiceList(
+                    #    UserID => $Param{UserID},
+                    #),
+            },
+            Mandatory => 0,
+            Default   => '',
+        },
+        {
+            Name     => 'SLAID',
+            Title    => $Self->{LanguageObject}->Get('SLA'),
+            Datatype => 'Text',
+            Viewtype => 'Picker',
+            Options  => {
+
+                #%{ $Self->_GetSLAs( %Param, ) }
+                # this options are just for testing
+                $Self->{SLAObject}->SLAList(
+                    UserID => $Param{UserID},
+                ),
+            },
+            Mandatory => 0,
+            Default   => '',
+        },
+    ];
+    push @ScreenElements, $ServiceElements;
+}
+
+# owner
+if ( $Self->{Config}->{Owner} ) {
+    my $OwnerElements = [
+        {
+            Name     => 'OwnerID',
+            Title    => $Self->{LanguageObject}->Get('Owner'),
+            Datatype => 'Text',
+            Viewtype => 'Picker',
+            Options  => {
+
+                # this options are just for testing
+                $Self->{UserObject}->UserList(
+                    Type  => 'Short',
+                    Valid => 1,
+                ),
+            },
+            Mandatory => 0,
+            Default   => '',
+        },
+    ];
+    push @ScreenElements, $OwnerElements;
+}
+
+# responsible
+if ( $Self->{ConfigObject}->Get('Ticket::Responsible') && $Self->{Config}->{Responsible} ) {
+    my $ResponsibleElements = [
+        {
+            Name     => 'ResponsibleID',
+            Title    => $Self->{LanguageObject}->Get('Responsible'),
+            Datatype => 'Text',
+            Viewtype => 'Picker',
+            Options  => {
+
+                # this options are just for testing
+                $Self->{UserObject}->UserList(
+                    Type  => 'Short',
+                    Valid => 1,
+                ),
+            },
+            Mandatory => 0,
+            Default   => '',
+        },
+    ];
+    push @ScreenElements, $ResponsibleElements;
+}
+
+# subject, body
+my $MainElements = [
+    {
+        Name      => 'Subject',
+        Title     => $Self->{LanguageObject}->Get('Subject'),
+        Datatype  => 'Text',
+        Viewtype  => 'Input',
+        Min       => 1,
+        Max       => 250,
+        Mandatory => 1,
+        Default   => '',
+    },
+    {
+        Name      => 'Body',
+        Title     => $Self->{LanguageObject}->Get('Text'),
+        Datatype  => 'Text',
+        Viewtype  => 'TextArea',
+        Min       => 1,
+        Max       => 20_000,
+        Mandatory => 1,
+        Default   => '',
+    },
+];
+push @ScreenElements, $MainElements;
+
+# customer id
+if ( $Self->{Config}->{CustomerID} ) {
+    my $CustomerElements = [
+        {
+            Name      => 'CustomerID',
+            Title     => $Self->{LanguageObject}->Get('CustomerID'),
+            Datatype  => 'Text',
+            Viewtype  => 'Input',
+            Min       => 1,
+            Max       => 150,
+            Mandatory => 0,
+            Default   => '',
+        },
+    ];
+    push @ScreenElements, $CustomerElements;
+}
+
+# state
+if ( $Self->{Config}->{CustomerID} ) {
+    my $StateElements = [
+        {
+            Name     => 'NextStateID',
+            Title    => $Self->{LanguageObject}->Get('Next Ticket State'),
+            Datatype => 'Text',
+            Viewtype => 'Picker',
+
+            # this options are just for testing
+            Options => {
+                $Self->{StateObject}->StateList(
+                    UserID => $Param{UserID},
+                ),
+            },
+            Mandatory => 1,
+            Default   => '',
+        },
+    ];
+    push @ScreenElements, $StateElements;
+}
+
+# pending date
+my $PendingDateElements = [
+    {
+        Name      => 'PendingDate',
+        Title     => $Self->{LanguageObject}->Get('Pending Date (for pending* states)'),
+        Datatype  => 'DateTime',
+        Viewtype  => 'Picker',
+        Mandatory => 0,
+        Default   => '',
+    },
+];
+push @ScreenElements, $PendingDateElements;
+
+# priority
+my $PriorityElements = [
+    {
+        Name     => 'PriorityID',
+        Title    => $Self->{LanguageObject}->Get('Priority'),
+        Datatype => 'Text',
+        Viewtype => 'Picker',
+
+        # this options are just for testing
+        Options => {
+            $Self->{TicketObject}->PriorityList(
+                UserID => $Param{UserID},
+            ),
+        },
+        Mandatory => 1,
+        Default   => '',
+    },
+];
+push @ScreenElements, $PriorityElements;
+
+# time units
+if ( $Self->{Config}->{TimeUnits} ) {
+    my $TimeUnitsElements = [
+        {
+            Name      => 'TimeUnits',
+            Title     => $Self->{LanguageObject}->Get('Time units (work units)'),
+            Datatype  => 'Text',
+            Viewtype  => 'Input',
+            Min       => 1,
+            Max       => 10,
+            Mandatory => 0,
+            Default   => '',
+        },
+    ];
+    push @ScreenElements, $TimeUnitsElements;
+}
+return \@ScreenElements;
+};
+
+sub CustomerSearch {
+    my ( $Self, %Param ) = @_;
+
+    my %Customers = $Self->{CustomerUserObject}->CustomerSearch(
+        Search => $Param{Search},
+    );
+    return \%Customers;
+}
+
 1;
 
 =back
@@ -2772,6 +2835,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.11 2010/06/27 15:09:00 cr Exp $
+$Id: iPhone.pm,v 1.12 2010/06/29 05:03:50 cr Exp $
 
 =cut
