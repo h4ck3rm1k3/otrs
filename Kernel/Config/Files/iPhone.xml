@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: iPhone.xml,v 1.1 2010/06/29 04:56:26 cr Exp $</CVS>
+    <CVS>$Id: iPhone.xml,v 1.2 2010/06/30 03:09:06 cr Exp $</CVS>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TicketType" Required="0" Valid="1">
         <Description Lang="en">If you want to set the ticket type (Ticket::Type needs to be activated).</Description>
         <Description Lang="de">Wenn der Ticket-Typ gesetzt werden soll (Ticket::Type muss aktiv sein).</Description>
@@ -85,7 +85,7 @@
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###PriorityDefault" Required="0" Valid="1">
         <Description Lang="en">Default priority options.</Description>
         <Description Lang="de">Default Auswahl der Priorität.</Description>
-        <Group>Ticket</Group>
+        <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
             <String Regex="">3 normal</String>
@@ -106,7 +106,7 @@
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TicketFreeText" Required="0" Valid="1">
         <Description Lang="en">Shown ticket free text options. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Description Lang="de">Angezeigte Ticket-Frei-Text-Felder. Mögliche Einstellungen: 0 = Deaktiviert, 1 = Aktiviert, 2 = Aktiviert und Pflichtfeld.</Description>
-        <Group>Ticket</Group>
+        <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
             <Hash>
@@ -132,7 +132,7 @@
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TicketFreeTime" Required="0" Valid="1">
         <Description Lang="en">Shown ticket free time options. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Description Lang="de">Angezeigte Ticket-Frei-Time-Felder. Mögliche Einstellungen: 0 = Deaktiviert, 1 = Aktiviert, 2 = Aktiviert und Pflichtfeld.</Description>
-        <Group>Ticket</Group>
+        <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
             <Hash>
@@ -148,7 +148,7 @@
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###ArticleFreeText" Required="0" Valid="1">
         <Description Lang="en">Shown article free text options.</Description>
         <Description Lang="de">Gezeigte Artikel-Frei-Text-Felder.</Description>
-        <Group>Ticket</Group>
+        <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
             <Hash>
@@ -158,8 +158,6 @@
             </Hash>
         </Setting>
     </ConfigItem>
-
-<!--
 
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###TicketType" Required="0" Valid="1">
         <Description Lang="en">If you want to set the ticket type (Ticket::Type needs to be activated).</Description>
@@ -272,30 +270,6 @@
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
             <TextArea></TextArea>
-        </Setting>
-    </ConfigItem>
-    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###InvolvedAgent" Required="0" Valid="0">
-        <Description Lang="en">Show selection of involved agents.</Description>
-        <Description Lang="de">Auswahl der involvierten Agents anzeigen.</Description>
-        <Group>iPhone</Group>
-        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
-        <Setting>
-            <Option SelectedID="0">
-                <Item Key="0">No</Item>
-                <Item Key="1">Yes</Item>
-            </Option>
-        </Setting>
-    </ConfigItem>
-    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###InformAgent" Required="0" Valid="0">
-        <Description Lang="en">Show selection of agents to inform (all agents with note permissions on the queue/ticket).</Description>
-        <Description Lang="de">Auswahl der zu informierenden Agents anzeigen (alle Agenten mit "notiz" Rechten am Ticket/Queue).</Description>
-        <Group>iPhone</Group>
-        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
-        <Setting>
-            <Option SelectedID="0">
-                <Item Key="0">No</Item>
-                <Item Key="1">Yes</Item>
-            </Option>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###ArticleTypeDefault" Required="0" Valid="1">
@@ -426,6 +400,5 @@
             <String Regex="">%%Note</String>
         </Setting>
     </ConfigItem>
--->
 
 </otrs_config>
