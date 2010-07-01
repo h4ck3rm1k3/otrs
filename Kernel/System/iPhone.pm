@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.14 2010/07/01 05:16:08 cr Exp $
+# $Id: iPhone.pm,v 1.15 2010/07/01 15:36:24 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Log;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.14 $) [1];
+$VERSION = qw($Revision: 1.15 $) [1];
 
 =head1 NAME
 
@@ -2124,51 +2124,47 @@ sub _GetScreenElements {
 
     # type
     if ( $Self->{ConfigObject}->Get('Ticket::Type') && $Self->{Config}->{TicketType} ) {
-        my $TypeElements = [
-            {
-                Name     => 'TypeID',
-                Title    => $Self->{LanguageObject}->Get('Type'),
-                Datatype => 'Text',
-                Viewtype => 'Picker',
-                Options  => {
-                    %{
-                        $Self->_GetTypes(
-                            %Param,
-                            UserID => $Param{UserID},
-                            )
-                        },
-                },
-                Mandatory => 1,
-                Default   => '',
+        my $TypeElements = {
+            Name     => 'TypeID',
+            Title    => $Self->{LanguageObject}->Get('Type'),
+            Datatype => 'Text',
+            Viewtype => 'Picker',
+            Options  => {
+                %{
+                    $Self->_GetTypes(
+                        %Param,
+                        UserID => $Param{UserID},
+                        )
+                    },
             },
-        ];
-
+            Mandatory => 1,
+            Default   => '',
+        };
         push @ScreenElements, $TypeElements;
     }
 
     # from, to
     if ( $Param{Screen} eq 'Phone' ) {
-        my $CustomerElements = [
-            {
-                Name           => 'CustomerUserLogin',
-                Title          => $Self->{LanguageObject}->Get('From customer'),
-                Datatype       => 'Text',
-                Viewtype       => 'AutoCompletion',
-                DynamicOptions => {
-                    Object     => 'CustomObject',
-                    Method     => 'CustomerSearch',
-                    Parameters => [
-                        {
-                            Search => 'CustomerUserLogin',
-                        },
-                    ],
-                },
-                Mandatory => 1,
-                Default   => '',
+        my $CustomerElements = {
+            Name           => 'CustomerUserLogin',
+            Title          => $Self->{LanguageObject}->Get('From customer'),
+            Datatype       => 'Text',
+            Viewtype       => 'AutoCompletion',
+            DynamicOptions => {
+                Object     => 'CustomObject',
+                Method     => 'CustomerSearch',
+                Parameters => [
+                    {
+                        Search => 'CustomerUserLogin',
+                    },
+                ],
             },
-        ];
+            Mandatory => 1,
+            Default   => '',
+        };
         push @ScreenElements, $CustomerElements;
     }
+
     if ( $Param{Screen} eq 'Phone' || $Param{Screen} eq 'Move' ) {
         my $Title;
         if ( $Param{Screen} eq 'Phone' ) {
@@ -2177,68 +2173,64 @@ sub _GetScreenElements {
         else {
             $Title = 'New Queue'
         }
-        my $QueueElements = [
-            {
-                Name     => 'QueueID',
-                Title    => $Self->{LanguageObject}->Get($Title),
-                Datatype => 'Text',
-                Viewtype => 'Picker',
-                Options  => {
-                    %{
-                        $Self->_GetTos(
-                            %Param,
-                            UserID => $Param{UserID},
-                            )
-                        },
-                },
-                Mandatory => 1,
-                Default   => '',
+        my $QueueElements = {
+            Name     => 'QueueID',
+            Title    => $Self->{LanguageObject}->Get($Title),
+            Datatype => 'Text',
+            Viewtype => 'Picker',
+            Options  => {
+                %{
+                    $Self->_GetTos(
+                        %Param,
+                        UserID => $Param{UserID},
+                        )
+                    },
             },
-        ];
+            Mandatory => 1,
+            Default   => '',
+        };
         push @ScreenElements, $QueueElements;
     }
 
     # service, sla
     if ( $Self->{ConfigObject}->Get('Ticket::Service') && $Self->{Config}->{Service} ) {
-        my $ServiceElements = [
-            {
-                Name           => 'ServiceID',
-                Title          => $Self->{LanguageObject}->Get('Service'),
-                Datatype       => 'Text',
-                Viewtype       => 'Picker',
-                DynamicOptions => {
-                    Object     => 'CustomObject',
-                    Method     => 'ServicesGet',
-                    Parameters => [
-                        {
-                            CustomerUserID => 'CustomerUserLogin',
-                            QueueID        => 'QueueID',
-                        },
-                    ],
-                },
-                Mandatory => 0,
-                Default   => '',
+        my $ServiceElements = {
+            Name           => 'ServiceID',
+            Title          => $Self->{LanguageObject}->Get('Service'),
+            Datatype       => 'Text',
+            Viewtype       => 'Picker',
+            DynamicOptions => {
+                Object     => 'CustomObject',
+                Method     => 'ServicesGet',
+                Parameters => [
+                    {
+                        CustomerUserID => 'CustomerUserLogin',
+                        QueueID        => 'QueueID',
+                    },
+                ],
+            },
+            Mandatory => 0,
+            Default   => '',
             },
             {
-                Name           => 'SLAID',
-                Title          => $Self->{LanguageObject}->Get('SLA'),
-                Datatype       => 'Text',
-                Viewtype       => 'Picker',
-                DynamicOptions => {
-                    Object     => 'CustomObject',
-                    Method     => 'SLAsGet',
-                    Parameters => [
-                        {
-                            CustomerUserID => 'CustomerUserLogin',
-                            QueueID        => 'QueueID',
-                            ServiceID      => 'ServiceID',
-                        },
-                    ],
-                },
-                Mandatory => 0,
-                Default   => '',
+            Name           => 'SLAID',
+            Title          => $Self->{LanguageObject}->Get('SLA'),
+            Datatype       => 'Text',
+            Viewtype       => 'Picker',
+            DynamicOptions => {
+                Object     => 'CustomObject',
+                Method     => 'SLAsGet',
+                Parameters => [
+                    {
+                        CustomerUserID => 'CustomerUserLogin',
+                        QueueID        => 'QueueID',
+                        ServiceID      => 'ServiceID',
+                    },
+                ],
             },
-        ];
+            Mandatory => 0,
+            Default   => '',
+            };
         push @ScreenElements, $ServiceElements;
     }
 
@@ -2252,118 +2244,110 @@ sub _GetScreenElements {
             $Title = 'Owner';
         }
 
-        my $OwnerElements = [
-            {
-                Name           => 'OwnerID',
-                Title          => $Self->{LanguageObject}->Get($Title),
-                Datatype       => 'Text',
-                Viewtype       => 'Picker',
-                DynamicOptions => {
-                    Object     => 'CustomObject',
-                    Method     => 'UsersGet',
-                    Parameters => [
-                        {
-                            QueueID => 'QueueID',
-                        },
-                    ],
-                },
-                Mandatory => 0,
-                Default   => '',
+        my $OwnerElements = {
+            Name           => 'OwnerID',
+            Title          => $Self->{LanguageObject}->Get($Title),
+            Datatype       => 'Text',
+            Viewtype       => 'Picker',
+            DynamicOptions => {
+                Object     => 'CustomObject',
+                Method     => 'UsersGet',
+                Parameters => [
+                    {
+                        QueueID => 'QueueID',
+                    },
+                ],
             },
-        ];
+            Mandatory => 0,
+            Default   => '',
+        };
         push @ScreenElements, $OwnerElements;
     }
 
     # responsible
     if ( $Self->{ConfigObject}->Get('Ticket::Responsible') && $Self->{Config}->{Responsible} ) {
-        my $ResponsibleElements = [
-            {
-                Name           => 'ResponsibleID',
-                Title          => $Self->{LanguageObject}->Get('Responsible'),
-                Datatype       => 'Text',
-                Viewtype       => 'Picker',
-                DynamicOptions => {
-                    Object     => 'CustomObject',
-                    Method     => 'UsersGet',
-                    Parameters => [
-                        {
-                            QueueID => 'QueueID',
-                        },
-                    ],
-                },
-                Mandatory => 0,
-                Default   => '',
+        my $ResponsibleElements = {
+            Name           => 'ResponsibleID',
+            Title          => $Self->{LanguageObject}->Get('Responsible'),
+            Datatype       => 'Text',
+            Viewtype       => 'Picker',
+            DynamicOptions => {
+                Object     => 'CustomObject',
+                Method     => 'UsersGet',
+                Parameters => [
+                    {
+                        QueueID => 'QueueID',
+                    },
+                ],
             },
-        ];
+            Mandatory => 0,
+            Default   => '',
+        };
         push @ScreenElements, $ResponsibleElements;
     }
 
     if ( $Param{Screen} eq 'Compose' ) {
-        my $ComposeElements = [
-            {
-                Name      => 'From',
-                Title     => $Self->{LanguageObject}->Get('From'),
-                Datatype  => 'Text',
-                Viewtype  => 'Input',
-                Min       => 1,
-                Max       => 50,
-                Mandatory => 1,
+        my $ComposeElements = {
+            Name      => 'From',
+            Title     => $Self->{LanguageObject}->Get('From'),
+            Datatype  => 'Text',
+            Viewtype  => 'Input',
+            Min       => 1,
+            Max       => 50,
+            Mandatory => 1,
 
-                # define a RedonlyFieldto
-                # ReadOnly  => 1,
-                # get from address from ticket
-                Default => '',
+            # define a RedonlyFieldto
+            # ReadOnly  => 1,
+            # get from address from ticket
+            Default => '',
             },
             {
-                Name      => 'To',
-                Title     => $Self->{LanguageObject}->Get('To'),
-                Datatype  => 'Text',
-                Viewtype  => 'EMail',
-                Min       => 1,
-                Max       => 50,
-                Mandatory => 0,
+            Name      => 'To',
+            Title     => $Self->{LanguageObject}->Get('To'),
+            Datatype  => 'Text',
+            Viewtype  => 'EMail',
+            Min       => 1,
+            Max       => 50,
+            Mandatory => 0,
 
-                # must be retrieved from the ticket
-                Default => '',
+            # must be retrieved from the ticket
+            Default => '',
             },
 
             {
-                Name      => 'Cc',
-                Title     => $Self->{LanguageObject}->Get('Cc'),
-                Datatype  => 'Text',
-                Viewtype  => 'EMail',
-                Min       => 1,
-                Max       => 50,
-                Mandatory => 0,
-                Default   => '',
+            Name      => 'Cc',
+            Title     => $Self->{LanguageObject}->Get('Cc'),
+            Datatype  => 'Text',
+            Viewtype  => 'EMail',
+            Min       => 1,
+            Max       => 50,
+            Mandatory => 0,
+            Default   => '',
             },
             {
-                Name      => 'Bcc',
-                Title     => $Self->{LanguageObject}->Get('Bcc'),
-                Datatype  => 'Text',
-                Viewtype  => 'EMail',
-                Min       => 1,
-                Max       => 50,
-                Mandatory => 0,
-                Default   => '',
-            },
-        ];
+            Name      => 'Bcc',
+            Title     => $Self->{LanguageObject}->Get('Bcc'),
+            Datatype  => 'Text',
+            Viewtype  => 'EMail',
+            Min       => 1,
+            Max       => 50,
+            Mandatory => 0,
+            Default   => '',
+            };
         push @ScreenElements, $ComposeElements;
     }
 
     # subject
-    my $SubjectElements = [
-        {
-            Name      => 'Subject',
-            Title     => $Self->{LanguageObject}->Get('Subject'),
-            Datatype  => 'Text',
-            Viewtype  => 'Input',
-            Min       => 1,
-            Max       => 250,
-            Mandatory => 1,
-            Default   => $Self->{LanguageObject}->Get( $Self->{Config}->{Subject} ),
-        },
-    ];
+    my $SubjectElements = {
+        Name      => 'Subject',
+        Title     => $Self->{LanguageObject}->Get('Subject'),
+        Datatype  => 'Text',
+        Viewtype  => 'Input',
+        Min       => 1,
+        Max       => 250,
+        Mandatory => 1,
+        Default   => $Self->{LanguageObject}->Get( $Self->{Config}->{Subject} ),
+    };
     push @ScreenElements, $SubjectElements;
 
     # sign
@@ -2391,133 +2375,120 @@ sub _GetScreenElements {
     #        },
 
     # body
-    my $BodyElements = [
-        {
-            Name      => 'Body',
-            Title     => $Self->{LanguageObject}->Get('Text'),
-            Datatype  => 'Text',
-            Viewtype  => 'TextArea',
-            Min       => 1,
-            Max       => 20_000,
-            Mandatory => 1,
-            Default   => '',
-        },
-    ];
+    my $BodyElements = {
+        Name      => 'Body',
+        Title     => $Self->{LanguageObject}->Get('Text'),
+        Datatype  => 'Text',
+        Viewtype  => 'TextArea',
+        Min       => 1,
+        Max       => 20_000,
+        Mandatory => 1,
+        Default   => '',
+    };
+
     push @ScreenElements, $BodyElements;
 
     # customer id
     if ( $Self->{Config}->{CustomerID} ) {
-        my $CustomerElements = [
-            {
-                Name      => 'CustomerID',
-                Title     => $Self->{LanguageObject}->Get('CustomerID'),
-                Datatype  => 'Text',
-                Viewtype  => 'Input',
-                Min       => 1,
-                Max       => 150,
-                Mandatory => 0,
-                Default   => '',
-            },
-        ];
+        my $CustomerElements = {
+            Name      => 'CustomerID',
+            Title     => $Self->{LanguageObject}->Get('CustomerID'),
+            Datatype  => 'Text',
+            Viewtype  => 'Input',
+            Min       => 1,
+            Max       => 150,
+            Mandatory => 0,
+            Default   => '',
+        };
         push @ScreenElements, $CustomerElements;
     }
 
     #note
     if ( $Self->{Config}->{Note} ) {
-        my $NoteElements = [
-            {
-                Name     => 'ArticleTypeID',
-                Title    => $Self->{LanguageObject}->Get('Note type'),
-                Datatype => 'Text',
-                Viewtype => 'Picker',
-                Options  => {
-                    %{ $Self->_GetNoteTypes( %Param, ) }
-                },
-                Mandatory => 1,
-                Default   => $Self->{Config}->{ArticleTypeDefault},
+        my $NoteElements = {
+            Name     => 'ArticleTypeID',
+            Title    => $Self->{LanguageObject}->Get('Note type'),
+            Datatype => 'Text',
+            Viewtype => 'Picker',
+            Options  => {
+                %{ $Self->_GetNoteTypes( %Param, ) }
             },
-        ];
+            Mandatory => 1,
+            Default   => $Self->{Config}->{ArticleTypeDefault},
+        };
         push @ScreenElements, $NoteElements;
     }
 
     # state
     if ( $Self->{Config}->{State} ) {
-        my $StateElements = [
-            {
-                Name           => 'NextStateID',
-                Title          => $Self->{LanguageObject}->Get('Next Ticket State'),
-                Datatype       => 'Text',
-                Viewtype       => 'Picker',
-                DynamicOptions => {
-                    Object     => 'CustomObject',
-                    Method     => 'NextStatesGet',
-                    Parameters => [
-                        {
-                            CustomerUserID => 'CustomerUserLogin',
-                            QueueID        => 'QueueID',
-                        },
-                    ],
-                },
-                Mandatory => 1,
-                Default   => $Self->{Config}->{StateDefault},
+        my $StateElements = {
+            Name           => 'NextStateID',
+            Title          => $Self->{LanguageObject}->Get('Next Ticket State'),
+            Datatype       => 'Text',
+            Viewtype       => 'Picker',
+            DynamicOptions => {
+                Object     => 'CustomObject',
+                Method     => 'NextStatesGet',
+                Parameters => [
+                    {
+                        CustomerUserID => 'CustomerUserLogin',
+                        QueueID        => 'QueueID',
+                    },
+                ],
             },
-        ];
+            Mandatory => 1,
+            Default   => $Self->{Config}->{StateDefault},
+        };
         push @ScreenElements, $StateElements;
     }
 
     # pending date
     if ( $Param{Screen} eq 'Phone' || $Param{Screen} eq 'Compose' ) {
-        my $PendingDateElements = [
-            {
-                Name      => 'PendingDate',
-                Title     => $Self->{LanguageObject}->Get('Pending Date (for pending* states)'),
-                Datatype  => 'DateTime',
-                Viewtype  => 'Picker',
-                Mandatory => 0,
-                Default   => '',
-            },
-        ];
+        my $PendingDateElements = {
+            Name      => 'PendingDate',
+            Title     => $Self->{LanguageObject}->Get('Pending Date (for pending* states)'),
+            Datatype  => 'DateTime',
+            Viewtype  => 'Picker',
+            Mandatory => 0,
+            Default   => '',
+        };
         push @ScreenElements, $PendingDateElements;
     }
 
     # priority
     if ( $Param{Screen} eq 'Phone' ) {
-        my $PriorityElements = [
-            {
-                Name           => 'PriorityID',
-                Title          => $Self->{LanguageObject}->Get('Priority'),
-                Datatype       => 'Text',
-                Viewtype       => 'Picker',
-                DynamicOptions => {
-                    Object     => 'CustomObject',
-                    Method     => 'PrioritiesGet',
-                    Parameters => [
-                        {
-                            QueueID => 'QueueID',
-                        },
-                    ],
-                },
-                Mandatory => 1,
-                Default   => $Self->{Config}->{PriorityDefault},
+        my $PriorityElements = {
+            Name           => 'PriorityID',
+            Title          => $Self->{LanguageObject}->Get('Priority'),
+            Datatype       => 'Text',
+            Viewtype       => 'Picker',
+            DynamicOptions => {
+                Object     => 'CustomObject',
+                Method     => 'PrioritiesGet',
+                Parameters => [
+                    {
+                        QueueID => 'QueueID',
+                    },
+                ],
             },
-        ];
+            Mandatory => 1,
+            Default   => $Self->{Config}->{PriorityDefault},
+        };
         push @ScreenElements, $PriorityElements;
     }
 
     # time units
     if ( $Self->{Config}->{TimeUnits} ) {
-        my $TimeUnitsElements = [
-            {
-                Name      => 'TimeUnits',
-                Title     => $Self->{LanguageObject}->Get('Time units (work units)'),
-                Datatype  => 'Text',
-                Viewtype  => 'Input',
-                Min       => 1,
-                Max       => 10,
-                Mandatory => 0,
-                Default   => '',
-            },
-        ];
+        my $TimeUnitsElements = {
+            Name      => 'TimeUnits',
+            Title     => $Self->{LanguageObject}->Get('Time units (work units)'),
+            Datatype  => 'Text',
+            Viewtype  => 'Input',
+            Min       => 1,
+            Max       => 10,
+            Mandatory => 0,
+            Default   => '',
+        };
         push @ScreenElements, $TimeUnitsElements;
     }
     return \@ScreenElements;
@@ -2627,6 +2598,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.14 2010/07/01 05:16:08 cr Exp $
+$Id: iPhone.pm,v 1.15 2010/07/01 15:36:24 cr Exp $
 
 =cut
