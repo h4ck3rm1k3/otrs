@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.13 2010/06/30 03:14:53 cr Exp $
+# $Id: iPhone.pm,v 1.14 2010/07/01 05:16:08 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Log;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.13 $) [1];
+$VERSION = qw($Revision: 1.14 $) [1];
 
 =head1 NAME
 
@@ -227,17 +227,8 @@ sub ScreenConfig {
     my ( $Self, %Param ) = @_;
 
     $Self->{LanguageObject} = Kernel::Language->new( %{$Self}, UserLanguage => $Param{Language} );
-    my $LanguageObject = Kernel::Language->new( %{$Self}, UserLanguage => $Param{Language} );
 
-    my $HttpType    = $Self->{ConfigObject}->Get('HttpType');
-    my $FQDN        = $Self->{ConfigObject}->Get('FQDN');
-    my $ScriptAlias = $Self->{ConfigObject}->Get('ScriptAlias');
-    my $Credentials = 'User=' . $Param{UserID} . '&Password=';     #. $Param{Password};
-         #    # sould be retreived by the config?
-    my $Handle = 'json.pl';
-
-    $Self->{ActionURL} = $HttpType . '://' . $FQDN . '/' . $ScriptAlias . $Handle . '?'
-        . $Credentials;
+    # this can also be reduced
 
     # ------------------------------------------------------------ #
     # New Phone Ticket Screen
@@ -247,10 +238,9 @@ sub ScreenConfig {
 
         # get screen configuration options for iphone from sysconfig
         $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketPhone');
-
         my %Config = (
-            Title    => $LanguageObject->Get('New Phone Ticket'),
-            Elements => $Self->_GetPhoneViewElements(%Param),
+            Title    => $Self->{LanguageObject}->Get('New Phone Ticket'),
+            Elements => $Self->_GetScreenElements(%Param),
         );
         return \%Config;
     }
@@ -265,187 +255,24 @@ sub ScreenConfig {
         $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketNote');
 
         my %Config = (
-            Title    => $LanguageObject->Get('Add Note'),
-            Elements => $Self->_GetPhoneViewElements(%Param),
+            Title    => $Self->{LanguageObject}->Get('Add Note'),
+            Elements => $Self->_GetScreenElements(%Param),
         );
         return \%Config;
     }
-
-    #
-    #            # Note => {
-    #            Title    => $LanguageObject->Get('Add Note'),
-    #            Elements => [
-    #                {
-    #                    Name        => 'Subject',
-    #                    Title       => $LanguageObject->Get('Subject'),
-    #                    Datatype    => 'Text',
-    #                    Viewtype    => 'Input',
-    #                    Min         => 1,
-    #                    Max         => 250,
-    #                    Mandatory   => 1,
-    #                    Placeholder => 'Note',
-    #                },
-    #                {
-    #                    Name      => 'Body',
-    #                    Title     => $LanguageObject->Get('Text'),
-    #                    Datatype  => 'Text',
-    #                    Viewtype  => 'TextArea',
-    #                    Min       => 1,
-    #                    Max       => 20_000,
-    #                    Mandatory => 1,
-    #                    Default   => '',
-    #                },
-    #                {
-    #                    Name     => 'ArticleTypeID',
-    #                    Title    => $LanguageObject->Get('Note type'),
-    #                    Datatype => 'Text',
-    #                    Viewtype => 'Picker',
-    #                    Options  => {
-    #                        %{ $Self->_GetNoteTypes( %Param, ) }
-    #                    },
-    #                    Mandatory => 1,
-    #                    Default   => 'note-internal',
-    #                },
-    #                {
-    #                    Name      => 'TimeUnits',
-    #                    Title     => $LanguageObject->Get('Time units (work units)'),
-    #                    Datatype  => 'Text',
-    #                    Viewtype  => 'Input',
-    #                    Min       => 1,
-    #                    Max       => 10,
-    #                    Mandatory => 0,
-    #                    Default   => '',
-    #                },
-    #
-    #                #                {
-    #                #                    Name      => 'Subject',
-    #                #                    Title     => $LanguageObject->Get('Subject'),
-    #                #                    Type      => 'Input',
-    #                #                    Min       => 1,
-    #                #                    Max       => 250,
-    #                #                    Mandatory => 1,
-    #                #                    Default   => '',
-    #                #                },
-    #                #                {
-    #                #                    Name      => 'Body',
-    #                #                    Title     => $LanguageObject->Get('Body'),
-    #                #                    Type      => 'Text',
-    #                #                    Min       => 1,
-    #                #                    Max       => 20_000,
-    #                #                    Mandatory => 1,
-    #                #                    Default   => '',
-    #                #                },
-    #            ],
-    #
-    #            # },
-    #        );
-    #        return \%Config
-    #    }
 
     # ------------------------------------------------------------ #
     # Close Ticket Screen
     # ------------------------------------------------------------ #
 
     if ( $Param{Screen} eq 'Close' ) {
+
+        # get screen configuration options for iphone from sysconfig
+        $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketClose');
+
         my %Config = (
-
-            #Close => {
-            Title    => $LanguageObject->Get('Close'),
-            Elements => [
-                {
-                    Name        => 'Subject',
-                    Title       => $LanguageObject->Get('Subject'),
-                    Datatype    => 'Text',
-                    Viewtype    => 'Input',
-                    Min         => 1,
-                    Max         => 250,
-                    Mandatory   => 1,
-                    Placeholder => 'Close',
-                },
-                {
-                    Name      => 'Body',
-                    Title     => $LanguageObject->Get('Text'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'TextArea',
-                    Min       => 1,
-                    Max       => 20_000,
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name     => 'ArticeTypeID',
-                    Title    => $LanguageObject->Get('Note type'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-                    Options  => {
-                        %{ $Self->_GetNoteTypes( %Param, ) }
-                    },
-                    Mandatory => 1,
-                    Default   => 'note-internal',
-                },
-                {
-                    Name     => 'NextStateID',
-                    Title    => $LanguageObject->Get('Next Ticket State'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-
-                    # this options are just for testing
-                    Options => {
-                        $Self->{StateObject}->StateList(
-                            UserID => $Param{UserID},
-                        ),
-                    },
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name      => 'TimeUnits',
-                    Title     => $LanguageObject->Get('Time units (work units)'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'Input',
-                    Min       => 1,
-                    Max       => 10,
-                    Mandatory => 0,
-                    Default   => '',
-                },
-
-           #                {
-           #                    Name      => 'Subject',
-           #                    Title     => $LanguageObject->Get('Subject'),
-           #                    Type      => 'Input',
-           #                    Min       => 1,
-           #                    Max       => 250,
-           #                    Mandatory => 1,
-           #                    Default   => '',
-           #                },
-           #                {
-           #                    Name      => 'Body',
-           #                    Title     => $LanguageObject->Get('Body'),
-           #                    Type      => 'Text',
-           #                    Min       => 1,
-           #                    Max       => 20_000,
-           #                    Mandatory => 1,
-           #                    Default   => '',
-           #                },
-           #                {
-           #                    Name    => 'State',
-           #                    Title   => $LanguageObject->Get('State'),
-           #                    Type    => 'Option',
-           #                    Options => {
-           #
-           #                        #                        $Self->{TicketObject}->TicketStateList(
-           #                        #                            Action   => $Param{Action},
-           #                        #                            QueueID  => $Param{QueueID},
-           #                        #                            TicketID => $Param{TicketID},
-           #                        #                            UserID   => $Param{UserID},
-           #                        #                        ),
-           #                    },
-           #                    Mandatory => 0,
-           #                    Default   => '',
-           #                },
-            ],
-
-            #},
+            Title    => $Self->{LanguageObject}->Get('Close'),
+            Elements => $Self->_GetScreenElements(%Param),
         );
         return \%Config;
     }
@@ -455,181 +282,13 @@ sub ScreenConfig {
     # ------------------------------------------------------------ #
 
     if ( $Param{Screen} eq 'Compose' ) {
+
+        # get screen configuration options for iphone from sysconfig
+        $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketCompose');
+
         my %Config = (
-
-            #Compose => {
-            Title    => $LanguageObject->Get('Compose'),
-            Elements => [
-
-                {
-                    Name      => 'From',
-                    Title     => $LanguageObject->Get('From'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'Input',
-                    Min       => 1,
-                    Max       => 50,
-                    Mandatory => 1,
-
-                    # define a RedonlyFieldto
-                    # ReadOnly  => 1,
-                    # get from address from ticket
-                    Default => '',
-                },
-                {
-                    Name      => 'To',
-                    Title     => $LanguageObject->Get('To'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'EMail',
-                    Min       => 1,
-                    Max       => 50,
-                    Mandatory => 0,
-
-                    # must be retrieved from the ticket
-                    Default => '',
-                },
-
-                {
-                    Name      => 'Cc',
-                    Title     => $LanguageObject->Get('Cc'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'EMail',
-                    Min       => 1,
-                    Max       => 50,
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name      => 'Bcc',
-                    Title     => $LanguageObject->Get('Bcc'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'EMail',
-                    Min       => 1,
-                    Max       => 50,
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name      => 'Subject',
-                    Title     => $LanguageObject->Get('Subject'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'Input',
-                    Min       => 1,
-                    Max       => 250,
-                    Mandatory => 1,
-
-                    # must be retieved from ticket
-                    Default => '',
-                },
-                {
-                    Name      => 'SignKeyID',
-                    Title     => $LanguageObject->Get('Sign'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'Picker',
-                    Opetions  => [],
-                    Mandatory => 0,
-                    Default   => '- none -',
-                },
-                {
-                    Name      => 'CryptKeyID',
-                    Title     => $LanguageObject->Get('Crypt'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'Picker',
-                    Opetions  => [],
-                    Mandatory => 0,
-                    Default   => '- none -',
-                },
-                {
-                    Name      => 'Body',
-                    Title     => $LanguageObject->Get('Text'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'TextArea',
-                    Min       => 1,
-                    Max       => 20_000,
-                    Mandatory => 1,
-
-                    # must be retieved from the selected response
-                    Default => '',
-                },
-                {
-                    Name     => 'NextStateID',
-                    Title    => $LanguageObject->Get('Next Ticket State'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-
-                    # this options are just for testing
-                    Options => {
-                        $Self->{StateObject}->StateList(
-                            UserID => $Param{UserID},
-                        ),
-                    },
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name      => 'PendingDate',
-                    Title     => $LanguageObject->Get('Pending Date (for pending* states)'),
-                    Datatype  => 'DateTime',
-                    Viewtype  => 'Picker',
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name      => 'TimeUnits',
-                    Title     => $LanguageObject->Get('Time units (work units)'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'Input',
-                    Min       => 1,
-                    Max       => 10,
-                    Mandatory => 0,
-                    Default   => '',
-                },
-
-           #                {
-           #                    Name      => 'To',
-           #                    Title     => $LanguageObject->Get('To'),
-           #                    Type      => 'Input',
-           #                    Min       => 1,
-           #                    Max       => 250,
-           #                    Mandatory => 1,
-           #                    Default   => '',
-           #                },
-           #                {
-           #                    Name      => 'Subject',
-           #                    Title     => $LanguageObject->Get('Subject'),
-           #                    Type      => 'Input',
-           #                    Min       => 1,
-           #                    Max       => 250,
-           #                    Mandatory => 1,
-           #                    Default   => '',
-           #                },
-           #                {
-           #                    Name      => 'Body',
-           #                    Title     => $LanguageObject->Get('Body'),
-           #                    Type      => 'Text',
-           #                    Min       => 1,
-           #                    Max       => 20_000,
-           #                    Mandatory => 1,
-           #                    Default   => '',
-           #                },
-           #                {
-           #                    Name    => 'State',
-           #                    Title   => $LanguageObject->Get('State'),
-           #                    Type    => 'Option',
-           #                    Options => {
-           #
-           #                        #                        $Self->{TicketObject}->TicketStateList(
-           #                        #                            Action   => $Param{Action},
-           #                        #                            QueueID  => $Param{QueueID},
-           #                        #                            TicketID => $Param{TicketID},
-           #                        #                            UserID   => $Param{UserID},
-           #                        #                        ),
-           #                    },
-           #                    Mandatory => 0,
-           #                    Default   => '',
-           #                },
-            ],
-
-            # },
+            Title    => $Self->{LanguageObject}->Get('Compose'),
+            Elements => $Self->_GetScreenElements(%Param),
         );
         return \%Config;
     }
@@ -638,107 +297,13 @@ sub ScreenConfig {
     # Move Screen
     # ------------------------------------------------------------ #
     if ( $Param{Screen} eq 'Move' ) {
+
+        # get screen configuration options for iphone from sysconfig
+        $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketMove');
+
         my %Config = (
-            Title    => $LanguageObject->Get('Move'),
-            Elements => [
-
-                {
-                    Name     => 'QueueID',
-                    Title    => $LanguageObject->Get('New Queue'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-                    Options  => {
-
-                        #%{$Self->_GetTos( %Param, ) },
-                        # this options are just for testing
-                        $Self->{QueueObject}->GetAllQueues(
-                            UserID => $Param{UserID},
-                            Type   => 'rw',
-                        ),
-                    },
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name     => 'NewOwnerID',
-                    Title    => $LanguageObject->Get('New Owner'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-                    Options  => {
-
-                        # this options are just for testing
-                        $Self->{UserObject}->UserList(
-                            Type  => 'Short',
-                            Valid => 1,
-                        ),
-                    },
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name     => 'OldOwnerID',
-                    Title    => $LanguageObject->Get('Old Owner'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-                    Options  => {
-
-                        # this options are just for testing
-                        $Self->{UserObject}->UserList(
-                            Type  => 'Short',
-                            Valid => 1,
-                        ),
-                    },
-                    Mandatory => 0,
-                    Default   => '',
-                },
-                {
-                    Name      => 'Subject',
-                    Title     => $LanguageObject->Get('Subject'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'Input',
-                    Min       => 1,
-                    Max       => 250,
-                    Mandatory => 1,
-
-                    # must be retieved from ticket
-                    Default => '',
-                },
-                {
-                    Name      => 'Body',
-                    Title     => $LanguageObject->Get('Text'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'TextArea',
-                    Min       => 1,
-                    Max       => 20_000,
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name     => 'NextStateID',
-                    Title    => $LanguageObject->Get('Next Ticket State'),
-                    Datatype => 'Text',
-                    Viewtype => 'Picker',
-
-                    # this options are just for testing
-                    Options => {
-                        $Self->{StateObject}->StateList(
-                            UserID => $Param{UserID},
-                        ),
-                    },
-                    Mandatory => 1,
-                    Default   => '',
-                },
-                {
-                    Name      => 'TimeUnits',
-                    Title     => $LanguageObject->Get('Time units (work units)'),
-                    Datatype  => 'Text',
-                    Viewtype  => 'Input',
-                    Min       => 1,
-                    Max       => 10,
-                    Mandatory => 0,
-                    Default   => '',
-                },
-            ],
+            Title    => $Self->{LanguageObject}->Get('Move'),
+            Elements => $Self->_GetScreenElements(%Param),
         );
         return \%Config;
     }
@@ -2540,7 +2105,7 @@ sub _GetNoteTypes {
     # ready for iPhone
     my ( $Self, %Param ) = @_;
 
-    $Self->{Config} = $Self->{ConfigObject}->Get('Ticket::Frontend::AgentTicketFreeText');
+    #$Self->{Config} = $Self->{ConfigObject}->Get('Ticket::Frontend::AgentTicketFreeText');
     my %DefaultNoteTypes = %{ $Self->{Config}->{ArticleTypes} };
 
     my %NoteTypes = $Self->{TicketObject}->ArticleTypeList( Result => 'HASH' );
@@ -2552,7 +2117,7 @@ sub _GetNoteTypes {
     return \%NoteTypes;
 }
 
-sub _GetPhoneViewElements {
+sub _GetScreenElements {
     my ( $Self, %Param ) = @_;
 
     my @ScreenElements;
@@ -2582,42 +2147,56 @@ sub _GetPhoneViewElements {
     }
 
     # from, to
-    my $FlowElements = [
-        {
-            Name           => 'CustomerUserLogin',
-            Title          => $Self->{LanguageObject}->Get('From customer'),
-            Datatype       => 'Text',
-            Viewtype       => 'AutoCompletion',
-            DynamicOptions => {
-                Object     => 'CustomObject',
-                Method     => 'CustomerSearch',
-                Parameters => [
-                    {
-                        Search => 'CustomerUserLogin',
-                    },
-                ],
+    if ( $Param{Screen} eq 'Phone' ) {
+        my $CustomerElements = [
+            {
+                Name           => 'CustomerUserLogin',
+                Title          => $Self->{LanguageObject}->Get('From customer'),
+                Datatype       => 'Text',
+                Viewtype       => 'AutoCompletion',
+                DynamicOptions => {
+                    Object     => 'CustomObject',
+                    Method     => 'CustomerSearch',
+                    Parameters => [
+                        {
+                            Search => 'CustomerUserLogin',
+                        },
+                    ],
+                },
+                Mandatory => 1,
+                Default   => '',
             },
-            Mandatory => 1,
-            Default   => '',
-        },
-        {
-            Name     => 'QueueID',
-            Title    => $Self->{LanguageObject}->Get('To queue'),
-            Datatype => 'Text',
-            Viewtype => 'Picker',
-            Options  => {
-                %{
-                    $Self->_GetTos(
-                        %Param,
-                        UserID => $Param{UserID},
-                        )
-                    },
+        ];
+        push @ScreenElements, $CustomerElements;
+    }
+    if ( $Param{Screen} eq 'Phone' || $Param{Screen} eq 'Move' ) {
+        my $Title;
+        if ( $Param{Screen} eq 'Phone' ) {
+            $Title = 'To queue';
+        }
+        else {
+            $Title = 'New Queue'
+        }
+        my $QueueElements = [
+            {
+                Name     => 'QueueID',
+                Title    => $Self->{LanguageObject}->Get($Title),
+                Datatype => 'Text',
+                Viewtype => 'Picker',
+                Options  => {
+                    %{
+                        $Self->_GetTos(
+                            %Param,
+                            UserID => $Param{UserID},
+                            )
+                        },
+                },
+                Mandatory => 1,
+                Default   => '',
             },
-            Mandatory => 1,
-            Default   => '',
-        },
-    ];
-    push @ScreenElements, $FlowElements;
+        ];
+        push @ScreenElements, $QueueElements;
+    }
 
     # service, sla
     if ( $Self->{ConfigObject}->Get('Ticket::Service') && $Self->{Config}->{Service} ) {
@@ -2665,10 +2244,18 @@ sub _GetPhoneViewElements {
 
     # owner
     if ( $Self->{Config}->{Owner} ) {
+        my $Title;
+        if ( $Param{Screen} eq 'Move' ) {
+            $Title = 'New Owner';
+        }
+        else {
+            $Title = 'Owner';
+        }
+
         my $OwnerElements = [
             {
                 Name           => 'OwnerID',
-                Title          => $Self->{LanguageObject}->Get('Owner'),
+                Title          => $Self->{LanguageObject}->Get($Title),
                 Datatype       => 'Text',
                 Viewtype       => 'Picker',
                 DynamicOptions => {
@@ -2711,8 +2298,61 @@ sub _GetPhoneViewElements {
         push @ScreenElements, $ResponsibleElements;
     }
 
-    # subject, body
-    my $MainElements = [
+    if ( $Param{Screen} eq 'Compose' ) {
+        my $ComposeElements = [
+            {
+                Name      => 'From',
+                Title     => $Self->{LanguageObject}->Get('From'),
+                Datatype  => 'Text',
+                Viewtype  => 'Input',
+                Min       => 1,
+                Max       => 50,
+                Mandatory => 1,
+
+                # define a RedonlyFieldto
+                # ReadOnly  => 1,
+                # get from address from ticket
+                Default => '',
+            },
+            {
+                Name      => 'To',
+                Title     => $Self->{LanguageObject}->Get('To'),
+                Datatype  => 'Text',
+                Viewtype  => 'EMail',
+                Min       => 1,
+                Max       => 50,
+                Mandatory => 0,
+
+                # must be retrieved from the ticket
+                Default => '',
+            },
+
+            {
+                Name      => 'Cc',
+                Title     => $Self->{LanguageObject}->Get('Cc'),
+                Datatype  => 'Text',
+                Viewtype  => 'EMail',
+                Min       => 1,
+                Max       => 50,
+                Mandatory => 0,
+                Default   => '',
+            },
+            {
+                Name      => 'Bcc',
+                Title     => $Self->{LanguageObject}->Get('Bcc'),
+                Datatype  => 'Text',
+                Viewtype  => 'EMail',
+                Min       => 1,
+                Max       => 50,
+                Mandatory => 0,
+                Default   => '',
+            },
+        ];
+        push @ScreenElements, $ComposeElements;
+    }
+
+    # subject
+    my $SubjectElements = [
         {
             Name      => 'Subject',
             Title     => $Self->{LanguageObject}->Get('Subject'),
@@ -2721,8 +2361,37 @@ sub _GetPhoneViewElements {
             Min       => 1,
             Max       => 250,
             Mandatory => 1,
-            Default   => '',
+            Default   => $Self->{LanguageObject}->Get( $Self->{Config}->{Subject} ),
         },
+    ];
+    push @ScreenElements, $SubjectElements;
+
+    # sign
+    # define Sign Field
+    #         {
+    #            Name      => 'SignKeyID',
+    #            Title     => $LanguageObject->Get('Sign'),
+    #            Datatype  => 'Text',
+    #            Viewtype  => 'Picker',
+    #            Options  => [],
+    #            Mandatory => 0,
+    #            Default   => '- none -',
+    #        },
+
+    # crypt
+    # define Crypt Field
+    #        {
+    #            Name      => 'CryptKeyID',
+    #            Title     => $LanguageObject->Get('Crypt'),
+    #            Datatype  => 'Text',
+    #            Viewtype  => 'Picker',
+    #            Options  => [],
+    #            Mandatory => 0,
+    #            Default   => '- none -',
+    #        },
+
+    # body
+    my $BodyElements = [
         {
             Name      => 'Body',
             Title     => $Self->{LanguageObject}->Get('Text'),
@@ -2734,7 +2403,7 @@ sub _GetPhoneViewElements {
             Default   => '',
         },
     ];
-    push @ScreenElements, $MainElements;
+    push @ScreenElements, $BodyElements;
 
     # customer id
     if ( $Self->{Config}->{CustomerID} ) {
@@ -2751,6 +2420,24 @@ sub _GetPhoneViewElements {
             },
         ];
         push @ScreenElements, $CustomerElements;
+    }
+
+    #note
+    if ( $Self->{Config}->{Note} ) {
+        my $NoteElements = [
+            {
+                Name     => 'ArticleTypeID',
+                Title    => $Self->{LanguageObject}->Get('Note type'),
+                Datatype => 'Text',
+                Viewtype => 'Picker',
+                Options  => {
+                    %{ $Self->_GetNoteTypes( %Param, ) }
+                },
+                Mandatory => 1,
+                Default   => $Self->{Config}->{ArticleTypeDefault},
+            },
+        ];
+        push @ScreenElements, $NoteElements;
     }
 
     # state
@@ -2779,39 +2466,43 @@ sub _GetPhoneViewElements {
     }
 
     # pending date
-    my $PendingDateElements = [
-        {
-            Name      => 'PendingDate',
-            Title     => $Self->{LanguageObject}->Get('Pending Date (for pending* states)'),
-            Datatype  => 'DateTime',
-            Viewtype  => 'Picker',
-            Mandatory => 0,
-            Default   => '',
-        },
-    ];
-    push @ScreenElements, $PendingDateElements;
+    if ( $Param{Screen} eq 'Phone' || $Param{Screen} eq 'Compose' ) {
+        my $PendingDateElements = [
+            {
+                Name      => 'PendingDate',
+                Title     => $Self->{LanguageObject}->Get('Pending Date (for pending* states)'),
+                Datatype  => 'DateTime',
+                Viewtype  => 'Picker',
+                Mandatory => 0,
+                Default   => '',
+            },
+        ];
+        push @ScreenElements, $PendingDateElements;
+    }
 
     # priority
-    my $PriorityElements = [
-        {
-            Name           => 'PriorityID',
-            Title          => $Self->{LanguageObject}->Get('Priority'),
-            Datatype       => 'Text',
-            Viewtype       => 'Picker',
-            DynamicOptions => {
-                Object     => 'CustomObject',
-                Method     => 'PrioritiesGet',
-                Parameters => [
-                    {
-                        QueueID => 'QueueID',
-                    },
-                ],
+    if ( $Param{Screen} eq 'Phone' ) {
+        my $PriorityElements = [
+            {
+                Name           => 'PriorityID',
+                Title          => $Self->{LanguageObject}->Get('Priority'),
+                Datatype       => 'Text',
+                Viewtype       => 'Picker',
+                DynamicOptions => {
+                    Object     => 'CustomObject',
+                    Method     => 'PrioritiesGet',
+                    Parameters => [
+                        {
+                            QueueID => 'QueueID',
+                        },
+                    ],
+                },
+                Mandatory => 1,
+                Default   => $Self->{Config}->{PriorityDefault},
             },
-            Mandatory => 1,
-            Default   => $Self->{Config}->{PriorityDefault},
-        },
-    ];
-    push @ScreenElements, $PriorityElements;
+        ];
+        push @ScreenElements, $PriorityElements;
+    }
 
     # time units
     if ( $Self->{Config}->{TimeUnits} ) {
@@ -2936,6 +2627,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.13 2010/06/30 03:14:53 cr Exp $
+$Id: iPhone.pm,v 1.14 2010/07/01 05:16:08 cr Exp $
 
 =cut
