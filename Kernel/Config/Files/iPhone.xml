@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: iPhone.xml,v 1.2 2010/06/30 03:09:06 cr Exp $</CVS>
+    <CVS>$Id: iPhone.xml,v 1.3 2010/07/01 05:11:39 cr Exp $</CVS>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TicketType" Required="0" Valid="1">
         <Description Lang="en">If you want to set the ticket type (Ticket::Type needs to be activated).</Description>
         <Description Lang="de">Wenn der Ticket-Typ gesetzt werden soll (Ticket::Type muss aktiv sein).</Description>
@@ -171,6 +171,7 @@
             </Option>
         </Setting>
     </ConfigItem>
+
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Service" Required="0" Valid="1">
         <Description Lang="en">If you want to set the service (Ticket::Service needs to be activated).</Description>
         <Description Lang="de">Wenn der Service gesetzt werden soll (Ticket::Service muss aktiv sein).</Description>
@@ -255,12 +256,12 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Subject" Required="0" Valid="1">
-        <Description Lang="en">Default note subject.</Description>
+        <Description Lang="en">Default note subject (This option will be translated).</Description>
         <Description Lang="de">Standardtext im Betreff einer Notiz.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
-            <String Regex="">$Text{"Note"}</String>
+            <String Regex="">Note</String>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Body" Required="0" Valid="1">
@@ -322,6 +323,18 @@
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
             <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###TimeUnits" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the time units of a ticket.</Description>
+        <Description Lang="de">Wenn die zeiteinheiten gesetzt werden soll.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
                 <Item Key="0">No</Item>
                 <Item Key="1">Yes</Item>
             </Option>
@@ -400,5 +413,520 @@
             <String Regex="">%%Note</String>
         </Setting>
     </ConfigItem>
+
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###TicketType" Required="0" Valid="1">
+        <Description Translatable="1">Sets the ticket type in the close ticket screen of the agent interface (Ticket::Type needs to be activated).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Service" Required="0" Valid="1">
+        <Description Translatable="1">Sets the service in the close ticket screen of the agent interface (Ticket::Service needs to be activated).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Owner" Required="0" Valid="1">
+        <Description Translatable="1">Sets the ticket owner in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Responsible" Required="0" Valid="1">
+        <Description Translatable="1">Sets the responsible agent of the ticket in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###State" Required="0" Valid="1">
+        <Description Translatable="1">If a note is added by an agent, sets the state of a ticket in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###StateType" Required="1" Valid="1">
+        <Description Translatable="1">Defines the next state of a ticket after adding a note, in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Array>
+                <Item>closed</Item>
+            </Array>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###StateDefault" Required="0" Valid="1">
+        <Description Translatable="1">Defines the default next state of a ticket after adding a note, in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <String Regex="">closed successful</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Note" Required="0" Valid="1">
+        <Description Translatable="1">Allows adding notes in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Subject" Required="0" Valid="1">
+        <Description Translatable="1">Sets the default subject for notes added in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <String Regex="">Close</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Body" Required="0" Valid="1">
+        <Description Translatable="1">Sets the default body text for notes added in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <TextArea></TextArea>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###ArticleTypeDefault" Required="0" Valid="1">
+        <Description Translatable="1">Defines the default type of the note in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <String Regex="">note-internal</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###ArticleTypes" Required="0" Valid="1">
+        <Description Translatable="1">Specifies the different note types that will be used in the system.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="note-internal">1</Item>
+                <Item Key="note-external">0</Item>
+                <Item Key="note-report">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Priority" Required="0" Valid="0">
+        <Description Translatable="1">Shows the ticket priority options in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###PriorityDefault" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default ticket priority in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <String Regex="">3 normal</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Title" Required="0" Valid="1">
+        <Description Translatable="1">Shows the title fields in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###TimeUnits" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the time units of a ticket.</Description>
+        <Description Lang="de">Wenn die zeiteinheiten gesetzt werden soll.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###TicketFreeText" Required="0" Valid="1">
+        <Description Translatable="1">Ticket free text options shown in the close ticket screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+                <Item Key="4">0</Item>
+                <Item Key="5">0</Item>
+                <Item Key="6">0</Item>
+                <Item Key="7">0</Item>
+                <Item Key="8">0</Item>
+                <Item Key="9">0</Item>
+                <Item Key="10">0</Item>
+                <Item Key="11">0</Item>
+                <Item Key="12">0</Item>
+                <Item Key="13">0</Item>
+                <Item Key="14">0</Item>
+                <Item Key="15">0</Item>
+                <Item Key="16">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###TicketFreeTime" Required="0" Valid="1">
+        <Description Translatable="1">Ticket free time options shown in the close ticket screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+                <Item Key="4">0</Item>
+                <Item Key="5">0</Item>
+                <Item Key="6">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###ArticleFreeText" Required="0" Valid="1">
+        <Description Translatable="1">Article free text options shown in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###HistoryType" Required="0" Valid="1">
+        <Description Translatable="1">Defines the history type for the close ticket screen action, which gets used for ticket history in the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <String Regex="">AddNote</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###HistoryComment" Required="0" Valid="1">
+        <Description Translatable="1">Defines the history comment for the close ticket screen action, which gets used for ticket history in the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <String Regex="">%%Close</String>
+        </Setting>
+    </ConfigItem>
+
+    <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###State" Required="0" Valid="1">
+        <Description Translatable="1">If a note is added by an agent, sets the state of a ticket if it is composed / answered in the ticket compose screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###StateDefault" Required="0" Valid="1">
+        <Description Translatable="1">Defines the default next state of a ticket if it is composed / answered in the ticket compose screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <String Regex="">open</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###StateType" Required="1" Valid="1">
+        <Description Translatable="1">Defines the next possible states after composing / answering a ticket in the ticket compose screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <Array>
+                <Item>open</Item>
+                <Item>closed</Item>
+                <Item>pending auto</Item>
+                <Item>pending reminder</Item>
+            </Array>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::ResponseFormat" Required="1" Valid="1">
+        <Description Translatable="1">Defines the format of responses in the ticket compose screen of the agent interface ($QData{"OrigFrom"} is From 1:1, $QData{"OrigFromName"} is only realname of From).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <TextArea>$QData{"Salutation"}
+$TimeShort{"$QData{"Created"}"} - $QData{"OrigFromName"} $Text{"wrote"}:
+$QData{"Body"}
+
+$QData{"StdResponse"}
+
+$QData{"Signature"}
+</TextArea>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::Quote" Required="0" Valid="1">
+        <Description Translatable="1">Defines the used character for email quotes in the ticket compose screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <String Regex="">&gt;</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::ComposeAddCustomerAddress" Required="1" Valid="1">
+        <Description Translatable="1">Adds customers email addresses to recipients in the ticket compose screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::ComposeReplaceSenderAddress" Required="1" Valid="1">
+        <Description Translatable="1">Replaces the original sender with current customer's email address on compose answer in the ticket compose screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::ComposeExcludeCcRecipients" Required="1" Valid="1">
+        <Description Translatable="1">Uses Cc recipients in reply Cc list on compose an email answer in the ticket compose screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###TimeUnits" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the time units of a ticket.</Description>
+        <Description Lang="de">Wenn die zeiteinheiten gesetzt werden soll.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###TicketFreeText" Required="0" Valid="1">
+        <Description Translatable="1">Ticket free text options shown in the ticket compose screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+                <Item Key="4">0</Item>
+                <Item Key="5">0</Item>
+                <Item Key="6">0</Item>
+                <Item Key="7">0</Item>
+                <Item Key="8">0</Item>
+                <Item Key="9">0</Item>
+                <Item Key="10">0</Item>
+                <Item Key="11">0</Item>
+                <Item Key="12">0</Item>
+                <Item Key="13">0</Item>
+                <Item Key="14">0</Item>
+                <Item Key="15">0</Item>
+                <Item Key="16">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###TicketFreeTime" Required="0" Valid="1">
+        <Description Translatable="1">Ticket free time options shown in the ticket compose screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+                <Item Key="4">0</Item>
+                <Item Key="5">0</Item>
+                <Item Key="6">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###ArticleFreeText" Required="0" Valid="1">
+        <Description Translatable="1">Article free text options shown in the ticket compose screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+
+<!--
+    <ConfigItem Name="iPhone::Frontend::MoveType" Required="1" Valid="1">
+        <Description Translatable="1">Determines if the list of possible queues to move to ticket into should be displayed in a dropdown list or in a new window in the agent interface. If "New Window" is set you can add a move note to the ticket.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <Option SelectedID="form">
+                <Item Key="link">New Window</Item>
+                <Item Key="form">Dropdown</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+-->?
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###Owner" Required="0" Valid="1">
+        <Description Translatable="1">Sets the ticket owner in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###State" Required="0" Valid="1">
+        <Description Translatable="1">Allows to set a new ticket state in the move ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###StateType" Required="1" Valid="1">
+        <Description Translatable="1">Defines the next state of a ticket after being moved to another queue, in the move ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <Array>
+                <Item>open</Item>
+                <Item>closed</Item>
+            </Array>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###StateDefault" Required="0" Valid="1">
+        <Description Translatable="1">Defines the default next state of a ticket after adding a note, in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <String Regex="">open</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###Priority" Required="0" Valid="0">
+        <Description Translatable="1">Shows the ticket priority options in the move ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###PriorityDefault" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default ticket priority in the close ticket screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <String Regex="">3 normal</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###TimeUnits" Required="0" Valid="1">
+        <Description Lang="en">If you want to set the time units of a ticket.</Description>
+        <Description Lang="de">Wenn die zeiteinheiten gesetzt werden soll.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###TicketFreeText" Required="0" Valid="1">
+        <Description Translatable="1">Ticket free text options shown in the move ticket screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+                <Item Key="4">0</Item>
+                <Item Key="5">0</Item>
+                <Item Key="6">0</Item>
+                <Item Key="7">0</Item>
+                <Item Key="8">0</Item>
+                <Item Key="9">0</Item>
+                <Item Key="10">0</Item>
+                <Item Key="11">0</Item>
+                <Item Key="12">0</Item>
+                <Item Key="13">0</Item>
+                <Item Key="14">0</Item>
+                <Item Key="15">0</Item>
+                <Item Key="16">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###TicketFreeTime" Required="0" Valid="1">
+        <Description Translatable="1">Ticket free time options shown in the move ticket screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
+                <Item Key="4">0</Item>
+                <Item Key="5">0</Item>
+                <Item Key="6">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+
+
+
+
+
 
 </otrs_config>
