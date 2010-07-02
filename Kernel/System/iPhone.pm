@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.15 2010/07/01 15:36:24 cr Exp $
+# $Id: iPhone.pm,v 1.16 2010/07/02 02:16:06 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Log;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.15 $) [1];
+$VERSION = qw($Revision: 1.16 $) [1];
 
 =head1 NAME
 
@@ -2192,7 +2192,7 @@ sub _GetScreenElements {
         push @ScreenElements, $QueueElements;
     }
 
-    # service, sla
+    # service
     if ( $Self->{ConfigObject}->Get('Ticket::Service') && $Self->{Config}->{Service} ) {
         my $ServiceElements = {
             Name           => 'ServiceID',
@@ -2211,27 +2211,32 @@ sub _GetScreenElements {
             },
             Mandatory => 0,
             Default   => '',
-            },
-            {
+        };
+        push @ScreenElements, $ServiceElements;
+    }
+
+    # sla
+    if ( $Self->{ConfigObject}->Get('Ticket::Service') && $Self->{Config}->{Service} ) {
+        my $SLAElements = {
             Name           => 'SLAID',
             Title          => $Self->{LanguageObject}->Get('SLA'),
             Datatype       => 'Text',
             Viewtype       => 'Picker',
             DynamicOptions => {
-                Object     => 'CustomObject',
-                Method     => 'SLAsGet',
-                Parameters => [
+                Object => 'CustomObject',
+                Method => 'SLAsGet',
+                Parameters =>
                     {
-                        CustomerUserID => 'CustomerUserLogin',
-                        QueueID        => 'QueueID',
-                        ServiceID      => 'ServiceID',
+                    CustomerUserID => 'CustomerUserLogin',
+                    QueueID        => 'QueueID',
+                    ServiceID      => 'ServiceID',
                     },
-                ],
+
             },
             Mandatory => 0,
             Default   => '',
-            };
-        push @ScreenElements, $ServiceElements;
+        };
+        push @ScreenElements, $SLAElements;
     }
 
     # owner
@@ -2287,7 +2292,7 @@ sub _GetScreenElements {
     }
 
     if ( $Param{Screen} eq 'Compose' ) {
-        my $ComposeElements = {
+        my $ComposeFromElements = {
             Name      => 'From',
             Title     => $Self->{LanguageObject}->Get('From'),
             Datatype  => 'Text',
@@ -2296,12 +2301,14 @@ sub _GetScreenElements {
             Max       => 50,
             Mandatory => 1,
 
-            # define a RedonlyFieldto
+            # define a RedonlyField to
             # ReadOnly  => 1,
             # get from address from ticket
             Default => '',
-            },
-            {
+        };
+        push @ScreenElements, $ComposeFromElements;
+
+        my $ComposeToElements = {
             Name      => 'To',
             Title     => $Self->{LanguageObject}->Get('To'),
             Datatype  => 'Text',
@@ -2312,9 +2319,10 @@ sub _GetScreenElements {
 
             # must be retrieved from the ticket
             Default => '',
-            },
+        };
+        push @ScreenElements, $ComposeToElements;
 
-            {
+        my $ComposeCcElements = {
             Name      => 'Cc',
             Title     => $Self->{LanguageObject}->Get('Cc'),
             Datatype  => 'Text',
@@ -2323,8 +2331,10 @@ sub _GetScreenElements {
             Max       => 50,
             Mandatory => 0,
             Default   => '',
-            },
-            {
+        };
+        push @ScreenElements, $ComposeCcElements;
+
+        my $ComposeBccElements = {
             Name      => 'Bcc',
             Title     => $Self->{LanguageObject}->Get('Bcc'),
             Datatype  => 'Text',
@@ -2333,11 +2343,16 @@ sub _GetScreenElements {
             Max       => 50,
             Mandatory => 0,
             Default   => '',
-            };
-        push @ScreenElements, $ComposeElements;
+        };
+        push @ScreenElements, $ComposeBccElements;
     }
 
     # subject
+    my $DefaultSubject = '';
+    if ( $Self->{Config}->{Subject} ) {
+        $DefaultSubject = $Self->{LanguageObject}->Get( $Self->{Config}->{Subject} )
+    }
+
     my $SubjectElements = {
         Name      => 'Subject',
         Title     => $Self->{LanguageObject}->Get('Subject'),
@@ -2346,7 +2361,7 @@ sub _GetScreenElements {
         Min       => 1,
         Max       => 250,
         Mandatory => 1,
-        Default   => $Self->{LanguageObject}->Get( $Self->{Config}->{Subject} ),
+        Default   => $DefaultSubject,
     };
     push @ScreenElements, $SubjectElements;
 
@@ -2405,6 +2420,10 @@ sub _GetScreenElements {
 
     #note
     if ( $Self->{Config}->{Note} ) {
+        my $DefaultArticleType = '';
+        if ( $Self->{Config}->{ArticleTypeDefault} ) {
+            $DefaultArticleType = $Self->{Config}->{ArticleTypeDefault};
+        }
         my $NoteElements = {
             Name     => 'ArticleTypeID',
             Title    => $Self->{LanguageObject}->Get('Note type'),
@@ -2414,13 +2433,18 @@ sub _GetScreenElements {
                 %{ $Self->_GetNoteTypes( %Param, ) }
             },
             Mandatory => 1,
-            Default   => $Self->{Config}->{ArticleTypeDefault},
+            Default   => $DefaultArticleType,
         };
         push @ScreenElements, $NoteElements;
     }
 
     # state
     if ( $Self->{Config}->{State} ) {
+        my $DefaultState = '';
+        if ( $Self->{Config}->{StateDefault} ) {
+            $DefaultState = $Self->{Config}->{StateDefault}
+        }
+
         my $StateElements = {
             Name           => 'NextStateID',
             Title          => $Self->{LanguageObject}->Get('Next Ticket State'),
@@ -2437,7 +2461,7 @@ sub _GetScreenElements {
                 ],
             },
             Mandatory => 1,
-            Default   => $Self->{Config}->{StateDefault},
+            Default   => $DefaultState,
         };
         push @ScreenElements, $StateElements;
     }
@@ -2457,6 +2481,12 @@ sub _GetScreenElements {
 
     # priority
     if ( $Param{Screen} eq 'Phone' ) {
+
+        my $DefaultPriority = '';
+        if ( $Self->{Config}->{PriorityDefault} ) {
+            $DefaultPriority = $Self->{Config}->{PriorityDefault};
+        }
+
         my $PriorityElements = {
             Name           => 'PriorityID',
             Title          => $Self->{LanguageObject}->Get('Priority'),
@@ -2472,9 +2502,84 @@ sub _GetScreenElements {
                 ],
             },
             Mandatory => 1,
-            Default   => $Self->{Config}->{PriorityDefault},
+            Default   => $DefaultPriority,
         };
         push @ScreenElements, $PriorityElements;
+    }
+
+    # freetext
+    for my $Index ( 1 .. 16 ) {
+        if ( $Self->{Config}->{TicketFreeText}->{$Index} ) {
+
+            my $FreeTextElement;
+
+            my $Name;
+            $Name = 'FreeText' . $Index;
+
+            my $Title;
+            $Title = $Self->{ConfigObject}->Get( 'TicketFreeKey' . $Index . '::DefaultSelection' );
+
+            my $ViewType;
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
+                $ViewType = 'Picker';
+            }
+            else {
+                $ViewType = 'Input';
+            }
+
+            my @TicketFreeKeys;
+            @TicketFreeKeys = $Self->{ConfigObject}->Get( 'TicketFreeKey' . $Index );
+
+            my @Options;
+            @Options = $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index );
+
+            my $Mandatory;
+            if ( $Self->{Config}->{TicketFreeText}->{$Index} == 2 ) {
+                $Mandatory = 1;
+            }
+            else {
+                $Mandatory = 0;
+            }
+
+            my $Default;
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
+                $Default = $Self->{ConfigObject}->Get(
+                    'TicketFreeText' . $Index
+                        . '::DefaultSelection'
+                );
+            }
+            else {
+                $Default = '';
+            }
+
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
+                $FreeTextElement = {
+                    Name        => $Name,
+                    Title       => $Title,
+                    FreeTextKey => @TicketFreeKeys,
+                    Datatype    => 'Text',
+                    Viewtype    => $ViewType,
+                    Options     => @Options,
+                    Mandatory   => $Mandatory,
+                    Default     => $Default,
+                    }
+            }
+            else {
+                $FreeTextElement = {
+                    Name        => $Name,
+                    Title       => $Title,
+                    FreeTextKey => @TicketFreeKeys,
+                    Datatype    => 'Text',
+                    Viewtype    => $ViewType,
+                    Min         => 1,
+                    Max         => 200,
+                    Mandatory   => $Mandatory,
+                    Default     => $Default,
+                    }
+            }
+
+            push @ScreenElements, $FreeTextElement;
+        }
     }
 
     # time units
@@ -2598,6 +2703,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.15 2010/07/01 15:36:24 cr Exp $
+$Id: iPhone.pm,v 1.16 2010/07/02 02:16:06 cr Exp $
 
 =cut
