@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.16 2010/07/02 02:16:06 cr Exp $
+# $Id: iPhone.pm,v 1.17 2010/07/02 22:58:19 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Log;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.16 $) [1];
+$VERSION = qw($Revision: 1.17 $) [1];
 
 =head1 NAME
 
@@ -2507,14 +2507,14 @@ sub _GetScreenElements {
         push @ScreenElements, $PriorityElements;
     }
 
-    # freetext
+    # ticket freetext fields
     for my $Index ( 1 .. 16 ) {
         if ( $Self->{Config}->{TicketFreeText}->{$Index} ) {
 
             my $FreeTextElement;
 
             my $Name;
-            $Name = 'FreeText' . $Index;
+            $Name = 'TicketFreeText' . $Index;
 
             my $Title;
             $Title = $Self->{ConfigObject}->Get( 'TicketFreeKey' . $Index . '::DefaultSelection' );
@@ -2569,6 +2569,122 @@ sub _GetScreenElements {
                     Name        => $Name,
                     Title       => $Title,
                     FreeTextKey => @TicketFreeKeys,
+                    Datatype    => 'Text',
+                    Viewtype    => $ViewType,
+                    Min         => 1,
+                    Max         => 200,
+                    Mandatory   => $Mandatory,
+                    Default     => $Default,
+                    }
+            }
+
+            push @ScreenElements, $FreeTextElement;
+        }
+    }
+
+    # ticket freetime fields
+    for my $Index ( 1 .. 6 ) {
+        if ( $Self->{Config}->{TicketFreeTime}->{$Index} ) {
+
+            my $Name;
+            $Name = 'TicketFreeTime' . $Index;
+
+            my $Title;
+            $Title = $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Index );
+
+            my $Mandatory;
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeTimeOptional' . $Index ) ) {
+                $Mandatory = 0;
+            }
+            else {
+                $Mandatory = 1;
+            }
+
+            my $DefaultTimeFormated;
+            my $TimeDiff = 0;
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Index ) ) {
+                $TimeDiff = $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Index );
+            }
+            my $DefaultTime = $Self->{TimeObject}->SystemTime() - $TimeDiff;
+
+            $DefaultTimeFormated = $Self->{TimeObject}->SystemTime2TimeStamp(
+                SystemTime => $DefaultTime,
+            );
+
+            my $FreeTimeElement = {
+                Name      => $Name,
+                Title     => $Title,
+                Datatype  => 'DateTime',
+                Viewtype  => 'Picker',
+                Mandatory => $Mandatory,
+                Default   => $DefaultTimeFormated,
+            };
+            push @ScreenElements, $FreeTimeElement;
+        }
+    }
+
+    # article freetext fields
+    for my $Index ( 1 .. 3 ) {
+        if ( $Self->{Config}->{ArticleFreeText}->{$Index} ) {
+
+            my $FreeTextElement;
+
+            my $Name;
+            $Name = 'ArticleFreeText' . $Index;
+
+            my $Title;
+            $Title = $Self->{ConfigObject}->Get( 'ArticleFreeKey' . $Index . '::DefaultSelection' );
+
+            my $ViewType;
+            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
+                $ViewType = 'Picker';
+            }
+            else {
+                $ViewType = 'Input';
+            }
+
+            my @ArticleFreeKeys;
+            @ArticleFreeKeys = $Self->{ConfigObject}->Get( 'ArticleFreeKey' . $Index );
+
+            my @Options;
+            @Options = $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index );
+
+            my $Mandatory;
+            if ( $Self->{Config}->{ArticleFreeText}->{$Index} == 2 ) {
+                $Mandatory = 1;
+            }
+            else {
+                $Mandatory = 0;
+            }
+
+            my $Default;
+            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
+                $Default = $Self->{ConfigObject}->Get(
+                    'ArticleFreeText' . $Index
+                        . '::DefaultSelection'
+                );
+            }
+            else {
+                $Default = '';
+            }
+
+            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
+                $FreeTextElement = {
+                    Name        => $Name,
+                    Title       => $Title,
+                    FreeTextKey => @ArticleFreeKeys,
+                    Datatype    => 'Text',
+                    Viewtype    => $ViewType,
+                    Options     => @Options,
+                    Mandatory   => $Mandatory,
+                    Default     => $Default,
+                    }
+            }
+            else {
+                $FreeTextElement = {
+                    Name        => $Name,
+                    Title       => $Title,
+                    FreeTextKey => @ArticleFreeKeys,
                     Datatype    => 'Text',
                     Viewtype    => $ViewType,
                     Min         => 1,
@@ -2703,6 +2819,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.16 2010/07/02 02:16:06 cr Exp $
+$Id: iPhone.pm,v 1.17 2010/07/02 22:58:19 cr Exp $
 
 =cut
