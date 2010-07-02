@@ -3,7 +3,7 @@
 # bin/cgi-bin/json.pl - json handle
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: json.pl,v 1.7 2010/06/22 20:01:44 cr Exp $
+# $Id: json.pl,v 1.8 2010/07/02 17:15:59 cr Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -53,7 +53,7 @@ use Kernel::System::iPhone;
 use Kernel::System::Web::Request;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.7 $) [1];
+$VERSION = qw($Revision: 1.8 $) [1];
 
 my $Self = Core->new();
 print "Content-Type: text/plain; \n";
@@ -101,6 +101,10 @@ sub Dispatch {
     $Self->{ParamObject}  = Kernel::System::Web::Request->new( %{$Self} );
     $Self->{iPhoneObject} = Kernel::System::iPhone->new( %{$Self} );
 
+    if ( $Self->{ConfigObject}->Get('iPhone::LogFile') ) {
+        $Self->{DebugLogFile} = $Self->{ConfigObject}->Get('iPhone::LogFile');
+    }
+
     my $User   = $Self->{ParamObject}->GetParam( Param => 'User' );
     my $Pw     = $Self->{ParamObject}->GetParam( Param => 'Password' );
     my $Object = $Self->{ParamObject}->GetParam( Param => 'Object' );
@@ -113,6 +117,16 @@ sub Dispatch {
     }
     $User ||= '';
     $Pw   ||= '';
+
+    if ( $Self->{ConfigObject}->Get('iPhone::DebugLog') ) {
+        my $Message = 'User=' . $User . '&Password=****' . '&Object=' . $Object
+            . '&Method=' . $Method . '&Data' . $Data;
+
+        $Self->Log(
+            Direction => 'Inbound',
+            Message   => $Message,
+            )
+    }
 
     # agent auth
     my %ParamFixed;
@@ -221,7 +235,40 @@ sub Result {
             last if $ResultProtocol{Message};
         }
     }
-    return $Self->{JSONObject}->Encode( Data => \%ResultProtocol );
+    my $JSONResult = $Self->{JSONObject}->Encode( Data => \%ResultProtocol );
+    if ( $Self->{ConfigObject}->Get('iPhone::DebugLog') ) {
+
+        $Self->Log(
+            Direction => 'Outbound',
+            Message   => $JSONResult,
+            )
+    }
+
+    return $JSONResult;
+}
+
+sub Log {
+    my ( $Self, %Param ) = @_;
+
+    my $FH;
+
+    # open logfile
+    if ( !open $FH, '>>', $Self->{DebugLogFile} ) {
+
+        # print error screen
+        print STDERR "\n";
+        print STDERR " >> Can't write $Self->{LogFile}: $! <<\n";
+        print STDERR "\n";
+        return;
+    }
+
+    # write log file
+    print $FH '[' . $Self->{TimeObject}->CurrentTimestamp() . ']';
+    print $FH "[Debug] [$Param{Direction}] [$Param{Message}\n";
+
+    # close file handle
+    close $FH;
+    return 1;
 }
 
 1;
