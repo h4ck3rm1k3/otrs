@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: iPhone.xml,v 1.4 2010/07/02 17:03:25 cr Exp $</CVS>
+    <CVS>$Id: iPhone.xml,v 1.5 2010/07/02 22:56:08 cr Exp $</CVS>
 
     <ConfigItem Name="iPhone::DebugLog" Required="1" Valid="1">
         <Description Lang="en">If you want to log all communication between iPhone and otrs.</Description>
@@ -943,6 +943,18 @@ $QData{"Signature"}
                 <Item Key="4">0</Item>
                 <Item Key="5">0</Item>
                 <Item Key="6">0</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###ArticleFreeText" Required="0" Valid="1">
+        <Description Translatable="1">Article free text options shown in the ticket move screen of the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="1">0</Item>
+                <Item Key="2">0</Item>
+                <Item Key="3">0</Item>
             </Hash>
         </Setting>
     </ConfigItem>
