@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.17 2010/07/02 22:58:19 cr Exp $
+# $Id: iPhone.pm,v 1.18 2010/07/05 04:57:36 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Log;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.17 $) [1];
+$VERSION = qw($Revision: 1.18 $) [1];
 
 =head1 NAME
 
@@ -2446,7 +2446,7 @@ sub _GetScreenElements {
         }
 
         my $StateElements = {
-            Name           => 'NextStateID',
+            Name           => 'StateID',
             Title          => $Self->{LanguageObject}->Get('Next Ticket State'),
             Datatype       => 'Text',
             Viewtype       => 'Picker',
@@ -2819,6 +2819,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.17 2010/07/02 22:58:19 cr Exp $
+$Id: iPhone.pm,v 1.18 2010/07/05 04:57:36 cr Exp $
 
 =cut
