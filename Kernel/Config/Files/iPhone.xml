@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: iPhone.xml,v 1.6 2010/07/06 06:10:25 cr Exp $</CVS>
+    <CVS>$Id: iPhone.xml,v 1.7 2010/07/06 19:09:30 cr Exp $</CVS>
 
     <ConfigItem Name="iPhone::DebugLog" Required="1" Valid="1">
         <Description Lang="en">If you want to log all communication between iPhone and otrs.</Description>
@@ -214,6 +214,25 @@
         </Setting>
     </ConfigItem>
 
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the ticket note screen in the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <String Regex="">note</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketNote###RequiredLock" Required="0" Valid="1">
+        <Description Translatable="1">Defines if a ticket lock is required in the ticket note screen of the agent interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###TicketType" Required="0" Valid="1">
         <Description Lang="en">If you want to set the ticket type (Ticket::Type needs to be activated).</Description>
         <Description Lang="de">Wenn der Ticket-Typ gesetzt werden soll (Ticket::Type muss aktiv sein).</Description>
@@ -469,6 +488,25 @@
         </Setting>
     </ConfigItem>
 
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the close ticket screen in the agent interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <String Regex="">close</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketClose###RequiredLock" Required="0" Valid="1">
+        <Description Translatable="1">Defines if a ticket lock is required in the close ticket screen of the agent interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###TicketType" Required="0" Valid="1">
         <Description Translatable="1">Sets the ticket type in the close ticket screen of the agent interface (Ticket::Type needs to be activated).</Description>
         <Group>iPhone</Group>
