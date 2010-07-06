@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.21 2010/07/06 19:56:43 cr Exp $
+# $Id: iPhone.pm,v 1.22 2010/07/06 23:37:27 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,7 +20,7 @@ use Kernel::System::CheckItem;
 use Kernel::System::Priority;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.21 $) [1];
+$VERSION = qw($Revision: 1.22 $) [1];
 
 =head1 NAME
 
@@ -275,6 +275,7 @@ sub ScreenConfig {
                 Parameters => {
                     Action   => 'Note',
                     TicketID => $Param{TicketID},
+                    Title    => 'a title',
                 },
             },
         );
@@ -2465,9 +2466,17 @@ sub _GetScreenElements {
 
     #note
     if ( $Self->{Config}->{Note} ) {
-        my $DefaultArticleType = '';
+
+        my $DefaultArticleType;
         if ( $Self->{Config}->{ArticleTypeDefault} ) {
             $DefaultArticleType = $Self->{Config}->{ArticleTypeDefault};
+        }
+
+        my $DefaultArticleTypeID;
+        if ($DefaultArticleType) {
+            $DefaultArticleTypeID = $Self->{TicketObject}->ArticleTypeLookup(
+                ArticleType => $DefaultArticleType,
+            );
         }
         my $NoteElements = {
             Name     => 'ArticleTypeID',
@@ -2478,7 +2487,7 @@ sub _GetScreenElements {
                 %{ $Self->_GetNoteTypes( %Param, ) }
             },
             Mandatory => 1,
-            Default   => $DefaultArticleType,
+            Default   => $DefaultArticleTypeID,
         };
         push @ScreenElements, $NoteElements;
     }
@@ -2554,7 +2563,7 @@ sub _GetScreenElements {
         }
 
         my $PriorityElements = {
-            Name           => 'PriorityID',
+            Name           => 'NewPriorityID',
             Title          => $Self->{LanguageObject}->Get('Priority'),
             Datatype       => 'Text',
             Viewtype       => 'Picker',
@@ -3194,7 +3203,8 @@ sub _TicketPhoneNew {
 
 sub _TicketCommonActions {
     my ( $Self, %Param ) = @_;
-    return 'Under Development';
+
+    #return 'Under Development';
     my $Error;
     $Self->{Config}
         = $Self->{ConfigObject}->Get( 'iPhone::Frontend::AgentTicket' . $Param{Action} );
@@ -3208,17 +3218,27 @@ sub _TicketCommonActions {
     }
 
     # check needed stuff
-    if ( !$Self->{TicketID} ) {
+    if ( !$Param{TicketID} ) {
         $Error = 'No TicketID is given! Please contact the admin.';
         return $Error;
     }
 
     # check permissions
-    my $Access = $Self->{TicketObject}->TicketPermission(
-        Type     => $Self->{Config}->{Permission},
-        TicketID => $Param{TicketID},
-        UserID   => $Param{UserID}
-    );
+    my $Access;
+    if ( $Self->{'API3X'} ) {
+        $Access = $Self->{TicketObject}->TicketPermission(
+            Type     => $Self->{Config}->{Permission},
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID},
+        );
+    }
+    else {
+        $Access = $Self->{TicketObject}->Permission(
+            Type     => $Self->{Config}->{Permission},
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID},
+        );
+    }
 
     # error screen, don't show ticket
     if ( !$Access ) {
@@ -3226,11 +3246,6 @@ sub _TicketCommonActions {
         return $Error;
     }
 
-    # ----------------------------------------------
-    #
-    # Check if needed
-    #
-    # -----------------------------------------------
     my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
 
     # get lock state
@@ -3239,7 +3254,7 @@ sub _TicketCommonActions {
             $Self->{TicketObject}->TicketLockSet(
                 TicketID => $Param{TicketID},
                 Lock     => 'lock',
-                UserID   => $Param{UserID}
+                UserID   => $Param{UserID},
             );
             my $Success = $Self->{TicketObject}->TicketOwnerSet(
                 TicketID  => $Param{TicketID},
@@ -3260,7 +3275,6 @@ sub _TicketCommonActions {
         }
     }
 
-#$Success = '';
 # -------------------------------------------------------
 #
 # not sure that this is needed
@@ -3600,7 +3614,7 @@ sub _TicketCommonActions {
             UserID => $Param{UserID},
         );
 
-        my $From = "$User{UserFirstname} $User{UserLastname} <User->{UserEmail}>";
+        my $From = "$User{UserFirstname} $User{UserLastname} <$User{UserEmail}>";
 
         # agent list
         my %InformedUsers;
@@ -3635,186 +3649,138 @@ sub _TicketCommonActions {
             }
         }
 
-   #            my @NotifyUserIDs = ( @{ $InformUsers }, @{ $InvolvedUses } );
-   #            $ArticleID = $Self->{TicketObject}->ArticleCreate(
-   #                TicketID                        => $Param{TicketID},
-   #                SenderType                      => 'agent',
-   #                From                            => $From,
-   #                MimeType                        => $MimeType,
-   #                # iphone must send info in current charset
-   #                Charset                         => $Self->{ConfigObject}->Get('DefaultCharset'),
-   #
-   #                #Charset                         => $Self->{ayoutObject}->{UserCharset},
-   #                UserID                          => $Param{UserID},
-   #                HistoryType                     => $Self->{Config}->{HistoryType},
-   #                HistoryComment                  => $Self->{Config}->{HistoryComment},
-   #                ForceNotificationToUserID       => \@NotifyUserIDs,
-   #                ExcludeMuteNotificationToUserID => \@NotifyDone,
-   #                %Param,
-   #            );
-   #            if ( !$ArticleID ) {
-   #                return $Self->{ayoutObject}->ErrorScreen();
-   #            }
-   #
-   #            # time accounting
-   #            if ( $GetParam{TimeUnits} ) {
-   #                $Self->{TicketObject}->TicketAccountTime(
-   #                    TicketID  => $Self->{TicketID},
-   #                    ArticleID => $ArticleID,
-   #                    TimeUnit  => $GetParam{TimeUnits},
-   #                    UserID    => $Self->{UserID},
-   #                );
-   #            }
-   #
-   #            # get pre loaded attachment
-   #            my @Attachments = $Self->{UploadCacheObject}->FormIDGetAllFilesData(
-   #                FormID => $Self->{FormID},
-   #            );
-   #
-   #            # get submit attachment
-   #            my %UploadStuff = $Self->{aramObject}->GetUploadAll(
-   #                Param  => 'FileUpload',
-   #                Source => 'String',
-   #            );
-   #            if (%UploadStuff) {
-   #                push @Attachments, \%UploadStuff;
-   #            }
-   #
-   #            # write attachments
-   #            for my $Attachment (@Attachments) {
-   #
-   #                # skip, deleted not used inline images
-   #                my $ContentID = $Attachment->{ContentID};
-   #                if ($ContentID) {
-   #                    my $ContentIDHTMLQuote = $Self->{ayoutObject}->Ascii2Html(
-   #                        Text => $ContentID,
-   #                    );
-   #                    next if $GetParam{Body} !~ /(\Q$ContentIDHTMLQuote\E|\Q$ContentID\E)/i;
-   #                }
-   #
-   #                # write existing file to backend
-   #                $Self->{TicketObject}->ArticleWriteAttachment(
-   #                    %{$Attachment},
-   #                    ArticleID => $ArticleID,
-   #                    UserID    => $Self->{UserID},
-   #                );
-   #            }
-   #
-   #            # remove pre submited attachments
-   #            $Self->{UploadCacheObject}->FormIDRemove( FormID => $Self->{FormID} );
-   #        }
-   #
-   #        # set ticket free text
-   #        for my $Count ( 1 .. 16 ) {
-   #            my $Key  = 'TicketFreeKey' . $Count;
-   #            my $Text = 'TicketFreeText' . $Count;
-   #            next if !defined $GetParam{$Key};
-   #            $Self->{TicketObject}->TicketFreeTextSet(
-   #                TicketID => $Self->{TicketID},
-   #                Key      => $GetParam{$Key},
-   #                Value    => $GetParam{$Text},
-   #                Counter  => $Count,
-   #                UserID   => $Self->{UserID},
-   #            );
-   #        }
-   #
-   #        # set ticket free time
-   #        for my $Count ( 1 .. 6 ) {
-   #            my $Prefix = 'TicketFreeTime' . $Count;
-   #            next if !defined $GetParam{ $Prefix . 'Year' };
-   #            next if !defined $GetParam{ $Prefix . 'Month' };
-   #            next if !defined $GetParam{ $Prefix . 'Day' };
-   #            next if !defined $GetParam{ $Prefix . 'Hour' };
-   #            next if !defined $GetParam{ $Prefix . 'Minute' };
-   #
-   #            # set time stamp to NULL if field is not used/checked
-   #            if ( !$GetParam{ $Prefix . 'Used' } ) {
-   #                $GetParam{ $Prefix . 'Year' }   = 0;
-   #                $GetParam{ $Prefix . 'Month' }  = 0;
-   #                $GetParam{ $Prefix . 'Day' }    = 0;
-   #                $GetParam{ $Prefix . 'Hour' }   = 0;
-   #                $GetParam{ $Prefix . 'Minute' } = 0;
-   #            }
-   #
-   #            # set free time
-   #            $Self->{TicketObject}->TicketFreeTimeSet(
-   #                %GetParam,
-   #                Prefix   => 'TicketFreeTime',
-   #                TicketID => $Self->{TicketID},
-   #                Counter  => $Count,
-   #                UserID   => $Self->{UserID},
-   #            );
-   #        }
-   #
-   #        # set article free text
-   #        for my $Count ( 1 .. 3 ) {
-   #            my $Key  = 'ArticleFreeKey' . $Count;
-   #            my $Text = 'ArticleFreeText' . $Count;
-   #            next if !defined $GetParam{$Key};
-   #            $Self->{TicketObject}->ArticleFreeTextSet(
-   #                TicketID  => $Self->{TicketID},
-   #                ArticleID => $ArticleID,
-   #                Key       => $GetParam{$Key},
-   #                Value     => $GetParam{$Text},
-   #                Counter   => $Count,
-   #                UserID    => $Self->{UserID},
-   #            );
-   #        }
-   #
-   #        # set priority
-   #        if ( $Self->{Config}->{Priority} && $GetParam{NewPriorityID} ) {
-   #            $Self->{TicketObject}->TicketPrioritySet(
-   #                TicketID   => $Self->{TicketID},
-   #                PriorityID => $GetParam{NewPriorityID},
-   #                UserID     => $Self->{UserID},
-   #            );
-   #        }
-   #
-   #        # set state
-   #        if ( $Self->{Config}->{State} && $GetParam{NewStateID} ) {
-   #            $Self->{TicketObject}->TicketStateSet(
-   #                TicketID => $Self->{TicketID},
-   #                StateID  => $GetParam{NewStateID},
-   #                UserID   => $Self->{UserID},
-   #            );
-   #
-   #            # unlock the ticket after close
-   #            my %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
-   #                ID => $GetParam{NewStateID},
-   #            );
-   #
-   #            # set unlock on close state
-   #            if ( $StateData{TypeName} =~ /^close/i ) {
-   #                $Self->{TicketObject}->TicketLockSet(
-   #                    TicketID => $Self->{TicketID},
-   #                    Lock     => 'unlock',
-   #                    UserID   => $Self->{UserID},
-   #                );
-   #            }
-   #
-   #            # set pending time on pendig state
-   #            elsif ( $StateData{TypeName} =~ /^pending/i ) {
-   #
-   #                # set pending time
-   #                $Self->{TicketObject}->TicketPendingTimeSet(
-   #                    UserID   => $Self->{UserID},
-   #                    TicketID => $Self->{TicketID},
-   #                    %GetParam,
-   #                );
-   #            }
+        #    my @NotifyUserIDs = ( @{ $InformedUsers }, @{ $InvolvedUsers } );
+        $ArticleID = $Self->{TicketObject}->ArticleCreate(
+            TicketID   => $Param{TicketID},
+            SenderType => 'agent',
+            From       => $From,
+            MimeType   => $MimeType,
 
-        #            # redirect to last screen overview on closed tickets
-        #            if ( $StateData{TypeName} =~ /^close/i ) {
-        #                return $Self->{ayoutObject}->Redirect( OP => $Self->{LastScreenOverview} );
+            # iphone must send info in current charset
+            Charset => $Self->{ConfigObject}->Get('DefaultCharset'),
+
+            #Charset                         => $Self->{ayoutObject}->{UserCharset},
+            UserID         => $Param{UserID},
+            HistoryType    => $Self->{Config}->{HistoryType},
+            HistoryComment => $Self->{Config}->{HistoryComment},
+
+            #                ForceNotificationToUserID       => \@NotifyUserIDs,
+            ExcludeMuteNotificationToUserID => \@NotifyDone,
+            %Param,
+        );
+
+        # time accounting
+        if ( $Param{TimeUnits} ) {
+            $Self->{TicketObject}->TicketAccountTime(
+                TicketID  => $Param{TicketID},
+                ArticleID => $ArticleID,
+                TimeUnit  => $Param{TimeUnits},
+                UserID    => $Param{UserID},
+            );
+        }
+
+        #
+        #
+        #        # set ticket free text
+        #        for my $Count ( 1 .. 16 ) {
+        #            my $Key  = 'TicketFreeKey' . $Count;
+        #            my $Text = 'TicketFreeText' . $Count;
+        #            next if !defined $GetParam{$Key};
+        #            $Self->{TicketObject}->TicketFreeTextSet(
+        #                TicketID => $Self->{TicketID},
+        #                Key      => $GetParam{$Key},
+        #                Value    => $GetParam{$Text},
+        #                Counter  => $Count,
+        #                UserID   => $Self->{UserID},
+        #            );
+        #        }
+        #
+        #        # set ticket free time
+        #        for my $Count ( 1 .. 6 ) {
+        #            my $Prefix = 'TicketFreeTime' . $Count;
+        #            next if !defined $GetParam{ $Prefix . 'Year' };
+        #            next if !defined $GetParam{ $Prefix . 'Month' };
+        #            next if !defined $GetParam{ $Prefix . 'Day' };
+        #            next if !defined $GetParam{ $Prefix . 'Hour' };
+        #            next if !defined $GetParam{ $Prefix . 'Minute' };
+        #
+        #            # set time stamp to NULL if field is not used/checked
+        #            if ( !$GetParam{ $Prefix . 'Used' } ) {
+        #                $GetParam{ $Prefix . 'Year' }   = 0;
+        #                $GetParam{ $Prefix . 'Month' }  = 0;
+        #                $GetParam{ $Prefix . 'Day' }    = 0;
+        #                $GetParam{ $Prefix . 'Hour' }   = 0;
+        #                $GetParam{ $Prefix . 'Minute' } = 0;
         #            }
+        #
+        #            # set free time
+        #            $Self->{TicketObject}->TicketFreeTimeSet(
+        #                %GetParam,
+        #                Prefix   => 'TicketFreeTime',
+        #                TicketID => $Self->{TicketID},
+        #                Counter  => $Count,
+        #                UserID   => $Self->{UserID},
+        #            );
+        #        }
+        #
+        #        # set article free text
+        #        for my $Count ( 1 .. 3 ) {
+        #            my $Key  = 'ArticleFreeKey' . $Count;
+        #            my $Text = 'ArticleFreeText' . $Count;
+        #            next if !defined $GetParam{$Key};
+        #            $Self->{TicketObject}->ArticleFreeTextSet(
+        #                TicketID  => $Self->{TicketID},
+        #                ArticleID => $ArticleID,
+        #                Key       => $GetParam{$Key},
+        #                Value     => $GetParam{$Text},
+        #                Counter   => $Count,
+        #                UserID    => $Self->{UserID},
+        #            );
+        #        }
+        #
+        # set priority
+        if ( $Self->{Config}->{Priority} && $Param{NewPriorityID} ) {
+            $Self->{TicketObject}->TicketPrioritySet(
+                TicketID   => $Param{TicketID},
+                PriorityID => $Param{NewPriorityID},
+                UserID     => $Param{UserID},
+            );
+        }
+
+        # set state
+        if ( $Self->{Config}->{State} && $Param{NewStateID} ) {
+            $Self->{TicketObject}->TicketStateSet(
+                TicketID => $Param{TicketID},
+                StateID  => $Param{NewStateID},
+                UserID   => $Param{UserID},
+            );
+
+            # unlock the ticket after close
+            my %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
+                ID => $Param{NewStateID},
+            );
+
+            # set unlock on close state
+            if ( $StateData{TypeName} =~ /^close/i ) {
+                $Self->{TicketObject}->TicketLockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'unlock',
+                    UserID   => $Param{UserID},
+                );
+            }
+
+            # set pending time on pendig state
+            elsif ( $StateData{TypeName} =~ /^pending/i ) {
+
+                # set pending time
+                $Self->{TicketObject}->TicketPendingTimeSet(
+                    UserID   => $Param{UserID},
+                    TicketID => $Param{TicketID},
+                    String   => $Param{PendingDate},
+                );
+            }
+        }
     }
-
-    #        # redirect
-    #        return $Self->{ayoutObject}->Redirect(
-    #            OP => "Action=AgentTicketZoom;TicketID=$Self->{TicketID};ArticleID=$ArticleID"
-    #        );
-    #}
-
 }
 
 sub _TicketCompose {
@@ -3842,6 +3808,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.21 2010/07/06 19:56:43 cr Exp $
+$Id: iPhone.pm,v 1.22 2010/07/06 23:37:27 cr Exp $
 
 =cut
