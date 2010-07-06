@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.20 2010/07/06 19:27:03 cr Exp $
+# $Id: iPhone.pm,v 1.21 2010/07/06 19:56:43 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,7 +20,7 @@ use Kernel::System::CheckItem;
 use Kernel::System::Priority;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.20 $) [1];
+$VERSION = qw($Revision: 1.21 $) [1];
 
 =head1 NAME
 
@@ -2903,7 +2903,7 @@ sub _TicketPhoneNew {
 
     $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketPhone');
 
-    my %Error     = ();
+    my $Error;
     my %StateData = ();
     if ( $Param{NewStateID} ) {
         %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
@@ -2924,14 +2924,16 @@ sub _TicketPhoneNew {
     # check pending date
     if ( $StateData{TypeName} && $StateData{TypeName} =~ /^pending/i ) {
         if ( !$Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} ) ) {
-            $Error{"Date invalid"} = 'invalid';
+            $Error = "Date invalid";
+            return $Error;
         }
         if (
             $Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} )
             < $Self->{TimeObject}->SystemTime()
             )
         {
-            $Error{"Date invalid"} = 'invalid';
+            $Error = "Date invalid";
+            return $Error;
         }
     }
 
@@ -2945,7 +2947,8 @@ sub _TicketPhoneNew {
             && $Param{"TicketFreeText$_"} eq ''
             )
         {
-            $Error{"TicketFreeTextField$_ invalid"} = 'invalid';
+            $Error = "TicketFreeTextField$_ invalid";
+            retrun $Error;
         }
     }
 
@@ -2970,17 +2973,21 @@ sub _TicketPhoneNew {
     # check email address
     for my $Email ( Mail::Address->parse( $CustomerUserData{UserEmail} ) ) {
         if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
-            $Error{'From invalid'} .= $Self->{CheckItemObject}->CheckError();
+            $Error = 'From invalid' . $Self->{CheckItemObject}->CheckError();
+            return $Error;
         }
     }
     if ( !$Param{CustomerUserLogin} ) {
-        $Error{'From invalid'} = 'invalid';
+        $Error = 'From invalid';
+        return $Error;
     }
     if ( !$Param{Subject} ) {
-        $Error{'Subject invalid'} = 'invalid';
+        $Error = 'Subject invalid';
+        return $Error;
     }
     if ( !$NewQueueID ) {
-        $Error{'Destination invalid'} = 'invalid';
+        $Error = 'Destination invalid';
+        return $Error;
     }
     if (
         $Self->{ConfigObject}->Get('Ticket::Service')
@@ -2988,12 +2995,8 @@ sub _TicketPhoneNew {
         && !$Param{ServiceID}
         )
     {
-        $Error{'Service invalid'} = 'invalid';
-    }
-
-    # return error to iPhone via JSON
-    if (%Error) {
-        return %Error;
+        $Error = 'Service invalid';
+        return $Error
     }
 
     # create new ticket, do db insert
@@ -3012,6 +3015,9 @@ sub _TicketPhoneNew {
         CustomerUser => $CustomerUser,
         UserID       => $Param{UserID},
     );
+    if ( !$TicketID ) {
+        return 'Error No ticket created';
+    }
 
     # set ticket free text
     for ( 1 .. 16 ) {
@@ -3182,7 +3188,7 @@ sub _TicketPhoneNew {
         return $TicketID;
     }
     else {
-        return 'Error';
+        return 'Error no Article was created';
     }
 }
 
@@ -3836,6 +3842,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.20 2010/07/06 19:27:03 cr Exp $
+$Id: iPhone.pm,v 1.21 2010/07/06 19:56:43 cr Exp $
 
 =cut
