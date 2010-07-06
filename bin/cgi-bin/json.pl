@@ -3,7 +3,7 @@
 # bin/cgi-bin/json.pl - json handle
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: json.pl,v 1.9 2010/07/02 17:27:09 cr Exp $
+# $Id: json.pl,v 1.10 2010/07/06 06:11:21 cr Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -53,7 +53,7 @@ use Kernel::System::iPhone;
 use Kernel::System::Web::Request;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.9 $) [1];
+$VERSION = qw($Revision: 1.10 $) [1];
 
 my $Self = Core->new();
 print "Content-Type: text/plain; \n";
@@ -96,21 +96,23 @@ sub Dispatch {
     $Self->{CustomerUserObject} = Kernel::System::CustomerUser->new( %{$Self} );
     $Self->{TicketObject}       = Kernel::System::Ticket->new( %{$Self} );
     $Self->{LinkObject}         = Kernel::System::LinkObject->new( %{$Self} );
+    $Self->{JSONObject}         = Kernel::System::JSON->new( %{$Self} );
+    $Self->{ParamObject}        = Kernel::System::Web::Request->new( %{$Self} );
+    $Self->{iPhoneObject}       = Kernel::System::iPhone->new( %{$Self} );
 
-    $Self->{JSONObject}   = Kernel::System::JSON->new( %{$Self} );
-    $Self->{ParamObject}  = Kernel::System::Web::Request->new( %{$Self} );
-    $Self->{iPhoneObject} = Kernel::System::iPhone->new( %{$Self} );
-
+    # get log filename
     if ( $Self->{ConfigObject}->Get('iPhone::LogFile') ) {
         $Self->{DebugLogFile} = $Self->{ConfigObject}->Get('iPhone::LogFile');
     }
 
+    # set common variables
     my $User   = $Self->{ParamObject}->GetParam( Param => 'User' );
     my $Pw     = $Self->{ParamObject}->GetParam( Param => 'Password' );
     my $Object = $Self->{ParamObject}->GetParam( Param => 'Object' );
     my $Method = $Self->{ParamObject}->GetParam( Param => 'Method' );
     my $Data   = $Self->{ParamObject}->GetParam( Param => 'Data' );
     my $ParamScalar = $Self->{JSONObject}->Decode( Data => $Data );
+
     my %Param;
     if ($ParamScalar) {
         %Param = %{$ParamScalar};
@@ -118,6 +120,7 @@ sub Dispatch {
     $User ||= '';
     $Pw   ||= '';
 
+    # inblund log
     if ( $Self->{ConfigObject}->Get('iPhone::DebugLog') ) {
         my $Message = 'User=' . $User . '&Password=****' . '&Object=' . $Object
             . '&Method=' . $Method . '&Data=' . $Data;
@@ -133,6 +136,7 @@ sub Dispatch {
     if (1) {
         my $AuthObject = Kernel::System::Auth->new( %{$Self} );
         my $UserLogin = $AuthObject->Auth( User => $User, Pw => $Pw );
+
         if ( !$UserLogin ) {
             $Self->{LogObject}->Log(
                 Priority => 'notice',
@@ -171,7 +175,7 @@ sub Dispatch {
         if ( $User ne $RequiredUser || $Pw ne $RequiredPassword ) {
             $Self->{LogObject}->Log(
                 Priority => 'notice',
-                Message  => "Auth for user $User (pw $Pw) failed!",
+                Message  => "Auth for user $User (pasword $Pw) failed!",
             );
             return $Self->Result();
         }
@@ -235,7 +239,11 @@ sub Result {
             last if $ResultProtocol{Message};
         }
     }
+
+    # set result to a variable for easy log output
     my $JSONResult = $Self->{JSONObject}->Encode( Data => \%ResultProtocol );
+
+    # outbound log
     if ( $Self->{ConfigObject}->Get('iPhone::DebugLog') ) {
 
         $Self->Log(
