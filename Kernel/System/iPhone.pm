@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.23 2010/07/07 05:02:54 cr Exp $
+# $Id: iPhone.pm,v 1.24 2010/07/08 03:39:13 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,9 +18,10 @@ use Kernel::System::Log;
 use Kernel::Language;
 use Kernel::System::CheckItem;
 use Kernel::System::Priority;
+use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.23 $) [1];
+$VERSION = qw($Revision: 1.24 $) [1];
 
 =head1 NAME
 
@@ -212,6 +213,7 @@ sub new {
 
     $Self->{CheckItemObject} = Kernel::System::CheckItem->new(%Param);
     $Self->{PriorityObject}  = Kernel::System::Priority->new(%Param);
+    $Self->{SystemAddress}   = Kernel::System::SystemAddress->new(%Param);
 
     my $SystemVersion = $Self->{ConfigObject}->Get('Version');
 
@@ -322,8 +324,9 @@ sub ScreenConfig {
                 Object     => 'CustomObject',
                 Method     => 'ScreenActions',
                 Parameters => {
-                    Action   => 'Compose',
-                    TicketID => $Param{TicketID},
+                    Action         => 'Compose',
+                    TicketID       => $Param{TicketID},
+                    ReplyArticleID => $Param{ArticleID},
                 },
             },
         );
@@ -2361,6 +2364,12 @@ sub _GetScreenElements {
     }
 
     if ( $Param{Screen} eq 'Compose' ) {
+        my %ComposeDefaults = $Self->_GetComposeDefaults(
+            %Param,
+            ArticleID => $Param{ArticleID},
+            TicketID  => $Param{TicketID},
+        );
+
         my $ComposeFromElements = {
             Name      => 'From',
             Title     => $Self->{LanguageObject}->Get('From'),
@@ -2373,7 +2382,7 @@ sub _GetScreenElements {
             # define a RedonlyField to
             # ReadOnly  => 1,
             # get from address from ticket
-            Default => '',
+            Default => $ComposeDefaults{From},
         };
         push @ScreenElements, $ComposeFromElements;
 
@@ -2387,7 +2396,7 @@ sub _GetScreenElements {
             Mandatory => 0,
 
             # must be retrieved from the ticket
-            Default => '',
+            Default => $ComposeDefaults{To},
         };
         push @ScreenElements, $ComposeToElements;
 
@@ -2399,7 +2408,7 @@ sub _GetScreenElements {
             Min       => 1,
             Max       => 50,
             Mandatory => 0,
-            Default   => '',
+            Default   => $ComposeDefaults{Cc},
         };
         push @ScreenElements, $ComposeCcElements;
 
@@ -2411,28 +2420,54 @@ sub _GetScreenElements {
             Min       => 1,
             Max       => 50,
             Mandatory => 0,
-            Default   => '',
+            Default   => $ComposeDefaults{Bcc},
         };
         push @ScreenElements, $ComposeBccElements;
+
+        my $SubjectElements = {
+            Name      => 'Subject',
+            Title     => $Self->{LanguageObject}->Get('Subject'),
+            Datatype  => 'Text',
+            Viewtype  => 'Input',
+            Min       => 1,
+            Max       => 250,
+            Mandatory => 1,
+            Default   => $ComposeDefaults{Subject},
+        };
+        push @ScreenElements, $SubjectElements;
+
+        my $BodyElements = {
+            Name      => 'Body',
+            Title     => $Self->{LanguageObject}->Get('Text'),
+            Datatype  => 'Text',
+            Viewtype  => 'TextArea',
+            Min       => 1,
+            Max       => 20_000,
+            Mandatory => 1,
+            Default   => $ComposeDefaults{Body},
+        };
+        push @ScreenElements, $BodyElements;
     }
 
     # subject
-    my $DefaultSubject = '';
-    if ( $Self->{Config}->{Subject} ) {
-        $DefaultSubject = $Self->{LanguageObject}->Get( $Self->{Config}->{Subject} )
-    }
+    if ( $Param{Screen} ne 'Compose' ) {
+        my $DefaultSubject = '';
+        if ( $Self->{Config}->{Subject} ) {
+            $DefaultSubject = $Self->{LanguageObject}->Get( $Self->{Config}->{Subject} )
+        }
 
-    my $SubjectElements = {
-        Name      => 'Subject',
-        Title     => $Self->{LanguageObject}->Get('Subject'),
-        Datatype  => 'Text',
-        Viewtype  => 'Input',
-        Min       => 1,
-        Max       => 250,
-        Mandatory => 1,
-        Default   => $DefaultSubject,
-    };
-    push @ScreenElements, $SubjectElements;
+        my $SubjectElements = {
+            Name      => 'Subject',
+            Title     => $Self->{LanguageObject}->Get('Subject'),
+            Datatype  => 'Text',
+            Viewtype  => 'Input',
+            Min       => 1,
+            Max       => 250,
+            Mandatory => 1,
+            Default   => $DefaultSubject,
+        };
+        push @ScreenElements, $SubjectElements;
+    }
 
     # sign
     # define Sign Field
@@ -2459,18 +2494,19 @@ sub _GetScreenElements {
     #        },
 
     # body
-    my $BodyElements = {
-        Name      => 'Body',
-        Title     => $Self->{LanguageObject}->Get('Text'),
-        Datatype  => 'Text',
-        Viewtype  => 'TextArea',
-        Min       => 1,
-        Max       => 20_000,
-        Mandatory => 1,
-        Default   => '',
-    };
-
-    push @ScreenElements, $BodyElements;
+    if ( $Param{Screen} ne 'Compose' ) {
+        my $BodyElements = {
+            Name      => 'Body',
+            Title     => $Self->{LanguageObject}->Get('Text'),
+            Datatype  => 'Text',
+            Viewtype  => 'TextArea',
+            Min       => 1,
+            Max       => 20_000,
+            Mandatory => 1,
+            Default   => '',
+        };
+        push @ScreenElements, $BodyElements;
+    }
 
     # customer id
     if ( $Self->{Config}->{CustomerID} ) {
@@ -3154,37 +3190,72 @@ sub _TicketPhoneNew {
 
         # set owner (if new user id is given)
         if ( $Param{NewOwnerID} ) {
-            $Self->{TicketObject}->OwnerSet(
-                TicketID  => $TicketID,
-                NewUserID => $Param{NewOwnerID},
-                UserID    => $Param{UserID},
-            );
+            if ( $Self->{'API3X'} ) {
+                $Self->{TicketObject}->TicketOwnerSet(
+                    TicketID  => $TicketID,
+                    NewUserID => $Param{NewOwnerID},
+                    UserID    => $Param{UserID},
+                );
 
-            # set lock
-            $Self->{TicketObject}->LockSet(
-                TicketID => $TicketID,
-                Lock     => 'lock',
-                UserID   => $Param{UserID},
-            );
+                # set lock
+                $Self->{TicketObject}->TicketLockSet(
+                    TicketID => $TicketID,
+                    Lock     => 'lock',
+                    UserID   => $Param{UserID},
+                );
+            }
+            else {
+                $Self->{TicketObject}->OwnerSet(
+                    TicketID  => $TicketID,
+                    NewUserID => $Param{NewOwnerID},
+                    UserID    => $Param{UserID},
+                );
+
+                # set lock
+                $Self->{TicketObject}->LockSet(
+                    TicketID => $TicketID,
+                    Lock     => 'lock',
+                    UserID   => $Param{UserID},
+                );
+            }
         }
 
         # else set owner to current agent but do not lock it
         else {
-            $Self->{TicketObject}->OwnerSet(
-                TicketID           => $TicketID,
-                NewUserID          => $Param{UserID},
-                SendNoNotification => 1,
-                UserID             => $Param{UserID},
-            );
+            if ( $Self->{'API3X'} ) {
+                $Self->{TicketObject}->TicketOwnerSet(
+                    TicketID           => $TicketID,
+                    NewUserID          => $Param{UserID},
+                    SendNoNotification => 1,
+                    UserID             => $Param{UserID},
+                );
+            }
+            else {
+                $Self->{TicketObject}->OwnerSet(
+                    TicketID           => $TicketID,
+                    NewUserID          => $Param{UserID},
+                    SendNoNotification => 1,
+                    UserID             => $Param{UserID},
+                );
+            }
         }
 
         # set responsible (if new user id is given)
         if ( $Param{NewResponsibleID} ) {
-            $Self->{TicketObject}->ResponsibleSet(
-                TicketID  => $TicketID,
-                NewUserID => $Param{NewResponsibleID},
-                UserID    => $Param{UserID},
-            );
+            if ( $Self->{'API3X'} ) {
+                $Self->{TicketObject}->TicketResponsibleSet(
+                    TicketID  => $TicketID,
+                    NewUserID => $Param{NewResponsibleID},
+                    UserID    => $Param{UserID},
+                );
+            }
+            else {
+                $Self->{TicketObject}->ResponsibleSet(
+                    TicketID  => $TicketID,
+                    NewUserID => $Param{NewResponsibleID},
+                    UserID    => $Param{UserID},
+                );
+            }
         }
 
         # time accounting
@@ -3200,11 +3271,20 @@ sub _TicketPhoneNew {
         # should i set an unlock?
         my %StateData = $Self->{StateObject}->StateGet( ID => $Param{NewStateID} );
         if ( $StateData{TypeName} =~ /^close/i ) {
-            $Self->{TicketObject}->LockSet(
-                TicketID => $TicketID,
-                Lock     => 'unlock',
-                UserID   => $Param{UserID},
-            );
+            if ( $Self->{'API3X'} ) {
+                $Self->{TicketObject}->TicketLockSet(
+                    TicketID => $TicketID,
+                    Lock     => 'unlock',
+                    UserID   => $Param{UserID},
+                );
+            }
+            else {
+                $Self->{TicketObject}->LockSet(
+                    TicketID => $TicketID,
+                    Lock     => 'unlock',
+                    UserID   => $Param{UserID},
+                );
+            }
         }
 
         # set pending time
@@ -3283,16 +3363,30 @@ sub _TicketCommonActions {
             }
         }
         if ( !$Locked ) {
-            $Self->{TicketObject}->TicketLockSet(
-                TicketID => $Param{TicketID},
-                Lock     => 'lock',
-                UserID   => $Param{UserID},
-            );
-            my $Success = $Self->{TicketObject}->TicketOwnerSet(
-                TicketID  => $Param{TicketID},
-                UserID    => $Param{UserID},
-                NewUserID => $Param{UserID},
-            );
+            if ( $Self->{'API3X'} ) {
+                $Self->{TicketObject}->TicketLockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'lock',
+                    UserID   => $Param{UserID},
+                );
+                my $Success = $Self->{TicketObject}->TicketOwnerSet(
+                    TicketID  => $Param{TicketID},
+                    UserID    => $Param{UserID},
+                    NewUserID => $Param{UserID},
+                );
+            }
+            else {
+                $Self->{TicketObject}->LockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'lock',
+                    UserID   => $Param{UserID},
+                );
+                my $Success = $Self->{TicketObject}->OwnerSet(
+                    TicketID  => $Param{TicketID},
+                    UserID    => $Param{UserID},
+                    NewUserID => $Param{UserID},
+                );
+            }
         }
         else {
             my $AccessOk = $Self->{TicketObject}->OwnerCheck(
@@ -3408,17 +3502,33 @@ sub _TicketCommonActions {
     if ( $Self->{Config}->{Owner} ) {
         my $BodyText = $Param{Body} || '';
         if ( $Param{NewOwnerID} ) {
-            $Self->{TicketObject}->TicketLockSet(
-                TicketID => $Param{TicketID},
-                Lock     => 'lock',
-                UserID   => $Param{UserID},
-            );
-            my $Success = $Self->{TicketObject}->TicketOwnerSet(
-                TicketID  => $Param{TicketID},
-                UserID    => $Param{UserID},
-                NewUserID => $Param{NewOwnerID},
-                Comment   => $BodyText,
-            );
+            my $Success;
+            if ( $Self->{'API3X'} ) {
+                $Self->{TicketObject}->TicketLockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'lock',
+                    UserID   => $Param{UserID},
+                );
+                $Success = $Self->{TicketObject}->TicketOwnerSet(
+                    TicketID  => $Param{TicketID},
+                    UserID    => $Param{UserID},
+                    NewUserID => $Param{NewOwnerID},
+                    Comment   => $BodyText,
+                );
+            }
+            else {
+                $Self->{TicketObject}->LockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'lock',
+                    UserID   => $Param{UserID},
+                );
+                $Success = $Self->{TicketObject}->OwnerSet(
+                    TicketID  => $Param{TicketID},
+                    UserID    => $Param{UserID},
+                    NewUserID => $Param{NewOwnerID},
+                    Comment   => $BodyText,
+                );
+            }
 
             # remember to not notify owner twice
             if ( $Success && $Success eq 1 ) {
@@ -3431,12 +3541,23 @@ sub _TicketCommonActions {
     if ( $Self->{Config}->{Responsible} ) {
         if ( $Param{NewResponsibleID} ) {
             my $BodyText = $Param{Body} || '';
-            my $Success = $Self->{TicketObject}->TicketResponsibleSet(
-                TicketID  => $Param{TicketID},
-                UserID    => $Param{UserID},
-                NewUserID => $Param{NewResponsibleID},
-                Comment   => $BodyText,
-            );
+            my $Success;
+            if ( $Self->{'API3X'} ) {
+                $Success = $Self->{TicketObject}->TicketResponsibleSet(
+                    TicketID  => $Param{TicketID},
+                    UserID    => $Param{UserID},
+                    NewUserID => $Param{NewResponsibleID},
+                    Comment   => $BodyText,
+                );
+            }
+            else {
+                $Success = $Self->{TicketObject}->ResponsibleSet(
+                    TicketID  => $Param{TicketID},
+                    UserID    => $Param{UserID},
+                    NewUserID => $Param{NewResponsibleID},
+                    Comment   => $BodyText,
+                );
+            }
 
             # remember to not notify responsible twice
             if ( $Success && $Success eq 1 ) {
@@ -3487,6 +3608,10 @@ sub _TicketCommonActions {
             ExcludeMuteNotificationToUserID => \@NotifyDone,
             %Param,
         );
+
+        if ( !$ArticleID ) {
+            return "Error no article was created";
+        }
 
         # time accounting
         if ( $Param{TimeUnits} ) {
@@ -3565,11 +3690,20 @@ sub _TicketCommonActions {
 
         # set priority
         if ( $Self->{Config}->{Priority} && $Param{NewPriorityID} ) {
-            $Self->{TicketObject}->TicketPrioritySet(
-                TicketID   => $Param{TicketID},
-                PriorityID => $Param{NewPriorityID},
-                UserID     => $Param{UserID},
-            );
+            if ( $Self->{'API3X'} ) {
+                $Self->{TicketObject}->TicketPrioritySet(
+                    TicketID   => $Param{TicketID},
+                    PriorityID => $Param{NewPriorityID},
+                    UserID     => $Param{UserID},
+                );
+            }
+            else {
+                $Self->{TicketObject}->PrioritySet(
+                    TicketID   => $Param{TicketID},
+                    PriorityID => $Param{NewPriorityID},
+                    UserID     => $Param{UserID},
+                );
+            }
         }
 
         # set state
@@ -3696,13 +3830,689 @@ sub _TicketCommonActions {
 
 sub _TicketCompose {
     my ( $Self, %Param ) = @_;
-    return 'Under Development';
+
+    my $Error;
+    $Self->{Config}
+        = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketCompose');
+
+    # check needed stuff
+    if ( !$Param{TicketID} ) {
+        $Error = 'No TicketID is given! Please contact the admin.';
+        return $Error;
+    }
+
+    # check permissions
+    my $Access;
+    if ( $Self->{'API3X'} ) {
+        $Access = $Self->{TicketObject}->TicketPermission(
+            Type     => $Self->{Config}->{Permission},
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID},
+        );
+    }
+    else {
+        $Access = $Self->{TicketObject}->Permission(
+            Type     => $Self->{Config}->{Permission},
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID},
+        );
+    }
+
+    # error screen, don't show ticket
+    if ( !$Access ) {
+        $Error = 'You need $Self->{Config}->{Permission} permissions!';
+        return $Error;
+    }
+    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
+
+    # get lock state
+    if ( $Self->{Config}->{RequiredLock} ) {
+        my $Locked;
+        if ( $Self->{'API3X'} ) {
+            $Locked = $Self->{TicketObject}->TicketLockGet( TicketID => $Param{TicketID} );
+        }
+        else {
+            my %TicketData = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
+            if ( $TicketData{Lock} eq 'lock' ) {
+                $Locked = 1;
+            }
+        }
+        if ( !$Locked ) {
+            my $Success;
+            if ( $Self->{'API3X'} ) {
+                $Self->{TicketObject}->TicketLockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'lock',
+                    UserID   => $Param{UserID},
+                );
+
+                $Success = $Self->{TicketObject}->TicketOwnerSet(
+                    TicketID  => $Param{TicketID},
+                    UserID    => $Param{UserID},
+                    NewUserID => $Param{UserID},
+                );
+            }
+            else {
+                $Self->{TicketObject}->LockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'lock',
+                    UserID   => $Param{UserID},
+                );
+
+                $Success = $Self->{TicketObject}->OwnerSet(
+                    TicketID  => $Param{TicketID},
+                    UserID    => $Param{UserID},
+                    NewUserID => $Param{UserID},
+                );
+            }
+        }
+        else {
+            my $AccessOk = $Self->{TicketObject}->OwnerCheck(
+                TicketID => $Param{TicketID},
+                OwnerID  => $Param{UserID},
+            );
+            if ( !$AccessOk ) {
+                $Error
+                    = 'Sorry, you need to be the owner to do this action! Please change the owner first.';
+                return $Error;
+            }
+        }
+    }
+
+    # ---------------------------------------------------------
+    #
+    # Must be implemented aalso in PhoneNew and Common Actions
+    #
+    # ----------------------------------------------------------
+    #    # transform pending time, time stamp based on user time zone
+    #    if (
+    #        defined $GetParam{Year}
+    #        && defined $GetParam{Month}
+    #        && defined $GetParam{Day}
+    #        && defined $GetParam{Hour}
+    #        && defined $GetParam{Minute}
+    #        )
+    #    {
+    #        %GetParam = $Self->{ayoutObject}->TransfromDateSelection(
+    #            %GetParam,
+    #        );
+    #    }
+    #
+    #    # transform free time, time stamp based on user time zone
+    #    for my $Count ( 1 .. 6 ) {
+    #        my $Prefix = 'TicketFreeTime' . $Count;
+    #        next if !defined $GetParam{ $Prefix . 'Year' };
+    #        next if !defined $GetParam{ $Prefix . 'Month' };
+    #        next if !defined $GetParam{ $Prefix . 'Day' };
+    #        next if !defined $GetParam{ $Prefix . 'Hour' };
+    #        next if !defined $GetParam{ $Prefix . 'Minute' };
+    #        %GetParam = $Self->{ayoutObject}->TransfromDateSelection(
+    #            %GetParam,
+    #            Prefix => $Prefix
+    #        );
+    #    }
+
+    # send email
+
+    my %StateData = $Self->{TicketObject}->{StateObject}->StateGet( ID => $Param{NewStateID}, );
+
+    # check pending date
+    if ( $StateData{TypeName} && $StateData{TypeName} =~ /^pending/i ) {
+        if ( !$Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} ) ) {
+            $Error = "Date invalid";
+            return $Error;
+        }
+        if (
+            $Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} )
+            < $Self->{TimeObject}->SystemTime()
+            )
+        {
+            $Error = "Date invalid";
+            return $Error;
+        }
+    }
+
+    # check required FreeTextField (if configured)
+    for ( 1 .. 16 ) {
+        if (
+            $Self->{Config}->{TicketFreeText}->{$_} == 2
+            && $Param{"TicketFreeText$_"} eq ''
+            )
+        {
+            $Error = "TicketFreeTextField$_ invalid";
+            return $Error
+        }
+    }
+
+    # check some values
+    for my $Line (qw(From To Cc Bcc)) {
+        next if !$Param{$Line};
+        for my $Email ( Mail::Address->parse( $Param{$Line} ) ) {
+            if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
+                $Error = "$Line invalid " . $Self->{CheckItemObject}->CheckError();
+                return $Error;
+            }
+        }
+    }
+
+  #for Sign and crypt ... no needed in this version
+  #        my %ArticleParam;
+  #
+  #        # run compose modules
+  #        if ( ref $Self->{ConfigObject}->Get('Ticket::Frontend::ArticleComposeModule') eq 'HASH' )
+  #        {
+  #            my %Jobs = %{ $Self->{ConfigObject}->Get('Ticket::Frontend::ArticleComposeModule') };
+  #            for my $Job ( sort keys %Jobs ) {
+  #
+  #                # load module
+  #                if ( !$Self->{MainObject}->Require( $Jobs{$Job}->{Module} ) ) {
+  #                    return "fatal error"
+  #                }
+  #                my $Object = $Jobs{$Job}->{Module}->new( %{$Self}, Debug => $Self->{Debug} );
+  #
+  #                # get params
+  #                for ( $Object->Option( %Param, Config => $Jobs{$Job} ) ) {
+  #                    $Param{$_} = $Self->{aramObject}->GetParam( Param => $_ );
+  #                }
+  #
+  #                # run module
+  #                $Object->Run( %Param, Config => $Jobs{$Job} );
+  #
+  #                # ticket params
+  #                %ArticleParam = (
+  #                    %ArticleParam,
+  #                    $Object->ArticleOption( %Param, Config => $Jobs{$Job} ),
+  #                );
+  #
+  #                # get errors
+  #                my %ModuleError = (
+  #                    $Object->Error( %Param, Config => $Jobs{$Job} ),
+  #                );
+  #                if (%ModuleError){
+  #                    for my $ErrorKey (keys %ModuleError){
+  #                       $Error .= $ModuleError{$ErrorKey};
+  #                    }
+  #                }
+  #            }
+  #        }
+
+    #        # check if there is an error
+    #        if (%Error) {
+    #
+    #            # get free text config options
+    #            my %TicketFreeText;
+    #            for my $Count ( 1 .. 16 ) {
+    #                my $Key  = 'TicketFreeKey' . $Count;
+    #                my $Text = 'TicketFreeText' . $Count;
+    #                $TicketFreeText{$Key} = $Self->{TicketObject}->TicketFreeTextGet(
+    #                    TicketID => $Self->{TicketID},
+    #                    Type     => $Key,
+    #                    Action   => $Self->{Action},
+    #                    UserID   => $Self->{UserID},
+    #                );
+    #                $TicketFreeText{$Text} = $Self->{TicketObject}->TicketFreeTextGet(
+    #                    TicketID => $Self->{TicketID},
+    #                    Type     => $Text,
+    #                    Action   => $Self->{Action},
+    #                    UserID   => $Self->{UserID},
+    #                );
+    #            }
+    #
+    #            # article free text
+    #            my %ArticleFreeText;
+    #            for my $Count ( 1 .. 3 ) {
+    #                my $Key  = 'ArticleFreeKey' . $Count;
+    #                my $Text = 'ArticleFreeText' . $Count;
+    #                $ArticleFreeText{$Key} = $Self->{TicketObject}->ArticleFreeTextGet(
+    #                    TicketID => $Self->{TicketID},
+    #                    Type     => $Key,
+    #                    Action   => $Self->{Action},
+    #                    UserID   => $Self->{UserID},
+    #                );
+    #                $ArticleFreeText{$Text} = $Self->{TicketObject}->ArticleFreeTextGet(
+    #                    TicketID => $Self->{TicketID},
+    #                    Type     => $Text,
+    #                    Action   => $Self->{Action},
+    #                    UserID   => $Self->{UserID},
+    #                );
+    #            }
+    #        }
+
+    # replace <OTRS_TICKET_STATE> with next ticket state name
+    if ( $StateData{Name} ) {
+        $Param{Body} =~ s/<OTRS_TICKET_STATE>/$StateData{Name}/g;
+        $Param{Body} =~ s/&lt;OTRS_TICKET_STATE&gt;/$StateData{Name}/g;
+    }
+
+    # get recipients
+    my $Recipients = '';
+    for my $Line (qw(To Cc Bcc)) {
+        if ( $Param{$Line} ) {
+            if ($Recipients) {
+                $Recipients .= ',';
+            }
+            $Recipients .= $Param{$Line};
+        }
+    }
+
+    my $MimeType = 'text/plain';
+
+    # send email
+    my $ArticleID = $Self->{TicketObject}->ArticleSend(
+        ArticleType    => 'email-external',
+        SenderType     => 'agent',
+        TicketID       => $Param{TicketID},
+        HistoryType    => 'SendAnswer',
+        HistoryComment => "\%\%$Recipients",
+        From           => $Param{From},
+        To             => $Param{To},
+        Cc             => $Param{Cc},
+        Bcc            => $Param{Bcc},
+        Subject        => $Param{Subject},
+        UserID         => $Param{UserID},
+        Body           => $Param{Body},
+        InReplyTo      => $Param{InReplyTo},
+        References     => $Param{References},
+        Charset        => $Self->{ConfigObject}->Get('DefaultCharset'),
+        MimeType       => $MimeType,
+
+        #            %ArticleParam,
+    );
+
+    # error page
+    if ( !$ArticleID ) {
+        return "Error no Article created";
+    }
+
+    # time accounting
+    if ( $Param{TimeUnits} ) {
+        $Self->{TicketObject}->TicketAccountTime(
+            TicketID  => $Param{TicketID},
+            ArticleID => $ArticleID,
+            TimeUnit  => $Param{TimeUnits},
+            UserID    => $Param{UserID},
+        );
+    }
+
+    # set ticket free text
+    for my $Count ( 1 .. 16 ) {
+        my $Key  = 'TicketFreeKey' . $Count;
+        my $Text = 'TicketFreeText' . $Count;
+        if ( defined $Param{$Key} ) {
+            $Self->{TicketObject}->TicketFreeTextSet(
+                Key      => $Param{$Key},
+                Value    => $Param{$Text},
+                Counter  => $Count,
+                TicketID => $Param{TicketID},
+                UserID   => $Param{UserID},
+            );
+        }
+    }
+
+    # set ticket free time
+    for ( 1 .. 6 ) {
+
+        if ( $Param{ 'TicketFreeTime' . $_ } ) {
+            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
+                = $Self->{TimeObject}->SystemTime2Date(
+                SystemTime =>
+                    $Self->{TimeObject}->SystemTime( $Param{ 'TicketFreeTime' . $_ } ),
+                );
+
+            $Param{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
+            $Param{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
+            $Param{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
+            $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
+            $Param{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
+
+            # set time stamp to NULL if field is not used/checked
+            if ( !$Param{ 'TicketFreeTime' . $_ . 'Used' } ) {
+                $Param{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
+            }
+
+            # set free time
+            $Self->{TicketObject}->TicketFreeTimeSet(
+                %Param,
+                Prefix   => 'TicketFreeTime',
+                TicketID => $Param{TicketID},
+                Counter  => $_,
+                UserID   => $Param{UserID},
+            );
+        }
+    }
+
+    # set article free text
+    for my $Count ( 1 .. 3 ) {
+        my $Key  = 'ArticleFreeKey' . $Count;
+        my $Text = 'ArticleFreeText' . $Count;
+        if ( defined $Param{$Key} ) {
+            $Self->{TicketObject}->ArticleFreeTextSet(
+                TicketID  => $Self->{TicketID},
+                ArticleID => $ArticleID,
+                Key       => $Param{$Key},
+                Value     => $Param{$Text},
+                Counter   => $Count,
+                UserID    => $Self->{UserID},
+            );
+        }
+    }
+
+    # set state
+    if ( $Self->{Config}->{State} && $Param{NewStateID} ) {
+        if ( $Self->{'API3X'} ) {
+            $Self->{TicketObject}->TicketStateSet(
+                TicketID => $Param{TicketID},
+                StateID  => $Param{NewStateID},
+                UserID   => $Param{UserID},
+            );
+        }
+        else {
+            $Self->{TicketObject}->StateSet(
+                TicketID => $Param{TicketID},
+                StateID  => $Param{NewStateID},
+                UserID   => $Param{UserID},
+            );
+        }
+    }
+
+    # should I set an unlock?
+    if ( $StateData{TypeName} =~ /^close/i ) {
+        if ( $Self->{'API3X'} ) {
+            $Self->{TicketObject}->TicketLockSet(
+                TicketID => $Param{TicketID},
+                Lock     => 'unlock',
+                UserID   => $Param{UserID},
+            );
+        }
+        else {
+            $Self->{TicketObject}->LockSet(
+                TicketID => $Param{TicketID},
+                Lock     => 'unlock',
+                UserID   => $Param{UserID},
+            );
+        }
+    }
+
+    # set pending time
+    elsif ( $StateData{TypeName} =~ /^pending/i ) {
+        $Self->{TicketObject}->TicketPendingTimeSet(
+            UserID   => $Param{UserID},
+            TicketID => $Param{TicketID},
+            String   => $Param{PendingDate},
+        );
+    }
+
+    # log use response id and reply article id (useful for response diagnostics)
+    my $HistoryName;
+    if ( $Param{ReplyArticleID} ) {
+        $HistoryName = "Respomse from iPhone /$Param{ReplyArticleID}/$ArticleID)";
+    }
+    else {
+        $HistoryName = "Respomse from iPhone /$ArticleID)"
+    }
+    $Self->{TicketObject}->HistoryAdd(
+        Name         => $HistoryName,
+        HistoryType  => 'Misc',
+        TicketID     => $Param{TicketID},
+        CreateUserID => $Param{UserID},
+    );
+    return $ArticleID;
 }
 
 sub _TicketMove {
     my ( $Self, %Param ) = @_;
     return 'Under Development';
 }
+
+sub _GetComposeDefaults {
+    my ( $Self, %Param ) = @_;
+
+    #need to delete this
+    $Self->{LanguageObject} = Kernel::Language->new( %{$Self}, UserLanguage => $Param{Language} );
+
+    if ( !$Param{TicketID} ) {
+        return "Need TicketID";
+    }
+
+    my %ComposeData;
+
+    # get last customer article or selected article ...
+    my %Data;
+    if ( $Param{ArticleID} ) {
+        %Data = $Self->{TicketObject}->ArticleGet( ArticleID => $Param{ArticleID} );
+    }
+    else {
+        %Data = $Self->{TicketObject}->ArticleLastCustomerArticle(
+            TicketID => $Param{TicketID},
+        );
+    }
+
+    # check article type and replace To with From (in case)
+    if ( $Data{SenderType} !~ /customer/ ) {
+        my $To   = $Data{To};
+        my $From = $Data{From};
+
+        # set OrigFrom for correct email quoteing (xxxx wrote)
+        $Data{OrigFrom} = $Data{From};
+
+        # replace From/To, To/From because sender is agent
+        $Data{From}    = $To;
+        $Data{To}      = $Data{From};
+        $Data{ReplyTo} = '';
+    }
+    else {
+
+        # set OrigFrom for correct email quoteing (xxxx wrote)
+        $Data{OrigFrom} = $Data{From};
+    }
+
+    # build OrigFromName (to only use the realname)
+    $Data{OrigFromName} = $Data{OrigFrom};
+    $Data{OrigFromName} =~ s/<.*>|\(.*\)|\"|;|,//g;
+    $Data{OrigFromName} =~ s/( $)|(  $)//g;
+
+    my %Ticket = $Self->{TicketObject}->TicketGet(
+        TicketID => $Param{TicketID},
+        UserID   => $Param{UserID},
+    );
+
+    # get customer data
+    my %Customer;
+    if ( $Ticket{CustomerUserID} ) {
+        %Customer = $Self->{CustomerUserObject}->CustomerUserDataGet(
+            User => $Ticket{CustomerUserID}
+        );
+    }
+
+    # prepare body, subject, ReplyTo ...
+    # rewrap body if exists
+    if ( $Data{Body} ) {
+        $Data{Body} =~ s/\t/ /g;
+        my $Quote = $Self->{ConfigObject}->Get('Ticket::Frontend::Quote');
+        if ($Quote) {
+            $Data{Body} =~ s/\n/\n$Quote /g;
+            $Data{Body} = "\n$Quote " . $Data{Body};
+        }
+        else {
+            $Data{Body} = "\n" . $Data{Body};
+            if ( $Data{Created} ) {
+                $Data{Body} = "Date: $Data{Created}\n" . $Data{Body};
+            }
+            for (qw(Subject ReplyTo Reply-To Cc To From)) {
+                if ( $Data{$_} ) {
+                    $Data{Body} = "$_: $Data{$_}\n" . $Data{Body};
+                }
+            }
+            $Data{Body} = "\n---- Message from $Data{From} ---\n\n" . $Data{Body};
+            $Data{Body} .= "\n---- End Message ---\n";
+        }
+    }
+
+    # check if Cc recipients should be used
+    if ( $Self->{ConfigObject}->Get('Ticket::Frontend::ComposeExcludeCcRecipients') ) {
+        $Data{Cc} = '';
+    }
+
+    # add not local To addresses to Cc
+    for my $Email ( Mail::Address->parse( $Data{To} ) ) {
+        my $IsLocal = $Self->{SystemAddress}->SystemAddressIsLocalAddress(
+            Address => $Email->address(),
+        );
+        if ( !$IsLocal ) {
+            if ( $Data{Cc} ) {
+                $Data{Cc} .= ', ';
+            }
+            $Data{Cc} .= $Email->format();
+        }
+    }
+
+    # check ReplyTo
+    if ( $Data{ReplyTo} ) {
+        $Data{To} = $Data{ReplyTo};
+    }
+    else {
+        $Data{To} = $Data{From};
+
+        # try to remove some wrong text to from line (by way of ...)
+        # added by some strange mail programs on bounce
+        $Data{To} =~ s/(.+?\<.+?\@.+?\>)\s+\(by\s+way\s+of\s+.+?\)/$1/ig;
+    }
+
+    # get to email (just "some@example.com")
+    for my $Email ( Mail::Address->parse( $Data{To} ) ) {
+        $Data{ToEmail} = $Email->address();
+    }
+
+    # use customer database email
+    if ( $Self->{ConfigObject}->Get('Ticket::Frontend::ComposeAddCustomerAddress') ) {
+
+        # check if customer is in recipient list
+        if ( $Customer{UserEmail} && $Data{ToEmail} !~ /^\Q$Customer{UserEmail}\E$/i ) {
+
+            # replace To with customers database address
+            if ( $Self->{ConfigObject}->Get('Ticket::Frontend::ComposeReplaceSenderAddress') ) {
+                $Data{To} = $Customer{UserEmail};
+            }
+
+            # add customers database address to Cc
+            else {
+                if ( $Data{Cc} ) {
+                    $Data{Cc} .= ', ' . $Customer{UserEmail};
+                }
+                else {
+                    $Data{Cc} = $Customer{UserEmail};
+                }
+            }
+        }
+    }
+
+    # find duplicate addresses
+    my %Recipient;
+    for my $Type (qw(To Cc Bcc)) {
+        if ( $Data{$Type} ) {
+            my $NewLine = '';
+            for my $Email ( Mail::Address->parse( $Data{$Type} ) ) {
+                my $Address = lc $Email->address();
+
+                # only use email addresses with @ inside
+                if ( $Address && $Address =~ /@/ && !$Recipient{$Address} ) {
+                    $Recipient{$Address} = 1;
+                    my $IsLocal = $Self->{SystemAddress}->SystemAddressIsLocalAddress(
+                        Address => $Address,
+                    );
+                    if ( !$IsLocal ) {
+                        if ($NewLine) {
+                            $NewLine .= ', ';
+                        }
+                        $NewLine .= $Email->format();
+                    }
+                }
+            }
+            $Data{$Type} = $NewLine;
+        }
+    }
+
+    $Param{ResponseID} = 1;
+
+    # get template
+    my $TemplateGenerator = Kernel::System::TemplateGenerator->new( %{$Self} );
+    my %Response          = $TemplateGenerator->Response(
+        TicketID   => $Param{TicketID},
+        ArticleID  => $Param{ArticleID},
+        ResponseID => $Param{ResponseID},
+        Data       => \%Data,
+        UserID     => $Param{UserID},
+    );
+    $Data{Salutation}       = $Response{Salutation};
+    $Data{Signature}        = $Response{Signature};
+    $Data{StandardResponse} = $Response{StandardResponse};
+
+    %Data = $TemplateGenerator->Attributes(
+        TicketID   => $Param{TicketID},
+        ArticleID  => $Param{ArticleID},
+        ResponseID => $Param{ResponseID},
+        Data       => \%Data,
+        UserID     => $Param{UserID},
+    );
+
+    my $Salutation = $Data{Salutation};
+    my $OrigFrom   = $Data{OrigFrom};
+    my $Wrote      = $Self->{LanguageObject}->Get('wrote');
+    my $Body       = $Data{Body};
+    my $Signature  = $Data{Signature};
+
+    my $ResponseFormat =
+        "$Salutation \n  $OrigFrom $Wrote: \n $Body \n $Signature \n";
+
+    # restore qdata formatting for Output replacement
+    $ResponseFormat =~ s/&quot;/"/gi;
+
+    # restore qdata formatting for Output replacement
+    $ResponseFormat =~ s/&quot;/"/gi;
+
+    # prepare subject
+    my $Tn = $Self->{TicketObject}->TicketNumberLookup( TicketID => $Param{TicketID} );
+    $Param{Subject} = $Self->{TicketObject}->TicketSubjectBuild(
+        TicketNumber => $Tn,
+        Subject => $Param{Subject} || '',
+    );
+
+    # check some values
+    my $Error;
+    for my $Line (qw(To Cc Bcc)) {
+        next if !$Data{$Line};
+        for my $Email ( Mail::Address->parse( $Data{$Line} ) ) {
+            if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
+                $Error = $Line . "Invalid" . " ServerError";
+                return $Error;
+            }
+        }
+    }
+    if ( $Data{From} ) {
+        for my $Email ( Mail::Address->parse( $Data{From} ) ) {
+            if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
+                $Error = "FromInvalid" . $Self->{CheckItemObject}->CheckError();
+                return $Error;
+            }
+        }
+    }
+
+    %ComposeData = (
+        From    => $Data{From},
+        To      => $Data{To},
+        Cc      => $Data{Cc},
+        Bcc     => $Data{Bcc},
+        ReplyTo => $Data{ReplyTo},
+        Subject => $Data{Subject},
+        Body    => $ResponseFormat,
+    );
+    return %ComposeData;
+}
+
 1;
 
 =back
@@ -3719,6 +4529,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.23 2010/07/07 05:02:54 cr Exp $
+$Id: iPhone.pm,v 1.24 2010/07/08 03:39:13 cr Exp $
 
 =cut
