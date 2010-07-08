@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: iPhone.xml,v 1.8 2010/07/08 03:29:59 cr Exp $</CVS>
+    <CVS>$Id: iPhone.xml,v 1.9 2010/07/08 14:53:06 cr Exp $</CVS>
 
     <ConfigItem Name="iPhone::DebugLog" Required="1" Valid="1">
         <Description Lang="en">If you want to log all communication between iPhone and otrs.</Description>
@@ -787,29 +787,6 @@
                 <Item>pending auto</Item>
                 <Item>pending reminder</Item>
             </Array>
-        </Setting>
-    </ConfigItem>
-    <ConfigItem Name="iPhone::Frontend::ResponseFormat" Required="1" Valid="1">
-        <Description Translatable="1">Defines the format of responses in the ticket compose screen of the agent interface ($QData{"OrigFrom"} is From 1:1, $QData{"OrigFromName"} is only realname of From).</Description>
-        <Group>iPhone</Group>
-        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
-        <Setting>
-            <TextArea>$QData{"Salutation"}
-$TimeShort{"$QData{"Created"}"} - $QData{"OrigFromName"} $Text{"wrote"}:
-$QData{"Body"}
-
-$QData{"StdResponse"}
-
-$QData{"Signature"}
-</TextArea>
-        </Setting>
-    </ConfigItem>
-    <ConfigItem Name="iPhone::Frontend::Quote" Required="0" Valid="1">
-        <Description Translatable="1">Defines the used character for email quotes in the ticket compose screen of the agent interface.</Description>
-        <Group>iPhone</Group>
-        <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
-        <Setting>
-            <String Regex="">&gt;</String>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::ComposeAddCustomerAddress" Required="1" Valid="1">
