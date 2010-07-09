@@ -1,8 +1,8 @@
 # --
 # Kernel/System/DB/postgresql.pm - postgresql database backend
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: postgresql.pm,v 1.63 2011/09/01 11:29:21 mg Exp $
+# $Id: postgresql.pm,v 1.52.2.1 2010/07/09 17:44:41 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.63 $) [1];
+$VERSION = qw($Revision: 1.52.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -31,21 +31,14 @@ sub LoadPreferences {
     my ( $Self, %Param ) = @_;
 
     # db settings
-    $Self->{'DB::Limit'}       = 'limit';
-    $Self->{'DB::DirectBlob'}  = 0;
-    $Self->{'DB::QuoteSingle'} = '\'';
-
-    #$Self->{'DB::QuoteBack'}            = '\\';
-    $Self->{'DB::QuoteBack'} = '';
-
-    #$Self->{'DB::QuoteSemicolon'}       = '\\';
-    $Self->{'DB::QuoteSemicolon'} = '';
-
-    #$Self->{'DB::QuoteUnderscoreStart'} = '\\\\';
-    $Self->{'DB::QuoteUnderscoreStart'} = '\\';
-    $Self->{'DB::QuoteUnderscoreEnd'}   = '';
-    $Self->{'DB::CaseInsensitive'}      = 0;
-    $Self->{'DB::LikeEscapeString'}     = '';
+    $Self->{'DB::Limit'}            = 'limit';
+    $Self->{'DB::DirectBlob'}       = 0;
+    $Self->{'DB::QuoteSingle'}      = '\'';
+    $Self->{'DB::QuoteBack'}        = '\\';
+    $Self->{'DB::QuoteSemicolon'}   = '\\';
+    $Self->{'DB::QuoteUnderscore'}  = '\\\\';
+    $Self->{'DB::CaseInsensitive'}  = 0;
+    $Self->{'DB::LikeEscapeString'} = '';
 
     # dbi attributes
     $Self->{'DB::Attribute'} = {};
@@ -57,12 +50,13 @@ sub LoadPreferences {
     $Self->{'DB::Encode'} = 1;
 
     # shell setting
-    $Self->{'DB::Comment'}      = '-- ';
-    $Self->{'DB::ShellCommit'}  = ';';
-    $Self->{'DB::ShellConnect'} = 'SET standard_conforming_strings TO ON';
+    $Self->{'DB::Comment'}     = '-- ';
+    $Self->{'DB::ShellCommit'} = ';';
+
+    #$Self->{'DB::ShellConnect'} = '';
 
     # init sql setting on db connect
-    $Self->{'DB::Connect'} = 'SET standard_conforming_strings TO ON';
+    #$Self->{'DB::Connect'} = '';
 
     return 1;
 }
@@ -81,15 +75,8 @@ sub Quote {
             ${$Text} =~ s/;/$Self->{'DB::QuoteSemicolon'};/g;
         }
         if ( $Type && $Type eq 'Like' ) {
-
-            # if $Text contains only backslashes, add a % at the end.
-            # newer versions of postgres do not allow an escape character (backslash)
-            # at the end of a pattern: "LIKE pattern must not end with escape character"
-            ${$Text} =~ s{ \A ( \\+ ) \z }{$1%}xms;
-
-            if ( $Self->{'DB::QuoteUnderscoreStart'} || $Self->{'DB::QuoteUnderscoreEnd'} ) {
-                ${$Text}
-                    =~ s/_/$Self->{'DB::QuoteUnderscoreStart'}_$Self->{'DB::QuoteUnderscoreEnd'}/g;
+            if ( $Self->{'DB::QuoteUnderscore'} ) {
+                ${$Text} =~ s/_/$Self->{'DB::QuoteUnderscore'}_/g;
             }
         }
     }

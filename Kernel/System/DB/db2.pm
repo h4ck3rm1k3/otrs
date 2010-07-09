@@ -1,8 +1,8 @@
 # --
 # Kernel/System/DB/db2.pm - db2 database backend
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: db2.pm,v 1.62 2011/12/12 09:04:47 mg Exp $
+# $Id: db2.pm,v 1.56.2.1 2010/07/09 17:44:41 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.62 $) [1];
+$VERSION = qw($Revision: 1.56.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -37,8 +37,7 @@ sub LoadPreferences {
     $Self->{'DB::QuoteBack'}            = 0;
     $Self->{'DB::QuoteSemicolon'}       = '';
     $Self->{'DB::CaseInsensitive'}      = 0;
-    $Self->{'DB::QuoteUnderscoreStart'} = '\\';
-    $Self->{'DB::QuoteUnderscoreEnd'}   = '';
+    $Self->{'DB::QuoteUnderscore'}      = '\\';
     $Self->{'DB::LcaseLikeInLargeText'} = 1;
     $Self->{'DB::LikeEscapeString'}     = '';
 
@@ -80,9 +79,8 @@ sub Quote {
             ${$Text} =~ s/;/$Self->{'DB::QuoteSemicolon'};/g;
         }
         if ( $Type && $Type eq 'Like' ) {
-            if ( $Self->{'DB::QuoteUnderscoreStart'} || $Self->{'DB::QuoteUnderscoreEnd'} ) {
-                ${$Text}
-                    =~ s/_/$Self->{'DB::QuoteUnderscoreStart'}_$Self->{'DB::QuoteUnderscoreEnd'}/g;
+            if ( $Self->{'DB::QuoteUnderscore'} ) {
+                ${$Text} =~ s/_/$Self->{'DB::QuoteUnderscore'}_/g;
             }
         }
     }
@@ -99,7 +97,12 @@ sub DatabaseCreate {
     }
 
     # return SQL
-    return ("CREATE DATABASE $Param{Name} using codeset utf-8 territory us pagesize 32 k");
+    if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /(utf(\-8|8))/i ) {
+        return ("CREATE DATABASE $Param{Name} using codeset utf-8 territory us pagesize 32 k");
+    }
+    else {
+        return ("CREATE DATABASE $Param{Name}");
+    }
 }
 
 sub DatabaseDrop {
@@ -391,14 +394,7 @@ sub TableAlter {
                 $Default = defined $Tag->{Default} ? "'$Tag->{Default}'" : "''";
             }
 
-        # Not sure if this might cause problems if the column does not have a NOT NULL constraint...
-            push @SQL, "ALTER TABLE $Table ALTER COLUMN $Tag->{NameNew} DROP NOT NULL";
-            push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
-            push @SQL, "ALTER TABLE $Table ALTER COLUMN $Tag->{NameNew} SET DATA TYPE $Tag->{Type}";
-            push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
-
             # remove possible default
-            # First set a default value, to be able to always drop it afterwards.
             push @SQL, "ALTER TABLE $Table ALTER COLUMN $Tag->{NameNew} SET DEFAULT $Default";
             push @SQL, "CALL SYSPROC.ADMIN_CMD ('REORG TABLE $Table')";
             push @SQL, "ALTER TABLE $Table ALTER COLUMN $Tag->{NameNew} DROP DEFAULT";
