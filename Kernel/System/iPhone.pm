@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.24 2010/07/08 03:39:13 cr Exp $
+# $Id: iPhone.pm,v 1.25 2010/07/09 19:03:28 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.24 $) [1];
+$VERSION = qw($Revision: 1.25 $) [1];
 
 =head1 NAME
 
@@ -234,8 +234,6 @@ sub ScreenConfig {
     my ( $Self, %Param ) = @_;
 
     $Self->{LanguageObject} = Kernel::Language->new( %{$Self}, UserLanguage => $Param{Language} );
-
-    # this can also be reduced
 
     # ------------------------------------------------------------ #
     # New Phone Ticket Screen
@@ -2246,7 +2244,7 @@ sub _GetScreenElements {
             $Title = 'New Queue'
         }
         my $QueueElements = {
-            Name     => 'QueueID',
+            Name     => 'NewQueueID',
             Title    => $Self->{LanguageObject}->Get($Title),
             Datatype => 'Text',
             Viewtype => 'Picker',
@@ -2331,7 +2329,8 @@ sub _GetScreenElements {
                 Method     => 'UsersGet',
                 Parameters => [
                     {
-                        QueueID => 'QueueID',
+                        QueueID  => 'QueueID',
+                        AllUsers => 1,
                     },
                 ],
             },
@@ -2353,7 +2352,8 @@ sub _GetScreenElements {
                 Method     => 'UsersGet',
                 Parameters => [
                     {
-                        QueueID => 'QueueID',
+                        QueueID  => 'QueueID',
+                        AllUsers => 1,
                     },
                 ],
             },
@@ -2378,11 +2378,8 @@ sub _GetScreenElements {
             Min       => 1,
             Max       => 50,
             Mandatory => 1,
-
-            # define a RedonlyField to
-            # ReadOnly  => 1,
-            # get from address from ticket
-            Default => $ComposeDefaults{From},
+            Readonly  => 1,
+            Default   => $ComposeDefaults{From},
         };
         push @ScreenElements, $ComposeFromElements;
 
@@ -2394,9 +2391,7 @@ sub _GetScreenElements {
             Min       => 1,
             Max       => 50,
             Mandatory => 0,
-
-            # must be retrieved from the ticket
-            Default => $ComposeDefaults{To},
+            Default   => $ComposeDefaults{To},
         };
         push @ScreenElements, $ComposeToElements;
 
@@ -2468,30 +2463,6 @@ sub _GetScreenElements {
         };
         push @ScreenElements, $SubjectElements;
     }
-
-    # sign
-    # define Sign Field
-    #         {
-    #            Name      => 'SignKeyID',
-    #            Title     => $LanguageObject->Get('Sign'),
-    #            Datatype  => 'Text',
-    #            Viewtype  => 'Picker',
-    #            Options  => [],
-    #            Mandatory => 0,
-    #            Default   => '- none -',
-    #        },
-
-    # crypt
-    # define Crypt Field
-    #        {
-    #            Name      => 'CryptKeyID',
-    #            Title     => $LanguageObject->Get('Crypt'),
-    #            Datatype  => 'Text',
-    #            Viewtype  => 'Picker',
-    #            Options  => [],
-    #            Mandatory => 0,
-    #            Default   => '- none -',
-    #        },
 
     # body
     if ( $Param{Screen} ne 'Compose' ) {
@@ -2837,7 +2808,7 @@ sub _GetScreenElements {
         my $TimeUnitsElements = {
             Name      => 'TimeUnits',
             Title     => $Self->{LanguageObject}->Get('Time units (work units)'),
-            Datatype  => 'Text',
+            Datatype  => 'Numeric',
             Viewtype  => 'Input',
             Min       => 1,
             Max       => 10,
@@ -2940,6 +2911,17 @@ sub PrioritiesGet {
 sub ScreenActions() {
     my ( $Self, %Param ) = @_;
 
+    my %UserPreferences = $Self->{UserObject}->GetPreferences( UserID => $Param{UserID} );
+    $Self->{UserTimeZone} = $UserPreferences{UserTimeZone};
+
+    if ( $Self->{ConfigObject}->Get('TimeZoneUser') && $Self->{UserTimeZone} ) {
+        $Self->{UserTimeObject} = Kernel::System::Time->new( %{$Self} );
+    }
+    else {
+        $Self->{UserTimeObject} = $Self->{TimeObject};
+        $Self->{UserTimeZone}   = '';
+    }
+
     if ( $Param{Action} ) {
         my $Result;
         if ( $Param{Action} eq 'Phone' ) {
@@ -2978,10 +2960,25 @@ sub _TicketPhoneNew {
             ID => $Param{NewStateID},
         );
     }
-    my $NextState    = $StateData{Name} || '';
-    my $NewQueueID   = $Param{QueueID};
+
+    # transform pending time, time stamp based on user time zone
+    if ( defined $Param{PendingDate} ) {
+        $Param{PendingDate} = $Self->_TransfromDateSelection(
+            TimeStamp => $Param{PendingDate},
+        );
+    }
+
+    # transform free time, time stamp based on user time zone
+    for my $Count ( 1 .. 6 ) {
+        my $Prefix = 'TicketFreeTime' . $Count;
+        next if ( !defined $Param{$Prefix} );
+        $Param{$Prefix} = $Self->_TransfromDateSelection(
+            TimeStamp => $Param{$Prefix},
+        );
+    }
+
     my $CustomerUser = $Param{CustomerUserLogin};
-    my $CustomerID   = $Param{CustomerID} || '';
+    my $CustomerID = $Param{CustomerID} || '';
 
     # rewrap body if exists
     if ( $Self->{ConfigObject}->Get('Frontend::RichText') && $Param{Body} ) {
@@ -3053,7 +3050,7 @@ sub _TicketPhoneNew {
         $Error = 'Subject invalid';
         return $Error;
     }
-    if ( !$NewQueueID ) {
+    if ( !$Param{NewQueueID} ) {
         $Error = 'Destination invalid';
         return $Error;
     }
@@ -3064,13 +3061,13 @@ sub _TicketPhoneNew {
         )
     {
         $Error = 'Service invalid';
-        return $Error
+        return $Error;
     }
 
     # create new ticket, do db insert
     my $TicketID = $Self->{TicketObject}->TicketCreate(
         Title        => $Param{Subject},
-        QueueID      => $NewQueueID,
+        QueueID      => $Param{NewQueueID},
         Subject      => $Param{Subject},
         Lock         => 'unlock',
         TypeID       => $Param{TypeID},
@@ -3145,7 +3142,7 @@ sub _TicketPhoneNew {
     if ( $Param{NewOwnerID} ) {
         $NoAgentNotify = 1;
     }
-    my $QueueName = $Self->{QueueObject}->QueueLookup( QueueID => $NewQueueID );
+    my $QueueName = $Self->{QueueObject}->QueueLookup( QueueID => $Param{NewQueueID} );
     my $ArticleID = $Self->{TicketObject}->ArticleCreate(
         NoAgentNotify => $NoAgentNotify,
         TicketID      => $TicketID,
@@ -3401,6 +3398,22 @@ sub _TicketCommonActions {
         }
     }
 
+    # transform pending time, time stamp based on user time zone
+    if ( defined $Param{PendingDate} ) {
+        $Param{PendingDate} = $Self->_TransfromDateSelection(
+            TimeStamp => $Param{PendingDate},
+        );
+    }
+
+    # transform free time, time stamp based on user time zone
+    for my $Count ( 1 .. 6 ) {
+        my $Prefix = 'TicketFreeTime' . $Count;
+        next if ( defined $Param{$Prefix} );
+        $Param{$Prefix} = $Self->_TransfromDateSelection(
+            TimeStamp => $Param{$Prefix},
+        );
+    }
+
     # rewrap body if no rich text is used
     if ( $Param{Body} ) {
         my $Size = $Self->{ConfigObject}->Get('Ticket::Frontend::TextAreaNote') || 70;
@@ -3577,21 +3590,6 @@ sub _TicketCommonActions {
 
         my $From = "$User{UserFirstname} $User{UserLastname} <$User{UserEmail}>";
 
- #        # get involved
- #        my %InvolvedUsers;
- #        if ( $Self->{Config}->{InvolvedAgent} ) {
- #            my @UserIDs
- #                = $Self->{TicketObject}->TicketInvolvedAgentsList( TicketID => $Param{TicketID} );
- #            my $Counter = 0;
- #            for my $User ( reverse @UserIDs ) {
- #                $Counter++;
- #                next if $InvolvedUsers{ $User->{UserID} };
- #                $InvolvedUsers{ $User->{UserID} } = "$Counter: $User->{UserLastname} "
- #                    . "$User->{UserFirstname} ($User->{UserLogin})";
- #            }
- #        }
-
-        #    my @NotifyUserIDs = ( @{ $InformedUsers }, @{ $InvolvedUsers } );
         $ArticleID = $Self->{TicketObject}->ArticleCreate(
             TicketID   => $Param{TicketID},
             SenderType => 'agent',
@@ -3919,38 +3917,21 @@ sub _TicketCompose {
         }
     }
 
-    # ---------------------------------------------------------
-    #
-    # Must be implemented aalso in PhoneNew and Common Actions
-    #
-    # ----------------------------------------------------------
-    #    # transform pending time, time stamp based on user time zone
-    #    if (
-    #        defined $GetParam{Year}
-    #        && defined $GetParam{Month}
-    #        && defined $GetParam{Day}
-    #        && defined $GetParam{Hour}
-    #        && defined $GetParam{Minute}
-    #        )
-    #    {
-    #        %GetParam = $Self->{ayoutObject}->TransfromDateSelection(
-    #            %GetParam,
-    #        );
-    #    }
-    #
-    #    # transform free time, time stamp based on user time zone
-    #    for my $Count ( 1 .. 6 ) {
-    #        my $Prefix = 'TicketFreeTime' . $Count;
-    #        next if !defined $GetParam{ $Prefix . 'Year' };
-    #        next if !defined $GetParam{ $Prefix . 'Month' };
-    #        next if !defined $GetParam{ $Prefix . 'Day' };
-    #        next if !defined $GetParam{ $Prefix . 'Hour' };
-    #        next if !defined $GetParam{ $Prefix . 'Minute' };
-    #        %GetParam = $Self->{ayoutObject}->TransfromDateSelection(
-    #            %GetParam,
-    #            Prefix => $Prefix
-    #        );
-    #    }
+    # transform pending time, time stamp based on user time zone
+    if ( defined $Param{PendingDate} ) {
+        $Param{PendingDate} = $Self->_TransfromDateSelection(
+            TimeStamp => $Param{PendingDate},
+        );
+    }
+
+    # transform free time, time stamp based on user time zone
+    for my $Count ( 1 .. 6 ) {
+        my $Prefix = 'TicketFreeTime' . $Count;
+        next if ( defined $Param{$Prefix} );
+        $Param{$Prefix} = $Self->_TransfromDateSelection(
+            TimeStamp => $Param{$Prefix},
+        );
+    }
 
     # send email
 
@@ -3994,89 +3975,6 @@ sub _TicketCompose {
             }
         }
     }
-
-  #for Sign and crypt ... no needed in this version
-  #        my %ArticleParam;
-  #
-  #        # run compose modules
-  #        if ( ref $Self->{ConfigObject}->Get('Ticket::Frontend::ArticleComposeModule') eq 'HASH' )
-  #        {
-  #            my %Jobs = %{ $Self->{ConfigObject}->Get('Ticket::Frontend::ArticleComposeModule') };
-  #            for my $Job ( sort keys %Jobs ) {
-  #
-  #                # load module
-  #                if ( !$Self->{MainObject}->Require( $Jobs{$Job}->{Module} ) ) {
-  #                    return "fatal error"
-  #                }
-  #                my $Object = $Jobs{$Job}->{Module}->new( %{$Self}, Debug => $Self->{Debug} );
-  #
-  #                # get params
-  #                for ( $Object->Option( %Param, Config => $Jobs{$Job} ) ) {
-  #                    $Param{$_} = $Self->{aramObject}->GetParam( Param => $_ );
-  #                }
-  #
-  #                # run module
-  #                $Object->Run( %Param, Config => $Jobs{$Job} );
-  #
-  #                # ticket params
-  #                %ArticleParam = (
-  #                    %ArticleParam,
-  #                    $Object->ArticleOption( %Param, Config => $Jobs{$Job} ),
-  #                );
-  #
-  #                # get errors
-  #                my %ModuleError = (
-  #                    $Object->Error( %Param, Config => $Jobs{$Job} ),
-  #                );
-  #                if (%ModuleError){
-  #                    for my $ErrorKey (keys %ModuleError){
-  #                       $Error .= $ModuleError{$ErrorKey};
-  #                    }
-  #                }
-  #            }
-  #        }
-
-    #        # check if there is an error
-    #        if (%Error) {
-    #
-    #            # get free text config options
-    #            my %TicketFreeText;
-    #            for my $Count ( 1 .. 16 ) {
-    #                my $Key  = 'TicketFreeKey' . $Count;
-    #                my $Text = 'TicketFreeText' . $Count;
-    #                $TicketFreeText{$Key} = $Self->{TicketObject}->TicketFreeTextGet(
-    #                    TicketID => $Self->{TicketID},
-    #                    Type     => $Key,
-    #                    Action   => $Self->{Action},
-    #                    UserID   => $Self->{UserID},
-    #                );
-    #                $TicketFreeText{$Text} = $Self->{TicketObject}->TicketFreeTextGet(
-    #                    TicketID => $Self->{TicketID},
-    #                    Type     => $Text,
-    #                    Action   => $Self->{Action},
-    #                    UserID   => $Self->{UserID},
-    #                );
-    #            }
-    #
-    #            # article free text
-    #            my %ArticleFreeText;
-    #            for my $Count ( 1 .. 3 ) {
-    #                my $Key  = 'ArticleFreeKey' . $Count;
-    #                my $Text = 'ArticleFreeText' . $Count;
-    #                $ArticleFreeText{$Key} = $Self->{TicketObject}->ArticleFreeTextGet(
-    #                    TicketID => $Self->{TicketID},
-    #                    Type     => $Key,
-    #                    Action   => $Self->{Action},
-    #                    UserID   => $Self->{UserID},
-    #                );
-    #                $ArticleFreeText{$Text} = $Self->{TicketObject}->ArticleFreeTextGet(
-    #                    TicketID => $Self->{TicketID},
-    #                    Type     => $Text,
-    #                    Action   => $Self->{Action},
-    #                    UserID   => $Self->{UserID},
-    #                );
-    #            }
-    #        }
 
     # replace <OTRS_TICKET_STATE> with next ticket state name
     if ( $StateData{Name} ) {
@@ -4265,7 +4163,342 @@ sub _TicketCompose {
 
 sub _TicketMove {
     my ( $Self, %Param ) = @_;
-    return 'Under Development';
+
+    my $Error;
+
+    # check needed stuff
+    for (qw(TicketID)) {
+        if ( !$Param{$_} ) {
+            return "Need TicketID";
+        }
+    }
+
+    $Self->{Config}
+        = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketMove');
+
+    # check permissions
+    my $Access;
+    if ( $Self->{'API3X'} ) {
+        $Access = $Self->{TicketObject}->TicketPermission(
+            Type     => 'move',
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID}
+        );
+    }
+    else {
+        $Access = $Self->{TicketObject}->Permission(
+            Type     => 'move',
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID}
+        );
+    }
+
+    # error screen, don't show ticket
+    if ( !$Access ) {
+        return "No Permission";
+    }
+
+    # check if ticket is locked
+    my $Locked;
+    if ( $Self->{'API3X'} ) {
+        $Locked = $Self->{TicketObject}->TicketLockGet( TicketID => $Param{TicketID} );
+    }
+    else {
+        my %TicketData = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
+        if ( $TicketData{Lock} eq 'lock' ) {
+            $Locked = 1;
+        }
+    }
+    if ( !$Locked ) {
+        $Error = "Sorry, you need to be the owner to do this action! "
+            . "Please change the owner first.";
+        return $Error;
+    }
+
+    # ticket attributes
+    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
+
+    # transform pending time, time stamp based on user time zone
+    if ( defined $Param{PendingDate} ) {
+        $Param{PendingDate} = $Self->_TransfromDateSelection(
+            TimeStamp => $Param{PendingDate},
+        );
+    }
+
+    # transform free time, time stamp based on user time zone
+    for my $Count ( 1 .. 6 ) {
+        my $Prefix = 'TicketFreeTime' . $Count;
+        next if ( defined $Param{$Prefix} );
+        $Param{$Prefix} = $Self->_TransfromDateSelection(
+            TimeStamp => $Param{$Prefix},
+        );
+    }
+
+    # check required FreeTextField (if configured)
+    for ( 1 .. 16 ) {
+        if (
+            $Self->{Config}->{'TicketFreeText'}->{$_} == 2
+            && $Param{"TicketFreeText$_"} eq ''
+            )
+        {
+            $Error = "TicketFreeTextField$_ invalid";
+            return $Error;
+        }
+    }
+
+    # DestQueueID lookup
+    if ( !$Param{NewQueueID} ) {
+        $Error = 'Needed NewQueueID!';
+        return $Error;
+    }
+
+    # check new user
+    if ( !$Param{NewOwnerID} ) {
+        $Error = 'Needed NewOwnerID';
+    }
+    else {
+        $Param{NewUserID} = $Param{NewOwnerID};
+    }
+
+    # move ticket (send notification of no new owner is selected)
+    my $BodyAsText = $Param{Body} || 0;
+    my $Move;
+    if ( $Self->{'API3X'} ) {
+        $Move = $Self->{TicketObject}->TicketQueueSet(
+            QueueID            => $Param{NewQueueID},
+            UserID             => $Param{UserID},
+            TicketID           => $Param{TicketID},
+            SendNoNotification => $Param{NewUserID},
+            Comment            => $BodyAsText,
+        );
+    }
+    else {
+        $Move = $Self->{TicketObject}->MoveTicket(
+            QueueID            => $Param{NewQueueID},
+            UserID             => $Param{UserID},
+            TicketID           => $Param{TicketID},
+            SendNoNotification => $Param{NewUserID},
+            Comment            => $BodyAsText,
+        );
+    }
+    if ( !$Move ) {
+        return "Error: not moved";
+    }
+
+    # set priority
+    if ( $Self->{Config}->{Priority} && $Param{NewPriorityID} ) {
+        if ( $Self->{'API3X'} ) {
+            $Self->{TicketObject}->TicketPrioritySet(
+                TicketID   => $Param{TicketID},
+                PriorityID => $Param{NewPriorityID},
+                UserID     => $Param{UserID},
+            );
+        }
+        else {
+            $Self->{TicketObject}->PrioritySet(
+                TicketID   => $Param{TicketID},
+                PriorityID => $Param{NewPriorityID},
+                UserID     => $Param{UserID},
+            );
+        }
+    }
+
+    # set state
+    if ( $Self->{Config}->{State} && $Param{NewStateID} ) {
+
+        if ( $Self->{'API3X'} ) {
+            $Self->{TicketObject}->TicketStateSet(
+                TicketID => $Param{TicketID},
+                StateID  => $Param{NewStateID},
+                UserID   => $Param{UserID},
+            );
+        }
+        else {
+            $Self->{TicketObject}->StateSet(
+                TicketID => $Param{TicketID},
+                StateID  => $Param{NewStateID},
+                UserID   => $Param{UserID},
+            );
+        }
+
+        # unlock the ticket after close
+        my %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
+            ID => $Param{NewStateID},
+        );
+
+        # set unlock on close state
+        if ( $StateData{TypeName} =~ /^close/i ) {
+            if ( $Self->{'API3X'} ) {
+                $Self->{TicketObject}->TicketLockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'unlock',
+                    UserID   => $Param{UserID},
+                );
+            }
+            else {
+                $Self->{TicketObject}->LockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'unlock',
+                    UserID   => $Param{UserID},
+                );
+            }
+        }
+    }
+
+    # check if new user is given and send notification
+    if ( $Param{NewUserID} ) {
+        if ( $Self->{'API3X'} ) {
+
+            # lock
+            $Self->{TicketObject}->TicketLockSet(
+                TicketID => $Param{TicketID},
+                Lock     => 'lock',
+                UserID   => $Param{UserID},
+            );
+
+            # set owner
+            $Self->{TicketObject}->TicketOwnerSet(
+                TicketID  => $Param{TicketID},
+                UserID    => $Param{UserID},
+                NewUserID => $Param{NewUserID},
+                Comment   => $BodyAsText,
+            );
+        }
+        else {
+
+            # lock
+            $Self->{TicketObject}->LockSet(
+                TicketID => $Param{TicketID},
+                Lock     => 'lock',
+                UserID   => $Param{UserID},
+            );
+
+            # set owner
+            $Self->{TicketObject}->OwnerSet(
+                TicketID  => $Param{TicketID},
+                UserID    => $Param{UserID},
+                NewUserID => $Param{NewUserID},
+                Comment   => $BodyAsText,
+            );
+        }
+    }
+
+    # force unlock if no new owner is set and ticket was unlocked
+    else {
+        if ( $Self->{TicketUnlock} ) {
+            if ( $Self->{'API3X'} ) {
+                $Self->{TicketObject}->TicketLockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'unlock',
+                    UserID   => $Param{UserID},
+                );
+            }
+            else {
+                $Self->{TicketObject}->LockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'unlock',
+                    UserID   => $Param{UserID},
+                );
+            }
+        }
+    }
+
+    # add note (send no notification)
+    my $ArticleID;
+
+    if ( $Param{Body} ) {
+
+        my $MimeType = 'text/plain';
+
+        my %UserData = $Self->{UserObject}->GetUserData( UserID => $Param{UserID} );
+
+        $ArticleID = $Self->{TicketObject}->ArticleCreate(
+            TicketID    => $Param{TicketID},
+            ArticleType => 'note-internal',
+            SenderType  => 'agent',
+            From     => "$UserData{UserFirstname} $UserData{UserLastname} <$UserData{UserEmail}>",
+            Subject  => $Param{Subject},
+            Body     => $Param{Body},
+            MimeType => $MimeType,
+            Charset  => $Self->{ConfigObject}->Get('DefaultCharset'),
+            UserID   => $Param{UserID},
+            HistoryType    => 'AddNote',
+            HistoryComment => '%%Move',
+            NoAgentNotify  => 1,
+        );
+    }
+
+    # set ticket free text
+    for my $Count ( 1 .. 16 ) {
+        my $Key  = 'TicketFreeKey' . $Count;
+        my $Text = 'TicketFreeText' . $Count;
+        if ( defined $Param{$Key} ) {
+            $Self->{TicketObject}->TicketFreeTextSet(
+                Key      => $Param{$Key},
+                Value    => $Param{$Text},
+                Counter  => $Count,
+                TicketID => $Param{TicketID},
+                UserID   => $Param{UserID},
+            );
+        }
+    }
+
+    # set ticket free time
+    for ( 1 .. 6 ) {
+
+        if ( $Param{ 'TicketFreeTime' . $_ } ) {
+            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
+                = $Self->{TimeObject}->SystemTime2Date(
+                SystemTime =>
+                    $Self->{TimeObject}->SystemTime( $Param{ 'TicketFreeTime' . $_ } ),
+                );
+
+            $Param{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
+            $Param{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
+            $Param{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
+            $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
+            $Param{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
+
+            # set time stamp to NULL if field is not used/checked
+            if ( !$Param{ 'TicketFreeTime' . $_ . 'Used' } ) {
+                $Param{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
+            }
+
+            # set free time
+            $Self->{TicketObject}->TicketFreeTimeSet(
+                %Param,
+                Prefix   => 'TicketFreeTime',
+                TicketID => $Param{TicketID},
+                Counter  => $_,
+                UserID   => $Param{UserID},
+            );
+        }
+    }
+
+    # time accounting
+    if ( $Param{TimeUnits} ) {
+        $Self->{TicketObject}->TicketAccountTime(
+            TicketID  => $Param{TicketID},
+            ArticleID => $ArticleID,
+            TimeUnit  => $Param{TimeUnits},
+            UserID    => $Param{UserID},
+        );
+    }
+
+    if ($ArticleID) {
+        return $ArticleID;
+    }
+    else {
+        if ($Move) {
+            return $Param{NewQueueID};
+        }
+    }
+    return ($Error);
+
 }
 
 sub _GetComposeDefaults {
@@ -4513,6 +4746,21 @@ sub _GetComposeDefaults {
     return %ComposeData;
 }
 
+sub _TransfromDateSelection {
+    my ( $Self, %Param ) = @_;
+
+    # time zone translation if needed
+    if ( $Self->{ConfigObject}->Get('TimeZoneUser') && $Self->{UserTimeZone} ) {
+        my $SystemTime = $Self->{TimeObject}->TimeStamp2SystemTime(
+            String => $Param{TimeStamp},
+        );
+        $SystemTime = $SystemTime - ( $Self->{UserTimeZone} * 3600 );
+        $Param{TimeStamp} = $Self->{UserTimeObject}->SystemTime2Date( SystemTime => $SystemTime, );
+    }
+
+    return $Param{TimeStamp};
+}
+
 1;
 
 =back
@@ -4529,6 +4777,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.24 2010/07/08 03:39:13 cr Exp $
+$Id: iPhone.pm,v 1.25 2010/07/09 19:03:28 cr Exp $
 
 =cut
