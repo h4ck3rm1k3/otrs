@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.25 2010/07/09 19:03:28 cr Exp $
+# $Id: iPhone.pm,v 1.26 2010/07/10 17:43:21 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.25 $) [1];
+$VERSION = qw($Revision: 1.26 $) [1];
 
 =head1 NAME
 
@@ -359,12 +359,12 @@ sub ScreenConfig {
 
 sub ResponsesGet {
     my ( $Self, %Param ) = @_;
-    if ( !$Param{QueueID} ) {
+    if ( !$Param{NewQueueID} ) {
         return
     }
 
     # fetch all std. responses
-    my %StdResponses = $Self->{QueueObject}->GetStdResponses( QueueID => $Param{QueueID} );
+    my %StdResponses = $Self->{QueueObject}->GetStdResponses( QueueID => $Param{NewQueueID} );
     return \%StdResponses;
 }
 
@@ -2054,6 +2054,9 @@ sub ServicesGet {
     my ( $Self, %Param ) = @_;
 
     my %Service = ();
+    if ( $Param{NewQueueID} && !$Param{QueueID} ) {
+        $Param{QueueID} = $Param{NewQueueID};
+    }
 
     # get service
     if ( ( $Param{QueueID} || $Param{TicketID} ) && $Param{CustomerUserID} ) {
@@ -2091,6 +2094,9 @@ sub _GetTos {
         %NewTos = %{ $Self->{ConfigObject}->{'Ticket::Frontend::NewQueueOwnSelection'} };
     }
     else {
+        if ( $Param{NewQueueID} && !$Param{QueueID} ) {
+            $Param{QueueID} = $Param{NewQueueID};
+        }
 
         # SelectionType Queue or SystemAddress?
         my %Tos = ();
@@ -2275,7 +2281,7 @@ sub _GetScreenElements {
                 Parameters => [
                     {
                         CustomerUserID => 'CustomerUserLogin',
-                        QueueID        => 'QueueID',
+                        QueueID        => 'NewQueueID',
                     },
                 ],
             },
@@ -2298,7 +2304,7 @@ sub _GetScreenElements {
                 Parameters =>
                     {
                     CustomerUserID => 'CustomerUserLogin',
-                    QueueID        => 'QueueID',
+                    QueueID        => 'NewQueueID',
                     ServiceID      => 'ServiceID',
                     },
 
@@ -2329,7 +2335,7 @@ sub _GetScreenElements {
                 Method     => 'UsersGet',
                 Parameters => [
                     {
-                        QueueID  => 'QueueID',
+                        QueueID  => 'NewQueueID',
                         AllUsers => 1,
                     },
                 ],
@@ -2352,7 +2358,7 @@ sub _GetScreenElements {
                 Method     => 'UsersGet',
                 Parameters => [
                     {
-                        QueueID  => 'QueueID',
+                        QueueID  => 'NewQueueID',
                         AllUsers => 1,
                     },
                 ],
@@ -2553,8 +2559,7 @@ sub _GetScreenElements {
                 Method     => 'NextStatesGet',
                 Parameters => [
                     {
-                        CustomerUserID => 'CustomerUserLogin',
-                        QueueID        => 'QueueID',
+                        QueueID => 'NewQueueID',
                     },
                 ],
             },
@@ -2602,7 +2607,7 @@ sub _GetScreenElements {
                 Method     => 'PrioritiesGet',
                 Parameters => [
                     {
-                        QueueID => 'QueueID',
+                        QueueID => 'NewQueueID',
                     },
                 ],
             },
@@ -2839,6 +2844,10 @@ sub UsersGet {
         Valid => 1,
     );
 
+    if ( $Param{NewQueueID} && !$Param{QueueID} ) {
+        $Param{QueueID} = $Param{NewQueueID};
+    }
+
     # just show only users with selected custom queue
     if ( $Param{QueueID} && !$Param{AllUsers} ) {
         my @UserIDs = $Self->{TicketObject}->GetSubscribedUserIDsByQueueID(%Param);
@@ -2881,6 +2890,10 @@ sub UsersGet {
 sub NextStatesGet {
     my ( $Self, %Param ) = @_;
 
+    if ( $Param{NewQueueID} and !$Param{QueueID} ) {
+        $Param{QueueID} = $Param{NewQueueID};
+    }
+
     my %NextStates = ();
     if ( $Param{QueueID} || $Param{TicketID} ) {
         %NextStates = $Self->{TicketObject}->StateList(
@@ -2896,6 +2909,10 @@ sub PrioritiesGet {
     my ( $Self, %Param ) = @_;
 
     my %Priorities = ();
+
+    if ( $Param{NewQueueID} and !$Param{QueueID} ) {
+        $Param{QueueID} = $Param{NewQueueID}
+    }
 
     # get priority
     if ( $Param{QueueID} || $Param{TicketID} ) {
@@ -2971,7 +2988,7 @@ sub _TicketPhoneNew {
     # transform free time, time stamp based on user time zone
     for my $Count ( 1 .. 6 ) {
         my $Prefix = 'TicketFreeTime' . $Count;
-        next if ( !defined $Param{$Prefix} );
+        next if !defined $Param{$Prefix};
         $Param{$Prefix} = $Self->_TransfromDateSelection(
             TimeStamp => $Param{$Prefix},
         );
@@ -3408,7 +3425,7 @@ sub _TicketCommonActions {
     # transform free time, time stamp based on user time zone
     for my $Count ( 1 .. 6 ) {
         my $Prefix = 'TicketFreeTime' . $Count;
-        next if ( defined $Param{$Prefix} );
+        next if !defined $Param{$Prefix};
         $Param{$Prefix} = $Self->_TransfromDateSelection(
             TimeStamp => $Param{$Prefix},
         );
@@ -3927,7 +3944,7 @@ sub _TicketCompose {
     # transform free time, time stamp based on user time zone
     for my $Count ( 1 .. 6 ) {
         my $Prefix = 'TicketFreeTime' . $Count;
-        next if ( defined $Param{$Prefix} );
+        next if !defined $Param{$Prefix};
         $Param{$Prefix} = $Self->_TransfromDateSelection(
             TimeStamp => $Param{$Prefix},
         );
@@ -4228,7 +4245,7 @@ sub _TicketMove {
     # transform free time, time stamp based on user time zone
     for my $Count ( 1 .. 6 ) {
         my $Prefix = 'TicketFreeTime' . $Count;
-        next if ( defined $Param{$Prefix} );
+        next if !defined $Param{$Prefix};
         $Param{$Prefix} = $Self->_TransfromDateSelection(
             TimeStamp => $Param{$Prefix},
         );
@@ -4755,9 +4772,9 @@ sub _TransfromDateSelection {
             String => $Param{TimeStamp},
         );
         $SystemTime = $SystemTime - ( $Self->{UserTimeZone} * 3600 );
-        $Param{TimeStamp} = $Self->{UserTimeObject}->SystemTime2Date( SystemTime => $SystemTime, );
+        $Param{TimeStamp}
+            = $Self->{UserTimeObject}->SystemTime2TimeStamp( SystemTime => $SystemTime, );
     }
-
     return $Param{TimeStamp};
 }
 
@@ -4777,6 +4794,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.25 2010/07/09 19:03:28 cr Exp $
+$Id: iPhone.pm,v 1.26 2010/07/10 17:43:21 cr Exp $
 
 =cut
