@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.26 2010/07/10 17:43:21 cr Exp $
+# $Id: iPhone.pm,v 1.27 2010/07/11 04:49:46 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.26 $) [1];
+$VERSION = qw($Revision: 1.27 $) [1];
 
 =head1 NAME
 
@@ -1855,10 +1855,9 @@ sub TicketList {
 
     # strip out all data
     my @Delete
-        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix PriorityID StateID
-        QueueID SenderTypeID OwnerID ResponsibleID ArticleTypeID ArticleFreeKey1
-        ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1 ArticleFreeText2
-        ArticleFreeText3 IncomingTime RealTillTimeNotUsed LockID TypeID ServiceID SLAID
+        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
+        ArticleTypeID ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
+        ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
         StateType ArchiveFlag UnlockTimeout Changed
     );
 
@@ -1931,11 +1930,10 @@ sub TicketGet {
 
     # strip out all data
     my @Delete
-        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix PriorityID StateID
-        QueueID SenderTypeID OwnerID ResponsibleID ArticleTypeID ArticleFreeKey1
-        ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1 ArticleFreeText2 ArticleFreeText3
-        IncomingTime RealTillTimeNotUsed LockID TypeID ServiceID SLAID StateType ArchiveFlag
-        UnlockTimeout Changed
+        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
+        ArticleTypeID ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
+        ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
+        StateType ArchiveFlag UnlockTimeout Changed
     );
 
     for my $Key (@Delete) {
@@ -2013,11 +2011,10 @@ sub ArticleGet {
 
     # strip out all data
     my @Delete
-        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix PriorityID StateID
-        QueueID SenderTypeID OwnerID ResponsibleID ArticleTypeID ArticleFreeKey1
-        ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1 ArticleFreeText2 ArticleFreeText3
-        IncomingTime RealTillTimeNotUsed LockID TypeID ServiceID SLAID StateType ArchiveFlag
-        UnlockTimeout Changed
+        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
+        ArticleTypeID ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
+        ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
+        StateType ArchiveFlag UnlockTimeout Changed
     );
 
     for my $Key (@Delete) {
@@ -4794,6 +4791,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.26 2010/07/10 17:43:21 cr Exp $
+$Id: iPhone.pm,v 1.27 2010/07/11 04:49:46 cr Exp $
 
 =cut
