@@ -3,7 +3,7 @@
 # bin/otrs.CheckSum.pl - a tool to compare changes in a installation
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: otrs.CheckSum.pl,v 1.9 2010/10/28 11:13:28 mg Exp $
+# $Id: otrs.CheckSum.pl,v 1.2.2.1 2010/07/12 12:05:42 bes Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -28,9 +28,10 @@ use warnings;
 use File::Basename;
 use FindBin qw($RealBin);
 use lib dirname($RealBin);
+use lib dirname($RealBin) . "/Kernel/cpan-lib";
 
 use vars qw($VERSION $RealBin);
-$VERSION = qw($Revision: 1.9 $) [1];
+$VERSION = qw($Revision: 1.2.2.1 $) [1];
 
 use Getopt::Std;
 use Digest::MD5 qw(md5_hex);
@@ -38,12 +39,12 @@ use Digest::MD5 qw(md5_hex);
 my $Start   = $RealBin . '/../';
 my $Archive = '';
 my $Action  = 'compare';
-my %Compare;
+my %Compare = ();
 
 # get options
-my %Opts;
+my %Opts = ();
 getopt( 'habd', \%Opts );
-if ( exists $Opts{h} || !keys %Opts ) {
+if ( exists $Opts{h} ) {
     print "otrs.CheckSum.pl <Revision $VERSION> - OTRS check sum\n";
     print "Copyright (C) 2001-2010 OTRS AG, http://otrs.org/\n";
     print
@@ -51,8 +52,8 @@ if ( exists $Opts{h} || !keys %Opts ) {
     exit 1;
 }
 
-if ( $Opts{a} && $Opts{a} eq 'create' ) {
-    $Action = $Opts{a};
+if ( $Opts{a} && $Opts{'a'} eq 'create' ) {
+    $Action = $Opts{'a'};
 }
 if ( $Opts{d} ) {
     $Start = $Opts{d};
@@ -69,16 +70,16 @@ if ( $Action eq 'create' ) {
     open( OUT, '>', $Archive ) || die "ERROR: Can't open: $Archive";
 }
 else {
-    open( my $In, '<', $Archive ) || die "ERROR: Can't open: $Archive";
-    while (<$In>) {
+    open( IN, '<', $Archive ) || die "ERROR: Can't open: $Archive";
+    while (<IN>) {
         my @Row = split( /::/, $_ );
-        chomp $Row[1];
+        chomp( $Row[1] );
         $Compare{ $Row[1] } = $Row[0];
     }
-    close $In;
+    close IN;
 }
 
-my @Dirs;
+my @Dirs = ();
 R($Start);
 for my $File ( sort keys %Compare ) {
 
@@ -115,20 +116,19 @@ sub R {
         $File =~ s/$Start//;
         $File =~ s/^\/(.*)$/$1/;
 
-        # ignore directories
+        # ignore var directories
         next if $File =~ /^doc\//;
         next if $File =~ /^var\/tmp/;
         next if $File =~ /^var\/article/;
-        next if $File =~ /js-cache/;
-        next if $File =~ /css-cache/;
 
-        # next if not readable
         # print "File: $File\n";
-        open( my $In, '<', $OrigFile ) || die "ERROR: $!";
-        my $ctx = Digest::MD5->new;
-        $ctx->addfile($In);
-        my $Digest = $ctx->hexdigest();
-        close $In;
+        my $Content = '';
+        open( IN, '<', $OrigFile ) || die "ERROR: $!";
+        while (<IN>) {
+            $Content .= $_;
+        }
+        close IN;
+        my $Digest = md5_hex($Content);
         if ( $Action eq 'create' ) {
             print OUT $Digest . '::' . $File . "\n";
         }
@@ -139,7 +139,7 @@ sub R {
             elsif ( $Compare{$File} ne $Digest ) {
                 print "Notice: Dif $File\n";
             }
-            if ( defined $Compare{$File} ) {
+            if ( defined( $Compare{$File} ) ) {
                 delete $Compare{$File};
             }
         }
