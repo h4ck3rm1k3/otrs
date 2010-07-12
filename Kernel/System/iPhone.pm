@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.29 2010/07/12 18:01:46 cr Exp $
+# $Id: iPhone.pm,v 1.30 2010/07/12 18:20:10 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.29 $) [1];
+$VERSION = qw($Revision: 1.30 $) [1];
 
 =head1 NAME
 
@@ -4739,16 +4739,14 @@ sub _GetComposeDefaults {
         next if !$Data{$Line};
         for my $Email ( Mail::Address->parse( $Data{$Line} ) ) {
             if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
-                $Error{Error} = $Line . "Invalid" . " ServerError";
-                return %Error;
+                $Data{$Line} .= " " . $Line . " Invalid" . " ServerError";
             }
         }
     }
     if ( $Data{From} ) {
         for my $Email ( Mail::Address->parse( $Data{From} ) ) {
             if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
-                $Error{Error} = "FromInvalid" . $Self->{CheckItemObject}->CheckError();
-                return %Error;
+                $Data{From} .= " From Invalid " . $Self->{CheckItemObject}->CheckError();
             }
         }
     }
@@ -4796,6 +4794,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.29 2010/07/12 18:01:46 cr Exp $
+$Id: iPhone.pm,v 1.30 2010/07/12 18:20:10 cr Exp $
 
 =cut
