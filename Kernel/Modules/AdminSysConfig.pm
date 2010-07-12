@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AdminSysConfig.pm - to change, import, export ConfigParameters
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSysConfig.pm,v 1.119 2011/11/29 13:13:26 mg Exp $
+# $Id: AdminSysConfig.pm,v 1.85.2.1 2010/07/12 08:54:23 bes Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::SysConfig;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.119 $) [1];
+$VERSION = qw($Revision: 1.85.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -75,15 +75,6 @@ sub Run {
     }
 
     # ------------------------------------------------------------ #
-    # import
-    # ------------------------------------------------------------ #
-    elsif ( $Self->{Subaction} eq 'Import' ) {
-        $Self->{LayoutObject}->Block( Name => 'ActionList' );
-        $Self->{LayoutObject}->Block( Name => 'ActionOverview' );
-        $Self->{LayoutObject}->Block( Name => 'Import' );
-    }
-
-    # ------------------------------------------------------------ #
     # upload
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Upload' ) {
@@ -103,11 +94,6 @@ sub Run {
             return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
 
         }
-        else {
-
-            # redirect
-            return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
-        }
         return $Self->{LayoutObject}->ErrorScreen();
     }
 
@@ -123,40 +109,33 @@ sub Run {
         my $Group    = $Self->{ParamObject}->GetParam( Param => 'SysConfigGroup' );
         my @List = $Self->{SysConfigObject}->ConfigSubGroupConfigItemList(
             Group    => $Group,
-            SubGroup => $SubGroup,
+            SubGroup => $SubGroup
         );
 
         # list all Items
-        ITEM:
         for (@List) {
 
             # Get all Attributes from Item
             my %ItemHash = $Self->{SysConfigObject}->ConfigItemGet( Name => $_ );
 
-            # check if config item needs no update because it is not editable
-            # because of an insufficent config level of the admin user
-            if ( $Self->{ParamObject}->GetParam( Param => $_ . '-InsufficientConfigLevel' ) ) {
-                next ITEM;
-            }
-
             # Reset Item
-            if ( defined $Self->{ParamObject}->GetParam( Param => "Reset$_" ) ) {
+            if ( defined $Self->{ParamObject}->GetParam( Param => "Reset$_.x" ) ) {
                 $Self->{SysConfigObject}->ConfigItemReset( Name => $_ );
                 $Anker = $ItemHash{Name};
                 next;
             }
 
-            # Get ElementActive (checkbox)
-            my $Active = 0;
+            # Get ElementAktiv (checkbox)
+            my $Aktiv = 0;
             if (
                 ( $ItemHash{Required} && $ItemHash{Required} == 1 )
                 || (
-                    $Self->{ParamObject}->GetParam( Param => $_ . 'ItemActive' )
-                    && $Self->{ParamObject}->GetParam( Param => $_ . 'ItemActive' ) == 1
+                    $Self->{ParamObject}->GetParam( Param => $_ . 'ItemAktiv' )
+                    && $Self->{ParamObject}->GetParam( Param => $_ . 'ItemAktiv' ) == 1
                 )
                 )
             {
-                $Active = 1;
+                $Aktiv = 1;
             }
 
             # ConfigElement String
@@ -169,10 +148,10 @@ sub Run {
                 my $Update = $Self->{SysConfigObject}->ConfigItemUpdate(
                     Key   => $_,
                     Value => $Content,
-                    Valid => $Active,
+                    Valid => $Aktiv
                 );
                 if ( !$Update ) {
-                    $Self->{LayoutObject}->FatalError( Message => "Can't write ConfigItem!" );
+                    $Self->{LayoutObject}->FatalError( Message => 'Can\'t write ConfigItem!' );
                 }
             }
 
@@ -186,10 +165,10 @@ sub Run {
                 my $Update = $Self->{SysConfigObject}->ConfigItemUpdate(
                     Key   => $_,
                     Value => $Content,
-                    Valid => $Active,
+                    Valid => $Aktiv
                 );
                 if ( !$Update ) {
-                    $Self->{LayoutObject}->FatalError( Message => "Can't write ConfigItem!" );
+                    $Self->{LayoutObject}->FatalError( Message => 'Can\'t write ConfigItem!' );
                 }
             }
 
@@ -201,10 +180,10 @@ sub Run {
                 my $Update = $Self->{SysConfigObject}->ConfigItemUpdate(
                     Key   => $_,
                     Value => $Content,
-                    Valid => $Active,
+                    Valid => $Aktiv
                 );
                 if ( !$Update ) {
-                    $Self->{LayoutObject}->FatalError( Message => "Can't write ConfigItem!" );
+                    $Self->{LayoutObject}->FatalError( Message => 'Can\'t write ConfigItem!' );
                 }
             }
 
@@ -219,10 +198,10 @@ sub Run {
                     # SubHash
                     if ( $Values[$Index] eq '##SubHash##' ) {
                         my @SubHashKeys = $Self->{ParamObject}->GetArray(
-                            Param => $_ . '##SubHash##' . $Keys[$Index] . 'Key[]',
+                            Param => $_ . '##SubHash##' . $Keys[$Index] . 'Key[]'
                         );
                         my @SubHashValues = $Self->{ParamObject}->GetArray(
-                            Param => $_ . '##SubHash##' . $Keys[$Index] . 'Content[]',
+                            Param => $_ . '##SubHash##' . $Keys[$Index] . 'Content[]'
                         );
                         my %SubHash;
                         for my $Index2 ( 0 .. $#SubHashKeys ) {
@@ -245,7 +224,7 @@ sub Run {
 
                         # New SubHashElement
                         my $New = $Self->{ParamObject}->GetParam(
-                            Param => $ItemHash{Name} . '#' . $Keys[$Index] . '#NewSubElement',
+                            Param => $ItemHash{Name} . '#' . $Keys[$Index] . '#NewSubElement'
                         );
                         if ($New) {
                             $SubHash{''} = '';
@@ -257,12 +236,12 @@ sub Run {
                     # SubArray
                     elsif ( $Values[$Index] eq '##SubArray##' ) {
                         my @SubArray = $Self->{ParamObject}->GetArray(
-                            Param => $_ . '##SubArray##' . $Keys[$Index] . 'Content[]',
+                            Param => $_ . '##SubArray##' . $Keys[$Index] . 'Content[]'
                         );
 
                         # New SubArrayElement
                         my $New = $Self->{ParamObject}->GetParam(
-                            Param => $ItemHash{Name} . '#' . $Keys[$Index] . '#NewSubElement',
+                            Param => $ItemHash{Name} . '#' . $Keys[$Index] . '#NewSubElement'
                         );
                         if ($New) {
                             push @SubArray, '';
@@ -289,7 +268,7 @@ sub Run {
                     # Delete Hash Element?
                     elsif (
                         !$Self->{ParamObject}->GetParam(
-                            Param => $ItemHash{Name} . '#DeleteHashElement' . $DeleteNumber[$Index],
+                            Param => $ItemHash{Name} . '#DeleteHashElement' . $DeleteNumber[$Index]
                         )
                         )
                     {
@@ -313,10 +292,10 @@ sub Run {
                 my $Update = $Self->{SysConfigObject}->ConfigItemUpdate(
                     Key   => $_,
                     Value => \%Content,
-                    Valid => $Active,
+                    Valid => $Aktiv
                 );
                 if ( !$Update ) {
-                    $Self->{LayoutObject}->FatalError( Message => "Can't write ConfigItem!" );
+                    $Self->{LayoutObject}->FatalError( Message => 'Can\'t write ConfigItem!' );
                 }
             }
 
@@ -336,7 +315,7 @@ sub Run {
                 # Delete Array Element
                 for my $Index ( 0 .. $#Content ) {
                     my $Delete = $Self->{ParamObject}->GetParam(
-                        Param => $ItemHash{Name} . '#DeleteArrayElement' . ( $Index + 1 ),
+                        Param => $ItemHash{Name} . '#DeleteArrayElement' . ( $Index + 1 )
                     );
                     if ($Delete) {
                         splice( @Content, $Index, 1 );
@@ -348,10 +327,10 @@ sub Run {
                 my $Update = $Self->{SysConfigObject}->ConfigItemUpdate(
                     Key   => $_,
                     Value => \@Content,
-                    Valid => $Active,
+                    Valid => $Aktiv
                 );
                 if ( !$Update ) {
-                    $Self->{LayoutObject}->FatalError( Message => "Can't write ConfigItem!" );
+                    $Self->{LayoutObject}->FatalError( Message => 'Can\'t write ConfigItem!' );
                 }
             }
 
@@ -367,12 +346,12 @@ sub Run {
                 }
                 for my $Type (qw(Group GroupRo)) {
                     my @Group = $Self->{ParamObject}->GetArray(
-                        Param => $ElementKey . '#' . $Type . '[]',
+                        Param => $ElementKey . '#' . $Type . '[]'
                     );
 
                     # New Group(Ro)Element
                     my $New = $Self->{ParamObject}->GetParam(
-                        Param => $ItemHash{Name} . '#New' . $Type . 'Element',
+                        Param => $ItemHash{Name} . '#New' . $Type . 'Element'
                     );
                     if ($New) {
                         push @Group, '';
@@ -398,60 +377,9 @@ sub Run {
                     }
                 }
 
-                # Loader start
-                my @Loader = $Self->{ParamObject}->GetArray(
-                    Param => $ElementKey . '#Loader[]',
-                );
-                my @LoaderFileTypes = (
-                    'CSS',
-                    'CSS_IE6',
-                    'CSS_IE7',
-                    'CSS_IE8',
-                    'JavaScript',
-                );
-
-                # New Loader Element
-                my $New = $Self->{ParamObject}->GetParam(
-                    Param => $ElementKey . '#NewLoaderElement',
-                );
-                if ($New) {
-                    push @Loader, '';
-                    $Anker = $ElementKey;
-                }
-
-                my %LoaderFiles;
-
-                # If @loader have values
-                if (@Loader) {
-
-                    # Find for every file kind
-                    for my $Key (@LoaderFileTypes) {
-                        my @LoaderArray;
-                        for my $Index ( 0 .. $#Loader ) {
-                            my $Delete = $Self->{ParamObject}->GetParam(
-                                Param => $ItemHash{Name} . '#DeleteLoaderElement' . ( $Index + 1 ),
-                            );
-                            if ( !$Delete ) {
-                                my $TypeKey = $Self->{ParamObject}->GetParam(
-                                    Param => $ElementKey . 'LoaderType' . ( $Index + 1 )
-                                ) || 'JavaScript';
-                                if ( $TypeKey and ( $Key eq $TypeKey ) ) {
-                                    push @LoaderArray, $Loader[$Index];
-                                }
-                            }
-                        }
-                        if (@LoaderArray) {
-                            $LoaderFiles{$Key} = \@LoaderArray;
-                        }
-                    }
-                    $Content{Loader} = \%LoaderFiles;
-                }
-
-                # Loader finish
-
                 # NavBar get Params
                 my %NavBarParams;
-                for (qw(Description Name Link LinkOption Type Prio Block NavBar AccessKey)) {
+                for (qw(Description Name Image Link Type Prio Block NavBar AccessKey)) {
                     my @Param = $Self->{ParamObject}->GetArray(
                         Param => $ElementKey . '#NavBar#' . $_ . '[]'
                     );
@@ -511,10 +439,7 @@ sub Run {
                             $Content{NavBar}->[$Index]->{$Type} = \@Group;
                         }
                     }
-                    for (
-                        qw(Description Name Link LinkOption Type Prio Block NavBar AccessKey)
-                        )
-                    {
+                    for (qw(Description Name Image Link Type Prio Block NavBar AccessKey)) {
                         if ( defined $NavBarParams{$_}->[$Index] ) {
                             $Content{NavBar}->[$Index]->{$_} = $NavBarParams{$_}->[$Index];
                         }
@@ -534,21 +459,21 @@ sub Run {
 
                 # NavBarModule
                 my $NavBarModule = $Self->{ParamObject}->GetArray(
-                    Param => $ElementKey . '#NavBarModule#Module[]',
+                    Param => $ElementKey . '#NavBarModule#Module[]'
                 );
                 if ($NavBarModule) {
 
                     # get Params
                     my %NavBarModuleParams;
-                    for (qw(Module Name Description Block Prio)) {
+                    for (qw(Module Name Block Prio)) {
                         my @Param = $Self->{ParamObject}->GetArray(
-                            Param => $ElementKey . '#NavBarModule#' . $_ . '[]',
+                            Param => $ElementKey . '#NavBarModule#' . $_ . '[]'
                         );
                         $NavBarModuleParams{$_} = \@Param;
                     }
 
                     # Create Hash
-                    for (qw(Group GroupRo Module Name Description Block Prio)) {
+                    for (qw(Group GroupRo Module Name Block Prio)) {
                         if (
                             defined $NavBarModuleParams{$_}->[0]
                             && $NavBarModuleParams{$_}->[0] ne ''
@@ -563,10 +488,10 @@ sub Run {
                 my $Update = $Self->{SysConfigObject}->ConfigItemUpdate(
                     Key   => $_,
                     Value => \%Content,
-                    Valid => $Active,
+                    Valid => $Aktiv
                 );
                 if ( !$Update ) {
-                    $Self->{LayoutObject}->FatalError( Message => "Can't write ConfigItem!" );
+                    $Self->{LayoutObject}->FatalError( Message => 'Can\'t write ConfigItem!' );
                 }
             }
 
@@ -611,10 +536,10 @@ sub Run {
                 my $Update = $Self->{SysConfigObject}->ConfigItemUpdate(
                     Key   => $_,
                     Value => \%Content,
-                    Valid => $Active,
+                    Valid => $Aktiv
                 );
                 if ( !$Update ) {
-                    $Self->{LayoutObject}->FatalError( Message => "Can't write ConfigItem!" );
+                    $Self->{LayoutObject}->FatalError( Message => 'Can\'t write ConfigItem!' );
                 }
             }
 
@@ -658,11 +583,11 @@ sub Run {
                 my $Update = $Self->{SysConfigObject}->ConfigItemUpdate(
                     Key   => $_,
                     Value => \%Content,
-                    Valid => $Active,
+                    Valid => $Aktiv
                 );
 
                 if ( !$Update ) {
-                    $Self->{LayoutObject}->FatalError( Message => "Can't write ConfigItem!" );
+                    $Self->{LayoutObject}->FatalError( Message => 'Can\'t write ConfigItem!' );
                 }
             }
 
@@ -681,10 +606,10 @@ sub Run {
                 my $Update = $Self->{SysConfigObject}->ConfigItemUpdate(
                     Key   => $_,
                     Value => \%Content,
-                    Valid => $Active,
+                    Valid => $Aktiv
                 );
                 if ( !$Update ) {
-                    $Self->{LayoutObject}->FatalError( Message => "Can't write ConfigItem!" );
+                    $Self->{LayoutObject}->FatalError( Message => 'Can\'t write ConfigItem!' );
                 }
             }
         }
@@ -710,8 +635,8 @@ sub Run {
             SubGroup => $SubGroup
         );
 
-        # get the config level of the admin user
-        my $ConfigLevel = $Self->{ConfigObject}->Get('ConfigLevel') || 0;
+        # Language
+        my $UserLang = $Self->{UserLanguage} || $Self->{ConfigObject}->Get('DefaultLanguage');
 
         # list all Items
         for (@List) {
@@ -727,83 +652,57 @@ sub Run {
 
             # Valid
             my $Valid      = '';
-            my $Validstyle = 'Invalid';
+            my $Validstyle = 'passiv';
             if ( $ItemHash{Valid} ) {
                 $Valid      = 'checked="checked"';
                 $Validstyle = '';
             }
 
-            my $Description = $ItemHash{Description}[1]{Content};
+            #Description
+            my %HashLang;
+            for my $Index ( 1 .. $#{ $ItemHash{Description} } ) {
+                $HashLang{ $ItemHash{Description}[$Index]{Lang} }
+                    = $ItemHash{Description}[$Index]{Content};
+            }
+            my $Description;
 
-            # Generate an ID that is valid XHTML for use in id attribute
-            my $ItemKeyID = $ItemHash{Name};
-            $ItemKeyID =~ s{\#}{_}gsm;
+            # Description in User Language
+            if ( defined $HashLang{$UserLang} ) {
+                $Description = $HashLang{$UserLang};
+            }
 
-            # show the config element block
+            # Description in Default Language
+            else {
+                $Description = $HashLang{en};
+            }
             $Self->{LayoutObject}->Block(
                 Name => 'ConfigElementBlock',
                 Data => {
-                    ItemKey     => $ItemHash{Name},
-                    ItemKeyID   => $ItemKeyID,
+                    Name        => $ItemHash{Name},
+                    ItemKey     => $_,
                     Description => $Description,
                     Valid       => $Valid,
                     Validstyle  => $Validstyle,
                     Required    => $Required,
                 },
             );
-
-            # the admin users config level is not sufficient to edit this config item
-            if ( $ItemHash{ConfigLevel} && $ItemHash{ConfigLevel} < $ConfigLevel ) {
-
-                # only show the name of the config item
+            if ( $ItemHash{Diff} ) {
                 $Self->{LayoutObject}->Block(
-                    Name => 'ConfigElementInsufficientConfigLevel',
-                    Data => {
-                        ItemKey     => $ItemHash{Name},
-                        ItemKeyID   => $ItemKeyID,
-                        Description => $Description,
-                        Valid       => $Valid,
-                        Validstyle  => $Validstyle,
-                        Required    => $Required,
-                        ConfigLevel => $ItemHash{ConfigLevel},
-                    },
+                    Name => 'ConfigElementBlockReset',
+                    Data => { ItemKey => $_, },
                 );
             }
-            else {
 
-                # show the complete config item
-                $Self->{LayoutObject}->Block(
-                    Name => 'ConfigElementSufficientConfigLevel',
-                    Data => {
-                        ItemKey     => $ItemHash{Name},
-                        ItemKeyID   => $ItemKeyID,
-                        Description => $Description,
-                        Valid       => $Valid,
-                        Validstyle  => $Validstyle,
-                        Required    => $Required,
-                    },
-                );
-
-                # show icon to reset the config item to default
-                if ( $ItemHash{Diff} ) {
-                    $Self->{LayoutObject}->Block(
-                        Name => 'ConfigElementBlockReset',
-                        Data => { ItemKey => $_ },
-                    );
-                }
-
-                # ListConfigItem
-                $Self->ListConfigItem( Hash => \%ItemHash );
-            }
+            # ListConfigItem
+            $Self->ListConfigItem( Hash => \%ItemHash );
         }
-
         $Data{SubGroup} = $SubGroup;
         $Data{Group}    = $Group;
         my $Output .= $Self->{LayoutObject}->Header( Value => "$Group -> $SubGroup" );
         $Output    .= $Self->{LayoutObject}->NavigationBar();
         $Output    .= $Self->{LayoutObject}->Output(
             TemplateFile => 'AdminSysConfigEdit',
-            Data         => \%Data,
+            Data         => \%Data
         );
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
@@ -813,74 +712,12 @@ sub Run {
     # search config
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Search' ) {
-
-        $Self->{LayoutObject}->Block( Name => 'ActionList' );
-        $Self->{LayoutObject}->Block(
-            Name => 'SearchBox',
-            Data => {
-                ConfigCounter => $Self->{SysConfigObject}->{ConfigCounter},
-            },
-        );
-
-        # list Groups
-        my %List = $Self->{SysConfigObject}->ConfigGroupList();
-
-        # create select Box
-        $Data{List} = $Self->{LayoutObject}->BuildSelection(
-            Data         => \%List,
-            SelectedID   => $Group,
-            Name         => 'SysConfigGroup',
-            Translation  => 0,
-            PossibleNone => 1,
-        );
-
-        $Self->{LayoutObject}->Block(
-            Name => 'ConfigGroups',
-            Data => \%Data,
-        );
-
-        # check if sysconfig download link should be shown
-        if ( $Self->{SysConfigObject}->Download( Type => 'Check' ) ) {
-            $Self->{LayoutObject}->Block( Name => 'Download' );
-        }
-
-        $Self->{LayoutObject}->Block( Name => 'ActionImport' );
-        $Self->{LayoutObject}->Block( Name => 'ContentOverview' );
-
         my $Search = $Self->{ParamObject}->GetParam( Param => 'Search' );
-
-        # if a search parameter was provided
-        if ($Search) {
+        my @List = $Self->{SysConfigObject}->ConfigItemSearch( Search => $Search );
+        for my $Option (@List) {
             $Self->{LayoutObject}->Block(
-                Name => 'OverviewResult',
-                Data => {},
-            );
-            my @List = $Self->{SysConfigObject}->ConfigItemSearch( Search => $Search );
-
-            # if there are any results, they are shown
-            if (@List) {
-                for my $Option (@List) {
-                    $Self->{LayoutObject}->Block(
-                        Name => 'Row',
-                        Data => $Option,
-                    );
-                }
-            }
-
-            # otherwise a no data found msg is displayed
-            else {
-                $Self->{LayoutObject}->Block(
-                    Name => 'NoDataFoundMsg',
-                    Data => {},
-                );
-            }
-        }
-
-        # otherwise a no search term msg is shown
-        else {
-            $Self->{LayoutObject}->Block(
-                Name => 'NoSearchTerms',
-                Data => {},
+                Name => 'Row',
+                Data => $Option,
             );
         }
     }
@@ -889,127 +726,51 @@ sub Run {
     # list subgroups
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'SelectGroup' ) {
-
-        $Self->{LayoutObject}->Block( Name => 'ActionList' );
-        $Self->{LayoutObject}->Block(
-            Name => 'SearchBox',
-            Data => {
-                ConfigCounter => $Self->{SysConfigObject}->{ConfigCounter},
-            },
-        );
-
-        # list Groups
-        my %List = $Self->{SysConfigObject}->ConfigGroupList();
-
         $Group = $Self->{ParamObject}->GetParam( Param => 'SysConfigGroup' );
-
-        # create select Box
-        $Data{List} = $Self->{LayoutObject}->BuildSelection(
-            Data         => \%List,
-            SelectedID   => $Group,
-            Name         => 'SysConfigGroup',
-            Translation  => 0,
-            PossibleNone => 1,
-        );
-
-        $Self->{LayoutObject}->Block(
-            Name => 'ConfigGroups',
-            Data => \%Data,
-        );
-
-        # check if sysconfig download link should be shown
-        if ( $Self->{SysConfigObject}->Download( Type => 'Check' ) ) {
-            $Self->{LayoutObject}->Block( Name => 'Download' );
-        }
-
-        $Self->{LayoutObject}->Block( Name => 'ActionImport' );
-        $Self->{LayoutObject}->Block( Name => 'ContentOverview' );
-
-        $Self->{LayoutObject}->Block( Name => 'OverviewResult' );
-
-        %List = $Self->{SysConfigObject}->ConfigSubGroupList( Name => $Group );
-
-        # if there are any results, they are shown
-        if (%List) {
-            for ( sort keys %List ) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'Row',
-                    Data => {
-                        SubGroup      => $_,
-                        SubGroupCount => $List{$_},
-                        Group         => $Group,
-                    },
-                );
-            }
-        }
-
-        # otherwise a no data found msg is displayed
-        else {
+        my %List = $Self->{SysConfigObject}->ConfigSubGroupList( Name => $Group );
+        for ( sort keys %List ) {
             $Self->{LayoutObject}->Block(
-                Name => 'NoDataFoundMsg',
-                Data => {},
+                Name => 'Row',
+                Data => {
+                    SubGroup      => $_,
+                    SubGroupCount => $List{$_},
+                    Group         => $Group,
+                },
             );
         }
     }
 
+    # secure mode message (don't allow this action till secure mode is enabled)
+    if ( !$Self->{ConfigObject}->Get('SecureMode') ) {
+        $Self->{LayoutObject}->SecureMode();
+    }
+
     # ------------------------------------------------------------ #
-    # shows initial screen
+    # list Groups
     # ------------------------------------------------------------ #
-    else {
+    my %List = $Self->{SysConfigObject}->ConfigGroupList();
 
-        # secure mode message (don't allow this action till secure mode is enabled)
-        if ( !$Self->{ConfigObject}->Get('SecureMode') ) {
-            $Self->{LayoutObject}->SecureMode();
-        }
+    # create select Box
+    $Data{Liste} = $Self->{LayoutObject}->BuildSelection(
+        Data                => \%List,
+        SelectedID          => $Group,
+        Name                => 'SysConfigGroup',
+        LanguageTranslation => 0,
+    );
 
-        $Self->{LayoutObject}->Block( Name => 'ActionList' );
+    # check if sysconfig download link should be shown
+    if ( $Self->{SysConfigObject}->Download( Type => 'Check' ) ) {
         $Self->{LayoutObject}->Block(
-            Name => 'SearchBox',
-            Data => {
-                ConfigCounter => $Self->{SysConfigObject}->{ConfigCounter},
-            },
-        );
-
-        # list Groups
-        my %List = $Self->{SysConfigObject}->ConfigGroupList();
-
-        # create select Box
-        $Data{List} = $Self->{LayoutObject}->BuildSelection(
-            Data         => \%List,
-            SelectedID   => $Group,
-            Name         => 'SysConfigGroup',
-            Translation  => 0,
-            PossibleNone => 1,
-        );
-
-        $Self->{LayoutObject}->Block(
-            Name => 'ConfigGroups',
-            Data => \%Data,
-        );
-
-        # check if sysconfig download link should be shown
-        if ( $Self->{SysConfigObject}->Download( Type => 'Check' ) ) {
-            $Self->{LayoutObject}->Block( Name => 'Download' );
-        }
-
-        $Self->{LayoutObject}->Block( Name => 'ActionImport' );
-        $Self->{LayoutObject}->Block( Name => 'ContentOverview' );
-
-        $Self->{LayoutObject}->Block(
-            Name => 'NoSearchTerms',
+            Name => 'Download',
             Data => {},
         );
-
     }
 
     my $Output .= $Self->{LayoutObject}->Header( Value => $Group );
     $Output    .= $Self->{LayoutObject}->NavigationBar();
     $Output    .= $Self->{LayoutObject}->Output(
         TemplateFile => 'AdminSysConfig',
-        Data         => {
-            %Data,
-            ConfigCounter => $Self->{SysConfigObject}->{ConfigCounter},
-        },
+        Data => { %Data, ConfigCounter => $Self->{SysConfigObject}->{ConfigCounter}, }
     );
     $Output .= $Self->{LayoutObject}->Footer();
     return $Output;
@@ -1019,32 +780,12 @@ sub ListConfigItem {
     my ( $Self, %Param ) = @_;
 
     my %ItemHash = %{ $Param{Hash} };
+    my $Valid    = '';
     my $Default  = '';
     my $Item     = $ItemHash{Setting}->[1];
 
     # ConfigElement String
     if ( defined $Item->{String} ) {
-
-        # get default
-        if ( $Item->{String}->[1]->{Default} ) {
-            $Default = $Item->{String}->[1]->{Default};
-        }
-
-        my $InputType = 'text';
-
-        if ( $Item->{String}->[1]->{Type} && $Item->{String}->[1]->{Type} eq 'Password' ) {
-            $InputType = 'password';
-        }
-
-        $Self->{LayoutObject}->Block(
-            Name => 'ConfigElementString',
-            Data => {
-                ElementKey => $ItemHash{Name},
-                Content    => $Item->{String}->[1]->{Content},
-                Default    => $Default,
-                InputType  => $InputType,
-            },
-        );
 
         # check
         my $Check = $Item->{String}->[1]->{Check};
@@ -1052,27 +793,34 @@ sub ListConfigItem {
 
             # file
             if ( $Check eq 'File' && !-f $Item->{String}->[1]->{Content} ) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'ConfigElementStringErrorFileNotFound',
-                );
+                $Valid = 'file not found';
             }
 
             # directory
             if ( $Check eq 'Directory' && !-d $Item->{String}->[1]->{Content} ) {
-                $Self->{LayoutObject}->Block(
-                    Name => 'ConfigElementStringErrorDirectoryNotFound',
-                );
+                $Valid = 'directory not found';
             }
         }
 
         # Regex check
         my $RegExp = $Item->{String}->[1]->{Regex};
         if ( $RegExp && $Item->{String}->[1]->{Content} !~ /$Item->{String}->[1]->{Regex}/ ) {
-            $Self->{LayoutObject}->Block(
-                Name => 'ConfigElementStringErrorRegexMismatch',
-            );
+            $Valid = 'invalid';
         }
 
+        # get default
+        if ( $Item->{String}->[1]->{Default} ) {
+            $Default = $Item->{String}->[1]->{Default};
+        }
+        $Self->{LayoutObject}->Block(
+            Name => 'ConfigElementString',
+            Data => {
+                ElementKey => $ItemHash{Name},
+                Content    => $Item->{String}->[1]->{Content},
+                Valid      => $Valid,
+                Default    => $Default,
+            },
+        );
         return 1;
     }
 
@@ -1083,6 +831,7 @@ sub ListConfigItem {
             Data => {
                 ElementKey => $ItemHash{Name},
                 Content    => $Item->{TextArea}->[1]->{Content},
+                Valid      => $Valid,
             },
         );
         return 1;
@@ -1144,16 +893,6 @@ sub ListConfigItem {
                     },
                 );
 
-                $Self->{LayoutObject}->Block(
-                    Name => 'ConfigElementSubHashStart',
-                    Data => {
-                        ElementKey => $ItemHash{Name},
-                        Key        => $Hash->{Item}->[$Index]->{Key},
-                        Content    => '##SubHash##',
-                        Index      => $Index,
-                    },
-                );
-
                 # SubHashElements
                 for my $Index2 ( 1 .. $#{ ${Hash}->{Item}->[$Index]->{Hash}->[1]->{Item} } ) {
                     $Self->{LayoutObject}->Block(
@@ -1171,32 +910,12 @@ sub ListConfigItem {
                         },
                     );
                 }
-
-                $Self->{LayoutObject}->Block(
-                    Name => 'ConfigElementSubHashEnd',
-                    Data => {
-                        ElementKey => $ItemHash{Name},
-                        Key        => $Hash->{Item}->[$Index]->{Key},
-                        Content    => '##SubHash##',
-                        Index      => $Index,
-                    },
-                );
             }
 
             # SubArray
             elsif ( defined $Hash->{Item}->[$Index]->{Array} ) {
                 $Self->{LayoutObject}->Block(
                     Name => 'ConfigElementHashContent2',
-                    Data => {
-                        ElementKey => $ItemHash{Name},
-                        Key        => $Hash->{Item}->[$Index]->{Key},
-                        Content    => '##SubArray##',
-                        Index      => $Index,
-                    },
-                );
-
-                $Self->{LayoutObject}->Block(
-                    Name => 'ConfigElementSubArrayStart',
                     Data => {
                         ElementKey => $ItemHash{Name},
                         Key        => $Hash->{Item}->[$Index]->{Key},
@@ -1220,16 +939,6 @@ sub ListConfigItem {
                         },
                     );
                 }
-
-                $Self->{LayoutObject}->Block(
-                    Name => 'ConfigElementSubArrayEnd',
-                    Data => {
-                        ElementKey => $ItemHash{Name},
-                        Key        => $Hash->{Item}->[$Index]->{Key},
-                        Content    => '##SubArray##',
-                        Index      => $Index,
-                    },
-                );
             }
 
             # SubOption
@@ -1246,7 +955,6 @@ sub ListConfigItem {
                     Data       => \%Hash,
                     SelectedID => $Hash->{Item}->[$Index]->{Option}->[1]->{SelectedID},
                     Name       => $ItemHash{Name} . 'Content[]',
-                    Class      => 'Content',
                 );
                 $Self->{LayoutObject}->Block(
                     Name => 'ConfigElementHashContent3',
@@ -1309,20 +1017,14 @@ sub ListConfigItem {
             }
         }
         $Data{ElementKey} = $ItemHash{Name};
-
-        # Generate an ID that is valid XHTML for use in id attribute
-        $Data{ElementKeyID} = $Data{ElementKey};
-        $Data{ElementKeyID} =~ s{\#}{_}gsm;
-
         $Self->{LayoutObject}->Block(
             Name => 'ConfigElementFrontendModuleReg',
             Data => \%Data,
         );
 
         # Array Element Group
-        for my $ArrayElement (qw(Group GroupRo)) {
+        for my $ArrayElement qw(Group GroupRo) {
             for my $Index ( 1 .. $#{ $FrontendModuleReg->{$ArrayElement} } ) {
-
                 $Self->{LayoutObject}->Block(
                     Name => 'ConfigElementFrontendModuleRegContent' . $ArrayElement,
                     Data => {
@@ -1334,53 +1036,10 @@ sub ListConfigItem {
             }
         }
 
-        # Define array with keys for the Loader
-        my %LoaderTypes = (
-            'CSS'        => 1,
-            'CSS_IE6'    => 1,
-            'CSS_IE7'    => 1,
-            'CSS_IE8'    => 1,
-            'JavaScript' => 1,
-        );
-
-        my $Counter = 1;
-        for my $Index ( 1 .. $#{ $FrontendModuleReg->{Loader} } ) {
-
-            my $Content = $FrontendModuleReg->{Loader}->[$Index];
-            for my $Key ( sort keys %{$Content} ) {
-
-                if ( $LoaderTypes{$Key} ) {
-                    for my $Index2 ( 1 .. $#{ $Content->{$Key} } ) {
-
-                        $Self->{LayoutObject}->Block(
-                            Name => 'ConfigElementFrontendModuleRegContentLoader',
-                            Data => {
-                                Index        => $Counter,
-                                ElementKey   => $ItemHash{Name},
-                                ElementKeyID => $Data{ElementKeyID},
-                                Content      => $Content->{$Key}->[$Index2]->{Content},
-                                LoaderType   => $Self->{LayoutObject}->BuildSelection(
-                                    Data       => [ sort keys %LoaderTypes ],
-                                    Name       => $Data{ElementKey} . 'LoaderType' . $Counter,
-                                    ID         => $Data{ElementKeyID} . 'LoaderType' . $Counter,
-                                    SelectedID => $Key,
-                                ),
-                            },
-                        );
-                        $Counter++;
-                    }
-                }
-
-            }
-        }
-
         # NavBar
         for my $Index ( 1 .. $#{ $FrontendModuleReg->{NavBar} } ) {
             my %Data = ();
-            for my $Key (
-                qw(Description Name Link LinkOption Type Prio Block NavBar AccessKey)
-                )
-            {
+            for my $Key (qw(Description Name Image Link Type Prio Block NavBar AccessKey)) {
                 $Data{ 'Key' . $Key }     = $Key;
                 $Data{ 'Content' . $Key } = '';
                 if ( defined $FrontendModuleReg->{NavBar}->[1]->{$Key}->[1]->{Content} ) {
@@ -1389,19 +1048,14 @@ sub ListConfigItem {
                 }
             }
             $Data{ElementKey} = $ItemHash{Name} . '#NavBar';
-
-            # Generate an ID that is valid XHTML for use in id attribute
-            $Data{ElementKeyID} = $Data{ElementKey};
-            $Data{ElementKeyID} =~ s{\#}{_}gsm;
-
-            $Data{Index} = $Index;
+            $Data{Index}      = $Index;
             $Self->{LayoutObject}->Block(
                 Name => 'ConfigElementFrontendModuleRegContentNavBar',
                 Data => \%Data,
             );
 
             # Array Element Group
-            for my $ArrayElement (qw(Group GroupRo)) {
+            for my $ArrayElement qw(Group GroupRo) {
                 for my $Index2 ( 1 .. $#{ $FrontendModuleReg->{NavBar}[$Index]{$ArrayElement} } ) {
                     $Self->{LayoutObject}->Block(
                         Name => 'ConfigElementFrontendModuleRegContentNavBar' . $ArrayElement,
@@ -1421,8 +1075,8 @@ sub ListConfigItem {
         # NavBarModule
         if ( ref $FrontendModuleReg->{NavBarModule} eq 'ARRAY' ) {
             for my $Index ( 1 .. $#{ $FrontendModuleReg->{NavBarModule} } ) {
-                my %Data;
-                for my $Key (qw(Module Name Block Pri)) {
+                my %Data = ();
+                for my $Key qw (Module Name Block Prio) {
                     $Data{ 'Key' . $Key }     = $Key;
                     $Data{ 'Content' . $Key } = '';
                     if ( defined $FrontendModuleReg->{NavBarModule}->[1]->{$Key}->[1]->{Content} ) {
@@ -1431,13 +1085,6 @@ sub ListConfigItem {
                     }
                 }
                 $Data{ElementKey} = $ItemHash{Name} . '#NavBarModule';
-
-                # Generate an ID that is valid XHTML for use in id attribute
-                $Data{ElementKeyID} = $Data{ElementKey};
-                $Data{ElementKeyID} =~ s{\#}{_}gsm;
-
-                $Data{Index} = $Index;
-
                 $Self->{LayoutObject}->Block(
                     Name => 'ConfigElementFrontendModuleRegContentNavBarModule',
                     Data => \%Data,
@@ -1446,7 +1093,7 @@ sub ListConfigItem {
         }
         elsif ( defined $FrontendModuleReg->{NavBarModule} ) {
             my %Data;
-            for my $Key (qw(Module Name Description Block Prio)) {
+            for my $Key qw (Module Name Block Prio) {
                 $Data{ 'Key' . $Key }     = $Key;
                 $Data{ 'Content' . $Key } = '';
                 if ( defined $FrontendModuleReg->{NavBarModule}->{$Key}->[1]->{Content} ) {
@@ -1455,13 +1102,6 @@ sub ListConfigItem {
                 }
             }
             $Data{ElementKey} = $ItemHash{Name} . '#NavBarModule';
-
-            # Generate an ID that is valid XHTML for use in id attribute
-            $Data{ElementKeyID} = $Data{ElementKey};
-            $Data{ElementKeyID} =~ s{\#}{_}gsm;
-
-            $Data{Index} = 0;
-
             $Self->{LayoutObject}->Block(
                 Name => 'ConfigElementFrontendModuleRegContentNavBarModule',
                 Data => \%Data,
@@ -1474,14 +1114,12 @@ sub ListConfigItem {
     if ( defined $Item->{TimeVacationDaysOneTime} ) {
         $Self->{LayoutObject}->Block(
             Name => 'ConfigElementTimeVacationDaysOneTime',
-            Data => {
-                ElementKey => $ItemHash{Name},
-            },
+            Data => { ElementKey => $ItemHash{Name}, },
         );
 
         # New TimeVacationDaysOneTimeElement
         my $New = $Self->{ParamObject}->GetParam(
-            Param => $ItemHash{Name} . '#NewTimeVacationDaysOneTimeElement',
+            Param => $ItemHash{Name} . '#NewTimeVacationDaysOneTimeElement'
         );
         if ($New) {
             push( @{ $Item->{TimeVacationDaysOneTime}[1]{Item} }, { Key => '', Content => '' } );
@@ -1489,6 +1127,31 @@ sub ListConfigItem {
 
         # TimeVacationDaysOneTimeElements
         for my $Index ( 1 .. $#{ $Item->{TimeVacationDaysOneTime}->[1]->{Item} } ) {
+            my %Valid = ();
+            if (
+                $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Year}
+                && $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Year}
+                !~ /^\d\d\d\d$/
+                )
+            {
+                $Valid{ValidYear} = 'invalid';
+            }
+            if (
+                $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Month}
+                && $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Month}
+                !~ /^(1[0-2]|[1-9])$/
+                )
+            {
+                $Valid{ValidMonth} = 'invalid';
+            }
+            if (
+                $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Day}
+                && $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Day}
+                !~ /^([1-3][0-9]|[1-9])$/
+                )
+            {
+                $Valid{ValidDay} = 'invalid';
+            }
             $Self->{LayoutObject}->Block(
                 Name => 'ConfigElementTimeVacationDaysOneTimeContent',
                 Data => {
@@ -1499,35 +1162,9 @@ sub ListConfigItem {
                     Content =>
                         $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Content},
                     Index => $Index,
+                    %Valid,
                 },
             );
-            if (
-                $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Year}
-                && $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Year}
-                !~ /^\d\d\d\d$/
-                )
-            {
-                $Self->{LayoutObject}
-                    ->Block( Name => 'ConfigElementTimeVacationDaysOneTimeContentInvalidYear' );
-            }
-            if (
-                $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Month}
-                && $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Month}
-                !~ /^(1[0-2]|[1-9])$/
-                )
-            {
-                $Self->{LayoutObject}
-                    ->Block( Name => 'ConfigElementTimeVacationDaysOneTimeContentInvalidMonth' );
-            }
-            if (
-                $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Day}
-                && $Item->{TimeVacationDaysOneTime}[1]{Item}[$Index]{Day}
-                !~ /^([1-3][0-9]|[1-9])$/
-                )
-            {
-                $Self->{LayoutObject}
-                    ->Block( Name => 'ConfigElementTimeVacationDaysOneTimeContentInvalidDay' );
-            }
         }
         return 1;
     }
@@ -1536,14 +1173,12 @@ sub ListConfigItem {
     if ( defined $Item->{TimeVacationDays} ) {
         $Self->{LayoutObject}->Block(
             Name => 'ConfigElementTimeVacationDays',
-            Data => {
-                ElementKey => $ItemHash{Name},
-            },
+            Data => { ElementKey => $ItemHash{Name}, },
         );
 
         # New TimeVacationDaysElement
         my $New = $Self->{ParamObject}->GetParam(
-            Param => $ItemHash{Name} . '#NewTimeVacationDaysElement',
+            Param => $ItemHash{Name} . '#NewTimeVacationDaysElement'
         );
         if ($New) {
             push( @{ $Item->{TimeVacationDays}[1]{Item} }, { Key => '', Content => '' } );
@@ -1551,6 +1186,23 @@ sub ListConfigItem {
 
         # TimeVacationDaysElements
         for my $Index ( 1 .. $#{ $Item->{TimeVacationDays}->[1]->{Item} } ) {
+            my %Valid = ();
+            if (
+                $Item->{TimeVacationDays}[1]{Item}[$Index]{Month}
+                && $Item->{TimeVacationDays}[1]{Item}[$Index]{Month}
+                !~ /^(1[0-2]|[1-9])$/
+                )
+            {
+                $Valid{ValidMonth} = 'invalid';
+            }
+            if (
+                $Item->{TimeVacationDays}[1]{Item}[$Index]{Day}
+                && $Item->{TimeVacationDays}[1]{Item}[$Index]{Day}
+                !~ /^([1-3][0-9]|[1-9])$/
+                )
+            {
+                $Valid{ValidDay} = 'invalid';
+            }
             $Self->{LayoutObject}->Block(
                 Name => 'ConfigElementTimeVacationDaysContent',
                 Data => {
@@ -1559,27 +1211,9 @@ sub ListConfigItem {
                     Day        => $Item->{TimeVacationDays}[1]{Item}[$Index]{Day},
                     Content    => $Item->{TimeVacationDays}[1]{Item}[$Index]{Content},
                     Index      => $Index,
+                    %Valid,
                 },
             );
-            if (
-                $Item->{TimeVacationDays}[1]{Item}[$Index]{Month}
-                && $Item->{TimeVacationDays}[1]{Item}[$Index]{Month}
-                !~ /^(1[0-2]|[1-9])$/
-                )
-            {
-                $Self->{LayoutObject}
-                    ->Block( Name => 'ConfigElementTimeVacationDaysContentInvalidMonth' );
-            }
-
-            if (
-                $Item->{TimeVacationDays}[1]{Item}[$Index]{Day}
-                && $Item->{TimeVacationDays}[1]{Item}[$Index]{Day}
-                !~ /^([1-3][0-9]|[1-9])$/
-                )
-            {
-                $Self->{LayoutObject}
-                    ->Block( Name => 'ConfigElementTimeVacationDaysContentInvalidDay' );
-            }
         }
         return 1;
     }
@@ -1588,9 +1222,7 @@ sub ListConfigItem {
     if ( defined $Item->{TimeWorkingHours} ) {
         $Self->{LayoutObject}->Block(
             Name => 'ConfigElementTimeWorkingHours',
-            Data => {
-                ElementKey => $ItemHash{Name},
-            },
+            Data => { ElementKey => $ItemHash{Name}, },
         );
 
         # TimeWorkingHoursElements
@@ -1628,7 +1260,7 @@ sub ListConfigItem {
             # Hours
             my @ArrayHours = ('') x 25;
 
-            # Active Hours
+            # Aktiv Hours
             if ( defined $Item->{TimeWorkingHours}[1]{Day}[$Index]{Hour} ) {
                 for my $Index2 ( 1 .. $#{ $Item->{TimeWorkingHours}[1]{Day}[$Index]{Hour} } ) {
                     $ArrayHours[ $Item->{TimeWorkingHours}[1]{Day}[$Index]{Hour}[$Index2]{Content} ]
@@ -1641,8 +1273,8 @@ sub ListConfigItem {
                     Data => {
                         ElementKey => $ItemHash{Name}
                             . $Item->{TimeWorkingHours}[1]{Day}[$Index]{Name},
-                        Hour   => $Z,
-                        Active => $ArrayHours[$Z],
+                        Hour  => $Z,
+                        Aktiv => $ArrayHours[$Z],
                     },
                 );
             }
