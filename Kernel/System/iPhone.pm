@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.28 2010/07/12 17:44:01 cr Exp $
+# $Id: iPhone.pm,v 1.29 2010/07/12 18:01:46 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.28 $) [1];
+$VERSION = qw($Revision: 1.29 $) [1];
 
 =head1 NAME
 
@@ -2515,6 +2515,10 @@ sub _GetScreenElements {
             TicketID => $Param{TicketID},
         );
 
+        if ( $ComposeDefaults{Error} ) {
+            return $ComposeDefaults{Error};
+        }
+
         my $ComposeFromElements = {
             Name      => 'From',
             Title     => $Self->{LanguageObject}->Get('From'),
@@ -4520,8 +4524,11 @@ sub _TicketMove {
 sub _GetComposeDefaults {
     my ( $Self, %Param ) = @_;
 
+    my %Error;
+
     if ( !$Param{TicketID} ) {
-        return "Need TicketID";
+        $Error{Error} = "Need TicketID";
+        return %Error;
     }
 
     my %ComposeData;
@@ -4728,21 +4735,20 @@ sub _GetComposeDefaults {
     );
 
     # check some values
-    my $Error;
     for my $Line (qw(To Cc Bcc)) {
         next if !$Data{$Line};
         for my $Email ( Mail::Address->parse( $Data{$Line} ) ) {
             if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
-                $Error = $Line . "Invalid" . " ServerError";
-                return $Error;
+                $Error{Error} = $Line . "Invalid" . " ServerError";
+                return %Error;
             }
         }
     }
     if ( $Data{From} ) {
         for my $Email ( Mail::Address->parse( $Data{From} ) ) {
             if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
-                $Error = "FromInvalid" . $Self->{CheckItemObject}->CheckError();
-                return $Error;
+                $Error{Error} = "FromInvalid" . $Self->{CheckItemObject}->CheckError();
+                return %Error;
             }
         }
     }
@@ -4790,6 +4796,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.28 2010/07/12 17:44:01 cr Exp $
+$Id: iPhone.pm,v 1.29 2010/07/12 18:01:46 cr Exp $
 
 =cut
