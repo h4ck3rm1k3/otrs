@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.30 2010/07/12 18:20:10 cr Exp $
+# $Id: iPhone.pm,v 1.31 2010/07/12 19:23:49 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.30 $) [1];
+$VERSION = qw($Revision: 1.31 $) [1];
 
 =head1 NAME
 
@@ -1856,7 +1856,7 @@ sub TicketList {
     # strip out all data
     my @Delete
         = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
-        ArticleTypeID ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
+        ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
         ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
         StateType ArchiveFlag UnlockTimeout Changed
     );
@@ -1931,7 +1931,7 @@ sub TicketGet {
     # strip out all data
     my @Delete
         = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
-        ArticleTypeID ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
+        ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
         ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
         StateType ArchiveFlag UnlockTimeout Changed
     );
@@ -2012,7 +2012,7 @@ sub ArticleGet {
     # strip out all data
     my @Delete
         = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
-        ArticleTypeID ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
+        ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
         ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
         StateType ArchiveFlag UnlockTimeout Changed
     );
@@ -2037,9 +2037,6 @@ sub ServicesGet {
     my ( $Self, %Param ) = @_;
 
     my %Service = ();
-    if ( $Param{NewQueueID} && !$Param{QueueID} ) {
-        $Param{QueueID} = $Param{NewQueueID};
-    }
 
     # get service
     if ( ( $Param{QueueID} || $Param{TicketID} ) && $Param{CustomerUserID} ) {
@@ -2077,10 +2074,6 @@ sub UsersGet {
         Type  => 'Long',
         Valid => 1,
     );
-
-    if ( $Param{NewQueueID} && !$Param{QueueID} ) {
-        $Param{QueueID} = $Param{NewQueueID};
-    }
 
     # just show only users with selected custom queue
     if ( $Param{QueueID} && !$Param{AllUsers} ) {
@@ -2124,10 +2117,6 @@ sub UsersGet {
 sub NextStatesGet {
     my ( $Self, %Param ) = @_;
 
-    if ( $Param{NewQueueID} and !$Param{QueueID} ) {
-        $Param{QueueID} = $Param{NewQueueID};
-    }
-
     my %NextStates = ();
     if ( $Param{QueueID} || $Param{TicketID} ) {
         %NextStates = $Self->{TicketObject}->StateList(
@@ -2143,10 +2132,6 @@ sub PrioritiesGet {
     my ( $Self, %Param ) = @_;
 
     my %Priorities = ();
-
-    if ( $Param{NewQueueID} and !$Param{QueueID} ) {
-        $Param{QueueID} = $Param{NewQueueID}
-    }
 
     # get priority
     if ( $Param{QueueID} || $Param{TicketID} ) {
@@ -2233,9 +2218,6 @@ sub _GetTos {
         %NewTos = %{ $Self->{ConfigObject}->{'Ticket::Frontend::NewQueueOwnSelection'} };
     }
     else {
-        if ( $Param{NewQueueID} && !$Param{QueueID} ) {
-            $Param{QueueID} = $Param{NewQueueID};
-        }
 
         # SelectionType Queue or SystemAddress?
         my %Tos = ();
@@ -2465,7 +2447,7 @@ sub _GetScreenElements {
         }
 
         my $OwnerElements = {
-            Name           => 'NewOwnerID',
+            Name           => 'OwnerID',
             Title          => $Self->{LanguageObject}->Get($Title),
             Datatype       => 'Text',
             Viewtype       => 'Picker',
@@ -2488,7 +2470,7 @@ sub _GetScreenElements {
     # responsible
     if ( $Self->{ConfigObject}->Get('Ticket::Responsible') && $Self->{Config}->{Responsible} ) {
         my $ResponsibleElements = {
-            Name           => 'NewResponsibleID',
+            Name           => 'ResponsibleID',
             Title          => $Self->{LanguageObject}->Get('Responsible'),
             Datatype       => 'Text',
             Viewtype       => 'Picker',
@@ -2693,7 +2675,7 @@ sub _GetScreenElements {
         }
 
         my $StateElements = {
-            Name           => 'NewStateID',
+            Name           => 'StateID',
             Title          => $Self->{LanguageObject}->Get('Next Ticket State'),
             Datatype       => 'Text',
             Viewtype       => 'Picker',
@@ -2741,7 +2723,7 @@ sub _GetScreenElements {
         }
 
         my $PriorityElements = {
-            Name           => 'NewPriorityID',
+            Name           => 'PriorityID',
             Title          => $Self->{LanguageObject}->Get('Priority'),
             Datatype       => 'Text',
             Viewtype       => 'Picker',
@@ -2975,9 +2957,9 @@ sub _TicketPhoneNew {
 
     my $Error;
     my %StateData = ();
-    if ( $Param{NewStateID} ) {
+    if ( $Param{StateID} ) {
         %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
-            ID => $Param{NewStateID},
+            ID => $Param{StateID},
         );
     }
 
@@ -3093,8 +3075,8 @@ sub _TicketPhoneNew {
         TypeID       => $Param{TypeID},
         ServiceID    => $Param{ServiceID},
         SLAID        => $Param{SLAID},
-        StateID      => $Param{NewStateID},
-        PriorityID   => $Param{NewPriorityID},
+        StateID      => $Param{StateID},
+        PriorityID   => $Param{PriorityID},
         OwnerID      => 1,
         CustomerNo   => $CustomerID,
         CustomerUser => $CustomerUser,
@@ -3159,7 +3141,7 @@ sub _TicketPhoneNew {
 
     # check if new owner is given (then send no agent notify)
     my $NoAgentNotify = 0;
-    if ( $Param{NewOwnerID} ) {
+    if ( $Param{OwnerID} ) {
         $NoAgentNotify = 1;
     }
     my $QueueName = $Self->{QueueObject}->QueueLookup( QueueID => $Param{QueueID} );
@@ -3206,11 +3188,11 @@ sub _TicketPhoneNew {
         }
 
         # set owner (if new user id is given)
-        if ( $Param{NewOwnerID} ) {
+        if ( $Param{OwnerID} ) {
             if ( $Self->{'API3X'} ) {
                 $Self->{TicketObject}->TicketOwnerSet(
                     TicketID  => $TicketID,
-                    NewUserID => $Param{NewOwnerID},
+                    NewUserID => $Param{OwnerID},
                     UserID    => $Param{UserID},
                 );
 
@@ -3224,7 +3206,7 @@ sub _TicketPhoneNew {
             else {
                 $Self->{TicketObject}->OwnerSet(
                     TicketID  => $TicketID,
-                    NewUserID => $Param{NewOwnerID},
+                    NewUserID => $Param{OwnerID},
                     UserID    => $Param{UserID},
                 );
 
@@ -3258,18 +3240,18 @@ sub _TicketPhoneNew {
         }
 
         # set responsible (if new user id is given)
-        if ( $Param{NewResponsibleID} ) {
+        if ( $Param{ResponsibleID} ) {
             if ( $Self->{'API3X'} ) {
                 $Self->{TicketObject}->TicketResponsibleSet(
                     TicketID  => $TicketID,
-                    NewUserID => $Param{NewResponsibleID},
+                    NewUserID => $Param{ResponsibleID},
                     UserID    => $Param{UserID},
                 );
             }
             else {
                 $Self->{TicketObject}->ResponsibleSet(
                     TicketID  => $TicketID,
-                    NewUserID => $Param{NewResponsibleID},
+                    NewUserID => $Param{ResponsibleID},
                     UserID    => $Param{UserID},
                 );
             }
@@ -3286,7 +3268,7 @@ sub _TicketPhoneNew {
         }
 
         # should i set an unlock?
-        my %StateData = $Self->{StateObject}->StateGet( ID => $Param{NewStateID} );
+        my %StateData = $Self->{StateObject}->StateGet( ID => $Param{StateID} );
         if ( $StateData{TypeName} =~ /^close/i ) {
             if ( $Self->{'API3X'} ) {
                 $Self->{TicketObject}->TicketLockSet(
@@ -3330,9 +3312,9 @@ sub _TicketCommonActions {
 
     my %StateData = ();
 
-    if ( $Param{NewStateID} ) {
+    if ( $Param{StateID} ) {
         %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
-            ID => $Param{NewStateID},
+            ID => $Param{StateID},
         );
     }
 
@@ -3534,7 +3516,7 @@ sub _TicketCommonActions {
     my @NotifyDone;
     if ( $Self->{Config}->{Owner} ) {
         my $BodyText = $Param{Body} || '';
-        if ( $Param{NewOwnerID} ) {
+        if ( $Param{OwnerID} ) {
             my $Success;
             if ( $Self->{'API3X'} ) {
                 $Self->{TicketObject}->TicketLockSet(
@@ -3545,7 +3527,7 @@ sub _TicketCommonActions {
                 $Success = $Self->{TicketObject}->TicketOwnerSet(
                     TicketID  => $Param{TicketID},
                     UserID    => $Param{UserID},
-                    NewUserID => $Param{NewOwnerID},
+                    NewUserID => $Param{OwnerID},
                     Comment   => $BodyText,
                 );
             }
@@ -3558,28 +3540,28 @@ sub _TicketCommonActions {
                 $Success = $Self->{TicketObject}->OwnerSet(
                     TicketID  => $Param{TicketID},
                     UserID    => $Param{UserID},
-                    NewUserID => $Param{NewOwnerID},
+                    NewUserID => $Param{OwnerID},
                     Comment   => $BodyText,
                 );
             }
 
             # remember to not notify owner twice
             if ( $Success && $Success eq 1 ) {
-                push @NotifyDone, $Param{NewOwnerID};
+                push @NotifyDone, $Param{OwnerID};
             }
         }
     }
 
     # set new responsible
     if ( $Self->{Config}->{Responsible} ) {
-        if ( $Param{NewResponsibleID} ) {
+        if ( $Param{ResponsibleID} ) {
             my $BodyText = $Param{Body} || '';
             my $Success;
             if ( $Self->{'API3X'} ) {
                 $Success = $Self->{TicketObject}->TicketResponsibleSet(
                     TicketID  => $Param{TicketID},
                     UserID    => $Param{UserID},
-                    NewUserID => $Param{NewResponsibleID},
+                    NewUserID => $Param{ResponsibleID},
                     Comment   => $BodyText,
                 );
             }
@@ -3587,14 +3569,14 @@ sub _TicketCommonActions {
                 $Success = $Self->{TicketObject}->ResponsibleSet(
                     TicketID  => $Param{TicketID},
                     UserID    => $Param{UserID},
-                    NewUserID => $Param{NewResponsibleID},
+                    NewUserID => $Param{ResponsibleID},
                     Comment   => $BodyText,
                 );
             }
 
             # remember to not notify responsible twice
             if ( $Success && $Success eq 1 ) {
-                push @NotifyDone, $Param{NewResponsibleID};
+                push @NotifyDone, $Param{ResponsibleID};
             }
         }
     }
@@ -3707,43 +3689,43 @@ sub _TicketCommonActions {
         }
 
         # set priority
-        if ( $Self->{Config}->{Priority} && $Param{NewPriorityID} ) {
+        if ( $Self->{Config}->{Priority} && $Param{PriorityID} ) {
             if ( $Self->{'API3X'} ) {
                 $Self->{TicketObject}->TicketPrioritySet(
                     TicketID   => $Param{TicketID},
-                    PriorityID => $Param{NewPriorityID},
+                    PriorityID => $Param{PriorityID},
                     UserID     => $Param{UserID},
                 );
             }
             else {
                 $Self->{TicketObject}->PrioritySet(
                     TicketID   => $Param{TicketID},
-                    PriorityID => $Param{NewPriorityID},
+                    PriorityID => $Param{PriorityID},
                     UserID     => $Param{UserID},
                 );
             }
         }
 
         # set state
-        if ( $Self->{Config}->{State} && $Param{NewStateID} ) {
+        if ( $Self->{Config}->{State} && $Param{StateID} ) {
             if ( $Self->{'API3X'} ) {
                 $Self->{TicketObject}->TicketStateSet(
                     TicketID => $Param{TicketID},
-                    StateID  => $Param{NewStateID},
+                    StateID  => $Param{StateID},
                     UserID   => $Param{UserID},
                 );
             }
             else {
                 $Self->{TicketObject}->StateSet(
                     TicketID => $Param{TicketID},
-                    StateID  => $Param{NewStateID},
+                    StateID  => $Param{StateID},
                     UserID   => $Param{UserID},
                 );
             }
 
             # unlock the ticket after close
             my %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
-                ID => $Param{NewStateID},
+                ID => $Param{StateID},
             );
 
             # set unlock on close state
@@ -3955,7 +3937,7 @@ sub _TicketCompose {
 
     # send email
 
-    my %StateData = $Self->{TicketObject}->{StateObject}->StateGet( ID => $Param{NewStateID}, );
+    my %StateData = $Self->{TicketObject}->{StateObject}->StateGet( ID => $Param{StateID}, );
 
     # check pending date
     if ( $StateData{TypeName} && $StateData{TypeName} =~ /^pending/i ) {
@@ -4120,18 +4102,18 @@ sub _TicketCompose {
     }
 
     # set state
-    if ( $Self->{Config}->{State} && $Param{NewStateID} ) {
+    if ( $Self->{Config}->{State} && $Param{StateID} ) {
         if ( $Self->{'API3X'} ) {
             $Self->{TicketObject}->TicketStateSet(
                 TicketID => $Param{TicketID},
-                StateID  => $Param{NewStateID},
+                StateID  => $Param{StateID},
                 UserID   => $Param{UserID},
             );
         }
         else {
             $Self->{TicketObject}->StateSet(
                 TicketID => $Param{TicketID},
-                StateID  => $Param{NewStateID},
+                StateID  => $Param{StateID},
                 UserID   => $Param{UserID},
             );
         }
@@ -4273,11 +4255,11 @@ sub _TicketMove {
     }
 
     # check new user
-    if ( !$Param{NewOwnerID} ) {
-        $Error = 'Needed NewOwnerID';
+    if ( !$Param{OwnerID} ) {
+        $Error = 'Needed OwnerID';
     }
     else {
-        $Param{NewUserID} = $Param{NewOwnerID};
+        $Param{NewUserID} = $Param{OwnerID};
     }
 
     # move ticket (send notification of no new owner is selected)
@@ -4306,44 +4288,44 @@ sub _TicketMove {
     }
 
     # set priority
-    if ( $Self->{Config}->{Priority} && $Param{NewPriorityID} ) {
+    if ( $Self->{Config}->{Priority} && $Param{PriorityID} ) {
         if ( $Self->{'API3X'} ) {
             $Self->{TicketObject}->TicketPrioritySet(
                 TicketID   => $Param{TicketID},
-                PriorityID => $Param{NewPriorityID},
+                PriorityID => $Param{PriorityID},
                 UserID     => $Param{UserID},
             );
         }
         else {
             $Self->{TicketObject}->PrioritySet(
                 TicketID   => $Param{TicketID},
-                PriorityID => $Param{NewPriorityID},
+                PriorityID => $Param{PriorityID},
                 UserID     => $Param{UserID},
             );
         }
     }
 
     # set state
-    if ( $Self->{Config}->{State} && $Param{NewStateID} ) {
+    if ( $Self->{Config}->{State} && $Param{StateID} ) {
 
         if ( $Self->{'API3X'} ) {
             $Self->{TicketObject}->TicketStateSet(
                 TicketID => $Param{TicketID},
-                StateID  => $Param{NewStateID},
+                StateID  => $Param{StateID},
                 UserID   => $Param{UserID},
             );
         }
         else {
             $Self->{TicketObject}->StateSet(
                 TicketID => $Param{TicketID},
-                StateID  => $Param{NewStateID},
+                StateID  => $Param{StateID},
                 UserID   => $Param{UserID},
             );
         }
 
         # unlock the ticket after close
         my %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
-            ID => $Param{NewStateID},
+            ID => $Param{StateID},
         );
 
         # set unlock on close state
@@ -4794,6 +4776,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.30 2010/07/12 18:20:10 cr Exp $
+$Id: iPhone.pm,v 1.31 2010/07/12 19:23:49 cr Exp $
 
 =cut
