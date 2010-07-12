@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 # --
 # scripts/restore.pl - the restore script
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: restore.pl,v 1.14 2011/05/17 14:48:36 mb Exp $
+# $Id: restore.pl,v 1.11.2.1 2010/07/12 11:39:27 bes Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -31,7 +31,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.14 $) [1];
+$VERSION = qw($Revision: 1.11.2.1 $) [1];
 
 use Getopt::Std;
 
@@ -42,7 +42,7 @@ my $DBDump = '';
 getopt( 'hbd', \%Opts );
 if ( exists $Opts{h} ) {
     print "restore.pl <Revision $VERSION> - restore script\n";
-    print "Copyright (C) 2001-2011 OTRS AG, http://otrs.org/\n";
+    print "Copyright (C) 2001-2010 OTRS AG, http://otrs.org/\n";
     print "usage: restore.pl -b /data_backup/<TIME>/ -d /opt/otrs/\n";
     exit 1;
 }
@@ -180,7 +180,7 @@ if ( -e "$Opts{b}/DataDir.tar.gz" ) {
 if ( $DB =~ m/mysql/i ) {
     print "create $DB\n";
     if ($DatabasePw) {
-        $DatabasePw = "-p'$DatabasePw'";
+        $DatabasePw = "-p$DatabasePw";
     }
     if ( -e "$Opts{b}/DatabaseBackup.sql.gz" ) {
         print "decompresses SQL-file ...\n";
@@ -194,13 +194,13 @@ if ( $DB =~ m/mysql/i ) {
     }
     elsif ( -e "$Opts{b}/DatabaseBackup.sql.bz2" ) {
         print "decompresses SQL-file ...\n";
-        system("bunzip2 $Opts{b}/DatabaseBackup.sql.bz2");
+        system("bunzip $Opts{b}/DatabaseBackup.sql.bz2");
         print "cat SQL-file into $DB database\n";
         system(
             "mysql -f -u$DatabaseUser $DatabasePw -h$DatabaseHost $Database < $Opts{b}/DatabaseBackup.sql"
         );
         print "compress SQL-file...\n";
-        system("bzip2 $Opts{b}/DatabaseBackup.sql");
+        system("bzip $Opts{b}/DatabaseBackup.sql");
     }
 }
 else {
@@ -209,19 +209,19 @@ else {
         system("gunzip $Opts{b}/DatabaseBackup.sql.gz");
         print "cat SQL-file into $DB database\n";
         system(
-            "cat $Opts{b}/DatabaseBackup.sql | psql -U$DatabaseUser -W'$DatabasePw' -h$DatabaseHost $Database"
+            "cat $Opts{b}/DatabaseBackup.sql | psql -U$DatabaseUser -W$DatabasePw -h$DatabaseHost $Database"
         );
         print "compress SQL-file...\n";
         system("gzip $Opts{b}/DatabaseBackup.sql");
     }
     elsif ( -e "$Opts{b}/DatabaseBackup.sql.bz2" ) {
         print "decompresses SQL-file ...\n";
-        system("bunzip2 $Opts{b}/DatabaseBackup.sql.bz2");
+        system("bunzip $Opts{b}/DatabaseBackup.sql.bz2");
         print "cat SQL-file into $DB database\n";
         system(
-            "cat $Opts{b}/DatabaseBackup.sql | psql -U$DatabaseUser -W'$DatabasePw' -h$DatabaseHost $Database"
+            "cat $Opts{b}/DatabaseBackup.sql | psql -U$DatabaseUser -W$DatabasePw -h$DatabaseHost $Database"
         );
         print "compress SQL-file...\n";
-        system("bzip2 $Opts{b}/DatabaseBackup.sql");
+        system("bzip $Opts{b}/DatabaseBackup.sql");
     }
 }
