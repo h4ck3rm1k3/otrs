@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.27 2010/07/11 04:49:46 cr Exp $
+# $Id: iPhone.pm,v 1.28 2010/07/12 17:44:01 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.27 $) [1];
+$VERSION = qw($Revision: 1.28 $) [1];
 
 =head1 NAME
 
@@ -359,12 +359,12 @@ sub ScreenConfig {
 
 sub ResponsesGet {
     my ( $Self, %Param ) = @_;
-    if ( !$Param{NewQueueID} ) {
+    if ( !$Param{QueueID} ) {
         return
     }
 
     # fetch all std. responses
-    my %StdResponses = $Self->{QueueObject}->GetStdResponses( QueueID => $Param{NewQueueID} );
+    my %StdResponses = $Self->{QueueObject}->GetStdResponses( QueueID => $Param{QueueID} );
     return \%StdResponses;
 }
 
@@ -2033,20 +2033,6 @@ sub ArticleGet {
     return %Article;
 }
 
-sub _GetTypes {
-    my ( $Self, %Param ) = @_;
-
-    my %Type = ();
-
-    # get type
-    %Type = $Self->{TicketObject}->TicketTypeList(
-        %Param,
-        Action => $Param{Action},
-        UserID => $Param{UserID},
-    );
-    return \%Type;
-}
-
 sub ServicesGet {
     my ( $Self, %Param ) = @_;
 
@@ -2080,6 +2066,162 @@ sub SLAsGet {
         );
     }
     return \%SLA;
+}
+
+sub UsersGet {
+    my ( $Self, %Param ) = @_;
+
+    # get users
+    my %ShownUsers       = ();
+    my %AllGroupsMembers = $Self->{UserObject}->UserList(
+        Type  => 'Long',
+        Valid => 1,
+    );
+
+    if ( $Param{NewQueueID} && !$Param{QueueID} ) {
+        $Param{QueueID} = $Param{NewQueueID};
+    }
+
+    # just show only users with selected custom queue
+    if ( $Param{QueueID} && !$Param{AllUsers} ) {
+        my @UserIDs = $Self->{TicketObject}->GetSubscribedUserIDsByQueueID(%Param);
+        for ( keys %AllGroupsMembers ) {
+            my $Hit = 0;
+            for my $UID (@UserIDs) {
+                if ( $UID eq $_ ) {
+                    $Hit = 1;
+                }
+            }
+            if ( !$Hit ) {
+                delete $AllGroupsMembers{$_};
+            }
+        }
+    }
+
+    # show all system users
+    if ( $Self->{ConfigObject}->Get('Ticket::ChangeOwnerToEveryone') ) {
+        %ShownUsers = %AllGroupsMembers;
+    }
+
+    # show all users who are rw in the queue group
+    elsif ( $Param{QueueID} ) {
+        my $GID = $Self->{QueueObject}->GetQueueGroupID( QueueID => $Param{QueueID} );
+        my %MemberList = $Self->{GroupObject}->GroupMemberList(
+            GroupID => $GID,
+            Type    => 'rw',
+            Result  => 'HASH',
+            Cached  => 1,
+        );
+        for ( keys %MemberList ) {
+            if ( $AllGroupsMembers{$_} ) {
+                $ShownUsers{$_} = $AllGroupsMembers{$_};
+            }
+        }
+    }
+    return \%ShownUsers;
+}
+
+sub NextStatesGet {
+    my ( $Self, %Param ) = @_;
+
+    if ( $Param{NewQueueID} and !$Param{QueueID} ) {
+        $Param{QueueID} = $Param{NewQueueID};
+    }
+
+    my %NextStates = ();
+    if ( $Param{QueueID} || $Param{TicketID} ) {
+        %NextStates = $Self->{TicketObject}->StateList(
+            %Param,
+            Action => $Param{Action},
+            UserID => $Param{UserID},
+        );
+    }
+    return \%NextStates;
+}
+
+sub PrioritiesGet {
+    my ( $Self, %Param ) = @_;
+
+    my %Priorities = ();
+
+    if ( $Param{NewQueueID} and !$Param{QueueID} ) {
+        $Param{QueueID} = $Param{NewQueueID}
+    }
+
+    # get priority
+    if ( $Param{QueueID} || $Param{TicketID} ) {
+        %Priorities = $Self->{TicketObject}->PriorityList(
+            %Param,
+            Action => $Param{Action},
+            UserID => $Param{UserID},
+        );
+    }
+    return \%Priorities;
+}
+
+sub CustomerSearch {
+    my ( $Self, %Param ) = @_;
+
+    my %Customers = $Self->{CustomerUserObject}->CustomerSearch(
+        Search => $Param{Search},
+    );
+    return \%Customers;
+}
+
+sub ScreenActions() {
+    my ( $Self, %Param ) = @_;
+
+    my %UserPreferences = $Self->{UserObject}->GetPreferences( UserID => $Param{UserID} );
+    $Self->{UserTimeZone} = $UserPreferences{UserTimeZone};
+
+    if ( $Self->{ConfigObject}->Get('TimeZoneUser') && $Self->{UserTimeZone} ) {
+        $Self->{UserTimeObject} = Kernel::System::Time->new( %{$Self} );
+    }
+    else {
+        $Self->{UserTimeObject} = $Self->{TimeObject};
+        $Self->{UserTimeZone}   = '';
+    }
+
+    if ( $Param{Action} ) {
+        my $Result;
+        if ( $Param{Action} eq 'Phone' ) {
+            $Result = $Self->_TicketPhoneNew(%Param);
+            return $Result;
+        }
+        if ( $Param{Action} eq 'Note' || $Param{Action} eq 'Close' ) {
+            $Result = $Self->_TicketCommonActions(%Param);
+            return $Result;
+        }
+        if ( $Param{Action} eq 'Compose' ) {
+            $Result = $Self->_TicketCompose(%Param);
+            return $Result;
+        }
+        if ( $Param{Action} eq 'Move' ) {
+            $Result = $Self->_TicketMove(%Param);
+            return $Result;
+        }
+        return 'Action undefined! expected Phone, Note, Close, Compose or Move, but '
+            . $Param{Action} . ' found';
+    }
+    else {
+        return 'Need Action!'
+    }
+}
+
+# internal subroutines
+
+sub _GetTypes {
+    my ( $Self, %Param ) = @_;
+
+    my %Type = ();
+
+    # get type
+    %Type = $Self->{TicketObject}->TicketTypeList(
+        %Param,
+        Action => $Param{Action},
+        UserID => $Param{UserID},
+    );
+    return \%Type;
 }
 
 sub _GetTos {
@@ -2247,7 +2389,7 @@ sub _GetScreenElements {
             $Title = 'New Queue'
         }
         my $QueueElements = {
-            Name     => 'NewQueueID',
+            Name     => 'QueueID',
             Title    => $Self->{LanguageObject}->Get($Title),
             Datatype => 'Text',
             Viewtype => 'Picker',
@@ -2278,7 +2420,7 @@ sub _GetScreenElements {
                 Parameters => [
                     {
                         CustomerUserID => 'CustomerUserLogin',
-                        QueueID        => 'NewQueueID',
+                        QueueID        => 'QueueID',
                     },
                 ],
             },
@@ -2301,7 +2443,7 @@ sub _GetScreenElements {
                 Parameters =>
                     {
                     CustomerUserID => 'CustomerUserLogin',
-                    QueueID        => 'NewQueueID',
+                    QueueID        => 'QueueID',
                     ServiceID      => 'ServiceID',
                     },
 
@@ -2332,7 +2474,7 @@ sub _GetScreenElements {
                 Method     => 'UsersGet',
                 Parameters => [
                     {
-                        QueueID  => 'NewQueueID',
+                        QueueID  => 'QueueID',
                         AllUsers => 1,
                     },
                 ],
@@ -2355,7 +2497,7 @@ sub _GetScreenElements {
                 Method     => 'UsersGet',
                 Parameters => [
                     {
-                        QueueID  => 'NewQueueID',
+                        QueueID  => 'QueueID',
                         AllUsers => 1,
                     },
                 ],
@@ -2369,8 +2511,8 @@ sub _GetScreenElements {
     if ( $Param{Screen} eq 'Compose' ) {
         my %ComposeDefaults = $Self->_GetComposeDefaults(
             %Param,
-            ArticleID => $Param{ArticleID},
-            TicketID  => $Param{TicketID},
+            UserID   => $Param{UserID},
+            TicketID => $Param{TicketID},
         );
 
         my $ComposeFromElements = {
@@ -2556,7 +2698,7 @@ sub _GetScreenElements {
                 Method     => 'NextStatesGet',
                 Parameters => [
                     {
-                        QueueID => 'NewQueueID',
+                        QueueID => 'QueueID',
                     },
                 ],
             },
@@ -2604,7 +2746,7 @@ sub _GetScreenElements {
                 Method     => 'PrioritiesGet',
                 Parameters => [
                     {
-                        QueueID => 'NewQueueID',
+                        QueueID => 'QueueID',
                     },
                 ],
             },
@@ -2822,146 +2964,6 @@ sub _GetScreenElements {
     return \@ScreenElements;
 }
 
-sub CustomerSearch {
-    my ( $Self, %Param ) = @_;
-
-    my %Customers = $Self->{CustomerUserObject}->CustomerSearch(
-        Search => $Param{Search},
-    );
-    return \%Customers;
-}
-
-sub UsersGet {
-    my ( $Self, %Param ) = @_;
-
-    # get users
-    my %ShownUsers       = ();
-    my %AllGroupsMembers = $Self->{UserObject}->UserList(
-        Type  => 'Long',
-        Valid => 1,
-    );
-
-    if ( $Param{NewQueueID} && !$Param{QueueID} ) {
-        $Param{QueueID} = $Param{NewQueueID};
-    }
-
-    # just show only users with selected custom queue
-    if ( $Param{QueueID} && !$Param{AllUsers} ) {
-        my @UserIDs = $Self->{TicketObject}->GetSubscribedUserIDsByQueueID(%Param);
-        for ( keys %AllGroupsMembers ) {
-            my $Hit = 0;
-            for my $UID (@UserIDs) {
-                if ( $UID eq $_ ) {
-                    $Hit = 1;
-                }
-            }
-            if ( !$Hit ) {
-                delete $AllGroupsMembers{$_};
-            }
-        }
-    }
-
-    # show all system users
-    if ( $Self->{ConfigObject}->Get('Ticket::ChangeOwnerToEveryone') ) {
-        %ShownUsers = %AllGroupsMembers;
-    }
-
-    # show all users who are rw in the queue group
-    elsif ( $Param{QueueID} ) {
-        my $GID = $Self->{QueueObject}->GetQueueGroupID( QueueID => $Param{QueueID} );
-        my %MemberList = $Self->{GroupObject}->GroupMemberList(
-            GroupID => $GID,
-            Type    => 'rw',
-            Result  => 'HASH',
-            Cached  => 1,
-        );
-        for ( keys %MemberList ) {
-            if ( $AllGroupsMembers{$_} ) {
-                $ShownUsers{$_} = $AllGroupsMembers{$_};
-            }
-        }
-    }
-    return \%ShownUsers;
-}
-
-sub NextStatesGet {
-    my ( $Self, %Param ) = @_;
-
-    if ( $Param{NewQueueID} and !$Param{QueueID} ) {
-        $Param{QueueID} = $Param{NewQueueID};
-    }
-
-    my %NextStates = ();
-    if ( $Param{QueueID} || $Param{TicketID} ) {
-        %NextStates = $Self->{TicketObject}->StateList(
-            %Param,
-            Action => $Param{Action},
-            UserID => $Param{UserID},
-        );
-    }
-    return \%NextStates;
-}
-
-sub PrioritiesGet {
-    my ( $Self, %Param ) = @_;
-
-    my %Priorities = ();
-
-    if ( $Param{NewQueueID} and !$Param{QueueID} ) {
-        $Param{QueueID} = $Param{NewQueueID}
-    }
-
-    # get priority
-    if ( $Param{QueueID} || $Param{TicketID} ) {
-        %Priorities = $Self->{TicketObject}->PriorityList(
-            %Param,
-            Action => $Param{Action},
-            UserID => $Param{UserID},
-        );
-    }
-    return \%Priorities;
-}
-
-sub ScreenActions() {
-    my ( $Self, %Param ) = @_;
-
-    my %UserPreferences = $Self->{UserObject}->GetPreferences( UserID => $Param{UserID} );
-    $Self->{UserTimeZone} = $UserPreferences{UserTimeZone};
-
-    if ( $Self->{ConfigObject}->Get('TimeZoneUser') && $Self->{UserTimeZone} ) {
-        $Self->{UserTimeObject} = Kernel::System::Time->new( %{$Self} );
-    }
-    else {
-        $Self->{UserTimeObject} = $Self->{TimeObject};
-        $Self->{UserTimeZone}   = '';
-    }
-
-    if ( $Param{Action} ) {
-        my $Result;
-        if ( $Param{Action} eq 'Phone' ) {
-            $Result = $Self->_TicketPhoneNew(%Param);
-            return $Result;
-        }
-        if ( $Param{Action} eq 'Note' || $Param{Action} eq 'Close' ) {
-            $Result = $Self->_TicketCommonActions(%Param);
-            return $Result;
-        }
-        if ( $Param{Action} eq 'Compose' ) {
-            $Result = $Self->_TicketCompose(%Param);
-            return $Result;
-        }
-        if ( $Param{Action} eq 'Move' ) {
-            $Result = $Self->_TicketMove(%Param);
-            return $Result;
-        }
-        return 'Action undefined! expected Phone, Note, Close, Compose or Move, but '
-            . $Param{Action} . ' found';
-    }
-    else {
-        return 'Need Action!'
-    }
-}
-
 sub _TicketPhoneNew {
     my ( $Self, %Param ) = @_;
 
@@ -3064,7 +3066,7 @@ sub _TicketPhoneNew {
         $Error = 'Subject invalid';
         return $Error;
     }
-    if ( !$Param{NewQueueID} ) {
+    if ( !$Param{QueueID} ) {
         $Error = 'Destination invalid';
         return $Error;
     }
@@ -3081,7 +3083,7 @@ sub _TicketPhoneNew {
     # create new ticket, do db insert
     my $TicketID = $Self->{TicketObject}->TicketCreate(
         Title        => $Param{Subject},
-        QueueID      => $Param{NewQueueID},
+        QueueID      => $Param{QueueID},
         Subject      => $Param{Subject},
         Lock         => 'unlock',
         TypeID       => $Param{TypeID},
@@ -3156,7 +3158,7 @@ sub _TicketPhoneNew {
     if ( $Param{NewOwnerID} ) {
         $NoAgentNotify = 1;
     }
-    my $QueueName = $Self->{QueueObject}->QueueLookup( QueueID => $Param{NewQueueID} );
+    my $QueueName = $Self->{QueueObject}->QueueLookup( QueueID => $Param{QueueID} );
     my $ArticleID = $Self->{TicketObject}->ArticleCreate(
         NoAgentNotify => $NoAgentNotify,
         TicketID      => $TicketID,
@@ -4261,8 +4263,8 @@ sub _TicketMove {
     }
 
     # DestQueueID lookup
-    if ( !$Param{NewQueueID} ) {
-        $Error = 'Needed NewQueueID!';
+    if ( !$Param{QueueID} ) {
+        $Error = 'Needed QueueID!';
         return $Error;
     }
 
@@ -4279,7 +4281,7 @@ sub _TicketMove {
     my $Move;
     if ( $Self->{'API3X'} ) {
         $Move = $Self->{TicketObject}->TicketQueueSet(
-            QueueID            => $Param{NewQueueID},
+            QueueID            => $Param{QueueID},
             UserID             => $Param{UserID},
             TicketID           => $Param{TicketID},
             SendNoNotification => $Param{NewUserID},
@@ -4288,7 +4290,7 @@ sub _TicketMove {
     }
     else {
         $Move = $Self->{TicketObject}->MoveTicket(
-            QueueID            => $Param{NewQueueID},
+            QueueID            => $Param{QueueID},
             UserID             => $Param{UserID},
             TicketID           => $Param{TicketID},
             SendNoNotification => $Param{NewUserID},
@@ -4508,7 +4510,7 @@ sub _TicketMove {
     }
     else {
         if ($Move) {
-            return $Param{NewQueueID};
+            return $Param{QueueID};
         }
     }
     return ($Error);
@@ -4517,9 +4519,6 @@ sub _TicketMove {
 
 sub _GetComposeDefaults {
     my ( $Self, %Param ) = @_;
-
-    #need to delete this
-    $Self->{LanguageObject} = Kernel::Language->new( %{$Self}, UserLanguage => $Param{Language} );
 
     if ( !$Param{TicketID} ) {
         return "Need TicketID";
@@ -4791,6 +4790,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.27 2010/07/11 04:49:46 cr Exp $
+$Id: iPhone.pm,v 1.28 2010/07/12 17:44:01 cr Exp $
 
 =cut
