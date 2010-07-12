@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 # --
 # scripts/backup.pl - the backup script
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: backup.pl,v 1.25 2011/01/10 15:06:19 martin Exp $
+# $Id: backup.pl,v 1.18.2.1 2010/07/12 09:30:01 bes Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -31,7 +31,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.25 $) [1];
+$VERSION = qw($Revision: 1.18.2.1 $) [1];
 
 use Getopt::Std;
 use Kernel::Config;
@@ -52,7 +52,7 @@ my $DBDump      = '';
 getopt( 'hcrtd', \%Opts );
 if ( exists $Opts{h} ) {
     print "backup.pl <Revision $VERSION> - backup script\n";
-    print "Copyright (C) 2001-2011 OTRS AG, http://otrs.org/\n";
+    print "Copyright (C) 2001-2010 OTRS AG, http://otrs.org/\n";
     print
         "usage: backup.pl -d /data_backup_dir/ [-c gzip|bzip2] [-r 30] [-t fullbackup|nofullbackup]\n";
     exit 1;
@@ -148,11 +148,8 @@ if ( $Opts{r} ) {
         $LeaveBackups{ sprintf( "%04d-%01d-%02d", $DYear, $DMonth, $DDay ) } = 1;
         $LeaveBackups{ sprintf( "%04d-%02d-%02d", $DYear, $DMonth, $DDay ) } = 1;
     }
-    my @Directories = $CommonObject{MainObject}->DirectoryRead(
-        Directory => $Opts{d},
-        Filter    => '*',
-    );
-    for my $Directory (@Directories) {
+    my @Direcroties = glob( $Opts{d} . "/*" );
+    for my $Directory (@Direcroties) {
         my $Leave = 0;
         for my $Data ( keys %LeaveBackups ) {
             if ( $Directory =~ m/$Data/ ) {
@@ -163,10 +160,7 @@ if ( $Opts{r} ) {
 
             # remove files and directory
             print "deleting old backup in $Directory ... ";
-            my @Files = $CommonObject{MainObject}->DirectoryRead(
-                Directory => $Directory,
-                Filter    => '*',
-            );
+            my @Files = glob( $Directory . '/*' );
             for my $File (@Files) {
                 if ( -e $File ) {
 
@@ -235,7 +229,7 @@ else {
 # backup datadir
 if ( $ArticleDir !~ m/\Q$Home\E/ ) {
     print "Backup $Directory/DataDir.tar.gz ... ";
-    if ( !system("tar -czf $Directory/DataDir.tar.gz $ArticleDir") ) {
+    if ( !system("tar -czf $Directory/DataDir.tar.gz .") ) {
         print "done\n";
     }
     else {
@@ -247,7 +241,7 @@ if ( $ArticleDir !~ m/\Q$Home\E/ ) {
 if ( $DB =~ m/mysql/i ) {
     print "Dump $DB rdbms ... ";
     if ($DatabasePw) {
-        $DatabasePw = "-p'$DatabasePw'";
+        $DatabasePw = "-p$DatabasePw";
     }
     if (
         !system(
