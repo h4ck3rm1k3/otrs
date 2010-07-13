@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.33 2010/07/13 17:49:43 cr Exp $
+# $Id: iPhone.pm,v 1.34 2010/07/13 18:21:15 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.33 $) [1];
+$VERSION = qw($Revision: 1.34 $) [1];
 
 =head1 NAME
 
@@ -1869,7 +1869,17 @@ sub TicketList {
 sub TicketGet {
     my ( $Self, %Param ) = @_;
 
+    my %Color = (
+        1 => '#cdcdcd',
+        2 => '#cdcdcd',
+        3 => '#cdcdcd',
+        4 => '#ffaaaa',
+        5 => '#ff505e',
+    );
+
     my %Ticket = $Self->{TicketObject}->TicketGet(%Param);
+
+    $Ticket{PriorityColor} = $Color{ $Ticket{PriorityID} };
 
     if ( $Self->{'API3X'} ) {
         my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
@@ -4876,6 +4886,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.33 2010/07/13 17:49:43 cr Exp $
+$Id: iPhone.pm,v 1.34 2010/07/13 18:21:15 cr Exp $
 
 =cut
