@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.31 2010/07/12 19:23:49 cr Exp $
+# $Id: iPhone.pm,v 1.32 2010/07/13 02:49:50 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.31 $) [1];
+$VERSION = qw($Revision: 1.32 $) [1];
 
 =head1 NAME
 
@@ -355,17 +355,6 @@ sub ScreenConfig {
     }
 
     return;
-}
-
-sub ResponsesGet {
-    my ( $Self, %Param ) = @_;
-    if ( !$Param{QueueID} ) {
-        return
-    }
-
-    # fetch all std. responses
-    my %StdResponses = $Self->{QueueObject}->GetStdResponses( QueueID => $Param{QueueID} );
-    return \%StdResponses;
 }
 
 =item Badges()
@@ -2033,6 +2022,25 @@ sub ArticleGet {
     return %Article;
 }
 
+=item ServicesGet()
+Get a Hash reference to all possible services based on a Ticket or Queue and CustomerUser
+
+    my $Result = $iPhoneObject->ServicesGet(
+        UserID          => 1,
+        QueueID         => 3,  # || TicketID Optional
+        TicketID        => 23, # || QueueID Optional
+        CustomerUserID  => "Customer",
+    );
+
+    # a result could be
+
+    $Result = [
+        1 => "Service A",
+        3 => "Service A::SubService 1",
+        2 => "Service B"
+    ],
+=cut
+
 sub ServicesGet {
     my ( $Self, %Param ) = @_;
 
@@ -2048,6 +2056,24 @@ sub ServicesGet {
     }
     return \%Service;
 }
+
+=item SLAsGet()
+Get a Hash reference to all possible SLAs based on a Service
+
+    my $Result = $iPhoneObject->SLAsGet(
+        ServiceID       => 1,
+        QueueID         => 3, || TickeTID optional
+        TicketID        => 223 || QueueID optional
+        UserID          => 1,
+    );
+
+    # a result could be
+
+    $Result = [
+        1 => "SLA Gold for Service A",
+        3 => "SLA Silver for Service A",
+    ],
+=cut
 
 sub SLAsGet {
     my ( $Self, %Param ) = @_;
@@ -2134,13 +2160,14 @@ sub PrioritiesGet {
     my %Priorities = ();
 
     # get priority
-    if ( $Param{QueueID} || $Param{TicketID} ) {
-        %Priorities = $Self->{TicketObject}->PriorityList(
-            %Param,
-            Action => $Param{Action},
-            UserID => $Param{UserID},
-        );
-    }
+    # if ( $Param{QueueID} || $Param{TicketID} ) {
+    %Priorities = $Self->{TicketObject}->PriorityList(
+        %Param,
+        Action => $Param{Action},
+        UserID => $Param{UserID},
+    );
+
+    #}
     return \%Priorities;
 }
 
@@ -2153,7 +2180,7 @@ sub CustomerSearch {
     return \%Customers;
 }
 
-sub ScreenActions() {
+sub ScreenActions {
     my ( $Self, %Param ) = @_;
 
     my %UserPreferences = $Self->{UserObject}->GetPreferences( UserID => $Param{UserID} );
@@ -2403,6 +2430,7 @@ sub _GetScreenElements {
                     {
                         CustomerUserID => 'CustomerUserLogin',
                         QueueID        => 'QueueID',
+                        TicketID       => 'TicketID',
                     },
                 ],
             },
@@ -2427,6 +2455,7 @@ sub _GetScreenElements {
                     CustomerUserID => 'CustomerUserLogin',
                     QueueID        => 'QueueID',
                     ServiceID      => 'ServiceID',
+                    TicketID       => 'TicketID',
                     },
 
             },
@@ -3134,10 +3163,11 @@ sub _TicketPhoneNew {
         }
     }
 
-    my $MimeType = 'text/plain';
-    if ( $Self->{ConfigObject}->Get('Frontend::RichText') ) {
-        $MimeType = 'text/html';
-    }
+    my $MimeType = 'text/html';
+
+    #    if ( $Self->{ConfigObject}->Get('Frontend::RichText') ) {
+    #        $MimeType = 'text/html';
+    #    }
 
     # check if new owner is given (then send no agent notify)
     my $NoAgentNotify = 0;
@@ -3584,7 +3614,7 @@ sub _TicketCommonActions {
     # add note
     my $ArticleID = '';
     if ( $Self->{Config}->{Note} || $Param{Defaults} ) {
-        my $MimeType = 'text/plain';
+        my $MimeType = 'text/html';
 
         my %User = $Self->{UserObject}->GetUserData(
             UserID => $Param{UserID},
@@ -3995,7 +4025,7 @@ sub _TicketCompose {
         }
     }
 
-    my $MimeType = 'text/plain';
+    my $MimeType = 'text/html';
 
     # send email
     my $ArticleID = $Self->{TicketObject}->ArticleSend(
@@ -4410,7 +4440,7 @@ sub _TicketMove {
 
     if ( $Param{Body} ) {
 
-        my $MimeType = 'text/plain';
+        my $MimeType = 'text/html';
 
         my %UserData = $Self->{UserObject}->GetUserData( UserID => $Param{UserID} );
 
@@ -4701,10 +4731,7 @@ sub _GetComposeDefaults {
     my $Signature  = $Data{Signature};
 
     my $ResponseFormat =
-        "$Salutation \n  $OrigFrom $Wrote: \n $Body \n $Signature \n";
-
-    # restore qdata formatting for Output replacement
-    $ResponseFormat =~ s/&quot;/"/gi;
+        "$Salutation </br> $OrigFrom $Wrote: </br> $Body </br> $Signature \n";
 
     # restore qdata formatting for Output replacement
     $ResponseFormat =~ s/&quot;/"/gi;
@@ -4776,6 +4803,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.31 2010/07/12 19:23:49 cr Exp $
+$Id: iPhone.pm,v 1.32 2010/07/13 02:49:50 cr Exp $
 
 =cut
