@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.32 2010/07/13 02:49:50 cr Exp $
+# $Id: iPhone.pm,v 1.33 2010/07/13 17:49:43 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.32 $) [1];
+$VERSION = qw($Revision: 1.33 $) [1];
 
 =head1 NAME
 
@@ -2062,8 +2062,8 @@ Get a Hash reference to all possible SLAs based on a Service
 
     my $Result = $iPhoneObject->SLAsGet(
         ServiceID       => 1,
-        QueueID         => 3, || TickeTID optional
-        TicketID        => 223 || QueueID optional
+        QueueID         => 3,  #|| TickeTID optional
+        TicketID        => 223 #|| QueueID optional
         UserID          => 1,
     );
 
@@ -2090,6 +2090,24 @@ sub SLAsGet {
     }
     return \%SLA;
 }
+
+=item UsersGet()
+Get a Hash reference to all users that has rights on a Queue or the Users that has that queue in
+the "My Queues" list
+
+    my $Result = $iPhoneObject->UsersGet(
+        QueueID         => 3,
+        AllUsers        => 1 # Optional, To get the complete list of users with rights in the queue
+        UserID          => 1,
+    );
+
+    # a result could be
+
+    $Result = [
+        1    => "OTRS Admin (root@localhost)",
+        1138 => "Amy Allen (Aayla) "
+    ],
+=cut
 
 sub UsersGet {
     my ( $Self, %Param ) = @_;
@@ -2140,6 +2158,31 @@ sub UsersGet {
     return \%ShownUsers;
 }
 
+=item NextStatesGet()
+Get a Hash reference to all possible stated based on a Ticket or Queue
+
+    my $Result = $iPhoneObject->NextStatesGet(
+        QueueID         => 3,  #|| TickeTID optional
+        TicketID        => 223 #|| QueueID optional
+        UserID          => 1,
+    );
+
+    # a result could be
+
+    $Result = [
+        1  => "new",
+        2  => "closed successful",
+        3  => "closed unsuccessful",
+        4  => "open",
+        5  => "removed"
+        6  => "pending reminder",
+        7  => "pending auto close+",
+        8  => "pending auto close-",
+        9  => "merged",
+        10 => "closed with workaround",
+    ],
+=cut
+
 sub NextStatesGet {
     my ( $Self, %Param ) = @_;
 
@@ -2154,22 +2197,53 @@ sub NextStatesGet {
     return \%NextStates;
 }
 
+=item PrioritiesGet()
+Get a Hash reference to all possible priorities
+
+    my $Result = $iPhoneObject->PrioritiesGet(
+        UserID          => 1,
+    );
+
+    # a result could be
+
+    $Result = [
+        1 => "1 very low",
+        2 => "2 low",
+        3 => "3 normal",
+        4 => "4 high",
+        5 => "5 very high",
+    ],
+=cut
+
 sub PrioritiesGet {
     my ( $Self, %Param ) = @_;
 
     my %Priorities = ();
 
     # get priority
-    # if ( $Param{QueueID} || $Param{TicketID} ) {
     %Priorities = $Self->{TicketObject}->PriorityList(
         %Param,
         Action => $Param{Action},
         UserID => $Param{UserID},
     );
 
-    #}
     return \%Priorities;
 }
+
+=item CustomerSearch()
+Get a Hash reference to all possible customers matching the search paramenter, use "*" for all
+
+    my $Result = $iPhoneObject->CustomerSearch(
+        Search          => 'sw',
+    );
+
+    # a result could be
+
+    $Result = [
+        Ray   => '"Ray Park" <rp@sw.com>',
+        David => '"David Prowse" <dp@sw.com>',
+    ],
+=cut
 
 sub CustomerSearch {
     my ( $Self, %Param ) = @_;
@@ -2676,8 +2750,9 @@ sub _GetScreenElements {
             Options  => {
                 %{ $Self->_GetNoteTypes( %Param, ) }
             },
-            Mandatory => 1,
-            Default   => $DefaultArticleTypeID,
+            Mandatory     => 1,
+            Default       => $DefaultArticleTypeID,
+            DefaultOption => $DefaultArticleType,
         };
         push @ScreenElements, $NoteElements;
     }
@@ -2717,8 +2792,9 @@ sub _GetScreenElements {
                     },
                 ],
             },
-            Mandatory => 1,
-            Default   => $DefaultStateID,
+            Mandatory     => 1,
+            Default       => $DefaultStateID,
+            DetaultOption => $DefaultState
         };
         push @ScreenElements, $StateElements;
     }
@@ -2759,14 +2835,11 @@ sub _GetScreenElements {
             DynamicOptions => {
                 Object     => 'CustomObject',
                 Method     => 'PrioritiesGet',
-                Parameters => [
-                    {
-                        QueueID => 'QueueID',
-                    },
-                ],
+                Parameters => '',
             },
-            Mandatory => 1,
-            Default   => $DefaultPriorityID,
+            Mandatory     => 1,
+            Default       => $DefaultPriorityID,
+            DefaultOption => $DefaultPriority,
         };
         push @ScreenElements, $PriorityElements;
     }
@@ -4803,6 +4876,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.32 2010/07/13 02:49:50 cr Exp $
+$Id: iPhone.pm,v 1.33 2010/07/13 17:49:43 cr Exp $
 
 =cut
