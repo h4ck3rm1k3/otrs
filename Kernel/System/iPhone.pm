@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.38 2010/07/14 18:58:42 cr Exp $
+# $Id: iPhone.pm,v 1.39 2010/07/14 21:57:14 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,14 +14,15 @@ package Kernel::System::iPhone;
 use strict;
 use warnings;
 
-use Kernel::System::Log;
+#use Kernel::System::Log;
 use Kernel::Language;
 use Kernel::System::CheckItem;
 use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
+use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.38 $) [1];
+$VERSION = qw($Revision: 1.39 $) [1];
 
 =head1 NAME
 
@@ -210,6 +211,7 @@ sub new {
     $Self->{CheckItemObject} = Kernel::System::CheckItem->new(%Param);
     $Self->{PriorityObject}  = Kernel::System::Priority->new(%Param);
     $Self->{SystemAddress}   = Kernel::System::SystemAddress->new(%Param);
+    $Self->{PackageObject}   = Kernel::System::Package->new(%Param);
 
     my $SystemVersion = $Self->{ConfigObject}->Get('Version');
 
@@ -2755,6 +2757,29 @@ sub ScreenActions {
         );
         return;
     }
+}
+
+sub VersionGet() {
+    my ( $Self, %Param ) = @_;
+
+    PACKAGE:
+    for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
+        if ( $Package->{Name}->{content} eq 'iPhoneHandle' ) {
+            my %iPhonePackage = (
+                Name    => $Package->{Name}->{Content},
+                Version => $Package->{Version}->{Content},
+                Vendor  => $Package->{Vendor}->{Content},
+                URL     => $Package->{URL}->{Content},
+            );
+            return %iPhonePackage;
+            last PACKAGE;
+        }
+    }
+    $Self->{LogObject}->Log(
+        Priority => 'error',
+        Message  => 'No iPhoneHandle Package found, is this a development enviroment?',
+    );
+    return;
 }
 
 # internal subroutines
@@ -5462,6 +5487,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.38 2010/07/14 18:58:42 cr Exp $
+$Id: iPhone.pm,v 1.39 2010/07/14 21:57:14 cr Exp $
 
 =cut
