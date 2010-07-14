@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.39 2010/07/14 21:57:14 cr Exp $
+# $Id: iPhone.pm,v 1.40 2010/07/14 22:22:08 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.39 $) [1];
+$VERSION = qw($Revision: 1.40 $) [1];
 
 =head1 NAME
 
@@ -2764,14 +2764,14 @@ sub VersionGet() {
 
     PACKAGE:
     for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
-        if ( $Package->{Name}->{content} eq 'iPhoneHandle' ) {
+        if ( $Package->{Name}->{Content} eq 'iPhoneHandle' ) {
             my %iPhonePackage = (
                 Name    => $Package->{Name}->{Content},
                 Version => $Package->{Version}->{Content},
                 Vendor  => $Package->{Vendor}->{Content},
                 URL     => $Package->{URL}->{Content},
             );
-            return %iPhonePackage;
+            return \%iPhonePackage;
             last PACKAGE;
         }
     }
@@ -5487,6 +5487,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.39 2010/07/14 21:57:14 cr Exp $
+$Id: iPhone.pm,v 1.40 2010/07/14 22:22:08 cr Exp $
 
 =cut
