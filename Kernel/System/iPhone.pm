@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.35 2010/07/13 20:01:44 cr Exp $
+# $Id: iPhone.pm,v 1.36 2010/07/14 03:34:55 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.35 $) [1];
+$VERSION = qw($Revision: 1.36 $) [1];
 
 =head1 NAME
 
@@ -206,10 +206,10 @@ sub new {
         $Self->{$_} = $Param{$_} || die "Got no $_! object";
     }
 
-    $Self->{LogObject} = Kernel::System::Log->new(
-        LogPrefix => 'iPhoneHandle',
-        %{$Self},
-    );
+    #    $Self->{LogObject} = Kernel::System::Log->new(
+    #        LogPrefix => 'iPhoneHandle',
+    #        %{$Self},
+    #    );
 
     $Self->{CheckItemObject} = Kernel::System::CheckItem->new(%Param);
     $Self->{PriorityObject}  = Kernel::System::Priority->new(%Param);
@@ -229,6 +229,283 @@ sub new {
     }
     return $Self;
 }
+
+=item ScreenConfig()
+Get fields defintion for each screen (Phone, Note, Close, Compose or Move)
+
+Phone   (New phone ticket)
+Note    (Add a note to a Ticket)
+Close   (Close a tcket)
+Compose (Reply or response a ticket)
+Move    (Change ticket queue)
+
+Note, Close, Compose and Move, requires TicketID argument
+
+The retunig fields deppends on the Screen Argument and on the Settings in sysconfig for the iPhone
+and also general settings
+
+    my @Result = $iPhoneObject->ScreenConfig(
+        Screen => "Phone",
+    );
+
+    my @Result = $iPhoneObject->ScreenConfig(
+        Screen   => "Note",
+        TicketID => 224,
+    );
+
+    # a result could be
+
+    @Result = (
+        Actions => {
+            Parameters => {
+                Action => "Phone",
+            },
+            Method => "ScreenActions",
+            Object => "CustomObject"},
+            Title => "New Phone Ticket"
+       },
+        Elements => (
+            {
+                Name       => "TypeID",
+                Title      => "Type",
+                Datatype   => "Text",
+                Viewtype   => "Picker",
+                Options    => {
+                    1=> "default",
+                    2=> "RfC",
+                    3=> "Incident",
+                    4=> "Incident::ServiceRequest",
+                    5=> "Incident::Disaster"
+                    6=> "Problem",
+                    7=> "Problem::KnownError",
+                    8=> "Problem::PendingRfC",
+                },
+                Default   =>"",
+                Mandatory => 1,
+            },
+            {
+                Name           => "CustomerUserLogin",
+                Title          => "From customer",
+                Datatype       => "Text",
+                Viewtype       =>"AutoCompletion",
+                DynamicOptions => {
+                    Object     => "CustomObject",
+                    Method     =>"CustomerSearch",
+                    Parameters =>
+                        {
+                            Search => "CustomerUserLogin",
+                        },
+                },
+                Default        => "",
+                Mandatory      => 1,
+            },
+            {
+                Name      => "QueueID",
+                Title     => "To queue",
+                Datatype  => "Text",
+                Viewtype  => "Picker",
+                Options   =>{
+                      => "-",
+                    1 => "Postmaster",
+                    2 => "Raw",
+                    3 => "Junk",
+                    4 => "Misc",
+                },
+                Default   => "",
+                Mandatory => 1,
+            },
+            {
+                Name           => "ServiceID",
+                Title          => "Service",
+                Datatype       => "Text",
+                Viewtype       =>"Picker",
+                DynamicOptions => {
+                    Object     => "CustomObject"
+                    Method     => "ServicesGet",
+                    Parameters => {
+                        CustomerUserID => "CustomerUserLogin",
+                        QueueID        => "QueueID",
+                        TicketID       => "TicketID",
+                    },
+                },
+                Mandatory      => 0,
+                Default        => "",
+            },
+            {
+                Name           => "SLAID",
+                Title          => "SLA",
+                Datatype       => "Text",
+                Viewtype       => "Picker",
+                DynamicOptions => {
+                    Object     => "CustomObject",
+                    Method     => "SLAsGet",
+                    Parameters => {
+                        CustomerUserID => "CustomerUserLogin",
+                        QueueID        => "QueueID",
+                        ServiceID      => "ServiceID",
+                        TicketID       => "TicketID".
+                    },
+                },
+                Default        => "",
+                Mandatory      => 0,
+            },
+            {
+                Name           => "OwnerID",
+                Title          => "Owner",
+                Datatype       => "Text",
+                Viewtype       =>"Picker",
+                DynamicOptions => {
+                    Parameters => {
+                        QueueID  => "QueueID",
+                        AllUsers => 1,
+                    },
+                    Method     => "UsersGet",
+                    Object     => "CustomObject",
+                },
+                Default        => "",
+                Mandatory      => 0,
+            },
+            {
+                Name           => "ResponsibleID",
+                Title          => "Responsible",
+                Datatype       => "Text",
+                Viewtype       => "Picker",
+                DynamicOptions => {
+                    Object     => "CustomObject",
+                    Method     => "UsersGet",
+                    Parameters => {
+                        QueueID  => "QueueID",
+                        AllUsers => 1
+                    },
+                },
+                Default        => "",
+                Mandatory      => 0,
+            },
+            {
+                Name      => "Subject",
+                Title     => "Subject",
+                Datatype  => "Text",
+                Viewtype  => "Input",
+                Max       => 250,
+                Min       => 1,
+                Default   => "",
+                Mandatory => 1,
+            },
+            {
+                Name      => "Body",
+                Title     => "Text",
+                Datatype  => "Text",
+                Viewtype  => "TextArea",
+                Max       => 20000,
+                Min       => 1,
+                Default   => "",
+                Mandatory => 1,
+            },
+            {
+                Name      => "CustomerID",
+                Title     => "CustomerID",
+                Datatype  => "Text",
+                Viewtype  => "Input",
+                Max       => 150,
+                Min       => 1,
+                Default   => "",
+                Mandatory => 0,
+            },
+            {
+                Name           => "StateID",
+                Title          => "Next Ticket State",
+                Datatype       => "Text",
+                Viewtype       => "Picker",
+                DynamicOptions => {
+                    Method     => "NextStatesGet",
+                    Object     => "CustomObject",
+                    Parameters => {
+                        QueueID => "QueueID",
+                    },
+                },
+                Default        => "4",
+                DefaultOption  => "open",
+                Mandatory      => 1,
+            },
+            {
+                Name      => "PendingDate",
+                Title     => "Pending Date (for pending* states)"
+                Datatype  => "DateTime",
+                Viewtype  => "Picker",
+                Default   => "",
+                Mandatory => 0,
+            },
+            {
+                Name           => "PriorityID",
+                Title          => "Priority"
+                Datatype       => "Text",
+                Viewtype       => "Picker",
+                DynamicOptions => {
+                    Object     => "CustomObject"
+                    Method     => "PrioritiesGet",
+                    Parameters => "",
+                },
+                DefaultOption  => "3 normal",
+                Default        => "3",
+                Mandatory      => 1,
+            },
+            {
+                Name        => "TicketFreeText1",
+                FreeTextKey => {
+                    Device  => "Device",
+                    Product => "Product"
+                },
+                Title       => "Product",
+                Datatype    => "Text",
+                Viewtype    => "Picker",
+                Options     => {
+                             => "-",
+                    Phone    => "Phone",
+                    Notebook => "Notebook",
+                    PC       => "PC",
+                },
+                Default     => "Notebook",
+                Mandatory   => 0,
+            },
+            {
+                Name      => "TicketFreeTime1",
+                Title     => "Termin1",
+                Datatype  => "DateTime",
+                Viewtype  => "Picker",
+                Default   => "2010-07-13 15:18:24",
+                Mandatory => 0,
+            },
+            {
+                Name        => "ArticleFreeText1",
+                FreeTextKey => {
+                    Work => "Work",
+                },
+                Title       => '',
+                Datatype    => "Text",
+                Viewtype    => "Picker",
+                Options     => {
+                               => "-",
+                    Bugfix     => "Bugfix",
+                    Consulting => "Consulting",
+                    Research   => "Research",
+                },
+                Default     => '',
+                Mandatory   => 0,
+            },
+            {
+                Name => "TimeUnits",
+                Title => "Time units (work units)",
+                Datatype => "Numeric",
+                Viewtype => "Input",
+                Max => 10,
+                Min => 1,
+                Default => "",
+                Mandatory => 0,
+            },
+        ),
+    );
+
+=cut
 
 sub ScreenConfig {
     my ( $Self, %Param ) = @_;
@@ -2282,25 +2559,45 @@ sub ScreenActions {
         my $Result;
         if ( $Param{Action} eq 'Phone' ) {
             $Result = $Self->_TicketPhoneNew(%Param);
-            return $Result;
+            if ($Result) {
+                return $Result;
+            }
+            return;
         }
         if ( $Param{Action} eq 'Note' || $Param{Action} eq 'Close' ) {
             $Result = $Self->_TicketCommonActions(%Param);
-            return $Result;
+            if ($Result) {
+                return $Result;
+            }
+            return;
         }
         if ( $Param{Action} eq 'Compose' ) {
             $Result = $Self->_TicketCompose(%Param);
-            return $Result;
+            if ($Result) {
+                return $Result;
+            }
+            return;
         }
         if ( $Param{Action} eq 'Move' ) {
             $Result = $Self->_TicketMove(%Param);
-            return $Result;
+            if ($Result) {
+                return $Result;
+            }
+            return;
         }
-        return 'Action undefined! expected Phone, Note, Close, Compose or Move, but '
-            . $Param{Action} . ' found';
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'Action undefined! expected Phone, Note, Close, Compose or Move, '
+                . 'but ' . $Param{Action} . ' found',
+        );
+        return;
     }
     else {
-        return 'Need Action!'
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'No Action given! Please contact the admin.',
+        );
+        return;
     }
 }
 
@@ -2610,8 +2907,8 @@ sub _GetScreenElements {
             TicketID => $Param{TicketID},
         );
 
-        if ( $ComposeDefaults{Error} ) {
-            return $ComposeDefaults{Error};
+        if ( !%ComposeDefaults ) {
+            return;
         }
 
         my $ComposeFromElements = {
@@ -3067,7 +3364,6 @@ sub _TicketPhoneNew {
 
     $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketPhone');
 
-    my $Error;
     my %StateData = ();
     if ( $Param{StateID} ) {
         %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
@@ -3103,16 +3399,22 @@ sub _TicketPhoneNew {
     # check pending date
     if ( $StateData{TypeName} && $StateData{TypeName} =~ /^pending/i ) {
         if ( !$Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} ) ) {
-            $Error = "Date invalid";
-            return $Error;
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => 'Date invalid',
+            );
+            return;
         }
         if (
             $Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} )
             < $Self->{TimeObject}->SystemTime()
             )
         {
-            $Error = "Date invalid";
-            return $Error;
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => 'Date invalid',
+            );
+            return;
         }
     }
 
@@ -3126,8 +3428,11 @@ sub _TicketPhoneNew {
             && $Param{"TicketFreeText$_"} eq ''
             )
         {
-            $Error = "TicketFreeTextField$_ invalid";
-            retrun $Error;
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "TicketFreeTextField$_ invalid",
+            );
+            return;
         }
     }
 
@@ -3152,21 +3457,33 @@ sub _TicketPhoneNew {
     # check email address
     for my $Email ( Mail::Address->parse( $CustomerUserData{UserEmail} ) ) {
         if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
-            $Error = 'From invalid' . $Self->{CheckItemObject}->CheckError();
-            return $Error;
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => 'From invalid' . $Self->{CheckItemObject}->CheckError(),
+            );
+            return;
         }
     }
     if ( !$Param{CustomerUserLogin} ) {
-        $Error = 'From invalid';
-        return $Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'From invalid',
+        );
+        return;
     }
     if ( !$Param{Subject} ) {
-        $Error = 'Subject invalid';
-        return $Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'Subject invalid',
+        );
+        return;
     }
     if ( !$Param{QueueID} ) {
-        $Error = 'Destination invalid';
-        return $Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'Destination invalid',
+        );
+        return;
     }
     if (
         $Self->{ConfigObject}->Get('Ticket::Service')
@@ -3174,8 +3491,11 @@ sub _TicketPhoneNew {
         && !$Param{ServiceID}
         )
     {
-        $Error = 'Service invalid';
-        return $Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'Service invalid',
+        );
+        return;
     }
 
     # create new ticket, do db insert
@@ -3195,7 +3515,11 @@ sub _TicketPhoneNew {
         UserID       => $Param{UserID},
     );
     if ( !$TicketID ) {
-        return 'Error No ticket created';
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'Error: No ticket created! Pleae contact admin',
+        );
+        return;
     }
 
     # set ticket free text
@@ -3412,14 +3736,17 @@ sub _TicketPhoneNew {
         return $TicketID;
     }
     else {
-        return 'Error no Article was created';
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'Error: no article was created! Please contact the admin',
+        );
+        return;
     }
 }
 
 sub _TicketCommonActions {
     my ( $Self, %Param ) = @_;
 
-    my $Error;
     $Self->{Config}
         = $Self->{ConfigObject}->Get( 'iPhone::Frontend::AgentTicket' . $Param{Action} );
 
@@ -3433,8 +3760,11 @@ sub _TicketCommonActions {
 
     # check needed stuff
     if ( !$Param{TicketID} ) {
-        $Error = 'No TicketID is given! Please contact the admin.';
-        return $Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'No TicketID is given! Please contact the admin.',
+        );
+        return;
     }
 
     # check permissions
@@ -3456,8 +3786,11 @@ sub _TicketCommonActions {
 
     # error screen, don't show ticket
     if ( !$Access ) {
-        $Error = "You need $Self->{Config}->{Permission} permissions!";
-        return $Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "You need $Self->{Config}->{Permission} permissions!",
+        );
+        return;
     }
 
     my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
@@ -3506,9 +3839,12 @@ sub _TicketCommonActions {
                 OwnerID  => $Param{UserID},
             );
             if ( !$AccessOk ) {
-                $Error
-                    = 'Sorry, you need to be the owner to do this action! Please change the owner first.';
-                return $Error;
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message  => 'Sorry, you need to be the owner to do this action! '
+                        . 'Please change the owner first.',
+                );
+                return;
             }
         }
     }
@@ -3538,16 +3874,22 @@ sub _TicketCommonActions {
     # check pending date
     if ( $StateData{TypeName} && $StateData{TypeName} =~ /^pending/i ) {
         if ( !$Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} ) ) {
-            $Error = "Date invalid";
-            return $Error;
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => 'Date invalid',
+            );
+            return;
         }
         if (
             $Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} )
             < $Self->{TimeObject}->SystemTime()
             )
         {
-            $Error = "Date invalid";
-            return $Error;
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => 'Date invalid',
+            );
+            return;
         }
     }
 
@@ -3555,14 +3897,20 @@ sub _TicketCommonActions {
 
         # check subject
         if ( !$Param{Subject} ) {
-            $Error = 'SubjectInvalid';
-            return $Error;
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => 'Subject Invalid',
+            );
+            return;
         }
 
         # check body
         if ( !$Param{Body} ) {
-            $Error = 'BodyInvalid';
-            return $Error;
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => 'Body Invalid',
+            );
+            return;
         }
     }
 
@@ -3570,8 +3918,11 @@ sub _TicketCommonActions {
     for my $Count ( 1 .. 16 ) {
         next if $Self->{Config}->{TicketFreeText}->{$Count} ne 2;
         next if $Param{"TicketFreeText$Count"} ne '';
-        $Error = "TicketFreeTextField$Count invalid";
-        return $Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "TicketFreeTextField$Count invalid",
+        );
+        return;
     }
 
     #check if Title
@@ -3723,7 +4074,11 @@ sub _TicketCommonActions {
         );
 
         if ( !$ArticleID ) {
-            return "Error no article was created";
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => 'Error: no article was created! Please contact the admin.',
+            );
+            return;
         }
 
         # time accounting
@@ -3944,14 +4299,16 @@ sub _TicketCommonActions {
 sub _TicketCompose {
     my ( $Self, %Param ) = @_;
 
-    my $Error;
     $Self->{Config}
         = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketCompose');
 
     # check needed stuff
     if ( !$Param{TicketID} ) {
-        $Error = 'No TicketID is given! Please contact the admin.';
-        return $Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'No TicketID is given! Please contact the admin.',
+        );
+        return;
     }
 
     # check permissions
@@ -3973,8 +4330,11 @@ sub _TicketCompose {
 
     # error screen, don't show ticket
     if ( !$Access ) {
-        $Error = 'You need $Self->{Config}->{Permission} permissions!';
-        return $Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "You need $Self->{Config}->{Permission} permissions!",
+        );
+        return;
     }
     my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
 
@@ -4025,9 +4385,12 @@ sub _TicketCompose {
                 OwnerID  => $Param{UserID},
             );
             if ( !$AccessOk ) {
-                $Error
-                    = 'Sorry, you need to be the owner to do this action! Please change the owner first.';
-                return $Error;
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message  => "Sorry, you need to be the owner to do this action! "
+                        . "Please change the owner first.",
+                );
+                return;
             }
         }
     }
@@ -4055,16 +4418,22 @@ sub _TicketCompose {
     # check pending date
     if ( $StateData{TypeName} && $StateData{TypeName} =~ /^pending/i ) {
         if ( !$Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} ) ) {
-            $Error = "Date invalid";
-            return $Error;
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => 'Date invalid',
+            );
+            return;
         }
         if (
             $Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} )
             < $Self->{TimeObject}->SystemTime()
             )
         {
-            $Error = "Date invalid";
-            return $Error;
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => 'Date invalid',
+            );
+            return;
         }
     }
 
@@ -4075,8 +4444,11 @@ sub _TicketCompose {
             && $Param{"TicketFreeText$_"} eq ''
             )
         {
-            $Error = "TicketFreeTextField$_ invalid";
-            return $Error
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "TicketFreeTextField$_ invalid",
+            );
+            return;
         }
     }
 
@@ -4085,8 +4457,12 @@ sub _TicketCompose {
         next if !$Param{$Line};
         for my $Email ( Mail::Address->parse( $Param{$Line} ) ) {
             if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
-                $Error = "$Line invalid " . $Self->{CheckItemObject}->CheckError();
-                return $Error;
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message  => "$Line invalid "
+                        . $Self->{CheckItemObject}->CheckError(),
+                );
+                return;
             }
         }
     }
@@ -4134,7 +4510,11 @@ sub _TicketCompose {
 
     # error page
     if ( !$ArticleID ) {
-        return "Error no Article created";
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'Error no Article created! Please contact the admin',
+        );
+        return;
     }
 
     # time accounting
@@ -4279,12 +4659,14 @@ sub _TicketCompose {
 sub _TicketMove {
     my ( $Self, %Param ) = @_;
 
-    my $Error;
-
     # check needed stuff
     for (qw(TicketID)) {
         if ( !$Param{$_} ) {
-            return "Need TicketID";
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "No $_ is given! Please contact the admin.",
+            );
+            return;
         }
     }
 
@@ -4310,7 +4692,11 @@ sub _TicketMove {
 
     # error screen, don't show ticket
     if ( !$Access ) {
-        return "No Permission";
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "You need $Self->{Config}->{Permission} permissions!",
+        );
+        return;
     }
 
     # check if ticket is locked
@@ -4325,9 +4711,12 @@ sub _TicketMove {
         }
     }
     if ( !$Locked ) {
-        $Error = "Sorry, you need to be the owner to do this action! "
-            . "Please change the owner first.";
-        return $Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Sorry, you need to be the owner to do this action! "
+                . "Please change the owner first.",
+        );
+        return;
     }
 
     # ticket attributes
@@ -4356,20 +4745,30 @@ sub _TicketMove {
             && $Param{"TicketFreeText$_"} eq ''
             )
         {
-            $Error = "TicketFreeTextField$_ invalid";
-            return $Error;
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "TicketFreeTextField$_ invalid",
+            );
+            return;
         }
     }
 
     # DestQueueID lookup
     if ( !$Param{QueueID} ) {
-        $Error = 'Needed QueueID!';
-        return $Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "No QueueID is given! Please contact the admin.",
+        );
+        return;
     }
 
     # check new user
     if ( !$Param{OwnerID} ) {
-        $Error = 'Needed OwnerID';
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "No OwnerID is given! Please contact the admin.",
+        );
+        return;
     }
     else {
         $Param{NewUserID} = $Param{OwnerID};
@@ -4397,7 +4796,11 @@ sub _TicketMove {
         );
     }
     if ( !$Move ) {
-        return "Error: not moved";
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Error: ticket not moved! Please contact the admin.",
+        );
+        return;
     }
 
     # set priority
@@ -4541,6 +4944,14 @@ sub _TicketMove {
             HistoryComment => '%%Move',
             NoAgentNotify  => 1,
         );
+
+        if ( !$ArticleID ) {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Error: Can't create an article for the moved ticket",
+            );
+            return;
+        }
     }
 
     # set ticket free text
@@ -4612,18 +5023,19 @@ sub _TicketMove {
             return $Param{QueueID};
         }
     }
-    return ($Error);
+    return;
 
 }
 
 sub _GetComposeDefaults {
     my ( $Self, %Param ) = @_;
 
-    my %Error;
-
     if ( !$Param{TicketID} ) {
-        $Error{Error} = "Need TicketID";
-        return %Error;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'No TicketID given! Please contact the admin.',
+        );
+        return;
     }
 
     my %ComposeData;
@@ -4831,14 +5243,22 @@ sub _GetComposeDefaults {
         next if !$Data{$Line};
         for my $Email ( Mail::Address->parse( $Data{$Line} ) ) {
             if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
-                $Data{$Line} .= " " . $Line . " Invalid" . " ServerError";
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message  => $Line . " Invalid" . " ServerError",
+                );
+                return;
             }
         }
     }
     if ( $Data{From} ) {
         for my $Email ( Mail::Address->parse( $Data{From} ) ) {
             if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
-                $Data{From} .= " From Invalid " . $Self->{CheckItemObject}->CheckError();
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message  => " From Invalid " . $Self->{CheckItemObject}->CheckError(),
+                );
+                return;
             }
         }
     }
@@ -4886,6 +5306,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.35 2010/07/13 20:01:44 cr Exp $
+$Id: iPhone.pm,v 1.36 2010/07/14 03:34:55 cr Exp $
 
 =cut
