@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.36 2010/07/14 03:34:55 cr Exp $
+# $Id: iPhone.pm,v 1.37 2010/07/14 03:54:00 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.36 $) [1];
+$VERSION = qw($Revision: 1.37 $) [1];
 
 =head1 NAME
 
@@ -2711,7 +2711,7 @@ sub _GetScreenElements {
         );
         my $TitleDefault;
         if ( $TicketData{Title} ) {
-            $TitleDefault = $TicketData{Title};
+            $TitleDefault = $TicketData{Title} || '';
         }
 
         my $TitleElements = {
@@ -2722,7 +2722,7 @@ sub _GetScreenElements {
             Min       => 1,
             Max       => 200,
             Mandatory => 1,
-            Default   => $TitleDefault,
+            Default   => $TitleDefault || '',
         };
         push @ScreenElements, $TitleElements;
     }
@@ -2920,7 +2920,7 @@ sub _GetScreenElements {
             Max       => 50,
             Mandatory => 1,
             Readonly  => 1,
-            Default   => $ComposeDefaults{From},
+            Default   => $ComposeDefaults{From} || '',
         };
         push @ScreenElements, $ComposeFromElements;
 
@@ -2932,7 +2932,7 @@ sub _GetScreenElements {
             Min       => 1,
             Max       => 50,
             Mandatory => 0,
-            Default   => $ComposeDefaults{To},
+            Default   => $ComposeDefaults{To} || '',
         };
         push @ScreenElements, $ComposeToElements;
 
@@ -2944,7 +2944,7 @@ sub _GetScreenElements {
             Min       => 1,
             Max       => 50,
             Mandatory => 0,
-            Default   => $ComposeDefaults{Cc},
+            Default   => $ComposeDefaults{Cc} || '',
         };
         push @ScreenElements, $ComposeCcElements;
 
@@ -2956,7 +2956,7 @@ sub _GetScreenElements {
             Min       => 1,
             Max       => 50,
             Mandatory => 0,
-            Default   => $ComposeDefaults{Bcc},
+            Default   => $ComposeDefaults{Bcc} || '',
         };
         push @ScreenElements, $ComposeBccElements;
 
@@ -2968,7 +2968,7 @@ sub _GetScreenElements {
             Min       => 1,
             Max       => 250,
             Mandatory => 1,
-            Default   => $ComposeDefaults{Subject},
+            Default   => $ComposeDefaults{Subject} || '',
         };
         push @ScreenElements, $SubjectElements;
 
@@ -2980,7 +2980,7 @@ sub _GetScreenElements {
             Min       => 1,
             Max       => 20_000,
             Mandatory => 1,
-            Default   => $ComposeDefaults{Body},
+            Default   => $ComposeDefaults{Body} || '',
         };
         push @ScreenElements, $BodyElements;
     }
@@ -3000,7 +3000,7 @@ sub _GetScreenElements {
             Min       => 1,
             Max       => 250,
             Mandatory => 1,
-            Default   => $DefaultSubject,
+            Default   => $DefaultSubject || '',
         };
         push @ScreenElements, $SubjectElements;
     }
@@ -3058,8 +3058,8 @@ sub _GetScreenElements {
                 %{ $Self->_GetNoteTypes( %Param, ) }
             },
             Mandatory     => 1,
-            Default       => $DefaultArticleTypeID,
-            DefaultOption => $DefaultArticleType,
+            Default       => $DefaultArticleTypeID || '',
+            DefaultOption => $DefaultArticleType || '',
         };
         push @ScreenElements, $NoteElements;
     }
@@ -3100,8 +3100,8 @@ sub _GetScreenElements {
                 ],
             },
             Mandatory     => 1,
-            Default       => $DefaultStateID,
-            DefaultOption => $DefaultState
+            Default       => $DefaultStateID || '',
+            DefaultOption => $DefaultState || '',
         };
         push @ScreenElements, $StateElements;
     }
@@ -3145,8 +3145,8 @@ sub _GetScreenElements {
                 Parameters => '',
             },
             Mandatory     => 1,
-            Default       => $DefaultPriorityID,
-            DefaultOption => $DefaultPriority,
+            Default       => $DefaultPriorityID || '',
+            DefaultOption => $DefaultPriority || '',
         };
         push @ScreenElements, $PriorityElements;
     }
@@ -3205,7 +3205,7 @@ sub _GetScreenElements {
                     Viewtype    => $ViewType,
                     Options     => @Options,
                     Mandatory   => $Mandatory,
-                    Default     => $Default,
+                    Default     => $Default || '',
                     }
             }
             else {
@@ -3218,7 +3218,7 @@ sub _GetScreenElements {
                     Min         => 1,
                     Max         => 200,
                     Mandatory   => $Mandatory,
-                    Default     => $Default,
+                    Default     => $Default || '',
                     }
             }
 
@@ -3261,7 +3261,7 @@ sub _GetScreenElements {
                 Datatype  => 'DateTime',
                 Viewtype  => 'Picker',
                 Mandatory => $Mandatory,
-                Default   => $DefaultTimeFormated,
+                Default   => $DefaultTimeFormated || '',
             };
             push @ScreenElements, $FreeTimeElement;
         }
@@ -3321,7 +3321,7 @@ sub _GetScreenElements {
                     Viewtype    => $ViewType,
                     Options     => @Options,
                     Mandatory   => $Mandatory,
-                    Default     => $Default,
+                    Default     => $Default || '',
                     }
             }
             else {
@@ -3334,7 +3334,7 @@ sub _GetScreenElements {
                     Min         => 1,
                     Max         => 200,
                     Mandatory   => $Mandatory,
-                    Default     => $Default,
+                    Default     => $Default || '',
                     }
             }
 
@@ -5306,6 +5306,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.36 2010/07/14 03:34:55 cr Exp $
+$Id: iPhone.pm,v 1.37 2010/07/14 03:54:00 cr Exp $
 
 =cut
