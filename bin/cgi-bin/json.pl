@@ -3,7 +3,7 @@
 # bin/cgi-bin/json.pl - json handle
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: json.pl,v 1.10 2010/07/06 06:11:21 cr Exp $
+# $Id: json.pl,v 1.11 2010/07/14 03:30:46 cr Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -53,7 +53,7 @@ use Kernel::System::iPhone;
 use Kernel::System::Web::Request;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.11 $) [1];
 
 my $Self = Core->new();
 print "Content-Type: text/plain; \n";
@@ -210,14 +210,20 @@ sub Dispatch {
             %Param,
             %ParamFixed,
         );
-        return $Self->Result( \@Result );
+        if (@Result) {
+            return $Self->Result( \@Result );
+        }
+        return $Self->Result();
     }
     else {
         my @Result = $Self->{$Object}->$Method(
             %Param,
             %ParamFixed,
         );
-        return $Self->Result( \@Result );
+        if (@Result) {
+            return $Self->Result( \@Result );
+        }
+        return $Self->Result();
     }
 }
 
