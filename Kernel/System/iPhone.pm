@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.40 2010/07/14 22:22:08 cr Exp $
+# $Id: iPhone.pm,v 1.41 2010/07/14 22:32:39 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.40 $) [1];
+$VERSION = qw($Revision: 1.41 $) [1];
 
 =head1 NAME
 
@@ -2759,8 +2759,34 @@ sub ScreenActions {
     }
 }
 
-sub VersionGet() {
+=item VersionGet()
+Get a Hash reference with information about the otrs iPhone Package extension
+
+    my $Resut = $iPhoneObject->VersionGet(
+        UserID => 1;
+    );
+
+    a resutl could be
+
+    $Result [
+        Name    => "iPhoneHandle"
+        Version => "0.9.2",
+        Vendor  => "OTRS AG",
+        URL     => "L<http://otrs.org/>",
+    ];
+
+=cut
+
+sub VersionGet {
     my ( $Self, %Param ) = @_;
+
+    if ( !$Param{UserID} ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'No UserID given! Please contact the admin.',
+        );
+        return;
+    }
 
     PACKAGE:
     for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
@@ -5487,6 +5513,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.40 2010/07/14 22:22:08 cr Exp $
+$Id: iPhone.pm,v 1.41 2010/07/14 22:32:39 cr Exp $
 
 =cut
