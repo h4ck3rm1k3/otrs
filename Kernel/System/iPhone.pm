@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.37 2010/07/14 03:54:00 cr Exp $
+# $Id: iPhone.pm,v 1.38 2010/07/14 18:58:42 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.37 $) [1];
+$VERSION = qw($Revision: 1.38 $) [1];
 
 =head1 NAME
 
@@ -39,154 +39,155 @@ All iPhone functions.
 
 =item new()
 
-    create an object
+create an object
 
-        use Kernel::Config;
-        use Kernel::System::Encode;
-        use Kernel::System::Log;
-        use Kernel::System::Time;
-        use Kernel::System::Main;
-        use Kernel::System::DB;
-        use Kernel::System::User;
-        use Kernel::System::Group;
-        use Kernel::System::Queue;
-        use Kernel::System::Service;
-        use Kernel::System::Type;
-        use Kernel::System::State;
-        use Kernel::System::Lock;
-        use Kernel::System::SLA;
-        use Kernel::System::CustomerUser;
-        use Kernel::System::Ticket;
-        use Kernel::System::LinkObject;
+    use Kernel::Config;
+    use Kernel::System::Encode;
+    use Kernel::System::Log;
+    use Kernel::System::Time;
+    use Kernel::System::Main;
+    use Kernel::System::DB;
+    use Kernel::System::User;
+    use Kernel::System::Group;
+    use Kernel::System::Queue;
+    use Kernel::System::Service;
+    use Kernel::System::Type;
+    use Kernel::System::State;
+    use Kernel::System::Lock;
+    use Kernel::System::SLA;
+    use Kernel::System::CustomerUser;
+    use Kernel::System::Ticket;
+    use Kernel::System::LinkObject;
+    use Kernel::System::iPhone;
 
-        my $ConfigObject = Kernel::Config->new();
-        my $EncodeObject = Kernel::System::Encode->new(
-            ConfigObject => $ConfigObject,
-        );
-        my $LogObject = Kernel::System::Log->new(
-            ConfigObject => $ConfigObject,
-            EncodeObject => $EncodeObject,
-        );
-        my $TimeObject = Kernel::System::Time->new(
-            ConfigObject => $ConfigObject,
-            LogObject    => $LogObject,
-        );
-        my $MainObject = Kernel::System::Main->new(
-            ConfigObject => $ConfigObject,
-            EncodeObject => $EncodeObject,
-            LogObject    => $LogObject,
-        );
-        my $DBObject = Kernel::System::DB->new(
-            ConfigObject => $ConfigObject,
-            EncodeObject => $EncodeObject,
-            LogObject    => $LogObject,
-            MainObject   => $MainObject,
-        );
-        my $UserObject = Kernel::System::User->new(
-            ConfigObject => $ConfigObject,
-            LogObject    => $LogObject,
-            MainObject   => $MainObject,
-            TimeObject   => $TimeObject,
-            DBObject     => $DBObject,
-            EncodeObject => $EncodeObject,
-        );
-        my $GroupObject = Kernel::System::Group->new(
-            ConfigObject => $ConfigObject,
-            LogObject    => $LogObject,
-            DBObject     => $DBObject,
-            MainObject   => $MainObject,
-            EncodeObject => $EncodeObject,
-        );
-        my $QueueObject = Kernel::System::Queue->new(
-            ConfigObject        => $ConfigObject,
-            LogObject           => $LogObject,
-            DBObject            => $DBObject,
-            MainObject          => $MainObject,
-            EncodeObject        => $EncodeObject,
-            GroupObject         => $GroupObject, # if given
-            CustomerGroupObject => $CustomerGroupObject, # if given
-        );
-        my $ServiceObject = Kernel::System::Service->new(
-            ConfigObject => $ConfigObject,
-            EncodeObject => $EncodeObject,
-            LogObject    => $LogObject,
-            DBObject     => $DBObject,
-            MainObject   => $MainObject,
-        );
-        my $TypeObject = Kernel::System::Type->new(
-            ConfigObject => $ConfigObject,
-            LogObject    => $LogObject,
-            DBObject     => $DBObject,
-            MainObject   => $MainObject,
-            EncodeObject => $EncodeObject,
-        );
-        my $StateObject = Kernel::System::State->new(
-            ConfigObject => $ConfigObject,
-            LogObject    => $LogObject,
-            DBObject     => $DBObject,
-            MainObject   => $MainObject,
-            EncodeObject => $EncodeObject,
-        );
-        my $LockObject = Kernel::System::Lock->new(
-            ConfigObject => $ConfigObject,
-            LogObject    => $LogObject,
-            DBObject     => $DBObject,
-            MainObject   => $MainObject,
-            EncodeObject => $EncodeObject,
-        );
-        my $SLAObject = Kernel::System::SLA->new(
-            ConfigObject => $ConfigObject,
-            EncodeObject => $EncodeObject,
-            LogObject    => $LogObject,
-            DBObject     => $DBObject,
-            MainObject   => $MainObject,
-        );
-        my $CustomerUserObject = Kernel::System::CustomerUser->new(
-            ConfigObject => $ConfigObject,
-            LogObject    => $LogObject,
-            DBObject     => $DBObject,
-            MainObject   => $MainObject,
-            EncodeObject => $EncodeObject,
-        );
-        my $TicketObject = Kernel::System::Ticket->new(
-            ConfigObject       => $ConfigObject,
-            LogObject          => $LogObject,
-            DBObject           => $DBObject,
-            MainObject         => $MainObject,
-            TimeObject         => $TimeObject,
-            EncodeObject       => $EncodeObject,
-            GroupObject        => $GroupObject,        # if given
-            CustomerUserObject => $CustomerUserObject, # if given
-            QueueObject        => $QueueObject,        # if given
-        );
-        my $LinkObject = Kernel::System::LinkObject->new(
-            ConfigObject => $ConfigObject,
-            LogObject    => $LogObject,
-            DBObject     => $DBObject,
-            TimeObject   => $TimeObject,
-            MainObject   => $MainObject,
-            EncodeObject => $EncodeObject,
-        );
-        my $iPhoneObject = Kernel::System::iPhone->new(
-            ConfigObject       => $ConfigObject,
-            LogObject          => $LogObject,
-            DBObject           => $DBObject,
-            MainObject         => $MainObject,
-            TimeObject         => $TimeObject,
-            EncodeObject       => $EncodeObject,
-            GroupObject        => $GroupObject,
-            CustomerUserObject => $CustomerUserObject,
-            QueueObject        => $QueueObject,
-            UserObject         => $UserObject,
-            QueueObject        => $QueueObject,
-            ServiceObject      => $ServiceObject,
-            TypeObject         => $TypeObject,
-            StateObject        => $StateObject,
-            LockObject         => $LockObject,
-            SLAObject          => $SLAObject,
-            TicketObject       => $TicketObject,
-            Linkbject          => $LinkObject,
-        );
+    my $ConfigObject = Kernel::Config->new();
+    my $EncodeObject = Kernel::System::Encode->new(
+        ConfigObject => $ConfigObject,
+    );
+    my $LogObject = Kernel::System::Log->new(
+        ConfigObject => $ConfigObject,
+        EncodeObject => $EncodeObject,
+    );
+    my $TimeObject = Kernel::System::Time->new(
+        ConfigObject => $ConfigObject,
+        LogObject    => $LogObject,
+    );
+    my $MainObject = Kernel::System::Main->new(
+        ConfigObject => $ConfigObject,
+        EncodeObject => $EncodeObject,
+        LogObject    => $LogObject,
+    );
+    my $DBObject = Kernel::System::DB->new(
+        ConfigObject => $ConfigObject,
+        EncodeObject => $EncodeObject,
+        LogObject    => $LogObject,
+        MainObject   => $MainObject,
+    );
+    my $UserObject = Kernel::System::User->new(
+        ConfigObject => $ConfigObject,
+        LogObject    => $LogObject,
+        MainObject   => $MainObject,
+        TimeObject   => $TimeObject,
+        DBObject     => $DBObject,
+        EncodeObject => $EncodeObject,
+    );
+    my $GroupObject = Kernel::System::Group->new(
+        ConfigObject => $ConfigObject,
+        LogObject    => $LogObject,
+        DBObject     => $DBObject,
+        MainObject   => $MainObject,
+        EncodeObject => $EncodeObject,
+    );
+    my $QueueObject = Kernel::System::Queue->new(
+        ConfigObject        => $ConfigObject,
+        LogObject           => $LogObject,
+        DBObject            => $DBObject,
+        MainObject          => $MainObject,
+        EncodeObject        => $EncodeObject,
+        GroupObject         => $GroupObject, # if given
+        CustomerGroupObject => $CustomerGroupObject, # if given
+    );
+    my $ServiceObject = Kernel::System::Service->new(
+        ConfigObject => $ConfigObject,
+        EncodeObject => $EncodeObject,
+        LogObject    => $LogObject,
+        DBObject     => $DBObject,
+        MainObject   => $MainObject,
+    );
+    my $TypeObject = Kernel::System::Type->new(
+        ConfigObject => $ConfigObject,
+        LogObject    => $LogObject,
+        DBObject     => $DBObject,
+        MainObject   => $MainObject,
+        EncodeObject => $EncodeObject,
+    );
+    my $StateObject = Kernel::System::State->new(
+        ConfigObject => $ConfigObject,
+        LogObject    => $LogObject,
+        DBObject     => $DBObject,
+        MainObject   => $MainObject,
+        EncodeObject => $EncodeObject,
+    );
+    my $LockObject = Kernel::System::Lock->new(
+        ConfigObject => $ConfigObject,
+        LogObject    => $LogObject,
+        DBObject     => $DBObject,
+        MainObject   => $MainObject,
+        EncodeObject => $EncodeObject,
+    );
+    my $SLAObject = Kernel::System::SLA->new(
+        ConfigObject => $ConfigObject,
+        EncodeObject => $EncodeObject,
+        LogObject    => $LogObject,
+        DBObject     => $DBObject,
+        MainObject   => $MainObject,
+    );
+    my $CustomerUserObject = Kernel::System::CustomerUser->new(
+        ConfigObject => $ConfigObject,
+        LogObject    => $LogObject,
+        DBObject     => $DBObject,
+        MainObject   => $MainObject,
+        EncodeObject => $EncodeObject,
+    );
+    my $TicketObject = Kernel::System::Ticket->new(
+        ConfigObject       => $ConfigObject,
+        LogObject          => $LogObject,
+        DBObject           => $DBObject,
+        MainObject         => $MainObject,
+        TimeObject         => $TimeObject,
+        EncodeObject       => $EncodeObject,
+        GroupObject        => $GroupObject,        # if given
+        CustomerUserObject => $CustomerUserObject, # if given
+        QueueObject        => $QueueObject,        # if given
+    );
+    my $LinkObject = Kernel::System::LinkObject->new(
+        ConfigObject => $ConfigObject,
+        LogObject    => $LogObject,
+        DBObject     => $DBObject,
+        TimeObject   => $TimeObject,
+        MainObject   => $MainObject,
+        EncodeObject => $EncodeObject,
+    );
+    my $iPhoneObject = Kernel::System::iPhone->new(
+        ConfigObject       => $ConfigObject,
+        LogObject          => $LogObject,
+        DBObject           => $DBObject,
+        MainObject         => $MainObject,
+        TimeObject         => $TimeObject,
+        EncodeObject       => $EncodeObject,
+        GroupObject        => $GroupObject,
+        CustomerUserObject => $CustomerUserObject,
+        QueueObject        => $QueueObject,
+        UserObject         => $UserObject,
+        QueueObject        => $QueueObject,
+        ServiceObject      => $ServiceObject,
+        TypeObject         => $TypeObject,
+        StateObject        => $StateObject,
+        LockObject         => $LockObject,
+        SLAObject          => $SLAObject,
+        TicketObject       => $TicketObject,
+        Linkbject          => $LinkObject,
+    );
 
 =cut
 
@@ -205,11 +206,6 @@ sub new {
     {
         $Self->{$_} = $Param{$_} || die "Got no $_! object";
     }
-
-    #    $Self->{LogObject} = Kernel::System::Log->new(
-    #        LogPrefix => 'iPhoneHandle',
-    #        %{$Self},
-    #    );
 
     $Self->{CheckItemObject} = Kernel::System::CheckItem->new(%Param);
     $Self->{PriorityObject}  = Kernel::System::Priority->new(%Param);
@@ -246,11 +242,13 @@ and also general settings
 
     my @Result = $iPhoneObject->ScreenConfig(
         Screen => "Phone",
+        UserID => 1,
     );
 
     my @Result = $iPhoneObject->ScreenConfig(
         Screen   => "Note",
         TicketID => 224,
+        UserID   => 1,
     );
 
     # a result could be
@@ -2143,6 +2141,52 @@ sub TicketList {
     return %Article;
 }
 
+=item TicketGet()
+Get information of a ticket
+
+    my @Result = $iPhoneObject->TicketGet(
+        TicketID  => 224,
+        UserID    => 1,
+    );
+
+    #a result could be
+
+    @Resutl = (
+        AccountedTime   => "5404",
+        Age             => "681946",
+        CustomerID      => "sw",
+        CustomerUserID  => "David",
+        Created         => "2010-07-06 14:05:54",
+        GroupID         => 1,
+        TicketID        => 224,
+        LockID          => 2,
+        Lock            => "lock"
+        OwnerID         => 1134,
+        Owner           => "Aayla",
+        PriorityColor   => "#cdcdcd",
+        PriorityID      => 1,
+        Priority        => "1 very low",
+        Queue           => "Raw",
+        QueueID         => 2,
+        ResponsibleID   => 1134,
+        Responsible     => "Aayla",
+        Seen            => 1, # only on otrs 3.x framework
+        StateID         =>  4,
+        State           => "open",
+        TicketNumber    => "2010070610000215",
+        Title           => "iPhone Test",
+        TicketFreeKey1  => "Product",
+        TicketFreeText1 => "PC",
+        TicketFreeKey13 => "CriticalityID",
+        TicketFreeKey14 => "ImpactID",
+        TicketFreeTime1 => "2010-07-10 09:58:00",
+        TypeID          => 1,
+        Type            => "default",
+        UntilTime       => "0",
+    );
+
+=cut
+
 sub TicketGet {
     my ( $Self, %Param ) = @_;
 
@@ -2225,6 +2269,77 @@ sub TicketGet {
     }
     return %Ticket;
 }
+
+=item ArticleGet()
+
+Get information from an article
+
+    my %Result = $iPhoneObject->ArticleGet()
+        ArticleID  => 1054,
+        UserID   => 1,
+    );
+
+    #a result could be
+
+    %Resutl = (
+        Age                              => 166202,
+        AccountedTime                    => 123,
+        ArticleID                        => 1054,
+        ArticleTypeID                    => 5,
+        ArticleType                      => "phone",
+        Body                             => "iPhone ticket Test",
+        Charset                          => "utf-8",
+        ContentCharset                   => "utf-8",
+        ContentType                      => "text/plain; charset=utf-8",
+        Created                          => "2010-07-12 14:13:06",
+        CreatedBy                        => 1134,
+        CustomerID                       => "sw",
+        CustomerUserID                   => "David",
+        FirstResponseTimeDestinationDate => "2010-07-12 14:18:06",
+        FirstResponseTimeDestinationTime => "1278962286",
+        FirstResponseTimeEscalation      => 1,
+        FirstResponseTimeWorkingTime     => -86700,
+        FirstResponseTime                => -165902,
+        From                             => "\"David Prowse\" <pd@sw.com>"]}
+        LockID                           => 2,
+        Lock                             => "lock",
+        MimeType                         => "text/plain",
+        OwnerID                          => 1134,
+        Owner                            => "Aayla",
+        PriorityID                       => 1,
+        Priority                         => "1 very low",
+        QueueID                          => 3,
+        Queue                            => "Junk",
+        ResponsibleID                    => 1134,
+        Responsible                      => "Aayla",
+        Seen                             => 1, # only on otrs 3.x framework
+        SenderType                       => "customer",
+        SolutionTimeDestinationDate      => "2010-07-12 14:18:06",
+        SolutionTimeDestinationTime      => 1278962286,
+        SolutionTimeWorkingTime          => -86700,
+        SolutionTimeEscalation           => 1,
+        SolutionTime                     => -165902,
+        StateID                          => 4,
+        Subject                          => "iPhone Test",
+        State                            => "open",
+        TicketID                         => 247,
+        TicketFreeKey1                   => "Device",
+        TicketFreeTime1                  => "2010-07-12 14:13:00",
+        TicketFreeText1                  => "Notebook",
+        TicketNumber                     => "2010071210000043",
+        Title                            => "iPhone Test",
+        To                               => "Junk",
+        TypeID                           => 1,
+        Type                             => "default",
+        UpdateTimeDestinationDate        => "2010-07-12 14:18:06",
+        UpdateTimeDestinationTime        => 1278962286,
+        UpdateTimeEscalation             => 1,
+        UpdateTimeWorkingTime            => -86700,
+        UpdateTime                       => -165902,
+        UntilTime                        => 0,
+    );
+
+=cut
 
 sub ArticleGet {
     my ( $Self, %Param ) = @_;
@@ -2522,6 +2637,7 @@ Get a Hash reference to all possible customers matching the search paramenter, u
 
     my $Result = $iPhoneObject->CustomerSearch(
         Search          => 'sw',
+        UserID          => 1,
     );
 
     # a result could be
@@ -2540,6 +2656,46 @@ sub CustomerSearch {
     );
     return \%Customers;
 }
+
+=item ScreenActions()
+Performs a ticket action (Actions include Phone, Note, Close, Compose or Move)
+
+Phone   (New phone ticket)
+Note    (Add a note to a Ticket)
+Close   (Close a tcket)
+Compose (Reply or response a ticket)
+Move    (Change ticket queue)
+
+The Arguments depends on the results of ScreenConfig()
+
+The result is the TicketID for Action Phone or ArticleID for the other actions
+
+    my @Result = $iPhoneObject->ScreenActions(
+        Action              => "Phone",
+        Subject             => "iPhone Ticket",
+        CustomerID          => "otrs",
+        Body                => "My fisrt iPhone ticket",
+        CustomerUserLogin   => "Aayla",
+        TimeUnits           => 123,
+        QueueID             => 3,
+        OwnerID             => 23,
+        ResponsilbeID       => 45,
+        StateID             => 4,
+        PendingDate         =>"2010-07-09 23:54:18",
+        PriorityID          => 1,
+        TicketFreeTime1     =>"2010-07-09 23:54:18",
+        TicketFreeTime1Used => 1,
+        TicketFreeText1     =>"Notebook",
+        TicketFreeKey1      =>"Device",
+        ArticleFreeText1    =>"Bugfix",
+        ArticleFreeKey1     =>"Work",
+        UserID              => 1,
+    );
+
+    # a result could be
+
+    @Result = ( 224 );
+=cut
 
 sub ScreenActions {
     my ( $Self, %Param ) = @_;
@@ -5306,6 +5462,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.37 2010/07/14 03:54:00 cr Exp $
+$Id: iPhone.pm,v 1.38 2010/07/14 18:58:42 cr Exp $
 
 =cut
