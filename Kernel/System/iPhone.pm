@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.41 2010/07/14 22:32:39 cr Exp $
+# $Id: iPhone.pm,v 1.42 2010/07/15 22:15:40 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.41 $) [1];
+$VERSION = qw($Revision: 1.42 $) [1];
 
 =head1 NAME
 
@@ -213,15 +213,15 @@ sub new {
     $Self->{SystemAddress}   = Kernel::System::SystemAddress->new(%Param);
     $Self->{PackageObject}   = Kernel::System::Package->new(%Param);
 
-    my $SystemVersion = $Self->{ConfigObject}->Get('Version');
+    $Self->{SystemVersion} = $Self->{ConfigObject}->Get('Version');
 
     # check for any version staring with 2.4
-    if ( $SystemVersion =~ m{ \A 2 \. 4 \. \d+ \z }xms ) {
+    if ( $Self->{SystemVersion} =~ m{ \A 2 \. 4 \. \d+ \z }xms ) {
         $Self->{'API3X'} = 0;
     }
     else {
         $Self->{'API3X'} = 0;
-        if ( $SystemVersion =~ m{ \A 3 (?: \.\d+ ){2} \z }xms ) {
+        if ( $Self->{SystemVersion} =~ m{ \A 3 (?: \.\d+ ){2} \z }xms ) {
             $Self->{'API3X'} = 1;
         }
     }
@@ -594,7 +594,7 @@ sub ScreenConfig {
 
         my %Config = (
             Title    => $Self->{LanguageObject}->Get('Compose'),
-            Elements => $Self->_GetScreenElements(%Param),
+            Elements => $Self->_GetScreenElements(%Param) || '',
             Actions  => {
                 Object     => 'CustomObject',
                 Method     => 'ScreenActions',
@@ -605,6 +605,9 @@ sub ScreenConfig {
                 },
             },
         );
+        if ( !$Config{Elements} ) {
+            return;
+        }
         return \%Config;
     }
 
@@ -2792,10 +2795,11 @@ sub VersionGet {
     for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
         if ( $Package->{Name}->{Content} eq 'iPhoneHandle' ) {
             my %iPhonePackage = (
-                Name    => $Package->{Name}->{Content},
-                Version => $Package->{Version}->{Content},
-                Vendor  => $Package->{Vendor}->{Content},
-                URL     => $Package->{URL}->{Content},
+                Name      => $Package->{Name}->{Content},
+                Version   => $Package->{Version}->{Content},
+                Vendor    => $Package->{Vendor}->{Content},
+                URL       => $Package->{URL}->{Content},
+                Framework => $Self->{SystemVersion},
             );
             return \%iPhonePackage;
             last PACKAGE;
@@ -3777,7 +3781,7 @@ sub _TicketPhoneNew {
         }
     }
 
-    my $MimeType = 'text/html';
+    my $MimeType = 'text/plain';
 
     #    if ( $Self->{ConfigObject}->Get('Frontend::RichText') ) {
     #        $MimeType = 'text/html';
@@ -4255,7 +4259,7 @@ sub _TicketCommonActions {
     # add note
     my $ArticleID = '';
     if ( $Self->{Config}->{Note} || $Param{Defaults} ) {
-        my $MimeType = 'text/html';
+        my $MimeType = 'text/plain';
 
         my %User = $Self->{UserObject}->GetUserData(
             UserID => $Param{UserID},
@@ -4691,7 +4695,7 @@ sub _TicketCompose {
         }
     }
 
-    my $MimeType = 'text/html';
+    my $MimeType = 'text/plain';
 
     # send email
     my $ArticleID = $Self->{TicketObject}->ArticleSend(
@@ -4906,24 +4910,61 @@ sub _TicketMove {
         return;
     }
 
-    # check if ticket is locked
-    my $Locked;
-    if ( $Self->{'API3X'} ) {
-        $Locked = $Self->{TicketObject}->TicketLockGet( TicketID => $Param{TicketID} );
-    }
-    else {
-        my %TicketData = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
-        if ( $TicketData{Lock} eq 'lock' ) {
-            $Locked = 1;
+    # get lock state
+    if ( $Self->{Config}->{RequiredLock} ) {
+        my $Locked;
+        if ( $Self->{'API3X'} ) {
+            $Locked = $Self->{TicketObject}->TicketLockGet( TicketID => $Param{TicketID} );
         }
-    }
-    if ( !$Locked ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Sorry, you need to be the owner to do this action! "
-                . "Please change the owner first.",
-        );
-        return;
+        else {
+            my %TicketData = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
+            if ( $TicketData{Lock} eq 'lock' ) {
+                $Locked = 1;
+            }
+        }
+        if ( !$Locked ) {
+            my $Success;
+            if ( $Self->{'API3X'} ) {
+                $Self->{TicketObject}->TicketLockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'lock',
+                    UserID   => $Param{UserID},
+                );
+
+                $Success = $Self->{TicketObject}->TicketOwnerSet(
+                    TicketID  => $Param{TicketID},
+                    UserID    => $Param{UserID},
+                    NewUserID => $Param{UserID},
+                );
+            }
+            else {
+                $Self->{TicketObject}->LockSet(
+                    TicketID => $Param{TicketID},
+                    Lock     => 'lock',
+                    UserID   => $Param{UserID},
+                );
+
+                $Success = $Self->{TicketObject}->OwnerSet(
+                    TicketID  => $Param{TicketID},
+                    UserID    => $Param{UserID},
+                    NewUserID => $Param{UserID},
+                );
+            }
+        }
+        else {
+            my $AccessOk = $Self->{TicketObject}->OwnerCheck(
+                TicketID => $Param{TicketID},
+                OwnerID  => $Param{UserID},
+            );
+            if ( !$AccessOk ) {
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message  => "Sorry, you need to be the owner to do this action! "
+                        . "Please change the owner first.",
+                );
+                return;
+            }
+        }
     }
 
     # ticket attributes
@@ -4970,14 +5011,17 @@ sub _TicketMove {
     }
 
     # check new user
-    if ( !$Param{OwnerID} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "No OwnerID is given! Please contact the admin.",
-        );
-        return;
-    }
-    else {
+    #    if ( !$Param{OwnerID} ) {
+    #        $Self->{LogObject}->Log(
+    #            Priority => 'error',
+    #            Message  => "No OwnerID is given! Please contact the admin.",
+    #        );
+    #        return;
+    #    }
+    #    else {
+    #        $Param{NewUserID} = $Param{OwnerID};
+    #    }
+    if ( $Param{OwnerID} ) {
         $Param{NewUserID} = $Param{OwnerID};
     }
 
@@ -5133,7 +5177,7 @@ sub _TicketMove {
 
     if ( $Param{Body} ) {
 
-        my $MimeType = 'text/html';
+        my $MimeType = 'text/plain';
 
         my %UserData = $Self->{UserObject}->GetUserData( UserID => $Param{UserID} );
 
@@ -5405,6 +5449,9 @@ sub _GetComposeDefaults {
 
     $Param{ResponseID} = 1;
 
+    # set no RichText in order to get text/plain template for the iphone
+    $Self->{ConfigObject}->Set( Key => 'Frontend::RichText', Value => 0 );
+
     # get template
     my $TemplateGenerator = Kernel::System::TemplateGenerator->new( %{$Self} );
     my %Response          = $TemplateGenerator->Response(
@@ -5412,12 +5459,12 @@ sub _GetComposeDefaults {
         ArticleID  => $Param{ArticleID},
         ResponseID => $Param{ResponseID},
         Data       => \%Data,
-        UserID     => $Param{UserID},
+        UserID     => $Param{UserID}
     );
     $Data{Salutation}       = $Response{Salutation};
     $Data{Signature}        = $Response{Signature};
     $Data{StandardResponse} = $Response{StandardResponse};
-
+    print STDERR "Response => $Response{Salutation}\n";    #TODO Delete STDERR Output...
     %Data = $TemplateGenerator->Attributes(
         TicketID   => $Param{TicketID},
         ArticleID  => $Param{ArticleID},
@@ -5433,7 +5480,7 @@ sub _GetComposeDefaults {
     my $Signature  = $Data{Signature};
 
     my $ResponseFormat =
-        "$Salutation </br> $OrigFrom $Wrote: </br> $Body </br> $Signature \n";
+        "$Salutation \n $OrigFrom $Wrote: \n $Body \n $Signature \n";
 
     # restore qdata formatting for Output replacement
     $ResponseFormat =~ s/&quot;/"/gi;
@@ -5513,6 +5560,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.41 2010/07/14 22:32:39 cr Exp $
+$Id: iPhone.pm,v 1.42 2010/07/15 22:15:40 cr Exp $
 
 =cut
