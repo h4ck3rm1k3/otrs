@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
     "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<!-- $Id: iPhoneHandle.xml,v 1.1 2010/07/14 23:17:21 cr Exp $ -->
+<!-- $Id: iPhoneHandle.xml,v 1.2 2010/07/15 02:46:20 cr Exp $ -->
 
 <book lang='en'>
 
@@ -146,13 +146,13 @@ shell> bin/opm.pl -a install -p /path/to/$Name-$Version.opm
 
 <chapter>
     <title>Configuration</title>
-    <para>The following config options need to be copied into Kernel/Config.pm or changed via SysConfig.</para>
+    <para>The following config options can or need to be changed via SysConfig.</para>
     <sect1>
-        <title>Param 1</title>
-        <para>Description of param 1.</para>
+        <title>iPhone::DebugLog</title>
+        <para>If you want to log all communication between iPhone and otrs.</para>
         <sect2>
             <title>Via SysConfig</title>
-            <para>The SysConfig setting can be found under group "Ticket" and sub group "Core::TicketFreeText".</para>
+            <para>The SysConfig setting can be found under group "iPhone" and sub group "Core::Log".</para>
         </sect2>
         <sect2>
             <title>Via Kernel/Config.pm</title>
@@ -165,13 +165,18 @@ shell> bin/opm.pl -a install -p /path/to/$Name-$Version.opm
         </sect2>
     </sect1>
     <sect1>
-        <title>Param 2</title>
-        <para>Description of param 2.</para>
+        <title>iPhone::LogFile</title>
+        <para>You have to specify a logfile (for the debug log). The file will be created by the system, if it doesn't exist..</para>
     </sect1>
     <sect1>
-        <title>Param 3</title>
-        <para>Description of param 3.</para>
+        <title>iPhone::Frontend::AgentTicketPhone</title>
+        <para>Settings for iPhone Ticket Phone fields and screen configuration.</para>
+        <sect2>
+            <title>TicketType</title>
+            <para>If you want to set the ticket type (Ticket::Type needs to be activated).</para>
+        </sect2>
     </sect1>
+
 </chapter>
 
 <chapter>
