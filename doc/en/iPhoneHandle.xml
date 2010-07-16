@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
     "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<!-- $Id: iPhoneHandle.xml,v 1.3 2010/07/16 04:21:11 cr Exp $ -->
+<!-- $Id: iPhoneHandle.xml,v 1.4 2010/07/16 16:43:02 cr Exp $ -->
 
 <book lang='en'>
 
@@ -182,7 +182,7 @@ shell> bin/opm.pl -a install -p /path/to/$Name-$Version.opm
     </sect1>
     <sect1>
         <title>iPhone::Frontend::AgentTicketPhone</title>
-        <para>Settings for iPhone Ticket Phone fields and screen configuration.</para>
+        <para>Settings for iPhone new phone ticket fields and screen configuration.</para>
         <para>The SysConfig setting can be found under group "iPhone" and sub group "Frontend::Agent::Ticket::ViewPhone".</para>
         <sect2>
             <title>TicketType</title>
@@ -251,7 +251,7 @@ shell> bin/opm.pl -a install -p /path/to/$Name-$Version.opm
     </sect1>
     <sect1>
         <title>iPhone::Frontend::AgentTicketNote</title>
-        <para>Settings for iPhone Ticket Note fields and screen configuration.</para>
+        <para>Settings for iPhone note ticket fields and screen configuration.</para>
         <para>The SysConfig setting can be found under group "iPhone" and sub group "Frontend::Agent::Ticket::ViewNote".</para>
         <sect2>
             <title>Permission</title>
@@ -344,6 +344,103 @@ shell> bin/opm.pl -a install -p /path/to/$Name-$Version.opm
         <sect2>
             <title>HistoryComment</title>
             <para>Defines the history comment for the ticket note screen action, which gets used for ticket history in the iPhone interface.</para>
+        </sect2>
+    </sect1>
+    <sect1>
+        <title>iPhone::Frontend::AgentTicketClose</title>
+        <para>Settings for iPhone colse ticket fields and screen configuration.</para>
+        <para>The SysConfig setting can be found under group "iPhone" and sub group "Frontend::Agent::Ticket::ViewClose".</para>
+        <sect2>
+            <title>Permission</title>
+            <para>Required permissions to use the close ticket screen in the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>RequiredLock</title>
+            <para>Defines if a ticket lock is required in the close ticket screen of the iPhone interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</para>
+        </sect2>
+        <sect2>
+            <title>TicketType</title>
+            <para>Sets the ticket type in the close ticket screen of the iPhone interface (Ticket::Type needs to be activated).</para>
+        </sect2>
+        <sect2>
+            <title>Service</title>
+            <para>Sets the service in the close ticket screen of the iPhone interface (Ticket::Service needs to be activated).</para>
+        </sect2>
+        <sect2>
+            <title>Owner</title>
+            <para>Sets the ticket owner in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>Responsible</title>
+            <para>Sets the responsible agent of the ticket in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>State</title>
+            <para>If a note is added by an agent, sets the state of a ticket in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>StateType</title>
+            <para>Defines the next state of a ticket after adding a note, in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>StateDefault</title>
+            <para>Defines the default next state of a ticket after adding a note, in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>Note</title>
+            <para>Allows adding notes in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>Subject</title>
+            <para>Sets the default subject for notes added in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>Body</title>
+            <para>Sets the default body text for notes added in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>ArticleTypeDefault</title>
+            <para>Defines the default type of the note in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>ArticleTypes</title>
+            <para>Specifies the different note types that will be used in the system.</para>
+        </sect2>
+        <sect2>
+            <title>Priority</title>
+            <para>Shows the ticket priority options in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>PriorityDefault</title>
+            <para>Defines the default ticket priority in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>Title</title>
+            <para>Shows the title fields in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>TimeUnits</title>
+            <para>Sets the time units in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>TicketFreeText</title>
+            <para>Ticket free text options shown in the close ticket screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</para>
+        </sect2>
+        <sect2>
+            <title>TicketFreeTime</title>
+            <para>Ticket free time options shown in the close ticket screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</para>
+        </sect2>
+        <sect2>
+            <title>ArticleFreeText</title>
+            <para>Article free text options shown in the close ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>HistoryType</title>
+            <para>Defines the history type for the close ticket screen action, which gets used for ticket history in the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>HistoryComment</title>
+            <para>Defines the history comment for the close ticket screen action, which gets used for ticket history in the iPhone interface.</para>
         </sect2>
     </sect1>
 </chapter>
