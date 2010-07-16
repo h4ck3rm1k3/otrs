@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: iPhone.xml,v 1.11 2010/07/16 16:42:00 cr Exp $</CVS>
+    <CVS>$Id: iPhone.xml,v 1.12 2010/07/16 17:36:19 cr Exp $</CVS>
 
     <ConfigItem Name="iPhone::DebugLog" Required="1" Valid="1">
         <Description Translatable="1">Allows to enable a special log for all communication between iPhone and otrs.</Description>
@@ -703,7 +703,7 @@
     </ConfigItem>
 
     <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###Permission" Required="1" Valid="1">
-        <Description Translatable="1">Required permissions to use the ticket compose screen in the agent interface.</Description>
+        <Description Translatable="1">Required permissions to use the ticket compose screen in the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -711,7 +711,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###RequiredLock" Required="0" Valid="1">
-        <Description Translatable="1">Defines if a ticket lock is required in the ticket compose screen of the agent interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</Description>
+        <Description Translatable="1">Defines if a ticket lock is required in the ticket compose screen of the iPhone interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -722,7 +722,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###State" Required="1" Valid="1">
-        <Description Translatable="1">If a note is added by an agent, sets the state of a ticket if it is composed / answered in the ticket compose screen of the agent interface.</Description>
+        <Description Translatable="1">If a note is added by an agent, sets the state of a ticket if it is composed / answered in the ticket compose screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -733,7 +733,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###StateDefault" Required="0" Valid="1">
-        <Description Translatable="1">Defines the default next state of a ticket if it is composed / answered in the ticket compose screen of the agent interface.</Description>
+        <Description Translatable="1">Defines the default next state of a ticket if it is composed / answered in the ticket compose screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -741,7 +741,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###StateType" Required="1" Valid="1">
-        <Description Translatable="1">Defines the next possible states after composing / answering a ticket in the ticket compose screen of the agent interface.</Description>
+        <Description Translatable="1">Defines the next possible states after composing / answering a ticket in the ticket compose screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -754,7 +754,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::ComposeAddCustomerAddress" Required="1" Valid="1">
-        <Description Translatable="1">Adds customers email addresses to recipients in the ticket compose screen of the agent interface.</Description>
+        <Description Translatable="1">Adds customers email addresses to recipients in the ticket compose screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -765,7 +765,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::ComposeReplaceSenderAddress" Required="1" Valid="1">
-        <Description Translatable="1">Replaces the original sender with current customer's email address on compose answer in the ticket compose screen of the agent interface.</Description>
+        <Description Translatable="1">Replaces the original sender with current customer's email address on compose answer in the ticket compose screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -776,7 +776,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::ComposeExcludeCcRecipients" Required="1" Valid="1">
-        <Description Translatable="1">Uses Cc recipients in reply Cc list on compose an email answer in the ticket compose screen of the agent interface.</Description>
+        <Description Translatable="1">Uses Cc recipients in reply Cc list on compose an email answer in the ticket compose screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -787,8 +787,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###TimeUnits" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the time units of a ticket.</Description>
-        <Description Lang="de">Wenn die zeiteinheiten gesetzt werden soll.</Description>
+        <Description Translatable="1">Sets the time units in the ticket compose screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -799,7 +798,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###TicketFreeText" Required="0" Valid="1">
-        <Description Translatable="1">Ticket free text options shown in the ticket compose screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Description Translatable="1">Ticket free text options shown in the ticket compose screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -824,7 +823,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###TicketFreeTime" Required="0" Valid="1">
-        <Description Translatable="1">Ticket free time options shown in the ticket compose screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Description Translatable="1">Ticket free time options shown in the ticket compose screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -839,7 +838,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketCompose###ArticleFreeText" Required="0" Valid="1">
-        <Description Translatable="1">Article free text options shown in the ticket compose screen of the agent interface.</Description>
+        <Description Translatable="1">Article free text options shown in the ticket compose screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewCompose</SubGroup>
         <Setting>
@@ -864,8 +863,27 @@
         </Setting>
     </ConfigItem>
 -->?
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the move ticket screen in the iPhone interface.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <String Regex="">compose</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketMove###RequiredLock" Required="0" Valid="1">
+        <Description Translatable="1">Defines if a ticket lock is required in the move ticket screen of the iPhone interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</Description>
+        <Group>iPhone</Group>
+        <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
+        <Setting>
+            <Option SelectedID="1">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
+        </Setting>
+    </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketMove###Owner" Required="0" Valid="1">
-        <Description Translatable="1">Sets the ticket owner in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Sets the ticket owner in the move ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
         <Setting>
@@ -876,7 +894,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketMove###State" Required="0" Valid="1">
-        <Description Translatable="1">Allows to set a new ticket state in the move ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Allows to set a new ticket state in the move ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
         <Setting>
@@ -887,7 +905,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketMove###StateType" Required="1" Valid="1">
-        <Description Translatable="1">Defines the next state of a ticket after being moved to another queue, in the move ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Defines the next state of a ticket after being moved to another queue, in the move ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
         <Setting>
@@ -898,7 +916,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketMove###StateDefault" Required="0" Valid="1">
-        <Description Translatable="1">Defines the default next state of a ticket after adding a note, in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Defines the default next state of a ticket after adding a note, in the move ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
         <Setting>
@@ -906,7 +924,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketMove###Priority" Required="0" Valid="0">
-        <Description Translatable="1">Shows the ticket priority options in the move ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Shows the ticket priority options in the move ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
         <Setting>
@@ -917,7 +935,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketMove###PriorityDefault" Required="0" Valid="0">
-        <Description Translatable="1">Defines the default ticket priority in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Defines the default ticket priority in the move ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
         <Setting>
@@ -925,8 +943,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketMove###TimeUnits" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the time units of a ticket.</Description>
-        <Description Lang="de">Wenn die zeiteinheiten gesetzt werden soll.</Description>
+        <Description Translatable="1">Sets the time units in the move ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
         <Setting>
@@ -937,7 +954,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketMove###TicketFreeText" Required="0" Valid="1">
-        <Description Translatable="1">Ticket free text options shown in the move ticket screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Description Translatable="1">Ticket free text options shown in the move ticket screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
         <Setting>
@@ -962,7 +979,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketMove###TicketFreeTime" Required="0" Valid="1">
-        <Description Translatable="1">Ticket free time options shown in the move ticket screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Description Translatable="1">Ticket free time options shown in the move ticket screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
         <Setting>
@@ -977,7 +994,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketMove###ArticleFreeText" Required="0" Valid="1">
-        <Description Translatable="1">Article free text options shown in the ticket move screen of the agent interface.</Description>
+        <Description Translatable="1">Article free text options shown in the ticket move screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewMove</SubGroup>
         <Setting>
