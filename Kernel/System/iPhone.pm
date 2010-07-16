@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.43 2010/07/16 04:00:14 cr Exp $
+# $Id: iPhone.pm,v 1.44 2010/07/16 16:03:33 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.43 $) [1];
+$VERSION = qw($Revision: 1.44 $) [1];
 
 =head1 NAME
 
@@ -3555,6 +3555,13 @@ sub _GetScreenElements {
 
     # time units
     if ( $Self->{Config}->{TimeUnits} ) {
+        my $Mandatory;
+        if ( $Self->{ConfigObject}->Get('Ticket::Frontend::NeedAccountedTime') ) {
+            $Mandatory = 1;
+        }
+        else {
+            $Mandatory = 0;
+        }
         my $TimeUnitsElements = {
             Name      => 'TimeUnits',
             Title     => $Self->{LanguageObject}->Get('Time units (work units)'),
@@ -3562,7 +3569,7 @@ sub _GetScreenElements {
             Viewtype  => 'Input',
             Min       => 1,
             Max       => 10,
-            Mandatory => 0,
+            Mandatory => $Mandatory,
             Default   => '',
         };
         push @ScreenElements, $TimeUnitsElements;
@@ -5560,6 +5567,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.43 2010/07/16 04:00:14 cr Exp $
+$Id: iPhone.pm,v 1.44 2010/07/16 16:03:33 cr Exp $
 
 =cut
