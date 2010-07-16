@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: iPhone.xml,v 1.9 2010/07/08 14:53:06 cr Exp $</CVS>
+    <CVS>$Id: iPhone.xml,v 1.10 2010/07/16 04:01:59 cr Exp $</CVS>
 
     <ConfigItem Name="iPhone::DebugLog" Required="1" Valid="1">
-        <Description Lang="en">If you want to log all communication between iPhone and otrs.</Description>
-        <Description Lang="de">Wenn Sie die gesamte Kommunikation zwischen iPhone und OTRS log.</Description>
+        <Description Translatable="1">Allows to enable a special log for all communication between iPhone and otrs.</Description>
         <Group>iPhone</Group>
         <SubGroup>Core::Log</SubGroup>
         <Setting>
@@ -15,8 +14,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::LogFile" Required="1" Valid="1">
-        <Description Lang="en">You have to specify a logfile (for the debug log). The file will be created by the system, if it doesn't exist.</Description>
-        <Description Lang="de">Muss eine Logdatei angegeben werden. Diese wird automatisch vom System angelegt, falls sie noch nicht existiert.</Description>
+        <Description Translatable="1">Defines the path and file name for the degug log file. This file will be automatically created by the system, if it doesn't exist.</Description>
         <Group>iPhone</Group>
         <SubGroup>Core::Log</SubGroup>
         <Setting>
@@ -25,8 +23,7 @@
     </ConfigItem>
 
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TicketType" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the ticket type (Ticket::Type needs to be activated).</Description>
-        <Description Lang="de">Wenn der Ticket-Typ gesetzt werden soll (Ticket::Type muss aktiv sein).</Description>
+        <Description Translatable="1">Sets the ticket type in the new phone ticket screen on the iPhone interface (Ticket::Type needs to be activated).</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -37,8 +34,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###Service" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the service (Ticket::Service needs to be activated).</Description>
-        <Description Lang="de">Wenn der Service gesetzt werden soll (Ticket::Service muss aktiv sein).</Description>
+        <Description Translatable="1">Sets the service in the new phone ticket screen of the iPhone interface (Ticket::Service needs to be activated).</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -49,8 +45,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###Owner" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the owner.</Description>
-        <Description Lang="de">Wenn der Besitzer gesetzt werden soll.</Description>
+        <Description Translatable="1">Sets the ticket owner in the new phone ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -61,8 +56,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###Responsible" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the responsible (Ticket::Responsible needs to be activated).</Description>
-        <Description Lang="de">Wenn der Verantwortliche gesetzt werden soll (Ticket::Responsible muss aktiv sein).</Description>
+        <Description Translatable="1">Sets the responsible agent of the ticket in the new phone ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -73,8 +67,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###CustomerID" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the CustomerID.</Description>
-        <Description Lang="de">Wenn der CustomerID gesetzt werden soll.</Description>
+        <Description Translatable="1">Sets the customer id in the new phone ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -85,8 +78,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###State" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the state of a ticket.</Description>
-        <Description Lang="de">Wenn der zustand gesetzt werden soll.</Description>
+        <Description Translatable="1">Allows to set a new ticket state in the new phone ticket ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -97,8 +89,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###StateDefault" Required="0" Valid="1">
-        <Description Lang="en">Default next state.</Description>
-        <Description Lang="de">Standardmäßig ausgewählter nächster Status.</Description>
+        <Description Translatable="1">Sets the default next state for new phone tickets in the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -106,16 +97,15 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###PriorityDefault" Required="0" Valid="1">
-        <Description Lang="en">Default priority options.</Description>
-        <Description Lang="de">Default Auswahl der Priorität.</Description>
+        <Description Translatable="1">Defines the default ticket priority in the new phone ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
             <String Regex="">3 normal</String>
         </Setting>
     </ConfigItem>
-    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###ArticleType" Required="1" Valid="1">
-        <Description Translatable="1">Sets the default article type for new phone tickets in the agent interface.</Description>
+    <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###ArticleTypeDefault" Required="1" Valid="1">
+        <Description Translatable="1">Defines the default type of the ticket in the new phone ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -123,7 +113,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###SenderType" Required="1" Valid="1">
-        <Description Translatable="1">Sets the default sender type for new phone ticket in the agent interface.</Description>
+        <Description Translatable="1">Sets the default sender type for new phone ticket in the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -131,8 +121,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TimeUnits" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the time units of a ticket.</Description>
-        <Description Lang="de">Wenn die zeiteinheiten gesetzt werden soll.</Description>
+        <Description Translatable="1">Sets the time units in the new phone ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -143,8 +132,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TicketFreeText" Required="0" Valid="1">
-        <Description Lang="en">Shown ticket free text options. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
-        <Description Lang="de">Angezeigte Ticket-Frei-Text-Felder. Mögliche Einstellungen: 0 = Deaktiviert, 1 = Aktiviert, 2 = Aktiviert und Pflichtfeld.</Description>
+        <Description Translatable="1">Ticket free text options shown in the new phone ticket screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -169,8 +157,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###TicketFreeTime" Required="0" Valid="1">
-        <Description Lang="en">Shown ticket free time options. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
-        <Description Lang="de">Angezeigte Ticket-Frei-Time-Felder. Mögliche Einstellungen: 0 = Deaktiviert, 1 = Aktiviert, 2 = Aktiviert und Pflichtfeld.</Description>
+        <Description Translatable="1">Ticket free time options shown in the new phone ticket screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -185,8 +172,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###ArticleFreeText" Required="0" Valid="1">
-        <Description Lang="en">Shown article free text options.</Description>
-        <Description Lang="de">Gezeigte Artikel-Frei-Text-Felder.</Description>
+        <Description Translatable="1">Article free text options shown in the new phone ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -198,7 +184,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###HistoryType" Required="1" Valid="1">
-        <Description Translatable="1">Defines the history type for the phone ticket screen action, which gets used for ticket history in the agent interface.</Description>
+        <Description Translatable="1">Defines the history type for the new phone ticket screen action, which gets used for ticket history in the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -206,7 +192,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketPhone###HistoryComment" Required="1" Valid="1">
-        <Description Translatable="1">Defines the history comment for the phone ticket screen action, which gets used for ticket history in the agent interface.</Description>
+        <Description Translatable="1">Defines the history comment for the new phone ticket screen action, which gets used for ticket history in the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewPhone</SubGroup>
         <Setting>
@@ -215,7 +201,7 @@
     </ConfigItem>
 
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Permission" Required="1" Valid="1">
-        <Description Translatable="1">Required permissions to use the ticket note screen in the agent interface.</Description>
+        <Description Translatable="1">Required permissions to use the ticket note screen in the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -223,7 +209,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###RequiredLock" Required="0" Valid="1">
-        <Description Translatable="1">Defines if a ticket lock is required in the ticket note screen of the agent interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</Description>
+        <Description Translatable="1">Defines if a ticket lock is required in the ticket note screen of the iPhone interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -234,8 +220,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###TicketType" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the ticket type (Ticket::Type needs to be activated).</Description>
-        <Description Lang="de">Wenn der Ticket-Typ gesetzt werden soll (Ticket::Type muss aktiv sein).</Description>
+        <Description Translatable="1">Sets the ticket type in the ticket note screen of the iPhone interface (Ticket::Type needs to be activated).</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -247,8 +232,7 @@
     </ConfigItem>
 
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Service" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the service (Ticket::Service needs to be activated).</Description>
-        <Description Lang="de">Wenn der Service gesetzt werden soll (Ticket::Service muss aktiv sein).</Description>
+        <Description Translatable="1">Sets the service in the ticket note screen of the iPhone interface (Ticket::Service needs to be activated).</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -259,8 +243,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Owner" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the owner.</Description>
-        <Description Lang="de">Wenn der Besitzer gesetzt werden soll.</Description>
+        <Description Translatable="1">Sets the ticket owner in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -271,8 +254,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Responsible" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the responsible.</Description>
-        <Description Lang="de">Wenn der Verantwortliche gesetzt werden soll.</Description>
+        <Description Translatable="1">Sets the responsible agent of the ticket in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -283,8 +265,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###State" Required="0" Valid="1">
-        <Description Lang="en">Would you like to set the state of a ticket if a note is created by an agent?</Description>
-        <Description Lang="de">Soll der Status eines Tickets gesetzt werden können, wenn eine Notiz durch einen Agent angelegt wird?</Description>
+        <Description Translatable="1">If a note is added by an agent, sets the state of a ticket in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -295,8 +276,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###StateType" Required="1" Valid="1">
-        <Description Lang="en">Default next states after adding a note.</Description>
-        <Description Lang="de">Nächstmögliche Status nach dem Hinzufügen einer Notiz.</Description>
+        <Description Translatable="1">Defines the next state of a ticket after adding a note, in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -309,8 +289,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###StateDefault" Required="0" Valid="0">
-        <Description Lang="en">Default next state.</Description>
-        <Description Lang="de">Standardmäßig ausgewählter nächster Status.</Description>
+        <Description Translatable="1">Defines the default next state of a ticket after adding a note, in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -318,8 +297,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Note" Required="0" Valid="1">
-        <Description Lang="en">Show note fields.</Description>
-        <Description Lang="de">Eingabemöglichkeit für Notiz.</Description>
+        <Description Translatable="1">Allows adding notes in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -330,8 +308,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Subject" Required="0" Valid="1">
-        <Description Lang="en">Default note subject (This option will be translated).</Description>
-        <Description Lang="de">Standardtext im Betreff einer Notiz.</Description>
+        <Description Translatable="1">Sets the default subject for notes added in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -339,8 +316,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Body" Required="0" Valid="1">
-        <Description Lang="en">Default note text.</Description>
-        <Description Lang="de">Standardtext im Textfeld einer Notiz.</Description>
+        <Description Translatable="1">Sets the default body text for notes added in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -348,8 +324,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###ArticleTypeDefault" Required="0" Valid="1">
-        <Description Lang="en">Default note type.</Description>
-        <Description Lang="de">Voreingestellter Notiztyp.</Description>
+        <Description Translatable="1">Defines the default type of the note in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -357,8 +332,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###ArticleTypes" Required="0" Valid="1">
-        <Description Lang="en">Specify the different note types, that you want to use in your system.</Description>
-        <Description Lang="de">Hier können die verschiedenen Notiz-Typen festgelegt werden, die innerhalb des Systems verwendet werden sollen.</Description>
+        <Description Translatable="1">Specify the different note types, that you want to use in your system.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -370,8 +344,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Priority" Required="0" Valid="0">
-        <Description Lang="en">Show priority options.</Description>
-        <Description Lang="de">Möglichkeit der Auswahl für die Priorität.</Description>
+        <Description Translatable="1">Shows the ticket priority options in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -382,8 +355,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###PriorityDefault" Required="0" Valid="0">
-        <Description Lang="en">Default priority options.</Description>
-        <Description Lang="de">Default Auswahl der Priorität.</Description>
+        <Description Translatable="1">Defines the default ticket priority in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -391,8 +363,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###Title" Required="0" Valid="1">
-        <Description Lang="en">Show title fields.</Description>
-        <Description Lang="de">Eingabemöglichkeit für Title.</Description>
+        <Description Translatable="1">Shows the title fields in the ticket note screen of the iphone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -403,8 +374,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###TimeUnits" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the time units of a ticket.</Description>
-        <Description Lang="de">Wenn die zeiteinheiten gesetzt werden soll.</Description>
+        <Description Translatable="1">Sets the time units in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -415,8 +385,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###TicketFreeText" Required="0" Valid="1">
-        <Description Lang="en">Shown ticket free text options. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
-        <Description Lang="de">Angezeigte Ticket-Frei-Text-Felder. Mögliche Einstellungen: 0 = Deaktiviert, 1 = Aktiviert, 2 = Aktiviert und Pflichtfeld.</Description>
+        <Description Translatable="1">Ticket free text options shown in the ticket note screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -441,8 +410,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###TicketFreeTime" Required="0" Valid="1">
-        <Description Lang="en">Shown ticket free time options. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
-        <Description Lang="de">Angezeigte Ticket-Frei-Time-Felder. Mögliche Einstellungen: 0 = Deaktiviert, 1 = Aktiviert, 2 = Aktiviert und Pflichtfeld.</Description>
+        <Description Translatable="1">Ticket free time options shown in the ticket note screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -457,8 +425,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###ArticleFreeText" Required="0" Valid="1">
-        <Description Lang="en">Shown article free text options.</Description>
-        <Description Lang="de">Gezeigte Artikel-Frei-Text-Felder.</Description>
+        <Description Translatable="1">Article free text options shown in the ticket note screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -470,8 +437,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###HistoryType" Required="0" Valid="1">
-        <Description Lang="en">History type for this action.</Description>
-        <Description Lang="de">Historientyp für diese Aktion.</Description>
+        <Description Translatable="1">Defines the history type for the ticket note screen action, which gets used for ticket history in the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
@@ -479,8 +445,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketNote###HistoryComment" Required="0" Valid="1">
-        <Description Lang="en">History comment for this action.</Description>
-        <Description Lang="de">Historienkommentar für diese Aktion.</Description>
+        <Description Translatable="1">Defines the history comment for the ticket note screen action, which gets used for ticket history in the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewNote</SubGroup>
         <Setting>
