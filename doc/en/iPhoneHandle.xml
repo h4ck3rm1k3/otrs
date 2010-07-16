@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
     "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<!-- $Id: iPhoneHandle.xml,v 1.4 2010/07/16 16:43:02 cr Exp $ -->
+<!-- $Id: iPhoneHandle.xml,v 1.5 2010/07/16 17:38:17 cr Exp $ -->
 
 <book lang='en'>
 
@@ -160,7 +160,7 @@ shell> bin/opm.pl -a install -p /path/to/$Name-$Version.opm
     <sect1>
         <title>In the iPhone application</title>
         <para>Download and install MyOTRS from Apple AppStore in your iPhone or iPod Touch.</para>
-        <para>Add a new otrs account in the Account Manager. the URL must be &lt;FQDN&gt;/&lt;ScriptAlias&gt;/json.pl.</para>
+        <para>Add a new otrs account in the Account Manager. the URL must be http(s)://&lt;FQDN&gt;/&lt;ScriptAlias&gt;/json.pl.</para>
         <para>Example:</para>
         <para>http://localhost/otrs/json.pl.</para>
         <para>You should use same User and Password in otrs web application</para>
@@ -443,27 +443,120 @@ shell> bin/opm.pl -a install -p /path/to/$Name-$Version.opm
             <para>Defines the history comment for the close ticket screen action, which gets used for ticket history in the iPhone interface.</para>
         </sect2>
     </sect1>
+    <sect1>
+        <title>iPhone::Frontend::AgentTicketCompose</title>
+        <para>Settings for iPhone compose ticket fields and screen configuration.</para>
+        <para>The SysConfig setting can be found under group "iPhone" and sub group "Frontend::Agent::Ticket::ViewCompose".</para>
+        <sect2>
+            <title>Permission</title>
+            <para>Required permissions to use the ticket compose screen in the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>RequiredLock</title>
+            <para>Defines if a ticket lock is required in the ticket compose screen of the iPhone interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</para>
+        </sect2>
+        <sect2>
+            <title>State</title>
+            <para>If a note is added by an agent, sets the state of a ticket if it is composed / answered in the ticket compose screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>StateDefault</title>
+            <para>Defines the default next state of a ticket if it is composed / answered in the ticket compose screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>StateType</title>
+            <para>Defines the next possible states after composing / answering a ticket in the ticket compose screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>ComposeAddCustomerAddress</title>
+            <para>Adds customers email addresses to recipients in the ticket compose screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>ComposeReplaceSenderAddress</title>
+            <para>Replaces the original sender with current customer's email address on compose answer in the ticket compose screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>ComposeExcludeCcRecipients</title>
+            <para>Uses Cc recipients in reply Cc list on compose an email answer in the ticket compose screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>TimeUnits</title>
+            <para>Sets the time units in the ticket compose screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>TicketFreeText</title>
+            <para>Ticket free text options shown in the ticket compose screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</para>
+        </sect2>
+        <sect2>
+            <title>TicketFreeTime</title>
+            <para>Ticket free time options shown in the ticket compose screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</para>
+        </sect2>
+        <sect2>
+            <title>ArticleFreeText</title>
+            <para>Article free text options shown in the ticket compose screen of the iPhone interface.</para>
+        </sect2>
+    </sect1>
+    <sect1>
+        <title>iPhone::Frontend::AgentTicketMove</title>
+        <para>Settings for iPhone move ticket fields and screen configuration.</para>
+        <para>The SysConfig setting can be found under group "iPhone" and sub group "Frontend::Agent::Ticket::ViewMove".</para>
+        <sect2>
+            <title>Permission</title>
+            <para>Required permissions to use the move ticket screen in the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>RequiredLock</title>
+            <para>Defines if a ticket lock is required in the move ticket screen of the iPhone interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</para>
+        </sect2>
+        <sect2>
+            <title>Owner</title>
+            <para>Sets the ticket owner in the move ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>State</title>
+            <para>Allows to set a new ticket state in the move ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>StateType</title>
+            <para>Defines the next state of a ticket after being moved to another queue, in the move ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>StateDefault</title>
+            <para>Defines the default next state of a ticket after adding a note, in the move ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>Priority</title>
+            <para>Shows the ticket priority options in the move ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>PriorityDefault</title>
+            <para>Defines the default ticket priority in the move ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>TimeUnits</title>
+            <para>Sets the time units in the move ticket screen of the iPhone interface.</para>
+        </sect2>
+        <sect2>
+            <title>TicketFreeText</title>
+            <para>Ticket free text options shown in the move ticket screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</para>
+        </sect2>
+        <sect2>
+            <title>TicketFreeTime</title>
+            <para>Ticket free time options shown in the move ticket screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</para>
+        </sect2>
+        <sect2>
+            <title>ArticleFreeText</title>
+            <para>Article free text options shown in the ticket move screen of the iPhone interface.</para>
+        </sect2>
+    </sect1>
 </chapter>
 
 <chapter>
     <title>Contacts</title>
     <para>People who are involved in this implementation.</para>
     <sect1>
-        <title>XXXXXXXXX</title>
         <para>
-        Accounting: XXXXXX XXXXXXX &lt;XXXXXXXXX@XXXXXX&gt;, Phone +49 (0) XXXXXXXXXX
-        </para>
-        <para>
-        Technical: XXXXXX XXXXXX &lt;XXXXXXXX@XXXXX&gt;, Phone +49 (0) XXXXXXXXXX
-        </para>
-    </sect1>
-    <sect1>
-        <title>OTRS AG</title>
-        <para>
-        Accounting: Rene Bakker &lt;sales@otrs.com&gt;, Phone +49 (0)6172 681988 0
-        </para>
-        <para>
-        Technical: Martin Edenhofer &lt;dev-support@otrs.com&gt;, Phone +49 (0)6172 681988 0
+        Technical: Jens Bechtel &lt;dev-support@otrs.com&gt;, Phone +49 (0)6172 681988 0
         </para>
     </sect1>
 </chapter>
