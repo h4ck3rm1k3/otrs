@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: iPhone.xml,v 1.10 2010/07/16 04:01:59 cr Exp $</CVS>
+    <CVS>$Id: iPhone.xml,v 1.11 2010/07/16 16:42:00 cr Exp $</CVS>
 
     <ConfigItem Name="iPhone::DebugLog" Required="1" Valid="1">
         <Description Translatable="1">Allows to enable a special log for all communication between iPhone and otrs.</Description>
@@ -454,7 +454,7 @@
     </ConfigItem>
 
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Permission" Required="1" Valid="1">
-        <Description Translatable="1">Required permissions to use the close ticket screen in the agent interface.</Description>
+        <Description Translatable="1">Required permissions to use the close ticket screen in the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -462,7 +462,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###RequiredLock" Required="0" Valid="1">
-        <Description Translatable="1">Defines if a ticket lock is required in the close ticket screen of the agent interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</Description>
+        <Description Translatable="1">Defines if a ticket lock is required in the close ticket screen of the iPhone interface (if the ticket isn't locked yet, the ticket gets locked and the current agent will be set automatically as its owner).</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -473,7 +473,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###TicketType" Required="0" Valid="1">
-        <Description Translatable="1">Sets the ticket type in the close ticket screen of the agent interface (Ticket::Type needs to be activated).</Description>
+        <Description Translatable="1">Sets the ticket type in the close ticket screen of the iPhone interface (Ticket::Type needs to be activated).</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -484,7 +484,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Service" Required="0" Valid="1">
-        <Description Translatable="1">Sets the service in the close ticket screen of the agent interface (Ticket::Service needs to be activated).</Description>
+        <Description Translatable="1">Sets the service in the close ticket screen of the iPhone interface (Ticket::Service needs to be activated).</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -495,7 +495,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Owner" Required="0" Valid="1">
-        <Description Translatable="1">Sets the ticket owner in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Sets the ticket owner in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -506,7 +506,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Responsible" Required="0" Valid="1">
-        <Description Translatable="1">Sets the responsible agent of the ticket in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Sets the responsible agent of the ticket in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -517,7 +517,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###State" Required="0" Valid="1">
-        <Description Translatable="1">If a note is added by an agent, sets the state of a ticket in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">If a note is added by an agent, sets the state of a ticket in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -528,7 +528,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###StateType" Required="1" Valid="1">
-        <Description Translatable="1">Defines the next state of a ticket after adding a note, in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Defines the next state of a ticket after adding a note, in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -538,7 +538,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###StateDefault" Required="0" Valid="1">
-        <Description Translatable="1">Defines the default next state of a ticket after adding a note, in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Defines the default next state of a ticket after adding a note, in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -546,7 +546,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Note" Required="0" Valid="1">
-        <Description Translatable="1">Allows adding notes in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Allows adding notes in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -557,7 +557,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Subject" Required="0" Valid="1">
-        <Description Translatable="1">Sets the default subject for notes added in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Sets the default subject for notes added in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -565,7 +565,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Body" Required="0" Valid="1">
-        <Description Translatable="1">Sets the default body text for notes added in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Sets the default body text for notes added in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -573,7 +573,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###ArticleTypeDefault" Required="0" Valid="1">
-        <Description Translatable="1">Defines the default type of the note in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Defines the default type of the note in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -593,7 +593,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Priority" Required="0" Valid="0">
-        <Description Translatable="1">Shows the ticket priority options in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Shows the ticket priority options in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -604,7 +604,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###PriorityDefault" Required="0" Valid="0">
-        <Description Translatable="1">Defines the default ticket priority in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Defines the default ticket priority in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -612,7 +612,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###Title" Required="0" Valid="1">
-        <Description Translatable="1">Shows the title fields in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Shows the title fields in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -623,8 +623,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###TimeUnits" Required="0" Valid="1">
-        <Description Lang="en">If you want to set the time units of a ticket.</Description>
-        <Description Lang="de">Wenn die zeiteinheiten gesetzt werden soll.</Description>
+        <Description Translatable="1">Sets the time units in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -635,7 +634,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###TicketFreeText" Required="0" Valid="1">
-        <Description Translatable="1">Ticket free text options shown in the close ticket screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Description Translatable="1">Ticket free text options shown in the close ticket screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -660,7 +659,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###TicketFreeTime" Required="0" Valid="1">
-        <Description Translatable="1">Ticket free time options shown in the close ticket screen of the agent interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
+        <Description Translatable="1">Ticket free time options shown in the close ticket screen of the iPhone interface. Possible settings: 0 = Disabled, 1 = Enabled, 2 = Enabled and required.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -675,7 +674,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###ArticleFreeText" Required="0" Valid="1">
-        <Description Translatable="1">Article free text options shown in the close ticket screen of the agent interface.</Description>
+        <Description Translatable="1">Article free text options shown in the close ticket screen of the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -687,7 +686,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###HistoryType" Required="0" Valid="1">
-        <Description Translatable="1">Defines the history type for the close ticket screen action, which gets used for ticket history in the agent interface.</Description>
+        <Description Translatable="1">Defines the history type for the close ticket screen action, which gets used for ticket history in the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
@@ -695,7 +694,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="iPhone::Frontend::AgentTicketClose###HistoryComment" Required="0" Valid="1">
-        <Description Translatable="1">Defines the history comment for the close ticket screen action, which gets used for ticket history in the agent interface.</Description>
+        <Description Translatable="1">Defines the history comment for the close ticket screen action, which gets used for ticket history in the iPhone interface.</Description>
         <Group>iPhone</Group>
         <SubGroup>Frontend::Agent::Ticket::ViewClose</SubGroup>
         <Setting>
