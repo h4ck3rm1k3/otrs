@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
     "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<!-- $Id: iPhoneHandle.xml,v 1.5 2010/07/16 17:38:17 cr Exp $ -->
+<!-- $Id: iPhoneHandle.xml,v 1.6 2010/07/16 17:42:14 cr Exp $ -->
 
 <book lang='en'>
 
@@ -555,6 +555,7 @@ shell> bin/opm.pl -a install -p /path/to/$Name-$Version.opm
     <title>Contacts</title>
     <para>People who are involved in this implementation.</para>
     <sect1>
+        <title>OTRS AG</title>
         <para>
         Technical: Jens Bechtel &lt;dev-support@otrs.com&gt;, Phone +49 (0)6172 681988 0
         </para>
