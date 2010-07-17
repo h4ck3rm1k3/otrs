@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.44 2010/07/16 16:03:33 cr Exp $
+# $Id: iPhone.pm,v 1.45 2010/07/17 03:47:35 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.44 $) [1];
+$VERSION = qw($Revision: 1.45 $) [1];
 
 =head1 NAME
 
@@ -216,15 +216,16 @@ sub new {
     $Self->{SystemVersion} = $Self->{ConfigObject}->Get('Version');
 
     # check for any version staring with 2.4
-    if ( $Self->{SystemVersion} =~ m{ \A 2 \. 4 \. \d+ \z }xms ) {
+    if ( $Self->{SystemVersion} =~ m{ \A 2 \. 4 \. (?: \d+ | x \s+ CVS) \z }xms ) {
         $Self->{'API3X'} = 0;
     }
     else {
         $Self->{'API3X'} = 0;
-        if ( $Self->{SystemVersion} =~ m{ \A 3 (?: \.\d+ ){2} \z }xms ) {
+        if ( $Self->{SystemVersion} =~ m{ \A 3 \. \d+ \. (?: \d+ | x \s+ CVS ) \z }xms ) {
             $Self->{'API3X'} = 1;
         }
     }
+
     return $Self;
 }
 
@@ -5567,6 +5568,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.44 2010/07/16 16:03:33 cr Exp $
+$Id: iPhone.pm,v 1.45 2010/07/17 03:47:35 cr Exp $
 
 =cut
