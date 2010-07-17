@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.45 2010/07/17 03:47:35 cr Exp $
+# $Id: iPhone.pm,v 1.46 2010/07/17 18:09:59 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.45 $) [1];
+$VERSION = qw($Revision: 1.46 $) [1];
 
 =head1 NAME
 
@@ -3563,9 +3563,10 @@ sub _GetScreenElements {
         else {
             $Mandatory = 0;
         }
+        my $TimeUnitsMeasure  = $Self->{ConfigObject}->Get('Ticket::Frontend::TimeUnits');
         my $TimeUnitsElements = {
             Name      => 'TimeUnits',
-            Title     => $Self->{LanguageObject}->Get('Time units (work units)'),
+            Title     => $Self->{LanguageObject}->Get("Time units $TimeUnitsMeasure"),
             Datatype  => 'Numeric',
             Viewtype  => 'Input',
             Min       => 1,
@@ -5568,6 +5569,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.45 2010/07/17 03:47:35 cr Exp $
+$Id: iPhone.pm,v 1.46 2010/07/17 18:09:59 cr Exp $
 
 =cut
