@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.47 2010/07/19 18:24:53 cr Exp $
+# $Id: iPhone.pm,v 1.48 2010/07/19 18:59:19 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.47 $) [1];
+$VERSION = qw($Revision: 1.48 $) [1];
 
 =head1 NAME
 
@@ -540,7 +540,6 @@ sub ScreenConfig {
     # ------------------------------------------------------------ #
     if ( $Param{Screen} eq 'Note' ) {
 
-        # my %Config = (
         # get screen configuration options for iphone from sysconfig
         $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketNote');
 
@@ -1953,7 +1952,6 @@ sub QueueView {
     if ( $Param{QueueID} ) {
         my @ViewableTickets = $Self->{TicketObject}->TicketSearch(
 
-            #            %{ $Filters{ $Param{Filter} }->{Search} },
             OrderBy    => $Param{OrderBy},
             SortBy     => $Param{SortBy},
             StateIDs   => \@ViewableStateIDs,
@@ -1988,8 +1986,6 @@ sub QueueView {
             LockIDs  => \@ViewableLockIDs,
             QueueIDs => [$QueueID],
 
-            #            QueueIDs => \@ViewableQueueIDs,
-            #            %Sort,
             Permission => 'rw',
             UserID     => $Param{UserID},
             Result     => 'COUNT',
@@ -2002,8 +1998,6 @@ sub QueueView {
             LockIDs  => \@ViewableLockIDs,
             QueueIDs => [$QueueID],
 
-            #            QueueIDs => \@ViewableQueueIDs,
-            #            %Sort,
             TicketFlag => {
                 Seen => 1,
             },
@@ -2025,10 +2019,6 @@ sub QueueView {
         };
     }
 
-    #    for my $TicketID (@ViewableTickets) {
-    #        my %Ticket = $Self->{TicketObject}->Get( TicketID => $TicketID )
-    #        $QueueSum{QueueID}
-    #    }
     return @Queues;
 }
 
@@ -2895,11 +2885,8 @@ sub _GetTos {
 }
 
 sub _GetNoteTypes {
-
-    # ready for iPhone
     my ( $Self, %Param ) = @_;
 
-    #$Self->{Config} = $Self->{ConfigObject}->Get('Ticket::Frontend::AgentTicketFreeText');
     my %DefaultNoteTypes = %{ $Self->{Config}->{ArticleTypes} };
 
     my %NoteTypes = $Self->{TicketObject}->ArticleTypeList( Result => 'HASH' );
@@ -3791,10 +3778,6 @@ sub _TicketPhoneNew {
     }
 
     my $MimeType = 'text/plain';
-
-    #    if ( $Self->{ConfigObject}->Get('Frontend::RichText') ) {
-    #        $MimeType = 'text/html';
-    #    }
 
     # check if new owner is given (then send no agent notify)
     my $NoAgentNotify = 0;
@@ -4724,8 +4707,6 @@ sub _TicketCompose {
         References     => $Param{References},
         Charset        => $Self->{ConfigObject}->Get('DefaultCharset'),
         MimeType       => $MimeType,
-
-        #            %ArticleParam,
     );
 
     # error page
@@ -5019,17 +5000,6 @@ sub _TicketMove {
         return;
     }
 
-    # check new user
-    #    if ( !$Param{OwnerID} ) {
-    #        $Self->{LogObject}->Log(
-    #            Priority => 'error',
-    #            Message  => "No OwnerID is given! Please contact the admin.",
-    #        );
-    #        return;
-    #    }
-    #    else {
-    #        $Param{NewUserID} = $Param{OwnerID};
-    #    }
     if ( $Param{OwnerID} ) {
         $Param{NewUserID} = $Param{OwnerID};
     }
@@ -5569,6 +5539,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.47 2010/07/19 18:24:53 cr Exp $
+$Id: iPhone.pm,v 1.48 2010/07/19 18:59:19 cr Exp $
 
 =cut
