@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.46 2010/07/17 18:09:59 cr Exp $
+# $Id: iPhone.pm,v 1.47 2010/07/19 18:24:53 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.46 $) [1];
+$VERSION = qw($Revision: 1.47 $) [1];
 
 =head1 NAME
 
@@ -5473,7 +5473,7 @@ sub _GetComposeDefaults {
     $Data{Salutation}       = $Response{Salutation};
     $Data{Signature}        = $Response{Signature};
     $Data{StandardResponse} = $Response{StandardResponse};
-    print STDERR "Response => $Response{Salutation}\n";    #TODO Delete STDERR Output...
+
     %Data = $TemplateGenerator->Attributes(
         TicketID   => $Param{TicketID},
         ArticleID  => $Param{ArticleID},
@@ -5569,6 +5569,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.46 2010/07/17 18:09:59 cr Exp $
+$Id: iPhone.pm,v 1.47 2010/07/19 18:24:53 cr Exp $
 
 =cut
