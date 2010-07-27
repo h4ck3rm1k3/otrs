@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.48 2010/07/19 18:59:19 cr Exp $
+# $Id: iPhone.pm,v 1.49 2010/07/27 22:14:17 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.48 $) [1];
+$VERSION = qw($Revision: 1.49 $) [1];
 
 =head1 NAME
 
@@ -2762,7 +2762,7 @@ Get a Hash reference with information about the otrs iPhone Package extension
 
     a resutl could be
 
-    $Result [
+    $Result = [
         Name    => "iPhoneHandle"
         Version => "0.9.2",
         Vendor  => "OTRS AG",
@@ -2801,6 +2801,45 @@ sub VersionGet {
         Message  => 'No iPhoneHandle Package found, is this a development enviroment?',
     );
     return;
+}
+
+=item CustomerIDGet()
+Get the Customer ID from a given customer login
+
+    my $Resut = $iPhoneObject->CustomerIDGet(
+        User => "David";
+    );
+
+    a resutl could be
+
+    $Result = "sw"
+
+=cut
+
+sub CustomerIDGet {
+    my ( $Self, %Param ) = @_;
+
+    # check for parameters
+    if ( !$Param{CustomerUserID} ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'Need CustomerUserID!',
+        );
+        return;
+    }
+    my $CustomerID;
+
+    # get customer data
+    my %CustomerUserData = $Self->{CustomerUserObject}->CustomerUserDataGet(
+        User => $Param{CustomerUserID},
+    );
+    if ( $CustomerUserData{UserCustomerID} ) {
+        $CustomerID = $CustomerUserData{UserCustomerID};
+        return $CustomerID;
+    }
+    else {
+        return '';
+    }
 }
 
 # internal subroutines
@@ -5539,6 +5578,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.48 2010/07/19 18:59:19 cr Exp $
+$Id: iPhone.pm,v 1.49 2010/07/27 22:14:17 cr Exp $
 
 =cut
