@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.49 2010/07/27 22:14:17 cr Exp $
+# $Id: iPhone.pm,v 1.50 2010/07/29 17:50:25 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.49 $) [1];
+$VERSION = qw($Revision: 1.50 $) [1];
 
 =head1 NAME
 
@@ -2100,41 +2100,46 @@ sub TicketList {
     my %Article = $Self->{TicketObject}->ArticleLastCustomerArticle(
         TicketID => $Param{TicketID},
     );
+    if (%Article) {
+        $Article{PriorityColor} = $Color{ $Article{PriorityID} };
 
-    $Article{PriorityColor} = $Color{ $Article{PriorityID} };
+        if ( $Self->{'API3X'} ) {
+            my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
+                TicketID => $Param{TicketID},
+                UserID   => $Param{UserID},
+            );
+            if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
+                $Article{Seen} = 1;
+            }
+        }
 
-    if ( $Self->{'API3X'} ) {
-        my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
+        # strip out all data
+        my @Delete
+            = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
+            ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
+            ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
+            StateType ArchiveFlag UnlockTimeout Changed
         );
-        if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
-            $Article{Seen} = 1;
-        }
-    }
 
-    # strip out all data
-    my @Delete
-        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
-        ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
-        ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
-        StateType ArchiveFlag UnlockTimeout Changed
-    );
-
-    for my $Key (@Delete) {
-        delete $Article{$Key};
-    }
-
-    for my $Key ( keys %Article ) {
-        if ( !defined $Article{$Key} || $Article{$Key} eq '' ) {
+        for my $Key (@Delete) {
             delete $Article{$Key};
         }
-        if ( $Key =~ /^Escala/ ) {
-            delete $Article{$Key};
+
+        for my $Key ( keys %Article ) {
+            if ( !defined $Article{$Key} || $Article{$Key} eq '' ) {
+                delete $Article{$Key};
+            }
+            if ( $Key =~ /^Escala/ ) {
+                delete $Article{$Key};
+            }
         }
+
+        return %Article;
     }
 
-    return %Article;
+    # return only ticket information if ticket has no articles
+    my %TicketData = $Self->TicketGet( TicketID => $Param{TicketID} );
+    return %TicketData;
 }
 
 =item TicketGet()
@@ -2342,81 +2347,88 @@ sub ArticleGet {
 
     my %Article = $Self->{TicketObject}->ArticleGet(%Param);
 
-    if ( $Self->{'API3X'} ) {
-
-        # check if article is seen
-        my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
-            ArticleID => $Param{ArticleID},
-            UserID    => $Param{UserID},
-        );
-        if ( $ArticleFlag{seen} || $ArticleFlag{Seen} ) {
-            $Article{Seen} = 1;
-        }
-
-        # mark shown article as seen
-        $Self->{TicketObject}->ArticleFlagSet(
-            ArticleID => $Param{ArticleID},
-            Key       => 'Seen',
-            Value     => 1,
-            UserID    => $Param{UserID},
-        );
-    }
-
-    # check if ticket need to be marked as seen
-    my $ArticleAllSeen = 1;
-    my @Index = $Self->{TicketObject}->ArticleIndex( TicketID => $Article{TicketID} );
-    for my $ArticleID (@Index) {
+    if (%Article) {
         if ( $Self->{'API3X'} ) {
+
+            # check if article is seen
             my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
-                ArticleID => $ArticleID,
+                ArticleID => $Param{ArticleID},
                 UserID    => $Param{UserID},
             );
+            if ( $ArticleFlag{seen} || $ArticleFlag{Seen} ) {
+                $Article{Seen} = 1;
+            }
 
-            # last if article was not shown
-            if ( !$ArticleFlag{Seen} && !$ArticleFlag{seen} ) {
-                $ArticleAllSeen = 0;
-                last;
+            # mark shown article as seen
+            $Self->{TicketObject}->ArticleFlagSet(
+                ArticleID => $Param{ArticleID},
+                Key       => 'Seen',
+                Value     => 1,
+                UserID    => $Param{UserID},
+            );
+        }
+
+        # check if ticket need to be marked as seen
+        my $ArticleAllSeen = 1;
+        my @Index = $Self->{TicketObject}->ArticleIndex( TicketID => $Article{TicketID} );
+        for my $ArticleID (@Index) {
+            if ( $Self->{'API3X'} ) {
+                my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
+                    ArticleID => $ArticleID,
+                    UserID    => $Param{UserID},
+                );
+
+                # last if article was not shown
+                if ( !$ArticleFlag{Seen} && !$ArticleFlag{seen} ) {
+                    $ArticleAllSeen = 0;
+                    last;
+                }
             }
         }
-    }
 
-    # mark ticket as seen if all article are shown
-    if ( $ArticleAllSeen && $Self->{'API3X'} ) {
-        $Self->{TicketObject}->TicketFlagSet(
-            TicketID => $Article{TicketID},
-            Key      => 'Seen',
-            Value    => 1,
-            UserID   => $Param{UserID},
+        # mark ticket as seen if all article are shown
+        if ( $ArticleAllSeen && $Self->{'API3X'} ) {
+            $Self->{TicketObject}->TicketFlagSet(
+                TicketID => $Article{TicketID},
+                Key      => 'Seen',
+                Value    => 1,
+                UserID   => $Param{UserID},
+            );
+        }
+
+        # add accounted time
+        my $AccountedTime = $Self->{TicketObject}->ArticleAccountedTimeGet(%Param);
+        if ( defined $AccountedTime ) {
+            $Article{AccountedTime} = $AccountedTime;
+        }
+
+        # strip out all data
+        my @Delete
+            = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
+            ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
+            ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
+            StateType ArchiveFlag UnlockTimeout Changed
         );
-    }
 
-    # add accounted time
-    my $AccountedTime = $Self->{TicketObject}->ArticleAccountedTimeGet(%Param);
-    if ( defined $AccountedTime ) {
-        $Article{AccountedTime} = $AccountedTime;
-    }
+        for my $Key (@Delete) {
+            delete $Article{$Key};
+        }
 
-    # strip out all data
-    my @Delete
-        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
-        ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
-        ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
-        StateType ArchiveFlag UnlockTimeout Changed
+        for my $Key ( keys %Article ) {
+            if ( !defined $Article{$Key} || $Article{$Key} eq '' ) {
+                delete $Article{$Key};
+            }
+            if ( $Key =~ /^Escala/ ) {
+                delete $Article{$Key};
+            }
+        }
+
+        return %Article;
+    }
+    $Self->{LogObject}->Log(
+        Priority => 'error',
+        Message  => 'No Articles found in this ticket',
     );
-
-    for my $Key (@Delete) {
-        delete $Article{$Key};
-    }
-
-    for my $Key ( keys %Article ) {
-        if ( !defined $Article{$Key} || $Article{$Key} eq '' ) {
-            delete $Article{$Key};
-        }
-        if ( $Key =~ /^Escala/ ) {
-            delete $Article{$Key};
-        }
-    }
-
     return %Article;
 }
 
@@ -2842,6 +2854,33 @@ sub CustomerIDGet {
     }
 }
 
+=item ArticleIndex()
+
+returns an array with article id's or '' if ticket has no articles
+
+    my @ArticleIDs = $iPhoneObject->ArticleIndex(
+        TicketID => 123,
+    );
+
+    my @ArticleIDs = $iPhoneObject->ArticleIndex(
+        SenderType => 'customer',
+        TicketID   => 123,
+    );
+
+=cut
+
+sub ArticleIndex {
+    my ( $Self, %Param ) = @_;
+
+    my @Index = $Self->{TicketObject}->ArticleIndex(%Param);
+
+    if ( !@Index ) {
+        return '';
+    }
+
+    return @Index;
+}
+
 # internal subroutines
 
 sub _GetTypes {
@@ -3067,16 +3106,16 @@ sub _GetScreenElements {
             Datatype       => 'Text',
             Viewtype       => 'Picker',
             DynamicOptions => {
-                Object => 'CustomObject',
-                Method => 'SLAsGet',
-                Parameters =>
+                Object     => 'CustomObject',
+                Method     => 'SLAsGet',
+                Parameters => [
                     {
-                    CustomerUserID => 'CustomerUserLogin',
-                    QueueID        => 'QueueID',
-                    ServiceID      => 'ServiceID',
-                    TicketID       => 'TicketID',
+                        CustomerUserID => 'CustomerUserLogin',
+                        QueueID        => 'QueueID',
+                        ServiceID      => 'ServiceID',
+                        TicketID       => 'TicketID',
                     },
-
+                ],
             },
             Mandatory => 0,
             Default   => '',
@@ -5578,6 +5617,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.49 2010/07/27 22:14:17 cr Exp $
+$Id: iPhone.pm,v 1.50 2010/07/29 17:50:25 cr Exp $
 
 =cut
