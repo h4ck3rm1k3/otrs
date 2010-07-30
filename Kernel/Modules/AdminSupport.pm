@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.28 2010/02/16 19:07:15 ub Exp $
+# $Id: AdminSupport.pm,v 1.29 2010/07/30 10:04:32 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.28 $) [1];
+$VERSION = qw($Revision: 1.29 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -172,7 +172,7 @@ sub Run {
             else {
                 $Output .= $Self->{LayoutObject}->Notify(
                     Priority => 'warning',
-                    Info     => 'Can\'t send email to the ((otrs)) support team!' . "\n\n"
+                    Info     => 'Can not send email to the ((otrs)) support team!' . "\n\n"
                         . "You will find the otrs system information package at\n"
                         . "If you would like to use OTRS support services please send the package to support\@otrs.com or call\n"
                         . "our support team by phone to review the next step.\n\n"
