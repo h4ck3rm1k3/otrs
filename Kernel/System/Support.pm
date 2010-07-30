@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.43 2010/02/23 15:19:46 ub Exp $
+# $Id: Support.pm,v 1.44 2010/07/30 10:06:28 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.43 $) [1];
+$VERSION = qw($Revision: 1.44 $) [1];
 
 =head1 NAME
 
@@ -635,7 +635,7 @@ sub GetInstalledProduct {
         WIDPublicationSystem => 0,
     );
 
-    $Product = "Product:" . $Self->{ConfigObject}->Get('Product') . ' '
+    $Product = "Product: " . $Self->{ConfigObject}->Get('Product') . ' '
         . $Self->{ConfigObject}->Get('Version');
 
     for my $Package ( $Self->{PackageObject}->RepositoryList() ) {
@@ -648,6 +648,9 @@ sub GetInstalledProduct {
             }
         }
     }
+
+    # add the product name (which contains the ITSM version, if ITSM is installed)
+    $Product .= ' / ' . $Self->{ConfigObject}->Get('ProductName');
 
     # log info
     $Self->{LogObject}->Log(
@@ -1047,16 +1050,16 @@ sub _SQLDelete {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (http://otrs.org/).
+This software is part of the OTRS project (L<http://otrs.org/>).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =cut
 
 =head1 VERSION
 
-$Revision: 1.43 $ $Date: 2010/02/23 15:19:46 $
+$Revision: 1.44 $ $Date: 2010/07/30 10:06:28 $
 
 =cut
