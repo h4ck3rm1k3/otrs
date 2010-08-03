@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: iPhone.pm,v 1.51 2010/07/29 18:50:32 cr Exp $
+# $Id: iPhone.pm,v 1.52 2010/08/03 22:44:16 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.51 $) [1];
+$VERSION = qw($Revision: 1.52 $) [1];
 
 =head1 NAME
 
@@ -606,7 +606,7 @@ sub ScreenConfig {
             },
         );
         if ( !$Config{Elements} ) {
-            return;
+            return -1;
         }
         return \%Config;
     }
@@ -634,7 +634,7 @@ sub ScreenConfig {
         return \%Config;
     }
 
-    return;
+    return -1;
 }
 
 =item Badges()
@@ -1360,6 +1360,15 @@ sub LockedView {
             next if !%Article;
             push @List, \%Article;
         }
+
+        if ( !@List ) {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "There are no locked tickets under $Param{Filter} filter "
+                    . "category",
+            );
+        }
+
         return @List;
     }
 
@@ -1564,49 +1573,65 @@ sub WatchedView {
         },
     );
 
-    # do shown tickets lookup
-    my $Limit = $Param{Limit} || 100;
-    if ( $Param{Filter} ) {
-        my @ViewableTickets = $Self->{TicketObject}->TicketSearch(
-            %{ $Filters{ $Param{Filter} }->{Search} },
-            Limit  => $Limit,
-            Result => 'ARRAY',
-        );
-        my @List;
-        for my $TicketID (@ViewableTickets) {
-            next if !$TicketID;
-            my %Article = $Self->TicketList( TicketID => $TicketID, UserID => $Param{UserID} );
-            next if !%Article;
-            push @List, \%Article;
+    if ( $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
+
+        # do shown tickets lookup
+        my $Limit = $Param{Limit} || 100;
+        if ( $Param{Filter} ) {
+            my @ViewableTickets = $Self->{TicketObject}->TicketSearch(
+                %{ $Filters{ $Param{Filter} }->{Search} },
+                Limit  => $Limit,
+                Result => 'ARRAY',
+            );
+            my @List;
+            for my $TicketID (@ViewableTickets) {
+                next if !$TicketID;
+                my %Article = $Self->TicketList( TicketID => $TicketID, UserID => $Param{UserID} );
+                next if !%Article;
+                push @List, \%Article;
+            }
+            if ( !@List ) {
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message  => "There are no watched tickets under $Param{Filter} filter "
+                        . "category",
+                );
+            }
+            return @List;
         }
-        return @List;
+
+        # do nav bar lookup
+        my @States;
+        for my $Filter ( keys %Filters ) {
+            my $Count = $Self->{TicketObject}->TicketSearch(
+                %{ $Filters{$Filter}->{Search} },
+                Result => 'COUNT',
+            );
+            my $CountNew = $Self->{TicketObject}->TicketSearch(
+                %{ $Filters{$Filter}->{Search} },
+                Result     => 'COUNT',
+                TicketFlag => {
+                    Seen => 1,
+                },
+                TicketFlagUserID => $Param{UserID},
+            );
+            $CountNew = $Count - $CountNew;
+
+            push @States, {
+                StateType => $Filter,
+
+                NumberOfTickets                => $Count,
+                NumberOfTicketsWithNewMessages => $CountNew,
+            };
+        }
+        return @States;
     }
-
-    # do nav bar lookup
-    my @States;
-    for my $Filter ( keys %Filters ) {
-        my $Count = $Self->{TicketObject}->TicketSearch(
-            %{ $Filters{$Filter}->{Search} },
-            Result => 'COUNT',
-        );
-        my $CountNew = $Self->{TicketObject}->TicketSearch(
-            %{ $Filters{$Filter}->{Search} },
-            Result     => 'COUNT',
-            TicketFlag => {
-                Seen => 1,
-            },
-            TicketFlagUserID => $Param{UserID},
-        );
-        $CountNew = $Count - $CountNew;
-
-        push @States, {
-            StateType => $Filter,
-
-            NumberOfTickets                => $Count,
-            NumberOfTicketsWithNewMessages => $CountNew,
-        };
-    }
-    return @States;
+    $Self->{LogObject}->Log(
+        Priority => 'error',
+        Message  => 'Ticket watcher feature is not enable in system configuration '
+            . 'Please contact admin',
+    );
+    return -1;
 }
 
 =item ResponsibleView()
@@ -1799,6 +1824,13 @@ sub ResponsibleView {
                 next if !%Article;
                 push @List, \%Article;
             }
+            if ( !@List ) {
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message  => "There are no responsible for tickets under $Param{Filter} filter "
+                        . "category",
+                );
+            }
             return @List;
         }
 
@@ -1828,7 +1860,12 @@ sub ResponsibleView {
         }
         return @States;
     }
-    return
+    $Self->{LogObject}->Log(
+        Priority => 'error',
+        Message  => 'Ticket responsible feature is not enable in system configuration '
+            . 'Please contact admin',
+    );
+    return -1;
 }
 
 =item QueueView()
@@ -2429,7 +2466,7 @@ sub ArticleGet {
         Priority => 'error',
         Message  => 'No Articles found in this ticket',
     );
-    return;
+    return -1;
 }
 
 =item ServicesGet()
@@ -2726,42 +2763,42 @@ sub ScreenActions {
             if ($Result) {
                 return $Result;
             }
-            return;
+            return -1;
         }
         if ( $Param{Action} eq 'Note' || $Param{Action} eq 'Close' ) {
             $Result = $Self->_TicketCommonActions(%Param);
             if ($Result) {
                 return $Result;
             }
-            return;
+            return -1;
         }
         if ( $Param{Action} eq 'Compose' ) {
             $Result = $Self->_TicketCompose(%Param);
             if ($Result) {
                 return $Result;
             }
-            return;
+            return -1;
         }
         if ( $Param{Action} eq 'Move' ) {
             $Result = $Self->_TicketMove(%Param);
             if ($Result) {
                 return $Result;
             }
-            return;
+            return -1;
         }
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => 'Action undefined! expected Phone, Note, Close, Compose or Move, '
                 . 'but ' . $Param{Action} . ' found',
         );
-        return;
+        return -1;
     }
     else {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => 'No Action given! Please contact the admin.',
         );
-        return;
+        return -1;
     }
 }
 
@@ -2791,7 +2828,7 @@ sub VersionGet {
             Priority => 'error',
             Message  => 'No UserID given! Please contact the admin.',
         );
-        return;
+        return -1;
     }
 
     PACKAGE:
@@ -2812,7 +2849,7 @@ sub VersionGet {
         Priority => 'error',
         Message  => 'No iPhoneHandle Package found, is this a development enviroment?',
     );
-    return;
+    return -1;
 }
 
 =item CustomerIDGet()
@@ -2837,7 +2874,7 @@ sub CustomerIDGet {
             Priority => 'error',
             Message  => 'Need CustomerUserID!',
         );
-        return;
+        return -1;
     }
     my $CustomerID;
 
@@ -2875,7 +2912,10 @@ sub ArticleIndex {
     my @Index = $Self->{TicketObject}->ArticleIndex(%Param);
 
     if ( !@Index ) {
-        return '';
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'There are no articles for this ticket',
+        );
     }
 
     return @Index;
@@ -3185,7 +3225,7 @@ sub _GetScreenElements {
         );
 
         if ( !%ComposeDefaults ) {
-            return;
+            return -1;
         }
 
         my $ComposeFromElements = {
@@ -3688,7 +3728,7 @@ sub _TicketPhoneNew {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return;
+            return -1;
         }
         if (
             $Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} )
@@ -3699,7 +3739,7 @@ sub _TicketPhoneNew {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return;
+            return -1;
         }
     }
 
@@ -3717,7 +3757,7 @@ sub _TicketPhoneNew {
                 Priority => 'error',
                 Message  => "TicketFreeTextField$_ invalid",
             );
-            return;
+            return -1;
         }
     }
 
@@ -3746,7 +3786,7 @@ sub _TicketPhoneNew {
                 Priority => 'error',
                 Message  => 'From invalid' . $Self->{CheckItemObject}->CheckError(),
             );
-            return;
+            return -1;
         }
     }
     if ( !$Param{CustomerUserLogin} ) {
@@ -3754,21 +3794,21 @@ sub _TicketPhoneNew {
             Priority => 'error',
             Message  => 'From invalid',
         );
-        return;
+        return -1;
     }
     if ( !$Param{Subject} ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => 'Subject invalid',
         );
-        return;
+        return -1;
     }
     if ( !$Param{QueueID} ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => 'Destination invalid',
         );
-        return;
+        return -1;
     }
     if (
         $Self->{ConfigObject}->Get('Ticket::Service')
@@ -3780,7 +3820,7 @@ sub _TicketPhoneNew {
             Priority => 'error',
             Message  => 'Service invalid',
         );
-        return;
+        return -1;
     }
 
     # create new ticket, do db insert
@@ -3802,9 +3842,9 @@ sub _TicketPhoneNew {
     if ( !$TicketID ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Error: No ticket created! Pleae contact admin',
+            Message  => 'Error: No ticket created! Please contact admin',
         );
-        return;
+        return -1;
     }
 
     # set ticket free text
@@ -4021,7 +4061,7 @@ sub _TicketPhoneNew {
             Priority => 'error',
             Message  => 'Error: no article was created! Please contact the admin',
         );
-        return;
+        return -1;
     }
 }
 
@@ -4045,7 +4085,7 @@ sub _TicketCommonActions {
             Priority => 'error',
             Message  => 'No TicketID is given! Please contact the admin.',
         );
-        return;
+        return -1;
     }
 
     # check permissions
@@ -4071,7 +4111,7 @@ sub _TicketCommonActions {
             Priority => 'error',
             Message  => "You need $Self->{Config}->{Permission} permissions!",
         );
-        return;
+        return -1;
     }
 
     my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
@@ -4125,7 +4165,7 @@ sub _TicketCommonActions {
                     Message  => 'Sorry, you need to be the owner to do this action! '
                         . 'Please change the owner first.',
                 );
-                return;
+                return -1;
             }
         }
     }
@@ -4159,7 +4199,7 @@ sub _TicketCommonActions {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return;
+            return -1;
         }
         if (
             $Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} )
@@ -4170,7 +4210,7 @@ sub _TicketCommonActions {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return;
+            return -1;
         }
     }
 
@@ -4182,7 +4222,7 @@ sub _TicketCommonActions {
                 Priority => 'error',
                 Message  => 'Subject Invalid',
             );
-            return;
+            return -1;
         }
 
         # check body
@@ -4191,7 +4231,7 @@ sub _TicketCommonActions {
                 Priority => 'error',
                 Message  => 'Body Invalid',
             );
-            return;
+            return -1;
         }
     }
 
@@ -4203,7 +4243,7 @@ sub _TicketCommonActions {
             Priority => 'error',
             Message  => "TicketFreeTextField$Count invalid",
         );
-        return;
+        return -1;
     }
 
     #check if Title
@@ -4359,7 +4399,7 @@ sub _TicketCommonActions {
                 Priority => 'error',
                 Message  => 'Error: no article was created! Please contact the admin.',
             );
-            return;
+            return -1;
         }
 
         # time accounting
@@ -4589,7 +4629,7 @@ sub _TicketCompose {
             Priority => 'error',
             Message  => 'No TicketID is given! Please contact the admin.',
         );
-        return;
+        return -1;
     }
 
     # check permissions
@@ -4615,7 +4655,7 @@ sub _TicketCompose {
             Priority => 'error',
             Message  => "You need $Self->{Config}->{Permission} permissions!",
         );
-        return;
+        return -1;
     }
     my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
 
@@ -4671,7 +4711,7 @@ sub _TicketCompose {
                     Message  => "Sorry, you need to be the owner to do this action! "
                         . "Please change the owner first.",
                 );
-                return;
+                return -1;
             }
         }
     }
@@ -4703,7 +4743,7 @@ sub _TicketCompose {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return;
+            return -1;
         }
         if (
             $Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} )
@@ -4714,7 +4754,7 @@ sub _TicketCompose {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return;
+            return -1;
         }
     }
 
@@ -4729,7 +4769,7 @@ sub _TicketCompose {
                 Priority => 'error',
                 Message  => "TicketFreeTextField$_ invalid",
             );
-            return;
+            return -1;
         }
     }
 
@@ -4743,7 +4783,7 @@ sub _TicketCompose {
                     Message  => "$Line invalid "
                         . $Self->{CheckItemObject}->CheckError(),
                 );
-                return;
+                return -1;
             }
         }
     }
@@ -4793,7 +4833,7 @@ sub _TicketCompose {
             Priority => 'error',
             Message  => 'Error no Article created! Please contact the admin',
         );
-        return;
+        return -1;
     }
 
     # time accounting
@@ -4945,7 +4985,7 @@ sub _TicketMove {
                 Priority => 'error',
                 Message  => "No $_ is given! Please contact the admin.",
             );
-            return;
+            return -1;
         }
     }
 
@@ -4975,7 +5015,7 @@ sub _TicketMove {
             Priority => 'error',
             Message  => "You need $Self->{Config}->{Permission} permissions!",
         );
-        return;
+        return -1;
     }
 
     # get lock state
@@ -5030,7 +5070,7 @@ sub _TicketMove {
                     Message  => "Sorry, you need to be the owner to do this action! "
                         . "Please change the owner first.",
                 );
-                return;
+                return -1;
             }
         }
     }
@@ -5065,7 +5105,7 @@ sub _TicketMove {
                 Priority => 'error',
                 Message  => "TicketFreeTextField$_ invalid",
             );
-            return;
+            return -1;
         }
     }
 
@@ -5075,7 +5115,7 @@ sub _TicketMove {
             Priority => 'error',
             Message  => "No QueueID is given! Please contact the admin.",
         );
-        return;
+        return -1;
     }
 
     if ( $Param{OwnerID} ) {
@@ -5108,7 +5148,7 @@ sub _TicketMove {
             Priority => 'error',
             Message  => "Error: ticket not moved! Please contact the admin.",
         );
-        return;
+        return -1;
     }
 
     # set priority
@@ -5258,7 +5298,7 @@ sub _TicketMove {
                 Priority => 'error',
                 Message  => "Error: Can't create an article for the moved ticket",
             );
-            return;
+            return -1;
         }
     }
 
@@ -5331,7 +5371,7 @@ sub _TicketMove {
             return $Param{QueueID};
         }
     }
-    return;
+    return -1;
 
 }
 
@@ -5343,7 +5383,7 @@ sub _GetComposeDefaults {
             Priority => 'error',
             Message  => 'No TicketID given! Please contact the admin.',
         );
-        return;
+        return -1;
     }
 
     my %ComposeData;
@@ -5558,7 +5598,7 @@ sub _GetComposeDefaults {
                     Priority => 'error',
                     Message  => $Line . " Invalid" . " ServerError",
                 );
-                return;
+                return -1;
             }
         }
     }
@@ -5569,7 +5609,7 @@ sub _GetComposeDefaults {
                     Priority => 'error',
                     Message  => " From Invalid " . $Self->{CheckItemObject}->CheckError(),
                 );
-                return;
+                return -1;
             }
         }
     }
@@ -5617,6 +5657,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.51 2010/07/29 18:50:32 cr Exp $
+$Id: iPhone.pm,v 1.52 2010/08/03 22:44:16 cr Exp $
 
 =cut
