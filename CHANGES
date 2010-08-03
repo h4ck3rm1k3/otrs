@@ -2,7 +2,7 @@
 # CHANGES - change log of iPhoneHandle
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: CHANGES,v 1.1 2010/08/03 22:36:07 cr Exp $
+# $Id: CHANGES,v 1.2 2010/08/03 22:38:04 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,6 +20,7 @@ set TimeUnits field as mandatory or not.
 
 0.9.1 (2010/07/10)
  - (2010/07/10) Features development.
+
 
 
 EOF
