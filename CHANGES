@@ -1,0 +1,25 @@
+# --
+# CHANGES - change log of iPhoneHandle
+# Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
+# --
+# $Id: CHANGES,v 1.1 2010/08/03 22:36:07 cr Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+0.9.3 (2010/08/03)
+ - (2010/08/03) Fixed bug#5624 - Implement non error responses in iPhoneHandle. Now IPhoneHande has
+ a new mechanism for error handling.
+
+0.9.2 (2010/08/01)
+ - (2010/07/27) Fixed bug#5586 - No SLA List Displayed.
+ - (2010/07/16) Fixed bug#5361 - Global TimeUnits. Now iPhoneHandle read the sysconfig setting to
+set TimeUnits field as mandatory or not.
+
+0.9.1 (2010/07/10)
+ - (2010/07/10) Features development.
+
+
+EOF
