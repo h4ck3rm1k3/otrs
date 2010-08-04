@@ -2,14 +2,17 @@
 # CHANGES - change log of iPhoneHandle
 # Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
 # --
-# $Id: CHANGES,v 1.2 2010/08/03 22:38:04 cr Exp $
+# $Id: CHANGES,v 1.3 2010/08/04 15:18:17 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-0.9.3 (2010/08/03)
+0.9.4 (2010/08/??)
+
+
+0.9.3 (2010/08/04)
  - (2010/08/03) Fixed bug#5624 - Implement non error responses in iPhoneHandle. Now IPhoneHande has
  a new mechanism for error handling.
 
@@ -20,7 +23,6 @@ set TimeUnits field as mandatory or not.
 
 0.9.1 (2010/07/10)
  - (2010/07/10) Features development.
-
 
 
 EOF
