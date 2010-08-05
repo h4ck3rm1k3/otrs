@@ -22,4 +22,45 @@
         <File Permission="644" Location="Kernel/System/iPhone.pm"/>
         <File Permission="644" Location="Kernel/System/JSON.pm"/>
     </Filelist>
+        <IntroInstall Type="pre" Title="Install Information" Lang="en"><![CDATA[
+        <br/>
+        <b>WELCOME</b>
+        <br/>
+        <br/>
+        You are about to install the OTRS package iPhoneHandle.<br/>
+        <br/>
+        <br/>
+        <b>ATTENTION</b>
+        <br/>
+        <br/>
+        Make sure your database accepts packages over 5 MB in size. A MySQL database for example accepts packages up to 1 MB by default. In this case, the value for max_allowed_packet must be increased. The recommended maximum size accepted is 20 MB.<br/>
+        <br/>
+        <br/>
+        ((enjoy))<br/>
+        <br/>
+    ]]></IntroInstall>
+    <IntroUpgrade Type="pre" Title="Upgrade Information" Lang="en"><![CDATA[
+        <br/>
+        <b>WELCOME</b>
+        <br/>
+        <br/>
+        You are about to upgrade the OTRS package iPhoneHandle.<br/>
+        <br/>
+        <br/>
+        ((enjoy))<br/>
+        <br/>
+    ]]></IntroUpgrade>
+    <IntroUninstall Type="pre" Title="Uninstallation Information" Lang="en"><![CDATA[
+        <br/>
+        <b>ATTENTION</b>
+        <br/>
+        <br/>
+        If you uninstall this package, MyOTRS the iPhone app, will not be able to communicate with
+        your server!
+        <br/>
+        <br/>
+        ((enjoy))<br/>
+        <br/>
+    ]]></IntroUninstall>
+
 </otrs_package>
