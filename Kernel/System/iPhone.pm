@@ -1,8 +1,8 @@
 # --
 # Kernel/System/iPhone.pm - all iPhone handle functions
-# Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.52 2010/08/03 22:44:16 cr Exp $
+# $Id: iPhone.pm,v 1.53 2010/08/12 19:50:49 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.52 $) [1];
+$VERSION = qw($Revision: 1.53 $) [1];
 
 =head1 NAME
 
@@ -4961,10 +4961,10 @@ sub _TicketCompose {
     # log use response id and reply article id (useful for response diagnostics)
     my $HistoryName;
     if ( $Param{ReplyArticleID} ) {
-        $HistoryName = "Respomse from iPhone /$Param{ReplyArticleID}/$ArticleID)";
+        $HistoryName = "Response from iPhone /$Param{ReplyArticleID}/$ArticleID)";
     }
     else {
-        $HistoryName = "Respomse from iPhone /$ArticleID)"
+        $HistoryName = "Response from iPhone /$ArticleID)"
     }
     $Self->{TicketObject}->HistoryAdd(
         Name         => $HistoryName,
@@ -5657,6 +5657,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.52 2010/08/03 22:44:16 cr Exp $
+$Id: iPhone.pm,v 1.53 2010/08/12 19:50:49 mb Exp $
 
 =cut
