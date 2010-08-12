@@ -2,12 +2,15 @@
 # CHANGES - change log of iPhoneHandle
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: CHANGES,v 1.4 2010/08/05 19:16:06 cr Exp $
+# $Id: CHANGES,v 1.5 2010/08/12 22:18:53 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
+
+0.9.5 (2010/08/12)
+ - (2010/08/12) Fixed bug#5731 Access to all tickets via responsible.
 
 0.9.4 (2010/08/05)
  - (2010/08/05) Added Package Manager information for install, upgrade and uninstall procedures

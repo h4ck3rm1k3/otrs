@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.53 2010/08/12 19:50:49 mb Exp $
+# $Id: iPhone.pm,v 1.54 2010/08/12 22:18:52 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.53 $) [1];
+$VERSION = qw($Revision: 1.54 $) [1];
 
 =head1 NAME
 
@@ -1756,21 +1756,21 @@ sub ResponsibleView {
             Name   => 'All',
             Prio   => 1000,
             Search => {
-                StateType          => 'Open',
-                ResponsibleUserIDs => [ $Param{UserID} ],
-                OrderBy            => $Param{OrderBy},
-                SortBy             => $Param{SortBy},
-                UserID             => 1,
-                Permission         => 'ro',
+                StateType      => 'Open',
+                ResponsibleIDs => [ $Param{UserID} ],
+                OrderBy        => $Param{OrderBy},
+                SortBy         => $Param{SortBy},
+                UserID         => 1,
+                Permission     => 'ro',
             },
         },
         New => {
             Name   => 'New Article',
             Prio   => 1001,
             Search => {
-                StateType          => 'Open',
-                ResponsibleUserIDs => [ $Param{UserID} ],
-                TicketFlag         => {
+                StateType      => 'Open',
+                ResponsibleIDs => [ $Param{UserID} ],
+                TicketFlag     => {
                     Seen => 1,
                 },
                 TicketFlagUserID => $Param{UserID},
@@ -1785,11 +1785,11 @@ sub ResponsibleView {
             Prio   => 1002,
             Search => {
                 StateType => [ 'pending reminder', 'pending auto' ],
-                ResponsibleUserIDs => [ $Param{UserID} ],
-                OrderBy            => $Param{OrderBy},
-                SortBy             => $Param{SortBy},
-                UserID             => 1,
-                Permission         => 'ro',
+                ResponsibleIDs => [ $Param{UserID} ],
+                OrderBy        => $Param{OrderBy},
+                SortBy         => $Param{SortBy},
+                UserID         => 1,
+                Permission     => 'ro',
             },
         },
         ReminderReached => {
@@ -1798,7 +1798,7 @@ sub ResponsibleView {
             Search => {
                 StateType                     => ['pending reminder'],
                 TicketPendingTimeOlderMinutes => 1,
-                ResponsibleUserIDs            => [ $Param{UserID} ],
+                ResponsibleIDs                => [ $Param{UserID} ],
                 OrderBy                       => $Param{OrderBy},
                 SortBy                        => $Param{SortBy},
                 UserID                        => 1,
@@ -5657,6 +5657,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.53 2010/08/12 19:50:49 mb Exp $
+$Id: iPhone.pm,v 1.54 2010/08/12 22:18:52 cr Exp $
 
 =cut
