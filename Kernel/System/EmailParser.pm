@@ -1,8 +1,8 @@
 # --
 # Kernel/System/EmailParser.pm - the global email parser module
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: EmailParser.pm,v 1.107 2011/11/21 19:20:34 mb Exp $
+# $Id: EmailParser.pm,v 1.88.2.1 2010/08/25 15:54:40 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -24,7 +24,7 @@ use MIME::Words qw(:all);
 use Mail::Address;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.107 $) [1];
+$VERSION = qw($Revision: 1.88.2.1 $) [1];
 
 =head1 NAME
 
@@ -49,8 +49,6 @@ create an object
     use Kernel::System::Log;
     use Kernel::System::EmailParser;
 
-    # as array ref
-
     my $ConfigObject = Kernel::Config->new();
     my $EncodeObject = Kernel::System::Encode->new(
         ConfigObject => $ConfigObject,
@@ -59,6 +57,8 @@ create an object
         ConfigObject => $ConfigObject,
         EncodeObject => $EncodeObject,
     );
+
+    # as array ref
     my $ParserObject = Kernel::System::EmailParser->new(
         ConfigObject => $ConfigObject,
         LogObject    => $LogObject,
@@ -85,15 +85,6 @@ create an object
         Debug        => 0,
     );
 
-    # as stand alone mode, without parsing emails
-    my $ParserObject = Kernel::System::EmailParser->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        EncodeObject => $EncodeObject,
-        Mode         => 'Standalone',
-        Debug        => 0,
-    );
-
 =cut
 
 sub new {
@@ -112,10 +103,6 @@ sub new {
     }
 
     $Self->{HTMLUtilsObject} = Kernel::System::HTMLUtils->new(%Param);
-
-    if ( $Param{Mode} && $Param{Mode} eq 'Standalone' ) {
-        return $Self;
-    }
 
     # check needed objects
     if ( !$Param{Email} && !$Param{Entity} ) {
@@ -203,7 +190,7 @@ sub GetParam {
     my $Line = $Self->{HeaderObject}->get($What) || '';
     chomp($Line);
     my $ReturnLine = '';
-    my %Remember;
+    my %Remember   = ();
     for my $Array ( decode_mimewords($Line) ) {
         for ( @{$Array} ) {
 
@@ -225,7 +212,7 @@ sub GetParam {
                         $Remember{ $Array->[0] } = 1;
                     }
                 }
-                $ReturnLine .= $Self->{EncodeObject}->Convert2CharsetInternal(
+                $ReturnLine .= $Self->{EncodeObject}->Decode(
                     Text  => $Array->[0],
                     From  => $Array->[1] || $Self->GetCharset() || 'us-ascii',
                     Check => 1,
@@ -264,43 +251,7 @@ sub GetEmailAddress {
     for my $EmailSplit ( Mail::Address->parse( $Param{Email} ) ) {
         $Email = $EmailSplit->address();
     }
-
-    # return if no email address is there
-    return if $Email !~ /@/;
-
-    # return email address
     return $Email;
-}
-
-=item GetRealname()
-
-To get the senders realname back.
-
-    my $Realname = $ParserObject->GetRealname(
-        Email => 'Juergen Weber <juergen.qeber@air.com>',
-    );
-
-=cut
-
-sub GetRealname {
-    my ( $Self, %Param ) = @_;
-    my $Realname = '';
-
-    # find "NamePart, NamePart" <some@example.com> (get not recognized by Mail::Address)
-    if ( $Param{Email} =~ /"(.+?)"\s+?\<.+?@.+?\..+?\>/ ) {
-        $Realname = $1;
-
-        # removes unnecessary blank spaces, if the string has quotes.
-        # This is because of bug 6059
-        $Realname =~ s/"\s+?(.+?)\s+?"/"$1"/g;
-        return $Realname;
-    }
-
-    # fallback of Mail::Address
-    for my $EmailSplit ( Mail::Address->parse( $Param{Email} ) ) {
-        $Realname = $EmailSplit->name();
-    }
-    return $Realname;
 }
 
 =item SplitAddressLine()
@@ -318,7 +269,7 @@ This returns an array with ('Juergen Weber <juergen.qeber@air.com>', 'me@example
 sub SplitAddressLine {
     my ( $Self, %Param ) = @_;
 
-    my @GetParam;
+    my @GetParam = ();
     for my $Line ( Mail::Address->parse( $Param{Line} ) ) {
         push @GetParam, $Line->format();
     }
@@ -371,6 +322,7 @@ sub GetCharset {
 
     # find charset
     $Self->{HeaderObject}->unfold();
+    $Self->{HeaderObject}->combine('Content-Type');
     my $Line = $Self->{HeaderObject}->get('Content-Type') || '';
     chomp $Line;
     my %Data = $Self->GetContentTypeParams( ContentType => $Line );
@@ -447,15 +399,27 @@ sub GetReturnContentType {
     my $Self = shift;
 
     my $ContentType = $Self->GetContentType();
-    $ContentType =~ s/(charset=)(.*)/$1utf-8/ig;
+    if ( $Self->{EncodeObject}->EncodeInternalUsed() ) {
+        my $InternalCharset = $Self->{EncodeObject}->EncodeInternalUsed();
+        $ContentType =~ s/(charset=)(.*)/$1$InternalCharset/ig;
+
+        # debug
+        if ( $Self->{Debug} > 0 ) {
+            $Self->{LogObject}->Log(
+                Priority => 'debug',
+                Message  => "Changed ContentType from '"
+                    . $Self->GetContentType()
+                    . "' to '$ContentType'.",
+            );
+        }
+        return $ContentType;
+    }
 
     # debug
     if ( $Self->{Debug} > 0 ) {
         $Self->{LogObject}->Log(
             Priority => 'debug',
-            Message  => "Changed ContentType from '"
-                . $Self->GetContentType()
-                . "' to '$ContentType'.",
+            Message  => 'Changed no ContentType',
         );
     }
     return $ContentType;
@@ -475,7 +439,11 @@ Returns the charset of the new message body "Charset"
 sub GetReturnCharset {
     my $Self = shift;
 
-    return 'utf-8';
+    if ( $Self->{EncodeObject}->EncodeInternalUsed() ) {
+        return $Self->{EncodeObject}->EncodeInternalUsed();
+    }
+
+    return $Self->GetCharset();
 }
 
 =item GetMessageBody()
@@ -514,7 +482,7 @@ sub GetMessageBody {
 
         # charset decode
         if ( $Self->GetCharset() ) {
-            $Self->{MessageBody} = $Self->{EncodeObject}->Convert2CharsetInternal(
+            $Self->{MessageBody} = $Self->{EncodeObject}->Decode(
                 Text  => $BodyStrg,
                 From  => $Self->GetCharset(),
                 Check => 1,
@@ -524,7 +492,7 @@ sub GetMessageBody {
             $Self->{MessageBody} = $BodyStrg;
         }
 
-        # check if the mail contains only HTML (store it as attachment and add text/plain)
+        # check if it's juat a html email (store it as attachment and add text/plain)
         $Self->CheckMessageBody();
 
         # return message body
@@ -539,7 +507,7 @@ sub GetMessageBody {
             );
         }
 
-        # check if there is a valid attachment there, if yes, return
+        # check if there is an valid attachment there, if yes, return
         # first attachment (normally text/plain) as message body
         my @Attachments = $Self->GetAttachments();
         if ( @Attachments > 0 ) {
@@ -559,7 +527,7 @@ sub GetMessageBody {
 
             # check if charset exists
             if ( $Self->GetCharset() ) {
-                $Self->{MessageBody} = $Self->{EncodeObject}->Convert2CharsetInternal(
+                $Self->{MessageBody} = $Self->{EncodeObject}->Decode(
                     Text  => $Attachments[0]->{Content},
                     From  => $Self->GetCharset(),
                     Check => 1,
@@ -571,7 +539,7 @@ sub GetMessageBody {
                 $Self->{MessageBody} = '- no text message => see attachment -';
             }
 
-            # check it it's a html-only email (store it as attachment and add text/plain)
+            # check it it's juat a html email (store it as attachment and add text/plain)
             $Self->CheckMessageBody();
 
             # return message body
@@ -582,7 +550,7 @@ sub GetMessageBody {
                 $Self->{LogObject}->Log(
                     Priority => 'debug',
                     Message =>
-                        'No attachments returned from GetAttachments(), just an empty attachment!?',
+                        'No attachments returned from GetAttachments(), just a null attachment!?',
                 );
             }
 
@@ -668,7 +636,7 @@ sub PartsAttachments {
     }
 
     # get attachment meta stuff
-    my %PartData;
+    my %PartData = ();
 
     # get content alternative
     if ($ContentAlternative) {
@@ -739,7 +707,7 @@ sub PartsAttachments {
 
         # convert the file name in utf-8 if utf-8 is used
         if ( $PartData{Charset} ) {
-            $PartData{Filename} = $Self->{EncodeObject}->Convert2CharsetInternal(
+            $PartData{Filename} = $Self->{EncodeObject}->Decode(
                 Text  => $PartData{Filename},
                 From  => $PartData{Charset},
                 Check => 1,
@@ -755,25 +723,22 @@ sub PartsAttachments {
         }
     }
 
-    # parse/get Content-Id and Content-Location for html email attachments
-    $PartData{ContentID}       = $Part->head()->get('Content-Id');
-    $PartData{ContentLocation} = $Part->head()->get('Content-Location');
-
+    # parse/get Content-Id for html email attachments
+    $PartData{ContentID} = $Part->head()->get('Content-Id');
     if ( $PartData{ContentID} ) {
         chomp $PartData{ContentID};
     }
-    elsif ( $PartData{ContentLocation} ) {
-        chomp $PartData{ContentLocation};
-        $PartData{ContentID} = $PartData{ContentLocation};
-    }
-
-    # get attachment size
-    $PartData{Filesize} = bytes::length( $PartData{Content} );
 
     # debug
     if ( $Self->{Debug} > 0 ) {
-        print STDERR
-            "->GotArticle::Atm: '$PartData{Filename}' '$PartData{ContentType}' ($PartData{Filesize})\n";
+        print STDERR "->GotArticle::Atm: '$PartData{Filename}' '$PartData{ContentType}'\n";
+    }
+
+    # get attachment size
+    {
+        use bytes;
+        $PartData{Filesize} = length $PartData{Content};
+        no bytes;
     }
 
     # store data
@@ -826,11 +791,11 @@ sub GetContentTypeParams {
     my ( $Self, %Param ) = @_;
 
     my $ContentType = $Param{ContentType} || return;
-    if ( $Param{ContentType} =~ /charset\s*=.+?/i ) {
+    if ( $Param{ContentType} =~ /charset=.+?/i ) {
         $Param{Charset} = $Param{ContentType};
-        $Param{Charset} =~ s/.*?charset\s*=\s*(.*?)/$1/i;
+        $Param{Charset} =~ s/.+?charset=("|'|)(\w+)/$2/gi;
         $Param{Charset} =~ s/"|'//g;
-        $Param{Charset} =~ s/(.+?)(;|\s).*/$1/g;
+        $Param{Charset} =~ s/(.+?);.*/$1/g;
     }
     if ( !$Param{Charset} ) {
         if (
@@ -851,7 +816,7 @@ sub GetContentTypeParams {
             $Param{Charset} = $1;
         }
     }
-    if ( $Param{ContentType} =~ /Content-Type:\s{0,1}(.+?\/.+?)(;|'|"|\s)/i ) {
+    if ( $Param{ContentType} =~ /^(\w+\/\w+)/i ) {
         $Param{MimeType} = $1;
         $Param{MimeType} =~ s/"|'//g;
     }
@@ -931,6 +896,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.107 $ $Date: 2011/11/21 19:20:34 $
+$Revision: 1.88.2.1 $ $Date: 2010/08/25 15:54:40 $
 
 =cut
