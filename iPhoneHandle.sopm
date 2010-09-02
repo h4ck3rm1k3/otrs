@@ -3,7 +3,6 @@
     <CVS>$Id: iPhoneHandle.sopm,v 1.0 2010/04/28 00:08:47 cr Exp $</CVS>
     <Name>iPhoneHandle</Name>
     <Version>0.0.0</Version>
-    <Framework>2.4.x</Framework>
     <Framework>3.0.x</Framework>
     <Vendor>OTRS AG</Vendor>
     <URL>http://otrs.org/</URL>
@@ -13,14 +12,7 @@
     <Filelist>
         <File Permission="755" Location="bin/cgi-bin/json.pl"/>
         <File Permission="644" Location="Kernel/Config/Files/iPhone.xml"/>
-        <File Permission="644" Location="Kernel/cpan-lib/JSON.pm"/>
-        <File Permission="644" Location="Kernel/cpan-lib/JSON/PP.pm"/>
-        <File Permission="644" Location="Kernel/cpan-lib/JSON/PP5005.pm"/>
-        <File Permission="644" Location="Kernel/cpan-lib/JSON/PP56.pm"/>
-        <File Permission="644" Location="Kernel/cpan-lib/JSON/PP58.pm"/>
-        <File Permission="644" Location="Kernel/cpan-lib/JSON/PP/Boolean.pm"/>
         <File Permission="644" Location="Kernel/System/iPhone.pm"/>
-        <File Permission="644" Location="Kernel/System/JSON.pm"/>
     </Filelist>
         <IntroInstall Type="pre" Title="Install Information" Lang="en"><![CDATA[
         <br/>
