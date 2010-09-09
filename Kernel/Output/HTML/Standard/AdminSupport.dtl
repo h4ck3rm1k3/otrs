@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.23 2010/09/09 14:00:07 mg Exp $
+# $Id: AdminSupport.dtl,v 1.24 2010/09/09 22:55:10 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,85 +20,60 @@
     <div class="SidebarColumn">
         <div class="WidgetSimple">
             <div class="Header">
-                <h2>$Text{"Support"}</h2>
+                <h2>$Text{"Actions"}</h2>
             </div>
             <div class='Content'>
                 <ul class="ActionList">
                     <li>
-                        <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                            <input type="hidden" name="Subaction" value="Confidential"/>
-                            <button class="CallForAction" type="submit" value="$Text{"Start"}">
-                                <span>$Text{"Start support"}</span>
-                            </button>
-                            <p class="FieldExplanation">
-                                $Text{"For quick help please submit your system information and create a support ticket at the vendor's site."}
-                                <br/>
-                                $Text{"For more info please check"} <a href="http://otrs.com/" target="_blank">http://otrs.com/</a>
-                            </p>
-                        </form>
+                        <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Confidential" class="CallForAction"><span>$Text{"Start support"}</span></a>
+                    </li>
+                    <li>
+                        <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=BenchmarkSQLInit" class="CallForAction"><span>$Text{"SQL benchmark"}</span></a>
                     </li>
                 </ul>
             </div>
         </div>
-
         <div class="WidgetSimple">
             <div class="Header">
-                <h2>$Text{"SQL benchmark"}</h2>
+                <h2>$Text{"Note"}</h2>
             </div>
             <div class='Content'>
-                <form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                    <input type="hidden" name="Subaction" value="BenchmarkSQL"/>
-                    <fieldset class="TableLike">
-                        <Label for="Mode">$Text{"Multiplier"}:</label>
-                            <div class="Field">
-                                $Data{"ModeStrg"}
-                            </div>
-                            <ul class="ActionList">
-                                <li>
-                                    <button class="CallForAction" type="submit" value="$Text{"Start"}">
-                                        <span>$Text{"Start SQL benchmark"}</span>
-                                    </button>
-                                    <p class="FieldExplanation">
-                                        $Text{"Execute a SQL benchmark test on your database to find out how fast your database is (done on dedicated benchmark table)."}
-                                        <br/>
-                                    </p>
-                                    <div class="Content">
-                                        $Text{"Note: This should not be done on production systems!"}
-                                    </div>
-                                </li>
-                            </ul>
-                        </fieldset>
-                    </form>
-                </div>
+                <p>
+                    $Text{"For quick help please submit your system information and create a support ticket at the vendor's site."}
+                    <br/>
+                    $Text{"For more info please check"} <a href="http://otrs.com/" target="_blank">http://otrs.com/</a>
+                </p>
             </div>
-        </div>
-
-
-        <div class="ContentColumn">
-<!-- dtl:block:OverviewModule -->
-            <div class="WidgetSimple">
-                <div class="Header">
-                    <h2>$QData{"Module"}</h2>
-                </div>
-                <div class="Content">
-<!-- dtl:block:OverviewModuleRow -->
-                    <div class="CheckResult$QData{"Check"}">
-                        <h3 class="SpacingTopSmall">
-                            <span style="color: $QData{"FontColor"};">$QData{"Check"}</span>
-                            $QData{"Description"}
-                        </h3>
-                        <p class="Spacing">$QData{"Comment"}</p>
-                    </div>
-<!-- dtl:block:OverviewModuleRow -->
-                </div>
-            </div>
-<!-- dtl:block:OverviewModule -->
         </div>
     </div>
-<!-- dtl:block:Overview -->
 
+    <div class="ContentColumn">
+<!-- dtl:block:OverviewModule -->
+        <div class="WidgetSimple $QData{"Collapsed"}">
+            <div class="Header">
+                <div class="WidgetAction Toggle">
+                    <a title="Toggle this widget" href="#"></a>
+                </div>
+                <h2>$QData{"Module"}</h2>
+            </div>
+            <div class="Content">
+<!-- dtl:block:OverviewModuleRow -->
+                <div class="CheckResult">
+                    <div title="$QData{"Check"}" class="Flag Small">
+                        <span class="State-$QData{"FontColor"}">$QData{"Check"}</span>
+                    </div>
+                    <h3>
+                        $QData{"Description"}
+                    </h3>
+                    <p class="SpacingTopSmall">$QData{"Comment"}</p>
+                </div>
+<!-- dtl:block:OverviewModuleRow -->
+            </div>
+        </div>
+<!-- dtl:block:OverviewModule -->
+    </div>
+</div>
+<!-- dtl:block:Overview -->
 
 
 # ---
@@ -106,99 +81,50 @@
 # ---
 
 <!-- dtl:block:Confidential -->
-    <div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
-        <h1>$Text{"Admin Support Info"}</h1>
-        <div class="SidebarColumn">
-            <div class="WidgetSimple">
-                <div class="Header">
-                    <h2>$Text{"Actions"}</h2>
-                </div>
-                <div class="Content">
-                    <ul class="ActionList">
-                        <li>
-                            <a href="$Env{"Baselink"}Action=$Env{"Action"};Nav=$LQData{"Nav"}" class="CallForAction"><span>$Text{"Go to overview"}</span></a>
-                        </li>
-                    </ul>
-                </div>
+<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
+    <h1>$Text{"Admin Support Info"}</h1>
+    <div class="SidebarColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Actions"}</h2>
+            </div>
+            <div class="Content">
+                <ul class="ActionList">
+                    <li>
+                        <a href="$Env{"Baselink"}Action=$Env{"Action"}" class="CallForAction"><span>$Text{"Go to overview"}</span></a>
+                    </li>
+                    <li>
+                        <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=BenchmarkSQLInit" class="CallForAction"><span>$Text{"SQL benchmark"}</span></a>
+                    </li>
+                </ul>
             </div>
         </div>
+    </div>
 
-        <div class="ContentColumn">
-            <div class="WidgetSimple">
-                <div class="Header">
-                    <h2>$Text{"Confidential information"}</h2>
-                </div>
-                <div class="Content Center">
+    <div class="ContentColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Confidential information"}</h2>
+            </div>
+            <div class="Content Center">
 
-<!-- dtl:block:ConfidentialContentDE -->
-                <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>Datenschutz
+$Include{"SupportLicenseText"}
 
-Wir, die Firma OTRS AG, nehmen den Schutz Ihrer pers&ouml;nlichen Daten sehr ernst und halten uns strikt an die Regeln der Datenschutzgesetze. Alle Passw&ouml;rter werden vor dem Versenden der Informationen automatisiert unkenntlich gemacht. In keinem Fall werden die erhobenen Daten verkauft oder aus anderen Gr&uuml;nden an unautorisierte Dritte weitergegeben.
-
-Die nachfolgende Erkl&auml;rung gibt Ihnen einen &Uuml;berblick dar&uuml;ber, wie wir diesen Schutz gew&auml;hrleisten und welche Art von Daten zu welchem Zweck &uuml;bermittelt werden.
-
-Daten&uuml;bermittlung durch das 'Supportmodul'
-Die Firma OTRS AG &uuml;bermittelt und speichert Informationen, die durch das 'Supportmodul' an die Firma OTRS AG versendet werden. Dabei handelt es sich um ausschlie&szlig;lich um Daten, die die Firma OTRS AG ben&ouml;tigt, um Funktionsf&auml;higkeit und Leistungsf&auml;higkeit des betroffenen OTRS-Servers zu analysieren, oder um eine Kontaktaufnahme zu erm&ouml;glichen.
-
-Sicherheit Ihrer pers&ouml;nlichen Daten
-Die Firma OTRS AG sch&uuml;tzt Ihre pers&ouml;nlichen Daten vor unerlaubten Zugriff, Verwendung oder Ver&ouml;ffentlichung. Die Firma OTRS AG sorgt daf&uuml;r, dass von Ihnen auf dem Server gespeicherte pers&ouml;nliche Informationen in einer kontrollierten, sicheren Umgebung vor unerlaubtem Zugriff und Ver&ouml;ffentlichung gesch&Uuml;tzt sind.
-
-Weitergabe Ihrer Daten
-Die Firma OTRS AG gibt Ihre Daten nicht an Dritte weiter, sofern dies nicht zur Abwicklung des Gesch&auml;ftsverkehres n&ouml;tig ist.
-Soweit die Firma OTRS AG gesetzlich oder per Gerichtsbeschluss dazu verpflichtet ist, geben wir Ihre Daten nur an auskunftsberechtigte staatliche Institutionen und Beh&ouml;rden weiter.
-
-&Auml;nderung dieser Datenschutzbestimmungen
-Die Firma OTRS AG beh&auml;lt sich das Recht vor, diese Sicherheits- und Datenschutzma&szlig;nahmen zu ver&auml;ndern, soweit dies wegen der technischen Entwicklung erforderlich wird. In solchen F&auml;llen werden wir auch unsere Hinweise zum Datenschutz entsprechend anpassen. Bitte beachten Sie daher die jeweils aktuelle Version unserer Datenschutzerkl&auml;rung.
-
-Auskunftsrecht
-Sie haben jederzeit das Recht auf Auskunft &uuml;ber die bez&uuml;glich Ihrer Person gespeicherten Daten, deren Herkunft und Empf&auml;nger sowie den Zweck der Datenverarbeitung. Auskunft &uuml;ber die gespeicherten Daten k&ouml;nnen Sie unter info@otrs.com anfordern.
-
-Weitere Informationen
-Ihr Vertrauen ist uns wichtig. Daher geben wir Ihnen gerne jederzeit Auskunft &uuml;ber die Verarbeitung Ihrer personenbezogenen Daten. Wenn Sie Fragen haben, die Ihnen diese Datenschutzerkl&auml;rung nicht beantworten konnte oder wenn Sie weitere Informationen zu einem Punkt w&uuml;nschen, wenden Sie sich bitte mit einer E-Mail an info@otrs.com.
-                </textarea>
-<!-- dtl:block:ConfidentialContentDE -->
-<!-- dtl:block:ConfidentialContentEN -->
-                <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>Data Protection
-
-Here at OTRS AG we take the protection of your personal details very seriously and strictly adhere to data protection laws. All passwords are automatically made unrecognizable before the information is sent. Under no circumstances will any data we obtain be sold or passed on to unauthorized third parties.
-The following explanation provides you with an overview of how we guarantee this protection and which type of data is collected for which purpose.
-
-Data Handling with 'Support Module'
-Information received through the 'Support Module' is saved by OTRS AG. This only applies to data that OTRS AG requires to analyze the performance and function of the OTRS server or to establish contact.
-
-Safety of Personal Details
-OTRS AG protects your personal data from unauthorized access, use or publication. OTRS AG ensures that the personal information you store on the server is protected from unauthorized access and publication.
-
-Disclosure of Details
-OTRS AG will not pass on your details to third parties unless required for business transactions.
-OTRS AG will only pass on your details to entitled public institutions and authorities if required by law or court order.
-
-Amendment of Data Protection Policy
-OTRS AG reserves the right to amend this security and data protection policy if required by technical developments. In this case we will also adapt our information regarding data protection accordingly. Please regularly refer to the latest version of our Data Protection Policy.
-
-Right to Information
-You have the right to demand information concerning the data saved about you, its origin and recipients, as well as the purpose of the data processing at any time. You can request information about the saved data by sending an e-mail to info@otrs.com.
-
-Further Information
-Your trust is very important to us. We are willing to inform you about the processing of your personal details at any time. If you have any questions that have not been answered by this Data Protection Policy or if you require more detailed information about a specific topic, please contact info@otrs.com.
-
-                </textarea>
-<!-- dtl:block:ConfidentialContentEN -->
-                    <div class="Content CenterBox W50pc">
-                        <form action="$Env{"CGIHandle"}" method="post" class="Right">
-                            <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                            <input type="hidden" name="Subaction" value="SenderInformation"/>
-                            <input class="button" type="submit" value="$Text{"Accept license"}"/>
-                        </form>
-                        <form action="$Env{"CGIHandle"}" method="post" class="Right">
-                            <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                            <input class="button" type="submit" value="$Text{"Don't accept license"}"/>
-                        </form>
-                    </div>
+                <div class="Content CenterBox W50pc">
+                    <form action="$Env{"CGIHandle"}" method="post" class="Right">
+                        <input type="hidden" name="Action" value="$Env{"Action"}"/>
+                        <input type="hidden" name="Subaction" value="SenderInformation"/>
+                        <input class="button" type="submit" value="$Text{"Accept license"}"/>
+                    </form>
+                    <form action="$Env{"CGIHandle"}" method="post" class="Right">
+                        <input type="hidden" name="Action" value="$Env{"Action"}"/>
+                        <input class="button" type="submit" value="$Text{"Don't accept license"}"/>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
 <!-- dtl:block:Confidential -->
 
 
@@ -207,112 +133,115 @@ Your trust is very important to us. We are willing to inform you about the proce
 # ---
 
 <!-- dtl:block:SenderInformation -->
-    <div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
-        <h1>$Text{"Admin Support Info"}</h1>
-        <div class="SidebarColumn">
-            <div class="WidgetSimple">
-                <div class="Header">
-                    <h2>$Text{"Actions"}</h2>
-                </div>
-                <div class="Content">
-                    <ul class="ActionList">
-                        <li>
-                            <a href="$Env{"Baselink"}Action=$Env{"Action"};Nav=$LQData{"Nav"}" class="CallForAction"><span>$Text{"Go to overview"}</span></a>
-                        </li>
-                    </ul>
-                </div>
+<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
+    <h1>$Text{"Admin Support Info"}</h1>
+    <div class="SidebarColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Actions"}</h2>
             </div>
-        </div>
-
-        <div class="ContentColumn">
-            <div class="WidgetSimple">
-                <div class="Header">
-                    <h2>$Text{"Vendor Support"}</h2>
-                </div>
-                <div class="Content WithPadding">
-                    <form action="$Env{"CGIHandle"}" method="post" name="compose">
-                        <input type="hidden" name="Action" value="$Env{"Action"}">
-                        <input type="hidden" name="Subaction" value="Submit">
-<!-- dtl:block:SenderInformationHidden -->
-                        <input type="hidden" name="$QData{"Name"}" value="$QData{"Value"}">
-<!-- dtl:block:SenderInformationHidden -->
-                        <fieldset class="TableLike">
-                            <label for="Sender">$Text{"Email"}:</label>
-                            <div class="Field">
-                                <input type="Text" id="Sender" name="Sender" value="$QData{"SenderAdress"}" class="W50pc" readonly />
-                            </div>
-                            <div class="Clear"></div>
-
-                            <label for="Salutation">$Text{"Salutation"}:</label>
-                            <div class="Field">
-                                <input type="Text" id="Salutation" name="Salutation" value="$QData{"SenderSalutation"}" class="W50pc" readonly />
-                            </div>
-                            <div class="Clear"></div>
-
-                            <label for="Name">$Text{"Name"}:</label>
-                            <div class="Field">
-                                <input type="Text" id="Name" name="Name" value="$QData{"SenderName"}" class="W50pc" readonly />
-                            </div>
-                            <div class="Clear"></div>
-
-                            <label for="Company">$Text{"Company"}:</label>
-                            <div class="Field">
-                                <input type="Text" id="Company" name="Company" value="" class="W50pc" />
-                            </div>
-                            <div class="Clear"></div>
-
-                            <label for="Street">$Text{"Street"}:</label>
-                            <div class="Field">
-                                <input type="Text" id="Street" name="Street" value="" class="W50pc" />
-                            </div>
-                            <div class="Clear"></div>
-
-                            <label for="Zip">$Text{"Zip"}:</label>
-                            <div class="Field">
-                                <input type="Text" id="Zip" name="Zip" value="" class="W50pc" />
-                            </div>
-                            <div class="Clear"></div>
-
-                            <label for="City">$Text{"City"}:</label>
-                            <div class="Field">
-                                <input type="Text" id="City" name="City" value="" class="W50pc" />
-                            </div>
-                            <div class="Clear"></div>
-
-                            <label for="Phone">$Text{"Phone"}:</label>
-                            <div class="Field">
-                                <input type="Text" id="Phone" name="Phone" value="" class="W50pc" />
-                            </div>
-                            <div class="Clear"></div>
-
-                            <label for="BugzillaID">$Text{"Bugzilla ID"}:</label>
-                            <div class="Field">
-                                <input type="Text" id="BugzillaID" name="BugzillaID" value="" class="W50pc" />
-                            </div>
-                            <div class="Clear"></div>
-
-                            <div class="Value">
-                                <p class="Warning Small">$Text{"If you've already added a Bugzilla report at bugs.otrs.org, please add your Bugzilla ID here."}</p>
-                            </div>
-
-                            <div class="Value">
-                                <p class="FieldExplanation">
-                                    <strong>$Text{"Enterprise Support and Enterprise Subscription information"}</strong><br/>
-                                    $Text{"No, I'm not yet an ((otrs)) 'Enterprise Subscription' or 'Enterprise Support' customer. Please review my support package without any commitment and send me information only and without responsibility, about the different ((otrs)) Enterprise packages"}:
-                                    <input type="checkbox" id="SendInfo" name="SendInfo" value="1" checked="checked">
-                                </p>
-                            </div>
-                            <div class="Field SpacingTop">
-                                <input class="button" type="submit" id="Download" name="Download" value="$Text{"Download"}"/>
-                                <input class="button" type="submit" id="Send" name="Send" value="$Text{"Send"}"/>
-                            </div>
-                            <div class="Clear"></div>
-                        </fieldset>
-                    </form>
-                </div>
+            <div class="Content">
+                <ul class="ActionList">
+                    <li>
+                        <a href="$Env{"Baselink"}Action=$Env{"Action"}" class="CallForAction"><span>$Text{"Go to overview"}</span></a>
+                    </li>
+                    <li>
+                        <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=BenchmarkSQLInit" class="CallForAction"><span>$Text{"SQL benchmark"}</span></a>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
+
+    <div class="ContentColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Vendor Support"}</h2>
+            </div>
+            <div class="Content WithPadding">
+                <form action="$Env{"CGIHandle"}" method="post" name="compose">
+                    <input type="hidden" name="Action" value="$Env{"Action"}">
+                    <input type="hidden" name="Subaction" value="Submit">
+<!-- dtl:block:SenderInformationHidden -->
+                    <input type="hidden" name="$QData{"Name"}" value="$QData{"Value"}">
+<!-- dtl:block:SenderInformationHidden -->
+                    <fieldset class="TableLike">
+                        <label for="Sender">$Text{"Email"}:</label>
+                        <div class="Field">
+                            <input type="Text" id="Sender" name="Sender" value="$QData{"SenderAdress"}" class="W50pc" readonly />
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="Salutation">$Text{"Salutation"}:</label>
+                        <div class="Field">
+                            <input type="Text" id="Salutation" name="Salutation" value="$QData{"SenderSalutation"}" class="W50pc" readonly />
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="Name">$Text{"Name"}:</label>
+                        <div class="Field">
+                            <input type="Text" id="Name" name="Name" value="$QData{"SenderName"}" class="W50pc" readonly />
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="Company">$Text{"Company"}:</label>
+                        <div class="Field">
+                            <input type="Text" id="Company" name="Company" value="" class="W50pc" />
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="Street">$Text{"Street"}:</label>
+                        <div class="Field">
+                            <input type="Text" id="Street" name="Street" value="" class="W50pc" />
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="Zip">$Text{"Zip"}:</label>
+                        <div class="Field">
+                            <input type="Text" id="Zip" name="Zip" value="" class="W50pc" />
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="City">$Text{"City"}:</label>
+                        <div class="Field">
+                            <input type="Text" id="City" name="City" value="" class="W50pc" />
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="Phone">$Text{"Phone"}:</label>
+                        <div class="Field">
+                            <input type="Text" id="Phone" name="Phone" value="" class="W50pc" />
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="BugzillaID">$Text{"Bugzilla ID"}:</label>
+                        <div class="Field">
+                            <input type="Text" id="BugzillaID" name="BugzillaID" value="" class="W50pc" />
+                        </div>
+                        <div class="Clear"></div>
+
+                        <div class="Value">
+                            <p class="Warning Small">$Text{"If you've already added a Bugzilla report at bugs.otrs.org, please add your Bugzilla ID here."}</p>
+                        </div>
+
+                        <div class="Value">
+                            <p class="FieldExplanation">
+                                <strong>$Text{"Enterprise Support and Enterprise Subscription information"}</strong><br/>
+                                $Text{"No, I'm not yet an ((otrs)) 'Enterprise Subscription' or 'Enterprise Support' customer. Please review my support package without any commitment and send me information only and without responsibility, about the different ((otrs)) Enterprise packages"}:
+                                <input type="checkbox" id="SendInfo" name="SendInfo" value="1" checked="checked">
+                            </p>
+                        </div>
+                        <div class="Field SpacingTop">
+                            <input class="button" type="submit" id="Download" name="Download" value="$Text{"Download"}"/>
+                            <input class="button" type="submit" id="Send" name="Send" value="$Text{"Send"}"/>
+                        </div>
+                        <div class="Clear"></div>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- dtl:js_on_document_complete -->
         <script type="text/javascript">//<![CDATA[
             $('#Download').bind('click', function (Event) {
@@ -340,57 +269,129 @@ Your trust is very important to us. We are willing to inform you about the proce
 <!-- dtl:js_on_document_complete -->
 <!-- dtl:block:SenderInformation -->
 
+
 # ---
 # - Supportmodule benchmark result
 # ---
 
 <!-- dtl:block:BenchmarkResult -->
-    <div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
-        <h1>$Text{"Benchmark"}</h1>
-        <div class="SidebarColumn">
-            <div class="WidgetSimple">
-                <div class="Header">
-                    <h2>$Text{"Actions"}</h2>
-                </div>
-                <div class="Content">
-                    <ul class="ActionList">
-                        <li>
-                            <a href="$Env{"Baselink"}Action=$Env{"Action"};Nav=$LQData{"Nav"}" class="CallForAction"><span>$Text{"Go to overview"}</span></a>
-                        </li>
-                    </ul>
-                </div>
+<div class="Header">
+    <h2>$Text{"Result"}: $Text{"$Data{"Head"}"}</h2>
+</div>
+<div class="Content WithPadding Toggle Hidden">
+    <table class="DataTable">
+        <thead>
+            <tr>
+                <th class="W20pc">$Text{"Key"}</th>
+                <th class="W20pc">$Text{"Value"}</th>
+                <th class="W20pc">$Text{"Time"}</th>
+                <th>$Text{"Comment"}</th>
+            </tr>
+        </thead>
+        <tbody>
+<!-- dtl:block:BenchmarkResultRow -->
+            <tr>
+                <td>$QData{"Key"}:</td>
+                <td>$QData{"Value"}</td>
+                <td>$QData{"Time"}</td>
+                <td>$Data{"Comment"}</td>
+            </tr>
+<!-- dtl:block:BenchmarkResultRow -->
+        </tbody>
+    </table>
+</div>
+<!-- dtl:block:BenchmarkResult -->
+
+
+# ---
+# - Supportmodule Benchmark Result Init page
+# ---
+
+<!-- dtl:block:BenchmarkResultInit -->
+<div class="MainBox AdminSupport ARIARoleMain LayoutFixedSidebar SidebarFirst">
+    <h1>$Text{"Benchmark"}</h1>
+
+    <div class="SidebarColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Actions"}</h2>
+            </div>
+            <div class='Content'>
+                <ul class="ActionList">
+                    <li>
+                        <a href="$Env{"Baselink"}Action=$Env{"Action"}" class="CallForAction"><span>$Text{"Go to overview"}</span></a>
+                    </li>
+                    <li>
+                        <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Confidential" class="CallForAction"><span>$Text{"Start support"}</span></a>
+                    </li>
+                </ul>
             </div>
         </div>
-
-        <div class="ContentColumn">
-            <div class="WidgetSimple">
-                <div class="Header">
-                    <h2>$Text{"Result"}: $Text{"$Data{"Head"}"}</h2>
-                </div>
-                <div class="Content WithPadding">
-                    <table class="DataTable">
-                        <thead>
-                            <tr>
-                                <th class="W20pc">$Text{"Key"}</th>
-                                <th class="W20pc">$Text{"Value"}</th>
-                                <th class="W20pc">$Text{"Time"}</th>
-                                <th>$Text{"Comment"}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-<!-- dtl:block:BenchmarkResultRow -->
-                            <tr>
-                                <td>$QData{"Key"}:</td>
-                                <td>$QData{"Value"}</td>
-                                <td>$QData{"Time"}</td>
-                                <td>$Data{"Comment"}</td>
-                            </tr>
-<!-- dtl:block:BenchmarkResultRow -->
-                        </tbody>
-                    </table>
-                </div>
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Note"}</h2>
+            </div>
+            <div class='Content'>
+                <p class="SpacingBottom">
+                    $Text{"Execute a SQL benchmark test on your database to find out how fast your database is (done on dedicated benchmark table)."}
+                </p>
+                <p class="Warning">
+                    $Text{"This should not be done on production systems!"}
+                </p>
             </div>
         </div>
     </div>
+
+    <div class="ContentColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"SQL benchmark"}</h2>
+            </div>
+            <div class="Content">
+                <input type="hidden" id="URL" name="URL" value="$Env{"Baselink"}Action=$Env{"Action"};Subaction=BenchmarkSQL"/>
+                <fieldset class="TableLike Toggle" >
+                    <label for="Mode">$Text{"Multiplier"}:</label>
+                    <div class="Field">
+                        $Data{"ModeStrg"}
+                    </div>
+                    <div class="Field">
+                        <button id="SendRequest" class="Primary"  value="$Text{"Start"}">
+                            <span>$Text{"Start"}</span>
+                        </button>
+                    </div>
+                    <div class="Value">
+                        <p>* $Text{"Please select a multiplier and press start button."}</p>
+                    </div>
+                </fieldset>
+                <div id="ContentToUpdate" class="WidgetSimple">
+                    <div class="Header">
+                        <h2 class="Toggle Hidden">$Text{"Results"}</h2>
+                        <h2 class="Toggle Warning">
+                            * $Text{"No benchmark test has been done"}
+                        </h2>
+                    </div>
+                </div>
+                <div class="Content Center Toggle Hidden">
+                    <h2 class="Warning">$Text{"Please be patient, it could last long."}</h2>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </div>
-<!-- dtl:block:BenchmarkResult -->
+<!-- dtl:js_on_document_complete -->
+        <script type="text/javascript">//<![CDATA[
+            $('#SendRequest').bind('click', function (Event) {
+                $('.Toggle').toggle();
+                $('#ContentToUpdate').addClass('Loading');
+                var URL = $('#URL').val() + ';Mode=' + $('#Mode').val();
+                Core.AJAX.ContentUpdate($('#ContentToUpdate'), URL, function () {
+                    $('#ContentToUpdate').removeClass('Loading');
+                    $('.Toggle').toggle();
+                });
+                return false;
+            });
+        //]]></script>
+<!-- dtl:js_on_document_complete -->
+
+<!-- dtl:block:BenchmarkResultInit -->
