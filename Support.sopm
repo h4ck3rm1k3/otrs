@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-    <CVS>$Id: Support.sopm,v 1.23 2010/02/15 12:18:28 ub Exp $</CVS>
+    <CVS>$Id: Support.sopm,v 1.24 2010/09/09 14:00:08 mg Exp $</CVS>
     <Name>Support</Name>
     <Version>0.0.0</Version>
     <Framework>2.4.x</Framework>
@@ -32,6 +32,7 @@
         <File Permission="644" Location="Kernel/cpan-lib/Archive/Tar.pm"/>
         <File Permission="644" Location="Kernel/Modules/AdminSupport.pm"/>
         <File Permission="644" Location="Kernel/Config/Files/Support.xml"/>
+        <File Permission="644" Location="var/httpd/htdocs/skins/Agent/default/css/Support.Default.css"/>
     </Filelist>
     <DatabaseInstall>
         <TableCreate Name="support_bench_test">

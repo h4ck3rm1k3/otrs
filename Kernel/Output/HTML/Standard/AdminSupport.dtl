@@ -2,21 +2,19 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.22 2010/09/09 13:28:12 mg Exp $
+# $Id: AdminSupport.dtl,v 1.23 2010/09/09 14:00:07 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-<!-- start form -->
-
 # ---
 # - Supportmodule overview page
 # ---
 
 <!-- dtl:block:Overview -->
-<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
+<div class="MainBox AdminSupport ARIARoleMain LayoutFixedSidebar SidebarFirst">
     <h1>$Text{"Overview"}: $Text{"Config Item"}</h1>
 
     <div class="SidebarColumn">
@@ -86,11 +84,13 @@
                 </div>
                 <div class="Content">
 <!-- dtl:block:OverviewModuleRow -->
-                    <h3 class="SpacingTopSmall">
-                        <span style="color: $QData{"FontColor"};">$QData{"Check"}</span>
-                        $QData{"Description"}
-                    </h3>
-                    <p class="Spacing">$QData{"Comment"}</p>
+                    <div class="CheckResult$QData{"Check"}">
+                        <h3 class="SpacingTopSmall">
+                            <span style="color: $QData{"FontColor"};">$QData{"Check"}</span>
+                            $QData{"Description"}
+                        </h3>
+                        <p class="Spacing">$QData{"Comment"}</p>
+                    </div>
 <!-- dtl:block:OverviewModuleRow -->
                 </div>
             </div>
@@ -394,4 +394,3 @@ Your trust is very important to us. We are willing to inform you about the proce
     </div>
 </div>
 <!-- dtl:block:BenchmarkResult -->
-<!-- end form -->

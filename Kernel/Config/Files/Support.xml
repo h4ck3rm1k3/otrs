@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
+<?xml version="1.0" encoding="utf-8"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: Support.xml,v 1.8 2010/09/09 13:28:12 mg Exp $</CVS>
+    <CVS>$Id: Support.xml,v 1.9 2010/09/09 14:00:08 mg Exp $</CVS>
     <ConfigItem Name="Frontend::Module###AdminSupport" Required="1" Valid="1">
         <Description Lang="en">Frontend module registration for the AdminSystemStatus object in the admin area.</Description>Description>
         <Description Lang="de">Frontendmodul-Registration des AdminSystemStatus-Objekts im Admin-Bereich.</Description>Description>
@@ -18,6 +18,9 @@
                     <Block>System</Block>
                     <Prio>2000</Prio>
                 </NavBarModule>
+                <Loader>
+                    <CSS>Support.Default.css</CSS>
+                </Loader>
             </FrontendModuleReg>
         </Setting>
     </ConfigItem>
@@ -32,7 +35,7 @@
     </ConfigItem>
     <ConfigItem Name="Support::Database::DB2" Required="0" Valid="1">
         <Description Lang="en">Definition of the database checks for the DB2 database.</Description>
-        <Description Lang="de">Definition der Datenbank-Checks für die DB2 Datenbank.</Description>
+        <Description Lang="de">Definition der Datenbank-Checks fÃ¼r die DB2 Datenbank.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -44,7 +47,7 @@
     </ConfigItem>
     <ConfigItem Name="Support::Database::MSSQL" Required="0" Valid="1">
         <Description Lang="en">Definition of the database checks for the MSSQL database.</Description>
-        <Description Lang="de">Definition der Datenbank-Checks für die MSSQL Datenbank.</Description>
+        <Description Lang="de">Definition der Datenbank-Checks fÃ¼r die MSSQL Datenbank.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -57,7 +60,7 @@
     </ConfigItem>
     <ConfigItem Name="Support::Database::MySQL" Required="0" Valid="1">
         <Description Lang="en">Definition of the database checks for the MySQL database.</Description>
-        <Description Lang="de">Definition der Datenbank-Checks für die MySQL Datenbank.</Description>
+        <Description Lang="de">Definition der Datenbank-Checks fÃ¼r die MySQL Datenbank.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -76,7 +79,7 @@
     </ConfigItem>
     <ConfigItem Name="Support::Database::Oracle" Required="0" Valid="1">
         <Description Lang="en">Definition of the database checks for the Oracle database.</Description>
-        <Description Lang="de">Definition der Datenbank-Checks für die Oracle Datenbank.</Description>
+        <Description Lang="de">Definition der Datenbank-Checks fÃ¼r die Oracle Datenbank.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -92,7 +95,7 @@
     </ConfigItem>
     <ConfigItem Name="Support::Database::PostgreSQL" Required="0" Valid="1">
         <Description Lang="en">Definition of the database checks for the PostgreSQL database.</Description>
-        <Description Lang="de">Definition der Datenbank-Checks für die PostgreSQL Datenbank.</Description>
+        <Description Lang="de">Definition der Datenbank-Checks fÃ¼r die PostgreSQL Datenbank.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -147,7 +150,7 @@
     </ConfigItem>
     <ConfigItem Name="Support::Webserver::Apache" Required="0" Valid="1">
         <Description Lang="en">Definition of the webserver checks for the Apache webserver.</Description>
-        <Description Lang="de">Definition der Webserver-Checks für den Apache Webserver.</Description>
+        <Description Lang="de">Definition der Webserver-Checks fÃ¼r den Apache Webserver.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -161,7 +164,7 @@
     </ConfigItem>
     <ConfigItem Name="Support::Webserver::IIS" Required="0" Valid="1">
         <Description Lang="en">Definition of the webserver checks for the IIS webserver.</Description>
-        <Description Lang="de">Definition der Webserver-Checks für den IIS Webserver.</Description>
+        <Description Lang="de">Definition der Webserver-Checks fÃ¼r den IIS Webserver.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
