@@ -1,6 +1,6 @@
 /**
  * @project     OTRS (http://www.otrs.org) - Agent Frontend
- * @version     $Revision: 1.2 $
+ * @version     $Revision: 1.3 $
  * @copyright   OTRS AG
  * @license     AGPL (http://www.gnu.org/licenses/agpl.txt)
  */
@@ -11,12 +11,67 @@
  * @package     Support
  * @section     General
  */
-.AdminSupport div.CheckResultOK > p {
+/*.AdminSupport div.CheckResultOK > p {
     color: #888;
 }
 
 .AdminSupport div.CheckResultOK:hover > p {
     color: #000;
+}*/
+.AdminSupport div.CheckResult {
+    border-bottom: 1px dotted #aaa;
+    margin-bottom: 10px;
 }
+.AdminSupport div.CheckResult > p {
+    color: #888;
+    padding: 0 0 1px 35px;
+}
+
+.AdminSupport div.CheckResult:hover > p {
+    color: #000;
+}
+/**
+ * @subsection  Flag
+ */
+.Flag {
+    background: transparent url(../img/flag_shadow.png) no-repeat scroll 0 0;
+    height: 18px;
+    width: 24px;
+    float: left;
+    margin: 2px 10px 0 0;
+}
+
+.Flag.Small {
+    width: 17px;
+    height: 10px;
+    background-position: bottom right;
+}
+
+.Flag span {
+    display: block;
+    height: 16px;
+    margin-right: 2px;
+    text-indent: -9999px;
+    cursor: pointer;
+    /* set a default color for priorities */
+    background-color: #cdcdcd;
+}
+
+.Flag.Small span {
+    height: 8px;
+}
+
+.Flag span.State-green {
+    background-color: #008000;
+}
+
+.Flag span.State-red {
+    background-color: #ff0000;
+}
+
+.Flag span.State-orange {
+    background-color: #ffa000;
+}
+
 
 } /* end @media */
