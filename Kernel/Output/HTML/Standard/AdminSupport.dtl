@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.21 2010/09/08 22:51:32 cg Exp $
+# $Id: AdminSupport.dtl,v 1.22 2010/09/09 13:28:12 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -84,25 +84,14 @@
                 <div class="Header">
                     <h2>$QData{"Module"}</h2>
                 </div>
-                <div class="Content WithPadding">
-                    <table class="DataTable">
-                        <thead>
-                            <tr>
-                                <th>$Text{"Check"}</th>
-                                <th>$Text{"Comment"}</th>
-                                <th class="W20pc">$Text{"State"}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div class="Content">
 <!-- dtl:block:OverviewModuleRow -->
-                            <tr>
-                                <td><div title="$QData{"Description"}">$QData{"Description"}</div></td>
-                                <td>$QData{"Comment"}</td>
-                                <td><font color="$QData{"FontColor"}">$QData{"Check"}</font></td>
-                            </tr>
+                    <h3 class="SpacingTopSmall">
+                        <span style="color: $QData{"FontColor"};">$QData{"Check"}</span>
+                        $QData{"Description"}
+                    </h3>
+                    <p class="Spacing">$QData{"Comment"}</p>
 <!-- dtl:block:OverviewModuleRow -->
-                        </tbody>
-                    </table>
                 </div>
             </div>
 <!-- dtl:block:OverviewModule -->
