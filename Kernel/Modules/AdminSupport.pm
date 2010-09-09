@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.29 2010/07/30 10:04:32 ub Exp $
+# $Id: AdminSupport.pm,v 1.30 2010/09/09 22:56:05 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.29 $) [1];
+$VERSION = qw($Revision: 1.30 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -206,6 +206,51 @@ sub Run {
     }
 
     # ------------------------------------------------------------ #
+    # SQL bench Init
+    # ------------------------------------------------------------ #
+
+    elsif ( $Self->{Subaction} eq 'BenchmarkSQLInit' ) {
+
+        # selection data for benchmark dropdown list
+        my %SelectionData = (
+            Data => {
+                1 => '1 * Normal (ca. 25 sec)',
+                3 => '3 * High   (ca. 75 sec)',
+                5 => '5 * Heavy  (ca. 125 sec)',
+            },
+            Name => 'Mode',
+        );
+
+        # check if Layout object knows the function BuildSelection
+        # this is needed because older otrs versions use OptionStrgHashRef instead
+        if ( $Self->{LayoutObject}->can('BuildSelection') ) {
+
+            # build selection for benchmark test
+            $Param{ModeStrg} = $Self->{LayoutObject}->BuildSelection(%SelectionData);
+        }
+        else {
+
+            # build selection for benchmark test
+            $Param{ModeStrg} = $Self->{LayoutObject}->OptionStrgHashRef(%SelectionData);
+        }
+
+        $Self->{LayoutObject}->Block(
+            Name => 'BenchmarkResultInit',
+            Data => {
+                ModeStrg => $Param{ModeStrg},
+            },
+        );
+        my $Output = $Self->{LayoutObject}->Header();
+        $Output .= $Self->{LayoutObject}->NavigationBar();
+        $Output .= $Self->{LayoutObject}->Output(
+            TemplateFile => 'AdminSupport',
+            Data         => \%Param,
+        );
+        $Output .= $Self->{LayoutObject}->Footer();
+        return $Output;
+    }
+
+    # ------------------------------------------------------------ #
     # SQL bench
     # ------------------------------------------------------------ #
 
@@ -217,7 +262,6 @@ sub Run {
         my $Mode   = $Self->{ParamObject}->GetParam( Param => 'Mode' );
 
         my %BenchTest = $Self->{SupportObject}->Benchmark(
-
             Insert => $Insert,
             Update => $Update,
             Select => $Select,
@@ -277,13 +321,10 @@ sub Run {
                 Value => "* $Mode",
             },
         );
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->{LayoutObject}->Output(
+        my $Output = $Self->{LayoutObject}->Output(
             TemplateFile => 'AdminSupport',
             Data         => \%BenchTest,
         );
-        $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
 
@@ -296,29 +337,6 @@ sub Run {
         # get result of all admin checks
         my $DataHash = $Self->{SupportObject}->AdminChecksGet();
 
-        # selection data for benchmark dropdown list
-        my %SelectionData = (
-            Data => {
-                1 => '1 * Normal (ca. 25 sec)',
-                3 => '3 * High   (ca. 75 sec)',
-                5 => '5 * Heavy  (ca. 125 sec)',
-            },
-            Name => 'Mode',
-        );
-
-        # check if Layout object knows the function BuildSelection
-        # this is needed because older otrs versions use OptionStrgHashRef instead
-        if ( $Self->{LayoutObject}->can('BuildSelection') ) {
-
-            # build selection for benchmark test
-            $Param{ModeStrg} = $Self->{LayoutObject}->BuildSelection(%SelectionData);
-        }
-        else {
-
-            # build selection for benchmark test
-            $Param{ModeStrg} = $Self->{LayoutObject}->OptionStrgHashRef(%SelectionData);
-        }
-
         # create & return output
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
@@ -327,23 +345,20 @@ sub Run {
             Name => 'Overview',
             Data => \%Param,
         );
+
+        my $IsCollapsed = 'Expanded';
         for my $Module ( sort keys %{$DataHash} ) {
             $Self->{LayoutObject}->Block(
                 Name => 'OverviewModule',
-                Data => { Module => $Module, },
+                Data => {
+                    Module    => $Module,
+                    Collapsed => $IsCollapsed,
+                },
             );
+            $IsCollapsed = 'Collapsed';
 
-            # check css rotatory
-            my $CssClass;
             for my $RowHash ( @{ $DataHash->{$Module} } ) {
 
-                # set output class
-                if ( $CssClass && $CssClass eq 'searchactive' ) {
-                    $CssClass = 'searchpassive';
-                }
-                else {
-                    $CssClass = 'searchactive';
-                }
                 my $FontColor = 'red';
                 if ( $RowHash->{Check} ) {
                     if ( $RowHash->{Check} eq 'OK' ) {
@@ -362,7 +377,6 @@ sub Run {
                     Name => 'OverviewModuleRow',
                     Data => {
                         %{$RowHash},
-                        CssClass  => $CssClass,
                         FontColor => $FontColor,
                     },
                 );
