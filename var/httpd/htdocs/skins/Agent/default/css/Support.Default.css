@@ -1,6 +1,6 @@
 /**
  * @project     OTRS (http://www.otrs.org) - Agent Frontend
- * @version     $Revision: 1.1 $
+ * @version     $Revision: 1.2 $
  * @copyright   OTRS AG
  * @license     AGPL (http://www.gnu.org/licenses/agpl.txt)
  */
@@ -11,11 +11,11 @@
  * @package     Support
  * @section     General
  */
-div.CheckResultOK > p {
+.AdminSupport div.CheckResultOK > p {
     color: #888;
 }
 
-div.CheckResultOK:hover > p {
+.AdminSupport div.CheckResultOK:hover > p {
     color: #000;
 }
 
