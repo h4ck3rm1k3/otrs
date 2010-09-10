@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.30 2010/09/09 22:56:05 cg Exp $
+# $Id: AdminSupport.pm,v 1.31 2010/09/10 07:17:37 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.30 $) [1];
+$VERSION = qw($Revision: 1.31 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -346,38 +346,24 @@ sub Run {
             Data => \%Param,
         );
 
-        my $IsCollapsed = 'Expanded';
         for my $Module ( sort keys %{$DataHash} ) {
             $Self->{LayoutObject}->Block(
                 Name => 'OverviewModule',
                 Data => {
-                    Module    => $Module,
-                    Collapsed => $IsCollapsed,
+                    Module => $Module,
                 },
             );
-            $IsCollapsed = 'Collapsed';
 
+            ROWHASH:
             for my $RowHash ( @{ $DataHash->{$Module} } ) {
 
-                my $FontColor = 'red';
-                if ( $RowHash->{Check} ) {
-                    if ( $RowHash->{Check} eq 'OK' ) {
-                        $FontColor = 'green';
-                    }
-                    elsif ( $RowHash->{Check} eq 'Info' ) {
-                        $FontColor = 'darkblue';
-                    }
-                    elsif ( $RowHash->{Check} eq 'Critical' ) {
-                        $FontColor = 'orange';
-                    }
-                }
+                next ROWHASH if ( !%{$RowHash} );
 
                 # create new block with rotatory css
                 $Self->{LayoutObject}->Block(
                     Name => 'OverviewModuleRow',
                     Data => {
                         %{$RowHash},
-                        FontColor => $FontColor,
                     },
                 );
             }

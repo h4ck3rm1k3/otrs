@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-    <CVS>$Id: Support.sopm,v 1.25 2010/09/09 22:58:08 cg Exp $</CVS>
+    <CVS>$Id: Support.sopm,v 1.26 2010/09/10 07:17:37 mg Exp $</CVS>
     <Name>Support</Name>
     <Version>0.0.0</Version>
     <Framework>3.0.x</Framework>
@@ -15,7 +15,7 @@
     <IntroInstallPost Title="Notice - Introduction" Lang="es">El módulo de evaluación de soporte proporciona comprobaciones del sistema y puede ayudar a encontrar errores de configuración. Después de la instalación se puede acceder desde la Interfaz de Administración, en el panel de administración del sistema.</IntroInstallPost>
     <Filelist>
         <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupport.dtl"/>
-        <File Permission="644" Location="Kernel/Output/HTML/Standard/SupportLicenseText.dtl"/>
+        <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupportLicenseText.dtl"/>
         <File Permission="644" Location="Kernel/System/Support.pm"/>
         <File Permission="644" Location="Kernel/System/Support/Database.pm"/>
         <File Permission="644" Location="Kernel/System/Support/OS.pm"/>

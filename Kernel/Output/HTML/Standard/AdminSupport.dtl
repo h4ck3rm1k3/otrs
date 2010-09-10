@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.24 2010/09/09 22:55:10 cg Exp $
+# $Id: AdminSupport.dtl,v 1.25 2010/09/10 07:17:37 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@
 
 <!-- dtl:block:Overview -->
 <div class="MainBox AdminSupport ARIARoleMain LayoutFixedSidebar SidebarFirst">
-    <h1>$Text{"Overview"}: $Text{"Config Item"}</h1>
+    <h1>$Text{"Overview"}: $Text{"Support Assessment"}</h1>
 
     <div class="SidebarColumn">
         <div class="WidgetSimple">
@@ -49,7 +49,7 @@
 
     <div class="ContentColumn">
 <!-- dtl:block:OverviewModule -->
-        <div class="WidgetSimple $QData{"Collapsed"}">
+        <div class="WidgetSimple">
             <div class="Header">
                 <div class="WidgetAction Toggle">
                     <a title="Toggle this widget" href="#"></a>
@@ -58,15 +58,17 @@
             </div>
             <div class="Content">
 <!-- dtl:block:OverviewModuleRow -->
-                <div class="CheckResult">
-                    <div title="$QData{"Check"}" class="Flag Small">
-                        <span class="State-$QData{"FontColor"}">$QData{"Check"}</span>
-                    </div>
-                    <h3>
-                        $QData{"Description"}
-                    </h3>
-                    <p class="SpacingTopSmall">$QData{"Comment"}</p>
-                </div>
+                <ul>
+                    <li class="CheckResult CheckResult$QData{"Check"}">
+                        <h3>
+                            <span title="$QData{"Check"}" class="Flag Small">
+                                <span>$QData{"Check"}</span>
+                            </span>
+                            $QData{"Description"}
+                        </h3>
+                        <p class="SpacingTopSmall">$QData{"Comment"}</p>
+                    </li>
+                </ul>
 <!-- dtl:block:OverviewModuleRow -->
             </div>
         </div>
@@ -108,7 +110,7 @@
             </div>
             <div class="Content Center">
 
-$Include{"SupportLicenseText"}
+$Include{"AdminSupportLicenseText"}
 
                 <div class="Content CenterBox W50pc">
                     <form action="$Env{"CGIHandle"}" method="post" class="Right">
