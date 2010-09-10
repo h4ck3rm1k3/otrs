@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.26 2010/09/10 07:32:34 mg Exp $
+# $Id: AdminSupport.dtl,v 1.27 2010/09/10 07:44:42 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -113,14 +113,14 @@
 $Include{"AdminSupportLicenseText"}
 
                 <div class="Content CenterBox W50pc">
-                    <form action="$Env{"CGIHandle"}" method="post" class="Right">
+                    <form action="$Env{"CGIHandle"}" method="post" class="Right SpacingTopSmall">
                         <input type="hidden" name="Action" value="$Env{"Action"}"/>
                         <input type="hidden" name="Subaction" value="SenderInformation"/>
-                        <input class="button" type="submit" value="$Text{"Accept license"}"/>
+                        <button class="Primary" type="submit" value="$Text{"Accept license"}">$Text{"Accept license"}</button>
                     </form>
-                    <form action="$Env{"CGIHandle"}" method="post" class="Right">
+                    <form action="$Env{"CGIHandle"}" method="post" class="Right SpacingTopSmall">
                         <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                        <input class="button" type="submit" value="$Text{"Don't accept license"}"/>
+                        <button type="submit" value="$Text{"Don't accept license"}">$Text{"Don't accept license"}</button>
                     </form>
                 </div>
             </div>
@@ -147,9 +147,6 @@ $Include{"AdminSupportLicenseText"}
                     <li>
                         <a href="$Env{"Baselink"}Action=$Env{"Action"}" class="CallForAction"><span>$Text{"Go to overview"}</span></a>
                     </li>
-                    <li>
-                        <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=BenchmarkSQLInit" class="CallForAction"><span>$Text{"SQL benchmark"}</span></a>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -162,77 +159,76 @@ $Include{"AdminSupportLicenseText"}
             </div>
             <div class="Content WithPadding">
                 <form action="$Env{"CGIHandle"}" method="post" name="compose">
-                    <input type="hidden" name="Action" value="$Env{"Action"}">
-                    <input type="hidden" name="Subaction" value="Submit">
+                    <input type="hidden" name="Action" value="$Env{"Action"}"/>
+                    <input type="hidden" name="Subaction" value="Submit"/>
 <!-- dtl:block:SenderInformationHidden -->
-                    <input type="hidden" name="$QData{"Name"}" value="$QData{"Value"}">
+                    <input type="hidden" name="$QData{"Name"}" value="$QData{"Value"}"/>
 <!-- dtl:block:SenderInformationHidden -->
                     <fieldset class="TableLike">
                         <label for="Sender">$Text{"Email"}:</label>
                         <div class="Field">
-                            <input type="Text" id="Sender" name="Sender" value="$QData{"SenderAdress"}" class="W50pc" readonly />
+                            <input type="text" id="Sender" name="Sender" value="$QData{"SenderAdress"}" class="W50pc" readonly="readonly" />
                         </div>
                         <div class="Clear"></div>
 
                         <label for="Salutation">$Text{"Salutation"}:</label>
                         <div class="Field">
-                            <input type="Text" id="Salutation" name="Salutation" value="$QData{"SenderSalutation"}" class="W50pc" readonly />
+                            <input type="text" id="Salutation" name="Salutation" value="$QData{"SenderSalutation"}" class="W50pc" readonly="readonly" />
                         </div>
                         <div class="Clear"></div>
 
                         <label for="Name">$Text{"Name"}:</label>
                         <div class="Field">
-                            <input type="Text" id="Name" name="Name" value="$QData{"SenderName"}" class="W50pc" readonly />
+                            <input type="text" id="Name" name="Name" value="$QData{"SenderName"}" class="W50pc" readonly="readonly" />
                         </div>
                         <div class="Clear"></div>
 
                         <label for="Company">$Text{"Company"}:</label>
                         <div class="Field">
-                            <input type="Text" id="Company" name="Company" value="" class="W50pc" />
+                            <input type="text" id="Company" name="Company" value="" class="W50pc" />
                         </div>
                         <div class="Clear"></div>
 
                         <label for="Street">$Text{"Street"}:</label>
                         <div class="Field">
-                            <input type="Text" id="Street" name="Street" value="" class="W50pc" />
+                            <input type="text" id="Street" name="Street" value="" class="W50pc" />
                         </div>
                         <div class="Clear"></div>
 
                         <label for="Zip">$Text{"Zip"}:</label>
                         <div class="Field">
-                            <input type="Text" id="Zip" name="Zip" value="" class="W50pc" />
+                            <input type="text" id="Zip" name="Zip" value="" class="W50pc" />
                         </div>
                         <div class="Clear"></div>
 
                         <label for="City">$Text{"City"}:</label>
                         <div class="Field">
-                            <input type="Text" id="City" name="City" value="" class="W50pc" />
+                            <input type="text" id="City" name="City" value="" class="W50pc" />
                         </div>
                         <div class="Clear"></div>
 
                         <label for="Phone">$Text{"Phone"}:</label>
                         <div class="Field">
-                            <input type="Text" id="Phone" name="Phone" value="" class="W50pc" />
+                            <input type="text" id="Phone" name="Phone" value="" class="W50pc" />
                         </div>
                         <div class="Clear"></div>
 
                         <label for="BugzillaID">$Text{"Bugzilla ID"}:</label>
                         <div class="Field">
-                            <input type="Text" id="BugzillaID" name="BugzillaID" value="" class="W50pc" />
+                            <input type="text" id="BugzillaID" name="BugzillaID" value="" class="W50pc" />
+                            <p class="FieldExplanation">$Text{"If you've already added a Bugzilla report at bugs.otrs.org, please add your Bugzilla ID here."}</p>
                         </div>
                         <div class="Clear"></div>
 
                         <div class="Value">
-                            <p class="Warning Small">$Text{"If you've already added a Bugzilla report at bugs.otrs.org, please add your Bugzilla ID here."}</p>
-                        </div>
-
-                        <div class="Value">
-                            <p class="FieldExplanation">
+                            <p class="">
                                 <strong>$Text{"Enterprise Support and Enterprise Subscription information"}</strong><br/>
                                 $Text{"No, I'm not yet an ((otrs)) 'Enterprise Subscription' or 'Enterprise Support' customer. Please review my support package without any commitment and send me information only and without responsibility, about the different ((otrs)) Enterprise packages"}:
-                                <input type="checkbox" id="SendInfo" name="SendInfo" value="1" checked="checked">
+                                <input type="checkbox" id="SendInfo" name="SendInfo" value="1" checked="checked"/>
                             </p>
                         </div>
+                        <div class="Clear"></div>
+
                         <div class="Field SpacingTop">
                             <input class="button" type="submit" id="Download" name="Download" value="$Text{"Download"}"/>
                             <input class="button" type="submit" id="Send" name="Send" value="$Text{"Send"}"/>
@@ -322,9 +318,6 @@ $Include{"AdminSupportLicenseText"}
                 <ul class="ActionList">
                     <li>
                         <a href="$Env{"Baselink"}Action=$Env{"Action"}" class="CallForAction"><span>$Text{"Go to overview"}</span></a>
-                    </li>
-                    <li>
-                        <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Confidential" class="CallForAction"><span>$Text{"Start support"}</span></a>
                     </li>
                 </ul>
             </div>

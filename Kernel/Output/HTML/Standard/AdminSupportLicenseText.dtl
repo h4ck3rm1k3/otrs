@@ -1,8 +1,8 @@
 # --
-# SupportLicenseText.dtl - provides the license definition for the Support
+# AdminSupportLicenseText.dtl - provides the license definition for the Support
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupportLicenseText.dtl,v 1.1 2010/09/10 07:17:37 mg Exp $
+# $Id: AdminSupportLicenseText.dtl,v 1.2 2010/09/10 07:44:42 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -10,7 +10,7 @@
 # --
 
 <!-- dtl:block:ConfidentialContentDE -->
-                <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>Datenschutz
+                <textarea name="Confidential" rows="22" cols="78" readonly="readonly">Datenschutz
 
 Wir, die Firma OTRS AG, nehmen den Schutz Ihrer pers&ouml;nlichen Daten sehr ernst und halten uns strikt an die Regeln der Datenschutzgesetze. Alle Passw&ouml;rter werden vor dem Versenden der Informationen automatisiert unkenntlich gemacht. In keinem Fall werden die erhobenen Daten verkauft oder aus anderen Gr&uuml;nden an unautorisierte Dritte weitergegeben.
 
@@ -37,7 +37,7 @@ Ihr Vertrauen ist uns wichtig. Daher geben wir Ihnen gerne jederzeit Auskunft &u
                 </textarea>
 <!-- dtl:block:ConfidentialContentDE -->
 <!-- dtl:block:ConfidentialContentEN -->
-                <textarea name="Confidential" rows="22" cols="78" wrap="$Env{"BrowserWrap"}" readonly>Data Protection
+                <textarea name="Confidential" rows="22" cols="78" readonly="readonly">Data Protection
 
 Here at OTRS AG we take the protection of your personal details very seriously and strictly adhere to data protection laws. All passwords are automatically made unrecognizable before the information is sent. Under no circumstances will any data we obtain be sold or passed on to unauthorized third parties.
 The following explanation provides you with an overview of how we guarantee this protection and which type of data is collected for which purpose.
