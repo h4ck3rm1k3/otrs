@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.15 2010/02/09 21:29:16 ub Exp $
+# $Id: OS.pm,v 1.16 2010/09/10 07:54:49 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.15 $) [1];
+$VERSION = qw($Revision: 1.16 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -359,8 +359,15 @@ sub _DiskUsageCheck {
 
     # If used OS is a linux system
     if ( $^O =~ /(linux|unix|netbsd|freebsd|darwin)/i ) {
+        my $Commandline = "df -lx tmpfs -x iso9960 -x udf";
+
+        # current MacOS does not support the -x flag for df
+
+        if ( $^O =~ /darwin/i ) {
+            $Commandline = "df -l";
+        }
         my $In;
-        if ( open( $In, "df -lx tmpfs -x iso9960 -x udf |" ) ) {
+        if ( open( $In, "$Commandline |" ) ) {
             while (<$In>) {
                 if ( $_ =~ /^(.+?)\s.*\s(\d\d\d|\d\d|\d)%.+?$/ ) {
                     if ( $2 > 90 ) {
