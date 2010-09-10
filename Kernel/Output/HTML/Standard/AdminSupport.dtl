@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.25 2010/09/10 07:17:37 mg Exp $
+# $Id: AdminSupport.dtl,v 1.26 2010/09/10 07:32:34 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -280,7 +280,7 @@ $Include{"AdminSupportLicenseText"}
 <div class="Header">
     <h2>$Text{"Result"}: $Text{"$Data{"Head"}"}</h2>
 </div>
-<div class="Content WithPadding Toggle Hidden">
+<div class="Content">
     <table class="DataTable">
         <thead>
             <tr>
@@ -345,7 +345,7 @@ $Include{"AdminSupportLicenseText"}
     </div>
 
     <div class="ContentColumn">
-        <div class="WidgetSimple">
+        <div class="WidgetSimple" id="SQLBenchmarkWidget">
             <div class="Header">
                 <h2>$Text{"SQL benchmark"}</h2>
             </div>
@@ -355,45 +355,35 @@ $Include{"AdminSupportLicenseText"}
                     <label for="Mode">$Text{"Multiplier"}:</label>
                     <div class="Field">
                         $Data{"ModeStrg"}
+                        <p class="FieldExplanation">$Text{"Please select a multiplier and press start button."}</p>
                     </div>
                     <div class="Field">
-                        <button id="SendRequest" class="Primary"  value="$Text{"Start"}">
+                        <button id="SendRequest" class="Primary" value="$Text{"Start"}">
                             <span>$Text{"Start"}</span>
                         </button>
                     </div>
-                    <div class="Value">
-                        <p>* $Text{"Please select a multiplier and press start button."}</p>
-                    </div>
+                    <div class="Clear"></div>
                 </fieldset>
-                <div id="ContentToUpdate" class="WidgetSimple">
-                    <div class="Header">
-                        <h2 class="Toggle Hidden">$Text{"Results"}</h2>
-                        <h2 class="Toggle Warning">
-                            * $Text{"No benchmark test has been done"}
-                        </h2>
-                    </div>
-                </div>
-                <div class="Content Center Toggle Hidden">
-                    <h2 class="Warning">$Text{"Please be patient, it could last long."}</h2>
-                </div>
             </div>
-
         </div>
+
+        <div id="ContentToUpdate" class="WidgetSimple Hidden"></div>
     </div>
 </div>
 <!-- dtl:js_on_document_complete -->
-        <script type="text/javascript">//<![CDATA[
-            $('#SendRequest').bind('click', function (Event) {
-                $('.Toggle').toggle();
-                $('#ContentToUpdate').addClass('Loading');
-                var URL = $('#URL').val() + ';Mode=' + $('#Mode').val();
-                Core.AJAX.ContentUpdate($('#ContentToUpdate'), URL, function () {
-                    $('#ContentToUpdate').removeClass('Loading');
-                    $('.Toggle').toggle();
-                });
-                return false;
-            });
-        //]]></script>
+<script type="text/javascript">//<![CDATA[
+$('#SendRequest').bind('click', function (Event) {
+    $('#SQLBenchmarkWidget').addClass('Loading');
+    $('#SendRequest').attr('disabled', true);
+    var URL = $('#URL').val() + ';Mode=' + $('#Mode').val();
+    Core.AJAX.ContentUpdate($('#ContentToUpdate'), URL, function () {
+        $('#ContentToUpdate').show();
+        $('#SQLBenchmarkWidget').removeClass('Loading');
+        $('#SendRequest').attr('disabled', false);
+    });
+    return false;
+});
+//]]></script>
 <!-- dtl:js_on_document_complete -->
 
 <!-- dtl:block:BenchmarkResultInit -->
