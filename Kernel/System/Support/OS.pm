@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.17 2010/09/10 08:13:41 mg Exp $
+# $Id: OS.pm,v 1.18 2010/09/10 08:38:33 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.17 $) [1];
+$VERSION = qw($Revision: 1.18 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -76,7 +76,21 @@ sub _DistributionCheck {
     if ( $^O =~ /(linux|unix|netbsd|darwin)/i ) {
         my $TmpLine = "";
         my $Distribution;
-        if ( open( $Distribution, '<', "/etc/issue" ) ) {
+        if ( $^O =~ /darwin/i && open( $Distribution, "sw_vers |" ) ) {
+            while (<$Distribution>) {
+                $TmpLine .= $_;
+            }
+            $TmpLine =~ s/\\.*//;
+            $TmpLine =~ s/\n/ /g;
+            $ReturnHash = {
+                Name        => 'Distribution',
+                Description => "Shows the used distribution.",
+                Comment     => "\"$TmpLine\" is used.",
+                Check       => 'OK',
+            };
+
+        }
+        elsif ( open( $Distribution, '<', "/etc/issue" ) ) {
             while (<$Distribution>) {
                 $TmpLine .= $_;
             }
@@ -96,7 +110,7 @@ sub _DistributionCheck {
             $ReturnHash = {
                 Name        => 'Distribution',
                 Description => "Shows the used distribution.",
-                Comment     => "Can\'t find /etc/issue...",
+                Comment     => "Can\'t determine distribution.",
                 Check       => 'Failed',
             };
         }
