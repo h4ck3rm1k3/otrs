@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 # --
 # bin/cgi-bin/json.pl - json handle
-# Copyright (C) 2003-2010 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: json.pl,v 1.12 2010/08/03 22:44:53 cr Exp $
+# $Id: json.pl,v 1.13 2010/09/23 17:51:02 cr Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -53,7 +53,7 @@ use Kernel::System::iPhone;
 use Kernel::System::Web::Request;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+$VERSION = qw($Revision: 1.13 $) [1];
 
 my $Self = Core->new();
 print "Content-Type: text/plain; \n";
@@ -120,7 +120,7 @@ sub Dispatch {
     $User ||= '';
     $Pw   ||= '';
 
-    # inblund log
+    # inbound log
     if ( $Self->{ConfigObject}->Get('iPhone::DebugLog') ) {
         my $Message = 'User=' . $User . '&Password=****' . '&Object=' . $Object
             . '&Method=' . $Method . '&Data=' . $Data;
@@ -140,7 +140,7 @@ sub Dispatch {
         if ( !$UserLogin ) {
             $Self->{LogObject}->Log(
                 Priority => 'notice',
-                Message  => "Auth for user $User (pw $Pw) failed!",
+                Message  => "Auth for user $User failed!",
             );
             return $Self->Result();
         }
@@ -175,7 +175,7 @@ sub Dispatch {
         if ( $User ne $RequiredUser || $Pw ne $RequiredPassword ) {
             $Self->{LogObject}->Log(
                 Priority => 'notice',
-                Message  => "Auth for user $User (pasword $Pw) failed!",
+                Message  => "Auth for user $User failed!",
             );
             return $Self->Result();
         }
