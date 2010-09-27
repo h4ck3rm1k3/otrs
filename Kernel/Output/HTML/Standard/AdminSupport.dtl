@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.27 2010/09/10 07:44:42 mg Exp $
+# $Id: AdminSupport.dtl,v 1.28 2010/09/27 22:59:47 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -291,8 +291,20 @@ $Include{"AdminSupportLicenseText"}
             <tr>
                 <td>$QData{"Key"}:</td>
                 <td>$QData{"Value"}</td>
-                <td>$QData{"Time"}</td>
-                <td>$Data{"Comment"}</td>
+                <td>
+                    $QData{"Time"} s $QData{"Mood"}
+                </td>
+                <td>
+<!-- dtl:block:BenchmarkResultRowFine -->
+                    $Text{"Looks fine!"}
+<!-- dtl:block:BenchmarkResultRowFine -->
+<!-- dtl:block:BenchmarkResultRowOK -->
+                    $Text{"Ok"}
+<!-- dtl:block:BenchmarkResultRowOK -->
+<!-- dtl:block:BenchmarkResultRowWrong -->
+                    $Text{"Should not take more than"} $Data{"ShouldTake"}'s $Text{"on an average system"}.
+<!-- dtl:block:BenchmarkResultRowWrong -->
+                </td>
             </tr>
 <!-- dtl:block:BenchmarkResultRow -->
         </tbody>

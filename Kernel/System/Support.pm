@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.44 2010/07/30 10:06:28 ub Exp $
+# $Id: Support.pm,v 1.45 2010/09/27 22:59:47 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.44 $) [1];
+$VERSION = qw($Revision: 1.45 $) [1];
 
 =head1 NAME
 
@@ -913,66 +913,61 @@ sub Benchmark {
 
     my $InsertTime = ( $Param{InsertTime} / $Mode ) * ( 10000 / $Insert );
     if ( $InsertTime <= 3 ) {
-        $Param{InsertMood}    = ':-)';
-        $Param{InsertComment} = '$Text{"Looks fine!"}',
+        $Param{InsertResult} = 'Fine';
+
+        #        $Param{InsertMood}    = ':-)';
+        #        $Param{InsertComment} = '$Text{"Looks fine!"}',
     }
     elsif ( $InsertTime <= 5 ) {
-        $Param{InsertMood}    = ':-|';
-        $Param{InsertComment} = '$Text{"Ok"}';
+        $Param{InsertResult} = 'OK';
+
+        #        $Param{InsertMood}    = ':-|';
+        #        $Param{InsertComment} = '$Text{"Ok"}';
     }
     else {
-        $Param{InsertMood} = ':-(';
-        my $ShouldTake = int( $Mode * 5 );
-        $Param{InsertComment}
-            = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
+        $Param{InsertResult} = 'Wrong';
+        $Param{ShouldTake}   = int( $Mode * 5 );
+
+#        $Param{InsertMood} = ':-(';
+#        my $ShouldTake = int( $Mode * 5 );
+#        $Param{InsertComment}
+#            = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
     }
 
     my $UpdateTime = ( $Param{UpdateTime} / $Mode ) * ( 10000 / $Update );
     if ( $UpdateTime <= 5 ) {
-        $Param{UpdateMood}    = ':-)';
-        $Param{UpdateComment} = '$Text{"Looks fine!"}',
+        $Param{UpdateResult} = 'Fine';
     }
     elsif ( $UpdateTime <= 9 ) {
-        $Param{UpdateMood}    = ':-|';
-        $Param{UpdateComment} = '$Text{"Ok"}';
+        $Param{UpdateResult} = 'OK';
     }
     else {
-        $Param{UpdateMood} = ':-(';
-        my $ShouldTake = int( $Mode * 9 );
-        $Param{UpdateComment}
-            = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
+        $Param{UpdateResult} = 'Wrong';
+        $Param{ShouldTake}   = int( $Mode * 9 );
     }
 
     my $SelectTime = ( $Param{SelectTime} / $Mode ) * ( 10000 / $Select );
     if ( $SelectTime <= 5 ) {
-        $Param{SelectMood}    = ':-)';
-        $Param{SelectComment} = '$Text{"Looks fine!"}',
+        $Param{SelectResult} = 'Fine';
     }
     elsif ( $SelectTime <= 6 ) {
-        $Param{SelectMood}    = ':-|';
-        $Param{SelectComment} = '$Text{"Ok"}';
+        $Param{SelectResult} = 'OK';
     }
     else {
-        $Param{SelectMood} = ':-(';
-        my $ShouldTake = int( $Mode * 6 );
-        $Param{SelectComment}
-            = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
+        $Param{SelectResult} = 'Wrong';
+        $Param{ShouldTake}   = int( $Mode * 6 );
     }
 
     my $DeleteTime = ( $Param{DeleteTime} / $Mode );
     if ( $DeleteTime <= 4 ) {
-        $Param{DeleteMood}    = ':-)';
-        $Param{DeleteComment} = '$Text{"Looks fine!"}',
+        $Param{DeleteResult} = 'Fine';
     }
     elsif ( $DeleteTime <= 5 ) {
-        $Param{DeleteMood}    = ':-|';
-        $Param{DeleteComment} = '$Text{"Ok"}';
+        $Param{DeleteResult} = 'OK';
     }
     else {
-        $Param{DeleteMood} = ':-(';
-        my $ShouldTake = int( $Mode * 5 );
-        $Param{DeleteComment}
-            = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
+        $Param{DeleteResult} = 'Wrong';
+        $Param{ShouldTake}   = int( $Mode * 5 );
     }
 
     return %Param;
@@ -1060,6 +1055,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.44 $ $Date: 2010/07/30 10:06:28 $
+$Revision: 1.45 $ $Date: 2010/09/27 22:59:47 $
 
 =cut

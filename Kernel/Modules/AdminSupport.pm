@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.31 2010/09/10 07:17:37 mg Exp $
+# $Id: AdminSupport.pm,v 1.32 2010/09/27 22:59:47 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.31 $) [1];
+$VERSION = qw($Revision: 1.32 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -261,6 +261,8 @@ sub Run {
         my $Select = $Self->{ParamObject}->GetParam( Param => 'Select' ) || 10000;
         my $Mode   = $Self->{ParamObject}->GetParam( Param => 'Mode' );
 
+        my %Mood = ( 'Fine', ':-)', 'Ok', ':-|', 'Wrong', ':-(' );
+
         my %BenchTest = $Self->{SupportObject}->Benchmark(
             Insert => $Insert,
             Update => $Update,
@@ -275,45 +277,83 @@ sub Run {
                 Head => 'SQL',
             },
         );
+
+        # Insert
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow',
             Data => {
-                Key     => 'Insert Time',
-                Time    => "$BenchTest{InsertTime} s $BenchTest{InsertMood}",
-                Value   => ( $Insert * $Mode ),
-                Comment => $BenchTest{InsertComment} || '',
+                Key   => 'Insert Time',
+                Time  => $BenchTest{InsertTime},
+                Mood  => $Mood{ $BenchTest{InsertResult} },
+                Value => ( $Insert * $Mode ),
+
+                #                ShouldTake  => $BenchTest{ShouldTake} || '',
+            },
+        );
+        $Self->{LayoutObject}->Block(
+            Name => 'BenchmarkResultRow' . $BenchTest{InsertResult},
+            Data => {
+                ShouldTake => $BenchTest{ShouldTake} || '',
             },
         );
 
+        # Update
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow',
             Data => {
-                Key     => 'Update Time',
-                Time    => "$BenchTest{UpdateTime} s $BenchTest{UpdateMood}",
-                Value   => ( $Update * $Mode ),
-                Comment => $BenchTest{UpdateComment} || '',
+                Key   => 'Update Time',
+                Time  => $BenchTest{UpdateTime},
+                Mood  => $Mood{ $BenchTest{UpdateResult} },
+                Value => ( $Update * $Mode ),
+
+                #                Comment     => $BenchTest{UpdateComment} || '',
+            },
+        );
+        $Self->{LayoutObject}->Block(
+            Name => 'BenchmarkResultRow' . $BenchTest{UpdateResult},
+            Data => {
+                ShouldTake => $BenchTest{ShouldTake} || '',
             },
         );
 
+        # Time
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow',
             Data => {
-                Key     => 'Select Time',
-                Time    => "$BenchTest{SelectTime} s $BenchTest{SelectMood}",
-                Value   => ( $Select * $Mode ),
-                Comment => $BenchTest{SelectComment} || '',
+                Key   => 'Select Time',
+                Time  => $BenchTest{SelectTime},
+                Mood  => $Mood{ $BenchTest{SelectResult} },
+                Value => ( $Select * $Mode ),
+
+                #                Comment     => $BenchTest{SelectComment} || '',
+            },
+        );
+        $Self->{LayoutObject}->Block(
+            Name => 'BenchmarkResultRow' . $BenchTest{SelectResult},
+            Data => {
+                ShouldTake => $BenchTest{ShouldTake} || '',
             },
         );
 
+        # Delete
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow',
             Data => {
-                Key     => 'Delete Time',
-                Time    => "$BenchTest{DeleteTime} s $BenchTest{DeleteMood}",
-                Value   => ( $Insert * $Mode ),
-                Comment => $BenchTest{DeleteComment} || '',
+                Key   => 'Delete Time',
+                Time  => $BenchTest{DeleteTime},
+                Mood  => $Mood{ $BenchTest{DeleteResult} },
+                Value => ( $Insert * $Mode ),
+
+                #                Comment     => $BenchTest{DeleteComment} || '',
             },
         );
+        $Self->{LayoutObject}->Block(
+            Name => 'BenchmarkResultRow' . $BenchTest{DeleteResult},
+            Data => {
+                ShouldTake => $BenchTest{ShouldTake} || '',
+            },
+        );
+
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow',
             Data => {
