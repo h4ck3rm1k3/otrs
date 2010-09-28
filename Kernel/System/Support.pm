@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.45 2010/09/27 22:59:47 cg Exp $
+# $Id: Support.pm,v 1.46 2010/09/28 16:30:34 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.45 $) [1];
+$VERSION = qw($Revision: 1.46 $) [1];
 
 =head1 NAME
 
@@ -914,24 +914,13 @@ sub Benchmark {
     my $InsertTime = ( $Param{InsertTime} / $Mode ) * ( 10000 / $Insert );
     if ( $InsertTime <= 3 ) {
         $Param{InsertResult} = 'Fine';
-
-        #        $Param{InsertMood}    = ':-)';
-        #        $Param{InsertComment} = '$Text{"Looks fine!"}',
     }
     elsif ( $InsertTime <= 5 ) {
         $Param{InsertResult} = 'OK';
-
-        #        $Param{InsertMood}    = ':-|';
-        #        $Param{InsertComment} = '$Text{"Ok"}';
     }
     else {
-        $Param{InsertResult} = 'Wrong';
-        $Param{ShouldTake}   = int( $Mode * 5 );
-
-#        $Param{InsertMood} = ':-(';
-#        my $ShouldTake = int( $Mode * 5 );
-#        $Param{InsertComment}
-#            = '$Text{"Should not take more than %s on an average system.", "' . $ShouldTake . 's"}',
+        $Param{InsertResult}     = 'Wrong';
+        $Param{InsertShouldTake} = int( $Mode * 5 );
     }
 
     my $UpdateTime = ( $Param{UpdateTime} / $Mode ) * ( 10000 / $Update );
@@ -942,8 +931,8 @@ sub Benchmark {
         $Param{UpdateResult} = 'OK';
     }
     else {
-        $Param{UpdateResult} = 'Wrong';
-        $Param{ShouldTake}   = int( $Mode * 9 );
+        $Param{UpdateResult}     = 'Wrong';
+        $Param{UpdateShouldTake} = int( $Mode * 9 );
     }
 
     my $SelectTime = ( $Param{SelectTime} / $Mode ) * ( 10000 / $Select );
@@ -954,8 +943,8 @@ sub Benchmark {
         $Param{SelectResult} = 'OK';
     }
     else {
-        $Param{SelectResult} = 'Wrong';
-        $Param{ShouldTake}   = int( $Mode * 6 );
+        $Param{SelectResult}     = 'Wrong';
+        $Param{SelectShouldTake} = int( $Mode * 6 );
     }
 
     my $DeleteTime = ( $Param{DeleteTime} / $Mode );
@@ -966,8 +955,8 @@ sub Benchmark {
         $Param{DeleteResult} = 'OK';
     }
     else {
-        $Param{DeleteResult} = 'Wrong';
-        $Param{ShouldTake}   = int( $Mode * 5 );
+        $Param{DeleteResult}     = 'Wrong';
+        $Param{DeleteShouldTake} = int( $Mode * 5 );
     }
 
     return %Param;
@@ -1055,6 +1044,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.45 $ $Date: 2010/09/27 22:59:47 $
+$Revision: 1.46 $ $Date: 2010/09/28 16:30:34 $
 
 =cut

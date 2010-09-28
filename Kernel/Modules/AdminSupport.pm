@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.32 2010/09/27 22:59:47 cg Exp $
+# $Id: AdminSupport.pm,v 1.33 2010/09/28 16:30:34 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.32 $) [1];
+$VERSION = qw($Revision: 1.33 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -286,14 +286,12 @@ sub Run {
                 Time  => $BenchTest{InsertTime},
                 Mood  => $Mood{ $BenchTest{InsertResult} },
                 Value => ( $Insert * $Mode ),
-
-                #                ShouldTake  => $BenchTest{ShouldTake} || '',
             },
         );
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow' . $BenchTest{InsertResult},
             Data => {
-                ShouldTake => $BenchTest{ShouldTake} || '',
+                ShouldTake => $BenchTest{InsertShouldTake} || '',
             },
         );
 
@@ -305,14 +303,12 @@ sub Run {
                 Time  => $BenchTest{UpdateTime},
                 Mood  => $Mood{ $BenchTest{UpdateResult} },
                 Value => ( $Update * $Mode ),
-
-                #                Comment     => $BenchTest{UpdateComment} || '',
             },
         );
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow' . $BenchTest{UpdateResult},
             Data => {
-                ShouldTake => $BenchTest{ShouldTake} || '',
+                ShouldTake => $BenchTest{UpdateShouldTake} || '',
             },
         );
 
@@ -324,14 +320,12 @@ sub Run {
                 Time  => $BenchTest{SelectTime},
                 Mood  => $Mood{ $BenchTest{SelectResult} },
                 Value => ( $Select * $Mode ),
-
-                #                Comment     => $BenchTest{SelectComment} || '',
             },
         );
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow' . $BenchTest{SelectResult},
             Data => {
-                ShouldTake => $BenchTest{ShouldTake} || '',
+                ShouldTake => $BenchTest{SelectShouldTake} || '',
             },
         );
 
@@ -343,14 +337,12 @@ sub Run {
                 Time  => $BenchTest{DeleteTime},
                 Mood  => $Mood{ $BenchTest{DeleteResult} },
                 Value => ( $Insert * $Mode ),
-
-                #                Comment     => $BenchTest{DeleteComment} || '',
             },
         );
         $Self->{LayoutObject}->Block(
             Name => 'BenchmarkResultRow' . $BenchTest{DeleteResult},
             Data => {
-                ShouldTake => $BenchTest{ShouldTake} || '',
+                ShouldTake => $BenchTest{DeleteShouldTake} || '',
             },
         );
 
