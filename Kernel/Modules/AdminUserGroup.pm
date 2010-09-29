@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AdminUserGroup.pm - to add/update/delete groups <-> users
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminUserGroup.pm,v 1.56 2011/12/23 13:37:00 mg Exp $
+# $Id: AdminUserGroup.pm,v 1.36.2.1 2010/09/29 09:52:47 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.56 $) [1];
+$VERSION = qw($Revision: 1.36.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -36,18 +36,20 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    # ------------------------------------------------------------ #
+    my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' ) || '';
+    $Param{NextScreen} = 'AdminUserGroup';
+
     # user <-> group 1:n
-    # ------------------------------------------------------------ #
     if ( $Self->{Subaction} eq 'User' ) {
+        my $Output = $Self->{LayoutObject}->Header();
+        $Output .= $Self->{LayoutObject}->NavigationBar();
 
         # get user data
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
         my %UserData = $Self->{UserObject}->GetUserData( UserID => $ID );
 
         # get group data
         my %GroupData = $Self->{GroupObject}->GroupList( Valid => 1 );
-        my %Types;
+        my %Types = ();
         for my $Type ( @{ $Self->{ConfigObject}->Get('System::Permission') } ) {
             my %Data = $Self->{GroupObject}->GroupGroupMemberList(
                 UserID => $ID,
@@ -56,12 +58,9 @@ sub Run {
             );
             $Types{$Type} = \%Data;
         }
-
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->_Change(
-            %Types,
+        $Output .= $Self->MaskAdminUserGroupChangeForm(
             Data => \%GroupData,
+            %Types,
             ID   => $UserData{UserID},
             Name => $UserData{UserLogin},
             Type => 'User',
@@ -70,27 +69,24 @@ sub Run {
         return $Output;
     }
 
-    # ------------------------------------------------------------ #
     # group <-> user n:1
-    # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Group' ) {
+        my $Output = $Self->{LayoutObject}->Header();
+        $Output .= $Self->{LayoutObject}->NavigationBar();
 
-        # get group data
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
-        my %GroupData = $Self->{GroupObject}->GroupGet( ID => $ID );
-
-        # get user list
+        # get user data
         my %UserData = $Self->{UserObject}->UserList( Valid => 1 );
+        for ( keys %UserData ) {
 
-        # get user name
-        for my $UserID ( keys %UserData ) {
-            my $Name = $Self->{UserObject}->UserName( UserID => $UserID );
-            next if !$Name;
-            $UserData{$UserID} .= " ($Name)";
+            # get user data
+            my %User = $Self->{UserObject}->GetUserData( UserID => $_, Cached => 1 );
+            if ( $User{UserFirstname} && $User{UserLastname} ) {
+                $UserData{$_} .= " ($User{UserFirstname} $User{UserLastname})";
+            }
         }
 
         # get permission list users
-        my %Types;
+        my %Types = ();
         for my $Type ( @{ $Self->{ConfigObject}->Get('System::Permission') } ) {
             my %Data = $Self->{GroupObject}->GroupGroupMemberList(
                 GroupID => $ID,
@@ -100,9 +96,9 @@ sub Run {
             $Types{$Type} = \%Data;
         }
 
-        my $Output = $Self->{LayoutObject}->Header();
-        $Output .= $Self->{LayoutObject}->NavigationBar();
-        $Output .= $Self->_Change(
+        # get group data
+        my %GroupData = $Self->{GroupObject}->GroupGet( ID => $ID );
+        $Output .= $Self->MaskAdminUserGroupChangeForm(
             %Types,
             Data => \%UserData,
             ID   => $GroupData{ID},
@@ -113,21 +109,14 @@ sub Run {
         return $Output;
     }
 
-    # ------------------------------------------------------------ #
     # add user to groups
-    # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'ChangeGroup' ) {
 
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' ) || '';
-
         # get new groups
-        my %Permissions;
-        for my $Type ( @{ $Self->{ConfigObject}->Get('System::Permission') } ) {
-            my @IDs = $Self->{ParamObject}->GetArray( Param => $Type );
-            $Permissions{$Type} = \@IDs;
+        my %Permissions = ();
+        for ( @{ $Self->{ConfigObject}->Get('System::Permission') } ) {
+            my @IDs = $Self->{ParamObject}->GetArray( Param => $_ );
+            $Permissions{$_} = \@IDs;
         }
 
         # get group data
@@ -150,24 +139,17 @@ sub Run {
                 UserID     => $Self->{UserID},
             );
         }
-        return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
+        return $Self->{LayoutObject}->Redirect( OP => "Action=$Param{NextScreen}" );
     }
 
-    # ------------------------------------------------------------ #
     # groups to user
-    # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'ChangeUser' ) {
 
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
-
         # get new groups
-        my %Permissions;
-        for my $Type ( @{ $Self->{ConfigObject}->Get('System::Permission') } ) {
-            my @IDs = $Self->{ParamObject}->GetArray( Param => $Type );
-            $Permissions{$Type} = \@IDs;
+        my %Permissions = ();
+        for ( @{ $Self->{ConfigObject}->Get('System::Permission') } ) {
+            my @IDs = $Self->{ParamObject}->GetArray( Param => $_ );
+            $Permissions{$_} = \@IDs;
         }
 
         # get group data
@@ -190,147 +172,136 @@ sub Run {
                 UserID     => $Self->{UserID},
             );
         }
-        return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
+        return $Self->{LayoutObject}->Redirect( OP => "Action=$Param{NextScreen}" );
     }
 
-    # ------------------------------------------------------------ #
-    # overview
-    # ------------------------------------------------------------ #
-    my $Output = $Self->{LayoutObject}->Header();
-    $Output .= $Self->{LayoutObject}->NavigationBar();
-    $Output .= $Self->_Overview();
-    $Output .= $Self->{LayoutObject}->Footer();
-    return $Output;
+    # else ! print form
+    else {
+        my $Output = $Self->{LayoutObject}->Header();
+        $Output .= $Self->{LayoutObject}->NavigationBar();
+
+        # get user data
+        my %UserData = $Self->{UserObject}->UserList( Valid => 1 );
+        for ( keys %UserData ) {
+
+            # get user data
+            my %User = $Self->{UserObject}->GetUserData( UserID => $_, Cached => 1 );
+            if ( $User{UserFirstname} && $User{UserLastname} ) {
+                $UserData{$_} .= " ($User{UserFirstname} $User{UserLastname})";
+            }
+        }
+
+        # get group data
+        my %GroupData = $Self->{GroupObject}->GroupList( Valid => 1 );
+        $Output .= $Self->MaskAdminUserGroupForm(
+            GroupData => \%GroupData,
+            UserData  => \%UserData,
+        );
+        $Output .= $Self->{LayoutObject}->Footer();
+        return $Output;
+    }
 }
 
-sub _Change {
+sub MaskAdminUserGroupChangeForm {
     my ( $Self, %Param ) = @_;
 
-    my %Data   = %{ $Param{Data} };
-    my $Type   = $Param{Type} || 'User';
-    my $NeType = $Type eq 'Group' ? 'User' : 'Group';
+    my %Data     = %{ $Param{Data} };
+    my $BaseLink = $Self->{LayoutObject}->{Baselink};
+    my $Type     = $Param{Type} || 'User';
+    my $NeType   = $Type eq 'Group' ? 'User' : 'Group';
 
-    my %VisibleType = ( Group => 'Group', User => 'Agent', );
+    $Param{Name} = $Self->{LayoutObject}->Ascii2Html(
+        Text                => $Param{Name},
+        HTMLQuote           => 1,
+        LanguageTranslation => 0,
+    ) || '';
 
-    $Self->{LayoutObject}->Block( Name => 'Overview' );
-    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-    $Self->{LayoutObject}->Block( Name => 'ActionOverview' );
-    $Self->{LayoutObject}->Block( Name => 'ChangeReference', );
-    $Self->{LayoutObject}->Block(
-        Name => 'Change',
-        Data => {
-            %Param,
-            ActionHome    => 'Admin' . $Type,
-            NeType        => $NeType,
-            VisibleType   => $VisibleType{$Type},
-            VisibleNeType => $VisibleType{$NeType},
-        },
-    );
+    $Param{OptionStrg0}
+        .= "<B>\$Text{\"$Type\"}:</B> <A HREF=\"$BaseLink"
+        . "Action=Admin$Type&Subaction=Change&ID=$Param{ID}\">"
+        . "$Param{Name}</A> (id=$Param{ID})<BR>";
+    $Param{OptionStrg0} .= '<INPUT TYPE="hidden" NAME="ID" VALUE="' . $Param{ID} . '"><BR>';
 
-    $Self->{LayoutObject}->Block( Name => "ChangeHeader$VisibleType{$NeType}" );
-
-    for my $Type ( @{ $Self->{ConfigObject}->Get('System::Permission') } ) {
-        next if !$Type;
-        my $Mark = $Type eq 'rw' ? "Highlight" : '';
-        $Self->{LayoutObject}->Block(
-            Name => 'ChangeHeader',
-            Data => {
-                %Param,
-                Mark => $Mark,
-                Type => $Type,
-            },
-        );
+    $Param{OptionStrg0} .= "<br/>\n";
+    $Param{OptionStrg0} .= "<table cellspacing=\"0\" cellpadding=\"4\">\n";
+    $Param{OptionStrg0} .= "<tr valign=\"top\"><th>\$Text{\"$NeType\"}</th>";
+    for ( @{ $Self->{ConfigObject}->Get('System::Permission') } ) {
+        $Param{OptionStrg0} .= "<th>$_<br/>";
+        if ( $_ eq 'rw' ) {
+            $Param{OptionStrg0} .= " | ";
+        }
+        $Param{OptionStrg0}
+            .= "<input type=\"checkbox\" name=\"$_\" value=\"\" onclick=\"select_items('$_');\"></th>";
     }
+    $Param{OptionStrg0} .= "</tr>\n";
 
-    for my $ID ( sort { uc( $Data{$a} ) cmp uc( $Data{$b} ) } keys %Data ) {
+    my $CssClass = 'searchpassive';
+    for ( sort { uc( $Data{$a} ) cmp uc( $Data{$b} ) } keys %Data ) {
 
         # set output class
-        $Self->{LayoutObject}->Block(
-            Name => 'ChangeRow',
-            Data => {
-                %Param,
-                Name   => $Param{Data}->{$ID},
-                ID     => $ID,
-                NeType => $NeType,
-            },
-        );
-        for my $Type ( @{ $Self->{ConfigObject}->Get('System::Permission') } ) {
-            next if !$Type;
-            my $Mark = $Type eq 'rw' ? "Highlight" : '';
-            my $Selected = $Param{$Type}->{$ID} ? ' checked="checked"' : '';
+        $CssClass = $CssClass eq 'searchactive' ? 'searchpassive' : 'searchactive';
 
-            $Self->{LayoutObject}->Block(
-                Name => 'ChangeRowItem',
-                Data => {
-                    %Param,
-                    Mark     => $Mark,
-                    Type     => $Type,
-                    ID       => $ID,
-                    Selected => $Selected,
-                    Name     => $Param{Data}->{$ID},
-                },
-            );
+        $Param{Data}->{$_} = $Self->{LayoutObject}->Ascii2Html(
+            Text                => $Param{Data}->{$_},
+            HTMLQuote           => 1,
+            LanguageTranslation => 0,
+        ) || '';
+        $Param{OptionStrg0} .= "<tr class=\"$CssClass\"><td>";
+        $Param{OptionStrg0} .= "<a href=\"$BaseLink"
+            . "Action=Admin$NeType&Subaction=Change&ID=$_\">$Param{Data}->{$_}</a></td>";
+        for my $Type ( @{ $Self->{ConfigObject}->Get('System::Permission') } ) {
+            my $Selected = $Param{$Type}->{$_} ? ' checked' : '';
+            $Param{OptionStrg0} .= '<td align="center">';
+            $Param{OptionStrg0} .= $Type eq 'rw' ? " | " : '';
+            $Param{OptionStrg0}
+                .= '<input type="checkbox" name="'
+                . $Type
+                . '" value="'
+                . $_
+                . "\"$Selected> </td>";
+
         }
+        $Param{OptionStrg0} .= '</tr>' . "\n";
     }
 
+    $Param{OptionStrg0} .= "</table>\n";
+
     return $Self->{LayoutObject}->Output(
-        TemplateFile => 'AdminUserGroup',
+        TemplateFile => 'AdminUserGroupChangeForm',
         Data         => \%Param,
     );
 }
 
-sub _Overview {
+sub MaskAdminUserGroupForm {
     my ( $Self, %Param ) = @_;
 
-    $Self->{LayoutObject}->Block( Name => 'Overview' );
-
-    # no "actions list" block because no actions now
-    #    $Self->{LayoutObject}->Block( Name => 'ActionList' );
-
-    $Self->{LayoutObject}->Block( Name => 'UserFilter' );
-    $Self->{LayoutObject}->Block( Name => 'GroupFilter' );
-    $Self->{LayoutObject}->Block( Name => 'OverviewResult' );
-
-    # get user list
-    my %UserData = $Self->{UserObject}->UserList( Valid => 1 );
-
-    # get user name
-    for my $UserID ( keys %UserData ) {
-        my $Name = $Self->{UserObject}->UserName( UserID => $UserID );
-        next if !$Name;
-        $UserData{$UserID} .= " ($Name)";
+    my $UserData     = $Param{UserData};
+    my %UserDataTmp  = %$UserData;
+    my $GroupData    = $Param{GroupData};
+    my %GroupDataTmp = %$GroupData;
+    my $BaseLink     = $Self->{LayoutObject}->{Baselink} . "Action=AdminUserGroup&";
+    for ( sort { uc( $UserDataTmp{$a} ) cmp uc( $UserDataTmp{$b} ) } keys %UserDataTmp ) {
+        $UserDataTmp{$_} = $Self->{LayoutObject}->Ascii2Html(
+            Text                => $UserDataTmp{$_},
+            HTMLQuote           => 1,
+            LanguageTranslation => 0,
+        ) || '';
+        $Param{UserStrg}
+            .= "<A HREF=\"$BaseLink" . "Subaction=User&ID=$_\">$UserDataTmp{$_}</A><BR>";
     }
-    for my $UserID ( sort { uc( $UserData{$a} ) cmp uc( $UserData{$b} ) } keys %UserData ) {
-
-        # set output class
-        $Self->{LayoutObject}->Block(
-            Name => 'List1n',
-            Data => {
-                Name      => $UserData{$UserID},
-                Subaction => 'User',
-                ID        => $UserID,
-            },
-        );
-    }
-
-    # get group data
-    my %GroupData = $Self->{GroupObject}->GroupList( Valid => 1 );
-    for my $GroupID ( sort { uc( $GroupData{$a} ) cmp uc( $GroupData{$b} ) } keys %GroupData ) {
-
-        # set output class
-        $Self->{LayoutObject}->Block(
-            Name => 'Listn1',
-            Data => {
-                Name      => $GroupData{$GroupID},
-                Subaction => 'Group',
-                ID        => $GroupID,
-            },
-        );
+    for ( sort { uc( $GroupDataTmp{$a} ) cmp uc( $GroupDataTmp{$b} ) } keys %GroupDataTmp ) {
+        $GroupDataTmp{$_} = $Self->{LayoutObject}->Ascii2Html(
+            Text                => $GroupDataTmp{$_},
+            HTMLQuote           => 1,
+            LanguageTranslation => 0,
+        ) || '';
+        $Param{GroupStrg}
+            .= "<A HREF=\"$BaseLink" . "Subaction=Group&ID=$_\">$GroupDataTmp{$_}</A><BR>";
     }
 
     # return output
     return $Self->{LayoutObject}->Output(
-        TemplateFile => 'AdminUserGroup',
+        TemplateFile => 'AdminUserGroupForm',
         Data         => \%Param,
     );
 }
