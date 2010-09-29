@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.54 2010/08/12 22:18:52 cr Exp $
+# $Id: iPhone.pm,v 1.55 2010/09/29 19:32:35 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.54 $) [1];
+$VERSION = qw($Revision: 1.55 $) [1];
 
 =head1 NAME
 
@@ -986,8 +986,8 @@ sub EscalationView {
         $CountNew = $Count - $CountNew;
 
         push @States, {
-            StateType => $Filter,
-
+            StateType                      => $Filter,
+            FilterName                     => $Filters{$Filter}->{Name},
             NumberOfTickets                => $Count,
             NumberOfTicketsWithNewMessages => $CountNew,
         };
@@ -1103,7 +1103,7 @@ sub StatusView {
     # define filter
     my %Filters = (
         Open => {
-            Name   => 'open',
+            Name   => 'Open',
             Prio   => 1000,
             Search => {
                 StateType  => 'Open',
@@ -1114,7 +1114,7 @@ sub StatusView {
             },
         },
         Closed => {
-            Name   => 'closed',
+            Name   => 'Closed',
             Prio   => 1001,
             Search => {
                 StateType  => 'Closed',
@@ -1162,8 +1162,8 @@ sub StatusView {
         $CountNew = $Count - $CountNew;
 
         push @States, {
-            StateType => $Filter,
-
+            StateType                      => $Filter,
+            FilterName                     => $Filters{$Filter}->{Name},
             NumberOfTickets                => $Count,
             NumberOfTicketsWithNewMessages => $CountNew,
         };
@@ -1390,8 +1390,8 @@ sub LockedView {
         $CountNew = $Count - $CountNew;
 
         push @States, {
-            StateType => $Filter,
-
+            StateType                      => $Filter,
+            FilterName                     => $Filters{$Filter}->{Name},
             NumberOfTickets                => $Count,
             NumberOfTicketsWithNewMessages => $CountNew,
         };
@@ -1618,8 +1618,8 @@ sub WatchedView {
             $CountNew = $Count - $CountNew;
 
             push @States, {
-                StateType => $Filter,
-
+                StateType                      => $Filter,
+                FilterName                     => $Filters{$Filter}->{Name},
                 NumberOfTickets                => $Count,
                 NumberOfTicketsWithNewMessages => $CountNew,
             };
@@ -1852,8 +1852,8 @@ sub ResponsibleView {
             $CountNew = $Count - $CountNew;
 
             push @States, {
-                StateType => $Filter,
-
+                StateType                      => $Filter,
+                FilterName                     => $Filters{$Filter}->{Name},
                 NumberOfTickets                => $Count,
                 NumberOfTicketsWithNewMessages => $CountNew,
             };
@@ -5657,6 +5657,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.54 2010/08/12 22:18:52 cr Exp $
+$Id: iPhone.pm,v 1.55 2010/09/29 19:32:35 cr Exp $
 
 =cut
