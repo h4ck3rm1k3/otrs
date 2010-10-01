@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.54.2.3 2010/10/01 03:15:24 cr Exp $
+# $Id: iPhone.pm,v 1.54.2.4 2010/10/01 12:40:14 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.54.2.3 $) [1];
+$VERSION = qw($Revision: 1.54.2.4 $) [1];
 
 =head1 NAME
 
@@ -3078,16 +3078,18 @@ sub _GetScreenElements {
                     },
                 ],
             },
-            AutoFillElements => {
-                ElementName => 'CustomerID',
-                Object      => 'CustomObject',
-                Method      => 'CustomerIDGet',
-                Parameters  => [
-                    {
-                        CustomerUserID => 'CustomerUserLogin',
-                    },
-                ],
-            },
+            AutoFillElements => [
+                {
+                    ElementName => 'CustomerID',
+                    Object      => 'CustomObject',
+                    Method      => 'CustomerIDGet',
+                    Parameters  => [
+                        {
+                            CustomerUserID => 'CustomerUserLogin',
+                        },
+                    ],
+                },
+            ],
             Mandatory => 1,
             Default   => '',
         };
@@ -5664,6 +5666,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.54.2.3 2010/10/01 03:15:24 cr Exp $
+$Id: iPhone.pm,v 1.54.2.4 2010/10/01 12:40:14 cr Exp $
 
 =cut
