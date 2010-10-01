@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.54.2.2 2010/09/30 20:08:37 cr Exp $
+# $Id: iPhone.pm,v 1.54.2.3 2010/10/01 03:15:24 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.54.2.2 $) [1];
+$VERSION = qw($Revision: 1.54.2.3 $) [1];
 
 =head1 NAME
 
@@ -1515,12 +1515,12 @@ sub WatchedView {
     my ( $Self, %Param ) = @_;
 
     # define filter
+    # get all watched tickets no matter if they are locked or not
     my %Filters = (
         All => {
             Name   => 'All',
             Prio   => 1000,
             Search => {
-                Locks        => ['lock'],
                 WatchUserIDs => [ $Param{UserID} ],
                 OrderBy      => $Param{OrderBy},
                 SortBy       => $Param{SortBy},
@@ -1532,7 +1532,6 @@ sub WatchedView {
             Name   => 'New Article',
             Prio   => 1001,
             Search => {
-                Locks        => ['lock'],
                 WatchUserIDs => [ $Param{UserID} ],
                 TicketFlag   => {
                     Seen => 1,
@@ -1548,8 +1547,7 @@ sub WatchedView {
             Name   => 'Pending',
             Prio   => 1002,
             Search => {
-                Locks        => ['lock'],
-                StateType    => [ 'pending reminder', 'pending auto' ],
+                StateType => [ 'pending reminder', 'pending auto' ],
                 WatchUserIDs => [ $Param{UserID} ],
                 OrderBy      => $Param{OrderBy},
                 SortBy       => $Param{SortBy},
@@ -1561,7 +1559,6 @@ sub WatchedView {
             Name   => 'Reminder Reached',
             Prio   => 1003,
             Search => {
-                Locks                         => ['lock'],
                 StateType                     => ['pending reminder'],
                 TicketPendingTimeOlderMinutes => 1,
                 WatchUserIDs                  => [ $Param{UserID} ],
@@ -5667,6 +5664,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.54.2.2 2010/09/30 20:08:37 cr Exp $
+$Id: iPhone.pm,v 1.54.2.3 2010/10/01 03:15:24 cr Exp $
 
 =cut
