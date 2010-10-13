@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.18 2010/09/10 08:38:33 mg Exp $
+# $Id: OS.pm,v 1.19 2010/10/13 23:07:19 ep Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.18 $) [1];
+$VERSION = qw($Revision: 1.19 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -25,8 +25,8 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for (qw(ConfigObject LogObject)) {
-        $Self->{$_} = $Param{$_} || die "Got no $_!";
+    for my $Object (qw(MainObject ConfigObject LogObject)) {
+        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
     }
 
     return $Self;
@@ -90,6 +90,21 @@ sub _DistributionCheck {
             };
 
         }
+        elsif ( $^O =~ /linux/i ) {
+            $Self->{MainObject}->Require('Linux::Distribution');
+            my $DistributionName = Linux::Distribution::distribution_name()
+                || 'unknown distribution';
+            my $DistributionVersion = Linux::Distribution::distribution_version() || '';
+
+            $Distribution = $DistributionName . ' ' . $DistributionVersion;
+
+            $ReturnHash = {
+                Name        => 'Distribution',
+                Description => "Shows the used distribution.",
+                Comment     => "\"$Distribution\" is used.",
+                Check       => 'OK',
+            };
+        }
         elsif ( open( $Distribution, '<', "/etc/issue" ) ) {
             while (<$Distribution>) {
                 $TmpLine .= $_;
@@ -116,7 +131,7 @@ sub _DistributionCheck {
         }
     }
     elsif ( $^O =~ /win/i ) {
-        require Win32;
+        $Self->{MainObject}->Require('Win32');
         my $WinVersion = Win32::GetOSName();
         $ReturnHash = {
             Name        => 'Distribution',
