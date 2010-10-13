@@ -1,0 +1,24 @@
+# --
+# CHANGES - change log of OTRS:Support
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# --
+# $Id: CHANGES,v 1.1 2010/10/13 14:10:20 cg Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+1.2.4 2010-??-??
+ - 2010-09- Fixed bug#3629 - Frontend handling in backend.
+
+1.2.3 2010-09-10
+ - Improved Usability, fixed distribution check on Mac OS.
+
+1.2.2 2010-09-10
+ - Improved GUI, improved OS checks on MacOS.
+
+1.2.1 2010-09-10
+ - Init release for OTRS 3.0.
+
+EOF
