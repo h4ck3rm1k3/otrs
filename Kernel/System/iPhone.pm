@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.54.2.4 2010/10/01 12:40:14 cr Exp $
+# $Id: iPhone.pm,v 1.54.2.5 2010/10/15 08:37:07 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.54.2.4 $) [1];
+$VERSION = qw($Revision: 1.54.2.5 $) [1];
 
 =head1 NAME
 
@@ -2693,9 +2693,17 @@ Get a Hash reference to all possible customers matching the search paramenter, u
 sub CustomerSearch {
     my ( $Self, %Param ) = @_;
 
-    my %Customers = $Self->{CustomerUserObject}->CustomerSearch(
-        Search => $Param{Search},
-    );
+    # get AutoComplete settings form config
+    $Self->{Config} = $Self->{ConfigObject}->Get('Ticket::Frontend::CustomerSearchAutoComplete');
+
+    my %Customers;
+
+    # search only if the search string is at least as long as the Minimum Query Lenght
+    if ( length( $Param{Search} ) >= $Self->{Config}->{MinQueryLength} ) {
+        %Customers = $Self->{CustomerUserObject}->CustomerSearch(
+            Search => $Param{Search},
+        );
+    }
     return \%Customers;
 }
 
@@ -5666,6 +5674,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.54.2.4 2010/10/01 12:40:14 cr Exp $
+$Id: iPhone.pm,v 1.54.2.5 2010/10/15 08:37:07 cr Exp $
 
 =cut
