@@ -2,7 +2,7 @@
 # Kernel/System/Support.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: Support.pm,v 1.46 2010/09/28 16:30:34 cg Exp $
+# $Id: Support.pm,v 1.47 2010/10/18 11:20:52 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -25,7 +25,7 @@ use MIME::Base64;
 use Archive::Tar;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.46 $) [1];
+$VERSION = qw($Revision: 1.47 $) [1];
 
 =head1 NAME
 
@@ -283,7 +283,7 @@ sub ModuleCheck {
     my $Home = $Self->{ConfigObject}->Get('Home');
     my $TmpSumString;
     my $TmpLog;
-    open( $TmpSumString, "perl $Home/bin/otrs.checkModules |" );
+    open( $TmpSumString, "perl $Home/bin/otrs.CheckModules.pl |" );
 
     while (<$TmpSumString>) {
         $TmpLog .= $_;
@@ -1044,6 +1044,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.46 $ $Date: 2010/09/28 16:30:34 $
+$Revision: 1.47 $ $Date: 2010/10/18 11:20:52 $
 
 =cut
