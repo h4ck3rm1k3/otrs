@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.54.2.5 2010/10/15 08:37:07 cr Exp $
+# $Id: iPhone.pm,v 1.54.2.6 2010/10/19 09:55:13 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.54.2.5 $) [1];
+$VERSION = qw($Revision: 1.54.2.6 $) [1];
 
 =head1 NAME
 
@@ -2887,7 +2887,7 @@ sub CustomerIDGet {
     my %CustomerUserData = $Self->{CustomerUserObject}->CustomerUserDataGet(
         User => $Param{CustomerUserID},
     );
-    if ( $CustomerUserData{UserCustomerID} ) {
+    if ( %CustomerUserData && $CustomerUserData{UserCustomerID} ) {
         $CustomerID = $CustomerUserData{UserCustomerID};
         return $CustomerID;
     }
@@ -3786,14 +3786,19 @@ sub _TicketPhoneNew {
         UserLogin => $CustomerUser,
     );
     my $From;
-    for ( keys %CustomerUserList ) {
+    if (%CustomerUserList) {
+        for ( keys %CustomerUserList ) {
 
-        if ( $Param{CustomerUserLogin} eq $_ ) {
-            $From = $CustomerUserList{$_}
+            if ( $Param{CustomerUserLogin} eq $_ ) {
+                $From = $CustomerUserList{$_}
+            }
+            else {
+                $From = $CustomerUser;
+            }
         }
-        else {
-            $From = $CustomerUser;
-        }
+    }
+    else {
+        $From = $CustomerUser;
     }
 
     # check email address
@@ -5674,6 +5679,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.54.2.5 2010/10/15 08:37:07 cr Exp $
+$Id: iPhone.pm,v 1.54.2.6 2010/10/19 09:55:13 cr Exp $
 
 =cut
