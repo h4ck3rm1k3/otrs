@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.60 2010/10/19 09:54:51 cr Exp $
+# $Id: iPhone.pm,v 1.61 2010/10/26 17:07:44 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.60 $) [1];
+$VERSION = qw($Revision: 1.61 $) [1];
 
 =head1 NAME
 
@@ -2926,6 +2926,53 @@ sub ArticleIndex {
     return @Index;
 }
 
+=item InitConfigGet()
+
+returns a hash reference with initial configuration required by the iPhone app
+
+    my $Result = $iPhoneObject->InitConfigGet();
+
+    a result could be
+
+    $Result = [
+        TicketResponsible          => 1,
+        TicketWatcher              => 1,
+        CurrentTimestamp           => "2010-10-26 11:53:35",
+        VersionGet                 => {
+            URL       => "http://otrs.org/",
+            Framework => "2.4.x CVS",
+            Version   => "0.9.6",
+            Vendor    => "OTRS AG",
+            Name      => "iPhoneHandle"
+        },
+        CustomerSearchAutoComplete => {
+            QueryDelay          => 0.1,
+            Active              => 1,
+            MaxResultsDisplayed => 20,
+            TypeAhead           => false,
+            MinQueryLength      => 3,
+        },
+        DefaultCharset             => "utf-8",
+    ];
+
+=cut
+
+sub InitConfigGet {
+    my ( $Self, %Param ) = @_;
+
+    my %InitConfig;
+
+    $InitConfig{TicketWatcher}     = $Self->{ConfigObject}->Get('Ticket::Watcher');
+    $InitConfig{TicketResponsible} = $Self->{ConfigObject}->Get('Ticket::Responsible');
+    $InitConfig{DefaultCharset}    = $Self->{ConfigObject}->Get('DefaultCharset');
+    $InitConfig{CustomerSearchAutoComplete}
+        = $Self->{ConfigObject}->Get('Ticket::Frontend::CustomerSearchAutoComplete');
+    $InitConfig{CurrentTimestamp} = $Self->{TimeObject}->CurrentTimestamp();
+    $InitConfig{VersionGet}       = $Self->VersionGet(%Param);
+
+    return \%InitConfig;
+}
+
 # internal subroutines
 
 sub _GetTypes {
@@ -5679,6 +5726,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.60 2010/10/19 09:54:51 cr Exp $
+$Id: iPhone.pm,v 1.61 2010/10/26 17:07:44 cr Exp $
 
 =cut
