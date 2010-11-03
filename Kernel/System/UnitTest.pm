@@ -1,8 +1,8 @@
 # --
 # Kernel/System/UnitTest.pm - the global test wrapper
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: UnitTest.pm,v 1.60 2011/10/10 14:06:19 ep Exp $
+# $Id: UnitTest.pm,v 1.25.2.1 2010/11/03 22:40:39 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.60 $) [1];
+$VERSION = qw($Revision: 1.25.2.1 $) [1];
 
 =head1 NAME
 
@@ -23,8 +23,7 @@ Kernel::System::UnitTest - global test interface
 
 =head1 SYNOPSIS
 
-Functions to run existing unit tests, as well as
-functions to define test cases.
+All test functions
 
 =head1 PUBLIC INTERFACE
 
@@ -124,34 +123,16 @@ sub new {
 
 Run all tests located in scripts/test/*.t and print result to stdout.
 
-    $UnitTestObject->Run(
-        Name      => 'JSON:User:Auth',  # optional, control which tests to select
-        Directory => 'Selenium',        # optional, control which tests to select
-    );
-
 =cut
 
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    my %ResultSummary;
-    my $Home = $Self->{ConfigObject}->Get('Home');
-
-    my $Directory = "$Home/scripts/test";
-
-    # custom subdirectory passed
-    if ( $Param{Directory} ) {
-        $Directory .= "/$Param{Directory}";
-        $Directory =~ s/\.//g;
-    }
-
-    my @Files = $Self->{MainObject}->DirectoryRead(
-        Directory => $Directory,
-        Filter => [ '*.t', '*/*.t', '*/*/*.t', '*/*/*/*.t', '*/*/*/*/*.t', '*/*/*/*/*/*.t' ],
-    );
-
-    my $StartTime = $Self->{TimeObject}->SystemTime();
-    my $Product   = $Param{Product}
+    my %ResultSummary = ();
+    my $Home          = $Self->{ConfigObject}->Get('Home');
+    my @Files         = glob("$Home/scripts/test/*.t");
+    my $StartTime     = $Self->{TimeObject}->SystemTime();
+    my $Product       = $Param{Product}
         || $Self->{ConfigObject}->Get('Product') . " " . $Self->{ConfigObject}->Get('Version');
     my @Names = split( /:/, $Param{Name} || '' );
 
@@ -172,16 +153,14 @@ sub Run {
             }
         }
         $Self->{TestCount} = 0;
-        my $UnitTestFile = $Self->{MainObject}->FileRead( Location => $File );
-        if ( !$UnitTestFile ) {
+        my $ConfigFile = $Self->{MainObject}->FileRead( Location => $File );
+        if ( !$ConfigFile ) {
             $Self->True( 0, "ERROR: $!: $File" );
             print STDERR "ERROR: $!: $File\n";
         }
         else {
             $Self->_PrintHeadlineStart($File);
-
-            # HERE the actual tests are run!!!
-            if ( !eval ${$UnitTestFile} ) {
+            if ( !eval ${$ConfigFile} ) {
                 $Self->True( 0, "ERROR: Syntax error in $File: $@" );
                 print STDERR "ERROR: Syntax error in $File: $@\n";
             }
@@ -198,14 +177,11 @@ sub Run {
     $ResultSummary{Host}    = $Self->{ConfigObject}->Get('FQDN');
     $ResultSummary{Perl}    = sprintf "%vd", $^V;
     $ResultSummary{OS}      = $^O;
-
     if ( -e '/etc/SuSE-release' ) {
-
         my $ConfigFile = $Self->{MainObject}->FileRead(
             Location => '/etc/SuSE-release',
             Result   => 'ARRAY',
         );
-
         if ( $ConfigFile && $ConfigFile->[0] ) {
             $ResultSummary{Vendor} = $ConfigFile->[0];
         }
@@ -214,26 +190,22 @@ sub Run {
         }
     }
     elsif ( -e '/etc/fedora-release' ) {
-
         my $ConfigFile = $Self->{MainObject}->FileRead(
             Location => '/etc/fedora-release',
             Result   => 'ARRAY',
         );
-
         if ( $ConfigFile && $ConfigFile->[0] ) {
             $ResultSummary{Vendor} = $ConfigFile->[0];
         }
         else {
-            $ResultSummary{Vendor} = 'Fedora unknown';
+            $ResultSummary{Vendor} = 'fedora unknown';
         }
     }
     elsif ( -e '/etc/redhat-release' ) {
-
         my $ConfigFile = $Self->{MainObject}->FileRead(
             Location => '/etc/redhat-release',
             Result   => 'ARRAY',
         );
-
         if ( $ConfigFile && $ConfigFile->[0] ) {
             $ResultSummary{Vendor} = $ConfigFile->[0];
         }
@@ -242,123 +214,72 @@ sub Run {
         }
     }
     elsif ( -e '/etc/lsb-release' ) {
-
         my $ConfigFile = $Self->{MainObject}->FileRead(
             Location => '/etc/lsb-release',
             Result   => 'ARRAY',
         );
-
         if ( $ConfigFile && $ConfigFile->[0] ) {
             $ConfigFile->[0] =~ s/DISTRIB_ID=//;
             $ResultSummary{Vendor} = $ConfigFile->[0];
-            if ( $ConfigFile->[1] ) {
-                $ConfigFile->[1] =~ s/DISTRIB_RELEASE=//;
-                chomp $ResultSummary{Vendor};
-                $ResultSummary{Vendor} .= ' ' . $ConfigFile->[1];
-            }
-            else {
-                $ResultSummary{Vendor} .= ' (unknown release)';
-            }
+            $ConfigFile->[1] =~ s/DISTRIB_RELEASE=//;
+            chomp( $ResultSummary{Vendor} );
+            $ResultSummary{Vendor} .= ' ' . $ConfigFile->[1];
         }
         else {
-            $ResultSummary{Vendor} = 'Ubuntu unknown';
+            $ResultSummary{Vendor} = 'ubuntu unknown';
         }
     }
     elsif ( -e '/etc/debian_version' ) {
-
         my $ConfigFile = $Self->{MainObject}->FileRead(
             Location => '/etc/debian_version',
             Result   => 'ARRAY',
         );
-
         if ( $ConfigFile && $ConfigFile->[0] ) {
-            $ResultSummary{Vendor} = 'Debian ' . $ConfigFile->[0];
+            $ResultSummary{Vendor} = 'debian ' . $ConfigFile->[0];
         }
         else {
-            $ResultSummary{Vendor} = 'Debian unknown';
-        }
-    }
-    elsif ( -e '/etc/gentoo-release' ) {
-
-        my $ConfigFile = $Self->{MainObject}->FileRead(
-            Location => '/etc/gentoo-release',
-            Result   => 'ARRAY',
-        );
-
-        if ( $ConfigFile && $ConfigFile->[0] ) {
-            $ResultSummary{Vendor} = $ConfigFile->[0];
-        }
-        else {
-            $ResultSummary{Vendor} = 'Gentoo unknown';
-        }
-    }
-    elsif ( $^O eq 'freebsd' ) {
-
-        my $Release = `uname -r`;
-        $ResultSummary{Vendor} = 'FreeBSD ' . $Release;
-    }
-    elsif ( $^O eq 'MSWin32' ) {
-
-        $ResultSummary{Vendor} = 'MS Windows unknown';
-
-        my @Release = `systeminfo`;
-
-        for my $Row (@Release) {
-
-            my ($Name) = $Row =~ m{ \A OS \s Name: \s+ (.+?) \s* \z }xms;
-
-            if ($Name) {
-                $Name =~ s{Microsoft}{MS}xmsg;
-                $ResultSummary{Vendor} = $Name;
-            }
-
-            my ($Version) = $Row =~ m{ \A OS \s Version: \s+ (.+?) \s* \z }xms;
-
-            if ($Version) {
-                $ResultSummary{Vendor} .= ' ' . $Version;
-            }
+            $ResultSummary{Vendor} = 'debian unknown';
         }
     }
     else {
         $ResultSummary{Vendor} = 'unknown';
     }
-
-    chomp $ResultSummary{Vendor};
+    chomp( $ResultSummary{Vendor} );
     $ResultSummary{Database}  = $Self->{DBObject}->{'DB::Type'};
     $ResultSummary{TestOk}    = $Self->{TestCountOk};
     $ResultSummary{TestNotOk} = $Self->{TestCountNotOk};
 
     $Self->_PrintSummary(%ResultSummary);
+    my $XML = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
+    $XML .= "<otrs_test>\n";
+    $XML .= "<Summary>\n";
+    for my $Key ( sort keys %ResultSummary ) {
+        $ResultSummary{$Key} =~ s/&/&amp;/g;
+        $ResultSummary{$Key} =~ s/</&lt;/g;
+        $ResultSummary{$Key} =~ s/>/&gt;/g;
+        $ResultSummary{$Key} =~ s/"/&quot;/g;
+        $XML .= "  <Item Name=\"$Key\">$ResultSummary{$Key}</Item>\n";
+    }
+    $XML .= "</Summary>\n";
+    for my $Key ( sort keys %{ $Self->{XML}->{Test} } ) {
+        $XML .= "<Unit Name=\"$Key\">\n";
+        for my $TestCount ( sort { $a <=> $b } keys %{ $Self->{XML}->{Test}->{$Key} } ) {
+            my $Content = $Self->{XML}->{Test}->{$Key}->{$TestCount}->{Name};
+            $Content =~ s/&/&amp;/g;
+            $Content =~ s/</&lt;/g;
+            $Content =~ s/>/&gt;/g;
+            $Content =~ s/"/&quot;/g;
+            $Content =~ s/'/&quot;/g;
+            $XML
+                .= "  <Test Result=\"$Self->{XML}->{Test}->{$Key}->{$TestCount}->{Result}\" Count=\"$TestCount\">$Content</Test>\n";
+        }
+        $XML .= "</Unit>\n";
+    }
+    $XML .= "</otrs_test>\n";
     if ( $Self->{Content} ) {
         print $Self->{Content};
     }
-
-    if ( $Self->{Output} eq 'XML' ) {
-        my $XML = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
-        $XML .= "<otrs_test>\n";
-        $XML .= "<Summary>\n";
-        for my $Key ( sort keys %ResultSummary ) {
-            $ResultSummary{$Key} =~ s/&/&amp;/g;
-            $ResultSummary{$Key} =~ s/</&lt;/g;
-            $ResultSummary{$Key} =~ s/>/&gt;/g;
-            $ResultSummary{$Key} =~ s/"/&quot;/g;
-            $XML .= "  <Item Name=\"$Key\">$ResultSummary{$Key}</Item>\n";
-        }
-        $XML .= "</Summary>\n";
-        for my $Key ( sort keys %{ $Self->{XML}->{Test} } ) {
-            $XML .= "<Unit Name=\"$Key\">\n";
-            for my $TestCount ( sort { $a <=> $b } keys %{ $Self->{XML}->{Test}->{$Key} } ) {
-                my $Result  = $Self->{XML}->{Test}->{$Key}->{$TestCount}->{Result};
-                my $Content = $Self->{XML}->{Test}->{$Key}->{$TestCount}->{Name};
-                $Content =~ s/&/&amp;/g;
-                $Content =~ s/</&lt;/g;
-                $Content =~ s/>/&gt;/g;
-                $XML .= qq|  <Test Result="$Result" Count="$TestCount">$Content</Test>\n|;
-            }
-            $XML .= "</Unit>\n";
-        }
-        $XML .= "</otrs_test>\n";
-
+    if ( $Self->{Output} eq 'XML' && $XML ) {
         print $XML;
     }
     return 1;
@@ -366,21 +287,11 @@ sub Run {
 
 =item True()
 
-test for a scalar value that evaluates to true.
-
-Send a scalar value to this function along with the test's name:
+A true test.
 
     $UnitTestObject->True(1, 'Test Name');
 
-    $UnitTestObject->True($ParamA, 'Test Name');
-
-Internally, the function receives this value and evaluates it to see
-if it's true, returning 1 in this case or undef, otherwise.
-
-    my $TrueResult = $UnitTestObject->True(
-        $TestValue,
-        'Test Name',
-    );
+    $UnitTestObject->True($A eq $B, 'Test Name');
 
 =cut
 
@@ -408,10 +319,11 @@ sub True {
 
 =item False()
 
-test for a scalar value that evaluates to false.
+A false test.
 
-It has the same interface as L<True()>, but tests
-for a false value instead.
+    $UnitTestObject->False(0, 'Test Name');
+
+    $UnitTestObject->False($A ne $B, 'Test Name');
 
 =cut
 
@@ -439,21 +351,9 @@ sub False {
 
 =item Is()
 
-compares two scalar values for equality.
-
-To this function you must send a pair of scalar values to compare them,
-and the name that the test will take, this is done as shown in the examples
-below.
+A Is $A (is) eq $B (should be) test.
 
     $UnitTestObject->Is($A, $B, 'Test Name');
-
-Returns 1 if the values were equal, or undef otherwise.
-
-    my $IsResult = $UnitTestObject->Is(
-        $ValueFromFunction,      # test data
-        1,                       # expected value
-        'Test Name',
-    );
 
 =cut
 
@@ -493,10 +393,9 @@ sub Is {
 
 =item IsNot()
 
-compares two scalar values for inequality.
+A Is $A (is) nq $B (should not be) test.
 
-It has the same interface as L<Is()>, but tests
-for inequality instead.
+    $UnitTestObject->IsNot($A, $B, 'Test Name');
 
 =cut
 
@@ -532,259 +431,6 @@ sub IsNot {
         $Self->_Print( 0, "$Name (is '$Test' should not be '$ShouldBe')" );
         return;
     }
-}
-
-=item IsDeeply()
-
-compares complex data structures for equality.
-
-To this function you must send the references to two data structures to be compared,
-and the name that the test will take, this is done as shown in the examples
-below.
-
-    $UnitTestObject-> IsDeeply($ParamA, $ParamB, 'Test Name');
-
-Where $ParamA and $ParamB must be references to a structure (scalar, list or hash).
-
-Returns 1 if the data structures are the same, or undef otherwise.
-
-    my $IsDeeplyResult = $UnitTestObject->IsDeeply(
-        \%ResultHash,           # test data
-        \%ExpectedHash,         # expected value
-        'Dummy Test Name',
-    );
-
-=cut
-
-sub IsDeeply {
-    my ( $Self, $Test, $ShouldBe, $Name ) = @_;
-
-    if ( !$Name ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need Name! E. g. Is(\$A, \$B, \'Test Name\')!'
-        );
-        $Self->_Print( 0, 'ERROR: Need Name! E. g. Is(\$A, \$B, \'Test Name\')' );
-        return;
-    }
-
-    my $Diff = $Self->_DataDiff(
-        Data1 => $Test,
-        Data2 => $ShouldBe,
-    );
-
-    if ( !defined $Test && !defined $ShouldBe ) {
-        $Self->_Print( 1, "$Name (is 'undef')" );
-        return 1;
-    }
-    elsif ( !defined $Test && defined $ShouldBe ) {
-        $Self->_Print( 0, "$Name (is 'undef' should be defined)" );
-        return;
-    }
-    elsif ( defined $Test && !defined $ShouldBe ) {
-        $Self->_Print( 0, "$Name (is defined should be 'undef')" );
-        return;
-    }
-    elsif ( !$Diff ) {
-        $Self->_Print( 1, "$Name matches expected value" );
-        return 1;
-    }
-    else {
-        my $ShouldBeDump = $Self->{MainObject}->Dump($ShouldBe);
-        my $TestDump     = $Self->{MainObject}->Dump($Test);
-        $Self->_Print( 0, "$Name (is '$TestDump' should be '$ShouldBeDump')" );
-        return;
-    }
-}
-
-=item IsNotDeeply()
-
-compares two data structures for inequality.
-
-It has the same interface as L<IsDeeply()>, but tests
-for inequality instead.
-
-=cut
-
-sub IsNotDeeply {
-    my ( $Self, $Test, $ShouldBe, $Name ) = @_;
-
-    if ( !$Name ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Need Name! E. g. IsNot(\$A, \$B, \'Test Name\')!'
-        );
-        $Self->_Print( 0, 'ERROR: Need Name! E. g. IsNot(\$A, \$B, \'Test Name\')' );
-        return;
-    }
-
-    my $Diff = $Self->_DataDiff(
-        Data1 => $Test,
-        Data2 => $ShouldBe,
-    );
-
-    if ( !defined $Test && !defined $ShouldBe ) {
-        $Self->_Print( 0, "$Name (is 'undef')" );
-        return;
-    }
-    elsif ( !defined $Test && defined $ShouldBe ) {
-        $Self->_Print( 1, "$Name (is 'undef')" );
-        return 1;
-    }
-    elsif ( defined $Test && !defined $ShouldBe ) {
-        $Self->_Print( 1, "$Name (differs from expected value)" );
-        return 1;
-    }
-
-    if ($Diff) {
-        $Self->_Print( 1, "$Name (The structures are not equal.)" );
-        return 1;
-    }
-    else {
-
-        #        $Self->_Print( 0, "$Name (matches the expected value)" );
-        my $TestDump = $Self->{MainObject}->Dump($Test);
-        $Self->_Print( 0, "$Name (The structures are equal: '$TestDump')" );
-
-        return;
-    }
-}
-
-=begin Internal:
-
-=cut
-
-=item _DataDiff()
-
-compares two data structures with each other. Returns 1 if
-they are different, undef otherwise.
-
-Data parameters need to be passed by reference and can be SCALAR,
-ARRAY or HASH.
-
-    my $DataIsDifferent = $SysConfigObject->_DataDiff(
-        Data1 => \$Data1,
-        Data2 => \$Data2,
-    );
-
-=cut
-
-sub _DataDiff {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Data1 Data2)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # ''
-    if ( ref $Param{Data1} eq '' && ref $Param{Data2} eq '' ) {
-
-        # do nothing, it's ok
-        return if !defined $Param{Data1} && !defined $Param{Data2};
-
-        # return diff, because its different
-        return 1 if !defined $Param{Data1} || !defined $Param{Data2};
-
-        # return diff, because its different
-        return 1 if $Param{Data1} ne $Param{Data2};
-
-        # return, because its not different
-        return;
-    }
-
-    # SCALAR
-    if ( ref $Param{Data1} eq 'SCALAR' && ref $Param{Data2} eq 'SCALAR' ) {
-
-        # do nothing, it's ok
-        return if !defined ${ $Param{Data1} } && !defined ${ $Param{Data2} };
-
-        # return diff, because its different
-        return 1 if !defined ${ $Param{Data1} } || !defined ${ $Param{Data2} };
-
-        # return diff, because its different
-        return 1 if ${ $Param{Data1} } ne ${ $Param{Data2} };
-
-        # return, because its not different
-        return;
-    }
-
-    # ARRAY
-    if ( ref $Param{Data1} eq 'ARRAY' && ref $Param{Data2} eq 'ARRAY' ) {
-        my @A = @{ $Param{Data1} };
-        my @B = @{ $Param{Data2} };
-
-        # check if the count is different
-        return 1 if $#A ne $#B;
-
-        # compare array
-        for my $Count ( 0 .. $#A ) {
-
-            # do nothing, it's ok
-            next if !defined $A[$Count] && !defined $B[$Count];
-
-            # return diff, because its different
-            return 1 if !defined $A[$Count] || !defined $B[$Count];
-
-            if ( $A[$Count] ne $B[$Count] ) {
-                if ( ref $A[$Count] eq 'ARRAY' || ref $A[$Count] eq 'HASH' ) {
-                    return 1 if $Self->_DataDiff( Data1 => $A[$Count], Data2 => $B[$Count] );
-                    next;
-                }
-                return 1;
-            }
-        }
-        return;
-    }
-
-    # HASH
-    if ( ref $Param{Data1} eq 'HASH' && ref $Param{Data2} eq 'HASH' ) {
-        my %A = %{ $Param{Data1} };
-        my %B = %{ $Param{Data2} };
-
-        # compare %A with %B and remove it if checked
-        for my $Key ( keys %A ) {
-
-            # Check if both are undefined
-            if ( !defined $A{$Key} && !defined $B{$Key} ) {
-                delete $A{$Key};
-                delete $B{$Key};
-                next;
-            }
-
-            # return diff, because its different
-            return 1 if !defined $A{$Key} || !defined $B{$Key};
-
-            if ( $A{$Key} eq $B{$Key} ) {
-                delete $A{$Key};
-                delete $B{$Key};
-                next;
-            }
-
-            # return if values are different
-            if ( ref $A{$Key} eq 'ARRAY' || ref $A{$Key} eq 'HASH' ) {
-                return 1 if $Self->_DataDiff( Data1 => $A{$Key}, Data2 => $B{$Key} );
-                delete $A{$Key};
-                delete $B{$Key};
-                next;
-            }
-            return 1;
-        }
-
-        # check rest
-        return 1 if %B;
-        return;
-    }
-
-    if ( ref $Param{Data1} eq 'REF' && ref $Param{Data2} eq 'REF' ) {
-        return 1 if $Self->_DataDiff( Data1 => ${ $Param{Data1} }, Data2 => ${ $Param{Data2} } );
-        return;
-    }
-
-    return 1;
 }
 
 sub _PrintSummary {
@@ -881,13 +527,13 @@ sub _Print {
         $Self->{XML}->{Test}->{ $Self->{XMLUnit} }->{ $Self->{TestCount} }->{Name}   = $Name;
         return 1;
     }
-    else {
+    elsif ( $Self->{Output} eq 'ASCII' ) {
         $Self->{TestCountNotOk}++;
         if ( $Self->{Output} eq 'HTML' ) {
             $Self->{Content}
                 .= "<tr><td width='70' bgcolor='red'>not ok $Self->{TestCount}</td><td>$Name</td></tr>\n";
         }
-        elsif ( $Self->{Output} eq 'ASCII' ) {
+        else {
             print " not ok $Self->{TestCount} - $Name\n";
         }
         $Self->{XML}->{Test}->{ $Self->{XMLUnit} }->{ $Self->{TestCount} }->{Result} = 'not ok';
@@ -908,13 +554,11 @@ sub DESTROY {
 
 1;
 
-=end Internal:
-
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
@@ -924,6 +568,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.60 $ $Date: 2011/10/10 14:06:19 $
+$Revision: 1.25.2.1 $ $Date: 2010/11/03 22:40:39 $
 
 =cut
