@@ -2,7 +2,7 @@
 # CHANGES - change log of the Support module for OTRS
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: CHANGES-Support,v 1.1 2010/11/02 08:44:05 mg Exp $
+# $Id: CHANGES-Support,v 1.2 2010/11/04 21:43:22 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -10,6 +10,7 @@
 # --
 
 1.2.4 2010-??-??
+ - 2010-11-04 Added module check output.
  - 2010-09- Fixed bug#3629 - Frontend handling in backend.
 
 1.2.3 2010-09-10

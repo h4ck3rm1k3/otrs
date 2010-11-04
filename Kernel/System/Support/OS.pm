@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.19 2010/10/13 23:07:19 ep Exp $
+# $Id: OS.pm,v 1.20 2010/11/04 21:43:22 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.19 $) [1];
+$VERSION = qw($Revision: 1.20 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -224,6 +224,55 @@ sub _PerlCheck {
             Name        => 'PerlCheck',
             Description => "Check Perl Version.",
             Comment     => "Unable to parse version string ($Version / $OS).",
+            Check       => 'Critical',
+        };
+    }
+    return $ReturnHash;
+}
+
+sub _PerlModulesCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $ReturnHash = {};
+    my $Home       = $Self->{ConfigObject}->Get('Home');
+    my $TmpSumString;
+
+    if ( open( $TmpSumString, "perl $Home/bin/otrs.CheckModules.pl |" ) ) {
+
+        my $TmpLog;
+        open( $TmpSumString, "perl $Home/bin/otrs.CheckModules.pl |" );
+
+        while (<$TmpSumString>) {
+            $TmpLog .= $_;
+        }
+        close($TmpSumString);
+
+        if ( $TmpLog =~ /Not\sinstalled!+/ ) {
+            $ReturnHash = {
+                Name        => 'PerlModulesCheck',
+                Description => "Check Perl Modules installed.",
+                Comment =>
+                    "You have not installed one or more modules needed.",
+                Content    => $TmpLog,
+                Check      => 'Failed',
+                BlockStyle => 'TextArea',
+            };
+
+        }
+        else {
+            $ReturnHash = {
+                Name        => 'PerlModulesCheck',
+                Description => "Check Perl Modules installed.",
+                Comment     => "All Perl modules needed are currently installed.",
+                Check       => 'OK',
+            };
+        }
+    }
+    else {
+        $ReturnHash = {
+            Name        => 'PerlModulesCheck',
+            Description => "Check Perl Modules installed.",
+            Comment     => "Unable to check Perl modules.",
             Check       => 'Critical',
         };
     }

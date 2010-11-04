@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.33 2010/09/28 16:30:34 cg Exp $
+# $Id: AdminSupport.pm,v 1.34 2010/11/04 21:43:22 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.33 $) [1];
+$VERSION = qw($Revision: 1.34 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -391,9 +391,11 @@ sub Run {
 
                 next ROWHASH if ( !%{$RowHash} );
 
+                $RowHash->{BlockStyle} = $RowHash->{BlockStyle} || '';
+
                 # create new block with rotatory css
                 $Self->{LayoutObject}->Block(
-                    Name => 'OverviewModuleRow',
+                    Name => 'OverviewModuleRow' . $RowHash->{BlockStyle},
                     Data => {
                         %{$RowHash},
                     },
