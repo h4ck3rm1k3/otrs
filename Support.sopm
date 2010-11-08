@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-    <CVS>$Id: Support.sopm,v 1.26 2010/09/10 07:17:37 mg Exp $</CVS>
+    <CVS>$Id: Support.sopm,v 1.27 2010/11/08 12:54:00 mb Exp $</CVS>
     <Name>Support</Name>
     <Version>0.0.0</Version>
     <Framework>3.0.x</Framework>
@@ -30,6 +30,7 @@
         <File Permission="644" Location="Kernel/cpan-lib/Archive/Tar/Constant.pm"/>
         <File Permission="644" Location="Kernel/cpan-lib/Archive/Tar/File.pm"/>
         <File Permission="644" Location="Kernel/cpan-lib/Archive/Tar.pm"/>
+        <File Permission="644" Location="Kernel/cpan-lib/Linux/Distribution.pm"/>
         <File Permission="644" Location="Kernel/Modules/AdminSupport.pm"/>
         <File Permission="644" Location="Kernel/Config/Files/Support.xml"/>
         <File Permission="644" Location="var/httpd/htdocs/skins/Agent/default/css/Support.Default.css"/>
