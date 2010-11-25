@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.61 2010/10/26 17:07:44 cr Exp $
+# $Id: iPhone.pm,v 1.62 2010/11/25 18:55:54 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.61 $) [1];
+$VERSION = qw($Revision: 1.62 $) [1];
 
 =head1 NAME
 
@@ -3289,7 +3289,7 @@ sub _GetScreenElements {
         );
 
         if ( !%ComposeDefaults ) {
-            return -1;
+            return;
         }
 
         my $ComposeFromElements = {
@@ -3792,7 +3792,7 @@ sub _TicketPhoneNew {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return -1;
+            return;
         }
         if (
             $Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} )
@@ -3803,7 +3803,7 @@ sub _TicketPhoneNew {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return -1;
+            return;
         }
     }
 
@@ -3821,7 +3821,7 @@ sub _TicketPhoneNew {
                 Priority => 'error',
                 Message  => "TicketFreeTextField$_ invalid",
             );
-            return -1;
+            return;
         }
     }
 
@@ -3851,33 +3851,34 @@ sub _TicketPhoneNew {
     # check email address
     for my $Email ( Mail::Address->parse( $CustomerUserData{UserEmail} ) ) {
         if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
+            my $ServerError = $Self->{CheckItemObject}->CheckError();
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => 'From invalid' . $Self->{CheckItemObject}->CheckError(),
+                Message  => "Error on field \"From\"  \n $ServerError",
             );
-            return -1;
+            return;
         }
     }
     if ( !$Param{CustomerUserLogin} ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'From invalid',
+            Message  => 'From invalid: From is empty',
         );
-        return -1;
+        return;
     }
     if ( !$Param{Subject} ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Subject invalid',
+            Message  => 'Subject invalid: Subject is empty',
         );
-        return -1;
+        return;
     }
     if ( !$Param{QueueID} ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Destination invalid',
+            Message  => 'Destination invalid: Destination queue is empty',
         );
-        return -1;
+        return;
     }
     if (
         $Self->{ConfigObject}->Get('Ticket::Service')
@@ -3887,9 +3888,9 @@ sub _TicketPhoneNew {
     {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Service invalid',
+            Message  => 'Service invalid: no service selected',
         );
-        return -1;
+        return;
     }
 
     # create new ticket, do db insert
@@ -3913,7 +3914,7 @@ sub _TicketPhoneNew {
             Priority => 'error',
             Message  => 'Error: No ticket created! Please contact admin',
         );
-        return -1;
+        return;
     }
 
     # set ticket free text
@@ -4130,7 +4131,7 @@ sub _TicketPhoneNew {
             Priority => 'error',
             Message  => 'Error: no article was created! Please contact the admin',
         );
-        return -1;
+        return;
     }
 }
 
@@ -4154,7 +4155,7 @@ sub _TicketCommonActions {
             Priority => 'error',
             Message  => 'No TicketID is given! Please contact the admin.',
         );
-        return -1;
+        return;
     }
 
     # check permissions
@@ -4180,7 +4181,7 @@ sub _TicketCommonActions {
             Priority => 'error',
             Message  => "You need $Self->{Config}->{Permission} permissions!",
         );
-        return -1;
+        return;
     }
 
     my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
@@ -4234,7 +4235,7 @@ sub _TicketCommonActions {
                     Message  => 'Sorry, you need to be the owner to do this action! '
                         . 'Please change the owner first.',
                 );
-                return -1;
+                return;
             }
         }
     }
@@ -4268,7 +4269,7 @@ sub _TicketCommonActions {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return -1;
+            return;
         }
         if (
             $Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} )
@@ -4279,7 +4280,7 @@ sub _TicketCommonActions {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return -1;
+            return;
         }
     }
 
@@ -4289,18 +4290,18 @@ sub _TicketCommonActions {
         if ( !$Param{Subject} ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => 'Subject Invalid',
+                Message  => 'Subject Invalid: the Subject is empty!',
             );
-            return -1;
+            return;
         }
 
         # check body
         if ( !$Param{Body} ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => 'Body Invalid',
+                Message  => 'Body Invalid: the Body is empty!',
             );
-            return -1;
+            return;
         }
     }
 
@@ -4312,7 +4313,7 @@ sub _TicketCommonActions {
             Priority => 'error',
             Message  => "TicketFreeTextField$Count invalid",
         );
-        return -1;
+        return;
     }
 
     #check if Title
@@ -4468,7 +4469,7 @@ sub _TicketCommonActions {
                 Priority => 'error',
                 Message  => 'Error: no article was created! Please contact the admin.',
             );
-            return -1;
+            return;
         }
 
         # time accounting
@@ -4698,7 +4699,7 @@ sub _TicketCompose {
             Priority => 'error',
             Message  => 'No TicketID is given! Please contact the admin.',
         );
-        return -1;
+        return;
     }
 
     # check permissions
@@ -4724,7 +4725,7 @@ sub _TicketCompose {
             Priority => 'error',
             Message  => "You need $Self->{Config}->{Permission} permissions!",
         );
-        return -1;
+        return;
     }
     my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
 
@@ -4780,7 +4781,7 @@ sub _TicketCompose {
                     Message  => "Sorry, you need to be the owner to do this action! "
                         . "Please change the owner first.",
                 );
-                return -1;
+                return;
             }
         }
     }
@@ -4812,7 +4813,7 @@ sub _TicketCompose {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return -1;
+            return;
         }
         if (
             $Self->{TimeObject}->TimeStamp2SystemTime( String => $Param{PendingDate} )
@@ -4823,7 +4824,7 @@ sub _TicketCompose {
                 Priority => 'error',
                 Message  => 'Date invalid',
             );
-            return -1;
+            return;
         }
     }
 
@@ -4838,7 +4839,7 @@ sub _TicketCompose {
                 Priority => 'error',
                 Message  => "TicketFreeTextField$_ invalid",
             );
-            return -1;
+            return;
         }
     }
 
@@ -4847,12 +4848,12 @@ sub _TicketCompose {
         next if !$Param{$Line};
         for my $Email ( Mail::Address->parse( $Param{$Line} ) ) {
             if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
+                my $ServerError = $Self->{CheckItemObject}->CheckError();
                 $Self->{LogObject}->Log(
                     Priority => 'error',
-                    Message  => "$Line invalid "
-                        . $Self->{CheckItemObject}->CheckError(),
+                    Message  => "Error on field \"$Line\" \n $ServerError",
                 );
-                return -1;
+                return;
             }
         }
     }
@@ -4902,7 +4903,7 @@ sub _TicketCompose {
             Priority => 'error',
             Message  => 'Error no Article created! Please contact the admin',
         );
-        return -1;
+        return;
     }
 
     # time accounting
@@ -5054,7 +5055,7 @@ sub _TicketMove {
                 Priority => 'error',
                 Message  => "No $_ is given! Please contact the admin.",
             );
-            return -1;
+            return;
         }
     }
 
@@ -5084,7 +5085,7 @@ sub _TicketMove {
             Priority => 'error',
             Message  => "You need $Self->{Config}->{Permission} permissions!",
         );
-        return -1;
+        return;
     }
 
     # get lock state
@@ -5139,7 +5140,7 @@ sub _TicketMove {
                     Message  => "Sorry, you need to be the owner to do this action! "
                         . "Please change the owner first.",
                 );
-                return -1;
+                return;
             }
         }
     }
@@ -5174,7 +5175,7 @@ sub _TicketMove {
                 Priority => 'error',
                 Message  => "TicketFreeTextField$_ invalid",
             );
-            return -1;
+            return;
         }
     }
 
@@ -5184,7 +5185,7 @@ sub _TicketMove {
             Priority => 'error',
             Message  => "No QueueID is given! Please contact the admin.",
         );
-        return -1;
+        return;
     }
 
     if ( $Param{OwnerID} ) {
@@ -5217,7 +5218,7 @@ sub _TicketMove {
             Priority => 'error',
             Message  => "Error: ticket not moved! Please contact the admin.",
         );
-        return -1;
+        return;
     }
 
     # set priority
@@ -5367,7 +5368,7 @@ sub _TicketMove {
                 Priority => 'error',
                 Message  => "Error: Can't create an article for the moved ticket",
             );
-            return -1;
+            return;
         }
     }
 
@@ -5452,7 +5453,7 @@ sub _GetComposeDefaults {
             Priority => 'error',
             Message  => 'No TicketID given! Please contact the admin.',
         );
-        return -1;
+        return;
     }
 
     my %ComposeData;
@@ -5663,22 +5664,24 @@ sub _GetComposeDefaults {
         next if !$Data{$Line};
         for my $Email ( Mail::Address->parse( $Data{$Line} ) ) {
             if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
+                my $ServerError = $Self->{CheckItemObject}->CheckError();
                 $Self->{LogObject}->Log(
                     Priority => 'error',
-                    Message  => $Line . " Invalid" . " ServerError",
+                    Message  => "Error on field \"$Line\" \n $ServerError",
                 );
-                return -1;
+                return;
             }
         }
     }
     if ( $Data{From} ) {
         for my $Email ( Mail::Address->parse( $Data{From} ) ) {
             if ( !$Self->{CheckItemObject}->CheckEmail( Address => $Email->address() ) ) {
+                my $ServerError = $Self->{CheckItemObject}->CheckError();
                 $Self->{LogObject}->Log(
                     Priority => 'error',
-                    Message  => " From Invalid " . $Self->{CheckItemObject}->CheckError(),
+                    Message  => "Error on field \"From\"  \n $ServerError",
                 );
-                return -1;
+                return;
             }
         }
     }
@@ -5726,6 +5729,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.61 2010/10/26 17:07:44 cr Exp $
+$Id: iPhone.pm,v 1.62 2010/11/25 18:55:54 cr Exp $
 
 =cut
