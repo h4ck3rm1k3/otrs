@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.30 2010/11/05 09:29:07 mg Exp $
+# $Id: AdminSupport.dtl,v 1.31 2010/12/01 00:10:26 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -81,7 +81,7 @@
                         </h3>
                         <p class="SpacingTopSmall">$QData{"Comment"}</p>
                         <div class="Spacing">
-                            <textarea class="W100pc" rows="7" cols="" readonly="readonly">$QData{"Content"}</textarea>
+                            <textarea class="W100pc" rows="7" cols="" readonly="readonly">$QData{"ContentString"}</textarea>
                         </div>
                     </li>
                 </ul>

@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.21 2010/11/05 09:29:07 mg Exp $
+# $Id: OS.pm,v 1.22 2010/12/01 00:10:26 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.21 $) [1];
+$VERSION = qw($Revision: 1.22 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -258,20 +258,20 @@ sub _PerlModulesCheck {
                 Comment =>
                     "There is an error in your installed perl modules configuration. Please contact your administrator."
                 ,
-                Check      => 'Failed',
-                BlockStyle => 'TextArea',
-                Content    => $TmpLog,
+                Check         => 'Failed',
+                BlockStyle    => 'TextArea',
+                ContentString => $TmpLog,
             };
 
         }
         else {
             $ReturnHash = {
-                Name        => 'PerlModulesCheck',
-                Description => "Check Perl Modules installed.",
-                Comment     => "All Perl modules needed are currently installed.",
-                Check       => 'OK',
-                BlockStyle  => 'TextArea',
-                Content     => $TmpLog,
+                Name          => 'PerlModulesCheck',
+                Description   => "Check Perl Modules installed.",
+                Comment       => "All Perl modules needed are currently installed.",
+                Check         => 'OK',
+                BlockStyle    => 'TextArea',
+                ContentString => $TmpLog,
             };
         }
     }
