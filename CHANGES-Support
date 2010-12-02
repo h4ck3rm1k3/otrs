@@ -2,12 +2,17 @@
 # CHANGES - change log of the Support module for OTRS
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: CHANGES-Support,v 1.4 2010/11/08 13:15:51 mb Exp $
+# $Id: CHANGES-Support,v 1.5 2010/12/02 06:22:27 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
+
+1.2.7 2010-??-??
+
+1.2.6 2010-12-02
+ - 2010-12-02 Fixed invalid XML in perl modules check result.
 
 1.2.5 2010-11-08
  - 2010-11-08 Fixed bug#6244 - Support module fails to run because new extra
