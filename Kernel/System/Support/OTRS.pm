@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.27 2010/02/09 21:29:16 ub Exp $
+# $Id: OTRS.pm,v 1.28 2010/12/09 14:42:48 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.27 $) [1];
+$VERSION = qw($Revision: 1.28 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -335,7 +335,7 @@ sub _FQDNConfigCheck {
     }
 
     # FQDN syntax check.
-    elsif ( $FQDN =~ /\.\.|\s|[^a-zA-Z0-9-.]/g ) {
+    elsif ( $FQDN !~ /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$/ ) {
         $Data->{Check}   = 'Failed';
         $Data->{Comment} = "Invalid FQDN '$FQDN'.";
     }
