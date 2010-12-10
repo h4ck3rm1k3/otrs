@@ -2,7 +2,7 @@
 # Kernel/System/Ticket/ArticleStorageFS.pm - article storage module for OTRS kernel
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: ArticleStorageFS.pm,v 1.77 2010/12/10 13:03:31 martin Exp $
+# $Id: ArticleStorageFS.pm,v 1.63.2.1 2010/12/10 18:45:51 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use MIME::Base64;
 umask 002;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.77 $) [1];
+$VERSION = qw($Revision: 1.63.2.1 $) [1];
 
 sub ArticleStorageInit {
     my ( $Self, %Param ) = @_;
@@ -39,12 +39,14 @@ sub ArticleStorageInit {
     # check fs write permissions!
     my $Path = "$Self->{ArticleDataDir}/$Self->{ArticleContentPath}/check_permissions.$$";
     if ( -d $Path ) {
-        File::Path::rmtree( [$Path] );
+        File::Path::rmtree( [$Path] ) || die "Can't remove $Path: $!\n";
     }
     if ( mkdir( "$Self->{ArticleDataDir}/check_permissions_$$", 022 ) ) {
-        rmdir("$Self->{ArticleDataDir}/check_permissions_$$");
+        if ( !rmdir("$Self->{ArticleDataDir}/check_permissions_$$") ) {
+            die "Can't remove $Self->{ArticleDataDir}/check_permissions_$$: $!\n";
+        }
         if ( File::Path::mkpath( [$Path], 0, 0775 ) ) {
-            File::Path::rmtree( [$Path] );
+            File::Path::rmtree( [$Path] ) || die "Can't remove $Path: $!\n";
         }
     }
     else {
@@ -52,10 +54,10 @@ sub ArticleStorageInit {
         $Self->{LogObject}->Log(
             Priority => 'notice',
             Message  => "Can't create $Self->{ArticleDataDir}/check_permissions_$$: $Error, "
-                . "Try: \$OTRS_HOME/bin/otrs.SetPermissions.pl !",
+                . "Try: \$OTRS_HOME/bin/SetPermissions.pl !",
         );
         die "Error: Can't create $Self->{ArticleDataDir}/check_permissions_$$: $Error \n\n "
-            . "Try: \$OTRS_HOME/bin/otrs.SetPermissions.pl !!!\n";
+            . "Try: \$OTRS_HOME/bin/SetPermissions.pl !!!\n";
     }
     return 1;
 }
@@ -116,6 +118,32 @@ sub ArticleDelete {
     return 1;
 }
 
+sub _ArticleDeleteDirectory {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(ArticleID UserID)) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
+
+    # delete directory from fs
+    my $ContentPath = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} );
+    my $Path = "$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}";
+    if ( -d $Path ) {
+        if ( !rmdir($Path) ) {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Can't remove: $Path: $!!",
+            );
+            return;
+        }
+    }
+    return 1;
+}
+
 sub ArticleDeletePlain {
     my ( $Self, %Param ) = @_;
 
@@ -131,7 +159,7 @@ sub ArticleDeletePlain {
     my $ContentPath = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} );
     my $File = "$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}/plain.txt";
     if ( -f $File ) {
-        if ( !unlink $File ) {
+        if ( !unlink($File) ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
                 Message  => "Can't remove: $File: $!!",
@@ -140,7 +168,7 @@ sub ArticleDeletePlain {
         }
     }
 
-    # return if only delete in my backend
+    # return of only delete in my backend
     return 1 if $Param{OnlyMyBackend};
 
     # delete plain from db
@@ -167,11 +195,7 @@ sub ArticleDeleteAttachment {
     my $ContentPath = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} );
     my $Path = "$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}";
     if ( -e $Path ) {
-        my @List = $Self->{MainObject}->DirectoryRead(
-            Directory => $Path,
-            Filter    => "*",
-        );
-
+        my @List = glob( $Path . "/*" );
         for my $File (@List) {
             if ( $File !~ /(\/|\\)plain.txt$/ ) {
                 if ( !unlink "$File" ) {
@@ -184,7 +208,7 @@ sub ArticleDeleteAttachment {
         }
     }
 
-    # return if only delete in my backend
+    # return of only delete in my backend
     return 1 if $Param{OnlyMyBackend};
 
     # delete attachments from db
@@ -261,12 +285,10 @@ sub ArticleWriteAttachment {
     # strip dots from filenames
     $Param{Filename} =~ s/^\.//g;
     my $NewFileName = $Param{Filename};
-    my %UsedFile;
-    my %Index = $Self->ArticleAttachmentIndex(
-        ArticleID => $Param{ArticleID},
-        UserID    => $Param{UserID},
-    );
+
     if ( !$Param{Force} ) {
+        my %UsedFile = ();
+        my %Index = $Self->ArticleAttachmentIndex( ArticleID => $Param{ArticleID}, );
         for ( keys %Index ) {
             $UsedFile{ $Index{$_}->{Filename} } = 1;
         }
@@ -281,7 +303,6 @@ sub ArticleWriteAttachment {
             }
         }
     }
-
     $Param{Filename} = $NewFileName;
 
     # write attachment to backend
@@ -374,7 +395,7 @@ sub ArticlePlain {
         return ${$Data};
     }
 
-    # return if only delete in my backend
+    # return of only delete in my backend
     return if $Param{OnlyMyBackend};
 
     # can't open article, try database
@@ -397,7 +418,7 @@ sub ArticlePlain {
     return $Data;
 }
 
-sub ArticleAttachmentIndexRaw {
+sub ArticleAttachmentIndex {
     my ( $Self, %Param ) = @_;
 
     # check ArticleContentPath
@@ -412,17 +433,12 @@ sub ArticleAttachmentIndexRaw {
         return;
     }
     my $ContentPath = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} );
-    my %Index;
-    my $Counter = 0;
+    my %Index       = ();
+    my $Counter     = 0;
 
     # try fs
-    my @List = $Self->{MainObject}->DirectoryRead(
-        Directory => "$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}",
-        Filter    => "*",
-        Silent    => 1,
-    );
-
-    for my $Filename ( sort @List ) {
+    my @List = glob("$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}/*");
+    for my $Filename (@List) {
         my $FileSize    = -s $Filename;
         my $FileSizeRaw = $FileSize;
 
@@ -431,6 +447,12 @@ sub ArticleAttachmentIndexRaw {
         next if $Filename =~ /\.content_id$/;
         next if $Filename =~ /\.content_type$/;
         next if $Filename =~ /\/plain.txt$/;
+
+        # convert the file name in utf-8 if utf-8 is used
+        $Filename = $Self->{EncodeObject}->Decode(
+            Text => $Filename,
+            From => 'utf-8',
+        );
 
         # human readable file size
         if ($FileSize) {
@@ -507,13 +529,13 @@ sub ArticleAttachmentIndexRaw {
     # return if index exists
     return %Index if %Index;
 
-    # return if only delete in my backend
+    # return of only delete in my backend
     return %Index if $Param{OnlyMyBackend};
 
     # try database (if there is no index in fs)
     return if !$Self->{DBObject}->Prepare(
         SQL => 'SELECT filename, content_type, content_size, content_id, content_alternative'
-            . ' FROM article_attachment WHERE article_id = ? ORDER BY filename, id',
+            . ' FROM article_attachment WHERE article_id = ? ORDER BY id',
         Bind => [ \$Param{ArticleID} ],
     );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
@@ -550,7 +572,7 @@ sub ArticleAttachment {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(ArticleID FileID UserID)) {
+    for (qw(ArticleID FileID)) {
         if ( !$Param{$_} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
@@ -562,22 +584,13 @@ sub ArticleAttachment {
     $Param{ArticleID} =~ s/\0//g;
 
     # get attachment index
-    my %Index = $Self->ArticleAttachmentIndex(
-        ArticleID => $Param{ArticleID},
-        UserID    => $Param{UserID},
-    );
+    my %Index = $Self->ArticleAttachmentIndex( ArticleID => $Param{ArticleID} );
 
     # get content path
     my $ContentPath = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} );
     my %Data        = %{ $Index{ $Param{FileID} } };
     my $Counter     = 0;
-
-    my @List = $Self->{MainObject}->DirectoryRead(
-        Directory => "$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}",
-        Filter    => "*",
-        Silent    => 1,
-    );
-
+    my @List        = glob("$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}/*");
     if (@List) {
         for my $Filename (@List) {
             next if $Filename =~ /\.content_alternative$/;
@@ -589,6 +602,11 @@ sub ArticleAttachment {
             $Counter++;
             if ( $Counter == $Param{FileID} ) {
 
+                # convert the file name in utf-8 if utf-8 is used
+                $Filename = $Self->{EncodeObject}->Decode(
+                    Text => $Filename,
+                    From => 'utf-8',
+                );
                 if ( -e "$Filename.content_type" ) {
 
                     # read content type
@@ -649,7 +667,7 @@ sub ArticleAttachment {
                     && $Data{ContentType} =~ /(utf\-8|utf8)/i
                     )
                 {
-                    $Self->{EncodeObject}->EncodeInput( \$Data{Content} );
+                    $Self->{EncodeObject}->Encode( \$Data{Content} );
                 }
                 chomp $Data{ContentType};
                 return %Data;
@@ -657,13 +675,13 @@ sub ArticleAttachment {
         }
     }
 
-    # return if only delete in my backend
+    # return of only delete in my backend
     return if $Param{OnlyMyBackend};
 
     # try database, if no content is found
     return if !$Self->{DBObject}->Prepare(
         SQL => 'SELECT content_type, content, content_id, content_alternative'
-            . ' FROM article_attachment WHERE article_id = ? ORDER BY filename, id',
+            . ' FROM article_attachment WHERE article_id = ? ORDER BY id',
         Bind   => [ \$Param{ArticleID} ],
         Limit  => $Param{FileID},
         Encode => [ 1, 0, 0, 0 ],
@@ -690,32 +708,6 @@ sub ArticleAttachment {
         return;
     }
     return %Data;
-}
-
-sub _ArticleDeleteDirectory {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(ArticleID UserID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # delete directory from fs
-    my $ContentPath = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} );
-    my $Path = "$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}";
-    if ( -d $Path ) {
-        if ( !rmdir($Path) ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Can't remove: $Path: $!!",
-            );
-            return;
-        }
-    }
-    return 1;
 }
 
 1;

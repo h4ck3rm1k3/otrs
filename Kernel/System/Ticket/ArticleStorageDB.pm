@@ -2,7 +2,7 @@
 # Kernel/System/Ticket/ArticleStorageDB.pm - article storage module for OTRS kernel
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: ArticleStorageDB.pm,v 1.78 2010/12/10 13:03:31 martin Exp $
+# $Id: ArticleStorageDB.pm,v 1.68.2.1 2010/12/10 18:45:51 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use MIME::Base64;
 use MIME::Words qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.78 $) [1];
+$VERSION = qw($Revision: 1.68.2.1 $) [1];
 
 sub ArticleStorageInit {
     my ( $Self, %Param ) = @_;
@@ -92,6 +92,32 @@ sub ArticleDelete {
     return 1;
 }
 
+sub _ArticleDeleteDirectory {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(ArticleID UserID)) {
+        if ( !$Param{$_} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
+
+    # delete directory from fs
+    my $ContentPath = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} );
+    my $Path = "$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}";
+    if ( -d $Path ) {
+        if ( !rmdir($Path) ) {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Can't remove: $Path: $!!",
+            );
+            return;
+        }
+    }
+    return 1;
+}
+
 sub ArticleDeletePlain {
     my ( $Self, %Param ) = @_;
 
@@ -116,7 +142,7 @@ sub ArticleDeletePlain {
     my $ContentPath = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} );
     my $File = "$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}/plain.txt";
     if ( -f $File ) {
-        if ( !unlink $File ) {
+        if ( !unlink($File) ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
                 Message  => "Can't remove: $File: $!!",
@@ -151,10 +177,7 @@ sub ArticleDeleteAttachment {
     my $ContentPath = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} );
     my $Path = "$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}";
     if ( -e $Path ) {
-        my @List = $Self->{MainObject}->DirectoryRead(
-            Directory => $Path,
-            Filter    => "*",
-        );
+        my @List = glob($Path);
         for my $File (@List) {
             if ( $File !~ /(\/|\\)plain.txt$/ ) {
                 if ( !unlink $File ) {
@@ -187,13 +210,12 @@ sub ArticleWritePlain {
     }
 
     # write article to db 1:1
-    return if !$Self->{DBObject}->Do(
+    return $Self->{DBObject}->Do(
         SQL => 'INSERT INTO article_plain '
             . ' (article_id, body, create_time, create_by, change_time, change_by) '
             . ' VALUES (?, ?, current_timestamp, ?, current_timestamp, ?)',
         Bind => [ \$Param{ArticleID}, \$Param{Email}, \$Param{UserID}, \$Param{UserID} ],
     );
-    return 1;
 }
 
 sub ArticleWriteAttachment {
@@ -206,15 +228,10 @@ sub ArticleWriteAttachment {
             return;
         }
     }
-
     my $NewFileName = $Param{Filename};
-    my %UsedFile;
-    my %Index = $Self->ArticleAttachmentIndex(
-        ArticleID => $Param{ArticleID},
-        UserID    => $Param{UserID},
-    );
-
     if ( !$Param{Force} ) {
+        my %UsedFile = ();
+        my %Index = $Self->ArticleAttachmentIndex( ArticleID => $Param{ArticleID} );
         for ( keys %Index ) {
             $UsedFile{ $Index{$_}->{Filename} } = 1;
         }
@@ -234,7 +251,11 @@ sub ArticleWriteAttachment {
     $Param{Filename} = $NewFileName;
 
     # get attachment size
-    $Param{Filesize} = bytes::length( $Param{Content} );
+    {
+        use bytes;
+        $Param{Filesize} = length $Param{Content};
+        no bytes;
+    }
 
     # encode attachment if it's a postgresql backend!!!
     if ( !$Self->{DBObject}->GetDatabaseFunction('DirectBlob') ) {
@@ -248,7 +269,7 @@ sub ArticleWriteAttachment {
     }
 
     # write attachment to db
-    return if !$Self->{DBObject}->Do(
+    return $Self->{DBObject}->Do(
         SQL => 'INSERT INTO article_attachment '
             . ' (article_id, filename, content_type, content_size, content, '
             . ' content_id, content_alternative, create_time, create_by, change_time, change_by) '
@@ -259,7 +280,6 @@ sub ArticleWriteAttachment {
             \$Param{UserID}, \$Param{UserID},
         ],
     );
-    return 1;
 }
 
 sub ArticlePlain {
@@ -321,7 +341,7 @@ sub ArticlePlain {
     return;
 }
 
-sub ArticleAttachmentIndexRaw {
+sub ArticleAttachmentIndex {
     my ( $Self, %Param ) = @_;
 
     # check ArticleContentPath
@@ -340,13 +360,13 @@ sub ArticleAttachmentIndexRaw {
     if ( !$Param{ContentPath} ) {
         $Param{ContentPath} = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} ) || '';
     }
-    my %Index;
+    my %Index   = ();
     my $Counter = 0;
 
     # try database
     return if !$Self->{DBObject}->Prepare(
         SQL => 'SELECT filename, content_type, content_size, content_id, content_alternative'
-            . ' FROM article_attachment WHERE article_id = ? ORDER BY filename, id',
+            . ' FROM article_attachment WHERE article_id = ? ORDER BY id',
         Bind => [ \$Param{ArticleID} ],
     );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
@@ -384,13 +404,8 @@ sub ArticleAttachmentIndexRaw {
     return if $Param{OnlyMyBackend};
 
     # try fs (if there is no index in fs)
-    my @List = $Self->{MainObject}->DirectoryRead(
-        Directory => "$Self->{ArticleDataDir}/$Param{ContentPath}/$Param{ArticleID}",
-        Filter    => "*",
-        Silent    => 1,
-    );
-
-    for my $Filename ( sort @List ) {
+    my @List = glob("$Self->{ArticleDataDir}/$Param{ContentPath}/$Param{ArticleID}/*");
+    for my $Filename (@List) {
         my $FileSize    = -s $Filename;
         my $FileSizeRaw = $FileSize;
 
@@ -399,6 +414,12 @@ sub ArticleAttachmentIndexRaw {
         next if $Filename =~ /\.content_id$/;
         next if $Filename =~ /\.content_type$/;
         next if $Filename =~ /\/plain.txt$/;
+
+        # convert the file name in utf-8 if utf-8 is used
+        $Filename = $Self->{EncodeObject}->Decode(
+            Text => $Filename,
+            From => 'utf-8',
+        );
 
         # human readable file size
         if ($FileSize) {
@@ -476,7 +497,7 @@ sub ArticleAttachment {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(ArticleID FileID UserID)) {
+    for (qw(ArticleID FileID)) {
         if ( !$Param{$_} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
@@ -488,17 +509,14 @@ sub ArticleAttachment {
     $Param{ArticleID} =~ s/\0//g;
 
     # get attachment index
-    my %Index = $Self->ArticleAttachmentIndex(
-        ArticleID => $Param{ArticleID},
-        UserID    => $Param{UserID},
-    );
+    my %Index = $Self->ArticleAttachmentIndex( ArticleID => $Param{ArticleID} );
     return if !$Index{ $Param{FileID} };
     my %Data = %{ $Index{ $Param{FileID} } };
 
     # try database
     return if !$Self->{DBObject}->Prepare(
         SQL => 'SELECT content_type, content, content_id, content_alternative'
-            . ' FROM article_attachment WHERE article_id = ? ORDER BY filename, id',
+            . ' FROM article_attachment WHERE article_id = ? ORDER BY id',
         Bind   => [ \$Param{ArticleID} ],
         Limit  => $Param{FileID},
         Encode => [ 1, 0, 0, 0 ],
@@ -523,14 +541,8 @@ sub ArticleAttachment {
 
     # try fileystem, if no content is found
     my $ContentPath = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} );
-    my $Counter = 0;
-
-    my @List = $Self->{MainObject}->DirectoryRead(
-        Directory => "$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}",
-        Filter    => "*",
-        Silent    => 1,
-    );
-
+    my $Counter     = 0;
+    my @List        = glob("$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}/*");
     if (@List) {
         for my $Filename (@List) {
             next if $Filename =~ /\.content_alternative$/;
@@ -542,6 +554,11 @@ sub ArticleAttachment {
             $Counter++;
             if ( $Counter == $Param{FileID} ) {
 
+                # convert the file name in utf-8 if utf-8 is used
+                $Filename = $Self->{EncodeObject}->Decode(
+                    Text => $Filename,
+                    From => 'utf-8',
+                );
                 if ( -e "$Filename.content_type" ) {
 
                     # read content type
@@ -602,7 +619,7 @@ sub ArticleAttachment {
                     && $Data{ContentType} =~ /(utf\-8|utf8)/i
                     )
                 {
-                    $Self->{EncodeObject}->EncodeInput( \$Data{Content} );
+                    $Self->{EncodeObject}->Encode( \$Data{Content} );
                 }
                 chomp $Data{ContentType};
                 return %Data;
@@ -619,32 +636,6 @@ sub ArticleAttachment {
         return;
     }
     return %Data;
-}
-
-sub _ArticleDeleteDirectory {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(ArticleID UserID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    # delete directory from fs
-    my $ContentPath = $Self->ArticleGetContentPath( ArticleID => $Param{ArticleID} );
-    my $Path = "$Self->{ArticleDataDir}/$ContentPath/$Param{ArticleID}";
-    if ( -d $Path ) {
-        if ( !rmdir $Path ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Can't remove: $Path: $!!",
-            );
-            return;
-        }
-    }
-    return 1;
 }
 
 1;

@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 # --
 # otrs.ArticleStorageSwitch.pl - to move stored attachments from one backend to other
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: otrs.ArticleStorageSwitch.pl,v 1.15 2011/07/06 13:57:13 martin Exp $
+# $Id: otrs.ArticleStorageSwitch.pl,v 1.8.2.1 2010/12/10 18:45:51 martin Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -30,7 +30,7 @@ use FindBin qw($RealBin);
 use lib dirname($RealBin);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.15 $) [1];
+$VERSION = qw($Revision: 1.8.2.1 $) [1];
 
 use Getopt::Std;
 use Kernel::Config;
@@ -38,18 +38,16 @@ use Kernel::System::Encode;
 use Kernel::System::Log;
 use Kernel::System::Time;
 use Kernel::System::DB;
-use Kernel::System::PID;
 use Kernel::System::Main;
 use Kernel::System::Ticket;
 
 # get options
-my %Opts;
-getopt( 'hsdcCf', \%Opts );
+my %Opts = ();
+getopt( 'hsdv', \%Opts );
 if ( $Opts{h} ) {
     print "otrs.ArticleStorageSwitch.pl <Revision $VERSION> - to move storage content\n";
-    print "Copyright (C) 2001-2011 OTRS AG, http://otrs.org/\n";
-    print
-        "usage: otrs.ArticleStorageSwitch.pl -s ArticleStorageDB -d ArticleStorageFS [-c <JUST_SELECT_WHERE_CLOSE_DATE_IS_BEFORE> e. g. -c '2011-06-29 14:00:00' -C <JUST_SELECT_WHERE_CLOSE_IS_OLDER_IN_DAYS] e. g. -C '5'  [-f force]\n";
+    print "Copyright (C) 2001-2010 OTRS AG, http://otrs.org/\n";
+    print "usage: otrs.ArticleStorageSwitch.pl -s ArticleStorageDB -d ArticleStorageFS\n";
     exit 1;
 }
 
@@ -80,70 +78,13 @@ $CommonObject{TimeObject} = Kernel::System::Time->new(%CommonObject);
 
 # create needed objects
 $CommonObject{DBObject}     = Kernel::System::DB->new(%CommonObject);
-$CommonObject{PIDObject}    = Kernel::System::PID->new(%CommonObject);
 $CommonObject{TicketObject} = Kernel::System::Ticket->new(%CommonObject);
 
 # disable ticket events
 $CommonObject{ConfigObject}->{'Ticket::EventModulePost'} = {};
 
-# create pid lock
-if ( !$Opts{f} && !$CommonObject{PIDObject}->PIDCreate( Name => 'ArticleStorageSwitch' ) ) {
-    print
-        "NOTICE: otrs.ArticleStorageSwitch.pl is already running (use '-f 1' if you want to start it ";
-    print "forced)!\n";
-    exit 1;
-}
-elsif ( $Opts{f} && !$CommonObject{PIDObject}->PIDCreate( Name => 'ArticleStorageSwitch' ) ) {
-    print "NOTICE: otrs.ArticleStorageSwitch.pl is already running but is starting again!\n";
-}
-
-# extended imput validation
-my %SearchParams;
-if ( $Opts{c} ) {
-
-    # check time stamp format
-    if ( !$CommonObject{TimeObject}->TimeStamp2SystemTime( String => $Opts{c} ) ) {
-        print STDERR
-            "ERROR: -c '$Opts{c}' is not a valid time stamp, please use 'yyyy-mm-dd hh:mm:ss'\n";
-        exit 1;
-    }
-    %SearchParams = (
-        StateType                => 'Closed',
-        TicketCloseTimeOlderDate => $Opts{c},
-    );
-}
-elsif ( $Opts{C} ) {
-
-    # check time stamp format
-    if ( $Opts{C} !~ /^\d+$/ ) {
-        print STDERR
-            "ERROR: -C '$Opts{C}' is not a valid integer, please use e. g. '5' for 5 days\n";
-        exit 1;
-    }
-    $Opts{C} = $Opts{C} * 60 * 60 * 24;
-    my $TimeStamp = $CommonObject{TimeObject}->SystemTime() - $Opts{C};
-    $TimeStamp = $CommonObject{TimeObject}->SystemTime2TimeStamp(
-        SystemTime => $TimeStamp,
-    );
-    print "NOTICE: Searching for ticket which are closed before '$TimeStamp'\n";
-    %SearchParams = (
-        StateType                => 'Closed',
-        TicketCloseTimeOlderDate => $TimeStamp,
-    );
-}
-
-# set new PID
-$CommonObject{PIDObject}->PIDCreate(
-    Name  => 'ArticleStorageSwitch',
-    Force => 1,
-    TTL   => 60 * 60 * 24 * 3,
-);
-
 # get all tickets
 my @TicketIDs = $CommonObject{TicketObject}->TicketSearch(
-
-    # additional search params
-    %SearchParams,
 
     # result (required)
     Result  => 'ARRAY',
@@ -160,18 +101,14 @@ my $CountTotal = scalar @TicketIDs;
 for my $TicketID (@TicketIDs) {
     $Count++;
 
-    print "NOTICE: $Count/$CountTotal (TicketID:$TicketID)\n";
-    exit 1 if !$CommonObject{TicketObject}->TicketArticleStorageSwitch(
+    print "NOTICE: $Count/$CountTotal\n";
+    $CommonObject{TicketObject}->TicketArticleStorageSwitch(
         TicketID    => $TicketID,
         Source      => $Opts{s},
         Destination => $Opts{d},
         UserID      => 1,
     );
 }
-
-# delete pid lock
-$CommonObject{PIDObject}->PIDDelete( Name => 'ArticleStorageSwitch' );
-
 print "NOTICE: done.\n";
 
 exit 0;
