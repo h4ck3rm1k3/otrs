@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 # --
 # scripts/backup.pl - the backup script
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: backup.pl,v 1.25 2011/01/10 15:06:19 martin Exp $
+# $Id: backup.pl,v 1.17.2.1 2010/12/13 10:26:53 mg Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -31,7 +31,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.25 $) [1];
+$VERSION = qw($Revision: 1.17.2.1 $) [1];
 
 use Getopt::Std;
 use Kernel::Config;
@@ -43,16 +43,16 @@ use Kernel::System::DB;
 use Date::Pcalc qw(Today Today_and_Now Add_Delta_Days);
 
 # get options
-my %Opts;
+my %Opts        = ();
 my $Compress    = '';
 my $CompressCMD = '';
 my $FullBackup  = 0;
 my $DB          = '';
 my $DBDump      = '';
 getopt( 'hcrtd', \%Opts );
-if ( exists $Opts{h} ) {
+if ( $Opts{'h'} ) {
     print "backup.pl <Revision $VERSION> - backup script\n";
-    print "Copyright (C) 2001-2011 OTRS AG, http://otrs.org/\n";
+    print "Copyright (C) 2001-2010 OTRS AG, http://otrs.org/\n";
     print
         "usage: backup.pl -d /data_backup_dir/ [-c gzip|bzip2] [-r 30] [-t fullbackup|nofullbackup]\n";
     exit 1;
@@ -69,7 +69,7 @@ elsif ( !-d $Opts{d} ) {
 }
 
 # check compress mode
-if ( $Opts{c} && $Opts{c} =~ m/bzip2/i ) {
+if ( $Opts{c} && $Opts{c} =~ /bzip2/i ) {
     $Compress    = 'j';
     $CompressCMD = 'bzip2';
 }
@@ -79,7 +79,7 @@ else {
 }
 
 # check backup type
-if ( $Opts{t} && $Opts{t} =~ m/no/i ) {
+if ( $Opts{t} && $Opts{t} =~ /no/i ) {
     $FullBackup = 0;
 }
 else {
@@ -87,7 +87,7 @@ else {
 }
 
 # create common objects
-my %CommonObject;
+my %CommonObject = ();
 $CommonObject{ConfigObject} = Kernel::Config->new();
 $CommonObject{EncodeObject} = Kernel::System::Encode->new(%CommonObject);
 $CommonObject{LogObject}    = Kernel::System::Log->new(
@@ -96,7 +96,6 @@ $CommonObject{LogObject}    = Kernel::System::Log->new(
 );
 $CommonObject{MainObject} = Kernel::System::Main->new(%CommonObject);
 $CommonObject{TimeObject} = Kernel::System::Time->new(%CommonObject);
-$CommonObject{DBObject}   = Kernel::System::DB->new( %CommonObject, AutoConnectNo => 1 );
 my $DatabaseHost = $CommonObject{ConfigObject}->Get('DatabaseHost');
 my $Database     = $CommonObject{ConfigObject}->Get('Database');
 my $DatabaseUser = $CommonObject{ConfigObject}->Get('DatabaseUser');
@@ -105,16 +104,22 @@ my $DatabaseDSN  = $CommonObject{ConfigObject}->Get('DatabaseDSN');
 my $ArticleDir   = $CommonObject{ConfigObject}->Get('ArticleDir');
 
 # decrypt pw (if needed)
-if ( $DatabasePw =~ m/^\{(.*)\}$/ ) {
-    $DatabasePw = $CommonObject{DBObject}->_Decrypt($1);
+if ( $DatabasePw =~ /^\{(.*)\}$/ ) {
+    my $Length = length($1) * 4;
+    $DatabasePw = pack( "h$Length", $1 );
+    $DatabasePw = unpack( "B$Length", $DatabasePw );
+    $DatabasePw =~ s/1/A/g;
+    $DatabasePw =~ s/0/1/g;
+    $DatabasePw =~ s/A/0/g;
+    $DatabasePw = pack( "B$Length", $DatabasePw );
 }
 
 # check db backup support
-if ( $DatabaseDSN =~ m/:mysql/i ) {
+if ( $DatabaseDSN =~ /:mysql/i ) {
     $DB     = 'MySQL';
     $DBDump = 'mysqldump';
 }
-elsif ( $DatabaseDSN =~ m/:pg/i ) {
+elsif ( $DatabaseDSN =~ /:pg/i ) {
     $DB     = 'PostgreSQL';
     $DBDump = 'pg_dump';
 }
@@ -139,7 +144,7 @@ for my $CMD ( 'cp', 'tar', $DBDump, $CompressCMD ) {
 
 # remove old backups
 if ( $Opts{r} ) {
-    my %LeaveBackups;
+    my %LeaveBackups = ();
     my ( $Year, $Month, $Day ) = Today_and_Now();
     for ( 0 .. $Opts{r} ) {
         my ( $DYear, $DMonth, $DDay ) = Add_Delta_Days( $Year, $Month, $Day, -$_ );
@@ -148,14 +153,11 @@ if ( $Opts{r} ) {
         $LeaveBackups{ sprintf( "%04d-%01d-%02d", $DYear, $DMonth, $DDay ) } = 1;
         $LeaveBackups{ sprintf( "%04d-%02d-%02d", $DYear, $DMonth, $DDay ) } = 1;
     }
-    my @Directories = $CommonObject{MainObject}->DirectoryRead(
-        Directory => $Opts{d},
-        Filter    => '*',
-    );
-    for my $Directory (@Directories) {
+    my @Direcroties = glob( $Opts{d} . "/*" );
+    for my $Directory (@Direcroties) {
         my $Leave = 0;
         for my $Data ( keys %LeaveBackups ) {
-            if ( $Directory =~ m/$Data/ ) {
+            if ( $Directory =~ /$Data/ ) {
                 $Leave = 1;
             }
         }
@@ -163,10 +165,7 @@ if ( $Opts{r} ) {
 
             # remove files and directory
             print "deleting old backup in $Directory ... ";
-            my @Files = $CommonObject{MainObject}->DirectoryRead(
-                Directory => $Directory,
-                Filter    => '*',
-            );
+            my @Files = glob( $Directory . '/*' );
             for my $File (@Files) {
                 if ( -e $File ) {
 
@@ -190,7 +189,7 @@ chdir($Home);
 my ( $s, $m, $h, $D, $M, $Y ) = $CommonObject{TimeObject}->SystemTime2Date(
     SystemTime => $CommonObject{TimeObject}->SystemTime(),
 );
-my $Directory = "$Opts{d}/$Y-$M-$D" . "_" . "$h-$m";
+my $Directory = "$Opts{'d'}/$Y-$M-$D" . "_" . "$h-$m";
 if ( !mkdir($Directory) ) {
     print STDERR "ERROR: Can't create directory: $Directory: $!\n";
     exit 1;
@@ -233,9 +232,9 @@ else {
 }
 
 # backup datadir
-if ( $ArticleDir !~ m/\Q$Home\E/ ) {
+if ( $ArticleDir !~ /\Q$Home\E/ ) {
     print "Backup $Directory/DataDir.tar.gz ... ";
-    if ( !system("tar -czf $Directory/DataDir.tar.gz $ArticleDir") ) {
+    if ( !system("tar -czf $Directory/DataDir.tar.gz .") ) {
         print "done\n";
     }
     else {
@@ -244,14 +243,14 @@ if ( $ArticleDir !~ m/\Q$Home\E/ ) {
 }
 
 # backup database
-if ( $DB =~ m/mysql/i ) {
+if ( $DB =~ /mysql/i ) {
     print "Dump $DB rdbms ... ";
     if ($DatabasePw) {
-        $DatabasePw = "-p'$DatabasePw'";
+        $DatabasePw = "-p$DatabasePw";
     }
     if (
         !system(
-            "$DBDump -u $DatabaseUser $DatabasePw -h $DatabaseHost $Database > $Directory/DatabaseBackup.sql"
+            "$DBDump -u $DatabaseUser '$DatabasePw' -h $DatabaseHost $Database > $Directory/DatabaseBackup.sql"
         )
         )
     {
