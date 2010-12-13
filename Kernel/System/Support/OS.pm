@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system information
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.22 2010/12/01 00:10:26 cg Exp $
+# $Id: OS.pm,v 1.23 2010/12/13 10:08:24 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.22 $) [1];
+$VERSION = qw($Revision: 1.23 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -132,11 +132,19 @@ sub _DistributionCheck {
     }
     elsif ( $^O =~ /win/i ) {
         $Self->{MainObject}->Require('Win32');
-        my $WinVersion = Win32::GetOSName();
+        my @WinVersion;
+        no strict 'refs';
+        if ( defined &Win32::GetOSDisplayName ) {
+            @WinVersion = Win32::GetOSDisplayName();
+        }
+        else {
+            @WinVersion = Win32::GetOSName();
+        }
+        use strict;
         $ReturnHash = {
             Name        => 'Distribution',
             Description => "Shows the used distribution.",
-            Comment     => "$WinVersion is used.",
+            Comment     => "@WinVersion is used.",
             Check       => 'OK',
         };
     }

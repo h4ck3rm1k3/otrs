@@ -2,7 +2,7 @@
 # CHANGES - change log of the Support module for OTRS
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
-# $Id: CHANGES-Support,v 1.6 2010/12/09 14:42:48 mb Exp $
+# $Id: CHANGES-Support,v 1.7 2010/12/13 10:08:24 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -10,7 +10,9 @@
 # --
 
 1.2.7 2010-??-??
- - 2010-12-09 Fixed bug#6517 -  Support module does not complain about using a
+ - 2010-12-13 Fixed bug#6531 - Windows version detection doesn't return
+    detailed information.
+ - 2010-12-09 Fixed bug#6517 - Support module does not complain about using a
     hostname as FQDN.
 
 1.2.6 2010-12-02
