@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/OTRS.pm - all required otrs information
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.28 2010/12/09 14:42:48 mb Exp $
+# $Id: OTRS.pm,v 1.29 2011/01/19 23:55:30 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.28 $) [1];
+$VERSION = qw($Revision: 1.29 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -585,6 +585,56 @@ sub _DefaultSOAPUserCheck {
             $Data->{Comment} = 'Please set a strong password for SOAP::Password in SysConfig.';
         }
     }
+    return $Data;
+}
+
+# Total Ticket Amount
+sub _GeneralSystemOverview {
+    my ( $Self, %Param ) = @_;
+
+    my $Data = {};
+
+    my $Check   = 'OK';
+    my $Message = 'In your system currently exists:';
+    my %Search  = (
+        1 => {
+            TableName   => 'ticket',
+            Description => 'Tickets,',
+        },
+        2 => {
+            TableName   => 'article',
+            Description => 'Articles,',
+        },
+        3 => {
+            TableName   => 'users',
+            Description => 'Agents,',
+        },
+        4 => {
+            TableName   => 'customer_user',
+            Description => 'Customers and',
+        },
+        5 => {
+            TableName   => 'roles',
+            Description => 'Roles.',
+        },
+    );
+
+    for my $Key ( sort keys %Search ) {
+        my $Result = 0;
+        $Self->{DBObject}->Prepare( SQL => 'SELECT count(*) from ' . $Search{$Key}->{TableName} );
+        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+            $Result = $Row[0];
+        }
+        $Message .= ' ' . $Result .
+            ' ' . $Search{$Key}->{Description};
+    }
+
+    $Data = {
+        Name        => 'GeneralSystemOverview',
+        Description => 'Diplay a general system overview',
+        Comment     => $Message,
+        Check       => $Check,
+    };
     return $Data;
 }
 
