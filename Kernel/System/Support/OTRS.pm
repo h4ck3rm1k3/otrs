@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.29 2011/01/19 23:55:30 cg Exp $
+# $Id: OTRS.pm,v 1.30 2011/01/31 22:04:07 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.29 $) [1];
+$VERSION = qw($Revision: 1.30 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -36,12 +36,13 @@ sub new {
     }
 
     # create additional objects
-    $Self->{SupportObject} = Kernel::System::Support->new( %{$Self} );
-    $Self->{UserObject}    = Kernel::System::User->new( %{$Self} );
-    $Self->{TicketObject}  = Kernel::System::Ticket->new( %{$Self} );
-    $Self->{PackageObject} = Kernel::System::Package->new( %{$Self} );
-    $Self->{GroupObject}   = Kernel::System::Group->new( %{$Self} );
-    $Self->{AuthObject}    = Kernel::System::Auth->new( %{$Self} );
+    $Self->{SupportObject}      = Kernel::System::Support->new( %{$Self} );
+    $Self->{UserObject}         = Kernel::System::User->new( %{$Self} );
+    $Self->{CustomerUserObject} = Kernel::System::CustomerUser->new( %{$Self} );
+    $Self->{TicketObject}       = Kernel::System::Ticket->new( %{$Self} );
+    $Self->{PackageObject}      = Kernel::System::Package->new( %{$Self} );
+    $Self->{GroupObject}        = Kernel::System::Group->new( %{$Self} );
+    $Self->{AuthObject}         = Kernel::System::Auth->new( %{$Self} );
 
     return $Self;
 }
@@ -595,45 +596,84 @@ sub _GeneralSystemOverview {
     my $Data = {};
 
     my $Check   = 'OK';
-    my $Message = 'In your system currently exists:';
-    my %Search  = (
+    my $Message = ' - Product: ' .
+        $Self->{ConfigObject}->Get('Product') . ' ' .
+        $Self->{ConfigObject}->Get('Version') .
+        "\n";
+    my %Search = (
         1 => {
             TableName   => 'ticket',
-            Description => 'Tickets,',
+            Description => 'Tickets',
         },
         2 => {
             TableName   => 'article',
-            Description => 'Articles,',
+            Description => 'Articles',
         },
         3 => {
             TableName   => 'users',
-            Description => 'Agents,',
+            Description => 'Agents',
         },
         4 => {
-            TableName   => 'customer_user',
-            Description => 'Customers and',
+            TableName   => 'roles',
+            Description => 'Roles',
         },
         5 => {
-            TableName   => 'roles',
-            Description => 'Roles.',
+            TableName   => 'groups',
+            Description => "Groups",
         },
     );
 
     for my $Key ( sort keys %Search ) {
-        my $Result = 0;
         $Self->{DBObject}->Prepare( SQL => 'SELECT count(*) from ' . $Search{$Key}->{TableName} );
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-            $Result = $Row[0];
+            $Search{$Key}->{Result} = $Row[0];
         }
-        $Message .= ' ' . $Result .
-            ' ' . $Search{$Key}->{Description};
+        $Message .= " - " . $Search{$Key}->{Description} .
+            ": " . $Search{$Key}->{Result} .
+            "\n";
     }
 
+    my $AvgArticlesTicket = $Search{2}->{Result} / $Search{1}->{Result};
+    $AvgArticlesTicket = sprintf( "%.2f", $AvgArticlesTicket );
+    $Message .= " - Articles per ticket (avg): " . $AvgArticlesTicket . "\n";
+
+    #  attachments
+    my $HowManyAttachments    = '';
+    my $AverageAttachmentSize = 0;
+    $Self->{DBObject}->Prepare(
+        SQL => "select count(*), avg(content_size) from article_attachment " .
+            "where content_type not like('text/html%')",
+    );
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        $HowManyAttachments    = $Row[0];
+        $AverageAttachmentSize = $Row[1];
+    }
+
+    $AverageAttachmentSize = int( $AverageAttachmentSize / 1024 );
+    $AverageAttachmentSize = sprintf( "%.2f", $AverageAttachmentSize );
+    my $AvgAttachmentTicket = $HowManyAttachments / $Search{1}->{Result};
+    $AvgAttachmentTicket = sprintf( "%.2f", $AvgAttachmentTicket );
+    $Message .= " - Attachments per ticket (avg): " . $AvgAttachmentTicket . "\n" .
+        " - Attachment size (avg): " . $AverageAttachmentSize . " KB\n";
+
+    # customers
+    my %List = $Self->{CustomerUserObject}->CustomerSearch(
+        Search => '*',
+        Valid  => 0,
+    );
+    my $Customers = scalar keys %List;
+    $Message .= " - Customers: " . $Customers . " \n";
+
+    # operative system
+    $Message .= " - Operative system: " . $^O;
+
     $Data = {
-        Name        => 'GeneralSystemOverview',
-        Description => 'Diplay a general system overview',
-        Comment     => $Message,
-        Check       => $Check,
+        Name          => 'GeneralSystemOverview',
+        Description   => 'Diplay a general system overview',
+        Comment       => 'General information about your system.',
+        Check         => $Check,
+        BlockStyle    => 'TextArea',
+        ContentString => $Message,
     };
     return $Data;
 }
