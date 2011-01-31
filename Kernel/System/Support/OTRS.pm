@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.30 2011/01/31 22:04:07 cg Exp $
+# $Id: OTRS.pm,v 1.31 2011/01/31 23:32:41 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.30 $) [1];
+$VERSION = qw($Revision: 1.31 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -636,6 +636,26 @@ sub _GeneralSystemOverview {
     my $AvgArticlesTicket = $Search{2}->{Result} / $Search{1}->{Result};
     $AvgArticlesTicket = sprintf( "%.2f", $AvgArticlesTicket );
     $Message .= " - Articles per ticket (avg): " . $AvgArticlesTicket . "\n";
+
+    #  tickets per month (avg)
+    my $MonthInSeconds   = 2626560;    # 60 * 60 * 24 * 30.4;
+    my $TicketWindowTime = 1;          # in monts
+    $Self->{DBObject}->Prepare(
+        SQL => "select max(create_time_unix), min(create_time_unix) " .
+            "from ticket where id > 1 ",
+    );
+    my $TicketsMonts;
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+
+        # months on unix time
+        $TicketsMonts = $Row[0] - $Row[1];
+    }
+    $TicketsMonts = $TicketsMonts / $MonthInSeconds;
+    if ( $TicketsMonts > 1 ) {
+        $TicketWindowTime = sprintf( "%.2f", $TicketsMonts );
+    }
+    my $AverageTicketsMonth = $Search{1}->{Result} / $TicketWindowTime;
+    $Message .= " - Tickets per month (avg): " . $AverageTicketsMonth . "\n";
 
     #  attachments
     my $HowManyAttachments    = '';
