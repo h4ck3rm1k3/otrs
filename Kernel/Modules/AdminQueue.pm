@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminQueue.pm - to add/update/delete queues
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminQueue.pm,v 1.82 2011/09/08 20:51:33 en Exp $
+# $Id: AdminQueue.pm,v 1.77.2.1 2011/02/01 23:36:11 mp Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Signature;
 use Kernel::System::SystemAddress;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.82 $) [1];
+$VERSION = qw($Revision: 1.77.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -83,8 +83,8 @@ sub Run {
         if ($CryptObjectSMIME) {
             my @PrivateKeys = $CryptObjectSMIME->PrivateSearch( Search => $QueueData{Email}, );
             for my $DataRef (@PrivateKeys) {
-                $KeyList{"SMIME::Detached::$DataRef->{Filename}"}
-                    = "SMIME-Detached: $DataRef->{Filename} [$DataRef->{EndDate}] $DataRef->{Email}";
+                $KeyList{"SMIME::Detached::$DataRef->{Hash}"}
+                    = "SMIME-Detached: $DataRef->{Hash} $DataRef->{Email}";
             }
         }
     }
@@ -283,7 +283,7 @@ sub Run {
 
         # check needed data
         for my $Needed (
-            qw(Name GroupID SystemAddressID SalutationID SignatureID ValidID FollowUpID)
+            qw(Name GroupID SystemAddressID SalutationID SignatureID ValidID FollowUpID )
             )
         {
             if ( !$GetParam{$Needed} ) {
@@ -415,10 +415,10 @@ sub _Edit {
                 Valid => 1,
             ),
         },
-        Translation => 0,
-        Name        => 'GroupID',
-        SelectedID  => $Param{GroupID},
-        Class       => 'Validate_Required ' . ( $Param{Errors}->{'GroupIDInvalid'} || '' ),
+        LanguageTranslation => 0,
+        Name                => 'GroupID',
+        SelectedID          => $Param{GroupID},
+        Class               => 'Validate_Required ' . ( $Param{Errors}->{'GroupIDInvalid'} || '' ),
     );
 
     my $ParentQueue = '';
@@ -447,43 +447,13 @@ sub _Edit {
             delete $CleanHash{$Key};
         }
     }
-
-    # get list type
-    my $ListType = $Self->{ConfigObject}->Get('Ticket::Frontend::ListType');
-
-    # verify if queue list should be a list or a tree
-    if ( $ListType eq 'tree' ) {
-        $Param{QueueOption} = $Self->{LayoutObject}->AgentQueueListOption(
-            Data => { '' => ' -', %CleanHash, },
-            Name => 'ParentQueueID',
-            Selected       => $ParentQueue,
-            MaxLevel       => 3,
-            OnChangeSubmit => 0,
-        );
-    }
-    else {
-
-        # leave only queues with 3 levels, because max allowed level is 4:
-        # new queue + 3 levels of parent queue = 4 levels
-        for my $Key ( keys %CleanHash ) {
-            my $QueueName      = $CleanHash{$Key};
-            my @QueueNameLevel = split( ::, $QueueName );
-            my $QueueLevel     = $#QueueNameLevel + 1;
-            if ( $QueueLevel > 3 ) {
-                delete $CleanHash{$Key};
-            }
-        }
-
-        $Param{QueueOption} = $Self->{LayoutObject}->BuildSelection(
-            Data          => \%CleanHash,
-            Name          => 'ParentQueueID',
-            SelectedValue => $ParentQueue,
-            PossibleNone  => 1,
-            HTMLQuote     => 0,
-            Translation   => 0,
-        );
-    }
-
+    $Param{QueueOption} = $Self->{LayoutObject}->AgentQueueListOption(
+        Data => { '' => ' -', %CleanHash, },
+        Name => 'ParentQueueID',
+        Selected       => $ParentQueue,
+        MaxLevel       => 4,
+        OnChangeSubmit => 0,
+    );
     $Param{QueueLongOption} = $Self->{LayoutObject}->AgentQueueListOption(
         Data => { $Self->{QueueObject}->QueueList( Valid => 0 ), },
         Name => 'QueueID',
@@ -504,31 +474,27 @@ sub _Edit {
     );
     $Param{FirstResponseNotifyOptionStrg} = $Self->{LayoutObject}->BuildSelection(
         Data         => \%NotifyLevelList,
-        Translation  => 0,
         Name         => 'FirstResponseNotify',
         SelectedID   => $Param{FirstResponseNotify},
         PossibleNone => 1,
     );
     $Param{UpdateNotifyOptionStrg} = $Self->{LayoutObject}->BuildSelection(
         Data         => \%NotifyLevelList,
-        Translation  => 0,
         Name         => 'UpdateNotify',
         SelectedID   => $Param{UpdateNotify},
         PossibleNone => 1,
     );
     $Param{SolutionNotifyOptionStrg} = $Self->{LayoutObject}->BuildSelection(
         Data         => \%NotifyLevelList,
-        Translation  => 0,
         Name         => 'SolutionNotify',
         SelectedID   => $Param{SolutionNotify},
         PossibleNone => 1,
     );
     $Param{SignatureOption} = $Self->{LayoutObject}->BuildSelection(
         Data => { $Self->{SignatureObject}->SignatureList( Valid => 1 ), },
-        Translation => 0,
-        Name        => 'SignatureID',
-        SelectedID  => $Param{SignatureID},
-        Class       => 'Validate_Required ' . ( $Param{Errors}->{'SignatureIDInvalid'} || '' ),
+        Name => 'SignatureID',
+        SelectedID => $Param{SignatureID},
+        Class => 'Validate_Required ' . ( $Param{Errors}->{'SignatureIDInvalid'} || '' ),
     );
     $Param{FollowUpLockYesNoOption} = $Self->{LayoutObject}->BuildSelection(
         Data       => $Self->{ConfigObject}->Get('YesNoOptions'),
@@ -538,11 +504,10 @@ sub _Edit {
 
     $Param{SystemAddressOption} = $Self->{LayoutObject}->BuildSelection(
         Data => { $Self->{SystemAddressObject}->SystemAddressList( Valid => 1 ), },
-        Translation => 0,
-        Name        => 'SystemAddressID',
-        SelectedID  => $Param{SystemAddressID},
-        Max         => 200,
-        Class       => 'Validate_Required ' . ( $Param{Errors}->{'SystemAddressIDInvalid'} || '' ),
+        Name => 'SystemAddressID',
+        SelectedID => $Param{SystemAddressID},
+        Max        => 200,
+        Class      => 'Validate_Required ' . ( $Param{Errors}->{'SystemAddressIDInvalid'} || '' ),
     );
 
     my %DefaultSignKeyList = ();
@@ -560,10 +525,9 @@ sub _Edit {
     );
     $Param{SalutationOption} = $Self->{LayoutObject}->BuildSelection(
         Data => { $Self->{SalutationObject}->SalutationList( Valid => 1 ), },
-        Translation => 0,
-        Name        => 'SalutationID',
-        SelectedID  => $Param{SalutationID},
-        Class       => 'Validate_Required ' . ( $Param{Errors}->{'SalutationIDInvalid'} || '' ),
+        Name => 'SalutationID',
+        SelectedID => $Param{SalutationID},
+        Class => 'Validate_Required ' . ( $Param{Errors}->{'SalutationIDInvalid'} || '' ),
     );
     $Param{FollowUpOption} = $Self->{LayoutObject}->BuildSelection(
         Data => {
@@ -588,10 +552,9 @@ sub _Edit {
         }
     }
     $Param{CalendarOption} = $Self->{LayoutObject}->BuildSelection(
-        Data        => \%Calendar,
-        Translation => 0,
-        Name        => 'Calendar',
-        SelectedID  => $Param{Calendar},
+        Data       => \%Calendar,
+        Name       => 'Calendar',
+        SelectedID => $Param{Calendar},
     );
 
     $Self->{LayoutObject}->Block(
