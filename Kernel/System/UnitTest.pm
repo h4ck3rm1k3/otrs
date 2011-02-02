@@ -2,7 +2,7 @@
 # Kernel/System/UnitTest.pm - the global test wrapper
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: UnitTest.pm,v 1.60 2011/10/10 14:06:19 ep Exp $
+# $Id: UnitTest.pm,v 1.45.2.1 2011/02/02 09:20:07 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,8 +14,10 @@ package Kernel::System::UnitTest;
 use strict;
 use warnings;
 
+use Storable qw();
+
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.60 $) [1];
+$VERSION = qw($Revision: 1.45.2.1 $) [1];
 
 =head1 NAME
 
@@ -147,7 +149,7 @@ sub Run {
 
     my @Files = $Self->{MainObject}->DirectoryRead(
         Directory => $Directory,
-        Filter => [ '*.t', '*/*.t', '*/*/*.t', '*/*/*/*.t', '*/*/*/*/*.t', '*/*/*/*/*/*.t' ],
+        Filter => [ '*.t', '*/*.t' ],
     );
 
     my $StartTime = $Self->{TimeObject}->SystemTime();
@@ -198,14 +200,11 @@ sub Run {
     $ResultSummary{Host}    = $Self->{ConfigObject}->Get('FQDN');
     $ResultSummary{Perl}    = sprintf "%vd", $^V;
     $ResultSummary{OS}      = $^O;
-
     if ( -e '/etc/SuSE-release' ) {
-
         my $ConfigFile = $Self->{MainObject}->FileRead(
             Location => '/etc/SuSE-release',
             Result   => 'ARRAY',
         );
-
         if ( $ConfigFile && $ConfigFile->[0] ) {
             $ResultSummary{Vendor} = $ConfigFile->[0];
         }
@@ -214,26 +213,22 @@ sub Run {
         }
     }
     elsif ( -e '/etc/fedora-release' ) {
-
         my $ConfigFile = $Self->{MainObject}->FileRead(
             Location => '/etc/fedora-release',
             Result   => 'ARRAY',
         );
-
         if ( $ConfigFile && $ConfigFile->[0] ) {
             $ResultSummary{Vendor} = $ConfigFile->[0];
         }
         else {
-            $ResultSummary{Vendor} = 'Fedora unknown';
+            $ResultSummary{Vendor} = 'fedora unknown';
         }
     }
     elsif ( -e '/etc/redhat-release' ) {
-
         my $ConfigFile = $Self->{MainObject}->FileRead(
             Location => '/etc/redhat-release',
             Result   => 'ARRAY',
         );
-
         if ( $ConfigFile && $ConfigFile->[0] ) {
             $ResultSummary{Vendor} = $ConfigFile->[0];
         }
@@ -242,88 +237,37 @@ sub Run {
         }
     }
     elsif ( -e '/etc/lsb-release' ) {
-
         my $ConfigFile = $Self->{MainObject}->FileRead(
             Location => '/etc/lsb-release',
             Result   => 'ARRAY',
         );
-
         if ( $ConfigFile && $ConfigFile->[0] ) {
             $ConfigFile->[0] =~ s/DISTRIB_ID=//;
             $ResultSummary{Vendor} = $ConfigFile->[0];
-            if ( $ConfigFile->[1] ) {
-                $ConfigFile->[1] =~ s/DISTRIB_RELEASE=//;
-                chomp $ResultSummary{Vendor};
-                $ResultSummary{Vendor} .= ' ' . $ConfigFile->[1];
-            }
-            else {
-                $ResultSummary{Vendor} .= ' (unknown release)';
-            }
+            $ConfigFile->[1] =~ s/DISTRIB_RELEASE=//;
+            chomp( $ResultSummary{Vendor} );
+            $ResultSummary{Vendor} .= ' ' . $ConfigFile->[1];
         }
         else {
-            $ResultSummary{Vendor} = 'Ubuntu unknown';
+            $ResultSummary{Vendor} = 'ubuntu unknown';
         }
     }
     elsif ( -e '/etc/debian_version' ) {
-
         my $ConfigFile = $Self->{MainObject}->FileRead(
             Location => '/etc/debian_version',
             Result   => 'ARRAY',
         );
-
         if ( $ConfigFile && $ConfigFile->[0] ) {
-            $ResultSummary{Vendor} = 'Debian ' . $ConfigFile->[0];
+            $ResultSummary{Vendor} = 'debian ' . $ConfigFile->[0];
         }
         else {
-            $ResultSummary{Vendor} = 'Debian unknown';
-        }
-    }
-    elsif ( -e '/etc/gentoo-release' ) {
-
-        my $ConfigFile = $Self->{MainObject}->FileRead(
-            Location => '/etc/gentoo-release',
-            Result   => 'ARRAY',
-        );
-
-        if ( $ConfigFile && $ConfigFile->[0] ) {
-            $ResultSummary{Vendor} = $ConfigFile->[0];
-        }
-        else {
-            $ResultSummary{Vendor} = 'Gentoo unknown';
-        }
-    }
-    elsif ( $^O eq 'freebsd' ) {
-
-        my $Release = `uname -r`;
-        $ResultSummary{Vendor} = 'FreeBSD ' . $Release;
-    }
-    elsif ( $^O eq 'MSWin32' ) {
-
-        $ResultSummary{Vendor} = 'MS Windows unknown';
-
-        my @Release = `systeminfo`;
-
-        for my $Row (@Release) {
-
-            my ($Name) = $Row =~ m{ \A OS \s Name: \s+ (.+?) \s* \z }xms;
-
-            if ($Name) {
-                $Name =~ s{Microsoft}{MS}xmsg;
-                $ResultSummary{Vendor} = $Name;
-            }
-
-            my ($Version) = $Row =~ m{ \A OS \s Version: \s+ (.+?) \s* \z }xms;
-
-            if ($Version) {
-                $ResultSummary{Vendor} .= ' ' . $Version;
-            }
+            $ResultSummary{Vendor} = 'debian unknown';
         }
     }
     else {
         $ResultSummary{Vendor} = 'unknown';
     }
-
-    chomp $ResultSummary{Vendor};
+    chomp( $ResultSummary{Vendor} );
     $ResultSummary{Database}  = $Self->{DBObject}->{'DB::Type'};
     $ResultSummary{TestOk}    = $Self->{TestCountOk};
     $ResultSummary{TestNotOk} = $Self->{TestCountNotOk};
@@ -549,9 +493,9 @@ Where $ParamA and $ParamB must be references to a structure (scalar, list or has
 Returns 1 if the data structures are the same, or undef otherwise.
 
     my $IsDeeplyResult = $UnitTestObject->IsDeeply(
-        \%ResultHash,           # test data
-        \%ExpectedHash,         # expected value
-        'Dummy Test Name',
+        \%ResultHash,           # test data
+        \%ExpectedHash,         # expected value
+        'Dummy Test Name',
     );
 
 =cut
@@ -748,12 +692,8 @@ sub _DataDiff {
         # compare %A with %B and remove it if checked
         for my $Key ( keys %A ) {
 
-            # Check if both are undefined
-            if ( !defined $A{$Key} && !defined $B{$Key} ) {
-                delete $A{$Key};
-                delete $B{$Key};
-                next;
-            }
+            # do nothing, it's ok
+            next if !defined $A{$Key} && !defined $B{$Key};
 
             # return diff, because its different
             return 1 if !defined $A{$Key} || !defined $B{$Key};
@@ -924,6 +864,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.60 $ $Date: 2011/10/10 14:06:19 $
+$Revision: 1.45.2.1 $ $Date: 2011/02/02 09:20:07 $
 
 =cut
