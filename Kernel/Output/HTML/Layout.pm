@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/Layout.pm - provides generic HTML output
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Layout.pm,v 1.380 2012/01/23 13:45:30 mg Exp $
+# $Id: Layout.pm,v 1.351.2.1 2011/02/03 21:37:53 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -11,18 +11,18 @@
 
 package Kernel::Output::HTML::Layout;
 
+use lib '../../';
+
 use strict;
 use warnings;
 
 use Kernel::Language;
 use Kernel::System::HTMLUtils;
 use Kernel::System::JSON;
-
 use Mail::Address;
-use URI::Escape qw();
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.380 $) [1];
+$VERSION = qw($Revision: 1.351.2.1 $) [1];
 
 =head1 NAME
 
@@ -78,7 +78,7 @@ create a new object
         LogObject     => $LogObject,
         MainObject    => $MainObject,
         TimeObject    => $TimeObject,
-        ParamObject   => $RequestObject,
+        RequestObject => $RequestObject,
         EncodeObject  => $EncodeObject,
         Lang          => 'de',
     );
@@ -255,17 +255,12 @@ sub new {
         elsif ( $HttpUserAgent =~ /safari/ ) {
             $Self->{Browser} = 'Safari';
 
-            # if it's an iPad/iPhone with iOS5 the rte can be enabled
-            if ( $HttpUserAgent =~ /(ipad|iphone);.*cpu.*os 5_/ ) {
-                $Self->{BrowserRichText} = 1;
-            }
-
-            # on iphone (with older iOS) disable rich text editor
-            elsif ( $HttpUserAgent =~ /iphone\sos/ ) {
+            # on iphone disable rich text editor
+            if ( $HttpUserAgent =~ /iphone\sos/ ) {
                 $Self->{BrowserRichText} = 0;
             }
 
-            # on ipad (with older iOS) disable rich text editor
+            # on ipad disable rich text editor
             elsif ( $HttpUserAgent =~ /ipad;\s/ ) {
                 $Self->{BrowserRichText} = 0;
             }
@@ -374,22 +369,13 @@ sub new {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message =>
-                "No existing template directory found ('$Self->{TemplateDir}')!.
-                Default theme used instead.",
+                "No existing template directory found ('$Self->{TemplateDir}')! Check your Home in Kernel/Config.pm",
         );
-
-        # Set TemplateDir to 'Standard' as a fallback and check if it exists.
-        $Theme = 'Standard';
-        $Self->{TemplateDir} = $Self->{ConfigObject}->Get('TemplateDir') . '/HTML/' . $Theme;
-        if ( !-e $Self->{TemplateDir} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message =>
-                    "No existing template directory found ('$Self->{TemplateDir}')! Check your Home in Kernel/Config.pm",
-            );
-            $Self->FatalDie();
-        }
+        $Self->FatalDie();
     }
+
+# FRAMEWORK-2.5: define $Env{"Images"} (only for compat till 2.5, use $Config{"Frontend::ImagePath"})
+    $Self->{Images} = $Self->{ConfigObject}->Get('Frontend::ImagePath');
 
     # load sub layout files
     my $Dir = $Self->{ConfigObject}->Get('TemplateDir') . '/HTML';
@@ -407,10 +393,6 @@ sub new {
                 push @ISA, "Kernel::Output::HTML::$File";
             }
         }
-    }
-
-    if ( $Self->{SessionID} && $Self->{UserChallengeToken} ) {
-        $Self->{ChallengeTokenParam} = "ChallengeToken=$Self->{UserChallengeToken};";
     }
 
     return $Self;
@@ -469,8 +451,8 @@ Using a template file:
 Using a template string:
 
     my $HTML = $LayoutObject->Output(
-        Template => '<b>$QData{"SomeKey"}</b>',
-        Data     => \%Param,
+        Template     => '<b>$QData{"SomeKey"}</b>',
+        Data         => \%Param,
     );
 
 Additional parameters:
@@ -591,37 +573,32 @@ sub Output {
         TemplateFile => $Param{TemplateFile} || '',
     );
 
-    # Improve dtl performance of large pages, see also bug#7267.
-    # Thanks to Stelios Gikas <stelios.gikas@noris.net>!
-    my @OutputLines = split /\n/, $Output;
-    for my $Output (@OutputLines) {
-
-        # do time translation (with seconds)
-        $Output =~ s{
+    # do time translation (with seconds)
+    $Output =~ s{
         \$TimeLong{"(.*?)"}
     }
     {
         $Self->{LanguageObject}->FormatTimeString($1);
     }egx;
 
-        # do time translation (without seconds)
-        $Output =~ s{
+    # do time translation (without seconds)
+    $Output =~ s{
         \$TimeShort{"(.*?)"}
     }
     {
         $Self->{LanguageObject}->FormatTimeString($1, undef, 'NoSeconds');
     }egx;
 
-        # do date translation
-        $Output =~ s{
+    # do date translation
+    $Output =~ s{
         \$Date{"(.*?)"}
     }
     {
         $Self->{LanguageObject}->FormatTimeString($1, 'DateFormatShort');
     }egx;
 
-        # do translation
-        $Output =~ s{
+    # do translation
+    $Output =~ s{
         \$Text{"(.*?)"}
     }
     {
@@ -630,7 +607,7 @@ sub Output {
         );
     }egx;
 
-        $Output =~ s{
+    $Output =~ s{
         \$JSText{"(.*?)"}
     }
     {
@@ -640,8 +617,8 @@ sub Output {
         );
     }egx;
 
-        # do html quote
-        $Output =~ s{
+    # do html quote
+    $Output =~ s{
         \$Quote{"(.*?)"}
     }
     {
@@ -656,9 +633,6 @@ sub Output {
             $Self->Ascii2Html(Text => $Text);
         }
     }egx;
-
-    }
-    $Output = join "\n", @OutputLines;
 
     # rewrite forms, add challenge token : <form action="index.pl" method="get">
     if ( $Self->{SessionID} && $Self->{UserChallengeToken} ) {
@@ -710,7 +684,7 @@ sub Output {
             my $End = $3;
             if (lc $Target =~ m{^http s? :}smx || !$Self->{SessionID} ||
                 $Target !~ /\.(pl|php|cgi|fcg|fcgi|fpl)(\?|$)/ ||
-                $Target =~ /\Q$Self->{SessionName}\E=/) {
+                $Target =~ /\Q$Self->{SessionName}\E/) {
                 $AHref.$Target.$End;
             }
             else {
@@ -983,7 +957,7 @@ sub Login {
         for my $CSSStatement ( keys %AgentLogo ) {
             if ( $CSSStatement eq 'URL' ) {
                 my $WebPath = '';
-                if ( $AgentLogo{$CSSStatement} !~ /(http|ftp|https):\//i ) {
+                if ( $AgentLogo{$CSSStatement} !~ /http:\/\// ) {
                     $WebPath = $Self->{ConfigObject}->Get('Frontend::WebPath');
                 }
                 $Data{'URL'} = 'url(' . $WebPath . $AgentLogo{$CSSStatement} . ')';
@@ -1141,6 +1115,10 @@ sub Error {
             Type => 'Error',
             What => $_
         ) || '';
+        $Param{$Backend} = $Self->Ascii2Html(
+            Text           => $Param{$Backend},
+            HTMLResultMode => 1,
+        );
     }
     if ( !$Param{BackendMessage} && !$Param{BackendTraceback} ) {
         $Self->{LogObject}->Log(
@@ -1153,6 +1131,10 @@ sub Error {
                 Type => 'Error',
                 What => $_
             ) || '';
+            $Param{$Backend} = $Self->Ascii2Html(
+                Text           => $Param{$Backend},
+                HTMLResultMode => 1,
+            );
         }
     }
     if ( !$Param{Message} ) {
@@ -1183,6 +1165,10 @@ sub Warning {
         Type => 'Error',
         What => 'Message',
         ) || '';
+    $Param{BackendMessage} = $Self->Ascii2Html(
+        Text           => $Param{BackendMessage},
+        HTMLResultMode => 1,
+    );
 
     if ( !$Param{Message} ) {
         $Param{Message} = $Param{BackendMessage};
@@ -1199,30 +1185,29 @@ create notify lines
     infos, the text will be translated
 
     my $Output = $LayoutObject->Notify(
-        Priority => 'Warning',
+        Priority => 'warning',
         Info => 'Some Info Message',
     );
 
     data with link, the text will be translated
 
     my $Output = $LayoutObject->Notify(
-        Priority  => 'Warning',
-        Data      => '$Text{"Some DTL Stuff"}',
-        Link      => 'http://example.com/',
-        LinkClass => 'some_CSS_class',              # optional
+        Priority => 'warning',
+        Data => '$Text{"Some DTL Stuff"}',
+        Link => 'http://example.com/',
     );
 
     errors, the text will be translated
 
     my $Output = $LayoutObject->Notify(
-        Priority => 'Error',
+        Priority => 'error',
         Info => 'Some Error Message',
     );
 
     errors from log backend, if no error extists, a '' will be returned
 
     my $Output = $LayoutObject->Notify(
-        Priority => 'Error',
+        Priority => 'error',
     );
 
 =cut
@@ -1259,10 +1244,7 @@ sub Notify {
     if ( $Param{Link} ) {
         $Self->Block(
             Name => 'LinkStart',
-            Data => {
-                LinkStart => $Param{Link},
-                LinkClass => $Param{LinkClass} || '',
-            },
+            Data => { LinkStart => $Param{Link}, },
         );
     }
     if ( $Param{Data} ) {
@@ -1350,7 +1332,7 @@ sub Header {
         for my $CSSStatement ( keys %AgentLogo ) {
             if ( $CSSStatement eq 'URL' ) {
                 my $WebPath = '';
-                if ( $AgentLogo{$CSSStatement} !~ /(http|ftp|https):\//i ) {
+                if ( $AgentLogo{$CSSStatement} !~ /http:\/\// ) {
                     $WebPath = $Self->{ConfigObject}->Get('Frontend::WebPath');
                 }
                 $Data{'URL'} = 'url(' . $WebPath . $AgentLogo{$CSSStatement} . ')';
@@ -1866,22 +1848,43 @@ sub HTMLLinkQuote {
 
 =item LinkEncode()
 
-perform URL encoding on query string parameter names or values.
+do some url encoding - e. g. replace + with %2B in links
 
-    my $ParamValueEncoded = $LayoutObject->LinkEncode($ParamValue);
-
-Don't encode entire URLs, because this will make them invalid
-(?, & and ; will be encoded as well). Only pass one parameter name
-or value at a time.
+    my $URLEncoded = $LayoutObject->LinkEncode($URL);
 
 =cut
+
+#TODO: Use an external perl module from CPAN for this function.
 
 sub LinkEncode {
     my ( $Self, $Link ) = @_;
 
     return if !defined $Link;
 
-    return URI::Escape::uri_escape_utf8($Link);
+    $Link =~ s/%/%25/g;
+    $Link =~ s/&/%26/g;
+    $Link =~ s/=/%3D/g;
+    $Link =~ s/\!/%21/g;
+    $Link =~ s/"/%22/g;
+    $Link =~ s/\#/%23/g;
+    $Link =~ s/\$/%24/g;
+    $Link =~ s/'/%27/g;
+    $Link =~ s/,/%2C/g;
+    $Link =~ s/\+/%2B/g;
+    $Link =~ s/\?/%3F/g;
+    $Link =~ s/\|/%7C/g;
+    $Link =~ s/\//\%2F/g;
+    $Link =~ s/�/\%A7/g;
+
+    # According to the URL encoding RFC, the path segment of an URL must use %20 for space,
+    # while in the query string + is used normally. However, IIS does not understand + in the
+    # path segment, but understands %20 in the query string, like all others do as well.
+    # Therefore we use %20.
+    $Link =~ s/ /%20/g;
+    $Link =~ s/:/\%3A/g;
+    $Link =~ s/;/\%3B/g;
+    $Link =~ s/@/\%40/g;
+    return $Link;
 }
 
 sub CustomerAgeInHours {
@@ -1992,9 +1995,9 @@ build a html option element based on given data
     );
 
     my $HashRef = {
-        Key1 => 'Value1',
-        Key2 => 'Value2',
-        Key3 => 'Value3',
+        'Key1' => 'Value1',
+        'Key2' => 'Value2',
+        'Key3' => 'Value3',
     };
 
     my $ArrayRef = [
@@ -2006,21 +2009,21 @@ build a html option element based on given data
 
     my $ArrayHashRef = [
         {
-            Key   => '1',
+            Key => '1',
             Value => 'Value1',
         },
         {
-            Key      => '2',
-            Value    => 'Value1::Subvalue1',
+            Key => '2',
+            Value => 'Value1::Subvalue1',
             Selected => 1,
         },
         {
-            Key   => '3',
+            Key => '3',
             Value => 'Value1::Subvalue2',
         },
         {
-            Key      => '4',
-            Value    => 'Value2',
+            Key => '4',
+            Value => 'Value2',
             Disabled => 1,
         }
     ];
@@ -2036,15 +2039,6 @@ sub BuildSelection {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
-    }
-
-    # The parameters 'Ajax' and 'OnChange' are exclusive
-    if ( $Param{Ajax} && $Param{OnChange} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "The parameters 'OnChange' and 'Ajax' exclude each other!"
-        );
-        return;
     }
 
     # set OnChange if AJAX is used
@@ -2270,7 +2264,7 @@ returns browser output to display/download a attachment
         Content     => $Content,
     );
 
-    or for AJAX html snippets
+    or for AJAX html snipps
 
     $HTML = $LayoutObject->Attachment(
         Type        => 'inline',        # optional, default: attachment, possible: inline|attachment
@@ -2360,7 +2354,7 @@ sub Attachment {
     }
 
     # reset binmode, don't use utf8
-    binmode STDOUT, ':bytes';
+    binmode STDOUT;
 
     return $Output;
 }
@@ -2539,21 +2533,16 @@ sub PageNavBar {
         KeepScriptTags => $Param{KeepScriptTags},
     );
 
-    # only show total amount of pages if there is more than one
-    if ( $Pages > 1 ) {
-        $Param{NavBarLong} = "- \$Text{\"Page\"}: $Param{SearchNavBar}";
-    }
-    else {
-        $Param{SearchNavBar} = '';
-    }
+    # return if only 1 page is shown
+    return ( Link => $Param{Link} ) if $Pages eq 1;
 
     # return data
     return (
         TotalHits      => $Param{TotalHits},
         Result         => $Param{Results},
-        ResultLong     => "$Param{Results} \$Text{\"of\"} $Param{TotalHits}",
+        ResultLong     => "$Param{Results} \$Text{\"of\"} $Param{TotalHits} -",
         SiteNavBar     => $Param{SearchNavBar},
-        SiteNavBarLong => $Param{NavBarLong},
+        SiteNavBarLong => "\$Text{\"Page\"}: $Param{SearchNavBar}",
         Link           => $Param{Link},
     );
 }
@@ -2749,7 +2738,7 @@ sub NavigationBar {
     return $Output;
 }
 
-sub TransformDateSelection {
+sub TransfromDateSelection {
     my ( $Self, %Param ) = @_;
 
     # get key prefix
@@ -2848,12 +2837,12 @@ sub BuildDateSelection {
             }
         }
         $Param{Year} = $Self->BuildSelection(
-            Name        => $Prefix . 'Year',
-            Data        => \%Year,
-            SelectedID  => int( $Param{ $Prefix . 'Year' } || $Y ),
-            Translation => 0,
-            Class       => $Validate ? 'Validate_DateYear' : '',
-            Title       => $Self->{LanguageObject}->Get('Year'),
+            Name                => $Prefix . 'Year',
+            Data                => \%Year,
+            SelectedID          => int( $Param{ $Prefix . 'Year' } || $Y ),
+            LanguageTranslation => 0,
+            Class               => $Validate ? 'Validate_DateYear' : '',
+            Title               => $Self->{LanguageObject}->Get('Year'),
         );
     }
     else {
@@ -2874,12 +2863,12 @@ sub BuildDateSelection {
             $Month{$_} = $Tmp;
         }
         $Param{Month} = $Self->BuildSelection(
-            Name        => $Prefix . 'Month',
-            Data        => \%Month,
-            SelectedID  => int( $Param{ $Prefix . 'Month' } || $M ),
-            Translation => 0,
-            Class       => $Validate ? 'Validate_DateMonth' : '',
-            Title       => $Self->{LanguageObject}->Get('Month'),
+            Name                => $Prefix . 'Month',
+            Data                => \%Month,
+            SelectedID          => int( $Param{ $Prefix . 'Month' } || $M ),
+            LanguageTranslation => 0,
+            Class               => $Validate ? 'Validate_DateMonth' : '',
+            Title               => $Self->{LanguageObject}->Get('Month'),
         );
     }
     else {
@@ -2910,12 +2899,12 @@ sub BuildDateSelection {
             $Day{$_} = $Tmp;
         }
         $Param{Day} = $Self->BuildSelection(
-            Name        => $Prefix . 'Day',
-            Data        => \%Day,
-            SelectedID  => int( $Param{ $Prefix . 'Day' } || $D ),
-            Translation => 0,
-            Class       => "$DateValidateClasses $Class",
-            Title       => $Self->{LanguageObject}->Get('Day'),
+            Name                => $Prefix . 'Day',
+            Data                => \%Day,
+            SelectedID          => int( $Param{ $Prefix . 'Day' } || $D ),
+            LanguageTranslation => 0,
+            Class               => "$DateValidateClasses $Class",
+            Title               => $Self->{LanguageObject}->Get('Day'),
         );
     }
     else {
@@ -2942,9 +2931,9 @@ sub BuildDateSelection {
                 SelectedID => defined( $Param{ $Prefix . 'Hour' } )
                 ? int( $Param{ $Prefix . 'Hour' } )
                 : int($h),
-                Translation => 0,
-                Class       => $Validate ? ( 'Validate_DateHour ' . $Class ) : $Class,
-                Title       => $Self->{LanguageObject}->Get('Hours'),
+                LanguageTranslation => 0,
+                Class               => $Validate ? ( 'Validate_DateHour ' . $Class ) : $Class,
+                Title               => $Self->{LanguageObject}->Get('Hours'),
             );
         }
         else {
@@ -2974,9 +2963,9 @@ sub BuildDateSelection {
                 SelectedID => defined( $Param{ $Prefix . 'Minute' } )
                 ? int( $Param{ $Prefix . 'Minute' } )
                 : int($m),
-                Translation => 0,
-                Class       => $Validate ? ( 'Validate_DateMinute ' . $Class ) : $Class,
-                Title       => $Self->{LanguageObject}->Get('Minutes'),
+                LanguageTranslation => 0,
+                Class               => $Validate ? ( 'Validate_DateMinute ' . $Class ) : $Class,
+                Title               => $Self->{LanguageObject}->Get('Minutes'),
             );
         }
         else {
@@ -3123,7 +3112,7 @@ sub CustomerLogin {
         for my $CSSStatement ( keys %CustomerLogo ) {
             if ( $CSSStatement eq 'URL' ) {
                 my $WebPath = '';
-                if ( $CustomerLogo{$CSSStatement} !~ /(http|ftp|https):\//i ) {
+                if ( $CustomerLogo{$CSSStatement} !~ /http:\/\// ) {
                     $WebPath = $Self->{ConfigObject}->Get('Frontend::WebPath');
                 }
                 $Data{'URL'} = 'url(' . $WebPath . $CustomerLogo{$CSSStatement} . ')';
@@ -3206,25 +3195,19 @@ sub CustomerHeader {
         }
     }
 
-    my $Frontend;
+    # run header meta modules only on customer frontends
     if ( $Self->{ConfigObject}->Get('CustomerFrontend::Module')->{ $Self->{Action} } ) {
-        $Frontend = 'Customer';
-    }
-    else {
-        $Frontend = 'Public';
-    }
+        my $HeaderMetaModule = $Self->{ConfigObject}->Get('CustomerFrontend::HeaderMetaModule');
+        if ( ref $HeaderMetaModule eq 'HASH' ) {
+            my %Jobs = %{$HeaderMetaModule};
+            for my $Job ( sort keys %Jobs ) {
 
-    # run header meta modules for customer and public frontends
-    my $HeaderMetaModule = $Self->{ConfigObject}->Get( $Frontend . 'Frontend::HeaderMetaModule' );
-    if ( ref $HeaderMetaModule eq 'HASH' ) {
-        my %Jobs = %{$HeaderMetaModule};
-        for my $Job ( sort keys %Jobs ) {
-
-            # load and run module
-            next if !$Self->{MainObject}->Require( $Jobs{$Job}->{Module} );
-            my $Object = $Jobs{$Job}->{Module}->new( %{$Self}, LayoutObject => $Self );
-            next if !$Object;
-            $Object->Run( %Param, Config => $Jobs{$Job} );
+                # load and run module
+                next if !$Self->{MainObject}->Require( $Jobs{$Job}->{Module} );
+                my $Object = $Jobs{$Job}->{Module}->new( %{$Self}, LayoutObject => $Self );
+                next if !$Object;
+                $Object->Run( %Param, Config => $Jobs{$Job} );
+            }
         }
     }
 
@@ -3246,7 +3229,7 @@ sub CustomerHeader {
         for my $CSSStatement ( keys %CustomerLogo ) {
             if ( $CSSStatement eq 'URL' ) {
                 my $WebPath = '';
-                if ( $CustomerLogo{$CSSStatement} !~ /(http|ftp|https):\//i ) {
+                if ( $CustomerLogo{$CSSStatement} !~ /http:\/\// ) {
                     $WebPath = $Self->{ConfigObject}->Get('Frontend::WebPath');
                 }
                 $Data{'URL'} = 'url(' . $WebPath . $CustomerLogo{$CSSStatement} . ')';
@@ -3533,6 +3516,10 @@ sub CustomerError {
             Type => 'Error',
             What => $_
         ) || '';
+        $Param{ 'Backend' . $_ } = $Self->Ascii2Html(
+            Text           => $Param{ 'Backend' . $_ },
+            HTMLResultMode => 1,
+        );
     }
     if ( !$Param{BackendMessage} && !$Param{BackendTraceback} ) {
         $Self->{LogObject}->Log(
@@ -3544,6 +3531,10 @@ sub CustomerError {
                 Type => 'Error',
                 What => $_
             ) || '';
+            $Param{ 'Backend' . $_ } = $Self->Ascii2Html(
+                Text           => $Param{ 'Backend' . $_ },
+                HTMLResultMode => 1,
+            );
         }
     }
 
@@ -3567,6 +3558,10 @@ sub CustomerWarning {
         Type => 'Error',
         What => 'Message',
         ) || '';
+    $Param{BackendMessage} = $Self->Ascii2Html(
+        Text           => $Param{BackendMessage},
+        HTMLResultMode => 1,
+    );
 
     if ( !$Param{Message} ) {
         $Param{Message} = $Param{BackendMessage};
@@ -3720,7 +3715,7 @@ sub _RichTextReplaceLinkOfInlineContent {
 
     # replace image link with content id for uploaded images
     ${ $Param{String} } =~ s{
-        (<img.+?src=("|'))[^>]+ContentID=(.+?)("|')([^>]+>)
+        (<img.+?src=("|')).+?ContentID=(.+?)("|')(.*?>)
     }
     {
         $1 . 'cid:' . $3 . $4 . $5;
@@ -4119,62 +4114,68 @@ sub _Output {
         Template => \$TemplateString,
         TemplateFile => $Param{TemplateFile} || '',
     );
+    my $ID = 0;
+    my %LayerHash;
+    my $OldLayer = 1;
+    for my $Block (@BR) {
 
-    # check if a block structure exists
-    if ( scalar @BR ) {
-
-        # process structure
-        my $BlockStructure;
-        my $LastLayer = $BR[-1]->{Layer};
-        for my $Block (
-            reverse
-            {
-                Data  => $TemplateString,
-                Layer => 0,
-                Name  => 'TemplateString',
-            },
-            @BR
-            )
-        {
-
-            # process and remove substructure (if exists)
-            if (
-                $Block->{Layer} < $LastLayer
-                && ref $BlockStructure->{ $Block->{Layer} + 1 } eq 'HASH'
-                )
-            {
-                for my $SubLayer ( keys %{ $BlockStructure->{ $Block->{Layer} + 1 } } ) {
-                    my $SubLayerString = join '',
-                        @{ $BlockStructure->{ $Block->{Layer} + 1 }->{$SubLayer} };
-                    $Block->{Data}
-                        =~ s{ <!-- [ ] dtl:place_block: $SubLayer [ ] --> }{$SubLayerString}xms;
-                }
-                undef $BlockStructure->{ $Block->{Layer} + 1 };
-            }
-
-            # for safety - clean up old same-level structures
-            elsif ( $Block->{Layer} > $LastLayer ) {
-                undef $BlockStructure->{ $Block->{Layer} };
-            }
-
-            # add to structure
-            unshift @{ $BlockStructure->{ $Block->{Layer} }->{ $Block->{Name} } }, $Block->{Data};
-            $LastLayer = $Block->{Layer};
+        # reset layer counter if we switched on layer lower
+        if ( $Block->{Layer} > $OldLayer ) {
+            $LayerHash{ $Block->{Layer} } = 0;
         }
 
-        # assign result
-        $TemplateString = $BlockStructure->{0}->{TemplateString}->[0];
+        # count current layer
+        $LayerHash{ $Block->{Layer} }++;
 
+        # create current id (1:2:3)
+        undef $ID;
+        for ( my $i = 1; $i <= $Block->{Layer}; $i++ ) {
+            if ( defined $ID ) {
+                $ID .= ':';
+            }
+            if ( defined $LayerHash{$i} ) {
+                $ID .= $LayerHash{$i};
+            }
+        }
+
+        # add block counter to template blocks
+        if ( $Block->{Layer} == 1 ) {
+            $TemplateString =~ s{
+                <!-- [ ] dtl:place_block:($Block->{Name}) [ ] -->
+            }
+            {<!-- dtl:place_block:$1:$LayerHash{$Block->{Layer}} -->}sgxm;
+        }
+
+        # add block counter to in block blocks
+        $Block->{Data} =~ s{
+            <!-- [ ] dtl:place_block:(.+?) [ ] -->
+        }
+        {<!-- dtl:place_block:$1:$ID:- -->}sgxm;
+
+        # count up place_block counter
+        $ID =~ s/^(.*:)(\d+)$/$1-/;
+
+        my $NewID = '';
+        if ( $ID =~ /^(.*:)(\d+)$/ ) {
+            $NewID = $1 . ( $2 + 1 );
+        }
+        elsif ( $ID =~ /^(\d+)$/ ) {
+            $NewID = ( $1 + 1 );
+        }
+        elsif ( $ID =~ /^(.*:)-$/ ) {
+            $NewID = $ID;
+        }
+
+        $TemplateString =~ s{
+            <!-- [ ] dtl:place_block:$Block->{Name}:$ID [ ] -->
+        }
+        {$Block->{Data}<!-- dtl:place_block:$Block->{Name}:$NewID -->}sxm;
+        $OldLayer = $Block->{Layer};
     }
 
     # remove empty blocks and block preferences
     if ( $Param{BlockReplace} ) {
-        my @TemplateBlocks = split '<!-- dtl:place_block:', $TemplateString;
-        $TemplateString = shift @TemplateBlocks || '';
-        for my $TemplateBlock (@TemplateBlocks) {
-            $TemplateBlock =~ s{ \A .+? [ ] --> }{}xms;
-            $TemplateString .= $TemplateBlock;
-        }
+        $TemplateString =~ s{<!-- [ ] dtl:place_block:.+? [ ] --> }{}sgxm;
     }
 
     # process template
@@ -4299,9 +4300,9 @@ create the option hash
     );
 
     my $OptionRef = {
-        Sort         => 'numeric',
+        Sort => 'numeric',
         PossibleNone => 0,
-        Max          => 100,
+        Max => 100,
     }
 
 =cut
@@ -4309,8 +4310,9 @@ create the option hash
 sub _BuildSelectionOptionRefCreate {
     my ( $Self, %Param ) = @_;
 
-    # set SelectedID option
     my $OptionRef = {};
+
+    # set SelectedID option
     if ( defined $Param{SelectedID} ) {
         if ( ref $Param{SelectedID} eq 'ARRAY' ) {
             for my $Key ( @{ $Param{SelectedID} } ) {
@@ -4418,9 +4420,9 @@ create the attribute hash
     );
 
     my $AttributeRef = {
-        name     => 'TheName',
+        name => 'TheName',
         multiple => undef,
-        size     => 5,
+        size => 5,
     }
 
 =cut
@@ -4780,8 +4782,9 @@ create the html string
 sub _BuildSelectionOutput {
     my ( $Self, %Param ) = @_;
 
-    # start generation, if AttributeRef and DataRef was found
     my $String;
+
+    # start generation, if AttributeRef and DataRef was found
     if ( $Param{AttributeRef} && $Param{DataRef} ) {
 
         # generate <select> row
@@ -4883,12 +4886,6 @@ sub _RemoveScriptTags {
     return $Code;
 }
 
-#COMPAT: to 3.0.x and lower (can be removed later)
-sub TransfromDateSelection {
-    my $Self = shift;
-    return $Self->TransformDateSelection(@_);
-}
-
 1;
 
 =end Internal:
@@ -4905,6 +4902,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.380 $ $Date: 2012/01/23 13:45:30 $
+$Revision: 1.351.2.1 $ $Date: 2011/02/03 21:37:53 $
 
 =cut
