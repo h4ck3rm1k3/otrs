@@ -2,31 +2,19 @@
 # Ticket.t - ticket module testscript
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Ticket.t,v 1.101 2011/11/10 21:08:01 cr Exp $
+# $Id: Ticket.t,v 1.68.2.1 2011/02/05 00:05:20 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-use strict;
-use warnings;
-
 use utf8;
-use Kernel::System::UnitTest::Helper;
-use vars (qw($Self));
-
-use Time::HiRes qw( usleep );
-
 use Kernel::Config;
 use Kernel::System::Ticket;
 use Kernel::System::Queue;
 use Kernel::System::User;
 use Kernel::System::PostMaster;
-use Kernel::System::Type;
-use Kernel::System::Service;
-use Kernel::System::SLA;
-use Kernel::System::State;
 
 # create local objects
 my $ConfigObject = Kernel::Config->new();
@@ -42,20 +30,279 @@ my $QueueObject = Kernel::System::Queue->new(
     %{$Self},
     ConfigObject => $ConfigObject,
 );
-my $TypeObject    = Kernel::System::Type->new( %{$Self} );
-my $ServiceObject = Kernel::System::Service->new( %{$Self} );
-my $SLAObject     = Kernel::System::SLA->new( %{$Self} );
-my $HelperObject  = Kernel::System::UnitTest::Helper->new(
-    %{$Self},
-    UnitTestObject => $Self,
-);
-my $StateObject = Kernel::System::State->new(
+
+for my $TicketHook ( 'Ticket#', 'Call#', 'Ticket' ) {
+    for my $TicketSubjectConfig ( 'Right', 'Left' ) {
+
+        $ConfigObject->Set(
+            Key   => 'Ticket::Hook',
+            Value => $TicketHook,
+        );
+        $ConfigObject->Set(
+            Key   => 'Ticket::SubjectFormat',
+            Value => $TicketSubjectConfig,
+        );
+        $ConfigObject->Set(
+            Key   => 'Ticket::NumberGenerator',
+            Value => 'Kernel::System::Ticket::Number::DateChecksum',
+        );
+
+        my $TicketObject = Kernel::System::Ticket->new(
+            %{$Self},
+            ConfigObject => $ConfigObject,
+        );
+
+        # check GetTNByString
+        my $Tn = $TicketObject->TicketCreateNumber() || 'NONE!!!';
+        my $String = 'Re: ' . $TicketObject->TicketSubjectBuild(
+            TicketNumber => $Tn,
+            Subject      => 'Some Test',
+        );
+        my $TnGet = $TicketObject->GetTNByString($String) || 'NOTHING FOUND!!!';
+        $Self->Is(
+            $TnGet,
+            $Tn,
+            "GetTNByString() (DateChecksum: true eq)",
+        );
+        $Self->IsNot(
+            $TicketObject->GetTNByString('Ticket#: 200206231010138') || '',
+            $Tn,
+            "GetTNByString() (DateChecksum: false eq)",
+        );
+        $Self->False(
+            $TicketObject->GetTNByString("Ticket#: 1234567") || 0,
+            "GetTNByString() (DateChecksum: false)",
+        );
+
+        # TicketSubjectClean()
+        # check Ticket::SubjectRe with "RE"
+        $ConfigObject->Set(
+            Key   => 'Ticket::SubjectRe',
+            Value => 'RE',
+        );
+        my $NewSubject = $TicketObject->TicketSubjectClean(
+            TicketNumber => '2004040510440485',
+            Subject      => 'Re: [Ticket#: 2004040510440485] Re: RE: Some Subject',
+        );
+        if ( $NewSubject !~ /^Re:/ ) {
+            $Self->True(
+                1,
+                "TicketSubjectClean() (Re: $NewSubject)",
+            );
+        }
+        else {
+            $Self->True(
+                0,
+                "TicketSubjectClean() (Re: $NewSubject)",
+            );
+        }
+
+        # TicketSubjectClean()
+        $NewSubject = $TicketObject->TicketSubjectClean(
+            TicketNumber => '2004040510440485',
+            Subject => 'Re[5]: [' . $TicketHook . ': 2004040510440485] Re: RE: WG: Some Subject',
+        );
+        if ( $NewSubject !~ /^(Re:|\[$TicketHook)/ ) {
+            $Self->True(
+                1,
+                "TicketSubjectClean() (Re[5]: $NewSubject)",
+            );
+        }
+        else {
+            $Self->True(
+                0,
+                "TicketSubjectClean() (Re[5]: $NewSubject)",
+            );
+        }
+
+        # TicketSubjectClean()
+        $NewSubject = $TicketObject->TicketSubjectClean(
+            TicketNumber => '2004040510440485',
+            Subject => 'Re[5]: Re: RE: WG: Some Subject [' . $TicketHook . ': 2004040510440485]',
+        );
+        if ( $NewSubject !~ /2004040510440485/ ) {
+            $Self->True(
+                1,
+                "TicketSubjectClean() (Re[5]: $NewSubject)",
+            );
+        }
+        else {
+            $Self->True(
+                0,
+                "TicketSubjectClean() (Re[5]: $NewSubject)",
+            );
+        }
+
+        # TicketSubjectBuild()
+        $NewSubject = $TicketObject->TicketSubjectBuild(
+            TicketNumber => '2004040510440485',
+            Subject      => "Re: [$TicketHook: 2004040510440485] Re: RE: WG: Some Subject",
+        );
+        if ( $TicketSubjectConfig eq 'Left' ) {
+            $Self->Is(
+                $NewSubject,
+                'RE: [' . $TicketHook . '2004040510440485] Some Subject',
+                "TicketSubjectBuild() $TicketSubjectConfig ($NewSubject)",
+            );
+        }
+        else {
+            $Self->Is(
+                $NewSubject,
+                'RE: Some Subject [' . $TicketHook . '2004040510440485]',
+                "TicketSubjectBuild() $TicketSubjectConfig ($NewSubject)",
+            );
+        }
+
+        # check Ticket::SubjectRe with "Antwort"
+        $ConfigObject->Set(
+            Key   => 'Ticket::SubjectRe',
+            Value => 'Antwort',
+        );
+        $NewSubject = $TicketObject->TicketSubjectClean(
+            TicketNumber => '2004040510440485',
+            Subject      => 'Antwort: ['
+                . $TicketHook
+                . ': 2004040510440485] Antwort: Antwort: Some Subject2',
+        );
+        if ( $NewSubject !~ /^(Antwort:|\[Ticket)/ ) {
+            $Self->True(
+                1,
+                "TicketSubjectClean() (Antwort: $NewSubject)",
+            );
+        }
+        else {
+            $Self->True(
+                0,
+                "TicketSubjectClean() (Antwort: $NewSubject)",
+            );
+        }
+
+        # TicketSubjectBuild()
+        $NewSubject = $TicketObject->TicketSubjectBuild(
+            TicketNumber => '2004040510440485',
+            Subject => '[' . $TicketHook . ':2004040510440485] Antwort: Re: Antwort: Some Subject2',
+        );
+        if ( $TicketSubjectConfig eq 'Left' ) {
+            $Self->Is(
+                $NewSubject,
+                'Antwort: [' . $TicketHook . '2004040510440485] Re: Antwort: Some Subject2',
+                "TicketSubjectBuild() $TicketSubjectConfig ($NewSubject)",
+            );
+        }
+        else {
+            $Self->Is(
+                $NewSubject,
+                'Antwort: Re: Antwort: Some Subject2 [' . $TicketHook . '2004040510440485]',
+                "TicketSubjectBuild() $TicketSubjectConfig ($NewSubject)",
+            );
+        }
+
+        # check Ticket::SubjectRe with "Antwort"
+        $ConfigObject->Set(
+            Key   => 'Ticket::SubjectRe',
+            Value => '',
+        );
+        $NewSubject = $TicketObject->TicketSubjectClean(
+            TicketNumber => '2004040510440485',
+            Subject      => 'RE: ['
+                . $TicketHook
+                . ': 2004040510440485] Antwort: Antwort: Some Subject2',
+        );
+        if ( $NewSubject !~ /^(\[Ticket:#: 2004040510440485\].+?|RE\s)/ ) {
+            $Self->True(
+                1,
+                "TicketSubjectClean() ($NewSubject)",
+            );
+        }
+        else {
+            $Self->True(
+                0,
+                "TicketSubjectClean() ($NewSubject)",
+            );
+        }
+
+        # TicketSubjectBuild()
+        $NewSubject = $TicketObject->TicketSubjectBuild(
+            TicketNumber => '2004040510440485',
+            Subject => 'Re: [' . $TicketHook . ': 2004040510440485] Re: Antwort: Some Subject2',
+        );
+        if ( $TicketSubjectConfig eq 'Left' ) {
+            $Self->Is(
+                $NewSubject,
+                '[' . $TicketHook . '2004040510440485] Antwort: Some Subject2',
+                "TicketSubjectBuild() $TicketSubjectConfig ($NewSubject)",
+            );
+        }
+        else {
+            $Self->Is(
+                $NewSubject,
+                'Antwort: Some Subject2 [' . $TicketHook . '2004040510440485]',
+                "TicketSubjectBuild() $TicketSubjectConfig ($NewSubject)",
+            );
+        }
+
+        # TicketSubjectClean()
+        # check Ticket::SubjectFwd with "FWD"
+        $ConfigObject->Set(
+            Key   => 'Ticket::SubjectFwd',
+            Value => 'FWD',
+        );
+
+        # TicketSubjectBuild()
+        $NewSubject = $TicketObject->TicketSubjectBuild(
+            TicketNumber => '2004040510440485',
+            Subject      => "Re: [$TicketHook: 2004040510440485] Re: RE: WG: Some Subject",
+            Action       => 'Forward',
+        );
+        if ( $TicketSubjectConfig eq 'Left' ) {
+            $Self->Is(
+                $NewSubject,
+                'FWD: [' . $TicketHook . '2004040510440485] Some Subject',
+                "TicketSubjectBuild() $TicketSubjectConfig ($NewSubject)",
+            );
+        }
+        else {
+            $Self->Is(
+                $NewSubject,
+                'FWD: Some Subject [' . $TicketHook . '2004040510440485]',
+                "TicketSubjectBuild() $TicketSubjectConfig ($NewSubject)",
+            );
+        }
+
+        # check Ticket::SubjectFwd with "WG"
+        $ConfigObject->Set(
+            Key   => 'Ticket::SubjectFwd',
+            Value => 'WG',
+        );
+        $NewSubject = $TicketObject->TicketSubjectClean(
+            TicketNumber => '2004040510440485',
+            Subject      => 'Antwort: ['
+                . $TicketHook
+                . ': 2004040510440485] WG: Fwd: Some Subject2',
+            Action => 'Forward',
+        );
+        if ( $NewSubject !~ /^(WG:|\[Ticket)/ ) {
+            $Self->True(
+                1,
+                "TicketSubjectClean() (WG: $NewSubject)",
+            );
+        }
+        else {
+            $Self->True(
+                0,
+                "TicketSubjectClean() (Antwort: $NewSubject)",
+            );
+        }
+    }
+}
+
+$TicketObject = Kernel::System::Ticket->new(
     %{$Self},
     ConfigObject => $ConfigObject,
 );
 
 my $TicketID = $TicketObject->TicketCreate(
-    Title        => 'Some Ticket_Title',
+    Title        => 'Some Ticket Title',
     Queue        => 'Raw',
     Lock         => 'unlock',
     Priority     => '3 normal',
@@ -73,7 +320,7 @@ $Self->True(
 my %Ticket = $TicketObject->TicketGet( TicketID => $TicketID );
 $Self->Is(
     $Ticket{Title},
-    'Some Ticket_Title',
+    'Some Ticket Title',
     'TicketGet() (Title)',
 );
 $Self->Is(
@@ -95,21 +342,6 @@ $Self->Is(
     $Ticket{Owner},
     'root@localhost',
     'TicketGet() (Owner)',
-);
-$Self->Is(
-    $Ticket{CreateBy},
-    1,
-    'TicketGet() (CreateBy)',
-);
-$Self->Is(
-    $Ticket{ChangeBy},
-    1,
-    'TicketGet() (ChangeBy)',
-);
-$Self->Is(
-    $Ticket{Title},
-    'Some Ticket_Title',
-    'TicketGet() (Title)',
 );
 $Self->Is(
     $Ticket{Responsible},
@@ -137,71 +369,90 @@ $Self->Is(
     'TicketGet() (TypeID)',
 );
 
-my $TestUserLogin = $HelperObject->TestUserCreate(
-    Groups => [ 'users', ],
-);
-
-my $TestUserID = $UserObject->UserLookup(
-    UserLogin => $TestUserLogin,
-);
-
-my $TicketIDCreatedBy = $TicketObject->TicketCreate(
-    Title        => 'Some Ticket_Title',
+# create a new ticket
+my $NewTicket = $TicketObject->TicketCreate(
+    Title        => 'My ticket created by Agent A',
     Queue        => 'Raw',
     Lock         => 'unlock',
     Priority     => '3 normal',
-    State        => 'closed successful',
+    State        => 'open',
     CustomerNo   => '123465',
     CustomerUser => 'customer@example.com',
     OwnerID      => 1,
-    UserID       => $TestUserID,
+    UserID       => 1,
 );
 
-my %CheckCreatedBy = $TicketObject->TicketGet(
-    TicketID => $TicketIDCreatedBy,
-    UserID   => $TestUserID,
+# check 'Seen' flag of the new ticket with another agent
+my %TicketFlag = $TicketObject->TicketFlagGet(
+    TicketID => $NewTicket,
+    UserID   => 1,
+);
+$Self->False(
+    $TicketFlag{seen},
+    'Check seen flag with a secondary agent.',
 );
 
-$Self->Is(
-    $CheckCreatedBy{ChangeBy},
-    $TestUserID,
-    'TicketGet() (ChangeBy - not system ID 1 user)',
+my @Tests = (
+    {
+        Name   => 'seen flag',
+        Key    => 'seen',
+        Value  => 1,
+        UserID => 1,
+    },
+    {
+        Name   => 'not seend flag',
+        Key    => 'not seen',
+        Value  => 2,
+        UserID => 1,
+    },
 );
 
-$Self->Is(
-    $CheckCreatedBy{CreateBy},
-    $TestUserID,
-    'TicketGet() (CreateBy - not system ID 1 user)',
-);
-
-$TicketObject->TicketOwnerSet(
-    TicketID  => $TicketIDCreatedBy,
-    NewUserID => $TestUserID,
-    UserID    => 1,
-);
-
-%CheckCreatedBy = $TicketObject->TicketGet(
-    TicketID => $TicketIDCreatedBy,
-    UserID   => $TestUserID,
-);
-
-$Self->Is(
-    $CheckCreatedBy{CreateBy},
-    $TestUserID,
-    'TicketGet() (CreateBy - still the same after OwnerSet)',
-);
-
-$Self->Is(
-    $CheckCreatedBy{OwnerID},
-    $TestUserID,
-    'TicketOwnerSet()',
-);
-
-$Self->Is(
-    $CheckCreatedBy{ChangeBy},
-    1,
-    'TicketOwnerSet() (ChangeBy - System ID 1 now)',
-);
+for my $Test (@Tests) {
+    my %Flag = $TicketObject->TicketFlagGet(
+        TicketID => $TicketID,
+        UserID   => 1,
+    );
+    $Self->False(
+        $Flag{ $Test->{Key} },
+        'TicketFlagGet()',
+    );
+    my $Set = $TicketObject->TicketFlagSet(
+        TicketID => $TicketID,
+        Key      => $Test->{Key},
+        Value    => $Test->{Value},
+        UserID   => 1,
+    );
+    $Self->True(
+        $Set,
+        'TicketFlagSet()',
+    );
+    %Flag = $TicketObject->TicketFlagGet(
+        TicketID => $TicketID,
+        UserID   => 1,
+    );
+    $Self->Is(
+        $Flag{ $Test->{Key} },
+        $Test->{Value},
+        'TicketFlagGet()',
+    );
+    my $Delete = $TicketObject->TicketFlagDelete(
+        TicketID => $TicketID,
+        Key      => $Test->{Key},
+        UserID   => 1,
+    );
+    $Self->True(
+        $Delete,
+        'TicketFlagDelete()',
+    );
+    %Flag = $TicketObject->TicketFlagGet(
+        TicketID => $TicketID,
+        UserID   => 1,
+    );
+    $Self->False(
+        $Flag{ $Test->{Key} },
+        'TicketFlagGet()',
+    );
+}
 
 my $ArticleID = $TicketObject->ArticleCreate(
     TicketID    => $TicketID,
@@ -217,8 +468,7 @@ my $ArticleID = $TicketObject->ArticleCreate(
         'Some Customer B Some Customer B Some Customer B Some Customer B Some Customer B Some Customer B Some Customer B Some Customer B Some Customer B <customer-b@example.com>',
     Subject =>
         'some short description some short description some short description some short description some short description some short description some short description some short description ',
-    Body => (
-        'the message text
+    Body => 'the message text
 Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
 
 Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
@@ -232,8 +482,2544 @@ perlfaq contains questions and answers related to many common tasks, and often p
 perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
 
 If you feel the urge to write Perl modules, perlnewmod will give you good advice.
-' x 200
-    ),    # create a really big string by concatenating 200 times
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.
+
+Categories of modules range from text manipulation to network protocols to database integration to graphics. A categorized list of modules is also available from CPAN.
+
+To learn how to install modules you download from CPAN, read perlmodinstall
+
+To learn how to use a particular module, use perldoc Module::Name . Typically you will want to use Module::Name , which will then give you access to exported functions or an OO interface to the module.
+
+perlfaq contains questions and answers related to many common tasks, and often provides suggestions for good CPAN modules to use.
+
+perlmod describes Perl modules in general. perlmodlib lists the modules which came with your Perl installation.
+
+If you feel the urge to write Perl modules, perlnewmod will give you good advice.
+',
 
     #    MessageID => '<asdasdasd.123@example.com>',
     ContentType    => 'text/plain; charset=ISO-8859-15',
@@ -251,7 +3037,7 @@ $Self->True(
 my %Article = $TicketObject->ArticleGet( ArticleID => $ArticleID );
 $Self->Is(
     $Article{Title},
-    'Some Ticket_Title',
+    'Some Ticket Title',
     'ArticleGet()',
 );
 $Self->True(
@@ -291,9 +3077,310 @@ $Self->True(
     'TicketWatchSubscribe()',
 );
 
+# Check the TicketFreeField functions
+my %TicketFreeText = ();
+for ( 1 .. 16 ) {
+    my $TicketFreeTextSet = $TicketObject->TicketFreeTextSet(
+        Counter  => $_,
+        Key      => 'Planet' . $_,
+        Value    => 'Sun' . $_,
+        TicketID => $TicketID,
+        UserID   => 1,
+    );
+    $Self->True(
+        $TicketFreeTextSet,
+        'TicketFreeTextSet() ' . $_,
+    );
+}
+
+%TicketFreeText = $TicketObject->TicketGet( TicketID => $TicketID );
+for ( 1 .. 16 ) {
+    $Self->Is(
+        $TicketFreeText{ 'TicketFreeKey' . $_ },
+        'Planet' . $_,
+        "TicketGet() (TicketFreeKey$_)",
+    );
+    $Self->Is(
+        $TicketFreeText{ 'TicketFreeText' . $_ },
+        'Sun' . $_,
+        "TicketGet() (TicketFreeText$_)",
+    );
+}
+
+# TicketFreeTextSet check, if only a value is available but no key
+for ( 1 .. 16 ) {
+    my $TicketFreeTextSet = $TicketObject->TicketFreeTextSet(
+        Counter  => $_,
+        Value    => 'Earth' . $_,
+        TicketID => $TicketID,
+        UserID   => 1,
+    );
+    $Self->True(
+        $TicketFreeTextSet,
+        'TicketFreeTextSet () without key ' . $_,
+    );
+}
+
+%TicketFreeText = $TicketObject->TicketGet( TicketID => $TicketID );
+
+for ( 1 .. 16 ) {
+    $Self->Is(
+        $TicketFreeText{ 'TicketFreeKey' . $_ },
+        'Planet' . $_,
+        "TicketGet() (TicketFreeKey$_)",
+    );
+    $Self->Is(
+        $TicketFreeText{ 'TicketFreeText' . $_ },
+        'Earth' . $_,
+        "TicketGet() (TicketFreeText$_)",
+    );
+}
+
+# TicketFreeTextSet check, if only a key is available but no value
+for ( 1 .. 16 ) {
+    my $TicketFreeTextSet = $TicketObject->TicketFreeTextSet(
+        Counter  => $_,
+        Key      => 'Location' . $_,
+        TicketID => $TicketID,
+        UserID   => 1,
+    );
+    $Self->True(
+        $TicketFreeTextSet,
+        'TicketFreeTextSet () without value ' . $_,
+    );
+}
+
+%TicketFreeText = $TicketObject->TicketGet( TicketID => $TicketID );
+
+for ( 1 .. 16 ) {
+    $Self->Is(
+        $TicketFreeText{ 'TicketFreeKey' . $_ },
+        'Location' . $_,
+        "TicketGet() (TicketFreeKey$_)",
+    );
+    $Self->Is(
+        $TicketFreeText{ 'TicketFreeText' . $_ },
+        'Earth' . $_,
+        "TicketGet() (TicketFreeText$_)",
+    );
+}
+
+# TicketFreeTextSet check, if no key and value
+for ( 1 .. 16 ) {
+    my $TicketFreeTextSet = $TicketObject->TicketFreeTextSet(
+        Counter  => $_,
+        TicketID => $TicketID,
+        UserID   => 1,
+    );
+    $Self->True(
+        $TicketFreeTextSet,
+        'TicketFreeTextSet () without key and value ' . $_,
+    );
+}
+
+%TicketFreeText = $TicketObject->TicketGet( TicketID => $TicketID );
+for ( 1 .. 16 ) {
+    $Self->Is(
+        $TicketFreeText{ 'TicketFreeKey' . $_ },
+        'Location' . $_,
+        "TicketGet() (TicketFreeKey$_)",
+    );
+    $Self->Is(
+        $TicketFreeText{ 'TicketFreeText' . $_ },
+        'Earth' . $_,
+        "TicketGet() (TicketFreeText$_)",
+    );
+}
+
+# TicketFreeTextSet check, with empty keys and values
+for ( 1 .. 16 ) {
+    my $TicketFreeTextSet = $TicketObject->TicketFreeTextSet(
+        Counter  => $_,
+        TicketID => $TicketID,
+        Key      => '',
+        Value    => '',
+        UserID   => 1,
+    );
+    $Self->True(
+        $TicketFreeTextSet,
+        'TicketFreeTextSet () with empty key and value ' . $_,
+    );
+}
+
+%TicketFreeText = $TicketObject->TicketGet( TicketID => $TicketID );
+for ( 1 .. 16 ) {
+    $Self->Is(
+        $TicketFreeText{ 'TicketFreeKey' . $_ },
+        '',
+        "TicketGet() (TicketFreeKey$_)",
+    );
+    $Self->Is(
+        $TicketFreeText{ 'TicketFreeText' . $_ },
+        '',
+        "TicketGet() (TicketFreeText$_)",
+    );
+}
+
+for ( 1 .. 16 ) {
+    my $TicketFreeTextSet = $TicketObject->TicketFreeTextSet(
+        Counter  => $_,
+        Key      => 'Hans' . $_,
+        Value    => 'Max' . $_,
+        TicketID => $TicketID,
+        UserID   => 1,
+    );
+    $Self->True(
+        $TicketFreeTextSet,
+        'TicketFreeTextSet() ' . $_,
+    );
+}
+
+# Check the TicketFreeTime functions
+my %TicketFreeTime = ();
+for ( 1 .. 5 ) {
+    my $TicketFreeTimeSet = $TicketObject->TicketFreeTimeSet(
+        Counter          => $_,
+        Prefix           => 'a',
+        "a$_" . "Year"   => 2008,
+        "a$_" . "Month"  => 2,
+        "a$_" . "Day"    => 25,
+        "a$_" . "Hour"   => 22,
+        "a$_" . "Minute" => $_,
+        TicketID         => $TicketID,
+        UserID           => 1,
+    );
+    $Self->True(
+        $TicketFreeTimeSet,
+        'TicketFreeTimeSet() ' . $_,
+    );
+}
+
+%TicketFreeTime = $TicketObject->TicketGet( TicketID => $TicketID );
+for ( 1 .. 5 ) {
+    $Self->Is(
+        $TicketFreeTime{ 'TicketFreeTime' . $_ },
+        "2008-02-25 22:0$_:00",
+        "TicketGet() (TicketFreeTime$_)",
+    );
+}
+my @ArticleFreeTime = $TicketObject->ArticleGet( TicketID => $TicketID );
+for ( 1 .. 5 ) {
+    $Self->Is(
+        $ArticleFreeTime[0]->{ 'TicketFreeTime' . $_ },
+        "2008-02-25 22:0$_:00",
+        "ArticleGet() (TicketFreeTime$_)",
+    );
+}
+
+# set undef
+for ( 1 .. 5 ) {
+    my $TicketFreeTimeSet = $TicketObject->TicketFreeTimeSet(
+        Counter          => $_,
+        Prefix           => 'a',
+        "a$_" . "Year"   => '0000',
+        "a$_" . "Month"  => 0,
+        "a$_" . "Day"    => 0,
+        "a$_" . "Hour"   => 0,
+        "a$_" . "Minute" => 0,
+        TicketID         => $TicketID,
+        UserID           => 1,
+    );
+    $Self->True(
+        $TicketFreeTimeSet,
+        'TicketFreeTimeSet() ' . $_,
+    );
+}
+
+%TicketFreeTime = $TicketObject->TicketGet( TicketID => $TicketID );
+for ( 1 .. 5 ) {
+    $Self->Is(
+        $TicketFreeTime{ 'TicketFreeTime' . $_ },
+        '',
+        "TicketGet() (TicketFreeTime$_)",
+    );
+}
+
+# article attachment checks
+for my $Backend (qw(DB FS)) {
+    $ConfigObject->Set(
+        Key   => 'Ticket::StorageModule',
+        Value => 'Kernel::System::Ticket::ArticleStorage' . $Backend,
+    );
+    my $TicketObject = Kernel::System::Ticket->new(
+        %{$Self},
+        ConfigObject => $ConfigObject,
+    );
+    for my $File (
+        qw(Ticket-Article-Test1.xls Ticket-Article-Test1.txt Ticket-Article-Test1.doc
+        Ticket-Article-Test1.png Ticket-Article-Test1.pdf Ticket-Article-Test-utf8-1.txt Ticket-Article-Test-utf8-1.bin)
+        )
+    {
+        my $Content = '';
+        open( IN, '<', $ConfigObject->Get('Home') . "/scripts/test/sample/Ticket/$File" )
+            || die $!;
+        binmode(IN);
+        while (<IN>) {
+            $Content .= $_;
+        }
+        close(IN);
+        my $FileNew                = "ÄÖÜ ? カスタマ-" . $File;
+        my $MD5Orig                = $Self->{MainObject}->MD5sum( String => $Content );
+        my $ArticleWriteAttachment = $TicketObject->ArticleWriteAttachment(
+            Content     => $Content,
+            Filename    => $FileNew,
+            ContentType => 'image/png',
+            ArticleID   => $ArticleID,
+            UserID      => 1,
+        );
+        $Self->True(
+            $ArticleWriteAttachment,
+            "$Backend ArticleWriteAttachment() - $FileNew",
+        );
+        my %Data = $TicketObject->ArticleAttachment(
+            ArticleID => $ArticleID,
+            FileID    => 1,
+            UserID    => 1,
+        );
+        $Self->True(
+            $Data{Content},
+            "$Backend ArticleAttachment() Content - $FileNew",
+        );
+        $Self->True(
+            $Data{ContentType},
+            "$Backend ArticleAttachment() ContentType - $FileNew",
+        );
+        $Self->True(
+            $Data{Content} eq $Content,
+            "$Backend ArticleWriteAttachment() / ArticleAttachment() - $FileNew",
+        );
+        $Self->True(
+            $Data{ContentType} eq 'image/png',
+            "$Backend ArticleWriteAttachment() / ArticleAttachment() - $File",
+        );
+        my $MD5New = $Self->{MainObject}->MD5sum( String => $Data{Content} );
+        $Self->Is(
+            $MD5Orig || '1',
+            $MD5New  || '2',
+            "$Backend MD5 - $FileNew",
+        );
+        my $Delete = $TicketObject->ArticleDeleteAttachment(
+            ArticleID => $ArticleID,
+            UserID    => 1,
+        );
+        $Self->True(
+            $Delete,
+            "$Backend ArticleDeleteAttachment() - $FileNew",
+        );
+    }
+}
+
 my $TicketSearchTicketNumber = substr $Ticket{TicketNumber}, 0, 10;
 my %TicketIDs = $TicketObject->TicketSearch(
-    Result       => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit        => 100,
     TicketNumber => [ $TicketSearchTicketNumber . '%', '%not exisiting%' ],
     UserID       => 1,
@@ -305,7 +3392,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result       => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit        => 100,
     TicketNumber => $Ticket{TicketNumber},
     UserID       => 1,
@@ -317,7 +3408,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result       => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit        => 100,
     TicketNumber => [ $Ticket{TicketNumber}, '1234' ],
     UserID       => 1,
@@ -329,7 +3424,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result     => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit      => 100,
     Title      => $Ticket{Title},
     UserID     => 1,
@@ -341,7 +3440,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result     => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit      => 100,
     Title      => [ $Ticket{Title}, 'SomeTitleABC' ],
     UserID     => 1,
@@ -353,7 +3456,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result     => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit      => 100,
     CustomerID => $Ticket{CustomerID},
     UserID     => 1,
@@ -365,7 +3472,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result     => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit      => 100,
     CustomerID => [ $Ticket{CustomerID}, 'LULU' ],
     UserID     => 1,
@@ -377,7 +3488,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result            => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit             => 100,
     CustomerUserLogin => $Ticket{CustomerUser},
     UserID            => 1,
@@ -389,7 +3504,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result            => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit             => 100,
     CustomerUserLogin => [ $Ticket{CustomerUserID}, '1234' ],
     UserID            => 1,
@@ -401,7 +3520,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result            => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit             => 100,
     TicketNumber      => $Ticket{TicketNumber},
     Title             => $Ticket{Title},
@@ -416,7 +3539,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result            => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit             => 100,
     TicketNumber      => [ $Ticket{TicketNumber}, 'ABC' ],
     Title             => [ $Ticket{Title}, '123' ],
@@ -431,7 +3558,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result       => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit        => 100,
     TicketNumber => [ $Ticket{TicketNumber}, 'ABC' ],
     StateType    => 'Closed',
@@ -444,7 +3575,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result       => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit        => 100,
     TicketNumber => [ $Ticket{TicketNumber}, 'ABC' ],
     StateType    => 'Open',
@@ -457,7 +3592,11 @@ $Self->False(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result              => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit               => 100,
     Body                => 'write perl modules',
     ConditionInline     => 1,
@@ -473,7 +3612,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result              => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit               => 100,
     Body                => 'write perl modules',
     ConditionInline     => 1,
@@ -510,7 +3653,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result       => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit        => 100,
     TicketNumber => [ $Ticket{TicketNumber}, 'ABC' ],
     StateType    => 'Open',
@@ -523,7 +3670,11 @@ $Self->True(
 );
 
 %TicketIDs = $TicketObject->TicketSearch(
-    Result       => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit        => 100,
     TicketNumber => [ $Ticket{TicketNumber}, 'ABC' ],
     StateType    => 'Closed',
@@ -620,18 +3771,6 @@ $Self->True(
     'PrioritySet()',
 );
 
-# get ticket data
-my %TicketData = $TicketObject->TicketGet(
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-# save current change_time
-my $ChangeTime = $TicketData{Changed};
-
-# wait 5 seconds
-sleep(5);
-
 my $TicketTitle = $TicketObject->TicketTitleUpdate(
     Title    => 'Some Title 1234567',
     TicketID => $TicketID,
@@ -640,276 +3779,6 @@ my $TicketTitle = $TicketObject->TicketTitleUpdate(
 $Self->True(
     $TicketTitle,
     'TicketTitleUpdate()',
-);
-
-# get updated ticket data
-%TicketData = $TicketObject->TicketGet(
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-# compare current change_time with old one
-$Self->IsNot(
-    $ChangeTime,
-    $TicketData{Changed},
-    'Change_time updated in TicketTitleUpdate()',
-);
-
-# get updated ticket data
-%TicketData = $TicketObject->TicketGet(
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-# save current change_time
-$ChangeTime = $TicketData{Changed};
-
-# wait 5 seconds
-sleep(5);
-
-# set unlock timeout
-my $UnlockTimeout = $TicketObject->TicketUnlockTimeoutUpdate(
-    UnlockTimeout => $Self->{TimeObject}->SystemTime() + 10000,
-    TicketID      => $TicketID,
-    UserID        => 1,
-);
-
-$Self->True(
-    $UnlockTimeout,
-    'TicketUnlockTimeoutUpdate()',
-);
-
-# get updated ticket data
-%TicketData = $TicketObject->TicketGet(
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-# compare current change_time with old one
-$Self->IsNot(
-    $ChangeTime,
-    $TicketData{Changed},
-    'Change_time updated in TicketUnlockTimeoutUpdate()',
-);
-
-# save current change_time
-$ChangeTime = $TicketData{Changed};
-
-# save current queue
-my $CurrentQueueID = $TicketData{QueueID};
-
-# wait 5 seconds
-sleep(5);
-
-my $NewQueue = $CurrentQueueID != 1 ? 1 : 2;
-
-# set queue
-my $TicketQueueSet = $TicketObject->TicketQueueSet(
-    QueueID  => $NewQueue,
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-$Self->True(
-    $TicketQueueSet,
-    'TicketQueueSet()',
-);
-
-# get updated ticket data
-%TicketData = $TicketObject->TicketGet(
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-# compare current change_time with old one
-$Self->IsNot(
-    $ChangeTime,
-    $TicketData{Changed},
-    'Change_time updated in TicketQueueSet()',
-);
-
-# restore queue
-$TicketQueueSet = $TicketObject->TicketQueueSet(
-    QueueID  => $CurrentQueueID,
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-# save current change_time
-$ChangeTime = $TicketData{Changed};
-
-# save current type
-my $CurrentTicketType = $TicketData{TypeID};
-
-# wait 5 seconds
-sleep(5);
-
-# create a test type
-my $TypeID = $TypeObject->TypeAdd(
-    Name    => 'Unit Test New Type' . int( rand(10000) ),
-    ValidID => 1,
-    UserID  => 1,
-);
-
-# set type
-my $TicketTypeSet = $TicketObject->TicketTypeSet(
-    TypeID   => $TypeID,
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-$Self->True(
-    $TicketTypeSet,
-    'TicketTypeSet()',
-);
-
-# get updated ticket data
-%TicketData = $TicketObject->TicketGet(
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-# compare current change_time with old one
-$Self->IsNot(
-    $ChangeTime,
-    $TicketData{Changed},
-    'Change_time updated in TicketTypeSet()',
-);
-
-# restore type
-$TicketTypeSet = $TicketObject->TicketTypeSet(
-    TypeID   => $CurrentTicketType,
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-# set as invalid the test type
-$TypeObject->TypeUpdate(
-    ID      => $TypeID,
-    Name    => 'Unit Test New Type' . int( rand(10000) ),
-    ValidID => 2,
-    UserID  => 1,
-);
-
-# create a test service
-my $ServiceID = $ServiceObject->ServiceAdd(
-    Name    => 'Unit Test New Service' . int( rand(10000) ),
-    ValidID => 1,
-    Comment => 'Unit Test Comment',
-    UserID  => 1,
-);
-
-# wait 5 seconds
-sleep(5);
-
-# set type
-my $TicketServiceSet = $TicketObject->TicketServiceSet(
-    ServiceID => $ServiceID,
-    TicketID  => $TicketID,
-    UserID    => 1,
-);
-
-$Self->True(
-    $TicketServiceSet,
-    'TicketServiceSet()',
-);
-
-# get updated ticket data
-%TicketData = $TicketObject->TicketGet(
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-# compare current change_time with old one
-$Self->IsNot(
-    $ChangeTime,
-    $TicketData{Changed},
-    'Change_time updated in TicketServiceSet()',
-);
-
-# set as invalid the test service
-$ServiceObject->ServiceUpdate(
-    ServiceID => $ServiceID,
-    Name      => 'Unit Test New Service' . int( rand(10000) ),
-    ValidID   => 2,
-    UserID    => 1,
-);
-
-# save current change_time
-$ChangeTime = $TicketData{Changed};
-
-# wait 5 seconds
-sleep(5);
-
-my $TicketEscalationIndexBuild = $TicketObject->TicketEscalationIndexBuild(
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-$Self->True(
-    $TicketEscalationIndexBuild,
-    'TicketEscalationIndexBuild()',
-);
-
-# get updated ticket data
-%TicketData = $TicketObject->TicketGet(
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-# compare current change_time with old one
-$Self->IsNot(
-    $ChangeTime,
-    $TicketData{Changed},
-    'Change_time updated in TicketEscalationIndexBuild()',
-);
-
-# save current change_time
-$ChangeTime = $TicketData{Changed};
-
-# create a test SLA
-my $SLAID = $SLAObject->SLAAdd(
-    Name    => 'Unit Test New SLA' . int( rand(10000) ),
-    ValidID => 1,
-    Comment => 'Unit Test Comment',
-    UserID  => 1,
-);
-
-# wait 5 seconds
-sleep(5);
-
-# set SLA
-my $TicketSLASet = $TicketObject->TicketSLASet(
-    SLAID    => $SLAID,
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-$Self->True(
-    $TicketSLASet,
-    'TicketSLASet()',
-);
-
-# get updated ticket data
-%TicketData = $TicketObject->TicketGet(
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-# compare current change_time with old one
-$Self->IsNot(
-    $ChangeTime,
-    $TicketData{Changed},
-    'Change_time updated in TicketSLASet()',
-);
-
-# set as invalid the test SLA
-$SLAObject->SLAUpdate(
-    SLAID   => $SLAID,
-    Name    => 'Unit Test New SLA' . int( rand(10000) ),
-    ValidID => 1,
-    Comment => 'Unit Test Comment',
-    UserID  => 1,
 );
 
 my $TicketLock = $TicketObject->LockSet(
@@ -925,7 +3794,11 @@ $Self->True(
 
 # Test CreatedUserIDs
 %TicketIDs = $TicketObject->TicketSearch(
-    Result         => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit          => 100,
     CreatedUserIDs => [ 1, 455, 32 ],
     UserID         => 1,
@@ -938,7 +3811,11 @@ $Self->True(
 
 # Test CreatedPriorities
 %TicketIDs = $TicketObject->TicketSearch(
-    Result            => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit             => 100,
     CreatedPriorities => [ '2 low', '3 normal' ],
     UserID            => 1,
@@ -951,7 +3828,11 @@ $Self->True(
 
 # Test CreatedPriorityIDs
 %TicketIDs = $TicketObject->TicketSearch(
-    Result             => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit              => 100,
     CreatedPriorityIDs => [ 2, 3 ],
     UserID             => 1,
@@ -964,7 +3845,11 @@ $Self->True(
 
 # Test CreatedStates
 %TicketIDs = $TicketObject->TicketSearch(
-    Result        => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit         => 100,
     CreatedStates => ['closed successful'],
     UserID        => 1,
@@ -977,7 +3862,11 @@ $Self->True(
 
 # Test CreatedStateIDs
 %TicketIDs = $TicketObject->TicketSearch(
-    Result          => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit           => 100,
     CreatedStateIDs => [2],
     UserID          => 1,
@@ -990,7 +3879,11 @@ $Self->True(
 
 # Test CreatedQueues
 %TicketIDs = $TicketObject->TicketSearch(
-    Result        => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit         => 100,
     CreatedQueues => ['Raw'],
     UserID        => 1,
@@ -1003,7 +3896,11 @@ $Self->True(
 
 # Test CreatedQueueIDs
 %TicketIDs = $TicketObject->TicketSearch(
-    Result          => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit           => 100,
     CreatedQueueIDs => [ 2, 3 ],
     UserID          => 1,
@@ -1016,7 +3913,11 @@ $Self->True(
 
 # Test TicketCreateTimeNewerMinutes
 %TicketIDs = $TicketObject->TicketSearch(
-    Result                       => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit                        => 100,
     TicketCreateTimeNewerMinutes => 60,
     UserID                       => 1,
@@ -1027,22 +3928,13 @@ $Self->True(
     'TicketSearch() (HASH:TicketCreateTimeNewerMinutes => 60)',
 );
 
-# Test ArticleCreateTimeNewerMinutes
-%TicketIDs = $TicketObject->TicketSearch(
-    Result                        => 'HASH',
-    Limit                         => 100,
-    ArticleCreateTimeNewerMinutes => 60,
-    UserID                        => 1,
-    Permission                    => 'rw',
-);
-$Self->True(
-    $TicketIDs{$TicketID},
-    'TicketSearch() (HASH:ArticleCreateTimeNewerMinutes => 60)',
-);
-
 # Test TicketCreateOlderMinutes
 %TicketIDs = $TicketObject->TicketSearch(
-    Result                       => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit                        => 100,
     TicketCreateTimeOlderMinutes => 60,
     UserID                       => 1,
@@ -1053,23 +3945,14 @@ $Self->False(
     'TicketSearch() (HASH:TicketCreateTimeOlderMinutes => 60)',
 );
 
-# Test ArticleCreateOlderMinutes
-%TicketIDs = $TicketObject->TicketSearch(
-    Result                        => 'HASH',
-    Limit                         => 100,
-    ArticleCreateTimeOlderMinutes => 60,
-    UserID                        => 1,
-    Permission                    => 'rw',
-);
-$Self->False(
-    $TicketIDs{$TicketID},
-    'TicketSearch() (HASH:ArticleCreateTimeOlderMinutes => 60)',
-);
-
 # Test TicketCreateTimeNewerDate
 my $SystemTime = $Self->{TimeObject}->SystemTime();
 %TicketIDs = $TicketObject->TicketSearch(
-    Result                    => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit                     => 100,
     TicketCreateTimeNewerDate => $Self->{TimeObject}->SystemTime2TimeStamp(
         SystemTime => $SystemTime - ( 60 * 60 ),
@@ -1082,25 +3965,13 @@ $Self->True(
     'TicketSearch() (HASH:TicketCreateTimeNewerDate => 60)',
 );
 
-# Test ArticleCreateTimeNewerDate
-$SystemTime = $Self->{TimeObject}->SystemTime();
-%TicketIDs  = $TicketObject->TicketSearch(
-    Result                     => 'HASH',
-    Limit                      => 100,
-    ArticleCreateTimeNewerDate => $Self->{TimeObject}->SystemTime2TimeStamp(
-        SystemTime => $SystemTime - ( 60 * 60 ),
-    ),
-    UserID     => 1,
-    Permission => 'rw',
-);
-$Self->True(
-    $TicketIDs{$TicketID},
-    'TicketSearch() (HASH:ArticleCreateTimeNewerDate => 60)',
-);
-
 # Test TicketCreateOlderDate
 %TicketIDs = $TicketObject->TicketSearch(
-    Result                    => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit                     => 100,
     TicketCreateTimeOlderDate => $Self->{TimeObject}->SystemTime2TimeStamp(
         SystemTime => $SystemTime - ( 60 * 60 ),
@@ -1113,24 +3984,13 @@ $Self->False(
     'TicketSearch() (HASH:TicketCreateTimeOlderDate => 60)',
 );
 
-# Test ArticleCreateOlderDate
-%TicketIDs = $TicketObject->TicketSearch(
-    Result                     => 'HASH',
-    Limit                      => 100,
-    ArticleCreateTimeOlderDate => $Self->{TimeObject}->SystemTime2TimeStamp(
-        SystemTime => $SystemTime - ( 60 * 60 ),
-    ),
-    UserID     => 1,
-    Permission => 'rw',
-);
-$Self->False(
-    $TicketIDs{$TicketID},
-    'TicketSearch() (HASH:ArticleCreateTimeOlderDate => 60)',
-);
-
 # Test TicketCloseTimeNewerDate
 %TicketIDs = $TicketObject->TicketSearch(
-    Result                   => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit                    => 100,
     TicketCloseTimeNewerDate => $Self->{TimeObject}->SystemTime2TimeStamp(
         SystemTime => $SystemTime - ( 60 * 60 ),
@@ -1145,7 +4005,11 @@ $Self->True(
 
 # Test TicketCloseOlderDate
 %TicketIDs = $TicketObject->TicketSearch(
-    Result                   => 'HASH',
+
+    # result (required)
+    Result => 'HASH',
+
+    # result limit
     Limit                    => 100,
     TicketCloseTimeOlderDate => $Self->{TimeObject}->SystemTime2TimeStamp(
         SystemTime => $SystemTime - ( 60 * 60 ),
@@ -1221,19 +4085,18 @@ $Self->Is(
     'lock',
     'ArticleGet() (Lock)',
 );
-
-#for ( 1 .. 16 ) {
-#    $Self->Is(
-#        $Article{ 'TicketFreeKey' . $_ },
-#        'Hans_' . $_,
-#        "ArticleGet() (TicketFreeKey$_)",
-#    );
-#    $Self->Is(
-#        $Article{ 'TicketFreeText' . $_ },
-#        'Max_' . $_,
-#        "ArticleGet() (TicketFreeText$_)",
-#    );
-#}
+for ( 1 .. 16 ) {
+    $Self->Is(
+        $Article{ 'TicketFreeKey' . $_ },
+        'Hans' . $_,
+        "ArticleGet() (TicketFreeKey$_)",
+    );
+    $Self->Is(
+        $Article{ 'TicketFreeText' . $_ },
+        'Max' . $_,
+        "ArticleGet() (TicketFreeText$_)",
+    );
+}
 
 my @MoveQueueList = $TicketObject->MoveQueueList(
     TicketID => $TicketID,
@@ -1305,6 +4168,297 @@ $Self->Is(
     'ArticleAccountedTimeGet()',
 );
 
+# article flag tests
+@Tests = (
+    {
+        Name   => 'seen flag',
+        Key    => 'seen',
+        Value  => 1,
+        UserID => 1,
+    },
+    {
+        Name   => 'not seend flag',
+        Key    => 'not seen',
+        Value  => 2,
+        UserID => 1,
+    },
+);
+
+for my $Test (@Tests) {
+    my %Flag = $TicketObject->ArticleFlagGet(
+        ArticleID => $ArticleID,
+        UserID    => 1,
+    );
+    $Self->False(
+        $Flag{ $Test->{Key} },
+        'ArticleFlagGet()',
+    );
+    my $Set = $TicketObject->ArticleFlagSet(
+        ArticleID => $ArticleID,
+        Key       => $Test->{Key},
+        Value     => $Test->{Value},
+        UserID    => 1,
+    );
+    $Self->True(
+        $Set,
+        'ArticleFlagSet()',
+    );
+    %Flag = $TicketObject->ArticleFlagGet(
+        ArticleID => $ArticleID,
+        UserID    => 1,
+    );
+    $Self->Is(
+        $Flag{ $Test->{Key} },
+        $Test->{Value},
+        'ArticleFlagGet()',
+    );
+    my $Delete = $TicketObject->ArticleFlagDelete(
+        ArticleID => $ArticleID,
+        Key       => $Test->{Key},
+        UserID    => 1,
+    );
+    $Self->True(
+        $Delete,
+        'ArticleFlagDelete()',
+    );
+    %Flag = $TicketObject->ArticleFlagGet(
+        ArticleID => $ArticleID,
+        UserID    => 1,
+    );
+    $Self->False(
+        $Flag{ $Test->{Key} },
+        'ArticleFlagGet()',
+    );
+}
+
+# ticket history tests
+use Kernel::System::State;
+my $StateObject = Kernel::System::State->new( %{$Self} );
+
+use Kernel::System::Type;
+my $TypeObject = Kernel::System::Type->new( %{$Self} );
+
+@Tests = (
+    {
+        CreateData => [
+            {
+                TicketCreate => {
+                    Title        => 'HistoryCreateTitle',
+                    Queue        => 'Raw',
+                    Lock         => 'unlock',
+                    PriorityID   => '3',
+                    State        => 'new',
+                    CustomerID   => '1',
+                    CustomerUser => 'customer@example.com',
+                    OwnerID      => 1,
+                    UserID       => 1,
+                },
+            },
+            {
+                ArticleCreate => {
+                    ArticleType => 'note-internal',    # email-external|email-internal|phone|fax|...
+                    SenderType  => 'agent',            # agent|system|customer
+                    From    => 'Some Agent <email@example.com>',           # not required but useful
+                    To      => 'Some Customer A <customer-a@example.com>', # not required but useful
+                    Subject => 'some short description',                   # required
+                    Body    => 'the message text',                         # required
+                    Charset => 'ISO-8859-15',
+                    MimeType    => 'text/plain',
+                    HistoryType => 'OwnerUpdate'
+                    ,    # EmailCustomer|Move|AddNote|PriorityUpdate|WebRequestCustomer|...
+                    HistoryComment => 'Some free text!',
+                    UserID         => 1,
+                },
+            },
+            {
+                ArticleCreate => {
+                    ArticleType => 'note-internal',    # email-external|email-internal|phone|fax|...
+                    SenderType  => 'agent',            # agent|system|customer
+                    From    => 'Some other Agent <email2@example.com>',    # not required but useful
+                    To      => 'Some Customer A <customer-a@example.com>', # not required but useful
+                    Subject => 'some short description',                   # required
+                    Body    => 'the message text',                         # required
+                    Charset => 'UTF-8',
+                    MimeType    => 'text/plain',
+                    HistoryType => 'OwnerUpdate'
+                    ,    # EmailCustomer|Move|AddNote|PriorityUpdate|WebRequestCustomer|...
+                    HistoryComment => 'Some free text!',
+                    UserID         => 1,
+                },
+            },
+        ],
+    },
+    {
+        ReferenceData => [
+            {
+                TicketIndex => 0,
+                HistoryGet  => [
+                    {
+                        CreateBy    => 1,
+                        HistoryType => 'NewTicket',
+                        Queue       => 'Raw',
+                        OwnerID     => 1,
+                        PriorityID  => 3,
+                        State       => 'new',
+                        HistoryType => 'NewTicket',
+                        Type        => 'default',
+                    },
+                    {
+                        CreateBy    => 1,
+                        HistoryType => 'CustomerUpdate',
+                        Queue       => 'Raw',
+                        OwnerID     => 1,
+                        PriorityID  => 3,
+                        State       => 'new',
+                        HistoryType => 'CustomerUpdate',
+                        Type        => 'default',
+                    },
+                    {
+                        CreateBy    => 1,
+                        HistoryType => 'OwnerUpdate',
+                        Queue       => 'Raw',
+                        OwnerID     => 1,
+                        PriorityID  => 3,
+                        State       => 'new',
+                        HistoryType => 'OwnerUpdate',
+                        Type        => 'default',
+                    },
+                    {
+                        CreateBy    => 1,
+                        HistoryType => 'OwnerUpdate',
+                        Queue       => 'Raw',
+                        OwnerID     => 1,
+                        PriorityID  => 3,
+                        State       => 'new',
+                        HistoryType => 'OwnerUpdate',
+                        Type        => 'default',
+                    },
+                ],
+            },
+        ],
+    },
+);
+
+my @HistoryCreateTicketIDs;
+for my $Test (@Tests) {
+    my $HistoryCreateTicketID;
+    my @HistoryCreateArticleIDs;
+
+    if ( $Test->{CreateData} ) {
+        for my $CreateData ( @{ $Test->{CreateData} } ) {
+            if ( $CreateData->{TicketCreate} ) {
+                $HistoryCreateTicketID = $TicketObject->TicketCreate(
+                    %{ $CreateData->{TicketCreate} },
+                );
+                $Self->True(
+                    $HistoryCreateTicketID,
+                    'HistoryGet - TicketCreate()',
+                );
+
+                if ($HistoryCreateTicketID) {
+                    push @HistoryCreateTicketIDs, $HistoryCreateTicketID;
+                }
+            }
+            if ( $CreateData->{ArticleCreate} ) {
+                my $HistoryCreateArticleID = $TicketObject->ArticleCreate(
+                    TicketID => $HistoryCreateTicketID,
+                    %{ $CreateData->{ArticleCreate} },
+                );
+                $Self->True(
+                    $HistoryCreateArticleID,
+                    'HistoryGet - ArticleCreate()',
+                );
+                if ($HistoryCreateArticleID) {
+                    push @HistoryCreateArticleIDs, $HistoryCreateArticleID;
+                }
+            }
+        }
+    }
+
+    if ( $Test->{ReferenceData} ) {
+
+        REFERENCEDATA:
+        for my $ReferenceData ( @{ $Test->{ReferenceData} } ) {
+            $HistoryCreateTicketID = $HistoryCreateTicketIDs[ $ReferenceData->{TicketIndex} ];
+
+            next REFERENCEDATA if !$ReferenceData->{HistoryGet};
+            my @ReferenceResults = @{ $ReferenceData->{HistoryGet} };
+
+            my @HistoryGet = $TicketObject->HistoryGet(
+                UserID   => 1,
+                TicketID => $HistoryCreateTicketID,
+            );
+
+            $Self->True(
+                scalar @HistoryGet,
+                'HistoryGet - HistoryGet()',
+            );
+
+            next REFERENCEDATA if !@HistoryGet;
+
+            for my $ResultCount ( 0 .. ( ( scalar @ReferenceResults ) - 1 ) ) {
+
+                my $Result = $ReferenceData->{HistoryGet}->[$ResultCount];
+                RESULTENTRY:
+                for my $ResultEntry ( keys %{$Result} ) {
+                    next RESULTENTRY if !$Result->{$ResultEntry};
+
+                    if ( $ResultEntry eq 'Queue' ) {
+                        my $HistoryQueueID = $QueueObject->QueueLookup(
+                            Queue => $Result->{$ResultEntry},
+                        );
+
+                        $ResultEntry = 'QueueID';
+                        $Result->{$ResultEntry} = $HistoryQueueID;
+                    }
+
+                    if ( $ResultEntry eq 'State' ) {
+                        my %HistoryState = $StateObject->StateGet(
+                            Name => $Result->{$ResultEntry},
+                        );
+                        $ResultEntry = 'StateID';
+                        $Result->{$ResultEntry} = $HistoryState{ID};
+                    }
+
+                    if ( $ResultEntry eq 'HistoryType' ) {
+                        my $HistoryTypeID = $TicketObject->HistoryTypeLookup(
+                            Type => $Result->{$ResultEntry},
+                        );
+                        $ResultEntry = 'HistoryTypeID';
+                        $Result->{$ResultEntry} = $HistoryTypeID;
+                    }
+
+                    if ( $ResultEntry eq 'Type' ) {
+                        my $TypeID = $TypeObject->TypeLookup(
+                            Type => $Result->{$ResultEntry},
+                        );
+                        $ResultEntry = 'TypeID';
+                        $Result->{$ResultEntry} = $TypeID;
+                    }
+
+                    $Self->Is(
+                        $Result->{$ResultEntry},
+                        $HistoryGet[$ResultCount]->{$ResultEntry},
+                        'HistoryGet - Check returned content',
+                    );
+                }
+            }
+        }
+    }
+}
+
+# clean up created tickets
+for my $HistoryTicketID (@HistoryCreateTicketIDs) {
+    my $Delete = $TicketObject->TicketDelete(
+        UserID   => 1,
+        TicketID => $HistoryTicketID,
+    );
+    $Self->True(
+        $Delete,
+        'HistoryGet - TicketDelete()',
+    );
+}
+
 my ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $Self->{TimeObject}->SystemTime2Date(
     SystemTime => $Self->{TimeObject}->SystemTime(),
 );
@@ -1365,19 +4519,18 @@ if ( $TicketStatus{$TicketID} ) {
         '3 normal',
         "HistoryTicketStatusGet() (CreatePriority)",
     );
-
-    #    for ( 1 .. 16 ) {
-    #        $Self->Is(
-    #            $TicketHistory{ 'TicketFreeKey' . $_ },
-    #            'Hans_' . $_,
-    #            "HistoryTicketStatusGet() (TicketFreeKey$_)",
-    #        );
-    #        $Self->Is(
-    #            $TicketHistory{ 'TicketFreeText' . $_ },
-    #            'Max_' . $_,
-    #            "HistoryTicketStatusGet() (TicketFreeText$_)",
-    #        );
-    #    }
+    for ( 1 .. 16 ) {
+        $Self->Is(
+            $TicketHistory{ 'TicketFreeKey' . $_ },
+            'Hans' . $_,
+            "HistoryTicketStatusGet() (TicketFreeKey$_)",
+        );
+        $Self->Is(
+            $TicketHistory{ 'TicketFreeText' . $_ },
+            'Max' . $_,
+            "HistoryTicketStatusGet() (TicketFreeText$_)",
+        );
+    }
 }
 else {
     $Self->True(
@@ -1395,170 +4548,77 @@ $Self->True(
     'TicketDelete()',
 );
 
-my $DeleteCheck = $TicketObject->TicketGet(
-    TicketID => $TicketID,
-    UserID   => 1,
-);
-
-$Self->False(
-    $DeleteCheck,
-    'TicketDelete() worked',
-);
-
-my $CustomerNo = '42' . int rand 1_000_000;
-
 # ticket search sort/order test
 my $TicketIDSortOrder1 = $TicketObject->TicketCreate(
-    Title        => 'Some Ticket_Title - ticket sort/order by tests',
+    Title        => 'Some Ticket Title - ticket sort/order by tests',
     Queue        => 'Raw',
     Lock         => 'unlock',
     Priority     => '3 normal',
     State        => 'new',
-    CustomerNo   => $CustomerNo,
+    CustomerNo   => '123465',
     CustomerUser => 'customer@example.com',
     OwnerID      => 1,
     UserID       => 1,
 );
-my %TicketCreated = $TicketObject->TicketGet(
-    TicketID => $TicketIDSortOrder1,
-    UserID   => 1,
-);
-
-$Self->Is(
-    $TicketCreated{Changed},
-    $TicketCreated{Created},
-    'TicketCreated for sort - change time eq create time'
-        . "$TicketCreated{Changed} eq $TicketCreated{Created}",
-);
-
 sleep 2;
 my $TicketIDSortOrder2 = $TicketObject->TicketCreate(
-    Title        => 'Some Ticket_Title - ticket sort/order by tests2',
+    Title        => 'Some Ticket Title - ticket sort/order by tests2',
     Queue        => 'Raw',
     Lock         => 'unlock',
     Priority     => '3 normal',
     State        => 'new',
-    CustomerNo   => $CustomerNo,
+    CustomerNo   => '123465',
     CustomerUser => 'customer@example.com',
     OwnerID      => 1,
     UserID       => 1,
-);
-sleep 2;
-my $Success = $TicketObject->TicketStateSet(
-    State    => 'open',
-    TicketID => $TicketIDSortOrder1,
-    UserID   => 1,
-);
-$Self->True(
-    $Success,
-    'TicketTicketStateUpdate - update ticket state',
-);
-
-my %TicketUpdated = $TicketObject->TicketGet(
-    TicketID => $TicketIDSortOrder1,
-    UserID   => 1,
-);
-
-$Self->IsNot(
-    $TicketUpdated{Changed},
-    $TicketUpdated{Created},
-    'TicketUpdated for sort - change time ne create time'
-        . "$TicketUpdated{Changed} eq $TicketUpdated{Created}",
 );
 
 # find newest ticket by priority, age
 my @TicketIDsSortOrder = $TicketObject->TicketSearch(
-    Result       => 'ARRAY',
-    Title        => '%sort/order by test%',
-    Queues       => ['Raw'],
-    CustomerNo   => $CustomerNo,
-    CustomerUser => 'customer@example.com',
-    OrderBy      => [ 'Down', 'Up' ],
-    SortBy       => [ 'Priority', 'Age' ],
-    UserID       => 1,
-    Limit        => 1,
+    Result  => 'ARRAY',
+    Title   => '%sort/order by test%',
+    Queues  => ['Raw'],
+    OrderBy => [ 'Down', 'Up' ],
+    SortBy  => [ 'Priority', 'Age' ],
+    UserID  => 1,
 );
-$Self->Is(
-    $TicketIDsSortOrder[0],
-    $TicketIDSortOrder1,
+$Self->True(
+    $TicketIDsSortOrder[0] eq $TicketIDSortOrder1,
     'TicketTicketSearch() - ticket sort/order by (Priority (Down), Age (Up))',
 );
 
 # find oldest ticket by priority, age
 @TicketIDsSortOrder = $TicketObject->TicketSearch(
-    Result       => 'ARRAY',
-    Title        => '%sort/order by test%',
-    Queues       => ['Raw'],
-    CustomerNo   => $CustomerNo,
-    CustomerUser => 'customer@example.com',
-    OrderBy      => [ 'Down', 'Down' ],
-    SortBy       => [ 'Priority', 'Age' ],
-    UserID       => 1,
-    Limit        => 1,
+    Result  => 'ARRAY',
+    Title   => '%sort/order by test%',
+    Queues  => ['Raw'],
+    OrderBy => [ 'Down', 'Down' ],
+    SortBy  => [ 'Priority', 'Age' ],
+    UserID  => 1,
 );
-$Self->Is(
-    $TicketIDsSortOrder[0],
-    $TicketIDSortOrder2,
+$Self->True(
+    $TicketIDsSortOrder[0] eq $TicketIDSortOrder2,
     'TicketTicketSearch() - ticket sort/order by (Priority (Down), Age (Down))',
 );
-
-# find last modified ticket by changed time
-@TicketIDsSortOrder = $TicketObject->TicketSearch(
-    Result       => 'ARRAY',
-    Title        => '%sort/order by test%',
-    Queues       => ['Raw'],
-    CustomerNo   => $CustomerNo,
-    CustomerUser => 'customer@example.com',
-    OrderBy      => [ 'Down', ],
-    SortBy       => ['Changed'],
-    UserID       => 1,
-    Limit        => 1,
-);
-$Self->Is(
-    $TicketIDsSortOrder[0],
-    $TicketIDSortOrder1,
-    'TicketTicketSearch() - ticket sort/order by (Changed (Down))'
-        . "$TicketIDsSortOrder[0] instead of $TicketIDSortOrder1",
-);
-
-# find oldest modified by changed time
-@TicketIDsSortOrder = $TicketObject->TicketSearch(
-    Result       => 'ARRAY',
-    Title        => '%sort/order by test%',
-    Queues       => ['Raw'],
-    CustomerNo   => $CustomerNo,
-    CustomerUser => 'customer@example.com',
-    OrderBy      => [ 'Up', ],
-    SortBy       => [ 'Changed', ],
-    UserID       => 1,
-    Limit        => 1,
-);
-$Self->Is(
-    $TicketIDsSortOrder[0],
-    $TicketIDSortOrder2,
-    'TicketTicketSearch() - ticket sort/order by (Changed (Up)))'
-        . "$TicketIDsSortOrder[0]  instead of $TicketIDSortOrder2",
-);
-
 my $TicketIDSortOrder3 = $TicketObject->TicketCreate(
-    Title        => 'Some Ticket_Title - ticket sort/order by tests2',
+    Title        => 'Some Ticket Title - ticket sort/order by tests2',
     Queue        => 'Raw',
     Lock         => 'unlock',
     Priority     => '4 high',
     State        => 'new',
-    CustomerNo   => $CustomerNo,
+    CustomerNo   => '123465',
     CustomerUser => 'customer@example.com',
     OwnerID      => 1,
     UserID       => 1,
 );
 sleep 2;
 my $TicketIDSortOrder4 = $TicketObject->TicketCreate(
-    Title        => 'Some Ticket_Title - ticket sort/order by tests2',
+    Title        => 'Some Ticket Title - ticket sort/order by tests2',
     Queue        => 'Raw',
     Lock         => 'unlock',
     Priority     => '4 high',
     State        => 'new',
-    CustomerNo   => $CustomerNo,
+    CustomerNo   => '123465',
     CustomerUser => 'customer@example.com',
     OwnerID      => 1,
     UserID       => 1,
@@ -1572,11 +4632,9 @@ my $TicketIDSortOrder4 = $TicketObject->TicketCreate(
     OrderBy => [ 'Down', 'Down' ],
     SortBy  => [ 'Priority', 'Age' ],
     UserID  => 1,
-    Limit   => 1,
 );
-$Self->Is(
-    $TicketIDsSortOrder[0],
-    $TicketIDSortOrder4,
+$Self->True(
+    $TicketIDsSortOrder[0] eq $TicketIDSortOrder4,
     'TicketTicketSearch() - ticket sort/order by (Priority (Down), Age (Down))',
 );
 
@@ -1588,11 +4646,9 @@ $Self->Is(
     OrderBy => [ 'Up', 'Down' ],
     SortBy  => [ 'Priority', 'Age' ],
     UserID  => 1,
-    Limit   => 1,
 );
-$Self->Is(
-    $TicketIDsSortOrder[0],
-    $TicketIDSortOrder2,
+$Self->True(
+    $TicketIDsSortOrder[0] eq $TicketIDSortOrder2,
     'TicketTicketSearch() - ticket sort/order by (Priority (Up), Age (Down))',
 );
 
@@ -1604,11 +4660,9 @@ $Self->Is(
     OrderBy => 'Down',
     SortBy  => 'Age',
     UserID  => 1,
-    Limit   => 1,
 );
-$Self->Is(
-    $TicketIDsSortOrder[0],
-    $TicketIDSortOrder4,
+$Self->True(
+    $TicketIDsSortOrder[0] eq $TicketIDSortOrder4,
     'TicketTicketSearch() - ticket sort/order by (Age (Down))',
 );
 
@@ -1620,11 +4674,9 @@ $Self->Is(
     OrderBy => 'Up',
     SortBy  => 'Age',
     UserID  => 1,
-    Limit   => 1,
 );
-$Self->Is(
-    $TicketIDsSortOrder[0],
-    $TicketIDSortOrder1,
+$Self->True(
+    $TicketIDsSortOrder[0] eq $TicketIDSortOrder1,
     'TicketTicketSearch() - ticket sort/order by (Age (Up))',
 );
 $Self->True(
@@ -1655,6 +4707,352 @@ $Self->True(
     ),
     "TicketDelete()",
 );
+
+# ticket index accelerator tests
+for my $Module ( 'RuntimeDB', 'StaticDB' ) {
+    my $QueueID = $QueueObject->QueueLookup( Queue => 'Raw' );
+    $ConfigObject->Set(
+        Key   => 'Ticket::IndexModule',
+        Value => "Kernel::System::Ticket::IndexAccelerator::$Module",
+    );
+    my $TicketObject = Kernel::System::Ticket->new(
+        %{$Self},
+        ConfigObject => $ConfigObject,
+    );
+
+    my @TicketIDs;
+    $TicketID = $TicketObject->TicketCreate(
+        Title        => 'Some Ticket Title - ticket index accelerator tests',
+        Queue        => 'Raw',
+        Lock         => 'unlock',
+        Priority     => '3 normal',
+        State        => 'new',
+        CustomerNo   => '123465',
+        CustomerUser => 'customer@example.com',
+        OwnerID      => 1,
+        UserID       => 1,
+    );
+    push( @TicketIDs, $TicketID );
+    $Self->True(
+        $TicketID,
+        "$Module TicketCreate() - unlock - new",
+    );
+
+    my %IndexBefore = $TicketObject->TicketAcceleratorIndex(
+        UserID        => 1,
+        QueueID       => [ 1, 2, 3, 4, 5, $QueueID ],
+        ShownQueueIDs => [ 1, 2, 3, 4, 5, $QueueID ],
+    );
+    $TicketID = $TicketObject->TicketCreate(
+        Title        => 'Some Ticket Title - ticket index accelerator tests',
+        Queue        => 'Raw',
+        Lock         => 'unlock',
+        Priority     => '3 normal',
+        State        => 'closed successful',
+        CustomerNo   => '123465',
+        CustomerUser => 'customer@example.com',
+        OwnerID      => 1,
+        UserID       => 1,
+    );
+    push( @TicketIDs, $TicketID );
+    $Self->True(
+        $TicketID,
+        "$Module TicketCreate() - unlock - closed successful",
+    );
+    $TicketID = $TicketObject->TicketCreate(
+        Title        => 'Some Ticket Title - ticket index accelerator tests',
+        Queue        => 'Raw',
+        Lock         => 'lock',
+        Priority     => '3 normal',
+        State        => 'closed successful',
+        CustomerNo   => '123465',
+        CustomerUser => 'customer@example.com',
+        OwnerID      => 1,
+        UserID       => 1,
+    );
+    push( @TicketIDs, $TicketID );
+    $Self->True(
+        $TicketID,
+        "$Module TicketCreate() - lock - closed successful",
+    );
+    $TicketID = $TicketObject->TicketCreate(
+        Title        => 'Some Ticket Title - ticket index accelerator tests',
+        Queue        => 'Raw',
+        Lock         => 'lock',
+        Priority     => '3 normal',
+        State        => 'open',
+        CustomerNo   => '123465',
+        CustomerUser => 'customer@example.com',
+        OwnerID      => 1,
+        UserID       => 1,
+    );
+    push( @TicketIDs, $TicketID );
+    $Self->True(
+        $TicketID,
+        "$Module TicketCreate() - lock - open",
+    );
+    $TicketID = $TicketObject->TicketCreate(
+        Title        => 'Some Ticket Title - ticket index accelerator tests',
+        Queue        => 'Raw',
+        Lock         => 'unlock',
+        Priority     => '3 normal',
+        State        => 'open',
+        CustomerNo   => '123465',
+        CustomerUser => 'customer@example.com',
+        OwnerID      => 1,
+        UserID       => 1,
+    );
+    push( @TicketIDs, $TicketID );
+    $Self->True(
+        $TicketID,
+        "$Module TicketCreate() - unlock - open",
+    );
+
+    my %IndexNow = $TicketObject->TicketAcceleratorIndex(
+        UserID        => 1,
+        QueueID       => [ 1, 2, 3, 4, 5, $QueueID ],
+        ShownQueueIDs => [ 1, 2, 3, 4, 5, $QueueID ],
+    );
+    $Self->Is(
+        $IndexBefore{AllTickets}  || 0,
+        $IndexNow{AllTickets} - 2 || '',
+        "$Module TicketAcceleratorIndex() - AllTickets",
+    );
+    for my $ItemNow ( @{ $IndexNow{Queues} } ) {
+        if ( $ItemNow->{Queue} eq 'Raw' ) {
+            for my $ItemBefore ( @{ $IndexBefore{Queues} } ) {
+                if ( $ItemBefore->{Queue} eq 'Raw' ) {
+                    $Self->Is(
+                        $ItemBefore->{Count}  || 0,
+                        $ItemNow->{Count} - 1 || '',
+                        "$Module TicketAcceleratorIndex() - Count",
+                    );
+                }
+            }
+        }
+    }
+    my $TicketLock = $TicketObject->LockSet(
+        Lock               => 'lock',
+        TicketID           => $TicketIDs[1],
+        SendNoNotification => 1,
+        UserID             => 1,
+    );
+    $Self->True(
+        $TicketLock,
+        "$Module LockSet()",
+    );
+    %IndexNow = $TicketObject->TicketAcceleratorIndex(
+        UserID        => 1,
+        QueueID       => [ 1, 2, 3, 4, 5, $QueueID ],
+        ShownQueueIDs => [ 1, 2, 3, 4, 5, $QueueID ],
+    );
+    $Self->Is(
+        $IndexBefore{AllTickets}  || 0,
+        $IndexNow{AllTickets} - 2 || '',
+        "$Module TicketAcceleratorIndex() - AllTickets",
+    );
+    for my $ItemNow ( @{ $IndexNow{Queues} } ) {
+        if ( $ItemNow->{Queue} eq 'Raw' ) {
+            for my $ItemBefore ( @{ $IndexBefore{Queues} } ) {
+                if ( $ItemBefore->{Queue} eq 'Raw' ) {
+                    $Self->Is(
+                        $ItemBefore->{Count}  || 0,
+                        $ItemNow->{Count} - 1 || '',
+                        "$Module TicketAcceleratorIndex() - Count",
+                    );
+                }
+            }
+        }
+    }
+    $TicketLock = $TicketObject->LockSet(
+        Lock               => 'lock',
+        TicketID           => $TicketIDs[4],
+        SendNoNotification => 1,
+        UserID             => 1,
+    );
+    $Self->True(
+        $TicketLock,
+        "$Module LockSet()",
+    );
+    %IndexNow = $TicketObject->TicketAcceleratorIndex(
+        UserID        => 1,
+        QueueID       => [ 1, 2, 3, 4, 5, $QueueID ],
+        ShownQueueIDs => [ 1, 2, 3, 4, 5, $QueueID ],
+    );
+    $Self->Is(
+        $IndexBefore{AllTickets}  || 0,
+        $IndexNow{AllTickets} - 2 || '',
+        "$Module TicketAcceleratorIndex() - AllTickets",
+    );
+    for my $ItemNow ( @{ $IndexNow{Queues} } ) {
+        if ( $ItemNow->{Queue} eq 'Raw' ) {
+            for my $ItemBefore ( @{ $IndexBefore{Queues} } ) {
+                if ( $ItemBefore->{Queue} eq 'Raw' ) {
+                    $Self->Is(
+                        $ItemBefore->{Count} || 0,
+                        $ItemNow->{Count}    || '',
+                        "$Module TicketAcceleratorIndex() - Count",
+                    );
+                }
+            }
+        }
+    }
+    $TicketLock = $TicketObject->LockSet(
+        Lock               => 'unlock',
+        TicketID           => $TicketIDs[4],
+        SendNoNotification => 1,
+        UserID             => 1,
+    );
+    $Self->True(
+        $TicketLock,
+        "$Module LockSet()",
+    );
+    %IndexNow = $TicketObject->TicketAcceleratorIndex(
+        UserID        => 1,
+        QueueID       => [ 1, 2, 3, 4, 5, $QueueID ],
+        ShownQueueIDs => [ 1, 2, 3, 4, 5, $QueueID ],
+    );
+    $Self->Is(
+        $IndexBefore{AllTickets}  || 0,
+        $IndexNow{AllTickets} - 2 || '',
+        "$Module TicketAcceleratorIndex() - AllTickets",
+    );
+    for my $ItemNow ( @{ $IndexNow{Queues} } ) {
+        if ( $ItemNow->{Queue} eq 'Raw' ) {
+            for my $ItemBefore ( @{ $IndexBefore{Queues} } ) {
+                if ( $ItemBefore->{Queue} eq 'Raw' ) {
+                    $Self->Is(
+                        $ItemBefore->{Count}  || 0,
+                        $ItemNow->{Count} - 1 || '',
+                        "$Module TicketAcceleratorIndex() - Count",
+                    );
+                }
+            }
+        }
+    }
+    my $TicketState = $TicketObject->StateSet(
+        State              => 'open',
+        TicketID           => $TicketIDs[1],
+        SendNoNotification => 1,
+        UserID             => 1,
+    );
+    $Self->True(
+        $TicketState,
+        "$Module StateSet()",
+    );
+    $TicketLock = $TicketObject->LockSet(
+        Lock               => 'unlock',
+        TicketID           => $TicketIDs[1],
+        SendNoNotification => 1,
+        UserID             => 1,
+    );
+    $Self->True(
+        $TicketLock,
+        "$Module LockSet()",
+    );
+    %IndexNow = $TicketObject->TicketAcceleratorIndex(
+        UserID        => 1,
+        QueueID       => [ 1, 2, 3, 4, 5, $QueueID ],
+        ShownQueueIDs => [ 1, 2, 3, 4, 5, $QueueID ],
+    );
+    $Self->Is(
+        $IndexBefore{AllTickets}  || 0,
+        $IndexNow{AllTickets} - 3 || '',
+        "$Module TicketAcceleratorIndex() - AllTickets",
+    );
+    for my $ItemNow ( @{ $IndexNow{Queues} } ) {
+        if ( $ItemNow->{Queue} eq 'Raw' ) {
+            for my $ItemBefore ( @{ $IndexBefore{Queues} } ) {
+                if ( $ItemBefore->{Queue} eq 'Raw' ) {
+                    $Self->Is(
+                        $ItemBefore->{Count}  || 0,
+                        $ItemNow->{Count} - 2 || '',
+                        "$Module TicketAcceleratorIndex() - Count",
+                    );
+                }
+            }
+        }
+    }
+
+    # array to save the accounted times of each ticket
+    my @AccountedTimes = ();
+    my $Position       = 0;
+
+    for my $TicketID (@TicketIDs) {
+
+        for my $Index ( 1 .. 3 ) {
+
+            # generate a random number for the time units
+            my $RandomNumber = int( rand(100) ) + 1;
+
+            my $ArticleID = $TicketObject->ArticleCreate(
+                TicketID       => $TicketID,
+                ArticleType    => 'note-internal',
+                SenderType     => 'agent',
+                From           => 'Some Agent <email@example.com>',
+                To             => 'Some Customer A <customer-a@example.com>',
+                Subject        => 'some short description',
+                Body           => 'the message text',
+                Charset        => 'ISO-8859-15',
+                MimeType       => 'text/plain',
+                HistoryType    => 'OwnerUpdate',
+                HistoryComment => 'Some free text!',
+                UserID         => 1,
+            );
+
+            # add accounted time
+            $Self->True(
+                $TicketObject->TicketAccountTime(
+                    TicketID  => $TicketID,
+                    ArticleID => $ArticleID,
+                    TimeUnit  => $RandomNumber,
+                    UserID    => 1,
+                ),
+                "Add accounted time",
+            );
+
+            $AccountedTimes[$Position] += $RandomNumber;
+        }
+
+        # verify accounted time
+        $Self->Is(
+            $TicketObject->TicketAccountedTimeGet( TicketID => $TicketID ),
+            $AccountedTimes[$Position],
+            "Ticket accounted time",
+        );
+        $Position++;
+    }
+
+    my $ArraySize = @TicketIDs;
+
+    # merge the first and the last ticket on the array
+    $Self->True(
+        $TicketObject->TicketMerge(
+            MainTicketID  => $TicketIDs[0],
+            MergeTicketID => $TicketIDs[ $ArraySize - 1 ],
+            UserID        => 1,
+        ),
+        "Merge tickets",
+    );
+
+# verify the accounted time of the main ticket, it should be the sum of both (main and merge tickets)
+    $Self->Is(
+        $TicketObject->TicketAccountedTimeGet( TicketID => $TicketIDs[0] ),
+        $AccountedTimes[0] + $AccountedTimes[ $ArraySize - 1 ],
+        "Merged ticket accounted time",
+    );
+
+    # delete tickets
+    for my $TicketID (@TicketIDs) {
+        $Self->True(
+            $TicketObject->TicketDelete(
+                TicketID => $TicketID,
+                UserID   => 1,
+            ),
+            "$Module TicketDelete()",
+        );
+    }
+}
 
 # ---
 # avoid StateType and StateTypeID problems in TicketSearch()
@@ -1916,47 +5314,460 @@ $TicketObject->TicketDelete(
     UserID   => 1,
 );
 
-# tests for searching StateTypes that might not have states
-# this should return an empty list rather then a big SQL error
-# the problem is, we can't really test if there is an SQL error or not
-# ticketsearch returns an empty list anyway
+# tests for article search index modules
+for my $Module (qw(StaticDB RuntimeDB)) {
+    $ConfigObject->Set(
+        Key   => 'Ticket::SearchIndexModule',
+        Value => 'Kernel::System::Ticket::ArticleSearchIndex::' . $Module,
+    );
+    my $TicketObject = Kernel::System::Ticket->new(
+        %{$Self},
+        ConfigObject => $ConfigObject,
+    );
 
-my @NewStates = $StateObject->StateGetStatesByType(
-    StateType => ['new'],
-    Result    => 'ID',
-);
+    # create some content
+    my $TicketID = $TicketObject->TicketCreate(
+        Title        => 'Some Ticket Title',
+        Queue        => 'Raw',
+        Lock         => 'unlock',
+        Priority     => '3 normal',
+        State        => 'closed successful',
+        CustomerNo   => '123465',
+        CustomerUser => 'customer@example.com',
+        OwnerID      => 1,
+        UserID       => 1,
+    );
+    $Self->True(
+        $TicketID,
+        'TicketCreate()',
+    );
 
-# make sure we dont have valid states for state type new
-for my $NewStateID (@NewStates) {
-    my %State = $StateObject->StateGet( ID => $NewStateID, );
-    $StateObject->StateUpdate(
-        %State,
-        ValidID => 2,
-        UserID  => 1,
+    my $ArticleID = $TicketObject->ArticleCreate(
+        TicketID    => $TicketID,
+        ArticleType => 'note-internal',
+        SenderType  => 'agent',
+        From        => 'Some Agent <email@example.com>',
+        To          => 'Some Customer <customer@example.com>',
+        Subject     => 'some short description',
+        Body        => 'the message text
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.',
+        ContentType    => 'text/plain; charset=ISO-8859-15',
+        HistoryType    => 'OwnerUpdate',
+        HistoryComment => 'Some free text!',
+        UserID         => 1,
+        NoAgentNotify => 1,    # if you don't want to send agent notifications
+    );
+    $Self->True(
+        $ArticleID,
+        'ArticleCreate()',
+    );
+
+    # search
+    my %TicketIDs = $TicketObject->TicketSearch(
+        Subject    => '%short%',
+        Result     => 'HASH',
+        Limit      => 100,
+        UserID     => 1,
+        Permission => 'rw',
+    );
+    $Self->True(
+        $TicketIDs{$TicketID},
+        'TicketSearch() (HASH:Subject)',
+    );
+
+    $ArticleID = $TicketObject->ArticleCreate(
+        TicketID    => $TicketID,
+        ArticleType => 'note-internal',
+        SenderType  => 'agent',
+        From        => 'Some Agent <email@example.com>',
+        To          => 'Some Customer <customer@example.com>',
+        Subject     => 'Fax Agreement laalala',
+        Body        => 'the message text
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.',
+        ContentType    => 'text/plain; charset=ISO-8859-15',
+        HistoryType    => 'OwnerUpdate',
+        HistoryComment => 'Some free text!',
+        UserID         => 1,
+        NoAgentNotify => 1,    # if you don't want to send agent notifications
+    );
+    $Self->True(
+        $ArticleID,
+        'ArticleCreate()',
+    );
+
+    # search
+    %TicketIDs = $TicketObject->TicketSearch(
+        Subject    => '%fax agreement%',
+        Result     => 'HASH',
+        Limit      => 100,
+        UserID     => 1,
+        Permission => 'rw',
+    );
+    $Self->True(
+        $TicketIDs{$TicketID},
+        'TicketSearch() (HASH:Subject)',
+    );
+
+    # search
+    %TicketIDs = $TicketObject->TicketSearch(
+        Body       => '%HELP%',
+        Result     => 'HASH',
+        Limit      => 100,
+        UserID     => 1,
+        Permission => 'rw',
+    );
+    $Self->True(
+        $TicketIDs{$TicketID},
+        'TicketSearch() (HASH:Body)',
+    );
+
+    # search
+    %TicketIDs = $TicketObject->TicketSearch(
+        Body       => '%HELP_NOT_FOUND%',
+        Result     => 'HASH',
+        Limit      => 100,
+        UserID     => 1,
+        Permission => 'rw',
+    );
+    $Self->True(
+        !$TicketIDs{$TicketID},
+        'TicketSearch() (HASH:Body)',
+    );
+
+    my $Delete = $TicketObject->TicketDelete(
+        TicketID => $TicketID,
+        UserID   => 1,
+    );
+    $Self->True(
+        $Delete,
+        'TicketDelete()',
     );
 }
 
-my @TicketIDs = $TicketObject->TicketSearch(
-    Result       => 'LIST',
-    Limit        => 100,
-    TicketNumber => [ $Ticket{TicketNumber}, 'ABC' ],
-    StateType    => 'New',
-    UserID       => 1,
-    Permission   => 'rw',
-);
-$Self->False(
-    $TicketIDs[0],
-    'TicketSearch() (LIST:TicketNumber,StateType:new (no valid states of state type new)',
-);
+# ---
+# ticket/article flag tests
+# ---
 
-# activate states again
-for my $NewStateID (@NewStates) {
-    my %State = $StateObject->StateGet( ID => $NewStateID, );
-    $StateObject->StateUpdate(
-        %State,
-        ValidID => 1,
-        UserID  => 1,
+# create 2 new users
+my @UserIDs;
+for ( 1 .. 2 ) {
+    my $random_number = rand(1000);
+
+    my $UserID = $UserObject->UserAdd(
+        UserFirstname => "MyExampleUserName$random_number",
+        UserLastname  => "MyExampleUserLastName$random_number",
+        UserLogin     => "example$random_number",
+        UserEmail     => "myuser$random_number\@mydomain.com",
+        ValidID       => 1,
+        ChangeUserID  => 1,
     );
+    push @UserIDs, $UserID;
+}
+
+# create some content
+$TicketID = $TicketObject->TicketCreate(
+    Title        => 'Some Ticket Title',
+    Queue        => 'Raw',
+    Lock         => 'unlock',
+    Priority     => '3 normal',
+    State        => 'closed successful',
+    CustomerNo   => '123465',
+    CustomerUser => 'customer@example.com',
+    OwnerID      => 1,
+    UserID       => 1,
+);
+$Self->True(
+    $TicketID,
+    'TicketCreate()',
+);
+my @TicketIDs = ($TicketID);
+
+# create article
+my @ArticleIDs;
+for ( 1 .. 2 ) {
+    my $ArticleID = $TicketObject->ArticleCreate(
+        TicketID    => $TicketID,
+        ArticleType => 'note-internal',
+        SenderType  => 'agent',
+        From        => 'Some Agent <email@example.com>',
+        To          => 'Some Customer <customer@example.com>',
+        Subject     => 'Fax Agreement laalala',
+        Body        => 'the message text
+Perl modules provide a range of features to help you avoid reinventing the wheel, and can be downloaded from CPAN ( http://www.cpan.org/ ). A number of popular modules are included with the Perl distribution itself.',
+        ContentType    => 'text/plain; charset=ISO-8859-15',
+        HistoryType    => 'OwnerUpdate',
+        HistoryComment => 'Some free text!',
+        UserID         => 1,
+        NoAgentNotify => 1,    # if you don't want to send agent notifications
+    );
+    push @ArticleIDs, $ArticleID;
+}
+
+# check initial ticket and article flags
+for my $UserID (@UserIDs) {
+    my %TicketFlag = $TicketObject->TicketFlagGet(
+        TicketID => $TicketID,
+        UserID   => $UserID,
+    );
+    $Self->False(
+        $TicketFlag{Seen},
+        "Initial FlagCheck (false) - TicketFlagGet() - TicketID($TicketID) - UserID($UserID)",
+    );
+    for my $ArticleID (@ArticleIDs) {
+        my %ArticleFlag = $TicketObject->ArticleFlagGet(
+            ArticleID => $ArticleID,
+            UserID    => $UserID,
+        );
+        $Self->False(
+            $ArticleFlag{Seen},
+            "Initial FlagCheck (false) - ArticleFlagGet() - TicketID($TicketID) - ArticleID($ArticleID) - UserID($UserID)",
+        );
+    }
+}
+
+# update one article
+for my $UserID (@UserIDs) {
+    my $Success = $TicketObject->ArticleFlagSet(
+        ArticleID => $ArticleIDs[0],
+        Key       => 'Seen',
+        Value     => 1,
+        UserID    => $UserID,
+    );
+    $Self->True(
+        $Success,
+        "UpdateOne FlagCheck ArticleFlagSet() - ArticleID($ArticleIDs[0])",
+    );
+    my %TicketFlag = $TicketObject->TicketFlagGet(
+        TicketID => $TicketID,
+        UserID   => $UserID,
+    );
+    $Self->False(
+        $TicketFlag{Seen},
+        "UpdateOne FlagCheck (false) TicketFlagGet() - TicketID($TicketID) - ArticleID($ArticleIDs[0]) - UserID($UserID)",
+    );
+    my %ArticleFlag = $TicketObject->ArticleFlagGet(
+        ArticleID => $ArticleIDs[0],
+        UserID    => $UserID,
+    );
+    $Self->True(
+        $ArticleFlag{Seen},
+        "UpdateOne FlagCheck (true) ArticleFlagGet() - TicketID($TicketID) - ArticleID($ArticleIDs[0]) - UserID($UserID)",
+    );
+    %ArticleFlag = $TicketObject->ArticleFlagGet(
+        ArticleID => $ArticleIDs[1],
+        UserID    => $UserID,
+    );
+    $Self->False(
+        $ArticleFlag{Seen},
+        "UpdateOne FlagCheck (false) ArticleFlagGet() - TicketID($TicketID) - ArticleID($ArticleIDs[1]) - UserID($UserID)",
+    );
+}
+
+# update second article
+for my $UserID (@UserIDs) {
+    my $Success = $TicketObject->ArticleFlagSet(
+        ArticleID => $ArticleIDs[1],
+        Key       => 'Seen',
+        Value     => 1,
+        UserID    => $UserID,
+    );
+    $Self->True(
+        $Success,
+        "UpdateTwo FlagCheck ArticleFlagSet() - ArticleID($ArticleIDs[1])",
+    );
+    my %TicketFlag = $TicketObject->TicketFlagGet(
+        TicketID => $TicketID,
+        UserID   => $UserID,
+    );
+    $Self->True(
+        $TicketFlag{Seen},
+        "UpdateTwo FlagCheck (true) TicketFlagGet() - TicketID($TicketID) - ArticleID($ArticleIDs[1]) - UserID($UserID)",
+    );
+    for my $ArticleID (@ArticleIDs) {
+        my %ArticleFlag = $TicketObject->ArticleFlagGet(
+            ArticleID => $ArticleID,
+            UserID    => $UserID,
+        );
+        $Self->True(
+            $ArticleFlag{Seen},
+            "UpdateTwo FlagCheck (true) ArticleFlagGet() - TicketID($TicketID) - ArticleID($ArticleID) - UserID($UserID)",
+        );
+    }
+}
+
+# delete tickets
+for my $TicketID (@TicketIDs) {
+    $Self->True(
+        $TicketObject->TicketDelete(
+            TicketID => $TicketID,
+            UserID   => 1,
+        ),
+        'TicketDelete()',
+    );
+}
+
+# set created users to invalid
+for my $UserID (@UserIDs) {
+    my $random_number = rand(1000);
+
+    $UserObject->UserUpdate(
+        UserID        => $UserID,
+        UserFirstname => "MyExampleUserName$random_number",
+        UserLastname  => "MyExampleUserLastName$random_number",
+        UserLogin     => "example$random_number",
+        UserEmail     => "myuser$random_number\@mydomain.com",
+        ValidID       => 2,
+        ChangeUserID  => 1,
+    );
+}
+
+# create tickets/article/attachments in backend for article storage switch tests
+for my $SourceBackend (qw(ArticleStorageDB ArticleStorageFS)) {
+
+    $ConfigObject->Set(
+        Key   => 'Ticket::StorageModule',
+        Value => 'Kernel::System::Ticket::' . $SourceBackend,
+    );
+    my $TicketObject = Kernel::System::Ticket->new(
+        %{$Self},
+        ConfigObject => $ConfigObject,
+    );
+    my @TicketIDs;
+    my %ArticleIDs;
+    my $NamePrefix = "ArticleStorageSwitch ($SourceBackend)";
+    for my $File (qw(1 2 3 4 5 6 7 8 9 10 11)) {
+
+        my $NamePrefix = "$NamePrefix #$File ";
+
+        # new ticket check
+        my @Content;
+        my $MailFile = $ConfigObject->Get('Home')
+            . "/scripts/test/sample/PostMaster/PostMaster-Test$File.box";
+        open( IN, '<', $MailFile ) || die $!;
+        binmode(IN);
+        while ( my $Line = <IN> ) {
+            push @Content, $Line;
+        }
+        close(IN);
+
+        my $PostMasterObject = Kernel::System::PostMaster->new(
+            %{$Self},
+            TicketObject => $TicketObject,
+            QueueObject  => $QueueObject,
+            ConfigObject => $ConfigObject,
+            Email        => \@Content,
+        );
+
+        my @Return = $PostMasterObject->Run();
+        $Self->Is(
+            $Return[0] || 0,
+            1,
+            $NamePrefix . ' Run() - NewTicket',
+        );
+        $Self->True(
+            $Return[1] || 0,
+            $NamePrefix . ' Run() - NewTicket/TicketID',
+        );
+
+        # remember created tickets
+        push @TicketIDs, $Return[1];
+
+        # remember created article and attachments
+        my @ArticleBox = $TicketObject->ArticleContentIndex(
+            TicketID => $Return[1],
+            UserID   => 1,
+        );
+        for my $Article (@ArticleBox) {
+            $ArticleIDs{ $Article->{ArticleID} } = { %{ $Article->{Atms} } };
+        }
+    }
+
+    my @Map = (
+        [ 'ArticleStorageDB', 'ArticleStorageFS' ],
+        [ 'ArticleStorageFS', 'ArticleStorageDB' ],
+        [ 'ArticleStorageDB', 'ArticleStorageFS' ],
+        [ 'ArticleStorageFS', 'ArticleStorageDB' ],
+        [ 'ArticleStorageFS', 'ArticleStorageDB' ],
+    );
+    for my $Case (@Map) {
+        my $SourceBackend      = $Case->[0];
+        my $DestinationBackend = $Case->[1];
+        my $NamePrefix         = "ArticleStorageSwitch ($SourceBackend->$DestinationBackend)";
+
+        # verify
+        for my $ArticleID ( sort keys %ArticleIDs ) {
+            my %Index = $TicketObject->ArticleAttachmentIndex(
+                ArticleID => $ArticleID,
+                UserID    => 1,
+            );
+
+            # check file attributes
+            for my $AttachmentID ( sort keys %{ $ArticleIDs{$ArticleID} } ) {
+                for my $ID ( sort keys %Index ) {
+                    next
+                        if $ArticleIDs{$ArticleID}->{$AttachmentID}->{Filename} ne
+                            $Index{$ID}->{Filename};
+                    for my $Attribute ( sort keys %{ $ArticleIDs{$ArticleID}->{$AttachmentID} } ) {
+                        $Self->Is(
+                            $Index{$ID}->{$Attribute},
+                            $ArticleIDs{$ArticleID}->{$AttachmentID}->{$Attribute},
+                            "$NamePrefix - Verify before - $Attribute (ArticleID:$ArticleID)",
+                        );
+                    }
+                }
+            }
+        }
+
+        # switch to backend b
+        for my $TicketID (@TicketIDs) {
+            my $Success = $TicketObject->TicketArticleStorageSwitch(
+                TicketID    => $TicketID,
+                Source      => $SourceBackend,
+                Destination => $DestinationBackend,
+                UserID      => 1,
+            );
+            $Self->True(
+                $Success,
+                "$NamePrefix - backend move",
+            );
+        }
+
+        # verify
+        for my $ArticleID ( sort keys %ArticleIDs ) {
+            my %Index = $TicketObject->ArticleAttachmentIndex(
+                ArticleID => $ArticleID,
+                UserID    => 1,
+            );
+
+            # check file attributes
+            for my $AttachmentID ( sort keys %{ $ArticleIDs{$ArticleID} } ) {
+                for my $ID ( sort keys %Index ) {
+                    next
+                        if $ArticleIDs{$ArticleID}->{$AttachmentID}->{Filename} ne
+                            $Index{$ID}->{Filename};
+                    for my $Attribute ( sort keys %{ $ArticleIDs{$ArticleID}->{$AttachmentID} } ) {
+                        $Self->Is(
+                            $Index{$ID}->{$Attribute},
+                            $ArticleIDs{$ArticleID}->{$AttachmentID}->{$Attribute},
+                            "$NamePrefix - Verify after - $Attribute (ArticleID:$ArticleID)",
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    # cleanup
+    for my $TicketID (@TicketIDs) {
+        my $Delete = $TicketObject->TicketDelete(
+            UserID   => 1,
+            TicketID => $TicketID,
+        );
+        $Self->True(
+            $Delete,
+            "$NamePrefix - TicketDelete()",
+        );
+    }
 }
 
 1;
