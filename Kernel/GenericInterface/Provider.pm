@@ -1,15 +1,15 @@
 # --
-# Kernel/GI/Debugger.pm - GenericInterface data debugger interface
+# Kernel/GenericInterface/Provider.pm - GenericInterface provider handler
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Debugger.pm,v 1.1 2011/02/04 09:37:35 mg Exp $
+# $Id: Provider.pm,v 1.1 2011/02/07 16:06:05 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-package Kernel::GI::Debugger;
+package Kernel::GenericInterface::Provider;
 
 use strict;
 use warnings;
@@ -19,16 +19,11 @@ $VERSION = qw($Revision: 1.1 $) [1];
 
 =head1 NAME
 
-Kernel::GI::Debugger
+Kernel::GenericInterface::Provider
 
 =head1 SYNOPSIS
 
-GenericInterface data debugger interface.
-
-For every communication process, one Kernel::GI::Debugger object
-should be constructed and fed with data at the various stages
-of the process. It will collect the data and write it into the database,
-based on the configured debug level.
+GenericInterface handler for incoming web service requests.
 
 =head1 PUBLIC INTERFACE
 
@@ -38,7 +33,7 @@ based on the configured debug level.
 
 =item new()
 
-create an object.
+create an object
 
     use Kernel::Config;
     use Kernel::System::Encode;
@@ -46,7 +41,7 @@ create an object.
     use Kernel::System::Time;
     use Kernel::System::Main;
     use Kernel::System::DB;
-    use Kernel::GI::Debugger;
+    use Kernel::GenericInterface::Provider;
 
     my $ConfigObject = Kernel::Config->new();
     my $EncodeObject = Kernel::System::Encode->new(
@@ -71,20 +66,13 @@ create an object.
         LogObject    => $LogObject,
         MainObject   => $MainObject,
     );
-    my $DebuggerObject = Kernel::GI::Debugger->new(
+    my $ProviderObject = Kernel::GenericInterface::Provider->new(
         ConfigObject       => $ConfigObject,
         LogObject          => $LogObject,
         DBObject           => $DBObject,
         MainObject         => $MainObject,
         TimeObject         => $TimeObject,
         EncodeObject       => $EncodeObject,
-
-        DebuggerConfig   => {
-            DebugLevel => 'debug',
-            ...
-        },
-
-        WebserviceID    => 12,
     );
 
 =cut
@@ -92,6 +80,7 @@ create an object.
 sub new {
     my ( $Type, %Param ) = @_;
 
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
@@ -100,27 +89,54 @@ sub new {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
-    # TODO: implement
-
-    return;
+    return $Self;
 }
 
-=item DebugLog()
+=item Run()
 
-add one piece of data to the logging of this communication process
+receives the current incoming web service request, handles it,
+and returns an appropriate answer based on the configured requested
+web service.
 
-    $DebuggerObject->DebugLog(
-        DebugLevel  => 'debug',
-        Title       => 'Short summary, one line',
-        Data        => $Data,
+    # put this in the handler script
+    $ProviderObject->Run();
+
+=cut
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    #TODO: implement
+
+    # determine webservice ID with $ENV{QUERY_STRING}
+    # get webservice config
+    # get request data
+
+    # call $Self->_HandleRequest()
+
+    # print out response
+
+}
+
+=item _HandleRequest()
+
+handles the request data and returns the response data.
+
+    my $Response = $ProviderObject->_HandleRequest(
+        WebserviceConfig => {
+            ...
+        },
+        Request          => $Request,   # complete request data
     );
 
 =cut
 
-sub DebugLog {
+sub _HandleRequest {
     my ( $Self, %Param ) = @_;
 
     #TODO: implement
+
+    #return response
 }
 
 1;
@@ -139,6 +155,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.1 $ $Date: 2011/02/04 09:37:35 $
+$Revision: 1.1 $ $Date: 2011/02/07 16:06:05 $
 
 =cut
