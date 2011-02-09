@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Web/InterfaceAgent.pm - the agent interface file (incl. auth)
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: InterfaceAgent.pm,v 1.64 2012/01/23 15:12:16 mb Exp $
+# $Id: InterfaceAgent.pm,v 1.58.2.1 2011/02/09 23:40:08 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION @INC);
-$VERSION = qw($Revision: 1.64 $) [1];
+$VERSION = qw($Revision: 1.58.2.1 $) [1];
 
 # all framework needed modules
 use Kernel::Config;
@@ -52,10 +52,7 @@ create agent web interface object
     use Kernel::System::Web::InterfaceAgent;
 
     my $Debug = 0;
-    my $InterfaceAgent = Kernel::System::Web::InterfaceAgent->new(
-        Debug      => $Debug,
-        WebRequest => CGI::Fast->new(), # optional, e. g. if fast cgi is used, the CGI object is already provided
-    );
+    my $InterfaceAgent = Kernel::System::Web::InterfaceAgent->new(Debug => $Debug);
 
 =cut
 
@@ -307,7 +304,7 @@ sub Run {
             && $LayoutObject->{BrowserJavaScriptSupport}
             )
         {
-            my $TimeOffset = $Self->{ParamObject}->GetParam( Param => 'TimeOffset' ) || 0;
+            my $TimeOffset = $Self->{ParamObject}->GetParam( Param => 'TimeOffset' ) || '';
             if ( $TimeOffset > 0 ) {
                 $TimeOffset = '-' . ( $TimeOffset / 60 );
             }
@@ -332,21 +329,12 @@ sub Run {
         if ( !$Self->{ConfigObject}->Get('SessionUseCookieAfterBrowserClose') ) {
             $Expires = '';
         }
-
-        my $SecureAttribute;
-        if ( $Self->{ConfigObject}->Get('HttpType') eq 'https' ) {
-
-            # Restrict Cookie to HTTPS if it is used.
-            $SecureAttribute = 1;
-        }
-
         $LayoutObject = Kernel::Output::HTML::Layout->new(
             SetCookies => {
                 SessionIDCookie => $Self->{ParamObject}->SetCookie(
                     Key     => $Param{SessionName},
                     Value   => $NewSessionID,
                     Expires => $Expires,
-                    Secure  => scalar $SecureAttribute,
                 ),
             },
             SessionID   => $NewSessionID,
@@ -412,9 +400,6 @@ sub Run {
             %Param,
             %UserData,
         );
-
-        # Prevent CSRF attacks
-        $LayoutObject->ChallengeTokenCheck();
 
         # remove session id
         if ( !$Self->{SessionObject}->RemoveSessionID( SessionID => $Param{SessionID} ) ) {
@@ -938,6 +923,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.64 $ $Date: 2012/01/23 15:12:16 $
+$Revision: 1.58.2.1 $ $Date: 2011/02/09 23:40:08 $
 
 =cut

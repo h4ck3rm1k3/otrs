@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_config version="1.0" init="Framework">
-    <CVS>$Id: Framework.xml,v 1.466 2012/01/24 08:41:20 mg Exp $</CVS>
+    <CVS>$Id: Framework.xml,v 1.416.2.1 2011/02/09 23:41:11 en Exp $</CVS>
     <ConfigItem Name="SecureMode" Required="1" Valid="1" ConfigLevel="200">
         <Description Translatable="1">Disables the web installer (http://yourhost.example.com/otrs/installer.pl), to prevent the system from being hijacked. If set to "No", the system can be reinstalled and the current basic configuration will be used to pre-populate the questions within the installer script. If not active, it also disables the GenericAgent, PackageManager and SQL Box (to avoid the use of destructive queries, such as DROP DATABASE, and also to steal user passwords).</Description>
         <Group>Framework</Group>
@@ -87,11 +87,29 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Organization" Required="1" Valid="1">
-        <Description Translatable="1">Company name for the customer web interface. Will also be included in emails as an X-Header.</Description>
+        <Description Translatable="1">If configured, all emails sent by the application will contain an X-Header with this organization or company name.</Description>
         <Group>Framework</Group>
         <SubGroup>Core</SubGroup>
         <Setting>
             <String Regex="">Example Company</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="DefaultCharset" Required="1" Valid="1" ConfigLevel="200">
+        <Description Translatable="1">Sets the default charset for the web interface to use (should represent the charset used to create the database or, in some cases, the database management system being used). "utf-8" is a good choice for environments expecting many charsets. You can specify another charset here (i.e. "iso-8859-1"). Please be sure that you will not be receiving foreign emails, or text, otherwise this could lead to problems.</Description>
+        <Group>Framework</Group>
+        <SubGroup>Core</SubGroup>
+        <Setting>
+            <Option SelectedID="utf-8">
+                <Item Key="iso-8859-1">iso-8859-1</Item>
+                <Item Key="iso-8859-15">iso-8859-15</Item>
+                <Item Key="iso-8859-2">iso-8859-2</Item>
+                <Item Key="iso-8859-3">iso-8859-3</Item>
+                <Item Key="iso-8859-4">iso-8859-4</Item>
+                <Item Key="iso-8859-5">iso-8859-5</Item>
+                <Item Key="iso-8859-7">iso-8859-7</Item>
+                <Item Key="iso-8859-9">iso-8859-9</Item>
+                <Item Key="utf-8">utf-8</Item>
+            </Option>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="DefaultLanguage" Required="1" Valid="1">
@@ -110,7 +128,7 @@
             <Hash>
                 <Item Key="ar_SA">Arabic (Saudi Arabia)</Item>
                 <Item Key="bg">Bulgarian (&amp;#x0411;&amp;#x044a;&amp;#x043b;&amp;#x0433;&amp;#x0430;&amp;#x0440;&amp;#x0441;&amp;#x043a;&amp;#x0438;)</Item>
-                <Item Key="ca">Catal&amp;agrave;</Item>
+                <Item Key="ct">Catal&amp;agrave;</Item>
                 <Item Key="cs">Czech (&amp;#x010c;esky)</Item>
                 <Item Key="da">Dansk</Item>
                 <Item Key="de">Deutsch</Item>
@@ -124,12 +142,9 @@
                 <Item Key="fa">Persian (&amp;#x0641;&amp;#x0627;&amp;#x0631;&amp;#x0633;&amp;#x0649;)</Item>
                 <Item Key="fr">Fran&amp;ccedil;ais</Item>
                 <Item Key="fi">Suomi</Item>
-                <Item Key="hi">Hindi</Item>
-                <Item Key="hr">Hrvatski</Item>
                 <Item Key="hu">Magyar</Item>
                 <Item Key="it">Italiano</Item>
                 <Item Key="ja">Japanese (&amp;#x65e5;&amp;#x672c;&amp;#x8a9e)</Item>
-                <Item Key="lt">Lietuvi&#371; kalba</Item>
                 <Item Key="lv">Latvijas</Item>
                 <Item Key="nl">Nederlands</Item>
                 <Item Key="nb_NO">Norsk bokm&amp;aring;l</Item>
@@ -177,7 +192,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="CustomerLogo" Required="0" Valid="0">
-        <Description Translatable="1">The logo shown in the header of the customer interface. The URL to the image can be a relative URL to the skin image directory, or a full URL to a remote web server.</Description>
+        <Description Translatable="1">The logo shown in the header of the customer interface. The URL to the image must be a relative URL to the skin image directory.</Description>
         <Group>Framework</Group>
         <SubGroup>Frontend::Customer</SubGroup>
         <Setting>
@@ -191,7 +206,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="AgentLogo" Required="0" Valid="1">
-        <Description Translatable="1">The logo shown in the header of the agent interface. The URL to the image can be a relative URL to the skin image directory, or a full URL to a remote web server.</Description>
+        <Description Translatable="1">The logo shown in the header of the agent interface. The URL to the image must be a relative URL to the skin image directory.</Description>
         <Group>Framework</Group>
         <SubGroup>Frontend::Agent</SubGroup>
         <Setting>
@@ -263,7 +278,7 @@
         <Group>Framework</Group>
         <SubGroup>Core::Web</SubGroup>
         <Setting>
-            <String Regex="">&lt;OTRS_CONFIG_Frontend::WebPath&gt;js/thirdparty/ckeditor-3.6.2/</String>
+            <String Regex="">&lt;OTRS_CONFIG_Frontend::WebPath&gt;js/thirdparty/ckeditor-3.4.2/</String>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Frontend::RichTextWidth" Required="1" Valid="1">
@@ -275,7 +290,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Frontend::RichTextHeight" Required="1" Valid="1">
-        <Description Translatable="1">Defines the height for the rich text editor component. Enter number (pixels) or percent value (relative).</Description>
+        <Description Translatable="1">Defines the =hHeight for the rich text editor component. Enter number (pixels) or percent value (relative).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Web</SubGroup>
         <Setting>
@@ -296,6 +311,14 @@
         <SubGroup>Core::Web</SubGroup>
         <Setting>
             <String Regex="^[0-9]{1,3}$">90</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="DefaultPreViewLines" Required="1" Valid="1">
+        <Description Translatable="1">Sets the number of lines that are displayed in the preview of messages (e.g. for tickets in the QueueView).</Description>
+        <Group>Framework</Group>
+        <SubGroup>Core::Web</SubGroup>
+        <Setting>
+            <String Regex="^[0-9]{1,3}$">18</String>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="DefaultViewLines" Required="1" Valid="1">
@@ -469,7 +492,7 @@
         <Group>Framework</Group>
         <SubGroup>Core::Log</SubGroup>
         <Setting>
-            <Option SelectedID="utf-8">
+            <Option SelectedID="iso-8859-1">
                 <Item Key="iso-8859-1">iso-8859-1</Item>
                 <Item Key="iso-8859-15">iso-8859-15</Item>
                 <Item Key="utf-8">utf-8</Item>
@@ -540,7 +563,7 @@
         <Group>Framework</Group>
         <SubGroup>Core::Sendmail</SubGroup>
         <Setting>
-            <String Regex="" Type="Password">MailserverPassword</String>
+            <String Regex="">MailserverPassword</String>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="SendmailBcc" Required="0" Valid="1" ConfigLevel="200">
@@ -607,7 +630,7 @@
             <String Regex="">AgentInfo</String>
         </Setting>
     </ConfigItem>
-    <ConfigItem Name="Frontend::HeaderMetaModule###100-Refresh" Required="1" Valid="1">
+    <ConfigItem Name="Frontend::HeaderMetaModule###1-Refresh" Required="1" Valid="1">
         <Description Translatable="1">Defines the module to generate html refresh headers of html sites.</Description>
         <Group>Framework</Group>
         <SubGroup>Frontend::Agent::ModuleMetaHead</SubGroup>
@@ -617,7 +640,17 @@
             </Hash>
         </Setting>
     </ConfigItem>
-    <ConfigItem Name="Frontend::NotifyModule###200-UID-Check" Required="1" Valid="1">
+    <ConfigItem Name="Frontend::NotifyModule###1-CharsetCheck" Required="1" Valid="1">
+        <Description Translatable="1">Module to inform agents, via the agent interface, about the used charset. A notification is displayed, if the default charset is not used, e.g. in tickets.</Description>
+        <Group>Framework</Group>
+        <SubGroup>Frontend::Agent::ModuleNotify</SubGroup>
+        <Setting>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::NotificationCharsetCheck</Item>
+            </Hash>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Frontend::NotifyModule###2-UID-Check" Required="1" Valid="1">
         <Description Translatable="1">Defines the module to display a notification in the agent interface, if the system is used by the admin user (normally you shouldn't work as admin).</Description>
         <Group>Framework</Group>
         <SubGroup>Frontend::Agent::ModuleNotify</SubGroup>
@@ -627,7 +660,7 @@
             </Hash>
         </Setting>
     </ConfigItem>
-    <ConfigItem Name="Frontend::NotifyModule###300-ShowAgentOnline" Required="0" Valid="0">
+    <ConfigItem Name="Frontend::NotifyModule###3-ShowAgentOnline" Required="0" Valid="0">
         <Description Translatable="1">Defines the module that shows all the currently logged in agents in the agent interface.</Description>
         <Group>Framework</Group>
         <SubGroup>Frontend::Agent::ModuleNotify</SubGroup>
@@ -639,7 +672,7 @@
             </Hash>
         </Setting>
     </ConfigItem>
-    <ConfigItem Name="Frontend::NotifyModule###400-ShowCustomerOnline" Required="0" Valid="0">
+    <ConfigItem Name="Frontend::NotifyModule###4-ShowCustomerOnline" Required="0" Valid="0">
         <Description Translatable="1">Defines the module that shows all the currently loged in customers in the agent interface.</Description>
         <Group>Framework</Group>
         <SubGroup>Frontend::Agent::ModuleNotify</SubGroup>
@@ -648,30 +681,6 @@
                 <Item Key="Module">Kernel::Output::HTML::NotificationCustomerOnline</Item>
                 <Item Key="ShowEmail">1</Item>
                 <Item Key="IdleMinutes">60</Item>
-            </Hash>
-        </Setting>
-    </ConfigItem>
-    <ConfigItem Name="Frontend::NotifyModule###500-OutofOffice-Check" Required="1" Valid="1">
-        <Description Translatable="1">Defines the module to display a notification in the agent interface, if the agent is logged in while having out-of-office active.</Description>
-        <Group>Framework</Group>
-        <SubGroup>Frontend::Agent::ModuleNotify</SubGroup>
-        <Setting>
-            <Hash>
-                <Item Key="Module">Kernel::Output::HTML::NotificationOutofOfficeCheck</Item>
-            </Hash>
-        </Setting>
-    </ConfigItem>
-    <ConfigItem Name="Frontend::NotifyModule###900-Generic" Required="0" Valid="0">
-        <Description Translatable="1">Defines the module that shows a generic notification in the agent interface. Either "Text" - if configured - or the contents of "File" will be displayed.</Description>
-        <Group>Framework</Group>
-        <SubGroup>Frontend::Agent::ModuleNotify</SubGroup>
-        <Setting>
-            <Hash>
-                <Item Key="Module">Kernel::Output::HTML::NotificationGeneric</Item>
-                <Item Key="Priority">Warning</Item>
-                <Item Key="Text">The OTRS Website</Item>
-                <Item Key="File">&lt;OTRS_CONFIG_Home&gt;/var/notify.txt</Item>
-                <Item Key="Link">http://www.otrs.com</Item>
             </Hash>
         </Setting>
     </ConfigItem>
@@ -894,12 +903,12 @@
         <SubGroup>Core::Time</SubGroup>
         <Setting>
             <TimeVacationDays>
-                <Item Month="1" Day="1" Translatable="1">New Year's Day</Item>
-                <Item Month="5" Day="1" Translatable="1">International Workers' Day</Item>
-                <Item Month="12" Day="24" Translatable="1">Christmas Eve</Item>
-                <Item Month="12" Day="25" Translatable="1">First Christmas Day</Item>
-                <Item Month="12" Day="26" Translatable="1">Second Christmas Day</Item>
-                <Item Month="12" Day="31" Translatable="1">New Year's Eve</Item>
+                <Item Month="1" Day="1">New Year's Day</Item>
+                <Item Month="5" Day="1">International Workers' Day</Item>
+                <Item Month="12" Day="24">Christmas Eve</Item>
+                <Item Month="12" Day="25">First Christmas Day</Item>
+                <Item Month="12" Day="26">Second Christmas Day</Item>
+                <Item Month="12" Day="31">New Year's Eve</Item>
             </TimeVacationDays>
         </Setting>
     </ConfigItem>
@@ -1002,7 +1011,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar1Name" Required="1" Valid="1">
-        <Description Translatable="1">Defines the name of the indicated calendar.</Description>
+        <Description Translatable="1">Defines the name of the calendar number 1.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar1</SubGroup>
         <Setting>
@@ -1010,7 +1019,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar1" Required="1" Valid="1">
-        <Description Translatable="1">Defines the time zone of the indicated calendar, which can be assigned later to a specific queue.</Description>
+        <Description Translatable="1">Defines the time zone of the calendar number 1, which can be assigned later to a specific queue.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar1</SubGroup>
         <Setting>
@@ -1044,7 +1053,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDays::Calendar1" Required="1" Valid="1">
-        <Description Translatable="1">Adds the permanent vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the permanent vacation days for the calendar number 1. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar1</SubGroup>
         <Setting>
@@ -1059,7 +1068,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDaysOneTime::Calendar1" Required="1" Valid="1">
-        <Description Translatable="1">Adds the one time vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the one time vacation days for the calendar number 1. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar1</SubGroup>
         <Setting>
@@ -1069,7 +1078,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeWorkingHours::Calendar1" Required="1" Valid="1">
-        <Description Translatable="1">Defines the hours and week days of the indicated calendar, to count the working time.</Description>
+        <Description Translatable="1">Defines the hours and week days of the calendar number 1, to count the working time.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar1</SubGroup>
         <Setting>
@@ -1157,7 +1166,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar2Name" Required="1" Valid="1">
-        <Description Translatable="1">Defines the name of the indicated calendar.</Description>
+        <Description Translatable="1">Defines the name of the calendar number 2.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar2</SubGroup>
         <Setting>
@@ -1165,7 +1174,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar2" Required="1" Valid="1">
-        <Description Translatable="1">Defines the time zone of the indicated calendar, which can be assigned later to a specific queue.</Description>
+        <Description Translatable="1">Defines the time zone of the calendar number 2, which can be assigned later to a specific queue.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar2</SubGroup>
         <Setting>
@@ -1199,7 +1208,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDays::Calendar2" Required="1" Valid="1">
-        <Description Translatable="1">Adds the permanent vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the permanent vacation days for the calendar number 2. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar2</SubGroup>
         <Setting>
@@ -1214,7 +1223,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDaysOneTime::Calendar2" Required="1" Valid="1">
-        <Description Translatable="1">Adds the one time vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the one time vacation days for the calendar number 2. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar2</SubGroup>
         <Setting>
@@ -1224,7 +1233,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeWorkingHours::Calendar2" Required="1" Valid="1">
-        <Description Translatable="1">Defines the hours and week days of the indicated calendar, to count the working time.</Description>
+        <Description Translatable="1">Defines the hours and week days of the calendar number 2, to count the working time.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar2</SubGroup>
         <Setting>
@@ -1312,7 +1321,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar3Name" Required="1" Valid="1">
-        <Description Translatable="1">Defines the name of the indicated calendar.</Description>
+        <Description Translatable="1">Defines the name of the calendar number 3.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar3</SubGroup>
         <Setting>
@@ -1320,7 +1329,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar3" Required="1" Valid="1">
-        <Description Translatable="1">Defines the time zone of the indicated calendar, which can be assigned later to a specific queue.</Description>
+        <Description Translatable="1">Defines the time zone of the calendar number 3, which can be assigned later to a specific queue.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar3</SubGroup>
         <Setting>
@@ -1354,7 +1363,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDays::Calendar3" Required="1" Valid="1">
-        <Description Translatable="1">Adds the permanent vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the permanent vacation days for the calendar number 3. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar3</SubGroup>
         <Setting>
@@ -1369,7 +1378,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDaysOneTime::Calendar3" Required="1" Valid="1">
-        <Description Translatable="1">Adds the one time vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the one time vacation days for the calendar number 3. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar3</SubGroup>
         <Setting>
@@ -1379,7 +1388,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeWorkingHours::Calendar3" Required="1" Valid="1">
-        <Description Translatable="1">Defines the hours and week days of the indicated calendar, to count the working time.</Description>
+        <Description Translatable="1">Defines the hours and week days of the calendar number 3, to count the working time.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar3</SubGroup>
         <Setting>
@@ -1467,7 +1476,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar4Name" Required="1" Valid="1">
-        <Description Translatable="1">Defines the name of the indicated calendar.</Description>
+        <Description Translatable="1">Defines the name of the calendar number 4.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar4</SubGroup>
         <Setting>
@@ -1475,7 +1484,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar4" Required="1" Valid="1">
-        <Description Translatable="1">Defines the time zone of the indicated calendar, which can be assigned later to a specific queue.</Description>
+        <Description Translatable="1">Defines the time zone of the calendar number 4, which can be assigned later to a specific queue.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar4</SubGroup>
         <Setting>
@@ -1509,7 +1518,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDays::Calendar4" Required="1" Valid="1">
-        <Description Translatable="1">Adds the permanent vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the permanent vacation days for the calendar number 4. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar4</SubGroup>
         <Setting>
@@ -1524,7 +1533,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDaysOneTime::Calendar4" Required="1" Valid="1">
-        <Description Translatable="1">Adds the one time vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the one time vacation days for the calendar number 4. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar4</SubGroup>
         <Setting>
@@ -1534,7 +1543,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeWorkingHours::Calendar4" Required="1" Valid="1">
-        <Description Translatable="1">Defines the hours and week days of the indicated calendar, to count the working time.</Description>
+        <Description Translatable="1">Defines the hours and week days of the calendar number 4, to count the working time.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar4</SubGroup>
         <Setting>
@@ -1622,7 +1631,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar5Name" Required="1" Valid="1">
-        <Description Translatable="1">Defines the name of the indicated calendar.</Description>
+        <Description Translatable="1">Defines the name of the calendar number 5.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar5</SubGroup>
         <Setting>
@@ -1630,7 +1639,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar5" Required="1" Valid="1">
-        <Description Translatable="1">Defines the time zone of the indicated calendar, which can be assigned later to a specific queue.</Description>
+        <Description Translatable="1">Defines the time zone of the calendar number 5, which can be assigned later to a specific queue.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar5</SubGroup>
         <Setting>
@@ -1664,7 +1673,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDays::Calendar5" Required="1" Valid="1">
-        <Description Translatable="1">Adds the permanent vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the permanent vacation days for the calendar number 5. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar5</SubGroup>
         <Setting>
@@ -1679,7 +1688,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDaysOneTime::Calendar5" Required="1" Valid="1">
-        <Description Translatable="1">Adds the one time vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the one time vacation days for the calendar number 5. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar5</SubGroup>
         <Setting>
@@ -1689,7 +1698,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeWorkingHours::Calendar5" Required="1" Valid="1">
-        <Description Translatable="1">Defines the hours and week days of the indicated calendar, to count the working time.</Description>
+        <Description Translatable="1">Defines the hours and week days of the calendar number 5, to count the working time.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar5</SubGroup>
         <Setting>
@@ -1777,7 +1786,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar6Name" Required="1" Valid="1">
-        <Description Translatable="1">Defines the name of the indicated calendar.</Description>
+        <Description Translatable="1">Defines the name of the calendar number 6.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar6</SubGroup>
         <Setting>
@@ -1785,7 +1794,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar6" Required="1" Valid="1">
-        <Description Translatable="1">Defines the time zone of the indicated calendar, which can be assigned later to a specific queue.</Description>
+        <Description Translatable="1">Defines the time zone of the calendar number 6, which can be assigned later to a specific queue.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar6</SubGroup>
         <Setting>
@@ -1819,7 +1828,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDays::Calendar6" Required="1" Valid="1">
-        <Description Translatable="1">Adds the permanent vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the permanent vacation days for the calendar number 6. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar6</SubGroup>
         <Setting>
@@ -1834,7 +1843,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDaysOneTime::Calendar6" Required="1" Valid="1">
-        <Description Translatable="1">Adds the one time vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the one time vacation days for the calendar number 6. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar6</SubGroup>
         <Setting>
@@ -1844,7 +1853,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeWorkingHours::Calendar6" Required="1" Valid="1">
-        <Description Translatable="1">Defines the hours and week days of the indicated calendar, to count the working time.</Description>
+        <Description Translatable="1">Defines the hours and week days of the calendar number 6, to count the working time.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar6</SubGroup>
         <Setting>
@@ -1932,7 +1941,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar7Name" Required="1" Valid="1">
-        <Description Translatable="1">Defines the name of the indicated calendar.</Description>
+        <Description Translatable="1">Defines the name of the calendar number 7.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar7</SubGroup>
         <Setting>
@@ -1940,7 +1949,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar7" Required="1" Valid="1">
-        <Description Translatable="1">Defines the time zone of the indicated calendar, which can be assigned later to a specific queue.</Description>
+        <Description Translatable="1">Defines the time zone of the calendar number 7, which can be assigned later to a specific queue.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar7</SubGroup>
         <Setting>
@@ -1974,7 +1983,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDays::Calendar7" Required="1" Valid="1">
-        <Description Translatable="1">Adds the permanent vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the permanent vacation days for the calendar number 7. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar7</SubGroup>
         <Setting>
@@ -1989,7 +1998,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDaysOneTime::Calendar7" Required="1" Valid="1">
-        <Description Translatable="1">Adds the one time vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the one time vacation days for the calendar number 7. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar7</SubGroup>
         <Setting>
@@ -1999,7 +2008,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeWorkingHours::Calendar7" Required="1" Valid="1">
-        <Description Translatable="1">Defines the hours and week days of the indicated calendar, to count the working time.</Description>
+        <Description Translatable="1">Defines the hours and week days of the calendar number 7, to count the working time.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar7</SubGroup>
         <Setting>
@@ -2087,7 +2096,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar8Name" Required="1" Valid="1">
-        <Description Translatable="1">Defines the name of the indicated calendar.</Description>
+        <Description Translatable="1">Defines the name of the calendar number 8.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar8</SubGroup>
         <Setting>
@@ -2095,7 +2104,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar8" Required="1" Valid="1">
-        <Description Translatable="1">Defines the time zone of the indicated calendar, which can be assigned later to a specific queue.</Description>
+        <Description Translatable="1">Defines the time zone of the calendar number 8, which can be assigned later to a specific queue.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar8</SubGroup>
         <Setting>
@@ -2129,7 +2138,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDays::Calendar8" Required="1" Valid="1">
-        <Description Translatable="1">Adds the permanent vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the permanent vacation days for the calendar number 8. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar8</SubGroup>
         <Setting>
@@ -2144,7 +2153,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDaysOneTime::Calendar8" Required="1" Valid="1">
-        <Description Translatable="1">Adds the one time vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the one time vacation days for the calendar number 8. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar8</SubGroup>
         <Setting>
@@ -2154,7 +2163,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeWorkingHours::Calendar8" Required="1" Valid="1">
-        <Description Translatable="1">Defines the hours and week days of the indicated calendar, to count the working time.</Description>
+        <Description Translatable="1">Defines the hours and week days of the calendar number 8, to count the working time.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar8</SubGroup>
         <Setting>
@@ -2242,7 +2251,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar9Name" Required="1" Valid="1">
-        <Description Translatable="1">Defines the name of the indicated calendar.</Description>
+        <Description Translatable="1">Defines the name of the calendar number 9.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar9</SubGroup>
         <Setting>
@@ -2250,7 +2259,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeZone::Calendar9" Required="1" Valid="1">
-        <Description Translatable="1">Defines the time zone of the indicated calendar, which can be assigned later to a specific queue.</Description>
+        <Description Translatable="1">Defines the time zone of the calendar number 9, which can be assigned later to a specific queue.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar9</SubGroup>
         <Setting>
@@ -2284,7 +2293,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDays::Calendar9" Required="1" Valid="1">
-        <Description Translatable="1">Adds the permanent vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the permanent vacation days for the calendar number 9. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar9</SubGroup>
         <Setting>
@@ -2299,7 +2308,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeVacationDaysOneTime::Calendar9" Required="1" Valid="1">
-        <Description Translatable="1">Adds the one time vacation days for the indicated calendar. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
+        <Description Translatable="1">Adds the one time vacation days for the calendar number 9. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar9</SubGroup>
         <Setting>
@@ -2309,7 +2318,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="TimeWorkingHours::Calendar9" Required="1" Valid="1">
-        <Description Translatable="1">Defines the hours and week days of the indicated calendar, to count the working time.</Description>
+        <Description Translatable="1">Defines the hours and week days of the calendar number 9, to count the working time.</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Time::Calendar9</SubGroup>
         <Setting>
@@ -2587,7 +2596,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Package::RepositoryList" Required="0" Valid="0" ConfigLevel="200">
-        <Description Translatable="1">Defines the list of online repositories. Another installations can be used as repository, for example: Key="http://example.com/otrs/public.pl?Action=PublicRepository;File=" and Content="Some Name".</Description>
+        <Description Translatable="1">Defines the list of online repositories. Another installations can be used as repositoriy, for example: Key="http://example.com/otrs/public.pl?Action=PublicRepository;File=" and Content="Some Name".</Description>
         <Group>Framework</Group>
         <SubGroup>Core::Package</SubGroup>
         <Setting>
@@ -2633,7 +2642,7 @@
         <Group>Framework</Group>
         <SubGroup>Core::SOAP</SubGroup>
         <Setting>
-            <String Regex="" Type="Password">some_pass</String>
+            <String Regex="">some_pass</String>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="PDF" Required="1" Valid="1">
@@ -2954,18 +2963,6 @@ You can log in via the following URL:
             </Array>
         </Setting>
     </ConfigItem>
-    <ConfigItem Name="ReferenceData::OwnCountryList" Required="0" Valid="0">
-        <Description Translatable="1">This setting allows you to override the built-in country list with your own list of countries. This is particularly handy if you just want to use a small select group of countries.</Description>
-        <Group>Framework</Group>
-        <SubGroup>Core::ReferenceData</SubGroup>
-        <Setting>
-            <Hash>
-                <Item Key="AT">Austria</Item>
-                <Item Key="DE">Germany</Item>
-                <Item Key="CH">Switzerland</Item>
-            </Hash>
-        </Setting>
-    </ConfigItem>
     <ConfigItem Name="PerformanceLog" Required="0" Valid="1" ConfigLevel="200">
         <Description Translatable="1">Enables performance log (to log the page response time). It will affect the system performance. Frontend::Module###AdminPerformanceLog must be enabled.</Description>
         <Group>Framework</Group>
@@ -3120,19 +3117,19 @@ You can log in via the following URL:
             </Hash>
         </Setting>
     </ConfigItem>
-    <ConfigItem Name="PreferencesGroups###DynamicField" Required="0" Valid="0">
+    <ConfigItem Name="PreferencesGroups###FreeText" Required="0" Valid="0">
         <Description Translatable="1">Defines the config parameters of this item, to be shown in the preferences view.</Description>
-        <Group>DynamicFields</Group>
+        <Group>Framework</Group>
         <SubGroup>Frontend::Agent::Preferences</SubGroup>
         <Setting>
             <Hash>
                 <Item Key="Module">Kernel::Output::HTML::PreferencesGeneric</Item>
                 <Item Key="Column">Other Settings</Item>
-                <Item Key="Label" Translatable="1">Example for dynamic dield</Item>
-                <Item Key="Key" Translatable="1">Example for dynamic field</Item>
+                <Item Key="Label" Translatable="1">Example for free text</Item>
+                <Item Key="Key" Translatable="1">Example for free text</Item>
                 <Item Key="Block">Input</Item>
-                <Item Key="Data">$Env{"UserDynamicField_DynamicField"}</Item>
-                <Item Key="PrefKey">UserDynamicField_DynamicField</Item>
+                <Item Key="Data">$Env{"UserFreeText"}</Item>
+                <Item Key="PrefKey">UserFreeText</Item>
                 <Item Key="Prio">7000</Item>
                 <Item Key="Active">1</Item>
             </Hash>
@@ -3590,7 +3587,7 @@ via the Preferences button after logging in.
         <Group>Framework</Group>
         <SubGroup>Frontend::Customer::Auth</SubGroup>
         <Setting>
-            <String Regex="" Type="Password">some_password</String>
+            <String Regex="">some_password</String>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Customer::AuthModule::DB::Type" Required="0" Valid="0" ConfigLevel="200">
@@ -3681,7 +3678,7 @@ via the Preferences button after logging in.
         <Group>Framework</Group>
         <SubGroup>Frontend::Customer::Auth</SubGroup>
         <Setting>
-            <String Regex="" Type="Password">some_password</String>
+            <String Regex="">some_password</String>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Customer::AuthModule::LDAP::AlwaysFilter" Required="0" Valid="0" ConfigLevel="200">
@@ -3737,7 +3734,7 @@ via the Preferences button after logging in.
         <Group>Framework</Group>
         <SubGroup>Frontend::Customer::Auth</SubGroup>
         <Setting>
-            <String Regex="" Type="Password">radiussecret</String>
+            <String Regex="">radiussecret</String>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Customer::AuthModule::Radius::Die" Required="0" Valid="1" ConfigLevel="200">
@@ -3915,8 +3912,8 @@ via the Preferences button after logging in.
                     <Prio>50</Prio>
                 </NavBar>
                 <Loader>
-                    <JavaScript>thirdparty/flot-0.7/excanvas.js</JavaScript>
-                    <JavaScript>thirdparty/flot-0.7/jquery.flot.js</JavaScript>
+                    <JavaScript>thirdparty/flot-0.6/excanvas.js</JavaScript>
+                    <JavaScript>thirdparty/flot-0.6/jquery.flot.js</JavaScript>
                     <JavaScript>Core.UI.Chart.js</JavaScript>
                     <JavaScript>Core.UI.DnD.js</JavaScript>
                     <JavaScript>Core.Agent.Dashboard.js</JavaScript>
@@ -3985,7 +3982,6 @@ via the Preferences button after logging in.
                 <Title>Address Book</Title>
                 <NavBarName></NavBarName>
                 <Loader>
-                    <JavaScript>Core.Agent.CustomerSearch.js</JavaScript>
                     <JavaScript>Core.Agent.TicketAction.js</JavaScript>
                 </Loader>
             </FrontendModuleReg>
@@ -4022,7 +4018,7 @@ via the Preferences button after logging in.
         <Setting>
             <FrontendModuleReg>
                 <Description>Global Search Module</Description>
-                <Title Translatable="1">Search</Title>
+                <Title>Search</Title>
                 <NavBarName></NavBarName>
             </FrontendModuleReg>
         </Setting>
@@ -4088,7 +4084,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Create and manage agents.</Description>
-                <Title Translatable="1">Agents</Title>
+                <Title>Agents</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4108,7 +4104,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Groups</Title>
+                <Title>Groups</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4128,7 +4124,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Agents &lt;-&gt; Groups</Title>
+                <Title>Agents &lt;-&gt; Groups</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4150,7 +4146,7 @@ via the Preferences button after logging in.
                 <Group>admin</Group>
                 <Group>users</Group>
                 <Description>Edit Customers</Description>
-                <Title Translatable="1">Customers</Title>
+                <Title>Customers</Title>
                 <NavBarName>Customers</NavBarName>
                 <NavBar>
                     <Name Translatable="1">Customers</Name>
@@ -4186,7 +4182,7 @@ via the Preferences button after logging in.
                 <Group>admin</Group>
                 <Group>users</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Customer Companies</Title>
+                <Title>Customer Companies</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBar>
                     <Name Translatable="1">Companies</Name>
@@ -4227,7 +4223,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Customers &lt;-&gt; Groups</Title>
+                <Title>Customers &lt;-&gt; Groups</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4247,7 +4243,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Customers &lt;-&gt; Services</Title>
+                <Title>Customers &lt;-&gt; Services</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4267,7 +4263,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Roles</Title>
+                <Title>Role</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4287,7 +4283,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Agents &lt;-&gt; Roles</Title>
+                <Title>Roles &lt;-&gt; Agents</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4307,7 +4303,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Roles &lt;-&gt; Groups</Title>
+                <Title>Roles &lt;-&gt; Groups</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4327,7 +4323,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">S/MIME Management</Title>
+                <Title>S/MIME Management</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4347,7 +4343,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">PGP Key Management</Title>
+                <Title>PGP Key Management</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4367,7 +4363,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Mail Accounts</Title>
+                <Title>Mail Account</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4387,7 +4383,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">PostMaster Filters</Title>
+                <Title>PostMaster Filters</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4407,7 +4403,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Admin Notification</Title>
+                <Title>Admin-Email</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4427,7 +4423,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Session Management</Title>
+                <Title>Session Management</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4447,7 +4443,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">Performance Log</Title>
+                <Title>Performance Log</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4470,7 +4466,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">System Log</Title>
+                <Title>System Log</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4490,7 +4486,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Admin</Description>
-                <Title Translatable="1">SQL Box</Title>
+                <Title>SQL Box</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4510,7 +4506,7 @@ via the Preferences button after logging in.
             <FrontendModuleReg>
                 <Group>admin</Group>
                 <Description>Software Package Manager</Description>
-                <Title Translatable="1">Package Manager</Title>
+                <Title>Package Manager</Title>
                 <NavBarName>Admin</NavBarName>
                 <NavBarModule>
                     <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
@@ -4541,7 +4537,7 @@ via the Preferences button after logging in.
         <Setting>
             <FrontendModuleReg>
                 <Description>Customer preferences</Description>
-                <Title Translatable="1">Preferences</Title>
+                <Title>Preferences</Title>
                 <NavBarName></NavBarName>
             </FrontendModuleReg>
         </Setting>
@@ -4552,8 +4548,8 @@ via the Preferences button after logging in.
         <SubGroup>Frontend::Customer::ModuleRegistration</SubGroup>
         <Setting>
             <FrontendModuleReg>
-                <Description>To accept login information, such as an EULA or license.</Description>
-                <Title Translatable="1">Info</Title>
+                <Description>To accept login infos</Description>
+                <Title>Info</Title>
                 <NavBarName></NavBarName>
             </FrontendModuleReg>
         </Setting>
@@ -4565,7 +4561,7 @@ via the Preferences button after logging in.
         <Setting>
             <FrontendModuleReg>
                 <Description>Picture upload module</Description>
-                <Title Translatable="1">Picture-Upload</Title>
+                <Title>Picture-Upload</Title>
                 <NavBarName>Ticket</NavBarName>
             </FrontendModuleReg>
         </Setting>
@@ -4577,7 +4573,7 @@ via the Preferences button after logging in.
         <Setting>
             <FrontendModuleReg>
                 <Description>Spell checker</Description>
-                <Title Translatable="1">Spell Checker</Title>
+                <Title>Spell Checker</Title>
                 <NavBarName></NavBarName>
             </FrontendModuleReg>
         </Setting>
@@ -4656,7 +4652,7 @@ via the Preferences button after logging in.
         <SubGroup>Frontend::Agent::ModuleRegistration</SubGroup>
         <Setting>
             <FrontendModuleReg>
-                <Title Translatable="1">Stats</Title>
+                <Title>Stats</Title>
                 <Group>stats</Group>
                 <GroupRo>stats</GroupRo>
                 <Description>Stats</Description>
@@ -5156,7 +5152,7 @@ via the Preferences button after logging in.
         <Group>Framework</Group>
         <SubGroup>Core::MirrorDB</SubGroup>
         <Setting>
-            <String Regex="" Type="Password">some_password</String>
+            <String Regex="">some_password</String>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="LanguageDebug" Required="0" Valid="0">
@@ -5217,9 +5213,7 @@ via the Preferences button after logging in.
                 <Item Key="Module">Kernel::Output::HTML::DashboardRSS</Item>
                 <Item Key="Title">OTRS News</Item>
                 <Item Key="Description"></Item>
-                <Item Key="URL">http://www.otrs.com/en/rss.xml</Item>
-                <Item Key="URL_de">http://www.otrs.com/de/rss.xml</Item>
-                <Item Key="URL_es">http://www.otrs.com/es/rss.xml</Item>
+                <Item Key="URL">http://otrs.org/rss/</Item>
                 <Item Key="Block">ContentSmall</Item>
                 <Item Key="Limit">6</Item>
                 <Item Key="Group"></Item>
@@ -5285,18 +5279,6 @@ via the Preferences button after logging in.
                 <Item Key="Align">left</Item>
                 <Item Key="Scrolling">auto</Item>
             </Hash>
-        </Setting>
-    </ConfigItem>
-
-    <ConfigItem Name="Frontend::AgentLinkObject::WildcardSearch" Required="1" Valid="1">
-        <Description Translatable="1">Starts a wildcard search of the active object after the link object mask is started.</Description>
-        <Group>Framework</Group>
-        <SubGroup>Frontend::Agent::LinkObject</SubGroup>
-        <Setting>
-            <Option SelectedID="0">
-                <Item Key="0">No</Item>
-                <Item Key="1">Yes</Item>
-            </Option>
         </Setting>
     </ConfigItem>
 
@@ -5496,16 +5478,6 @@ via the Preferences button after logging in.
             </Option>
         </Setting>
     </ConfigItem>
-    <ConfigItem Name="StandardResponse2QueueByCreating" Required="0" Valid="0">
-        <Description Translatable="1">List of default StandardResponses which are assigned automatically to new Queues upon creation.</Description>
-        <Group>Framework</Group>
-        <SubGroup>Core</SubGroup>
-        <Setting>
-            <Array>
-                <Item></Item>
-            </Array>
-        </Setting>
-    </ConfigItem>
     <ConfigItem Name="Loader::Enabled::CSS" Required="1" Valid="1">
         <Description Translatable="1">If enabled, OTRS will deliver all CSS files in minified form. WARNING: If you turn this off, there will likely be problems in IE 7, because it cannot load more than 32 CSS files.</Description>
         <Group>Framework</Group>
@@ -5594,10 +5566,10 @@ via the Preferences button after logging in.
         <Setting>
             <Array>
                 <Item>thirdparty/json/json2.js</Item>
-                <Item>thirdparty/jquery-1.6.4/jquery.js</Item>
-                <Item>thirdparty/jquery-ui-1.8.16/jquery-ui.js</Item>
-                <Item>thirdparty/jquery-validate-1.9/jquery.validate.js</Item>
-                <Item>thirdparty/stacktrace-0.3/stacktrace.js</Item>
+                <Item>thirdparty/jquery-1.4.4/jquery.js</Item>
+                <Item>thirdparty/jquery-ui-1.8.7/jquery-ui.js</Item>
+                <Item>thirdparty/jquery-validate-1.7/jquery.validate.js</Item>
+                <Item>thirdparty/stacktrace/stacktrace.js</Item>
                 <Item>Core.JavaScriptEnhancements.js</Item>
                 <Item>Core.Debug.js</Item>
                 <Item>Core.Data.js</Item>
@@ -5682,16 +5654,16 @@ via the Preferences button after logging in.
         <SubGroup>Core::Web</SubGroup>
         <Setting>
             <Array>
-                <Item>thirdparty/jquery-1.6.4/jquery.js</Item>
-                <Item>thirdparty/jquery-validate-1.9/jquery.validate.js</Item>
-                <Item>thirdparty/jquery-ui-1.8.16/jquery-ui.js</Item>
-                <Item>thirdparty/stacktrace-0.3/stacktrace.js</Item>
+                <Item>thirdparty/jquery-1.4.4/jquery.js</Item>
+                <Item>thirdparty/jquery-validate-1.7/jquery.validate.js</Item>
+                <Item>thirdparty/jquery-ui-1.8.7/jquery-ui.js</Item>
+                <Item>thirdparty/stacktrace/stacktrace.js</Item>
                 <Item>Core.Debug.js</Item>
                 <Item>Core.Data.js</Item>
                 <Item>Core.Exception.js</Item>
+                <Item>Core.App.js</Item>
                 <Item>Core.JavaScriptEnhancements.js</Item>
                 <Item>Core.Config.js</Item>
-                <Item>Core.App.js</Item>
                 <Item>Core.UI.js</Item>
                 <Item>Core.UI.IE7Fixes.js</Item>
                 <Item>Core.UI.Accessibility.js</Item>
@@ -5704,6 +5676,17 @@ via the Preferences button after logging in.
                 <Item>Core.Form.Validate.js</Item>
                 <Item>Core.Customer.js</Item>
             </Array>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="NewTicketInNewWindow::Enabled" Required="1" Valid="1">
+        <Description Translatable="1">If enabled, TicketPhone and TicketEmail will be open in new windows.</Description>
+        <Group>Framework</Group>
+        <SubGroup>Frontend::Agent</SubGroup>
+        <Setting>
+            <Option SelectedID="0">
+                <Item Key="0">No</Item>
+                <Item Key="1">Yes</Item>
+            </Option>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="OpenMainMenuOnHover" Required="1" Valid="1">
@@ -5813,17 +5796,6 @@ via the Preferences button after logging in.
         <SubGroup>Core::Time</SubGroup>
         <Setting>
             <Option SelectedID="0">
-                <Item Key="0">No</Item>
-                <Item Key="1">Yes</Item>
-            </Option>
-        </Setting>
-    </ConfigItem>
-    <ConfigItem Name="AdminCustomerUser::RunInitialWildcardSearch" Required="1" Valid="1">
-        <Description Translatable="1">Runs an initial wildcard search of the existing customer users when accessing the AdminCustomerUser module.</Description>
-        <Group>Framework</Group>
-        <SubGroup>Frontend::Admin::AdminCustomerUser</SubGroup>
-        <Setting>
-            <Option SelectedID="1">
                 <Item Key="0">No</Item>
                 <Item Key="1">Yes</Item>
             </Option>

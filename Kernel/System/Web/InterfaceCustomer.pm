@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Web/InterfaceCustomer.pm - the customer interface file (incl. auth)
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: InterfaceCustomer.pm,v 1.63 2012/01/23 15:12:17 mb Exp $
+# $Id: InterfaceCustomer.pm,v 1.56.2.1 2011/02/09 23:40:08 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION @INC);
-$VERSION = qw($Revision: 1.63 $) [1];
+$VERSION = qw($Revision: 1.56.2.1 $) [1];
 
 # all framework needed modules
 use Kernel::Config;
@@ -52,10 +52,7 @@ create customer web interface object
     use Kernel::System::Web::InterfaceCustomer;
 
     my $Debug = 0;
-    my $InterfaceCustomer = Kernel::System::Web::InterfaceCustomer->new(
-        Debug      => $Debug,
-        WebRequest => CGI::Fast->new(), # optional, e. g. if fast cgi is used, the CGI object is already provided
-    );
+    my $InterfaceCustomer = Kernel::System::Web::InterfaceCustomer->new(Debug => $Debug);
 
 =cut
 
@@ -310,7 +307,7 @@ sub Run {
             && $LayoutObject->{BrowserJavaScriptSupport}
             )
         {
-            my $TimeOffset = $Self->{ParamObject}->GetParam( Param => 'TimeOffset' ) || 0;
+            my $TimeOffset = $Self->{ParamObject}->GetParam( Param => 'TimeOffset' ) || '';
             if ( $TimeOffset > 0 ) {
                 $TimeOffset = '-' . ( $TimeOffset / 60 );
             }
@@ -335,21 +332,12 @@ sub Run {
         if ( !$Self->{ConfigObject}->Get('SessionUseCookieAfterBrowserClose') ) {
             $Expires = '';
         }
-
-        my $SecureAttribute;
-        if ( $Self->{ConfigObject}->Get('HttpType') eq 'https' ) {
-
-            # Restrict Cookie to HTTPS if it is used.
-            $SecureAttribute = 1;
-        }
-
         $LayoutObject = Kernel::Output::HTML::Layout->new(
             SetCookies => {
                 SessionIDCookie => $Self->{ParamObject}->SetCookie(
                     Key     => $Param{SessionName},
                     Value   => $NewSessionID,
                     Expires => $Expires,
-                    Secure  => scalar $SecureAttribute,
                 ),
             },
             SessionID   => $NewSessionID,
@@ -557,20 +545,7 @@ sub Run {
         $UserData{NewPW} = $Self->{UserObject}->GenerateRandomPassword();
 
         # update new password
-        my $Success
-            = $Self->{UserObject}->SetPassword( UserLogin => $User, PW => $UserData{NewPW} );
-
-        if ( !$Success ) {
-            $LayoutObject->Print(
-                Output => \$LayoutObject->CustomerLogin(
-                    Title => 'Login',
-                    Message =>
-                        "Reset password unsuccessful. Please contact your administrator",
-                    User => $User,
-                ),
-            );
-            return;
-        }
+        $Self->{UserObject}->SetPassword( UserLogin => $User, PW => $UserData{NewPW} );
 
         # send notify email
         my $Body = $Self->{ConfigObject}->Get('CustomerPanelBodyLostPassword')
@@ -1067,6 +1042,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.63 $ $Date: 2012/01/23 15:12:17 $
+$Revision: 1.56.2.1 $ $Date: 2011/02/09 23:40:08 $
 
 =cut
