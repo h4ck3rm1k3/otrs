@@ -2,7 +2,7 @@
 # Kernel/Output/HTML/NotificationUIDCheck.pm
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: NotificationUIDCheck.pm,v 1.10 2011/02/16 14:15:47 mn Exp $
+# $Id: NotificationUIDCheck.pm,v 1.9.2.1 2011/02/16 14:15:30 mn Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.10 $) [1];
+$VERSION = qw($Revision: 1.9.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
