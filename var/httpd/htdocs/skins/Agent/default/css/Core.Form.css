@@ -1,6 +1,6 @@
 /**
  * @project     OTRS (http://www.otrs.org) - Agent Frontend
- * @version     $Revision: 1.35 $
+ * @version     $Revision: 1.27.2.1 $
  * @copyright   OTRS AG
  * @license     AGPL (http://www.gnu.org/licenses/agpl.txt)
  */
@@ -70,10 +70,9 @@ button.Primary {
     font-weight: bold;
 }
 
-a.CertificateRelationAdd,
-button.CertificateRelationAdd,
 button.Add,
 a.Add,
+a.DownloadAttachment,
 button.Remove,
 a.Remove,
 button.TrashCan,
@@ -105,9 +104,8 @@ a.Add:focus {
     background: url(../img/filter_add_hover.png) no-repeat center;
 }
 
-button.CertificateRelationAdd,
-a.CertificateRelationAdd {
-    background: url(../img/icons/certificate-plus.png) no-repeat center;
+a.DownloadAttachment {
+    background: url(../img/icons/drive-download.png) no-repeat center;
 }
 
 button.Remove,
@@ -136,7 +134,7 @@ a.Reset{
 }
 
 a.ViewAttachment {
-    background: url(../img/icons/monitor.png) no-repeat center;
+    background: url(../img/icons/screen.png) no-repeat center;
 }
 
 /**
@@ -223,8 +221,7 @@ div.TooltipErrorMessage {
  * @description Provides a table-like, aligned label-value structure
  */
 
-fieldset.TableLike > label,
-fieldset.TableLike > .Row > label {
+fieldset.TableLike > label {
     display: block;
     float: left;
     line-height: 1.3em;
@@ -236,14 +233,12 @@ fieldset.TableLike > .Row > label {
     text-shadow: 0 1px 0 #FAFAFA;
 }
 
-.RTL fieldset.TableLike > label,
-.RTL fieldset.TableLike > .Row > label {
+.RTL fieldset.TableLike > label {
     float: right;
     text-align: left;
 }
 
-fieldset.TableLike > .Field,
-fieldset.TableLike > .Row > .Field {
+fieldset.TableLike > .Field {
     line-height: 1.2em;
     margin-left: 30%;
     margin-right: 0;
@@ -253,8 +248,7 @@ fieldset.TableLike > .Row > .Field {
     padding-bottom: 3px;
 }
 
-.RTL fieldset.TableLike > .Field,
-.RTL fieldset.TableLike > .Row > .Field {
+.RTL fieldset.TableLike > .Field {
     margin-left: 0;
     margin-right: 30%;
     padding-left: 0;
@@ -269,15 +263,12 @@ fieldset.TableLike select {
  * @note     Also make labels grey which occur inside of a field,
  *          for example for complex input elements.
  */
-fieldset.TableLike > .Field label,
-fieldset.TableLike > .Row > .Field label {
+fieldset.TableLike > .Field label {
     color: #929292;
 }
 
 fieldset.TableLike > .Field > select,
-fieldset.TableLike > .Row > .Field > select,
-fieldset.TableLike > .Field > input,
-fieldset.TableLike > .Row > .Field > input {
+fieldset.TableLike > .Field > input {
     max-width: 100%;
 }
 
@@ -287,40 +278,31 @@ fieldset.TableLike > .Row > .Field > input {
  *          Additionally we have a generic FloatingField class,
  *          RichTextField is for backwards compatibility.
  */
-fieldset.TableLike > .RichTextField,
-fieldset.TableLike > .Row > .RichTextField,
-fieldset.TableLike > .FloatingField,
-fieldset.TableLike > .Row > .FloatingField {
+fieldset.TableLike > .RichTextField, fieldset.TableLike > .FloatingField {
     padding-bottom: 10px;
     padding-left: 10px;
     padding-right: 0;
     float: left;
 }
 
-.RTL fieldset.TableLike > .RichTextField,
-.RTL fieldset.TableLike > .Row > .RichTextField,
-.RTL fieldset.TableLike > .FloatingField,
-.RTL fieldset.TableLike > .Row > .FloatingField {
+.RTL fieldset.TableLike > .RichTextField, .RTL fieldset.TableLike > .FloatingField {
     padding-left: 0;
     padding-right: 10px;
     float: right;
 }
 
-fieldset.TableLike > .Value,
-fieldset.TableLike > .Row > .Value {
+fieldset.TableLike > .Value {
     margin-left: 30%;
     padding: 3px 0 3px 8px;
     line-height: 1.3em;
 }
 
-.RTL fieldset.TableLike > .Value,
-.RTL fieldset.TableLike > .Row > .Value {
+.RTL fieldset.TableLike > .Value {
     margin: 0 30% 0 0;
     padding: 3px 8px 3px 0;
 }
 
-fieldset.TableLike > .Value img,
-fieldset.TableLike > .Row > .Value img {
+fieldset.TableLike > .Value img {
     vertical-align: top;
 }
 
@@ -328,15 +310,12 @@ fieldset.TableLike > .Row > .Value img {
  * @note        FixedLabel - this additional class for TableLike
  *              makes the labels have a fixed size
  */
-fieldset.TableLike.FixedLabel > label,
-fieldset.TableLike.FixedLabel > .Row > label {
+fieldset.TableLike.FixedLabel > label {
     width: 170px;
 }
 
 fieldset.TableLike.FixedLabel > .Field,
-fieldset.TableLike.FixedLabel > .Row > .Field,
-fieldset.TableLike.FixedLabel > .Value,
-fieldset.TableLike.FixedLabel > .Row > .Value {
+fieldset.TableLike.FixedLabel > .Value {
     margin-left: 170px;
     margin-right: 0;
     padding-left: 17px;
@@ -344,9 +323,7 @@ fieldset.TableLike.FixedLabel > .Row > .Value {
 }
 
 .RTL fieldset.TableLike.FixedLabel > .Field,
-.RTL fieldset.TableLike.FixedLabel > .Row > .Field,
-.RTL fieldset.TableLike.FixedLabel > .Value,
-.RTL fieldset.TableLike.FixedLabel > .Row > .Value {
+.RTL fieldset.TableLike.FixedLabel > .Value {
     margin-left: 0;
     margin-right: 170px;
     padding-left: 0;
@@ -357,30 +334,24 @@ fieldset.TableLike.FixedLabel > .Row > .Value {
  * @note        FixedLabelSmall - this additional class for TableLike
  *              makes the labels have a small fixed size
  */
-fieldset.TableLike.FixedLabelSmall > label,
-fieldset.TableLike.FixedLabelSmall > .Row > label {
+fieldset.TableLike.FixedLabelSmall > label {
     width: 100px;
 }
 
 fieldset.TableLike.FixedLabelSmall > .Field,
-fieldset.TableLike.FixedLabelSmall > .Row > .Field,
-fieldset.TableLike.FixedLabelSmall > .Value,
-fieldset.TableLike.FixedLabelSmall > .Row > .Value {
+fieldset.TableLike.FixedLabelSmall > .Value {
     margin-left: 100px;
-    margin-right: 7px;
+    margin-right: 8px;
     word-wrap: break-word;
 }
 
 .RTL fieldset.TableLike.FixedLabelSmall > .Field,
-.RTL fieldset.TableLike.FixedLabelSmall > .Row > .Field,
-.RTL fieldset.TableLike.FixedLabelSmall > .Value,
-.RTL fieldset.TableLike.FixedLabelSmall > .Row > .Value {
+.RTL fieldset.TableLike.FixedLabelSmall > .Value {
     margin-left: 0;
     margin-right: 100px;
 }
 
-fieldset.TableLike.FixedLabelSmall > .FixedValueSmall,
-fieldset.TableLike.FixedLabelSmall > .Row > .FixedValueSmall {
+fieldset.TableLike.FixedLabelSmall > .FixedValueSmall {
     width: 145px;
 }
 
@@ -405,13 +376,11 @@ iframe.Signature {
  * @subsection freetext fields
  */
 
-input[type=text].TicketFreeText,
-input[type=text].ArticleFreeText {
+input[type=text].TicketFreeText, input[type=text].ArticleFreeText {
     width: 75%;
 }
 
-input[type=text].TicketFreeKey,
-input[type=text].ArticleFreeKey {
+input[type=text].TicketFreeKey, input[type=text].ArticleFreeKey {
     width: 50%;
 }
 

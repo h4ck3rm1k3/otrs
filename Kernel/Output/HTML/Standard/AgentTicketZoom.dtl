@@ -2,7 +2,7 @@
 # AgentTicketZoom.dtl - provides HTML for AgentTicketZoom.pm
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketZoom.dtl,v 1.205 2011/12/16 14:38:24 mg Exp $
+# $Id: AgentTicketZoom.dtl,v 1.182.2.1 2011/02/18 23:56:17 mp Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -95,15 +95,15 @@
                         <div class="Clear"></div>
 <!-- dtl:block:Type -->
                         <label>$Text{"State"}:</label>
-                        <p class="Value" title="$Text{"$Data{"State"}"}">$Text{"$Data{"State"}"}</p>
+                        <p class="Value" title="$Quote{"$Text{"$Data{"State"}"}"}">$Quote{"$Text{"$Data{"State"}"}","18"}</p>
                         <div class="Clear"></div>
 
                         <label>$Text{"Locked"}:</label>
-                        <p class="Value" title="$Text{"$Data{"Lock"}"}">$Text{"$Data{"Lock"}"}</p>
+                        <p class="Value" title="$Quote{"$Text{"$Data{"Lock"}"}"}">$Quote{"$Text{"$Data{"Lock"}"}","18"}</p>
                         <div class="Clear"></div>
 
                         <label>$Text{"Priority"}:</label>
-                        <p class="Value" title="$Text{"$Data{"Priority"}"}">$Text{"$Data{"Priority"}"}</p>
+                        <p class="Value" title="$Quote{"$Text{"$Data{"Priority"}"}"}">$Quote{"$Text{"$Data{"Priority"}"}","18"}</p>
                         <div class="Clear"></div>
 
                         <label>$Text{"Queue"}:</label>
@@ -161,12 +161,7 @@
                     <fieldset class="TableLike FixedLabelSmall">
                         <label>$Text{"CustomerID"}:</label>
                         <p class="Value">
-<!-- dtl:block:CustomerIDRW -->
                             <a href="$Config{"CustomerDBLink"}" class="AsPopup PopupType_TicketAction" $Config{"CustomerDBLinkTarget"}>$QData{"CustomerID", "18"}</a>
-<!-- dtl:block:CustomerIDRW -->
-<!-- dtl:block:CustomerIDRO -->
-                            $QData{"CustomerID", "18"}
-<!-- dtl:block:CustomerIDRO -->
                         </p>
                         <div class="Clear"></div>
 <!-- dtl:block:TotalAccountedTime -->
@@ -193,52 +188,67 @@
 
 <!-- dtl:block:Responsible -->
                     </fieldset>
-
-# show ticket dynamic fields
+# show TicketFreeKey1-16 and TicketFreeText1-16
                     <fieldset class="TableLike FixedLabelSmall">
-<!-- dtl:block:TicketDynamicField -->
-                        <label>$Text{"$Data{"Label"}"}:</label>
+<!-- dtl:block:TicketFreeText -->
+                        <label>$QData{"TicketFreeKey","25"}:</label>
                         <p class="Value">
-<!-- dtl:block:TicketDynamicFieldLink -->
-                            <span title="$QData{"Title"}"><a href="$Data{"Link"}" target="_blank" class="DynamicFieldLink">$Data{"Value"}</a></span>
-<!-- dtl:block:TicketDynamicFieldLink -->
-<!-- dtl:block:TicketDynamicFieldPlain -->
-                            <span title="$QData{"Title"}">$Data{"Value"}</span>
-<!-- dtl:block:TicketDynamicFieldPlain -->
+<!-- dtl:block:TicketFreeTextPlain -->
+                            <span title="$QData{"TicketFreeText"}">$QData{"TicketFreeText","25"}</span>
+<!-- dtl:block:TicketFreeTextPlain -->
+<!-- dtl:block:TicketFreeTextLink -->
+                            <span title="$QData{"TicketFreeText"}"><a href="$Data{"TicketFreeTextLink"}" target="_blank">$QData{"TicketFreeText","25"}</a></span>
+<!-- dtl:block:TicketFreeTextLink -->
                         </p>
                         <div class="Clear"></div>
-<!-- dtl:block:TicketDynamicField -->
-                    </fieldset>
+<!-- dtl:block:TicketFreeText -->
+#<!-- dtl:block:TicketFreeText1 -->
+#          <tr valign="top">
+#            <td><b>$QData{"TicketFreeKey1","25"}:</b></td>
+#            <td>
+#<!-- dtl:block:TicketFreeTextPlain1 -->
+#              <span title="$QData{"TicketFreeText1"}">$QData{"TicketFreeText1","25"}</span>
+#<!-- dtl:block:TicketFreeTextPlain1 -->
+#<!-- dtl:block:TicketFreeTextLink1 -->
+#              <span title="$QData{"TicketFreeText1"}"><a href="$Config{"TicketFreeTextLink1"}" target="_blank">$QData{"TicketFreeText1","25"}</a></span>
+#<!-- dtl:block:TicketFreeTextLink1 -->
+#            </td>
+#          </tr>
+#<!-- dtl:block:TicketFreeText1 -->
+#<!-- dtl:block:TicketFreeText2 -->
+#          <tr valign="top">
+#            <td><b>$QData{"TicketFreeKey2","25"}:</b></td>
+#            <td>
+#<!-- dtl:block:TicketFreeTextPlain2 -->
+#              <span title="$QData{"TicketFreeText2"}">$QData{"TicketFreeText2","25"}</span>
+#<!-- dtl:block:TicketFreeTextPlain2 -->
+#<!-- dtl:block:TicketFreeTextLink2 -->
+#              <span title="$QData{"TicketFreeText2"}"><a href="$Config{"TicketFreeTextLink2"}" target="_blank">$QData{"TicketFreeText2","25"}</a></span>
+#<!-- dtl:block:TicketFreeTextLink2 -->
+#            </td>
+#          </tr>
+#<!-- dtl:block:TicketFreeText2 -->
 
-# example of how to use fixed dynamic field blocks for customizations
-# Note: Field1 and Field2 are the names of the fields and had to be replaced with the actual
-# field names
-#                    <fieldset class="TableLike FixedLabelSmall">
-#<!-- dtl:block:TicketDynamicField_Field1 -->
-#                        <label>$Text{"$Data{"Label"}"}:</label>
-#                        <p class="Value">
-#<!-- dtl:block:TicketDynamicField_Field1_Link -->
-#                            <span title="$QData{"Title"}"><a href="$Data{"Link"}" target="_blank">$Data{"Value"}</a></span>
-#<!-- dtl:block:TicketDynamicField_Field1_Link -->
-#<!-- dtl:block:TicketDynamicField_Field1_Plain -->
-#                            <span title="$QData{"Title"}">$Data{"Value"}</span>
-#<!-- dtl:block:TicketDynamicField_Field1_Plain -->
-#                        </p>
-#<!-- dtl:block:TicketDynamicField_Field1 -->
-#                    </fieldset>
-#                    <fieldset class="TableLike FixedLabelSmall">
-#<!-- dtl:block:TicketDynamicField_Field2 -->
-#                        <label>$Text{"$Data{"Label"}"}:</label>
-#                        <p class="Value">
-#<!-- dtl:block:TicketDynamicField_Field2_Link -->
-#                            <span title="$QData{"Title"}"><a href="$Data{"Link"}" target="_blank">$Data{"Value"}</a></span>
-#<!-- dtl:block:TicketDynamicField_Field2_Link -->
-#<!-- dtl:block:TicketDynamicField_Field2_Plain -->
-#                            <span title="$QData{"Title"}">$Data{"Value"}</span>
-#<!-- dtl:block:TicketDynamicField_Field2_Plain -->
-#                        </p>
-#<!-- dtl:block:TicketDynamicField_Field2 -->
-#                    </fieldset>
+# use this if you want to show TicketFreeTime1-6
+<!-- dtl:block:TicketFreeTime -->
+                        <label>$Text{"$Data{"TicketFreeTimeKey"}"}:</label>
+                        <p class="Value" title="$TimeShort{"$QData{"TicketFreeTime"}"}">$TimeShort{"$QData{"TicketFreeTime"}"}</p>
+                        <div class="Clear"></div>
+
+<!-- dtl:block:TicketFreeTime -->
+#<!-- dtl:block:TicketFreeTime1 -->
+#          <tr valign="top">
+#            <td><b>$Text{"$Config{"TicketFreeTimeKey1"}"}:</b></td>
+#            <td><div title="$TimeShort{"$QData{"TicketFreeTime1"}"}">$TimeShort{"$QData{"TicketFreeTime1"}"}</div></td>
+#          </tr>
+#<!-- dtl:block:TicketFreeTime1 -->
+#<!-- dtl:block:TicketFreeTime2 -->
+#          <tr valign="top">
+#            <td><b>$Text{"$Config{"TicketFreeTimeKey2"}"}:</b></td>
+#            <td><div title="$TimeShort{"$QData{"TicketFreeTime2"}"}">$TimeShort{"$QData{"TicketFreeTime2"}"}</div></td>
+#          </tr>
+#<!-- dtl:block:TicketFreeTime2 -->
+                    </fieldset>
                 </div>
             </div>
             <div class="WidgetSimple">
@@ -268,9 +278,6 @@
                 <h2>$QData{"ArticleCount"} $Text{"Article(s)"}</h2>
                 <div class="AdditionalInformation">
                     $Text{"Age"}: $Data{"Age"} &ndash; $Text{"Created"}: $TimeShort{"$Data{"Created"}"}
-<!-- dtl:block:CreatedBy -->
-                    $Text{"by"} $QData{"CreatedByUser"}
-<!-- dtl:block:CreatedBy -->
                 </div>
             </div>
             <div class="ActionRow">
@@ -360,7 +367,7 @@ $Data{"ArticleItems"}
     </div>
     <div id="ArticleTableBody" class="ActionRow">
         <div class="Scroller">
-            <table id="FixedTable" class="TableSmall NoCellspacing $QData{"TableClasses"}">
+            <table id="FixedTable" class="TableSmall NoCellspacing">
                 <thead>
                     <tr>
                         <th class="UnreadArticles"><a class="UnreadArticles" href="#" title="$Text{"Unread articles"}"><span class="UnreadArticles"></span></a></th>
@@ -472,9 +479,6 @@ $Data{"ArticleItems"}
             <h2>#$QData{"Count"} &ndash; $QData{"Subject","60"}</h2>
             <div class="AdditionalInformation SpacingLoader">
                 $Text{"Created"}: $TimeShort{"$Data{"Created"}"}
-<!-- dtl:block:ArticleCreatedBy -->
-                $Text{"by"} $QData{"CreatedByUser"}
-<!-- dtl:block:ArticleCreatedBy -->
             </div>
         </div>
         <div class="LightRow Bottom">
@@ -545,41 +549,12 @@ $('#$QData{"FormID"} select[name=ResponseID]').bind('change', function (Event) {
                     <div class="Clear"></div>
 <!-- dtl:block:RowData -->
 
-# show article dynamic fields
-<!-- dtl:block:ArticleDynamicField -->
-                    <label>$Text{"$Data{"Label"}"}:</label>
-<!-- dtl:block:ArticleDynamicFieldLink -->
-                    <p class="Value" title="$QData{"Title"}"><a href="$Data{"Link"}" target="_blank" class="DynamicFieldLink">$Data{"Value"}</a></p>
-<!-- dtl:block:ArticleDynamicFieldLink -->
-<!-- dtl:block:ArticleDynamicFieldPlain -->
-                    <p class="Value" title="$QData{"Title"}">$Data{"Value"}</p>
-<!-- dtl:block:ArticleDynamicFieldPlain -->
+# show the ArticleFreeKey1-3 and ArticleFreeText1-3
+<!-- dtl:block:ArticleFreeText -->
+                    <label>$QData{"Key"}:</label>
+                    <p class="Value" title="$QData{"Value"}">$QData{"Value","160"}</p>
                     <div class="Clear"></div>
-<!-- dtl:block:ArticleDynamicField -->
-
-# example of how to use fixed dynamic field blocks for customizations
-# Note: Field1 and Field2 are the names of the fields and had to be replaced with the actual
-# field names
-#<!-- dtl:block:ArticleDynamicFieldField1 -->
-#                        <label>$Text{"$Data{"Label"}"}:</label>
-#<!-- dtl:block:ArticleDynamicField1Link -->
-#                    <p class="Value" title="$QData{"Title"}"><a href="$Data{"Link"}" target="_blank" class="DynamicFieldLink">$Data{"Value"}</a></p>
-#<!-- dtl:block:ArticleDynamicField1Link -->
-#<!-- dtl:block:ArticleDynamicField1Plain -->
-#                    <p class="Value" title="$QData{"Title"}">$Data{"Value"}</p>
-#<!-- dtl:block:ArticleDynamicField1Plain -->
-#                        <div class="Clear"></div>
-#<!-- dtl:block:ArticleDynamicFieldField1 -->
-#<!-- dtl:block:ArticleDynamicFieldField2 -->
-#                        <label>$Text{"$Data{"Label"}"}:</label>
-#<!-- dtl:block:ArticleDynamicField2Link -->
-#                    <p class="Value" title="$QData{"Title"}"><a href="$Data{"Link"}" target="_blank" class="DynamicFieldLink">$Data{"Value"}</a></p>
-#<!-- dtl:block:ArticleDynamicField2Link -->
-#<!-- dtl:block:ArticleDynamicField2Plain -->
-#                    <p class="Value" title="$QData{"Title"}">$Data{"Value"}</p>
-#<!-- dtl:block:ArticleDynamicField2Plain -->
-#                        <div class="Clear"></div>
-#<!-- dtl:block:ArticleDynamicFieldField2 -->
+<!-- dtl:block:ArticleFreeText -->
 
 # show article options like signed, crypted, ...
 <!-- dtl:block:ArticleOption -->
@@ -600,12 +575,10 @@ $('#$QData{"FormID"} select[name=ResponseID]').bind('change', function (Event) {
                     <label>$Text{"Attachment"}:</label>
                     <p class="Value">
 <!-- dtl:block:ArticleAttachmentRow -->
-<!-- dtl:block:ArticleAttachmentRowLink -->
-                        <a class="$QData{"Class"}" href="$Data{"Link"}" $Data{"Target"} title="$Text{"$Data{"Action"}"}">$QData{"Filename"}</a> $QData{"DataFileSize"}
-<!-- dtl:block:ArticleAttachmentRowLink -->
-<!-- dtl:block:ArticleAttachmentRowNoLink -->
                         $QData{"Filename"}, $QData{"Filesize"}
-<!-- dtl:block:ArticleAttachmentRowNoLink -->
+<!-- dtl:block:ArticleAttachmentRowLink -->
+                        <a class="$QData{"Class"}" href="$Data{"Link"}" $Data{"Target"} title="$Text{"$Data{"Action"}"}">$Text{"$Data{"Action"}"}</a>
+<!-- dtl:block:ArticleAttachmentRowLink -->
                         <br />
 <!-- dtl:block:ArticleAttachmentRow -->
                     </p>
@@ -639,20 +612,9 @@ $Data{"Body"}
 <!-- dtl:block:ArticleItemMarkAsSeen -->
 <!-- dtl:block:ArticleItem -->
 
-<!-- dtl:block:TicketItemMarkAsSeen -->
-<!-- dtl:js_on_document_complete -->
-<script type="text/javascript">//<![CDATA[
-    Core.Agent.TicketZoom.MarkTicketAsSeen($QData{"TicketID"});
-//]]></script>
-<!-- dtl:js_on_document_complete -->
-<!-- dtl:block:TicketItemMarkAsSeen -->
 
-<!-- dtl:block:TicketZoomInit -->
 <!-- dtl:js_on_document_complete -->
 <script type="text/javascript">//<![CDATA[
     Core.Agent.TicketZoom.Init({ ArticleTableHeight: parseInt('$Env{"UserTicketZoomArticleTableHeight"}', 10)});
-    Core.Config.Set('Ticket::Frontend::HTMLArticleHeightDefault', parseInt("$Config{"Ticket::Frontend::HTMLArticleHeightDefault"}" || 0, 10));
-    Core.Config.Set('Ticket::Frontend::HTMLArticleHeightMax', parseInt("$Config{"Ticket::Frontend::HTMLArticleHeightMax"}" || 0, 10));
 //]]></script>
 <!-- dtl:js_on_document_complete -->
-<!-- dtl:block:TicketZoomInit -->
