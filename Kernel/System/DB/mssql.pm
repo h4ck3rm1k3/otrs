@@ -2,7 +2,7 @@
 # Kernel/System/DB/mssql.pm - mssql database backend
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: mssql.pm,v 1.63 2011/12/12 08:19:14 mg Exp $
+# $Id: mssql.pm,v 1.55.2.1 2011/02/21 18:27:03 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.63 $) [1];
+$VERSION = qw($Revision: 1.55.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -36,8 +36,8 @@ sub LoadPreferences {
     $Self->{'DB::QuoteSingle'}          = '\'';
     $Self->{'DB::QuoteBack'}            = 0;
     $Self->{'DB::QuoteSemicolon'}       = '';
-    $Self->{'DB::QuoteUnderscoreStart'} = '[';
-    $Self->{'DB::QuoteUnderscoreEnd'}   = ']';
+    $Self->{'DB::QuoteUnderscoreStart'} = '\\';
+    $Self->{'DB::QuoteUnderscoreEnd'}   = '';
     $Self->{'DB::CaseInsensitive'}      = 1;
     $Self->{'DB::LikeEscapeString'}     = '';
 
@@ -236,7 +236,7 @@ sub TableCreate {
         $SQL .= $PrimaryKey;
     }
 
-    # add uniqueness
+    # add uniq
     for my $Name ( sort keys %Uniq ) {
         if ($SQL) {
             $SQL .= ",\n";
@@ -265,7 +265,7 @@ sub TableCreate {
             "ALTER TABLE $TableName ADD CONSTRAINT $DefaultName DEFAULT ($Default{$Column}) FOR $Column";
     }
 
-    # add index
+    # add indexs
     for my $Name ( sort keys %Index ) {
         push(
             @Return,
@@ -417,7 +417,7 @@ sub TableAlter {
             if ( !$Tag->{Name} && $Tag->{NameOld} ) {
                 $Tag->{Name} = $Tag->{NameOld};
             }
-            push @SQL, $Start . "ALTER TABLE $Table ALTER COLUMN $Tag->{Name} $Tag->{Type} NULL";
+            my $SQLEnd = $SQLStart . " ALTER COLUMN $Tag->{Name} $Tag->{Type} NULL";
 
             # create the default name
             my $DefaultName = 'DF_' . $Table . '_' . $Tag->{Name};
@@ -471,38 +471,35 @@ sub TableAlter {
             # remove possible default
             push @SQL, sprintf(
                 <<END
-                DECLARE \@defname%s VARCHAR(200), \@cmd%s VARCHAR(2000)
-                SET \@defname%s = (
+                DECLARE \@defname VARCHAR(200), \@cmd VARCHAR(2000)
+                SET \@defname = (
                     SELECT name FROM sysobjects so JOIN sysconstraints sc ON so.id = sc.constid
                     WHERE object_name(so.parent_obj) = '%s' AND so.xtype = 'D' AND sc.colid = (
                         SELECT colid FROM syscolumns WHERE id = object_id('%s') AND name = '%s'
                     )
                 )
-                SET \@cmd%s = 'ALTER TABLE %s DROP CONSTRAINT ' + \@defname%s
-                EXEC(\@cmd%s)
+                SET \@cmd = 'ALTER TABLE %s DROP CONSTRAINT ' + \@defname
+                EXEC(\@cmd)
 END
-                , $Table . $Tag->{Name}, $Table . $Tag->{Name}, $Table . $Tag->{Name}, $Table,
-                $Table, $Tag->{Name}, $Table . $Tag->{Name}, $Table, $Table . $Tag->{Name},
-                $Table . $Tag->{Name},
+                , $Table, $Table, $Tag->{Name}, $Table
             );
 
             # remove all possible constrains
             push @SQL, sprintf(
                 <<HEREDOC
-                    DECLARE \@sql%s NVARCHAR(4000)
+                    DECLARE \@sql NVARCHAR(4000)
 
                     WHILE 1=1
                     BEGIN
-                        SET \@sql%s = (SELECT TOP 1 'ALTER TABLE %s DROP CONSTRAINT [' + constraint_name + ']'
+                        SET \@sql = (SELECT TOP 1 'ALTER TABLE %s DROP CONSTRAINT [' + constraint_name + ']'
                         -- SELECT *
                         FROM information_schema.CONSTRAINT_COLUMN_USAGE where table_name='%s' and column_name='%s'
                         )
-                        IF \@sql%s IS NULL BREAK
-                        EXEC (\@sql%s)
+                        IF \@sql IS NULL BREAK
+                        EXEC (\@sql)
                     END
 HEREDOC
-                , $Table . $Tag->{Name}, $Table . $Tag->{Name}, $Table, $Table, $Tag->{Name},
-                $Table . $Tag->{Name}, $Table . $Tag->{Name},
+                , $Table, $Table, $Tag->{Name}
             );
 
             push @SQL, $SQLStart . " DROP COLUMN $Tag->{Name}";
@@ -779,15 +776,15 @@ sub _TypeTranslation {
         $Tag->{Type} = 'DATETIME';
     }
     elsif ( $Tag->{Type} =~ /^VARCHAR$/i ) {
-        if ( $Tag->{Size} > 4000 ) {
-            $Tag->{Type} = 'NVARCHAR (MAX)';
+        if ( $Tag->{Size} > 8000 ) {
+            $Tag->{Type} = 'TEXT';
         }
         else {
-            $Tag->{Type} = 'NVARCHAR (' . $Tag->{Size} . ')';
+            $Tag->{Type} = 'VARCHAR (' . $Tag->{Size} . ')';
         }
     }
     elsif ( $Tag->{Type} =~ /^longblob$/i ) {
-        $Tag->{Type} = 'NVARCHAR (MAX)';
+        $Tag->{Type} = 'TEXT';
     }
     elsif ( $Tag->{Type} =~ /^DECIMAL$/i ) {
         $Tag->{Type} = 'DECIMAL (' . $Tag->{Size} . ')';

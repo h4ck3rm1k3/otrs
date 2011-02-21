@@ -2,7 +2,7 @@
 # Kernel/System/DB/mysql.pm - mysql database backend
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.59 2011/08/12 09:06:16 mg Exp $
+# $Id: mysql.pm,v 1.55.2.1 2011/02/21 18:27:03 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.59 $) [1];
+$VERSION = qw($Revision: 1.55.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -61,7 +61,11 @@ sub LoadPreferences {
     #$Self->{'DB::ShellConnect'} = '';
 
     # init sql setting on db connect
-    if ( !$Self->{ConfigObject}->Get('Database::ShellOutput') )
+    if (
+        $Self->{ConfigObject}->Get('DefaultCharset')
+        =~ /(utf(\-8|8))/i
+        && !$Self->{ConfigObject}->Get('Database::ShellOutput')
+        )
     {
         $Self->{'DB::Connect'} = 'SET NAMES utf8';
     }
@@ -102,7 +106,12 @@ sub DatabaseCreate {
     }
 
     # return SQL
-    return ("CREATE DATABASE $Param{Name} DEFAULT CHARSET=utf8");
+    if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /(utf(\-8|8))/i ) {
+        return ("CREATE DATABASE $Param{Name} DEFAULT CHARSET=utf8");
+    }
+    else {
+        return ("CREATE DATABASE $Param{Name}");
+    }
 }
 
 sub DatabaseDrop {
