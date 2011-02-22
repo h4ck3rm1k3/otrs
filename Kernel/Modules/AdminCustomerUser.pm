@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AdminCustomerUser.pm - to add/update/delete customer user and preferences
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminCustomerUser.pm,v 1.99 2012/01/17 10:02:51 mg Exp $
+# $Id: AdminCustomerUser.pm,v 1.89.2.1 2011/02/22 13:13:02 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,7 +20,7 @@ use Kernel::System::Valid;
 use Kernel::System::CheckItem;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.99 $) [1];
+$VERSION = qw($Revision: 1.89.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -52,9 +52,7 @@ sub Run {
 
     my $Nav    = $Self->{ParamObject}->GetParam( Param => 'Nav' )    || '';
     my $Source = $Self->{ParamObject}->GetParam( Param => 'Source' ) || 'CustomerUser';
-    my $Search = $Self->{ParamObject}->GetParam( Param => 'Search' );
-    $Search
-        ||= $Self->{ConfigObject}->Get('AdminCustomerUser::RunInitialWildcardSearch') ? '*' : '';
+    my $Search = $Self->{ParamObject}->GetParam( Param => 'Search' ) || '*';
 
     #create local object
     my $CheckItemObject = Kernel::System::CheckItem->new( %{$Self} );
@@ -150,10 +148,6 @@ sub Run {
     # change action
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'ChangeAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Note = '';
         my ( %GetParam, %Errors );
         for my $Entry ( @{ $Self->{ConfigObject}->Get($Source)->{Map} } ) {
@@ -298,10 +292,6 @@ sub Run {
     # add action
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'AddAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Note = '';
         my ( %GetParam, %Errors );
 
@@ -410,7 +400,7 @@ sub Run {
                     my $UserQuote     = $Self->{LayoutObject}->Ascii2Html( Text => $User );
                     if ( $Self->{ConfigObject}->Get('Frontend::Module')->{AgentTicketPhone} ) {
                         $URL
-                            .= "<a href=\"\$Env{\"CGIHandle\"}?Action=AgentTicketPhone;Subaction=StoreNew;ExpandCustomerName=2;CustomerUser=$UserHTMLQuote;\$QEnv{\"ChallengeTokenParam\"}\">"
+                            .= "<a href=\"\$Env{\"CGIHandle\"}?Action=AgentTicketPhone;Subaction=StoreNew;ExpandCustomerName=2;CustomerUser=$UserHTMLQuote\">"
                             . $Self->{LayoutObject}->{LanguageObject}->Get('New phone ticket')
                             . "</a>";
                     }
@@ -419,7 +409,7 @@ sub Run {
                             $URL .= " - ";
                         }
                         $URL
-                            .= "<a href=\"\$Env{\"CGIHandle\"}?Action=AgentTicketEmail;Subaction=StoreNew;ExpandCustomerName=2;CustomerUser=$UserHTMLQuote;\$QEnv{\"ChallengeTokenParam\"}\">"
+                            .= "<a href=\"\$Env{\"CGIHandle\"}?Action=AgentTicketEmail;Subaction=StoreNew;ExpandCustomerName=2;CustomerUser=$UserHTMLQuote\">"
                             . $Self->{LayoutObject}->{LanguageObject}->Get('New email ticket')
                             . "</a>";
                     }
@@ -520,25 +510,10 @@ sub _Overview {
         Name => 'ActionSearch',
         Data => \%Param,
     );
-
-    # get writable data sources
-    my %CustomerSource = $Self->{CustomerUserObject}->CustomerSourceList(
-        ReadOnly => 0,
+    $Self->{LayoutObject}->Block(
+        Name => 'ActionAdd',
+        Data => \%Param,
     );
-
-    # only show Add option if we have at least one writable backend
-    if ( scalar keys %CustomerSource ) {
-        $Param{SourceOption} = $Self->{LayoutObject}->BuildSelection(
-            Data       => { %CustomerSource, },
-            Name       => 'Source',
-            SelectedID => $Param{Source} || '',
-        );
-
-        $Self->{LayoutObject}->Block(
-            Name => 'ActionAdd',
-            Data => \%Param,
-        );
-    }
 
     $Self->{LayoutObject}->Block(
         Name => 'OverviewHeader',
@@ -704,15 +679,14 @@ sub _Edit {
 
             # make sure the encoding stamp is set
             for my $Key ( keys %{$SelectionsData} ) {
-                $SelectionsData->{$Key}
-                    = $Self->{EncodeObject}->EncodeInput( $SelectionsData->{$Key} );
+                $SelectionsData->{$Key} = $Self->{EncodeObject}->Encode( $SelectionsData->{$Key} );
             }
 
             $Param{Option} = $Self->{LayoutObject}->BuildSelection(
-                Data        => $SelectionsData,
-                Name        => $Entry->[0],
-                Translation => 0,
-                SelectedID  => $Param{ $Entry->[0] },
+                Data                => $SelectionsData,
+                Name                => $Entry->[0],
+                LanguageTranslation => 0,
+                SelectedID          => $Param{ $Entry->[0] },
                 Class => $Param{RequiredClass} . ' ' . $Param{Errors}->{ $Entry->[0] . 'Invalid' }
                     || '',
             );
