@@ -2,7 +2,7 @@
 // Core.AJAX.UnitTest.js - UnitTests
 // Copyright (C) 2001-2011 OTRS AG, http://otrs.org/\n";
 // --
-// $Id: Core.AJAX.UnitTest.js,v 1.10 2011/10/28 08:24:16 mg Exp $
+// $Id: Core.AJAX.UnitTest.js,v 1.7.2.1 2011/02/24 10:35:31 mn Exp $
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (AGPL). If you
@@ -99,7 +99,7 @@ Core.AJAX = (function (Namespace) {
              },
              {
                  HTML:   '<select name="Element" multiple="multiple"><option value="1" selected="selected">one</option><option value="2" selected="selected">two</option></select>',
-                 Result: 'Element=1;Element=2;',
+                 Result: 'Element=1%2C2;',
                  Name:   'Multi-select with multiple values'
 
              },
@@ -111,7 +111,7 @@ Core.AJAX = (function (Namespace) {
              },
              {
                  HTML:   '<select name="Element" multiple="multiple"><option value="1">one</option><option value="2">two</option></select>',
-                 Result: '',
+                 Result: 'Element=;',
                  Name:   'Multi-select, empty'
 
              },
@@ -221,7 +221,6 @@ Core.AJAX = (function (Namespace) {
                     });
                 }
                 catch (Error) {
-                    equals(true, false, 'Exception was thrown');
                     start();
                 }
             });
@@ -252,7 +251,6 @@ Core.AJAX = (function (Namespace) {
                     Core.AJAX.FunctionCall(Test.URL, {}, Test.Callback, 'text');
                 }
                 catch (Error) {
-                    equals(true, false, 'Exception was thrown');
                     start();
                 }
             }, 'text');
@@ -286,12 +284,12 @@ Core.AJAX = (function (Namespace) {
             {
                 Expect: 1,
                 Name: 'FormUpdate error handling - wrong url',
-                URL: 'sample/Core.AJAX.FormUpdate-InvalidURL'
+                URL: 'sample/Core.AJAX.FormUpdate0.html'
             },
             {
                 Expect: 1,
                 Name: 'FormUpdate error handling - empty response',
-                URL: 'sample/Core.AJAX.EmptyResponse.html'
+                URL: 'sample/Core.AJAX.FormUpdate1.html'
             }
         ];
 
@@ -303,152 +301,18 @@ Core.AJAX = (function (Namespace) {
                 Core.Config.Set('Baselink', Test.URL);
                 try {
                     Core.AJAX.FormUpdate($('#FormUpdateErrorHandlingForm'), 'Subaction', 'Test1', ['Test2'], function () {
-                        equals(true, false, 'Error handling was not called');
                         start();
                         RestoreOrignal();
                     });
                 }
                 catch (Error) {
-                    equals(true, false, 'Error caught, Exception was thrown');
                     start();
                     RestoreOrignal();
                 }
             });
         });
 
-        //ContentUpdate
         $('#FormUpdateErrorHandling').remove();
-        $('body').append('<div id="ContentUpdateErrorHandling"></div>');
-
-        ContentUpdateTests =
-        [
-            {
-                Expect: 1,
-                Name: 'ContentUpdate error handling - wrong url',
-                URL: 'sample/Core.AJAX.ContentUpdate-InvalidURL'
-            },
-            {
-                Expect: 1,
-                Name: 'ContentUpdate error handling - empty response',
-                URL: 'sample/Core.AJAX.EmptyResponse.html'
-            }
-        ];
-
-        $.each(ContentUpdateTests, function () {
-            var Test = this;
-
-            asyncTest(Test.Name, Test.Expect + 1, function () {
-                ChangeErrorHandlingForTest();
-                try {
-                    Core.AJAX.ContentUpdate($('#ContentUpdateErrorHandling'), Test.URL, function () {
-                        ok(true, 'Complete callback called');
-                        RestoreOrignal();
-                    });
-                }
-                catch (Error) {
-                    equals(true, false, 'Error caught, Exception was thrown');
-                    start();
-                    RestoreOrignal();
-                }
-            });
-        });
-
-        // FunctionCall
-        $('#ContentUpdateErrorHandling').remove();
-
-        FunctionCallTests =
-        [
-            {
-                 Expect: 1,
-                 Name: 'FunctionCall error handling - wrong url',
-                 URL: 'sample/Core.AJAX.FunctionCall-InvalidURL',
-                 Callback: function () {
-                     equals(true, false, 'Error handling was not called');
-                     RestoreOrignal();
-                 }
-            }
-        ];
-
-        $.each(FunctionCallTests, function () {
-            var Test = this;
-
-            asyncTest(Test.Name, Test.Expect, function () {
-                ChangeErrorHandlingForTest();
-                try {
-                    Core.AJAX.FunctionCall(Test.URL, {}, Test.Callback);
-                }
-                catch (Error) {
-                    equals(true, false, 'Error caught, Exception was thrown');
-                    start();
-                    RestoreOrignal();
-                }
-            });
-        });
-
-        // FunctionCall - no callback defined
-        FunctionCallTests =
-        [
-            {
-                Expect: 1,
-                Name: 'FunctionCall error handling - no callback',
-                URL: 'sample/Core.AJAX.EmptyResponse.html',
-                Callback: '2'
-            }
-        ];
-
-        $.each(FunctionCallTests, function () {
-            var Test = this;
-
-            asyncTest(Test.Name, Test.Expect, function () {
-                ChangeErrorHandlingForTest();
-                // Special callback for this test
-                Core.Exception.HandleFinalError = function (Exception) {
-                    var ExceptionMessage = Exception.GetMessage();
-
-                    ok(ExceptionMessage.match(/^Invalid callback method.+$/), 'Error handling called');
-                    start();
-                    RestoreOrignal();
-                };
-                try {
-                    Core.AJAX.FunctionCall(Test.URL, {}, Test.Callback);
-                }
-                catch (Error) {
-                    equals(true, false, 'Error caught, Exception was thrown');
-                    start();
-                    RestoreOrignal();
-                }
-            });
-        });
-
-        // test AJAX error message suppression on leaving the page
-        asyncTest('AJAX error handling on leaving the page', 1, function () {
-            var AboutToLeaveOriginal = Core.Exception.AboutToLeave,
-                HandleFinalErrorOriginal = Core.Exception.HandleFinalError;
-
-            Core.Exception.AboutToLeave = true;
-
-            Core.Exception.HandleFinalError = function (ErrorObject, Trace) {
-                var ErrorShownToUser = HandleFinalErrorOriginal(ErrorObject, Trace);
-
-                equals(ErrorShownToUser, false, 'AJAX errors should be suppressed when leaving the page (custom error handler called)');
-                start();
-
-                Core.Exception.HandleFinalError = HandleFinalErrorOriginal;
-                Core.Exception.AboutToLeave = AboutToLeaveOriginal;
-            };
-
-            //ChangeErrorHandlingForTest();
-            try {
-                Core.AJAX.FunctionCall('nonexisting.url', {}, function () {
-                    equals(true, false, 'Callback on nonexisting URL');
-                    start();
-                });
-            }
-            catch (Error) {
-                equals(true, false, 'Error caught, unexpected Exception was thrown');
-                start();
-            }
-        });
     };
 
     return Namespace;
