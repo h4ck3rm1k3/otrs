@@ -1,8 +1,8 @@
 # --
 # Kernel/Config/Defaults.pm - Default Config file for OTRS kernel
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Defaults.pm,v 1.401 2012/01/24 08:41:20 mg Exp $
+# $Id: Defaults.pm,v 1.377.2.1 2011/02/25 10:22:13 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -24,12 +24,8 @@ package Kernel::Config::Defaults;
 use strict;
 use warnings;
 
-# Perl 5.8.6 is the required minimum version to use OTRS.
-# Do not use require VERSION as it leaks variables.
-use 5.008_006;
-
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.401 $) [1];
+$VERSION = qw($Revision: 1.377.2.1 $) [1];
 
 # prepend '../Custom', '../Kernel/cpan-lib' and '../' to the module search path @INC
 use File::Basename;
@@ -129,7 +125,7 @@ sub LoadDefaults {
 #    $ENV{NLS_LANG} = "german_germany.we8iso8859p15";
 #    $ENV{NLS_LANG} = "american_america.we8iso8859p1";
 
-    # If you want to use an init sql after connect, use this here.
+    # If you want to use an init sql after connect, use this hier.
     # (e. g. can be used for mysql encoding between client and server)
     #    $Self->{'Database::Connect'} = 'SET NAMES utf8';
 
@@ -144,9 +140,13 @@ sub LoadDefaults {
     # default valid
     $Self->{DefaultValid} = 'valid';
 
-    # DEPRECATED. Compatibilty setting for older 3.0 code.
-    # Internal charset must always be utf-8.
+    # default charset
+    # (default frontend charset - "utf-8" is a multi charset for all possible
+    # charsets - e. g. "iso-8859-1" is also possible for single charset)
+    # [default: utf-8]
     $Self->{DefaultCharset} = 'utf-8';
+
+#    $Self->{DefaultCharset} = 'iso-8859-1';
 
     # default language
     # (the default frontend language) [default: en]
@@ -157,7 +157,7 @@ sub LoadDefaults {
     $Self->{DefaultUsedLanguages} = {
         ar_SA   => 'Arabic (Saudi Arabia)',
         bg      => 'Bulgarian (&#x0411;&#x044a;&#x043b;&#x0433;&#x0430;&#x0440;&#x0441;&#x043a;&#x0438;)',
-        ca      => 'Catal&agrave;',
+        ct      => 'Catal&agrave;',
         cs      => 'Czech (&#x010c;esky)',
         da      => 'Dansk',
         de      => 'Deutsch',
@@ -172,11 +172,9 @@ sub LoadDefaults {
         fr      => 'Fran&ccedil;ais',
         fi      => 'Suomi',
         hi      => 'Hindi',
-        hr      => 'Hrvatski',
         hu      => 'Magyar',
         it      => 'Italiano',
         ja      => 'Japanese (&#x65e5;&#x672c;&#x8a9e)',
-        lt      => 'Lietuvi&#371; kalba',
         lv      => 'Latvijas',
         nl      => 'Nederlands',
         nb_NO   => 'Norsk bokm&aring;l',
@@ -339,11 +337,6 @@ sub LoadDefaults {
     # --------------------------------------------------- #
     # This is the auth. module againt the otrs db
     $Self->{AuthModule} = 'Kernel::System::Auth::DB';
-
-    # defines AuthSyncBackend (AuthSyncModule) for AuthModule
-    # if this key exists and is empty, there won't be a sync.
-    # example values: AuthSyncBackend, AuthSyncBackend2
-    $Self->{'AuthModule::UseSyncBackend'} = '';
 
     # password crypt type (sha2|sha1|md5|crypt|plain)
 #    $Self->{'AuthModule::DB::CryptType'} = 'md5';
@@ -612,10 +605,14 @@ sub LoadDefaults {
     # --------------------------------------------------- #
     # Notification Settings
     # --------------------------------------------------- #
+    # agent interface notification module to check the used charset
+    $Self->{'Frontend::NotifyModule'}->{'1-CharsetCheck'} = {
+        Module => 'Kernel::Output::HTML::NotificationCharsetCheck',
+    };
 
     # agent interface notification module to check the admin user id
     # (don't work with user id 1 notification)
-    $Self->{'Frontend::NotifyModule'}->{'200-UID-Check'} = {
+    $Self->{'Frontend::NotifyModule'}->{'2-UID-Check'} = {
         Module => 'Kernel::Output::HTML::NotificationUIDCheck',
     };
 
@@ -909,24 +906,24 @@ sub LoadDefaults {
 
     # Customer Common JS
     $Self->{'Loader::Customer::CommonJS'}->{'000-Framework'} =  [
-      'thirdparty/jquery-1.6.4/jquery.js',
-      'thirdparty/stacktrace-0.3/stacktrace.js',
+      'thirdparty/jquery-1.4.4/jquery.js',
+      'thirdparty/stacktrace/stacktrace.js',
       'Core.Debug.js',
       'Core.Exception.js',
-      'Core.Config.js',
       'Core.App.js',
       'Core.Customer.js',
       'Core.JavaScriptEnhancements.js',
+      'Core.Config.js',
       'Core.UI.RichTextEditor.js'
     ];
 
     # Agent Common JS
     $Self->{'Loader::Agent::CommonJS'}->{'000-Framework'} =  [
       'thirdparty/json/json2.js',
-      'thirdparty/jquery-1.6.4/jquery.js',
-      'thirdparty/jquery-ui-1.8.16/jquery-ui.js',
-      'thirdparty/jquery-validate-1.9/jquery.validate.js',
-      'thirdparty/stacktrace-0.3/stacktrace.js',
+      'thirdparty/jquery-1.4.4/jquery.js',
+      'thirdparty/jquery-ui-1.8.7/jquery-ui.js',
+      'thirdparty/jquery-validate-1.7/jquery.validate.js',
+      'thirdparty/stacktrace/stacktrace.js',
       'Core.JavaScriptEnhancements.js',
       'Core.Debug.js',
       'Core.Data.js',
@@ -1072,6 +1069,18 @@ sub LoadDefaults {
         Prio    => 6000,
         Active   => 0,
     };
+
+#    $Self->{PreferencesGroups}->{FreeText} = {
+#        Module  => 'Kernel::Output::HTML::PreferencesGeneric',
+#        Column  => 'Other Options',
+#        Label   => 'Free Text',
+#        Desc    => 'Example for free text.',
+#        Block   => 'Input',
+#        Data    => '$Env{"UserFreeText"}',
+#        PrefKey => 'UserFreeText',
+#        Prio    => 7000,
+#        Active   => 1,
+#    };
 
     $Self->{PreferencesGroups}->{Language} = {
         Module  => 'Kernel::Output::HTML::PreferencesLanguage',
@@ -1329,18 +1338,13 @@ Your OTRS Notification Master
 #            User => '',
 #            Password => '',
             Table => 'customer_user',
-            # if your frontend is unicode and the charset of your
-            # customer database server is iso-8859-1, use these options.
-#           SourceCharset => 'iso-8859-1',
-#           DestCharset => 'utf-8',
-
             # CaseSensitive will control if the SQL statements need LOWER()
             #   function calls to work case insensitively. Setting this to
             #   1 will improve performance dramatically on large databases.
             CaseSensitive => 0,
         },
 
-        # customer unique id
+        # customer uniq id
         CustomerKey => 'login',
 
         # customer #
@@ -1382,7 +1386,7 @@ Your OTRS Notification Master
             [ 'UserPassword',   'Password',   'pw',         0, 0, 'var', '', 0 ],
             [ 'UserEmail',      'Email',      'email',      1, 1, 'var', '', 0 ],
 
-#            [ 'UserEmail',      'Email', 'email',           1, 1, 'var', '$Env{"CGIHandle"}?Action=AgentTicketCompose&ResponseID=1&TicketID=$Data{"TicketID"}&ArticleID=$Data{"ArticleID"}', 0, 'OTRSPopup_TicketAction' ],
+#            [ 'UserEmail',      'Email', 'email',           1, 1, 'var', '$Env{"CGIHandle"}?Action=AgentTicketCompose&ResponseID=1&TicketID=$Data{"TicketID"}&ArticleID=$Data{"ArticleID"}', 0 ],
             [ 'UserCustomerID', 'CustomerID', 'customer_id', 0, 1, 'var', '', 0 ],
 
 #            [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
@@ -1429,10 +1433,10 @@ Your OTRS Notification Master
 #            # if both your frontend and your LDAP are unicode, use this:
 #            SourceCharset => 'utf-8',
 #            DestCharset   => 'utf-8',
-#            # if your frontend is unicode and the charset of your
-#            # ldap server is iso-8859-1, use these options.
-#            # SourceCharset => 'iso-8859-1',
-#            # DestCharset => 'utf-8',
+#            # if your frontend is e. g. iso-8859-1 and the charset of your
+#            # ldap server is utf-8, use these options.
+#            SourceCharset => 'utf-8',
+#            DestCharset => 'iso-8859-1',
 #            # die if backend can't work, e. g. can't connect to server
 #            Die => 0,
 #            # Net::LDAP new params (if needed - for more info see perldoc Net::LDAP)
@@ -1443,7 +1447,7 @@ Your OTRS Notification Master
 #                version => 3,
 #            },
 #        },
-#        # customer unique id
+#        # customer uniq id
 #        CustomerKey => 'uid',
 #        # customer #
 #        CustomerID => 'mail',
@@ -1487,10 +1491,9 @@ Your OTRS Notification Master
 #            User => '',
 #            Password => '',
             Table => 'customer_company',
-#            ForeignDB => 0,    # set this to 1 if your table does not have create_time, create_by, change_time and change_by fields
         },
 
-        # company unique id
+        # customer uniq id
         CustomerCompanyKey          => 'customer_id',
         CustomerCompanyValid        => 'valid_id',
         CustomerCompanyListFields   => [ 'customer_id', 'name' ],
@@ -1511,6 +1514,255 @@ Your OTRS Notification Master
             [ 'CustomerCompanyComment', 'Comment', 'comments', 1, 0, 'var', '', 0 ],
             [ 'ValidID',                'Valid',   'valid_id', 0, 1, 'int', '', 0 ],
         ],
+
+        # default selections
+        Selections => {
+            CustomerCompanyCountry => {
+                '-'                              => '-',
+                'Afghanistan'                    => 'Afghanistan',
+                'Albania'                        => 'Albania',
+                'Algeria'                        => 'Algeria',
+                'American Samoa'                 => 'American Samoa',
+                'Andorra'                        => 'Andorra',
+                'Angola'                         => 'Angola',
+                'Anguilla'                       => 'Anguilla',
+                'Antarctica'                     => 'Antarctica',
+                'Antigua and Barbuda'            => 'Antigua and Barbuda',
+                'Argentina'                      => 'Argentina',
+                'Armenia'                        => 'Armenia',
+                'Aruba'                          => 'Aruba',
+                'Australia'                      => 'Australia',
+                'Austria'                        => 'Austria',
+                'Azerbaijan'                     => 'Azerbaijan',
+                'Bahamas'                        => 'Bahamas',
+                'Bahrain'                        => 'Bahrain',
+                'Bangladesh'                     => 'Bangladesh',
+                'Barbados'                       => 'Barbados',
+                'Belarus'                        => 'Belarus',
+                'Belgium'                        => 'Belgium',
+                'Belize'                         => 'Belize',
+                'Benin'                          => 'Benin',
+                'Bermuda'                        => 'Bermuda',
+                'Bhutan'                         => 'Bhutan',
+                'Bolivia'                        => 'Bolivia',
+                'Bosnia and Herzegowina'         => 'Bosnia and Herzegowina',
+                'Botswana'                       => 'Botswana',
+                'Bouvet Island'                  => 'Bouvet Island',
+                'Brazil'                         => 'Brazil',
+                'British Indian Ocean Territory' => 'British Indian Ocean Territory',
+                'Brunei Darussalam'              => 'Brunei Darussalam',
+                'Bulgaria'                       => 'Bulgaria',
+                'Burkina Faso'                   => 'Burkina Faso',
+                'Burundi'                        => 'Burundi',
+                'Cambodia'                       => 'Cambodia',
+                'Cameroon'                       => 'Cameroon',
+                'Canada'                         => 'Canada',
+                'Cape Verde'                     => 'Cape Verde',
+                'Cayman Islands'                 => 'Cayman Islands',
+                'Central African Republic'       => 'Central African Republic',
+                'Chad'                           => 'Chad',
+                'Chile'                          => 'Chile',
+                'China'                          => 'China',
+                'Christmas Island'               => 'Christmas Island',
+                'Cocos (Keeling) Islands'        => 'Cocos (Keeling) Islands',
+                'Colombia'                       => 'Colombia',
+                'Comoros'                        => 'Comoros',
+                'Congo, Democratic Republic of'  => 'Congo, Democratic Republic of',
+                'Congo, Republic of'             => 'Congo, Republic of',
+                'Cook Islands'                   => 'Cook Islands',
+                'Costa Rica'                     => 'Costa Rica',
+                'Cote d\'Ivoire'                 => 'Cote d\'Ivoire',
+                'Croatia'                        => 'Croatia',
+                'Cuba'                           => 'Cuba',
+                'Cyprus'                         => 'Cyprus',
+                'Czech Republic'                 => 'Czech Republic',
+                'Denmark'                        => 'Denmark',
+                'Djibouti'                       => 'Djibouti',
+                'Dominica'                       => 'Dominica',
+                'Dominican Republic'             => 'Dominican Republic',
+                'Ecuador'                        => 'Ecuador',
+                'Egypt'                          => 'Egypt',
+                'El Salvador'                    => 'El Salvador',
+                'Equatorial Guinea'              => 'Equatorial Guinea',
+                'Eritrea'                        => 'Eritrea',
+                'Estonia'                        => 'Estonia',
+                'Ethiopia'                       => 'Ethiopia',
+                'Falkland Islands (Malvinas)'    => 'Falkland Islands (Malvinas)',
+                'Faroe Islands'                  => 'Faroe Islands',
+                'Fiji'                           => 'Fiji',
+                'Finland'                        => 'Finland',
+                'France'                         => 'France',
+                'French Guiana'                  => 'French Guiana',
+                'French Polynesia'               => 'French Polynesia',
+                'French Southern Territories'    => 'French Southern Territories',
+                'Gabon'                          => 'Gabon',
+                'Gambia'                         => 'Gambia',
+                'Georgia'                        => 'Georgia',
+                'Germany'                        => 'Germany',
+                'Ghana'                          => 'Ghana',
+                'Gibraltar'                      => 'Gibraltar',
+                'Greece'                         => 'Greece',
+                'Greenland'                      => 'Greenland',
+                'Grenada'                        => 'Grenada',
+                'Guadeloupe'                     => 'Guadeloupe',
+                'Guam'                           => 'Guam',
+                'Guatemala'                      => 'Guatemala',
+                'Guinea'                         => 'Guinea',
+                'Guinea-bissau'                  => 'Guinea-bissau',
+                'Guyana'                         => 'Guyana',
+                'Haiti'                          => 'Haiti',
+                'Heard and Mc Donald Islands'    => 'Heard and Mc Donald Islands',
+                'Honduras'                       => 'Honduras',
+                'Hong Kong'                      => 'Hong Kong',
+                'Hungary'                        => 'Hungary',
+                'Iceland'                        => 'Iceland',
+                'India'                          => 'India',
+                'Indonesia'                      => 'Indonesia',
+                'Iran (Islamic Republic of)'     => 'Iran (Islamic Republic of)',
+                'Iraq'                           => 'Iraq',
+                'Ireland'                        => 'Ireland',
+                'Israel'                         => 'Israel',
+                'Italy'                          => 'Italy',
+                'Jamaica'                        => 'Jamaica',
+                'Japan'                          => 'Japan',
+                'Jordan'                         => 'Jordan',
+                'Kazakhstan'                     => 'Kazakhstan',
+                'Kenya'                          => 'Kenya',
+                'Kiribati'                       => 'Kiribati',
+                'Korea, Democratic People\'s Republic of' =>
+                    'Korea, Democratic People\'s Republic of',
+                'Korea, Republic of'                => 'Korea, Republic of',
+                'Kuwait'                            => 'Kuwait',
+                'Kyrgyzstan'                        => 'Kyrgyzstan',
+                'Lao People\'s Democratic Republic' => 'Lao People\'s Democratic Republic',
+                'Latvia'                            => 'Latvia',
+                'Lebanon'                           => 'Lebanon',
+                'Lesotho'                           => 'Lesotho',
+                'Liberia'                           => 'Liberia',
+                'Libyan Arab Jamahiriya'            => 'Libyan Arab Jamahiriya',
+                'Liechtenstein'                     => 'Liechtenstein',
+                'Lithuania'                         => 'Lithuania',
+                'Luxembourg'                        => 'Luxembourg',
+                'Macau'                             => 'Macau',
+                'Macedonia, the Former Yugoslav Republic of' =>
+                    'Macedonia, the Former Yugoslav Republic of',
+                'Madagascar'                       => 'Madagascar',
+                'Malawi'                           => 'Malawi',
+                'Malaysia'                         => 'Malaysia',
+                'Maldives'                         => 'Maldives',
+                'Mali'                             => 'Mali',
+                'Malta'                            => 'Malta',
+                'Marshall Islands'                 => 'Marshall Islands',
+                'Martinique'                       => 'Martinique',
+                'Mauritania'                       => 'Mauritania',
+                'Mauritius'                        => 'Mauritius',
+                'Mayotte'                          => 'Mayotte',
+                'Mexico'                           => 'Mexico',
+                'Micronesia, Federated States of'  => 'Micronesia, Federated States of',
+                'Moldova, Republic of'             => 'Moldova, Republic of',
+                'Monaco'                           => 'Monaco',
+                'Mongolia'                         => 'Mongolia',
+                'Montserrat'                       => 'Montserrat',
+                'Morocco'                          => 'Morocco',
+                'Mozambique'                       => 'Mozambique',
+                'Myanmar'                          => 'Myanmar',
+                'Namibia'                          => 'Namibia',
+                'Nauru'                            => 'Nauru',
+                'Nepal'                            => 'Nepal',
+                'Netherlands'                      => 'Netherlands',
+                'Netherlands Antilles'             => 'Netherlands Antilles',
+                'New Caledonia'                    => 'New Caledonia',
+                'New Zealand'                      => 'New Zealand',
+                'Nicaragua'                        => 'Nicaragua',
+                'Niger'                            => 'Niger',
+                'Nigeria'                          => 'Nigeria',
+                'Niue'                             => 'Niue',
+                'Norfolk Island'                   => 'Norfolk Island',
+                'Northern Mariana Islands'         => 'Northern Mariana Islands',
+                'Norway'                           => 'Norway',
+                'Oman'                             => 'Oman',
+                'Pakistan'                         => 'Pakistan',
+                'Palau'                            => 'Palau',
+                'Palestinian Territory, oCCUPIED'  => 'Palestinian Territory, oCCUPIED',
+                'Panama'                           => 'Panama',
+                'Papua New Guinea'                 => 'Papua New Guinea',
+                'Paraguay'                         => 'Paraguay',
+                'Peru'                             => 'Peru',
+                'Philippines'                      => 'Philippines',
+                'Pitcairn'                         => 'Pitcairn',
+                'Poland'                           => 'Poland',
+                'Portugal'                         => 'Portugal',
+                'Puerto Rico'                      => 'Puerto Rico',
+                'Qatar'                            => 'Qatar',
+                'Reunion'                          => 'Reunion',
+                'Romania'                          => 'Romania',
+                'Russian Federation'               => 'Russian Federation',
+                'Rwanda'                           => 'Rwanda',
+                'Saint Helena'                     => 'Saint Helena',
+                'Saint Kitts and Nevis'            => 'Saint Kitts and Nevis',
+                'Saint Lucia'                      => 'Saint Lucia',
+                'Saint Pierre and Miquelon'        => 'Saint Pierre and Miquelon',
+                'Saint Vincent and the Grenadines' => 'Saint Vincent and the Grenadines',
+                'Samoa'                            => 'Samoa',
+                'San Marino'                       => 'San Marino',
+                'Sao tome and Principe'            => 'Sao tome and Principe',
+                'Saudi Arabia'                     => 'Saudi Arabia',
+                'Senegal'                          => 'Senegal',
+                'Serbia and Montenegro'            => 'Serbia and Montenegro',
+                'Seychelles'                       => 'Seychelles',
+                'Sierra Leone'                     => 'Sierra Leone',
+                'Singapore'                        => 'Singapore',
+                'Slovakia'                         => 'Slovakia',
+                'Slovenia'                         => 'Slovenia',
+                'Solomon Islands'                  => 'Solomon Islands',
+                'Somalia'                          => 'Somalia',
+                'South Africa'                     => 'South Africa',
+                'South Georgia and the South Sandwich Islands' =>
+                    'South Georgia and the South Sandwich Islands',
+                'Spain'                                => 'Spain',
+                'Sri Lanka'                            => 'Sri Lanka',
+                'Sudan'                                => 'Sudan',
+                'Suriname'                             => 'Suriname',
+                'Svalbard and Jan Mayen Islands'       => 'Svalbard and Jan Mayen Islands',
+                'Swaziland'                            => 'Swaziland',
+                'Sweden'                               => 'Sweden',
+                'Switzerland'                          => 'Switzerland',
+                'Syrian Arab Republic'                 => 'Syrian Arab Republic',
+                'Taiwan'                               => 'Taiwan',
+                'Tajikistan'                           => 'Tajikistan',
+                'Thailand'                             => 'Thailand',
+                'Timor-Leste'                          => 'Timor-Leste',
+                'Togo'                                 => 'Togo',
+                'Tokelau'                              => 'Tokelau',
+                'Tonga'                                => 'Tonga',
+                'Trinidad and Tobago'                  => 'Trinidad and Tobago',
+                'Tunisia'                              => 'Tunisia',
+                'Turkey'                               => 'Turkey',
+                'Turkmenistan'                         => 'Turkmenistan',
+                'Turks and Caicos Islands'             => 'Turks and Caicos Islands',
+                'Tuvalu'                               => 'Tuvalu',
+                'Uganda'                               => 'Uganda',
+                'Ukraine'                              => 'Ukraine',
+                'United Arab Emirates'                 => 'United Arab Emirates',
+                'United Kingdom'                       => 'United Kingdom',
+                'United States'                        => 'United States',
+                'United States Minor outlying Islands' => 'United States Minor outlying Islands',
+                'Uruguay'                              => 'Uruguay',
+                'Uzbekistan'                           => 'Uzbekistan',
+                'Vanuatu'                              => 'Vanuatu',
+                'Vatican City State (Holy See)'        => 'Vatican City State (Holy See)',
+                'Venezuela'                            => 'Venezuela',
+                'Viet nam'                             => 'Viet nam',
+                'Virgin Islands (British)'             => 'Virgin Islands (British)',
+                'Virgin Islands (U.S.)'                => 'Virgin Islands (U.S.)',
+                'Wallis and Futuna Islands'            => 'Wallis and Futuna Islands',
+                'Western Sahara'                       => 'Western Sahara',
+                'Yemen'                                => 'Yemen',
+                'Zambia'                               => 'Zambia',
+                'Zimbabwe'                             => 'Zimbabwe',
+                'Lettland'                             => 'Lettland',
+            },
+        },
     };
 
     # --------------------------------------------------- #
@@ -1764,6 +2016,20 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
+    # check required perl version
+    if ( !eval { require 5.008006 } ) {
+
+        my $RequiredPerl = 'v5.8.6';
+        my $CurrentPerl  = $^V;
+
+        my $Message = "\nERROR:\n"
+            . "Currently you are using Perl $CurrentPerl, but Perl $RequiredPerl is required for technical reasons!\n"
+            . "In order to use this version of OTRS, you need to have Perl $RequiredPerl installed.\n"
+            . "Otherwise you can also use an older version of OTRS.\n\n";
+
+        die $Message;
+    }
+
     # 0=off; 1=log if there exists no entry; 2=log all;
     $Self->{Debug} = 0;
 
@@ -1961,6 +2227,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.401 $ $Date: 2012/01/24 08:41:20 $
+$Revision: 1.377.2.1 $ $Date: 2011/02/25 10:22:13 $
 
 =cut
