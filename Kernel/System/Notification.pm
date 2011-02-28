@@ -2,7 +2,7 @@
 # Kernel/System/Notification.pm - lib for notifications
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Notification.pm,v 1.38 2011/08/12 09:06:15 mg Exp $
+# $Id: Notification.pm,v 1.36.2.1 2011/02/28 18:37:40 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.38 $) [1];
+$VERSION = qw($Revision: 1.36.2.1 $) [1];
 
 =head1 NAME
 
@@ -132,24 +132,28 @@ sub NotificationGet {
     my %Data;
     while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
 
-        # convert body
-        $Data[5] = $Self->{EncodeObject}->Convert(
-            Text  => $Data[5],
-            From  => $Data[2],
-            To    => 'utf-8',
-            Force => 1,
-        );
+        # convert to internal charset e. g. utf8
+        if ( $Self->{EncodeObject}->CharsetInternal() ) {
 
-        # convert subject
-        $Data[3] = $Self->{EncodeObject}->Convert(
-            Text  => $Data[3],
-            From  => $Data[2],
-            To    => 'utf-8',
-            Force => 1,
-        );
+            # convert body
+            $Data[5] = $Self->{EncodeObject}->Convert(
+                Text  => $Data[5],
+                From  => $Data[2],
+                To    => $Self->{EncodeObject}->CharsetInternal(),
+                Force => 1,
+            );
 
-        # set new charset
-        $Data[2] = 'utf-8';
+            # convert subject
+            $Data[3] = $Self->{EncodeObject}->Convert(
+                Text  => $Data[3],
+                From  => $Data[2],
+                To    => $Self->{EncodeObject}->CharsetInternal(),
+                Force => 1,
+            );
+
+            # set new charset
+            $Data[2] = $Self->{EncodeObject}->CharsetInternal();
+        }
 
         # fix some bad stuff from some browsers (Opera)!
         $Data[5] =~ s/(\n\r|\r\r\n|\r\n|\r)/\n/g;
@@ -235,6 +239,7 @@ sub NotificationList {
         # remember list
         $List{ $Data[3] . '::' . $Data[1] } = $Data[3] . '::' . $Data[1];
     }
+
     return %List;
 }
 
@@ -307,6 +312,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.38 $ $Date: 2011/08/12 09:06:15 $
+$Revision: 1.36.2.1 $ $Date: 2011/02/28 18:37:40 $
 
 =cut
