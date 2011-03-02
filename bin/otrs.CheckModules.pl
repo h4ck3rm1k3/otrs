@@ -3,7 +3,7 @@
 # bin/otrs.CheckModules.pl - to check needed cpan framework modules
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: otrs.CheckModules.pl,v 1.34 2011/11/28 12:20:00 mb Exp $
+# $Id: otrs.CheckModules.pl,v 1.14.2.1 2011/03/02 14:58:22 mg Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -60,28 +60,6 @@ my @NeededModules = (
         Comment  => 'Required to connect to a MySQL database.',
     },
     {
-        Module       => 'DBD::ODBC',
-        Required     => 0,
-        NotSupported => [
-            {
-                Version => '1.23',
-                Comment =>
-                    'This version is broken and not useable! Please upgrade to a higher version.',
-            },
-        ],
-        Comment => 'Required to connect to a MS-SQL database.',
-    },
-    {
-        Module   => 'DBD::Oracle',
-        Required => 0,
-        Comment  => 'Required to connect to a Oracle database.',
-    },
-    {
-        Module   => 'DBD::Pg',
-        Required => 0,
-        Comment  => 'Required to connect to a PostgreSQL database.',
-    },
-    {
         Module   => 'Digest::MD5',
         Required => 1,
     },
@@ -96,10 +74,6 @@ my @NeededModules = (
         Version  => '0.23',
         Required => 0,
         Comment  => 'Required to handle mails with several Chinese character sets.',
-    },
-    {
-        Module   => 'Encode::Locale',
-        Required => 1,
     },
     {
         Module   => 'GD',
@@ -161,10 +135,6 @@ my @NeededModules = (
         ],
     },
     {
-        Module   => 'Locale::Codes',
-        Required => 1,
-    },
-    {
         Module   => 'LWP::UserAgent',
         Required => 1,
     },
@@ -181,18 +151,6 @@ my @NeededModules = (
                 Module   => 'IO::Socket::SSL',
                 Required => 0,
                 Comment  => 'Required for POP3 SSL connections.',
-            },
-        ],
-    },
-    {
-        Module   => 'Mail::IMAPClient',
-        Comment  => 'Required for IMAP TLS connections.',
-        Required => 0,
-        Depends  => [
-            {
-                Module   => 'IO::Socket::SSL',
-                Required => 0,
-                Comment  => 'Required for IMAP TLS connections.',
             },
         ],
     },
@@ -344,18 +302,6 @@ my @NeededModules = (
                     'This version is broken and not useable! Please use another version.',
             },
         ],
-        Depends => [
-            {
-                Module   => 'version',
-                Required => 0,
-                Comment  => 'Required for SOAP::Lite.',
-            },
-            {
-                Module   => 'Class::Inspector',
-                Required => 0,
-                Comment  => 'Required for SOAP::Lite.',
-            },
-        ],
     },
     {
         Module   => 'Text::CSV',
@@ -370,84 +316,16 @@ my @NeededModules = (
             {
                 Module   => 'Text::CSV_XS',
                 Required => 0,
-                Comment  => 'Install it for faster CSV handling.',
+                Comment  => 'Optional, install it for faster CSV handling.',
             },
         ],
     },
     {
         Module   => 'XML::Parser',
         Required => 0,
-        Comment  => 'Required for faster xml handling.',
-    },
-    {
-        Module   => 'HTTP::Message',
-        Required => 1,
-        Comment  => 'Required for HTTP communication.',
-        Depends  => [
-            {
-                Module       => 'HTTP::Headers',
-                Required     => 1,
-                Comment      => 'Required for HTTP communication.',
-                NotSupported => [
-                    {
-                        Version => '1.64',
-                        Comment =>
-                            'This version is broken and not useable! '
-                            . 'Please upgrade to a higher version.',
-                    },
-                ],
-            },
-        ],
-        NotSupported => [
-            {
-                Version => '1.57',
-                Comment =>
-                    'This version is broken and not useable! '
-                    . 'Please upgrade to a higher version.',
-            },
-        ],
-    },
-    {
-        Module       => 'URI',
-        Required     => 1,
-        Comment      => 'Handles encoding and decoding of URLs',
-        NotSupported => [
-            {
-                Version => '1.35',
-                Comment =>
-                    'This version is broken and not useable! Please upgrade to a higher version.',
-            },
-        ],
-        Depends => [
-            {
-                Module   => 'URI::Escape',
-                Required => 1,
-                Comment  => 'Handles encoding and decoding of URLs.',
-            },
-        ],
-    },
-    {
-        Module   => 'Scalar::Util',
-        Required => 1,
+        Comment  => 'Required for faster xml handling.'
     },
 );
-
-# if we're on Windows we need some additional modules
-if ( $^O eq "MSWin32" ) {
-    my @WindowsModules = (
-        {
-            Module   => 'Win32::Daemon',
-            Required => 1,
-            Comment  => 'For running the OTRS Scheduler Service.',
-        },
-        {
-            Module   => 'Win32::Service',
-            Required => 1,
-            Comment  => 'For running the OTRS Scheduler Service.',
-        },
-    );
-    push @NeededModules, @WindowsModules;
-}
 
 # try to load modules
 my $Depends = 0;
@@ -464,7 +342,7 @@ sub _Check {
     }
     print "o $Module->{Module}";
     my $Length = length( $Module->{Module} ) + ( $Depends * 3 );
-    for ( $Length .. 32 ) {
+    for ( $Length .. 30 ) {
         print ".";
     }
     if ( eval "require $Module->{Module}" ) {
