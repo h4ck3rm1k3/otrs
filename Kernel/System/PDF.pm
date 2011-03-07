@@ -2,7 +2,7 @@
 # Kernel/System/PDF.pm - PDF lib
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: PDF.pm,v 1.47 2011/05/09 13:31:44 mb Exp $
+# $Id: PDF.pm,v 1.33.2.1 2011/03/07 21:27:29 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.47 $) [1];
+$VERSION = qw($Revision: 1.33.2.1 $) [1];
 
 =head1 NAME
 
@@ -23,49 +23,11 @@ Kernel::System::PDF - pdf lib
 
 =head1 SYNOPSIS
 
-Functions for generating PDF files.
+All pdf functions.
 
 =head1 PUBLIC INTERFACE
 
 =over 4
-
-=item new()
-
-create an object
-
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::Time;
-    use Kernel::System::PDF;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $PDFObject = Kernel::System::PDF->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        TimeObject   => $TimeObject,
-        MainObject   => $MainObject,
-    );
-
-C<undef> will be returned when the config option C<PDF> is not set,
-or when the L<PDF::API2> is not installed or has an unsupported version.
 
 =cut
 
@@ -77,13 +39,14 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for my $Object (qw(ConfigObject LogObject TimeObject MainObject)) {
-        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
+    for (qw(ConfigObject LogObject TimeObject MainObject)) {
+        $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
     # load PDF::API2
-    return if !$Self->{ConfigObject}->Get('PDF');
-
+    if ( !$Self->{ConfigObject}->Get('PDF') ) {
+        return;
+    }
     if ( !$Self->{MainObject}->Require('PDF::API2') ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
@@ -113,8 +76,7 @@ sub new {
     else {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message =>
-                "PDF support activated in SysConfig but PDF::API2 0.57 or newer is required. Found version $PDF::API2::Version::VERSION.",
+            Message => "PDF support activated in SysConfig but PDF::API2 0.57 or newer is required!"
         );
         return;
     }
@@ -124,7 +86,7 @@ sub new {
 
 Create a new PDF Document
 
-These font aliases are available in all methods:
+    This fonts aliases are available in all methods:
         Proportional
         ProportionalBold
         ProportionalItalic
@@ -135,9 +97,8 @@ These font aliases are available in all methods:
         MonospacedBoldItalic
 
     $True = $PDFObject->DocumentNew(
-        Title     => 'The Document Title',  # Title of PDF Document
-        Encode    => 'utf-8',               # Charset of Document
-        Testfonts => 1,                     # (optional) default 0
+        Title => 'The Document Title',  # Title of PDF Document
+        Encode => 'utf-8',              # Charset of Document
     );
 
 =cut
@@ -145,106 +106,89 @@ These font aliases are available in all methods:
 sub DocumentNew {
     my ( $Self, %Param ) = @_;
 
-    # check pdf object
-    if ( $Self->{PDF} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Can not create new Document!',
-        );
-        return;
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
     }
 
-    # get Product and Version
-    $Self->{Config}->{Project} = $Self->{ConfigObject}->Get('Product');
-    $Self->{Config}->{Version} = $Self->{ConfigObject}->Get('Version');
-    my $ProjectVersion = $Self->{Config}->{Project} . ' ' . $Self->{Config}->{Version};
+    if ( !defined( $Self->{PDF} ) ) {
 
-    # set document title
-    $Self->{Document}->{Title} = $Param{Title} || $ProjectVersion;
+        # get Product and Version
+        $Self->{Config}->{Project} = $Self->{ConfigObject}->Get('Product');
+        $Self->{Config}->{Version} = $Self->{ConfigObject}->Get('Version');
+        my $ProjectVersion = $Self->{Config}->{Project} . ' ' . $Self->{Config}->{Version};
 
-    # set document encode
-    $Self->{Document}->{Encode} = $Param{Encode} || 'utf-8';
+        # set document title
+        $Self->{Document}->{Title} = $Param{Title} || $ProjectVersion;
 
-    # set logo file
-    $Self->{Document}->{LogoFile} = $Self->{ConfigObject}->Get('PDF::LogoFile');
+        # set document encode
+        if ( !$Param{Encode} ) {
+            $Param{Encode} = 'latin1';
+        }
+        $Self->{Document}->{Encode} = $Param{Encode};
 
-    # create a new document
-    $Self->{PDF} = PDF::API2->new();
+        # set logo file
+        $Self->{Document}->{LogoFile} = $Self->{ConfigObject}->Get('PDF::LogoFile');
 
-    # check pdf object
-    if ( !$Self->{PDF} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => 'Can not create new Document!',
-        );
-        return;
-    }
+        # create a new document
+        $Self->{PDF} = PDF::API2->new();
 
-    # today
-    my ( $NowSec, $NowMin, $NowHour, $NowDay, $NowMonth, $NowYear )
-        = $Self->{TimeObject}->SystemTime2Date(
-        SystemTime => $Self->{TimeObject}->SystemTime(),
-        );
+        if ( $Self->{PDF} ) {
 
-    # set document infos
-    $Self->{PDF}->info(
-        'Author'       => $ProjectVersion,
-        'CreationDate' => "D:"
-            . $NowYear
-            . $NowMonth
-            . $NowDay
-            . $NowHour
-            . $NowMin
-            . $NowSec
-            . "+01'00'",
-        'Creator'  => $ProjectVersion,
-        'Producer' => "OTRS PDF Creator",
-        'Title'    => $Self->{Document}->{Title},
-        'Subject'  => $Self->{Document}->{Title},
-    );
+            # today
+            my ( $NowSec, $NowMin, $NowHour, $NowDay, $NowMonth, $NowYear )
+                = $Self->{TimeObject}->SystemTime2Date(
+                SystemTime => $Self->{TimeObject}->SystemTime(),
+                );
 
-    # add font directory
-    my $FontDir = $Self->{ConfigObject}->Get('Home') . '/var/fonts';
-    $Self->{PDF}->addFontDirs($FontDir);
+            # set document infos
+            $Self->{PDF}->info(
+                'Author'       => $ProjectVersion,
+                'CreationDate' => "D:"
+                    . $NowYear
+                    . $NowMonth
+                    . $NowDay
+                    . $NowHour
+                    . $NowMin
+                    . $NowSec
+                    . "+01'00'",
+                'Creator'  => $ProjectVersion,
+                'Producer' => "OTRS PDF Creator",
+                'Title'    => $Self->{Document}->{Title},
+                'Subject'  => $Self->{Document}->{Title},
+            );
 
-    if ( !$Param{Testfonts} ) {
-
-        # get font config
-        my %FontFiles = %{ $Self->{ConfigObject}->Get('PDF::TTFontFile') };
-
-        # set fonts
-        for my $FontType ( keys %FontFiles ) {
-            $Self->{Font}->{$FontType} = $Self->{PDF}->ttfont(
-                $FontFiles{$FontType},
+            # set testfont (only used in unitests)
+            $Self->{Font}->{Testfont1}
+                = $Self->{PDF}->corefont( 'Helvetica', -encode => $Self->{Document}->{Encode}, );
+            $Self->{Font}->{Testfont2}
+                = $Self->{PDF}->ttfont(
+                'DejaVuSans.ttf',
                 -encode     => $Self->{Document}->{Encode},
                 -unicodemap => 1,
-            );
-        }
-    }
-    else {
+                );
 
-        # set testfont (only used in unitests)
-        $Self->{Font}->{Testfont1} = $Self->{PDF}->corefont(
-            'Helvetica',
-            -encode     => $Self->{Document}->{Encode},
-            -unicodemap => 1,
-        );
-        $Self->{Font}->{Testfont2} = $Self->{PDF}->ttfont(
-            'DejaVuSans.ttf',
-            -encode     => $Self->{Document}->{Encode},
-            -unicodemap => 1,
-        );
+            # get font config
+            my %FontFiles = %{ $Self->{ConfigObject}->Get('PDF::TTFontFile') };
 
-        # get font config
-        my %FontFiles = %{ $Self->{ConfigObject}->Get('PDF::TTFontFile') };
-
-        # set fonts
-        for my $FontType ( keys %FontFiles ) {
-            $Self->{Font}->{$FontType} = $Self->{Font}->{Testfont1};
+            # set fonts
+            for my $FontType ( keys %FontFiles ) {
+                $Self->{Font}->{$FontType} = $Self->{PDF}->ttfont(
+                    $FontFiles{$FontType}, -encode => $Self->{Document}->{Encode}, -unicodemap => 1,
+                );
+            }
+            return 1;
         }
     }
 
-    return 1;
+    $Self->{LogObject}->Log(
+        Priority => 'error',
+        Message  => "Can not create new Document!"
+    );
+    return;
 }
 
 =item PageBlankNew()
@@ -252,14 +196,14 @@ sub DocumentNew {
 Create a new, blank Page
 
     $True = $PDFObject->PageBlankNew(
-        Width           => 200,          # (optional) default 595 (Din A4) - _ both or nothing
-        Height          => 300,          # (optional) default 842 (Din A4) -
+        Width => 200,                    # (optional) default 595 (Din A4) - _ both or nothing
+        Height => 300,                   # (optional) default 842 (Din A4) -
         PageOrientation => 'landscape',  # (optional) default normal (normal|landscape)
-        MarginTop       => 40,           # (optional) default 0 -
-        MarginRight     => 40,           # (optional) default 0  |_ all or nothing
-        MarginBottom    => 40,           # (optional) default 0  |
-        MarginLeft      => 40,           # (optional) default 0 -
-        ShowPageNumber  => 0,            # (optional) default 1
+        MarginTop => 40,                 # (optional) default 0 -
+        MarginRight => 40,               # (optional) default 0  |_ all or nothing
+        MarginBottom => 40,              # (optional) default 0  |
+        MarginLeft => 40,                # (optional) default 0 -
+        ShowPageNumber => 0,             # (optional) default 1
     );
 
 =cut
@@ -267,6 +211,13 @@ Create a new, blank Page
 sub PageBlankNew {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Object!" );
         return;
@@ -323,7 +274,6 @@ sub PageBlankNew {
         Priority => 'error',
         Message  => "Can not create new blank Page!"
     );
-
     return;
 }
 
@@ -332,20 +282,20 @@ sub PageBlankNew {
 Create a new Page
 
     $PDFObject->PageNew(
-        Width           => 200,                 # (optional) default 595 (Din A4)
-        Height          => 300,                 # (optional) default 842 (Din A4)
-        PageOrientation => 'landscape',         # (optional) default normal (normal|landscape)
-        MarginTop       => 40,                  # (optional) default 0
-        MarginRight     => 40,                  # (optional) default 0
-        MarginBottom    => 40,                  # (optional) default 0
-        MarginLeft      => 40,                  # (optional) default 0
-        ShowPageNumber  => 0,                   # (optional) default 1
-        LogoFile        => '/path/to/file.jpg', # (optional) you can use jpg, gif and png-Images
-        HeaderRight     => 'Header Right Text', # (optional)
-        HeadlineLeft    => 'Headline Text',     # (optional)
-        HeadlineRight   => 'Headline Text',     # (optional)
-        FooterLeft      => 'Footer Left Text',  # (optional)
-        FooterRight     => 'Footer Right Text', # (optional)
+        Width => 200,                       # (optional) default 595 (Din A4)
+        Height => 300,                      # (optional) default 842 (Din A4)
+        PageOrientation => 'landscape',     # (optional) default normal (normal|landscape)
+        MarginTop => 40,                    # (optional) default 0
+        MarginRight => 40,                  # (optional) default 0
+        MarginBottom => 40,                 # (optional) default 0
+        MarginLeft => 40,                   # (optional) default 0
+        ShowPageNumber => 0,                # (optional) default 1
+        LogoFile => '/path/to/file.jpg',    # (optional) you can use jpg, gif and png-Images
+        HeaderRight => 'Header Right Text', # (optional)
+        HeadlineLeft => 'Headline Text',    # (optional)
+        HeadlineRight => 'Headline Text',   # (optional)
+        FooterLeft => 'Footer Left Text',   # (optional)
+        FooterRight => 'Footer Right Text', # (optional)
     );
 
 =cut
@@ -353,6 +303,13 @@ Create a new Page
 sub PageNew {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Object!" );
         return;
@@ -600,6 +557,13 @@ Return the PDF as string
 sub DocumentOutput {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Object!" );
         return;
@@ -628,29 +592,29 @@ Add a table
         $ColumnData              # (reference) complete calculated
 
     (%Return, $CellData, $ColumnData) = $PDFObject->Table(
-        CellData            => $CellData,    # 2D arrayref (see example)
-        ColumnData          => $ColumnData,  # arrayref (see example)
-        RowData             => $RowData,     # arrayref (see example)
-        Type                => 'Cut',        # (optional) default ReturnLeftOver (ReturnLeftOver|ReturnLeftOverHard|Cut)
-        Width               => 300,          # (optional) default maximal width
-        Height              => 400,          # (optional) default minimal height
-        Font                => 'Monospaced', # (optional) default Proportional (see DocumentNew())
-        FontSize            => 9,            # (optional) default 11
-        FontColor           => 'red',        # (optional) default black
-        FontColorEven       => 'blue',       # (optional) cell font color for even rows
-        FontColorOdd        => 'green',      # (optional) cell font color for odd rows
-        Align               => 'right',      # (optional) default left (left|center|right)
-        Lead                => 3,            # (optional) default 1
-        Padding             => 18,           # (optional) default 3
-        PaddingTop          => 10,           # (optional) top cell padding, overides Padding
-        PaddingRight        => 30,           # (optional) right cell padding, overides Padding
-        PaddingBottom       => 30,           # (optional) bottom cell padding, overides Padding
-        PaddingLeft         => 10,           # (optional) left cell padding, overides Padding
-        BackgroundColor     => '#101010',    # (optional) default white
-        BackgroundColorEven => '#F0F0F0',    # (optional) cell background color for even rows
-        BackgroundColorOdd  => '#A0A0A0',    # (optional) cell background color for odd rows
-        Border              => 1,            # (optional) default 1 (values between 0 and 20)
-        BorderColor         => '#FF0000',    # (optional) default black
+        CellData => $CellData,            # 2D arrayref (see example)
+        ColumnData => $ColumnData,        # arrayref (see example)
+        RowData => $RowData,              # arrayref (see example)
+        Type => 'Cut',                    # (optional) default ReturnLeftOver (ReturnLeftOver|ReturnLeftOverHard|Cut)
+        Width => 300,                     # (optional) default maximal width
+        Height => 400,                    # (optional) default minimal height
+        Font => 'Monospaced',             # (optional) default Proportional (see DocumentNew())
+        FontSize => 9,                    # (optional) default 11
+        FontColor => 'red',               # (optional) default black
+        FontColorEven => 'blue',          # (optional) cell font color for even rows
+        FontColorOdd => 'green',          # (optional) cell font color for odd rows
+        Align => 'right',                 # (optional) default left (left|center|right)
+        Lead => 3,                        # (optional) default 1
+        Padding => 18,                    # (optional) default 3
+        PaddingTop => 10,                 # (optional) top cell padding, overides Padding
+        PaddingRight => 30,               # (optional) right cell padding, overides Padding
+        PaddingBottom => 30,              # (optional) bottom cell padding, overides Padding
+        PaddingLeft => 10,                # (optional) left cell padding, overides Padding
+        BackgroundColor => '#101010',     # (optional) default white
+        BackgroundColorEven => '#F0F0F0', # (optional) cell background color for even rows
+        BackgroundColorOdd => '#A0A0A0',  # (optional) cell background color for odd rows
+        Border => 1,                      # (optional) default 1 (values between 0 and 20)
+        BorderColor => '#FF0000',         # (optional) default black
     );
 
     $CellData = [
@@ -734,8 +698,8 @@ sub Table {
     my %Position = $Self->_CurPositionGet();
 
     # set default values
-    $Param{ColumnData} ||= [];
-    $Param{RowData}    ||= [];
+    $Param{ColumnData} = $Param{ColumnData} || [];
+    $Param{RowData}    = $Param{RowData}    || [];
 
     if (
         ref( $Param{CellData} )      eq 'ARRAY'
@@ -746,8 +710,8 @@ sub Table {
         if ( !defined( $Param{OutputCount} ) ) {
 
             # set default values
-            $Param{Type} ||= 'ReturnLeftOver';
-            $Param{Font} ||= 'Proportional';
+            $Param{Type} = $Param{Type} || 'ReturnLeftOver';
+            $Param{Font} = $Param{Font} || 'Proportional';
             if ( !defined( $Param{FontSize} ) || $Param{FontSize} <= 0 ) {
                 $Param{FontSize} = 10;
             }
@@ -757,24 +721,24 @@ sub Table {
                     $Param{Lead} = 1;
                 }
             }
-            $Param{FontColor}     ||= 'black';
-            $Param{FontColorOdd}  ||= $Param{FontColor};
-            $Param{FontColorEven} ||= $Param{FontColor};
+            $Param{FontColor}     = $Param{FontColor}     || 'black';
+            $Param{FontColorOdd}  = $Param{FontColorOdd}  || $Param{FontColor};
+            $Param{FontColorEven} = $Param{FontColorEven} || $Param{FontColor};
 
-            $Param{BackgroundColor}     ||= 'NULL';
-            $Param{BackgroundColorOdd}  ||= $Param{BackgroundColor};
-            $Param{BackgroundColorEven} ||= $Param{BackgroundColor};
+            $Param{BackgroundColor}     = $Param{BackgroundColor}     || 'NULL';
+            $Param{BackgroundColorOdd}  = $Param{BackgroundColorOdd}  || $Param{BackgroundColor};
+            $Param{BackgroundColorEven} = $Param{BackgroundColorEven} || $Param{BackgroundColor};
 
             $Param{Align} = $Param{Align} || 'left';
 
             if ( !defined( $Param{Border} ) || $Param{Border} < 0 ) {
                 $Param{Border} = 1;
             }
-            $Param{BorderColor}   ||= 'black';
-            $Param{PaddingTop}    ||= $Param{Padding} || 3;
-            $Param{PaddingRight}  ||= $Param{Padding} || 3;
-            $Param{PaddingBottom} ||= $Param{Padding} || 3;
-            $Param{PaddingLeft}   ||= $Param{Padding} || 3;
+            $Param{BorderColor}   = $Param{BorderColor}   || 'black';
+            $Param{PaddingTop}    = $Param{PaddingTop}    || $Param{Padding} || 3;
+            $Param{PaddingRight}  = $Param{PaddingRight}  || $Param{Padding} || 3;
+            $Param{PaddingBottom} = $Param{PaddingBottom} || $Param{Padding} || 3;
+            $Param{PaddingLeft}   = $Param{PaddingLeft}   || $Param{Padding} || 3;
 
             # check given Width
             my $DefaultWidth = $Dim{Left} + $Dim{Width} - $Position{X};
@@ -1078,15 +1042,15 @@ Output a textline
         $Return{LeftOver}
 
     %Return = $PDFObject->Text(
-        Text     => 'Text',              # Text
-        Width    => 300,                 # (optional) available width of textblock
-        Height   => 200,                 # (optional) available height of textblock
-        Type     => 'Cut',               # (optional) default ReturnLeftOver (ReturnLeftOver|ReturnLeftOverHard|Cut)
-        Font     => 'ProportionalBold',  # (optional) default Proportional  (see DocumentNew())
-        FontSize => 15,                  # (optional) default 10
-        Color    => '#FF0000',           # (optional) default #000000
-        Align    => 'center',            # (optional) default left (left|center|right)
-        Lead     => 20,                  # (optional) default 1 distance between lines
+        Text => 'Text',              # Text
+        Width => 300,                # (optional) available width of textblock
+        Height => 200,               # (optional) available height of textblock
+        Type => 'Cut',               # (optional) default ReturnLeftOver (ReturnLeftOver|ReturnLeftOverHard|Cut)
+        Font => 'ProportionalBold',  # (optional) default Proportional  (see DocumentNew())
+        FontSize => 15,              # (optional) default 10
+        Color => '#FF0000',          # (optional) default #000000
+        Align => 'center',           # (optional) default left (left|center|right)
+        Lead => 20,                  # (optional) default 1 distance between lines
     );
 
 =cut
@@ -1236,10 +1200,10 @@ sub Text {
 Output a image
 
     $True = $PDFObject->Image(
-        File   => '/path/image.gif',  # (gif|jpg|png)
-        Type   => 'ReturnFalse'       # (optional) default Reduce (ReturnFalse|Reduce)
-        Width  => 300,                # width of image
-        Height => 150,                # height of image
+        File => '/path/image.gif',  # (gif|jpg|png)
+        Type => 'ReturnFalse'       # (optional) default Reduce (ReturnFalse|Reduce)
+        Width => 300,               # width of image
+        Height => 150,              # height of image
     );
 
 =cut
@@ -1356,10 +1320,10 @@ sub Image {
 Output a horizontal line
 
     $True = $PDFObject->HLine(
-        Width     => 300,           # (optional) default 'end of printable dimension'
-        Type      => 'ReturnFalse'  # (optional) default Cut (ReturnFalse|Cut)
-        Color     => '#101010',     # (optional) default black
-        LineWidth => 1,             # (optional) default 1
+        Width => 300,          # (optional) default 'end of printable dimension'
+        Type => 'ReturnFalse'  # (optional) default Cut (ReturnFalse|Cut)
+        Color => '#101010',    # (optional) default black
+        LineWidth => 1,        # (optional) default 1
     );
 
 =cut
@@ -1367,6 +1331,13 @@ Output a horizontal line
 sub HLine {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -1476,8 +1447,8 @@ Set new position on current page
 
     $True = $PDFObject->PositionSet(
         Move => 'absolut',  # (optional) default absolut (absolut|relativ)
-        X    => 10,         # (optional) (<integer>|left|center|right)
-        Y    => 20,         # (optional) (<integer>|top|middle|bottom)
+        X => 10,            # (optional) (<integer>|left|center|right)
+        Y => 20,            # (optional) (<integer>|top|middle|bottom)
     );
 
 =cut
@@ -1485,6 +1456,13 @@ Set new position on current page
 sub PositionSet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -1610,6 +1588,13 @@ Get position on current page
 sub PositionGet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -1637,6 +1622,13 @@ Set active dimension
 sub DimSet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -1667,6 +1659,13 @@ Get active dimension (printable or content)
 sub DimGet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -1683,83 +1682,81 @@ sub DimGet {
     return $Self->{Current}->{Dim};
 }
 
-=begin Internal:
-
-=item _TableCalculate()
-
-calculate params of table
-
-    Return  # normally no return required, only references
-        %Param
-
-    (%Return, $CellData, $ColumnData) = $PDFObject->_TableCalculate(
-        CellData            => $CellData,     # 2D arrayref (see example)
-        ColumnData          => $ColumnData,   # arrayref (see example)
-        RowData             => $RowData,      # arrayref (see example)
-        Width               => 300,           # (optional) default default maximal width
-        Height              => 400,           # (optional) default minimal height
-        Font                => 'Monospaced',  # (optional) default Proportional (see DocumentNew())
-        FontSize            => 9,             # (optional) default 11
-        FontColor           => 'red',         # (optional) default black
-        FontColorEven       => 'blue',        # (optional) cell font color for even rows
-        FontColorOdd        => 'green',       # (optional) cell font color for odd rows
-        Align               => 'right',       # (optional) default left (left|center|right)
-        Lead                => 3,             # (optional) default 1
-        PaddingTop          => 10,            # (optional) top cell padding, overides Padding
-        PaddingRight        => 30,            # (optional) right cell padding, overides Padding
-        PaddingBottom       => 30,            # (optional) bottom cell padding, overides Padding
-        PaddingLeft         => 10,            # (optional) left cell padding, overides Padding
-        BackgroundColor     => '#101010',     # (optional) default white
-        BackgroundColorEven => '#F0F0F0',     # (optional) cell background color for even rows
-        BackgroundColorOdd  => '#A0A0A0',     # (optional) cell background color for odd rows
-        Border              => 1,             # (optional) default 1 (values between 0 and 20)
-        BorderColor         => '#FF0000',     # (optional) default black
-    );
-
-    $CellData = [
-        [
-            {
-                Content         => "Cell 1 (Row 1, Column 1)",  # (optional)
-                Font            => 'Monospaced',                # (optional)
-                FontSize        => 13,                          # (optional)
-                FontColor       => '#00FF00',                   # (optional)
-                Align           => 'center',                    # (optional)
-                Lead            => 7,                           # (optional)
-                BackgroundColor => '#101010',                   # (optional)
-            },
-            {
-                Content => "Cell 2 (Row 1, Column 2)",
-            },
-        ],
-        [
-            {
-                Content => "Cell 3 (Row 2, Column 1)",
-            },
-            {
-                Content => "Cell 4 (Row 2, Column 2)",
-            },
-        ],
-    ];
-
-    $ColumData = [        # this array was automaticly generated, if not given
-        {
-            Width => 11,  # (optional)
-        },
-        {
-            Width => 44,
-        },
-    ];
-
-    $RowData = [           # this array was automaticly generated, if not given
-        {
-            Height => 11,  # (optional)
-        },
-        {
-            Height => 44,
-        },
-    ];
-
-=cut
+#
+# _TableCalculate()
+#
+# calculate params of table
+#
+#    Return  # normally no return required, only references
+#        %Param
+#
+#    (%Return, $CellData, $ColumnData) = $PDFObject->_TableCalculate(
+#        CellData => $CellData,            # 2D arrayref (see example)
+#        ColumnData => $ColumnData,        # arrayref (see example)
+#        RowData => $RowData,              # arrayref (see example)
+#        Width => 300,                     # (optional) default default maximal width
+#        Height => 400,                    # (optional) default minimal height
+#        Font => 'Monospaced',             # (optional) default Proportional (see DocumentNew())
+#        FontSize => 9,                    # (optional) default 11
+#        FontColor => 'red',               # (optional) default black
+#        FontColorEven => 'blue',          # (optional) cell font color for even rows
+#        FontColorOdd => 'green',          # (optional) cell font color for odd rows
+#        Align => 'right',                 # (optional) default left (left|center|right)
+#        Lead => 3,                        # (optional) default 1
+#        PaddingTop => 10,                 # (optional) top cell padding, overides Padding
+#        PaddingRight => 30,               # (optional) right cell padding, overides Padding
+#        PaddingBottom => 30,              # (optional) bottom cell padding, overides Padding
+#        PaddingLeft => 10,                # (optional) left cell padding, overides Padding
+#        BackgroundColor => '#101010',     # (optional) default white
+#        BackgroundColorEven => '#F0F0F0', # (optional) cell background color for even rows
+#        BackgroundColorOdd => '#A0A0A0',  # (optional) cell background color for odd rows
+#        Border => 1,                      # (optional) default 1 (values between 0 and 20)
+#        BorderColor => '#FF0000',         # (optional) default black
+#    );
+#
+#    $CellData = [
+#        [
+#            {
+#                Content => "Cell 1 (Row 1, Column 1)",  # (optional)
+#                Font => 'Monospaced',                   # (optional)
+#                FontSize => 13,                         # (optional)
+#                FontColor => '#00FF00',                 # (optional)
+#                Align => 'center',                      # (optional)
+#                Lead => 7,                              # (optional)
+#                BackgroundColor => '#101010',           # (optional)
+#            },
+#            {
+#                Content => "Cell 2 (Row 1, Column 2)",
+#            },
+#        ],
+#        [
+#            {
+#                Content => "Cell 3 (Row 2, Column 1)",
+#            },
+#            {
+#                Content => "Cell 4 (Row 2, Column 2)",
+#            },
+#        ],
+#    ];
+#
+#    $ColumData = [        # this array was automaticly generated, if not given
+#        {
+#            Width => 11,  # (optional)
+#        },
+#        {
+#            Width => 44,
+#        },
+#    ];
+#
+#    $RowData = [           # this array was automaticly generated, if not given
+#        {
+#            Height => 11,  # (optional)
+#        },
+#        {
+#            Height => 44,
+#        },
+#    ];
+#
 
 sub _TableCalculate {
     my ( $Self, %Param ) = @_;
@@ -1900,7 +1897,7 @@ sub _TableCalculate {
                 $Cell->{Content} = $Self->_PrepareText( Text => $Cell->{Content}, );
             }
 
-            # set content blank, if not defined
+            # set content blank, if not definied
             if (
                 !defined( $Cell->{Content} )
                 || $Cell->{Content} eq ''
@@ -2096,23 +2093,23 @@ sub _TableCalculate {
     return %Param;
 }
 
-=item _TableBlockNextCalculate()
-
-calculate what block can output next
-
-   Return
-       $Return{State}
-       $Return{ReturnBlock}
-       $Return{ReturnRowStart}
-       $Return{ReturnColumnStart}
-       $Return{ReturnColumnStop}
-
-   %Return = $PDFObject->_TableBlockNextCalculate(
-       CellData   => $CellData,    # 2D arrayref
-       ColumnData => $ColumnData,  # arrayref
-   );
-
-=cut
+#
+# _TableBlockNextCalculate()
+#
+# calculate what block can output next
+#
+#    Return
+#        $Return{State}
+#        $Return{ReturnBlock}
+#        $Return{ReturnRowStart}
+#        $Return{ReturnColumnStart}
+#        $Return{ReturnColumnStop}
+#
+#    %Return = $PDFObject->_TableBlockNextCalculate(
+#        CellData => $CellData,      # 2D arrayref
+#        ColumnData => $ColumnData,  # arrayref
+#    );
+#
 
 sub _TableBlockNextCalculate {
     my ( $Self, %Param ) = @_;
@@ -2127,12 +2124,12 @@ sub _TableBlockNextCalculate {
 
     # check needed stuff
     for (qw(CellData ColumnData)) {
-        if ( !defined $Param{$_} ) {
+        if ( !defined( $Param{$_} ) ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
-    if ( ref $Param{CellData} ne 'ARRAY' || ref $Param{ColumnData} ne 'ARRAY' ) {
+    if ( ref( $Param{CellData} ) ne 'ARRAY' || ref( $Param{ColumnData} ) ne 'ARRAY' ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Need array references of CellData and ColumnData!"
@@ -2152,7 +2149,7 @@ sub _TableBlockNextCalculate {
     my $ColumnStart = 'NULL';
     my $ColumnStop  = 0;
 
-    # calculate, what cells can output (what cells are active)
+    # calculate, what cells can output (what cells are aktive)
     my $RowCounter = 0;
     for my $Row ( @{ $Param{CellData} } ) {
 
@@ -2164,8 +2161,8 @@ sub _TableBlockNextCalculate {
             }
         }
 
-        # now calculate, what cells can output (what cells are active)
-        for ( my $ColumnCounter = 0; $ColumnCounter < scalar @$Row; $ColumnCounter++ ) {
+        # now calculate, what cells can output (what cells are aktive)
+        for ( my $ColumnCounter = 0; $ColumnCounter < scalar(@$Row); $ColumnCounter++ ) {
 
             # calculate RowStart and ColumnStart
             if (
@@ -2210,21 +2207,21 @@ sub _TableBlockNextCalculate {
     return %Return;
 }
 
-=item _TableRowCalculate()
-
-calculate row of table
-
-   Return  # normally no return required, only references
-       %Param
-
-   %Return = $PDFObject->_TableRowCalculate(
-       CellData   => $CellData,    # 2D arrayref
-       RowData    => $RowData,     # arrayref
-       ColumnData => $ColumnData,  # arrayref
-       Row        => 3,            # current row
-   );
-
-=cut
+#
+# _TableRowCalculate()
+#
+# calculate row of table
+#
+#    Return  # normally no return required, only references
+#        %Param
+#
+#    %Return = $PDFObject->_TableRowCalculate(
+#        CellData => $CellData,      # 2D arrayref
+#        RowData => $RowData,        # arrayref
+#        ColumnData => $ColumnData,  # arrayref
+#        Row => 3,                   # current row
+#    );
+#
 
 sub _TableRowCalculate {
     my ( $Self, %Param ) = @_;
@@ -2299,36 +2296,36 @@ sub _TableRowCalculate {
     return %Param;
 }
 
-=item _TableCellOutput()
-
-output a cell of a table
-
-   Return
-       $Return{State}
-       $Return{RequiredWidth}
-       $Return{RequiredHeight}
-       $Return{LeftOver}
-
-   %Return = $PDFObject->_TableCellOutput(
-       Width           => 70,
-       Height          => 40,
-       Text            => 'Text',
-       Type            => 'Cut',
-       Font            => 'ProportionalBold',
-       FontSize        => 15,
-       FontColor       => '#FF0000',
-       Align           => 'center',
-       Lead            => 20,
-       PaddingTop      => 10,
-       PaddingRight    => 30,
-       PaddingBottom   => 30,
-       PaddingLeft     => 10,
-       BackgroundColor => '#101010',
-       Border          => 1,
-       BorderColor     => '#FF0000',
-   );
-
-=cut
+#
+# _TableCellOutput()
+#
+# output a cell of a table
+#
+#    Return
+#        $Return{State}
+#        $Return{RequiredWidth}
+#        $Return{RequiredHeight}
+#        $Return{LeftOver}
+#
+#    %Return = $PDFObject->_TableCellOutput(
+#        Width => 70,
+#        Height => 40,
+#        Text => 'Text',
+#        Type => 'Cut',
+#        Font => 'ProportionalBold',
+#        FontSize => 15,
+#        FontColor => '#FF0000',
+#        Align => 'center',
+#        Lead => 20,
+#        PaddingTop => 10,
+#        PaddingRight => 30,
+#        PaddingBottom => 30,
+#        PaddingLeft => 10,
+#        BackgroundColor => '#101010',
+#        Border => 1,
+#        BorderColor => '#FF0000',
+#    );
+#
 
 sub _TableCellOutput {
     my ( $Self, %Param ) = @_;
@@ -2449,18 +2446,18 @@ sub _TableCellOutput {
     return %Return;
 }
 
-=item _TableCellOnCount()
-
-count all active cells
-
-   Return
-       $CellCount
-
-   $Count = $PDFObject->_TableCellOnCount(
-       CellData => $CellData,  # 2D arrayref
-   );
-
-=cut
+#
+# _TableCellOnCount()
+#
+# count all aktive cells
+#
+#    Return
+#        $CellCount
+#
+#    $Count = $PDFObject->_TableCellOnCount(
+#        CellData => $CellData,  # 2D arrayref
+#    );
+#
 
 sub _TableCellOnCount {
     my ( $Self, %Param ) = @_;
@@ -2500,28 +2497,28 @@ sub _TableCellOnCount {
     return $Return;
 }
 
-=item _TextCalculate()
-
-calculate required values of given text
-
-   Return
-       $Return{State}
-       $Return{RequiredWidth}
-       $Return{RequiredHeight}
-       $Return{LeftOver}
-       $Return{PossibleRows}  # (Array Ref)
-
-   %Return = $PDFObject->_TextCalculate(
-       Text     => $Text,               # text
-       Type     => 'Cut',               # (ReturnLeftOver|ReturnLeftOverHard|Cut)
-       Width    => 300,                 # available width
-       Height   => 200,                 # available height
-       Font     => 'ProportionalBold',  # font of text
-       FontSize => 6,                   # fontsize of text
-       Lead     => 20,                  # lead
-   );
-
-=cut
+#
+# _TextCalculate()
+#
+# calculate required values of given text
+#
+#    Return
+#        $Return{State}
+#        $Return{RequiredWidth}
+#        $Return{RequiredHeight}
+#        $Return{LeftOver}
+#        $Return{PossibleRows}  # (Array Ref)
+#
+#    %Return = $PDFObject->_TextCalculate(
+#        Text => $Text,               # text
+#        Type => 'Cut',               # (ReturnLeftOver|ReturnLeftOverHard|Cut)
+#        Width => 300,                # available width
+#        Height => 200,               # available height
+#        Font => 'ProportionalBold',  # font of text
+#        FontSize => 6,               # fontsize of text
+#        Lead => 20,                  # lead
+#    );
+#
 
 sub _TextCalculate {
     my ( $Self, %Param ) = @_;
@@ -2746,69 +2743,78 @@ sub _TextCalculate {
     return %Return;
 }
 
-=item _StringWidth()
-
-calculate width of given text
-
-   $Width = $PDFObject->_StringWidth(
-       Text     => 'Text',              # text
-       Font     => 'ProportionalBold',  # font of text
-       FontSize => 6,                   # fontsize of text
-   );
-
-=cut
+#
+# _StringWidth()
+#
+# calculate width of given text
+#
+#    $Width = $PDFObject->_StringWidth(
+#        Text => 'Text',              # text
+#        Font => 'ProportionalBold',  # font of text
+#        FontSize => 6,               # fontsize of text
+#    );
+#
 
 sub _StringWidth {
     my ( $Self, %Param ) = @_;
 
+    my $StringWidth;
+
     # check needed stuff
     for (qw(Text Font FontSize)) {
-        if ( !defined $Param{$_} ) {
+        if ( !defined( $Param{$_} ) ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
-
-    # check document
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
     }
-
-    # check page
     if ( !$Self->{Page} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a Page!" );
         return;
     }
 
-    return $Self->{Cache}->{StringWidth}->{ $Param{Font} }->{ $Param{FontSize} }->{ $Param{Text} }
-        if $Self->{Cache}->{StringWidth}->{ $Param{Font} }->{ $Param{FontSize} }->{ $Param{Text} };
+    if (
+        !defined(
+            $Self->{Cache}->{StringWidth}->{ $Param{Font} }->{ $Param{FontSize} }->{ $Param{Text} }
+        )
+        )
+    {
 
-    # create a text object
-    $Self->{TextWidthObject} ||= $Self->{Page}->text;
+        # create a text object
+        my $Text = $Self->{Page}->text;
 
-    # set font and fontsize
-    $Self->{TextWidthObject}->font( $Self->{Font}->{ $Param{Font} }, $Param{FontSize} );
+        # set font and fontsize
+        $Text->font( $Self->{Font}->{ $Param{Font} }, $Param{FontSize} );
 
-    # calculate width of given text
-    my $StringWidth = $Self->{TextWidthObject}->advancewidth( $Param{Text} );
+        # calculate width of given text
+        $StringWidth = $Text->advancewidth( $Param{Text} );
 
-    # write width to cache
-    $Self->{Cache}->{StringWidth}->{ $Param{Font} }->{ $Param{FontSize} }->{ $Param{Text} }
-        = $StringWidth;
+        # write width to cache
+        $Self->{Cache}->{StringWidth}->{ $Param{Font} }->{ $Param{FontSize} }->{ $Param{Text} }
+            = $StringWidth;
+    }
+    else {
+
+        # get width from cache
+        $StringWidth = $Self->{Cache}->{StringWidth}->{ $Param{Font} }->{ $Param{FontSize} }
+            ->{ $Param{Text} };
+    }
 
     return $StringWidth;
 }
 
-=item _PrepareText()
-
-prepare given text for output
-
-   $Width = $PDFObject->_PrepareText(
-       Text => 'Text',  # text
-   );
-
-=cut
+#
+# _PrepareText()
+#
+# prepare given text for output
+#
+#    $Width = $PDFObject->_PrepareText(
+#        Text => 'Text',  # text
+#    );
+#
 
 sub _PrepareText {
     my ( $Self, %Param ) = @_;
@@ -2836,25 +2842,32 @@ sub _PrepareText {
     # convert page brake to new lines
     $Param{Text} =~ s/\f/\n\n/g;
 
-    # convert tabs to spaces
+    # convert taps to spaces
     $Param{Text} =~ s/\t/  /g;
 
     return $Param{Text};
 }
 
-=item _CurPageNumberSet()
-
-set number of current page
-
-   $PDFObject->_CurPageNumberSet(
-       ShowPageNumber => 0,  # (optional) default 1
-   );
-
-=cut
+#
+# _CurPageNumberSet()
+#
+# set number of current page
+#
+#    $PDFObject->_CurPageNumberSet(
+#        ShowPageNumber => 0,  # (optional) default 1
+#    );
+#
 
 sub _CurPageNumberSet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -2890,21 +2903,28 @@ sub _CurPageNumberSet {
     return 1;
 }
 
-=item _CurPageDimSet()
-
-Set current Page Dimension
-
-   $PDFObject->_CurPageDimSet(
-       Width           => 123,          # (optional) default 595 (Din A4)
-       Height          => 321,          # (optional) default 842 (Din A4)
-       PageOrientation => 'landscape',  # (optional) (normal|landscape)
-   );
-
-=cut
+#
+# _CurPageDimSet()
+#
+# Set current Page Dimension
+#
+#    $PDFObject->_CurPageDimSet(
+#        Width => 123,                    # (optional) default 595 (Din A4)
+#        Height => 321,                   # (optional) default 842 (Din A4)
+#        PageOrientation => 'landscape',  # (optional) (normal|landscape)
+#    );
+#
 
 sub _CurPageDimSet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -2980,21 +3000,28 @@ sub _CurPageDimSet {
     return 1;
 }
 
-=item _CurPageDimGet()
-
-Get current Page Dimension (Width, Height)
-
-   Return
-       $CurPageDim{Width}
-       $CurPageDim{Height}
-
-   %CurPageDim = $PDFObject->_CurPageDimGet();
-
-=cut
+#
+# _CurPageDimGet()
+#
+# Get current Page Dimension (Width, Height)
+#
+#    Return
+#        $CurPageDim{Width}
+#        $CurPageDim{Height}
+#
+#    %CurPageDim = $PDFObject->_CurPageDimGet();
+#
 
 sub _CurPageDimGet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -3017,20 +3044,27 @@ sub _CurPageDimGet {
     return %Data;
 }
 
-=item _CurPageDimCheck()
-
-Check given X an/or Y if inside the page dimension
-
-   $True = $PDFObject->_CurPageDimCheck(
-       X => 200,  # (optional)
-       Y => 100,  # (optional)
-   );
-
-=cut
+#
+# _CurPageDimCheck()
+#
+# Check given X an/or Y if inside the page dimension
+#
+#    $True = $PDFObject->_CurPageDimCheck(
+#        X => 200,  # (optional)
+#        Y => 100,  # (optional)
+#    );
+#
 
 sub _CurPageDimCheck {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -3058,22 +3092,29 @@ sub _CurPageDimCheck {
     return $Return;
 }
 
-=item _CurPrintableDimSet()
-
-Set current Printable Dimension
-
-   $True = $PDFObject->_CurPrintableDimSet(
-       Top    => 20,  # (optional)
-       Right  => 20,  # (optional)
-       Bottom => 20,  # (optional)
-       Left   => 20,  # (optional)
-   );
-
-=cut
+#
+# _CurPrintableDimSet()
+#
+# Set current Printable Dimension
+#
+#    $True = $PDFObject->_CurPrintableDimSet(
+#        Top => 20,     # (optional)
+#        Right => 20,   # (optional)
+#        Bottom => 20,  # (optional)
+#        Left => 20,    # (optional)
+#    );
+#
 
 sub _CurPrintableDimSet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -3160,25 +3201,32 @@ sub _CurPrintableDimSet {
     return 1;
 }
 
-=item _CurPrintableDimGet()
-
-Get current Printable Dimension
-
-   Return
-       $CurPrintableDim{Top}
-       $CurPrintableDim{Right}
-       $CurPrintableDim{Bottom}
-       $CurPrintableDim{Left}
-       $CurPrintableDim{Width}
-       $CurPrintableDim{Height}
-
-   %CurPrintableDim = $PDFObject->_CurPrintableDimGet();
-
-=cut
+#
+# _CurPrintableDimGet()
+#
+# Get current Printable Dimension
+#
+#    Return
+#        $CurPrintableDim{Top}
+#        $CurPrintableDim{Right}
+#        $CurPrintableDim{Bottom}
+#        $CurPrintableDim{Left}
+#        $CurPrintableDim{Width}
+#        $CurPrintableDim{Height}
+#
+#    %CurPrintableDim = $PDFObject->_CurPrintableDimGet();
+#
 
 sub _CurPrintableDimGet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -3201,20 +3249,27 @@ sub _CurPrintableDimGet {
     return %Data;
 }
 
-=item _CurPrintableDimCheck()
-
-Check given X an/or Y if inside the printable dimension
-
-   $True = $PDFObject->_CurPrintableDimCheck(
-       X => 200,  # (optional)
-       Y => 100,  # (optional)
-   );
-
-=cut
+#
+# _CurPrintableDimCheck()
+#
+# Check given X an/or Y if inside the printable dimension
+#
+#    $True = $PDFObject->_CurPrintableDimCheck(
+#        X => 200,  # (optional)
+#        Y => 100,  # (optional)
+#    );
+#
 
 sub _CurPrintableDimCheck {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -3250,22 +3305,29 @@ sub _CurPrintableDimCheck {
     return $Return;
 }
 
-=item _CurContentDimSet()
-
-Set current Content Dimension
-
-   $True = $PDFObject->_CurContentDimSet(
-       Top    => 20,  # (optional)
-       Right  => 20,  # (optional)
-       Bottom => 20,  # (optional)
-       Left   => 20,  # (optional)
-   );
-
-=cut
+#
+# _CurContentDimSet()
+#
+# Set current Content Dimension
+#
+#    $True = $PDFObject->_CurContentDimSet(
+#        Top => 20,     # (optional)
+#        Right => 20,   # (optional)
+#        Bottom => 20,  # (optional)
+#        Left => 20,    # (optional)
+#    );
+#
 
 sub _CurContentDimSet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -3344,25 +3406,32 @@ sub _CurContentDimSet {
     return 1;
 }
 
-=item _CurContentDimGet()
-
-Get current Content Dimension
-
-   Return
-       $CurContentDim{Top}
-       $CurContentDim{Right}
-       $CurContentDim{Bottom}
-       $CurContentDim{Left}
-       $CurContentDim{Width}
-       $CurContentDim{Height}
-
-   %CurContentDim = $PDFObject->_CurContentDimGet();
-
-=cut
+#
+# _CurContentDimGet()
+#
+# Get current Content Dimension
+#
+#    Return
+#        $CurContentDim{Top}
+#        $CurContentDim{Right}
+#        $CurContentDim{Bottom}
+#        $CurContentDim{Left}
+#        $CurContentDim{Width}
+#        $CurContentDim{Height}
+#
+#    %CurContentDim = $PDFObject->_CurContentDimGet();
+#
 
 sub _CurContentDimGet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -3385,20 +3454,27 @@ sub _CurContentDimGet {
     return %Data;
 }
 
-=item _CurContentDimCheck()
-
-Check given X an/or Y if inside the content dimension
-
-   $True = $PDFObject->_CurContentDimCheck(
-       X => 200,  # (optional)
-       Y => 100,  # (optional)
-   );
-
-=cut
+#
+# _CurContentDimCheck()
+#
+# Check given X an/or Y if inside the content dimension
+#
+#    $True = $PDFObject->_CurContentDimCheck(
+#        X => 200,  # (optional)
+#        Y => 100,  # (optional)
+#    );
+#
 
 sub _CurContentDimCheck {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -3427,20 +3503,27 @@ sub _CurContentDimCheck {
     return $Return;
 }
 
-=item _CurPositionSet()
-
-Set current Position
-
-   $True = $PDFObject->_CurPositionSet(
-       X => 20,  # (optional)
-       Y => 20,  # (optional)
-   );
-
-=cut
+#
+# _CurPositionSet()
+#
+# Set current Position
+#
+#    $True = $PDFObject->_CurPositionSet(
+#        X => 20,  # (optional)
+#        Y => 20,  # (optional)
+#    );
+#
 
 sub _CurPositionSet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -3492,21 +3575,28 @@ sub _CurPositionSet {
     return 1;
 }
 
-=item _CurPositionGet()
-
-Get current Position
-
-   Return
-       $CurPosition{X}
-       $CurPosition{Y}
-
-   %CurPosition = $PDFObject->_CurPositionGet();
-
-=cut
+#
+# _CurPositionGet()
+#
+# Get current Position
+#
+#    Return
+#        $CurPosition{X}
+#        $CurPosition{Y}
+#
+#    %CurPosition = $PDFObject->_CurPositionGet();
+#
 
 sub _CurPositionGet {
     my ( $Self, %Param ) = @_;
 
+    # check needed stuff
+    for (qw()) {
+        if ( !defined( $Param{$_} ) ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            return;
+        }
+    }
     if ( !$Self->{PDF} ) {
         $Self->{LogObject}->Log( Priority => 'error', Message => "Need a PDF Document!" );
         return;
@@ -3527,13 +3617,11 @@ sub _CurPositionGet {
 
 1;
 
-=end Internal:
-
 =back
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
@@ -3541,6 +3629,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.47 $ $Date: 2011/05/09 13:31:44 $
+$Revision: 1.33.2.1 $ $Date: 2011/03/07 21:27:29 $
 
 =cut
