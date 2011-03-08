@@ -1,33 +1,25 @@
 # --
-# UPGRADING - Upgrading Instructions for OTRS
+# UPGRADING - upgrading OTRS
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: UPGRADING,v 1.65 2011/12/08 11:09:33 mg Exp $
+# $Id: UPGRADING,v 1.49.2.1 2011/03/08 12:51:47 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-These instructions are for people upgrading OTRS from "3.0" to "3.1",
+These instructions are for people upgrading OTRS from "2.4" to "3.0",
 and applies both for RPM and source code (tarball) upgrades.
 
 If you are running a lower version of OTRS you have to follow the upgrade path
-to 3.0 first (1.1->1.2->1.3->2.0->2.1->2.2->2.3->2.4->3.0->3.1 ...)!
+to 2.4 first (1.1->1.2->1.3->2.0->2.1->2.2->2.3->2.4->3.0 ...)!
 
-Please note that if you upgrade from OTRS 2.2 or earlier, you have to
-take an extra step; please read http://bugs.otrs.org/show_bug.cgi?id=6798
+Please note that if you upgrade from OTRS 2.2 or earlier, you have to 
+take an extra step; read http://bugs.otrs.org/show_bug.cgi?id=6798
 
-If you need to do a "patch level upgrade", which is an upgrade for instance
-from OTRS version 3.1.1 to 3.1.3, you should skip steps 8, 10 and 12-19.
-
-Please note that for upgrades from 3.1.beta1 or 3.1.beta2, an additional step 20
-is needed!
-
-If you are using Microsoft SQL Server as the DBMS for OTRS, please refer
-to the manual, chapter "Upgrading Microsoft SQL Server Data Types" for instructions
-how to upgrade the data types used by OTRS
-(http://doc.otrs.org/3.1/en/html/upgrading-mssql-datatypes.html).
+If you need to do a "patch level upgrade", which is an upgrade for instance 
+from OTRS version 3.0.3 to 3.0.4, you should skip steps 8, 9, 10, and 13 - 16.
 
 
 1) Stop all relevant services
@@ -78,12 +70,12 @@ how to upgrade the data types used by OTRS
 
     shell> rpm -Uvh otrs-x.x.x.-01.rpm
 
-    In this case the RPM update automatically restores the old configuration files.
+    Restore old configuration files is not needed, done by RPM.
 
 6) Own themes
    ----------
 
-   Note: The OTRS themes between 3.0 and 3.1 are NOT compatible, so don't use your old themes!
+   The OTRS themes from 2.4 and 3.0 are _not_ compatible (don't use the old themes)!
 
    Themes are located under $OTRS_HOME/Kernel/Output/HTML/*/*.dtl (default: OTRS_HOME=/opt/otrs)
 
@@ -99,54 +91,36 @@ how to upgrade the data types used by OTRS
    with the permissions needed for your system setup.
 
 
-8) Apply the database changes
-   --------------------------
+8) Apply the database changes (part 1/2):
+   --------------------------------------
 
      shell> cd /opt/otrs/
 
+    MySQL:
+     shell> cat scripts/DBUpdate-to-3.0.mysql.sql | mysql -p -f -u root otrs
+    PostgreSQL:
+     shell> cat scripts/DBUpdate-to-3.0.postgresql.sql | psql otrs
 
-    SCHEMA UPDATE PART 1:
-    =====================
+
+9) Run the migration script (as OTRS user, _not_ as root):
+   -------------------------------------------------------
+
+   You must execute the migration script to migrate some data from the old database
+   structure to the new one. Please run
+
+     shell> scripts/DBUpdate-to-3.0.pl
+
+
+10) Apply the database changes (part 2/2):
+    --------------------------------------
 
     MySQL:
-     shell> cat scripts/DBUpdate-to-3.1.mysql.sql | mysql -p -f -u root otrs
-
-    PostgreSQL 8.2+:
-     shell> cat scripts/DBUpdate-to-3.1.postgresql.sql | psql otrs
-
-    PostgreSQL, older versions:
-     shell> cat scripts/DBUpdate-to-3.1.postgresql_before_8_2.sql | psql otrs
+     shell> cat scripts/DBUpdate-to-3.0-post.mysql.sql | mysql -p -f -u root otrs
+    PostgreSQL:
+     shell> cat scripts/DBUpdate-to-3.0-post.postgresql.sql | psql otrs
 
 
-    NOTE: If you use PostgreSQL 8.1 or earlier, you need to activate the new legacy driver
-    for these older versions. Do this by adding a new line to your Kernel/Config.pm like this:
-
-    $Self->{DatabasePostgresqlBefore82} = 1;
-
-
-    DATABASE MIGRATION SCRIPT
-    =========================
-
-    shell> scripts/DBUpdate-to-3.1.pl
-
-    Do not continue the upgrading process if this script did not work properly for you.
-    Otherwise data loss may occur.
-
-
-    SCHEMA UPDATE PART 2:
-    =====================
-
-    MySQL:
-     shell> cat scripts/DBUpdate-to-3.1-post.mysql.sql | mysql -p -f -u root otrs
-
-    PostgreSQL 8.2+:
-     shell> cat scripts/DBUpdate-to-3.1-post.postgresql.sql | psql otrs
-
-    PostgreSQL, older versions:
-     shell> cat scripts/DBUpdate-to-3.1-post.postgresql_before_8_2.sql | psql otrs
-
-
-9) Refresh the configuration cache and delete caches
+11) Refresh the configuration cache and delete caches
     -------------------------------------------------
 
     Please run:
@@ -155,25 +129,7 @@ how to upgrade the data types used by OTRS
     shell> bin/otrs.DeleteCache.pl
 
 
-10) Update your web server configuration
-    ------------------------------------
-
-    Note: this applies only if you use the Apache web server together with mod_perl2,
-    and do not use the configuration file directly from the OTRS installation directory
-    (e. g. with a symlink from the Apache configuration directory).
-
-    Please add a new setting to the Apache configuration file for OTRS:
-
-      # set mod_perl2 option for generic interface
-      <Location /otrs/nph-genericinterface.pl>
-          PerlOptions -ParseHeaders
-      </Location>
-
-    Please see the file /opt/otrs/scripts/apache2-httpd.include.conf for an example of
-    where this new option needs to be added (inside the <IfModule mod_perl.c> block).
-
-
-11) Restart your services
+12) Restart your services
     ---------------------
 
     e. g. (depends on used services):
@@ -185,90 +141,89 @@ how to upgrade the data types used by OTRS
     Now you can log into your system.
 
 
-12) Check installed packages
-    ------------------------
-    In the package manager, check if all packages are still marked as
-    correctly installed or if any require reinstallation or even a package upgrade.
-
-
 13) Check for encoding issues
     -------------------------
 
-    OTRS 3.1 only allows UTF-8 as internal charset.
-    Non-UTF-8 installations of OTRS must switch to UTF-8.
+    With OTRS 3.0, the default charset of OTRS was changed from "iso-8859-1" to "utf-8".
+
+    This will only affect you if you didn't specify a charset in Kernel/Config.pm (all
+    installations that were made with the web installer have a custom setting there) or
+    if you didn't change the default charset in the AdminSysConfig.
+
+    If you experience problems with the new charset, add this line to Kernel/Config.pm:
+
+    $Self->{'DefaultCharset'} = 'iso-8859-1'; # use your previous charset setting here
+
+    In General, using "utf-8" is the recommended mode of running OTRS, and switching from
+    other charsets should work well.
+
+    Please note: We recommend to change existing non-UTF-8 installations of OTRS to UTF-8
+    with the upgrade to 3.0. All other encodings are now deprecated.
+
+    OTRS 3.1 will only allow UTF-8 as internal charset.
 
 
-14) Escalation events
-    -----------------
+14) Check for Custom Frontend Module Registrations
+    ----------------------------------------------
 
-    If you want to use the new escalation events in your system, you need to activate the
-    corresponding GenericAgent job in Kernel/Config/GenericAcent.pm. Please look into
-    Kernel/Config/GenericAgent.pm.dist for an example of how to do this.
+    Starting with OTRS 3.0, application modules may have their own special CSS and/or
+    JavaScript. This is part of the so-called frontend module registration of the
+    modules in the SysConfig. This may cause problems during the upgrade, because
+    locally modified frontend module configuration settings will not catch the updates
+    of the new default configuration.
 
+    To check if you are affected, please look at the file Kernel/Config/Files/ZZZAuto.pm
+    and look for entries like
 
-15) TicketHistory
-    -------------
+    $Self->{'Frontend::Module'}->{'AgentStats'} = { ... };
 
-    The TicketHistory type TicketFreeTextUpdate was renamed to
-    TicketDynamicFieldUpdate. If you have any custom reporting using this,
-    please adjust it.
+    These settings should be reset to their default value in Admin -> SysConfig
+    (in this case: 'Frontend::Module###AgentStats') with the little "Reset" button
+    next to the "Active" checkbox. Then the settings will be reset with the new
+    module-specific settings and no longer show up in
+    Kernel/Config/Files/ZZZAuto.pm. After this procedure, you may customize these
+    settings again, if needed.
 
-
-16) Ticket event handlers
-    ---------------------
-
-    The Event name TicketFreeTextUpdate_$Counter was renamed to TicketDynamicFieldUpdate_$FieldName.
-    If you have any custom event handlers for these events, please adapt them.
-
-
-17) DynamicField user preferences module
-    ------------------------------------
-
-    If you had one or more active custom settings for "PreferencesGroups###Freetext",
-    you need to adapt them to work with the new DynamicFields engine. The PrefKey
-    setting must be changed to "UserDynamicField_DynamicField", where the part after
-    the _ is the name of the dynamic field. Existing values would need to be renamed
-    in the database as well.
+    The same procedure must be executed for the setting
+    "Frontend::ToolBarModule###1-Ticket::TicketSearchFulltext", as this now also uses
+    module specific CSS. If this setting is not activated on your system, you can
+    safely omit this step.
 
 
-18) Custom free field default value event handler
-    ---------------------------------------------
+15) Customer Database Backend Field Renaming
+    ----------------------------------------
 
-    If you used the event handler Ticket::EventModulePost###TicketFreeFieldDefault (not active by default),
-    you'll need to migrate its configuration to the new setting Ticket::EventModulePost###TicketDynamicFieldDefault.
+    The field 'salutation' in the built-in customer database has been renamed to
+    the more appropriate 'title'. If you are using the built-in database data
+    source for customers, and you have changed the configuration, for instance
+    because you've added fields to the customer table, or because you've enabled
+    Customer Company support, you should change the mapping in your Kernel/Config.pm:
 
-    The configuration of this is slightly different; where you had to specify a Counter indicating the TicketFreeText
-    number previously, now you need to specify the name of the DynamicField (for migrated fields, this will be
-    DynamicField_TicketFreeKey$Counter and DynamicField_TicketFreeText$Counter. You need two separate entries now
-    if you want to set both the key and the text field.
+    Change this line:
 
+     [ 'UserSalutation', 'Salutation', 'salutation', 1, 0, 'var', '', 0 ],
 
-19) FreeText/Time based ACLs
-    ------------------------
+    to:
 
-    If you have any ACLs defined which involve freetext or freetime fields, you need to adjust these
-    ACL definitions.
-    Please have a look at http://doc.otrs.org/3.1/en/html/acl.html. There you can find a list of all possible ACL
-    settings. In general, you need to add the prefix "DynamicField_" to existing free field definitions, and you
-    can add a new "DynamicField" section to the "Properties" list for situations when a ticket does not exist yet.
+     [ 'UserTitle',      'Title',      'title',      1, 0, 'var', '', 0 ],
 
+    Please note that this can also affect any salutations or other templates
+    where you've used the string <OTRS_*_UserSalutation>. If you have used this
+    string AND you use the built-in customer table, please replace it with 
+    <OTRS_CURRENT_UserTitle> instead.
 
-20) Database Upgrade During Beta Phase
-    ----------------------------------
+16) Optional: Mark Tickets as Read
+    ------------------------------
 
-    This step is ONLY needed if you upgrade from 3.1.beta1 or 3.1.beta2!
+    In OTRS 3.0 there is a new feature: new tickets and new articles which an Agent
+    did not read yet are highlighted as 'unread'. For all tickets which were created
+    before the upgrade to OTRS 3.0, the 'read' information is missing, and therefore
+    these tickets will be marked as 'unread'. If this bothers you, you can use a script
+    to set all tickets and articles as read for all agents which have read permissions
+    for these tickets. Note that this script may run for a while!
 
-    Please apply the required database changes as follows:
-
-    MySQL:
-     shell> cat scripts/DBUpdate-3.1.beta.mysql.sql | mysql -p -f -u root otrs
-
-    PostgreSQL 8.2+:
-     shell> cat scripts/DBUpdate-3.1.beta.postgresql.sql | psql otrs
-
-    PostgreSQL, older versions:
-     shell> cat scripts/DBUpdate-3.1.beta.postgresql_before_8_2.sql | psql otrs
+    shell> bin/otrs.MarkTicketAsSeen.pl
 
 
-21) Well done!
+17) Well done!
     ----------
