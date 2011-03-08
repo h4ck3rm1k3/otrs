@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AgentTicketZoom.pm - to get a closer view
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketZoom.pm,v 1.174 2012/01/24 18:33:38 cr Exp $
+# $Id: AgentTicketZoom.pm,v 1.145.2.1 2011/03/08 18:26:39 dz Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,12 +18,9 @@ use Kernel::System::CustomerUser;
 use Kernel::System::LinkObject;
 use Kernel::System::EmailParser;
 use Kernel::System::SystemAddress;
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.174 $) [1];
+$VERSION = qw($Revision: 1.145.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -82,12 +79,6 @@ sub new {
     $Self->{CustomerUserObject} = Kernel::System::CustomerUser->new(%Param);
     $Self->{LinkObject}         = Kernel::System::LinkObject->new(%Param);
     $Self->{SystemAddress}      = Kernel::System::SystemAddress->new(%Param);
-    $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new(%Param);
-    $Self->{BackendObject}      = Kernel::System::DynamicField::Backend->new(%Param);
-
-    # get dynamic field config for frontend module
-    $Self->{DynamicFieldFilter}
-        = $Self->{ConfigObject}->Get("Ticket::Frontend::AgentTicketZoom")->{DynamicField};
 
     return $Self;
 }
@@ -116,12 +107,9 @@ sub Run {
     }
 
     # get ticket attributes
-    my %Ticket = $Self->{TicketObject}->TicketGet(
-        TicketID      => $Self->{TicketID},
-        DynamicFields => 1,
-    );
+    my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Self->{TicketID} );
 
-    # get acl actions
+    # get ack actions
     $Self->{TicketObject}->TicketAcl(
         Data          => '-',
         Action        => $Self->{Action},
@@ -131,27 +119,6 @@ sub Run {
         UserID        => $Self->{UserID},
     );
     my %AclAction = $Self->{TicketObject}->TicketAclActionData();
-
-    # check if ACL resctictions if exist
-    if ( IsHashRefWithData( \%AclAction ) ) {
-
-        # show error screen if ACL prohibits this action
-        if ( defined $AclAction{ $Self->{Action} } && $AclAction{ $Self->{Action} } eq '0' ) {
-            return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
-        }
-    }
-
-    # mark shown ticket as seen
-    if ( $Self->{Subaction} eq 'TicketMarkAsSeen' ) {
-        my $Success = $Self->_TicketItemSeen( TicketID => $Self->{TicketID} );
-
-        return $Self->{LayoutObject}->Attachment(
-            ContentType => 'text/html',
-            Content     => $Success,
-            Type        => 'inline',
-            NoCache     => 1,
-        );
-    }
 
     # mark shown article as seen
     if ( $Self->{Subaction} eq 'MarkAsSeen' ) {
@@ -168,10 +135,7 @@ sub Run {
     # article update
     elsif ( $Self->{Subaction} eq 'ArticleUpdate' ) {
         my $Count = $Self->{ParamObject}->GetParam( Param => 'Count' );
-        my %Article = $Self->{TicketObject}->ArticleGet(
-            ArticleID     => $Self->{ArticleID},
-            DynamicFields => 0,
-        );
+        my %Article = $Self->{TicketObject}->ArticleGet( ArticleID => $Self->{ArticleID} );
         $Article{Count} = $Count;
 
         # get attachment index (without attachments)
@@ -334,10 +298,7 @@ sub Run {
         }
 
         # get article data
-        my %Article = $Self->{TicketObject}->ArticleGet(
-            ArticleID     => $Self->{ArticleID},
-            DynamicFields => 0,
-        );
+        my %Article = $Self->{TicketObject}->ArticleGet( ArticleID => $Self->{ArticleID} );
 
         # check if article data exists
         if ( !%Article ) {
@@ -398,7 +359,6 @@ sub MaskAgentZoom {
         TicketID                   => $Self->{TicketID},
         StripPlainBodyAsAttachment => $Self->{StripPlainBodyAsAttachment},
         UserID                     => $Self->{UserID},
-        DynamicFields => 0,    # fetch later only for the article(s) to display
     );
 
     # add counter
@@ -568,15 +528,7 @@ sub MaskAgentZoom {
             Article           => \%Article,
             AclAction         => \%AclAction,
             StandardResponses => \%StandardResponses,
-            ActualArticleID   => $ArticleID,
             Type              => 'Static',
-        );
-    }
-
-    if ( $Self->{ZoomExpand} ) {
-        $Self->{LayoutObject}->Block(
-            Name => 'TicketItemMarkAsSeen',
-            Data => { TicketID => $Ticket{TicketID} },
         );
     }
 
@@ -631,9 +583,8 @@ sub MaskAgentZoom {
         $MoveQueues{0}
             = '- ' . $Self->{LayoutObject}->{LanguageObject}->Get('Move') . ' -';
         $Param{MoveQueuesStrg} = $Self->{LayoutObject}->AgentQueueListOption(
-            Name           => 'DestQueueID',
-            Data           => \%MoveQueues,
-            CurrentQueueID => $Ticket{QueueID},
+            Name => 'DestQueueID',
+            Data => \%MoveQueues,
         );
     }
     if (
@@ -662,15 +613,6 @@ sub MaskAgentZoom {
                 );
             }
         }
-    }
-
-    # show created by if different then User ID 1
-    if ( $Ticket{CreateBy} > 1 ) {
-        $Ticket{CreatedByUser} = $Self->{UserObject}->UserName( UserID => $Ticket{CreateBy} );
-        $Self->{LayoutObject}->Block(
-            Name => 'CreatedBy',
-            Data => {%Ticket},
-        );
     }
 
     # ticket type
@@ -752,35 +694,6 @@ sub MaskAgentZoom {
         );
     }
 
-    # test access to frontend module for Customer
-    my $Access = $Self->{LayoutObject}->Permission(
-        Action => 'AgentTicketCustomer',
-        Type   => 'rw',
-    );
-    if ($Access) {
-
-        # test access to ticket
-        my $Config = $Self->{ConfigObject}->Get('Ticket::Frontend::AgentTicketCustomer');
-        if ( $Config->{Permission} ) {
-            my $OK = $Self->{TicketObject}->Permission(
-                Type     => $Config->{Permission},
-                TicketID => $Ticket{TicketID},
-                UserID   => $Self->{UserID},
-                LogNo    => 1,
-            );
-            if ( !$OK ) {
-                $Access = 0;
-            }
-        }
-    }
-
-    # define proper DTL block based on permissions
-    my $CustomerIDBlock = $Access ? 'CustomerIDRW' : 'CustomerIDRO';
-    $Self->{LayoutObject}->Block(
-        Name => $CustomerIDBlock,
-        Data => \%Ticket,
-    );
-
     # show total accounted time if feature is active:
     if ( $Self->{ConfigObject}->Get('Ticket::Frontend::AccountTime') ) {
         $Ticket{TicketTimeUnits} = $Self->{TicketObject}->TicketAccountedTimeGet(%Ticket);
@@ -819,71 +732,73 @@ sub MaskAgentZoom {
         );
     }
 
-    # get the dynamic fields for ticket object
-    my $DynamicField = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid       => 1,
-        ObjectType  => ['Ticket'],
-        FieldFilter => $Self->{DynamicFieldFilter} || {},
-    );
-
-    # cycle trough the activated Dynamic Fields for ticket object
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{$DynamicField} ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-        next DYNAMICFIELD if !defined $Ticket{ 'DynamicField_' . $DynamicFieldConfig->{Name} };
-        next DYNAMICFIELD if $Ticket{ 'DynamicField_' . $DynamicFieldConfig->{Name} } eq '';
-
-        # get print string for this dynamic field
-        my $ValueStrg = $Self->{BackendObject}->DisplayValueRender(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            Value              => $Ticket{ 'DynamicField_' . $DynamicFieldConfig->{Name} },
-            ValueMaxChars      => 25,
-            LayoutObject       => $Self->{LayoutObject},
-        );
-
-        my $Label = $DynamicFieldConfig->{Label};
-
+    # ticket free text
+    FREETEXT:
+    for my $Count ( 1 .. 16 ) {
+        next FREETEXT if !$Ticket{ 'TicketFreeText' . $Count };
         $Self->{LayoutObject}->Block(
-            Name => 'TicketDynamicField',
+            Name => 'TicketFreeText' . $Count,
+            Data => { %Ticket, %AclAction },
+        );
+        $Self->{LayoutObject}->Block(
+            Name => 'TicketFreeText',
             Data => {
-                Label => $Label,
+                %Ticket, %AclAction,
+                TicketFreeKey  => $Ticket{ 'TicketFreeKey' . $Count },
+                TicketFreeText => $Ticket{ 'TicketFreeText' . $Count },
+                Count          => $Count,
             },
         );
-
-        if ( $ValueStrg->{Link} ) {
+        if ( !$Self->{ConfigObject}->Get( 'TicketFreeText' . $Count . '::Link' ) ) {
             $Self->{LayoutObject}->Block(
-                Name => 'TicketDynamicFieldLink',
+                Name => 'TicketFreeTextPlain' . $Count,
+                Data => { %Ticket, %AclAction },
+            );
+            $Self->{LayoutObject}->Block(
+                Name => 'TicketFreeTextPlain',
                 Data => {
-                    Value                       => $ValueStrg->{Value},
-                    Title                       => $ValueStrg->{Title},
-                    Link                        => $ValueStrg->{Link},
-                    $DynamicFieldConfig->{Name} => $ValueStrg->{Title},
+                    %Ticket, %AclAction,
+                    TicketFreeKey  => $Ticket{ 'TicketFreeKey' . $Count },
+                    TicketFreeText => $Ticket{ 'TicketFreeText' . $Count },
+                    Count          => $Count,
                 },
             );
         }
         else {
             $Self->{LayoutObject}->Block(
-                Name => 'TicketDynamicFieldPlain',
+                Name => 'TicketFreeTextLink' . $Count,
+                Data => { %Ticket, %AclAction },
+            );
+            $Self->{LayoutObject}->Block(
+                Name => 'TicketFreeTextLink',
                 Data => {
-                    Value => $ValueStrg->{Value},
-                    Title => $ValueStrg->{Title},
+                    %Ticket, %AclAction,
+                    TicketFreeTextLink => $Self->{ConfigObject}->Get(
+                        'TicketFreeText' . $Count . '::Link'
+                    ),
+                    TicketFreeKey  => $Ticket{ 'TicketFreeKey' . $Count },
+                    TicketFreeText => $Ticket{ 'TicketFreeText' . $Count },
+                    Count          => $Count,
                 },
             );
         }
+    }
 
-        # example of dynamic fields order customization
+    # ticket free time
+    FREETIME:
+    for my $Count ( 1 .. 6 ) {
+        next FREETIME if !$Ticket{ 'TicketFreeTime' . $Count };
         $Self->{LayoutObject}->Block(
-            Name => 'TicketDynamicField_' . $DynamicFieldConfig->{Name},
-            Data => {
-                Label => $Label,
-            },
+            Name => 'TicketFreeTime' . $Count,
+            Data => { %Ticket, %AclAction },
         );
-
         $Self->{LayoutObject}->Block(
-            Name => 'TicketDynamicField_' . $DynamicFieldConfig->{Name} . '_Plain',
+            Name => 'TicketFreeTime',
             Data => {
-                Value => $ValueStrg->{Value},
-                Title => $ValueStrg->{Title},
+                %Ticket, %AclAction,
+                TicketFreeTimeKey => $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Count ),
+                TicketFreeTime    => $Ticket{ 'TicketFreeTime' . $Count },
+                Count             => $Count,
             },
         );
     }
@@ -1021,12 +936,6 @@ sub MaskAgentZoom {
         );
     }
 
-    # init js
-    $Self->{LayoutObject}->Block(
-        Name => 'TicketZoomInit',
-        Data => {%Param},
-    );
-
     # return output
     return $Self->{LayoutObject}->Output(
         TemplateFile => 'AgentTicketZoom',
@@ -1042,18 +951,10 @@ sub _ArticleTree {
     my $ArticleMaxLimit = $Param{ArticleMaxLimit};
     my $ArticleID       = $Param{ArticleID};
 
-    my $TableClasses;
-    if ( $Self->{ConfigObject}->Get('Ticket::UseArticleColors') ) {
-        $TableClasses .= 'UseArticleColors';
-    }
-
     # build thread string
     $Self->{LayoutObject}->Block(
         Name => 'Tree',
-        Data => {
-            %Param,
-            TableClasses => $TableClasses,
-        },
+        Data => {%Param},
     );
 
     # check if expand/collapse view is usable (only for less then 300 articles)
@@ -1313,22 +1214,6 @@ sub _ArticleTree {
     );
 }
 
-sub _TicketItemSeen {
-    my ( $Self, %Param ) = @_;
-
-    my @ArticleIDs = $Self->{TicketObject}->ArticleIndex(
-        TicketID => $Param{TicketID},
-    );
-
-    for my $ArticleID (@ArticleIDs) {
-        $Self->_ArticleItemSeen(
-            ArticleID => $ArticleID,
-        );
-    }
-
-    return 1;
-}
-
 sub _ArticleItemSeen {
     my ( $Self, %Param ) = @_;
 
@@ -1361,31 +1246,15 @@ sub _ArticleItem {
         Data => { %Param, %Article, %AclAction },
     );
 
-    # show created by if different from User ID 1
-    if ( $Article{CreatedBy} > 1 ) {
-        $Article{CreatedByUser} = $Self->{UserObject}->UserName( UserID => $Article{CreatedBy} );
-        $Self->{LayoutObject}->Block(
-            Name => 'ArticleCreatedBy',
-            Data => {%Article},
-        );
-    }
-
     # mark shown article as seen
     if ( $Param{Type} eq 'OnLoad' ) {
         $Self->_ArticleItemSeen( ArticleID => $Article{ArticleID} );
     }
     else {
-        if (
-            !$Self->{ZoomExpand}
-            && defined $Param{ActualArticleID}
-            && $Param{ActualArticleID} == $Article{ArticleID}
-            )
-        {
-            $Self->{LayoutObject}->Block(
-                Name => 'ArticleItemMarkAsSeen',
-                Data => { %Param, %Article, %AclAction },
-            );
-        }
+        $Self->{LayoutObject}->Block(
+            Name => 'ArticleItemMarkAsSeen',
+            Data => { %Param, %Article, %AclAction },
+        );
     }
 
     # show article actions
@@ -1562,7 +1431,7 @@ sub _ArticleItem {
                     Name => 'ArticleMenu',
                     Data => {
                         %Ticket, %Article, %AclAction,
-                        Description => 'Forward Article via Mail',
+                        Description => 'Forward',
                         Name        => 'Forward',
                         Class       => 'AsPopup PopupType_TicketAction',
                         Link =>
@@ -1610,7 +1479,7 @@ sub _ArticleItem {
                     Name => 'ArticleMenu',
                     Data => {
                         %Ticket, %Article, %AclAction,
-                        Description => 'Bounce Article to a different mail address',
+                        Description => 'Bounce',
                         Name        => 'Bounce',
                         Class       => 'AsPopup PopupType_TicketAction',
                         Link =>
@@ -1625,7 +1494,7 @@ sub _ArticleItem {
         }
     }
 
-    # check if phone link (outbound) should be shown
+    # check if phone link should be shown
     if (
         $Self->{ConfigObject}->Get('Frontend::Module')->{AgentTicketPhoneOutbound}
         && (
@@ -1675,56 +1544,6 @@ sub _ArticleItem {
         }
     }
 
-    # check if phone link (inbound) should be shown
-    if (
-        $Self->{ConfigObject}->Get('Frontend::Module')->{AgentTicketPhoneInbound}
-        && (
-            !defined $AclAction{AgentTicketPhoneInbound}
-            || $AclAction{AgentTicketPhoneInbound}
-        )
-        )
-    {
-        my $Access = 1;
-        my $Config = $Self->{ConfigObject}->Get('Ticket::Frontend::AgentTicketPhoneInbound');
-        if ( $Config->{Permission} ) {
-            my $OK = $Self->{TicketObject}->TicketPermission(
-                Type     => $Config->{Permission},
-                TicketID => $Ticket{TicketID},
-                UserID   => $Self->{UserID},
-                LogNo    => 1,
-            );
-            if ( !$OK ) {
-                $Access = 0;
-            }
-        }
-        if ( $Config->{RequiredLock} ) {
-            my $Locked = $Self->{TicketObject}->TicketLockGet(
-                TicketID => $Ticket{TicketID}
-            );
-            if ($Locked) {
-                my $AccessOk = $Self->{TicketObject}->OwnerCheck(
-                    TicketID => $Ticket{TicketID},
-                    OwnerID  => $Self->{UserID},
-                );
-                if ( !$AccessOk ) {
-                    $Access = 0;
-                }
-            }
-        }
-        if ($Access) {
-            $Self->{LayoutObject}->Block(
-                Name => 'ArticleMenu',
-                Data => {
-                    %Ticket, %Article, %AclAction,
-                    Description => 'Phone Call Inbound',
-                    Name        => 'Phone Call Inbound',
-                    Class       => 'AsPopup PopupType_TicketAction',
-                    Link        => 'Action=AgentTicketPhoneInbound;TicketID=$Data{"TicketID"}'
-                },
-            );
-        }
-    }
-
     # check if split link should be shown
     if (
         $Self->{ConfigObject}->Get('Frontend::Module')->{AgentTicketPhone}
@@ -1735,7 +1554,7 @@ sub _ArticleItem {
             Name => 'ArticleMenu',
             Data => {
                 %Ticket, %Article, %AclAction,
-                Description => 'Split this Article',
+                Description => 'Split',
                 Name        => 'Split',
                 Link =>
                     'Action=AgentTicketPhone;TicketID=$Data{"TicketID"};ArticleID=$Data{"ArticleID"};LinkTicketID=$Data{"TicketID"}'
@@ -1760,7 +1579,7 @@ sub _ArticleItem {
                 Name => 'ArticleMenu',
                 Data => {
                     %Ticket, %Article, %AclAction,
-                    Description => 'Print this Article',
+                    Description => 'Print',
                     Name        => 'Print',
                     Class       => 'AsPopup PopupType_TicketAction',
                     Link =>
@@ -1791,7 +1610,7 @@ sub _ArticleItem {
                 Name => 'ArticleMenu',
                 Data => {
                     %Ticket, %Article, %AclAction,
-                    Description => 'View the source for this Article',
+                    Description => 'Plain Format',
                     Name        => 'Plain Format',
                     Class       => 'AsPopup PopupType_TicketAction',
                     Link        => $Link,
@@ -1832,102 +1651,17 @@ sub _ArticleItem {
         );
     }
 
-    # get the dynamic fields for article object
-    my $DynamicField = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid       => 1,
-        ObjectType  => ['Article'],
-        FieldFilter => $Self->{DynamicFieldFilter} || {},
-    );
-
-    # cycle trough the activated Dynamic Fields
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{$DynamicField} ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-        my $Value = $Self->{BackendObject}->ValueGet(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            ObjectID           => $Article{ArticleID},
-        );
-
-        next if !$Value;
-        next if $Value eq '';
-
-        # get print string for this dynamic field
-        my $ValueStrg = $Self->{BackendObject}->DisplayValueRender(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            Value              => $Value,
-            ValueMaxChars      => 160,
-            LayoutObject       => $Self->{LayoutObject},
-        );
-
-        my $Label = $DynamicFieldConfig->{Label};
-
+    # show article free text
+    FREETEXT:
+    for my $Count ( 1 .. 3 ) {
+        next FREETEXT if !$Article{"ArticleFreeText$Count"};
         $Self->{LayoutObject}->Block(
-            Name => 'ArticleDynamicField',
+            Name => 'ArticleFreeText',
             Data => {
-                Label => $Label,
+                Key   => $Article{"ArticleFreeKey$Count"},
+                Value => $Article{"ArticleFreeText$Count"},
             },
         );
-
-        if ( $ValueStrg->{Link} ) {
-
-            # output link element
-            $Self->{LayoutObject}->Block(
-                Name => 'ArticleDynamicFieldLink',
-                Data => {
-                    Value                       => $ValueStrg->{Value},
-                    Title                       => $ValueStrg->{Title},
-                    Link                        => $ValueStrg->{Link},
-                    $DynamicFieldConfig->{Name} => $ValueStrg->{Title}
-                },
-            );
-        }
-        else {
-
-            # output non link element
-            $Self->{LayoutObject}->Block(
-                Name => 'ArticleDynamicFieldPlain',
-                Data => {
-                    Value => $ValueStrg->{Value},
-                    Title => $ValueStrg->{Title},
-                },
-            );
-        }
-
-        # example of dynamic fields order customization
-        $Self->{LayoutObject}->Block(
-            Name => 'ArticleDynamicField' . $DynamicFieldConfig->{Name},
-            Data => {
-                Label => $Label,
-                Value => $ValueStrg->{Value},
-                Title => $ValueStrg->{Title},
-            },
-        );
-
-        if ( $ValueStrg->{Link} ) {
-
-            # output link element
-            $Self->{LayoutObject}->Block(
-                Name => 'ArticleDynamicField' . $DynamicFieldConfig->{Name} . 'Link',
-                Data => {
-                    Value                       => $ValueStrg->{Value},
-                    Title                       => $ValueStrg->{Title},
-                    Link                        => $ValueStrg->{Link},
-                    $DynamicFieldConfig->{Name} => $ValueStrg->{Title}
-                },
-            );
-        }
-        else {
-
-            # output non link element
-            $Self->{LayoutObject}->Block(
-                Name => 'ArticleDynamicField' . $DynamicFieldConfig->{Name} . 'Plain',
-                Data => {
-                    Value => $ValueStrg->{Value},
-                    Title => $ValueStrg->{Title},
-                },
-            );
-        }
     }
 
     # run article view modules
@@ -1973,10 +1707,7 @@ sub _ArticleItem {
         }
     }
 
-    %Article = $Self->{TicketObject}->ArticleGet(
-        ArticleID     => $Article{ArticleID},
-        DynamicFields => 0,
-    );
+    %Article = $Self->{TicketObject}->ArticleGet( ArticleID => $Article{ArticleID} );
 
     # get attachment index (without attachments)
     my %AtmIndex = $Self->{TicketObject}->ArticleAttachmentIndex(
@@ -2028,14 +1759,7 @@ sub _ArticleItem {
                     },
                     Article => \%Article,
                 );
-
-                # check for the display of the filesize
-                if ( $Job eq '2-HTML-Viewer' && !%Data ) {
-                    $Data{DataFileSize} = ", " . $File{Filesize};
-                }
-                elsif ( $Job eq '2-HTML-Viewer' && %Data ) {
-                    $Data{DataFileSize} = ", " . $Data{Filesize};
-                }
+                next JOB if !%Data;
                 $Self->{LayoutObject}->Block(
                     Name => $Data{Block} || 'ArticleAttachmentRowLink',
                     Data => {%Data},
