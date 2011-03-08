@@ -3,7 +3,7 @@
 # bin/fcgi-bin/customer.pl - the global FCGI handle file (incl. auth) for OTRS
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: customer.pl,v 1.4 2011/03/08 14:15:54 mb Exp $
+# $Id: customer.pl,v 1.3.2.1 2011/03/08 14:16:51 mb Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -31,7 +31,7 @@ use lib "$Bin/../../Kernel/cpan-lib";
 use lib "$Bin/../../Custom";
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.4 $) [1];
+$VERSION = qw($Revision: 1.3.2.1 $) [1];
 
 # Imports the library; required line
 use CGI::Fast;
