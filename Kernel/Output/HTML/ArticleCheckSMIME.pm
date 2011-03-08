@@ -2,7 +2,7 @@
 # Kernel/Output/HTML/ArticleCheckSMIME.pm
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: ArticleCheckSMIME.pm,v 1.27 2011/11/03 01:15:39 te Exp $
+# $Id: ArticleCheckSMIME.pm,v 1.20.6.1 2011/03/08 04:22:02 dz Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Crypt;
 use Kernel::System::EmailParser;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.27 $) [1];
+$VERSION = qw($Revision: 1.20.6.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -112,18 +112,6 @@ sub Check {
             )
         {
 
-            # check if article is already decrypted
-            if ( $Param{Article}->{Body} ne '- no text message => see attachment -' ) {
-                push(
-                    @Return,
-                    {
-                        Key        => 'Crypted',
-                        Value      => 'Ticket decrypted before',
-                        Successful => 1,
-                    }
-                );
-            }
-
             # check sender (don't decrypt sent emails)
             if ( $Param{Article}->{SenderType} =~ /(agent|system)/i ) {
 
@@ -160,7 +148,7 @@ sub Check {
                 my @PrivateKeysResult
                     = $Self->{CryptObject}->PrivateSearch( Search => $EmailAddress, );
                 for my $Cert (@PrivateKeysResult) {
-                    $PrivateKeys{ $Cert->{Filename} } = $Cert;
+                    $PrivateKeys{ $Cert->{Hash} } = $Cert;
                 }
             }
 
@@ -169,8 +157,9 @@ sub Check {
                 push(
                     @Return,
                     {
-                        Key   => 'Crypted',
-                        Value => 'Impossible to decrypt: private key for email doesn\'t found!',
+                        Key => 'Crypted',
+                        Value =>
+                            "Impossible to decrypt: private key for email doesn't found",
                     }
                 );
                 return @Return;
@@ -182,8 +171,7 @@ sub Check {
 
                 # decrypt
                 %Decrypt = $Self->{CryptObject}->Decrypt(
-                    Message            => $Message,
-                    SearchingNeededKey => 1,
+                    Message => $Message,
                     %{$CertResult},
                 );
                 last PRIVATESEARCH if ( $Decrypt{Successful} );
@@ -191,17 +179,12 @@ sub Check {
 
             if ( $Decrypt{Successful} ) {
 
-                # parse the decryptet email body
-                my $ParserObject
-                    = Kernel::System::EmailParser->new( %{$Self}, Email => $Decrypt{Data} );
-                my $Body = $ParserObject->GetMessageBody();
-
                 # updated article body
                 $Self->{TicketObject}->ArticleUpdate(
                     TicketID  => $Param{Article}->{TicketID},
                     ArticleID => $Self->{ArticleID},
                     Key       => 'Body',
-                    Value     => $Body,
+                    Value     => $Decrypt{Data},
                     UserID    => $Self->{UserID},
                 );
 
@@ -210,17 +193,6 @@ sub Check {
                     ArticleID => $Self->{ArticleID},
                     UserID    => $Self->{UserID},
                 );
-
-                # write attachments to the storage
-                for my $Attachment ( $ParserObject->GetAttachments() ) {
-                    $Self->{TicketObject}->ArticleWriteAttachment(
-                        Content     => $Attachment->{Content},
-                        Filename    => $Attachment->{Filename},
-                        ContentType => $Attachment->{ContentType},
-                        ArticleID   => $Self->{ArticleID},
-                        UserID      => $Self->{UserID},
-                    );
-                }
 
                 push(
                     @Return,
@@ -261,8 +233,8 @@ sub Check {
                 push(
                     @Return,
                     {
-                        Key   => 'Crypted',
-                        Value => "$Decrypt{Message}",
+                        Key => 'Crypted',
+                        Value => $Decrypt{Message} || 'Impossible decrypt, unknown error',
                         %Decrypt,
                     }
                 );
@@ -275,19 +247,6 @@ sub Check {
             && $ContentType =~ /signed/i
             )
         {
-
-            # check if article is already verified
-            if ( $Param{Article}->{Body} ne '- no text message => see attachment -' ) {
-
-                # return result
-                push(
-                    @Return,
-                    {
-                        Key   => 'Signed',
-                        Value => 'Signature verified before!',
-                    }
-                );
-            }
 
             # check sign and get clear content
             %SignCheck = $Self->{CryptObject}->Verify( Message => $Message, );
