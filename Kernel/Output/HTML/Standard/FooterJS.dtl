@@ -1,8 +1,8 @@
 # --
 # FooterJS.dtl - provides global HTML footer JavaScript
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: FooterJS.dtl,v 1.34 2012/01/20 02:27:44 sb Exp $
+# $Id: FooterJS.dtl,v 1.26.2.1 2011/03/09 13:46:51 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -29,13 +29,14 @@ Core.App.Ready(function () {
         SessionIDCookie: '$QEnv{"SessionIDCookie"}',
         SessionName: '$Config{"SessionName"}',
         SessionID: '$QEnv{"SessionID"}',
-        ChallengeToken: '$QEnv{"UserChallengeToken"}',
         CustomerPanelSessionName: '$Config{"CustomerPanelSessionName"}',
         Images: '$Config{"Frontend::ImagePath"}',
-        UserLanguage: '$QEnv{"UserLanguage"}',
+        UserLanguage: '$Env{"UserLanguage"}',
         CheckEmailAddresses: parseInt('$Config{"CheckEmailAddresses"}', 10),
         AnimationEnabled: parseInt('$Config{"Frontend::AnimationEnabled"}', 10),
         OpenMainMenuOnHover: parseInt('$Config{"OpenMainMenuOnHover"}', 10),
+        HTMLArticleHeightDefault: parseInt("$Config{"Ticket::Frontend::HTMLArticleHeightDefault"}" || 0, 10),
+        HTMLArticleHeightMax: parseInt("$Config{"Ticket::Frontend::HTMLArticleHeightMax"}" || 0, 10),
         // translations
         ValidateServerErrorTitle: '$JSText{"Error"}',
         ValidateServerErrorMsg: '$JSText{"One or more errors occurred!"}',
@@ -44,7 +45,6 @@ Core.App.Ready(function () {
         PopupBlockerMsg: '$JSText{"Could not open popup window. Please disable any popup blockers for this application."}',
         PopupAlreadyOpenMsg: '$JSText{"A popup of this screen is already open. Do you want to close it and load this one instead?"}',
         LoadingMsg: '$JSText{"Loading..."}',
-        EmptySearchMsg: '$JSText{"Please enter at least one search value or * to find anything."}',
         SearchMsg: '$JSText{"Search"}'
     });
 
@@ -53,8 +53,8 @@ Core.App.Ready(function () {
 $Include{"Datepicker"}
 
 <!-- dtl:block:NewTicketInNewWindow -->
-    $('#nav-Tickets-Newphoneticket a').attr('target', '_blank');
-    $('#nav-Tickets-Newemailticket a').attr('target', '_blank');
+    $('#nav-Tickets-PhoneTicket a').attr('target', '_blank');
+    $('#nav-Tickets-EmailTicket a').attr('target', '_blank');
     $('.PhoneTicket a').attr('target', '_blank');
     $('.EmailTicket a').attr('target', '_blank');
 <!-- dtl:block:NewTicketInNewWindow -->
