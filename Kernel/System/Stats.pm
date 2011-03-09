@@ -2,7 +2,7 @@
 # Kernel/System/Stats.pm - all stats core functions
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Stats.pm,v 1.112 2011/12/23 14:37:19 mb Exp $
+# $Id: Stats.pm,v 1.100.2.1 2011/03/09 16:12:31 des Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -16,11 +16,10 @@ use warnings;
 
 use MIME::Base64;
 use Date::Pcalc qw(:all);
-
 use Kernel::System::XML;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.112 $) [1];
+$VERSION = qw($Revision: 1.100.2.1 $) [1];
 
 =head1 NAME
 
@@ -341,7 +340,7 @@ sub StatsGet {
                         );
                     }
 
-                    # settings for working with time elements
+                    # stettings for working with time elements
                     for (
                         qw(TimeStop TimeStart TimeRelativeUnit
                         TimeRelativeCount TimeScaleCount
@@ -430,7 +429,7 @@ sub StatsUpdate {
                     $StatXML{$Key}->[$Index]->{SelectedValues}->[$SubIndex]->{Content} = $Value;
                 }
 
-                # stetting for working with time elements
+                # stettings for working with time elements
                 for (qw(TimeStop TimeStart TimeRelativeUnit TimeRelativeCount TimeScaleCount)) {
                     if ( $Ref->{$_} ) {
                         $StatXML{$Key}->[$Index]->{$_} = $Ref->{$_};
@@ -690,7 +689,7 @@ sub SumBuild {
                 $Value =~ s{ \s+ \z }{}xms;
                 $Value =~ s{ , }{.}xms;
 
-                # add value to summary
+                # add value to summery
                 if ( $Value =~ m{^-?\d+(\.\d+)?$} ) {
                     $Sum += $Value;
                 }
@@ -711,8 +710,7 @@ sub SumBuild {
             INDEX2:
             for my $Index2 ( 1 .. $#{ $Data[$Index1] } ) {
 
-                # make sure we have a value to add
-                $Data[$Index1][$Index2] = 0 if !defined $Data[$Index1][$Index2];
+                next INDEX2 if !$Data[$Index1][$Index2];
 
                 # extract the value
                 my $Value = $Data[$Index1][$Index2];
@@ -722,7 +720,7 @@ sub SumBuild {
                 $Value =~ s{ \s+ \z }{}xms;
                 $Value =~ s{ , }{.}xms;
 
-                # add value to summary
+                # add value to summery
                 if ( $Value =~ m{^-?\d+(\.\d+)?$} ) {
                     $SumRow[$Index2] += $Value;
                 }
@@ -731,6 +729,7 @@ sub SumBuild {
 
         push @Data, \@SumRow;
     }
+
     return \@Data;
 }
 
@@ -786,7 +785,7 @@ sub GenerateGraph {
     }
 
     # remove first y/x position
-    my $Xlabel = shift @{$HeadArrayRef};
+    my $XLable = shift @{$HeadArrayRef};
 
     # get first col for legend
     my @YLine;
@@ -799,29 +798,10 @@ sub GenerateGraph {
     my @PData = ( $HeadArrayRef, @StatArray );
     my ( $XSize, $YSize ) = split( m{x}x, $Param{GraphSize} );
     my $graph = $GDBackend->new( $XSize || 550, $YSize || 350 );
-
-    # set fonts so we can use non-latin characters
-    my $FontDir    = $Self->{ConfigObject}->Get('Home') . '/var/fonts/';
-    my $TitleFont  = $FontDir . 'DejaVuSans-Bold.ttf';
-    my $LegendFont = $FontDir . 'DejaVuSans.ttf';
-    $graph->set_title_font( $TitleFont, 14 );
-
-    # there are different font options for different font types
-    if ( $GDBackend eq 'GD::Graph::pie' ) {
-        $graph->set_value_font( $LegendFont, 9 );
-    }
-    else {
-        $graph->set_values_font( $LegendFont, 9 );
-        $graph->set_legend_font( $LegendFont, 9 );
-        $graph->set_x_label_font( $LegendFont, 9 );
-        $graph->set_y_label_font( $LegendFont, 9 );
-        $graph->set_x_axis_font( $LegendFont, 9 );
-        $graph->set_y_axis_font( $LegendFont, 9 );
-    }
     $graph->set(
-        x_label => $Xlabel,
+        x_label => $XLable,
 
-        #        y_label => 'Ylabel',
+        #        y_label => 'YLable',
         title => $Param{Title},
 
         #        y_max_value => 20,
@@ -863,42 +843,19 @@ sub GenerateGraph {
         $graph->set_legend(@YLine);
     }
 
-    # investigate the possible output types
-    my @OutputTypeList = $graph->export_format();
-
-    # transfer array to hash
-    my %OutputTypes;
-    for my $OutputType (@OutputTypeList) {
-        $OutputTypes{$OutputType} = 1;
-    }
-
-    # select output type
-    my $Ext;
-    if ( $OutputTypes{'png'} ) {
+    # plot graph
+    my $Ext = '';
+    if ( !$graph->can('png') ) {
         $Ext = 'png';
     }
-    elsif ( $OutputTypes{'gif'} ) {
-        $Ext = 'gif';
-    }
-    elsif ( $OutputTypes{'jpeg'} ) {
-        $Ext = 'jpeg';
-    }
-
-    # error handling
-    if ( !$Ext ) {
-
+    else {
+        $Ext = $graph->export_format;
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message =>
-                "The support of png, jpeg and gif output is not activated in the GD CPAN module!",
+            Message  => "Can't write png! Write: $Ext",
         );
-
-        return;
     }
-
-    # create graph
     my $Content = eval { $graph->plot( \@PData )->$Ext() };
-
     return $Content;
 }
 
@@ -977,7 +934,7 @@ sub CompletenessCheck {
         Priority => 'Error'
     };
     $Notify[15] = {
-        Info     => 'Your reporting time interval is too small, please use a larger time scale!',
+        Info     => 'Your reporting time interval is to small, please use a larger time scale!',
         Priority => 'Error'
     };
     $Notify[16] = {
@@ -1167,7 +1124,7 @@ sub CompletenessCheck {
             }
         }
 
-        # check if the timeperiod is too big or the time scale too small
+        # check if the timeperiod is to big or the time scale to small
         # used only for fixed time values
         # remark time functions should be exportet in external functions (tr)
         if ( $Param{Section} eq 'All' && $StatData{StatType} eq 'dynamic' ) {
@@ -1685,13 +1642,8 @@ sub Import {
                 );
             }
 
-            # set utf8 or bin mode
-            if ( $StatsXML->{File}->[1]->{Content} =~ /use\sutf8;/ ) {
-                open $Filehandle, '>:utf8', $FileLocation;
-            }
-            else {
-                binmode $Filehandle;
-            }
+            # set bin mode
+            binmode $Filehandle;
             print $Filehandle $StatsXML->{File}->[1]->{Content};
             close $Filehandle;
 
@@ -2131,7 +2083,7 @@ sub _GenerateStaticStats {
         return;
     }
 
-    # load static module
+    # load static modul
     my $ObjectModule = $Param{ObjectModule};
     return if !$Self->{MainObject}->Require($ObjectModule);
     my $StatObject = $ObjectModule->new( %{$Self} );
@@ -3266,7 +3218,7 @@ sub _AutomaticSampleImport {
             # check filesize
             #            my $Filesize = -s $Directory.$Filename;
             #            if ($Filesize > $MaxFilesize) {
-            #                print "File: $Filename too big! max. $MaxFilesize byte allowed.\n";
+            #                print "File: $Filename to big! max. $MaxFilesize byte allowed.\n";
             #                $CommonObject{LogObject}->Log(
             #                    Priority => 'error',
             #                    Message => "Can't file imported: $Directory.$Filename",
@@ -3352,6 +3304,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.112 $ $Date: 2011/12/23 14:37:19 $
+$Revision: 1.100.2.1 $ $Date: 2011/03/09 16:12:31 $
 
 =cut
