@@ -1,8 +1,8 @@
 // --
 // Core.Form.js - provides functions for form handling
-// Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+// Copyright (C) 2001-2011 OTRS AG, http://otrs.org/\n";
 // --
-// $Id: Core.Form.js,v 1.15 2012/01/09 11:16:46 mn Exp $
+// $Id: Core.Form.js,v 1.9.2.1 2011/03/10 10:55:10 mn Exp $
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (AGPL). If you
@@ -45,14 +45,18 @@ Core.Form = (function (TargetNS) {
         if (!$Form.hasClass('AlreadyDisabled')) {
             $.each($Form.find("input:not([type='hidden']), textarea, select, button"), function (key, value) {
                 var ReadonlyValue = $(this).attr('readonly'),
-                    TagnameValue  = $(this).prop('tagName'),
+                    TagnameValue  = $(this).attr('tagName'),
                     DisabledValue = $(this).attr('disabled');
 
                 if (TagnameValue === 'BUTTON') {
-                    Core.Data.Set($(this), 'OldDisabledStatus', DisabledValue);
+                    if (DisabledValue === true) {
+                        Core.Data.Set($(this), 'OldDisabledStatus', 'disabled');
+                    }
                 }
                 else {
-                    Core.Data.Set($(this), 'OldReadonlyStatus', ReadonlyValue);
+                    if (ReadonlyValue === true) {
+                        Core.Data.Set($(this), 'OldReadonlyStatus', 'readonly');
+                    }
                 }
             });
 
@@ -94,7 +98,7 @@ Core.Form = (function (TargetNS) {
             .removeAttr('disabled');
 
         $.each($Form.find("input:not([type='hidden']), textarea, select, button"), function (key, value) {
-            var TagnameValue  = $(this).prop('tagName'),
+            var TagnameValue  = $(this).attr('tagName'),
                 ReadonlyValue = Core.Data.Get($(this), 'OldReadonlyStatus'),
                 DisabledValue = Core.Data.Get($(this), 'OldDisabledStatus');
 
@@ -127,17 +131,17 @@ Core.Form = (function (TargetNS) {
             var ElementName = $ClickedBox.attr('name'),
                 SelectAllID = $SelectAllCheckbox.attr('id'),
                 $Elements = $('input:checkbox[name=' + ElementName + ']').filter('[id!=' + SelectAllID + ']'),
-                Status = $ClickedBox.prop('checked'),
+                Status = $ClickedBox.attr('checked'),
                 CountCheckboxes,
                 CountSelectedCheckboxes;
             if ($ClickedBox.attr('id') && $ClickedBox.attr('id') === SelectAllID) {
-                $Elements.prop('checked', Status).triggerHandler('click');
+                $Elements.attr('checked', Status).triggerHandler('click');
             }
             else {
                 CountCheckboxes = $Elements.length;
                 CountSelectedCheckboxes = $Elements.filter(':checked').length;
                 if (CountCheckboxes === CountSelectedCheckboxes) {
-                    $SelectAllCheckbox.prop('checked', true);
+                    $SelectAllCheckbox.attr('checked', 'checked');
                 }
                 else {
                     $SelectAllCheckbox.removeAttr('checked');
@@ -157,7 +161,7 @@ Core.Form = (function (TargetNS) {
     TargetNS.InitSelectAllCheckboxes = function ($Checkboxes, $SelectAllCheckbox) {
         if (isJQueryObject($Checkboxes, $SelectAllCheckbox)) {
             if ($Checkboxes.filter('[id!=' + $SelectAllCheckbox.attr('id') + ']').length === $Checkboxes.filter(':checked').length) {
-                $SelectAllCheckbox.prop('checked', true);
+                $SelectAllCheckbox.attr('checked', 'checked');
             }
         }
     };
