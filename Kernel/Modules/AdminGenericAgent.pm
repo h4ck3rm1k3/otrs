@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminGenericAgent.pm - admin generic agent interface
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminGenericAgent.pm,v 1.102 2011/12/21 14:53:25 mg Exp $
+# $Id: AdminGenericAgent.pm,v 1.93.2.1 2011/03/13 19:27:28 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,12 +22,9 @@ use Kernel::System::State;
 use Kernel::System::Type;
 use Kernel::System::GenericAgent;
 use Kernel::System::CheckItem;
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.102 $) [1];
+$VERSION = qw($Revision: 1.93.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -50,14 +47,6 @@ sub new {
     $Self->{SLAObject}          = Kernel::System::SLA->new(%Param);
     $Self->{TypeObject}         = Kernel::System::Type->new(%Param);
     $Self->{GenericAgentObject} = Kernel::System::GenericAgent->new(%Param);
-    $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new(%Param);
-    $Self->{BackendObject}      = Kernel::System::DynamicField::Backend->new(%Param);
-
-    # get the dynamic fields for ticket object
-    $Self->{DynamicField} = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid      => 1,
-        ObjectType => ['Ticket'],
-    );
 
     return $Self;
 }
@@ -82,10 +71,6 @@ sub Run {
     # run a generic agent job -> "run now"
     # ---------------------------------------------------------- #
     if ( $Self->{Subaction} eq 'RunNow' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Run = $Self->{GenericAgentObject}->JobRun(
             Job    => $Self->{Profile},
             UserID => 1,
@@ -106,9 +91,6 @@ sub Run {
     # show result site
     if ( $Self->{Subaction} eq 'UpdateAction' ) {
 
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my ( %GetParam, %Errors );
 
         # challenge token check for write action
@@ -120,7 +102,7 @@ sub Run {
             CustomerUserLogin Agent SearchInArchive
             NewTitle
             NewCustomerID NewCustomerUserLogin
-            NewStateID NewQueueID NewPriorityID NewOwnerID NewResponsibleID
+            NewStateID NewQueueID NewPriorityID NewOwnerID
             NewTypeID NewServiceID NewSLAID
             NewNoteFrom NewNoteSubject NewNoteBody NewNoteTimeUnits NewModule
             NewParamKey1 NewParamKey2 NewParamKey3 NewParamKey4
@@ -140,7 +122,7 @@ sub Run {
         }
 
         for my $Type (
-            qw(Time ChangeTime CloseTime TimePending EscalationTime EscalationResponseTime EscalationUpdateTime EscalationSolutionTime)
+            qw(Time CloseTime TimePending EscalationTime EscalationResponseTime EscalationUpdateTime EscalationSolutionTime)
             )
         {
             my $Key = $Type . 'SearchType';
@@ -148,8 +130,7 @@ sub Run {
         }
         for my $Type (
             qw(
-            TicketCreate           TicketChange
-            TicketClose            TicketPending
+            TicketCreate           TicketClose              TicketPending
             TicketEscalation       TicketEscalationResponse
             TicketEscalationUpdate TicketEscalationSolution
             )
@@ -177,32 +158,42 @@ sub Run {
             }
         }
 
-        # get dynamic fields to set from web request
-        # to store dynamic fields profile data
-        my %DynamicFieldValues;
+        # get new free field params
+        for my $ID ( 1 .. 16 ) {
 
-        # cycle trough the activated Dynamic Fields for this screen
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+            # ticket free keys
+            if ( defined( $Self->{ParamObject}->GetParam( Param => "NewTicketFreeKey$ID" ) ) ) {
+                $GetParam{"NewTicketFreeKey$ID"} = $Self->{ParamObject}->GetParam(
+                    Param => 'NewTicketFreeKey' . $ID,
+                );
 
-            # extract the dynamic field value form the web request
-            my $DynamicFieldValue = $Self->{BackendObject}->EditFieldValueGet(
-                DynamicFieldConfig      => $DynamicFieldConfig,
-                ParamObject             => $Self->{ParamObject},
-                LayoutObject            => $Self->{LayoutObject},
-                ReturnTemplateStructure => 1,
-            );
+                # remove leading and trailing blank spaces
+                $CheckItemObject->StringClean( StringRef => \$GetParam{"NewTicketFreeKey$ID"} )
+                    if ( $GetParam{"NewTicketFreeKey$ID"} );
+            }
 
-            # set the comple value structure in GetParam to store it later in the Generic Agent Job
-            if ( IsHashRefWithData($DynamicFieldValue) ) {
-                %DynamicFieldValues = ( %DynamicFieldValues, %{$DynamicFieldValue} );
+            # ticket free text
+            if (
+                $Self->{ParamObject}->GetParam( Param => "NewTicketFreeText$ID" )
+                || (
+                    defined( $Self->{ParamObject}->GetParam( Param => "NewTicketFreeText$ID" ) )
+                    && $Self->{ConfigObject}->Get("TicketFreeText$ID")
+                )
+                )
+            {
+                $GetParam{"NewTicketFreeText$ID"} = $Self->{ParamObject}->GetParam(
+                    Param => 'NewTicketFreeText' . $ID,
+                );
+
+                # remove leading and trailing blank spaces
+                $CheckItemObject->StringClean( StringRef => \$GetParam{"NewTicketFreeText$ID"} )
+                    if ( $GetParam{"NewTicketFreeText$ID"} );
             }
         }
 
         # get array params
         for my $Parameter (
-            qw(LockIDs StateIDs StateTypeIDs QueueIDs PriorityIDs OwnerIDs ResponsibleIDs
+            qw(LockIDs StateIDs StateTypeIDs QueueIDs PriorityIDs OwnerIDs
             TypeIDs ServiceIDs SLAIDs
             ScheduleDays ScheduleMinutes ScheduleHours
             )
@@ -215,23 +206,29 @@ sub Run {
             }
         }
 
-        # get Dynamic fields for search from web request
-        # cycle trough the activated Dynamic Fields for this screen
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+        # get free field params
+        for my $ID ( 1 .. 16 ) {
 
-            # extract the dynamic field value form the web request
-            my $DynamicFieldValue = $Self->{BackendObject}->SearchFieldValueGet(
-                DynamicFieldConfig     => $DynamicFieldConfig,
-                ParamObject            => $Self->{ParamObject},
-                ReturnProfileStructure => 1,
-                LayoutObject           => $Self->{LayoutObject},
-            );
+            # get search array params for free key (get submitted params)
+            if ( $Self->{ParamObject}->GetArray( Param => "TicketFreeKey$ID" ) ) {
+                @{ $GetParam{"TicketFreeKey$ID"} } = $Self->{ParamObject}->GetArray(
+                    Param => 'TicketFreeKey' . $ID,
+                );
+            }
 
-            # set the comple value structure in GetParam to store it later in the Generic Agent Job
-            if ( IsHashRefWithData($DynamicFieldValue) ) {
-                %DynamicFieldValues = ( %DynamicFieldValues, %{$DynamicFieldValue} );
+            # get search array params for free text (get submitted params)
+            if ( $Self->{ConfigObject}->Get("TicketFreeText$ID") ) {
+                if ( $Self->{ParamObject}->GetArray( Param => "TicketFreeText$ID" ) ) {
+                    @{ $GetParam{"TicketFreeText$ID"} } = $Self->{ParamObject}->GetArray(
+                        Param => 'TicketFreeText' . $ID,
+                    );
+                }
+            }
+            else {
+                my @Array = $Self->{ParamObject}->GetArray( Param => 'TicketFreeText' . $ID );
+                if ( $Array[0] ) {
+                    @{ $GetParam{"TicketFreeText$ID"} } = @Array;
+                }
             }
         }
 
@@ -254,18 +251,14 @@ sub Run {
 
             # insert new profile params
             $Self->{GenericAgentObject}->JobAdd(
-                Name => $Self->{Profile},
-                Data => {
-                    %GetParam,
-                    %DynamicFieldValues,
-                },
+                Name   => $Self->{Profile},
+                Data   => \%GetParam,
                 UserID => $Self->{UserID},
             );
 
             # get time settings
             my %Map = (
                 TicketCreate             => 'Time',
-                TicketChange             => 'ChangeTime',
                 TicketClose              => 'CloseTime',
                 TicketPending            => 'TimePending',
                 TicketEscalation         => 'EscalationTime',
@@ -275,8 +268,7 @@ sub Run {
             );
             for my $Type (
                 qw(
-                TicketCreate           TicketClose
-                TicketChange           TicketPending
+                TicketCreate           TicketClose                  TicketPending
                 TicketEscalation       TicketEscalationResponse
                 TicketEscalationUpdate TicketEscalationSolution
                 )
@@ -376,30 +368,6 @@ sub Run {
                 }
             }
 
-            # dynamic fields search parameters for ticket search
-            my %DynamicFieldSearchParameters;
-
-            # cycle trough the activated Dynamic Fields for this screen
-            DYNAMICFIELD:
-            for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-                next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-                next DYNAMICFIELD
-                    if !$DynamicFieldValues{ 'Search_DynamicField_' . $DynamicFieldConfig->{Name} };
-
-                # extract the dynamic field value form the profile
-                my $SearchParameter = $Self->{BackendObject}->SearchFieldParameterBuild(
-                    DynamicFieldConfig => $DynamicFieldConfig,
-                    Profile            => \%DynamicFieldValues,
-                    LayoutObject       => $Self->{LayoutObject},
-                );
-
-                # set search parameter
-                if ( defined $SearchParameter ) {
-                    $DynamicFieldSearchParameters{ 'DynamicField_' . $DynamicFieldConfig->{Name} }
-                        = $SearchParameter->{Parameter};
-                }
-            }
-
             # perform ticket search
             my $Counter = $Self->{TicketObject}->TicketSearch(
                 Result          => 'COUNT',
@@ -409,7 +377,6 @@ sub Run {
                 Limit           => 60_000,
                 ConditionInline => 1,
                 %GetParam,
-                %DynamicFieldSearchParameters,
             ) || 0;
             my @TicketIDs = $Self->{TicketObject}->TicketSearch(
                 Result          => 'ARRAY',
@@ -419,7 +386,6 @@ sub Run {
                 Limit           => 30,
                 ConditionInline => 1,
                 %GetParam,
-                %DynamicFieldSearchParameters,
             );
 
             $Self->{LayoutObject}->Block( Name => 'ActionList', );
@@ -439,8 +405,7 @@ sub Run {
 
                     # get first article data
                     my %Data = $Self->{TicketObject}->ArticleFirstArticle(
-                        TicketID      => $TicketID,
-                        DynamicFields => 0,
+                        TicketID => $TicketID,
                     );
                     $Data{Age}
                         = $Self->{LayoutObject}->CustomerAge( Age => $Data{Age}, Space => ' ' );
@@ -481,7 +446,6 @@ sub Run {
         $JobDataReference = $Self->_MaskUpdate(
             %Param,
             %GetParam,
-            %DynamicFieldValues,
             %Errors,
         );
 
@@ -518,10 +482,6 @@ sub Run {
     # delete an generic agent job
     # ---------------------------------------------------------- #
     if ( $Self->{Subaction} eq 'Delete' && $Self->{Profile} ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         if ( $Self->{Profile} ) {
             $Self->{GenericAgentObject}->JobDelete(
                 Name   => $Self->{Profile},
@@ -597,32 +557,29 @@ sub _MaskUpdate {
         Valid => 1,
     );
     $JobData{OwnerStrg} = $Self->{LayoutObject}->BuildSelection(
-        Data        => \%ShownUsers,
-        Name        => 'OwnerIDs',
-        Multiple    => 1,
-        Size        => 5,
-        Translation => 0,
-        SelectedID  => $JobData{OwnerIDs},
+        Data       => \%ShownUsers,
+        Name       => 'OwnerIDs',
+        Multiple   => 1,
+        Size       => 5,
+        SelectedID => $JobData{OwnerIDs},
     );
     $JobData{NewOwnerStrg} = $Self->{LayoutObject}->BuildSelection(
-        Data        => \%ShownUsers,
-        Name        => 'NewOwnerID',
-        Size        => 5,
-        Multiple    => 1,
-        Translation => 0,
-        SelectedID  => $JobData{NewOwnerID},
+        Data       => \%ShownUsers,
+        Name       => 'NewOwnerID',
+        Size       => 5,
+        Multiple   => 1,
+        SelectedID => $JobData{NewOwnerID},
     );
     my %Hours;
     for my $Number ( 0 .. 23 ) {
         $Hours{$Number} = sprintf( "%02d", $Number );
     }
     $JobData{ScheduleHoursList} = $Self->{LayoutObject}->BuildSelection(
-        Data        => \%Hours,
-        Name        => 'ScheduleHours',
-        Size        => 6,
-        Multiple    => 1,
-        Translation => 0,
-        SelectedID  => $JobData{ScheduleHours},
+        Data       => \%Hours,
+        Name       => 'ScheduleHours',
+        Size       => 6,
+        Multiple   => 1,
+        SelectedID => $JobData{ScheduleHours},
     );
     $JobData{ScheduleMinutesList} = $Self->{LayoutObject}->BuildSelection(
         Data => {
@@ -633,11 +590,10 @@ sub _MaskUpdate {
             40   => '40',
             50   => '50',
         },
-        Name        => 'ScheduleMinutes',
-        Size        => 6,
-        Multiple    => 1,
-        Translation => 0,
-        SelectedID  => $JobData{ScheduleMinutes},
+        Name       => 'ScheduleMinutes',
+        Size       => 6,
+        Multiple   => 1,
+        SelectedID => $JobData{ScheduleMinutes},
     );
     $JobData{ScheduleDaysList} = $Self->{LayoutObject}->BuildSelection(
         Data => {
@@ -724,7 +680,6 @@ sub _MaskUpdate {
     # get time option
     my %Map = (
         TicketCreate             => 'Time',
-        TicketChange             => 'ChangeTime',
         TicketClose              => 'CloseTime',
         TicketPending            => 'TimePending',
         TicketEscalation         => 'EscalationTime',
@@ -733,9 +688,7 @@ sub _MaskUpdate {
         TicketEscalationSolution => 'EscalationSolutionTime',
     );
     for my $Type (
-        qw(
-        TicketCreate           TicketClose
-        TicketChange           TicketPending
+        qw( TicketCreate           TicketClose              TicketPending
         TicketEscalation       TicketEscalationResponse
         TicketEscalationUpdate TicketEscalationSolution
         )
@@ -788,13 +741,11 @@ sub _MaskUpdate {
             Prefix   => $Type . 'TimeStart',
             Format   => 'DateInputFormat',
             DiffTime => -( 60 * 60 * 24 ) * 30,
-            Validate => 1,
         );
         $JobData{ $Type . 'TimeStop' } = $Self->{LayoutObject}->BuildDateSelection(
             %JobData,
-            Prefix   => $Type . 'TimeStop',
-            Format   => 'DateInputFormat',
-            Validate => 1,
+            Prefix => $Type . 'TimeStop',
+            Format => 'DateInputFormat',
         );
     }
 
@@ -952,34 +903,6 @@ sub _MaskUpdate {
         );
     }
 
-    # ticket responsible string
-    if ( $Self->{ConfigObject}->Get('Ticket::Responsible') ) {
-        $JobData{ResponsibleStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data        => \%ShownUsers,
-            Name        => 'ResponsibleIDs',
-            Multiple    => 1,
-            Size        => 5,
-            Translation => 0,
-            SelectedID  => $JobData{ResponsibleIDs},
-        );
-        $JobData{NewResponsibleStrg} = $Self->{LayoutObject}->BuildSelection(
-            Data        => \%ShownUsers,
-            Name        => 'NewResponsibleID',
-            Multiple    => 1,
-            Size        => 5,
-            Translation => 0,
-            SelectedID  => $JobData{NewResponsibleID},
-        );
-        $Self->{LayoutObject}->Block(
-            Name => 'TicketResponsible',
-            Data => {%JobData},
-        );
-        $Self->{LayoutObject}->Block(
-            Name => 'NewTicketResponsible',
-            Data => {%JobData},
-        );
-    }
-
     # prepare archive
     if ( $Self->{ConfigObject}->Get('Ticket::ArchiveSystem') ) {
 
@@ -1014,96 +937,120 @@ sub _MaskUpdate {
         );
     }
 
-    # create dynamic field HTML for set with historical data options
-    my $PrintDynamicFieldsSearchHeader = 1;
-
-    # cycle trough the activated Dynamic Fields for this screen
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-        # get field html
-        my $DynamicFieldHTML = $Self->{BackendObject}->SearchFieldRender(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            Profile            => \%JobData,
-            DefaultValue =>
-                $Self->{Config}->{Defaults}->{DynamicField}->{ $DynamicFieldConfig->{Name} },
-            LayoutObject           => $Self->{LayoutObject},
-            ConfirmationCheckboxes => 1,
+    # get free text config options
+    my %TicketFreeText;
+    my %TicketFreeTextData;
+    for my $Count ( 1 .. 16 ) {
+        $TicketFreeText{ 'TicketFreeKey' . $Count } = $Self->{TicketObject}->TicketFreeTextGet(
+            Type   => 'TicketFreeKey' . $Count,
+            FillUp => 1,
+            Action => $Self->{Action},
+            UserID => $Self->{UserID},
+        );
+        $TicketFreeText{ 'TicketFreeText' . $Count } = $Self->{TicketObject}->TicketFreeTextGet(
+            Type   => 'TicketFreeText' . $Count,
+            FillUp => 1,
+            Action => $Self->{Action},
+            UserID => $Self->{UserID},
         );
 
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldHTML);
+        $TicketFreeTextData{ 'TicketFreeKey' . $Count } = $JobData{ 'TicketFreeKey' . $Count };
+        $TicketFreeTextData{ 'TicketFreeText' . $Count }
+            = $JobData{ 'TicketFreeText' . $Count };
+    }
 
-        if ($PrintDynamicFieldsSearchHeader) {
-            $Self->{LayoutObject}->Block( Name => 'DynamicField' );
-            $PrintDynamicFieldsSearchHeader = 0;
+    # generate the free text fields
+    my %TicketFreeTextHTML = $Self->{LayoutObject}->AgentFreeText(
+        Config     => \%TicketFreeText,
+        Ticket     => \%TicketFreeTextData,
+        NullOption => 1,
+    );
+
+    # Free field settings
+    my $Flag = 1;
+    COUNT:
+    for my $Count ( 1 .. 16 ) {
+
+        next COUNT if ref $Self->{ConfigObject}->Get( 'TicketFreeKey' . $Count ) ne 'HASH';
+
+        # $Flag to show the whole freefield block
+        if ($Flag) {
+            $Self->{LayoutObject}->Block( Name => 'TicketFreeField' );
+            $Flag = 0;
         }
 
-        # output dynamic field
+        # output free text field
         $Self->{LayoutObject}->Block(
-            Name => 'DynamicFieldElement',
+            Name => 'TicketFreeFieldElement',
             Data => {
-                Label => $DynamicFieldHTML->{Label},
-                Field => $DynamicFieldHTML->{Field},
+                TicketFreeKey  => $TicketFreeTextHTML{ 'TicketFreeKeyField' . $Count },
+                TicketFreeText => $TicketFreeTextHTML{ 'TicketFreeTextField' . $Count },
+                ValueID        => 'TicketFreeText' . $Count
             },
         );
     }
 
-    # create dynamic field HTML for set with historical data options
-    my $PrintDynamicFieldsEditHeader = 1;
+    # New free field settings
+    $Flag = 1;
+    for my $ID ( 1 .. 16 ) {
+        if ( ref( $Self->{ConfigObject}->Get( 'TicketFreeKey' . $ID ) ) eq 'HASH' ) {
 
-    # cycle trough the activated Dynamic Fields for this screen
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-        my $PossibleValuesFilter;
-
-        # check if field has PossibleValues property in its configuration
-        if ( IsHashRefWithData( $DynamicFieldConfig->{Config}->{PossibleValues} ) ) {
-
-            # set possible values filter from ACLs
-            my $ACL = $Self->{TicketObject}->TicketAcl(
-                Action        => $Self->{Action},
-                Type          => 'DynamicField_' . $DynamicFieldConfig->{Name},
-                ReturnType    => 'Ticket',
-                ReturnSubType => 'DynamicField_' . $DynamicFieldConfig->{Name},
-                Data          => $DynamicFieldConfig->{Config}->{PossibleValues},
-                UserID        => $Self->{UserID},
-            );
-            if ($ACL) {
-                my %Filter = $Self->{TicketObject}->TicketAclData();
-                $PossibleValuesFilter = \%Filter;
+            # $Flag to show the hole freefield block
+            if ($Flag) {
+                $Self->{LayoutObject}->Block( Name => 'NewTicketFreeField', );
+                $Flag = 0;
             }
+
+            # generate free key
+            my %TicketFreeKey    = %{ $Self->{ConfigObject}->Get( 'TicketFreeKey' . $ID ) };
+            my @FreeKey          = keys %TicketFreeKey;
+            my $NewTicketFreeKey = '';
+
+            if ( $#FreeKey == 0 ) {
+                $NewTicketFreeKey = $TicketFreeKey{ $FreeKey[0] };
+            }
+            else {
+                $NewTicketFreeKey = $Self->{LayoutObject}->BuildSelection(
+                    Data                => \%TicketFreeKey,
+                    Name                => 'NewTicketFreeKey' . $ID,
+                    Size                => 4,
+                    Multiple            => 1,
+                    LanguageTranslation => 0,
+                    SelectedID          => $JobData{ 'NewTicketFreeKey' . $ID },
+                );
+            }
+
+            # generate free text
+            my $NewTicketFreeText = '';
+            if ( !$Self->{ConfigObject}->Get( 'TicketFreeText' . $ID ) ) {
+                my $Value = $JobData{ 'NewTicketFreeText' . $ID } || '';
+                $NewTicketFreeText
+                    = '<input type="text" name="NewTicketFreeText'
+                    . $ID
+                    . '" size="30" value="'
+                    . $Value . '">';
+            }
+            else {
+                my %TicketFreeText = %{ $Self->{ConfigObject}->Get( 'TicketFreeText' . $ID ) };
+                $NewTicketFreeText = $Self->{LayoutObject}->BuildSelection(
+                    Data                => \%TicketFreeText,
+                    Name                => 'NewTicketFreeText' . $ID,
+                    Size                => 4,
+                    Multiple            => 1,
+                    LanguageTranslation => 0,
+                    SelectedID          => $JobData{ 'NewTicketFreeText' . $ID },
+                );
+            }
+
+            $Self->{LayoutObject}->Block(
+                Name => 'NewTicketFreeFieldElement',
+                Data => {
+                    NewTicketFreeKey  => $NewTicketFreeKey,
+                    NewTicketFreeText => $NewTicketFreeText,
+                    ValueID           => 'NewTicketFreeText' . $ID
+                },
+            );
         }
-
-        # get field html
-        my $DynamicFieldHTML = $Self->{BackendObject}->EditFieldRender(
-            DynamicFieldConfig   => $DynamicFieldConfig,
-            PossibleValuesFilter => $PossibleValuesFilter,
-            LayoutObject         => $Self->{LayoutObject},
-            ParamObject          => $Self->{ParamObject},
-            UseDefaultValue      => 0,
-            OverridePossibleNone => 1,
-            ConfirmationNeeded   => 1,
-            Template             => \%JobData,
-        );
-
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldHTML);
-
-        if ($PrintDynamicFieldsEditHeader) {
-            $Self->{LayoutObject}->Block( Name => 'NewDynamicField' );
-            $PrintDynamicFieldsEditHeader = 0;
-        }
-
-        # output dynamic field
-        $Self->{LayoutObject}->Block(
-            Name => 'NewDynamicFieldElement',
-            Data => {
-                Label => $DynamicFieldHTML->{Label},
-                Field => $DynamicFieldHTML->{Field},
-            },
-        );
     }
     return \%JobData;
 }
