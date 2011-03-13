@@ -2,7 +2,7 @@
 # AAATicket.dtl - $Text variable file
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AAATicket.dtl,v 1.77 2011/12/15 15:12:59 mg Exp $
+# $Id: AAATicket.dtl,v 1.64.2.1 2011/03/13 19:30:53 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -29,10 +29,6 @@ $Text{"Queues"}
 $Text{"Priority"}
 $Text{"Priorities"}
 $Text{"Priority Update"}
-$Text{"Priority added!"}
-$Text{"Priority updated!"}
-$Text{"Signature added!"}
-$Text{"Signature updated!"}
 $Text{"SLA"}
 $Text{"Service Level Agreement"}
 $Text{"Service Level Agreements"}
@@ -85,23 +81,17 @@ $Text{"Watched Tickets Total"}
 $Text{"Watched Tickets New"}
 $Text{"Watched Tickets Reminder Reached"}
 $Text{"All tickets"}
-$Text{"Available tickets"}
+$Text{"Tickets available"}
 $Text{"Escalation"}
 $Text{"last-search"}
 $Text{"QueueView"}
 $Text{"Ticket Escalation View"}
-$Text{"Message from"}
-$Text{"End message"}
-$Text{"Forwarded message from"}
-$Text{"End forwarded message"}
 
 $Text{"new"}
 $Text{"open"}
 $Text{"Open"}
-$Text{"Open tickets"}
 $Text{"closed"}
 $Text{"Closed"}
-$Text{"Closed tickets"}
 $Text{"removed"}
 $Text{"pending reminder"}
 $Text{"pending auto"}
@@ -132,21 +122,10 @@ $Text{"3 normal"}
 $Text{"4 high"}
 $Text{"5 very high"}
 
-$Text{"auto follow up"}
-$Text{"auto reject"}
-$Text{"auto remove"}
-$Text{"auto reply"}
-$Text{"auto reply/new ticket"}
-
 $Text{"Ticket "%s" created!"}
 $Text{"Ticket Number"}
 $Text{"Ticket Object"}
 $Text{"No such Ticket Number "%s"! Can't link it!"}
-$Text{"You don't have write access to this ticket."}
-$Text{"Sorry, you need to be the ticket owner to perform this action."}
-$Text{"Ticket selected."}
-$Text{"Ticket is locked by another agent."}
-$Text{"Ticket locked."}
 
 $Text{"Don't show closed Tickets"}
 $Text{"Show closed Tickets"}
@@ -178,8 +157,8 @@ $Text{"Watched"}
 $Text{"Watch"}
 $Text{"Unwatch"}
 $Text{"New message"}
-$Text{"Lock it to work on it"}
-$Text{"Unlock to give it back to the queue"}
+$Text{"Lock it to work on it!"}
+$Text{"Unlock to give it back to the queue!"}
 $Text{"Shows the ticket history!"}
 $Text{"Print this ticket!"}
 $Text{"Change the ticket priority!"}
@@ -261,7 +240,6 @@ $Text{"Create new Ticket"}
 $Text{"Customer called"}
 $Text{"phone call"}
 $Text{"Phone Call Outbound"}
-$Text{"Phone Call Inbound"}
 $Text{"Reminder Reached"}
 $Text{"Reminder Tickets"}
 $Text{"Escalated Tickets"}
@@ -305,7 +283,7 @@ $Text{"History::LoopProtection"}
 $Text{"History::Misc"}
 $Text{"History::SetPendingTime"}
 $Text{"History::StateUpdate"}
-$Text{"History::TicketDynamicFieldUpdate"}
+$Text{"History::TicketFreeTextUpdate"}
 $Text{"History::WebRequestCustomer"}
 $Text{"History::TicketLinkAdd"}
 $Text{"History::TicketLinkDelete"}
@@ -313,4 +291,3 @@ $Text{"History::Subscribe"}
 $Text{"History::Unsubscribe"}
 $Text{"History::SystemRequest"}
 $Text{"History::ResponsibleUpdate"}
-$Text{"History::ArchiveFlagUpdate"}
