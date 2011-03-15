@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AgentStats.pm - stats module
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentStats.pm,v 1.123 2012/01/23 19:39:23 cr Exp $
+# $Id: AgentStats.pm,v 1.113.2.1 2011/03/15 15:27:34 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::CSV;
 use Kernel::System::PDF;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.123 $) [1];
+$VERSION = qw($Revision: 1.113.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -134,14 +134,6 @@ sub Run {
                 NoObjectAttributes => 1,
             );
 
-            # get the object name
-            if ( $Stat->{StatType} eq 'static' ) {
-                $Stat->{ObjectName} = $Stat->{File};
-            }
-
-            # if no object name is defined use an empty string
-            $Stat->{ObjectName} ||= '';
-
             $Self->{LayoutObject}->Block(
                 Name => 'Result',
                 Data => $Stat,
@@ -194,13 +186,11 @@ sub Run {
 
         my $Stat = $Self->{StatsObject}->StatsGet( StatID => $StatID );
 
-        # get the object name
-        if ( $Stat->{StatType} eq 'static' ) {
-            $Stat->{ObjectName} = $Stat->{File};
-        }
-
-        # if no object name is defined use an empty string
-        $Stat->{ObjectName} ||= '';
+        # object
+        $Stat->{ObjectName} = $Stat->{StatType} eq 'static'
+            ? $Stat->{File}
+            : $Stat->{StatType} eq 'dynamic' ? $Stat->{ObjectName}
+            :                                  '';
 
         $Stat->{Description} = $Self->{LayoutObject}->Ascii2Html(
             Text           => $Stat->{Description},
@@ -220,7 +210,7 @@ sub Run {
         }
         my $CounterII = 0;
         for my $Value ( @{ $Stat->{Format} } ) {
-            if ( $Counter == 0 || $Value ne 'GD::Graph::pie' ) {
+            unless ( $Counter > 0 && $Value eq 'GD::Graph::pie' ) {
                 $SelectFormat{$Value} = $Format->{$Value};
                 $CounterII++;
             }
@@ -298,7 +288,7 @@ sub Run {
         # get static attributes
         if ( $Stat->{StatType} eq 'static' ) {
 
-            # load static module
+            # load static modul
             my $Params = $Self->{StatsObject}->GetParams( StatID => $StatID );
             $Self->{LayoutObject}->Block( Name => 'Static', );
             for my $ParamItem ( @{$Params} ) {
@@ -662,10 +652,6 @@ sub Run {
 
         # delete Stat
         if ( $Param{Status} && $Param{Status} eq 'Action' ) {
-
-            # challenge token check for write action
-            $Self->{LayoutObject}->ChallengeTokenCheck();
-
             if ( $Param{Yes} ) {
                 $Self->{StatsObject}->StatsDelete( StatID => $StatID );
             }
@@ -716,7 +702,6 @@ sub Run {
     # show import screen
     # ---------------------------------------------------------- #
     elsif ( $Self->{Subaction} eq 'Import' ) {
-
         my $Error = 0;
 
         # permission check
@@ -727,10 +712,6 @@ sub Run {
 
         # importing
         if ( $Param{Status} && $Param{Status} eq 'Action' ) {
-
-            # challenge token check for write action
-            $Self->{LayoutObject}->ChallengeTokenCheck();
-
             my $Uploadfile = '';
             if ( $Uploadfile = $Self->{ParamObject}->GetParam( Param => 'file_upload' ) ) {
                 my %UploadStuff = $Self->{ParamObject}->GetUploadAll(
@@ -785,9 +766,6 @@ sub Run {
     # action after edit of Stats
     # ---------------------------------------------------------- #
     elsif ( $Self->{Subaction} eq 'Action' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
 
         # permission check
         $Self->{AccessRw} || return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
@@ -861,15 +839,12 @@ sub Run {
                 StatData => \%Data,
                 Section  => 'Specification'
             );
-            if (@Notify) {
-                $Subaction = 'EditSpecification';
-            }
-            elsif ( $Data{StatType} eq 'static' ) {
-                $Subaction = 'View';
-            }
-            else {
-                $Subaction = 'EditXaxis';
-            }
+
+            $Subaction
+                = @Notify
+                ? 'EditSpecification'
+                : $Data{StatType} eq 'static' ? 'View'
+                :                               'EditXaxis';
 
         }
 
@@ -964,15 +939,12 @@ sub Run {
                 StatData => \%Data,
                 Section  => 'Xaxis'
             );
-            if (@Notify) {
-                $Subaction = 'EditXaxis';
-            }
-            elsif ( $Param{Back} ) {
-                $Subaction = 'EditSpecification';
-            }
-            else {
-                $Subaction = 'EditValueSeries';
-            }
+
+            $Subaction
+                = @Notify
+                ? 'EditXaxis'
+                : $Param{Back} ? 'EditSpecification'
+                :                'EditValueSeries';
         }
 
         # save EditValueSeries
@@ -1029,15 +1001,11 @@ sub Run {
                 StatData => \%Data,
                 Section  => 'ValueSeries'
             );
-            if (@Notify) {
-                $Subaction = 'EditValueSeries';
-            }
-            elsif ( $Param{Back} ) {
-                $Subaction = 'EditXaxis';
-            }
-            else {
-                $Subaction = 'EditRestrictions';
-            }
+            $Subaction
+                = @Notify
+                ? 'EditValueSeries'
+                : $Param{Back} ? 'EditXaxis'
+                :                'EditRestrictions';
         }
 
         # save EditRestrictions
@@ -1134,15 +1102,12 @@ sub Run {
                 StatData => \%Data,
                 Section  => 'Restrictions'
             );
-            if ( @Notify || $SelectFieldError ) {
-                $Subaction = 'EditRestrictions';
-            }
-            elsif ( $Param{Back} ) {
-                $Subaction = 'EditValueSeries';
-            }
-            else {
-                $Subaction = 'View';
-            }
+
+            $Subaction
+                = ( @Notify || $SelectFieldError )
+                ? 'EditRestrictions'
+                : $Param{Back} ? 'EditValueSeries'
+                :                'View';
         }
         else {
             return $Self->{LayoutObject}->ErrorScreen(
@@ -1274,7 +1239,7 @@ sub Run {
                         Data => {
                             Name      => 'Static-File',
                             StateType => 'static',
-                        },
+                            }
                     );
                 }
 
@@ -1287,9 +1252,7 @@ sub Run {
                     );
                     $Self->{LayoutObject}->Block(
                         Name => 'SelectField',
-                        Data => {
-                            SelectField => $Frontend{SelectField},
-                        },
+                        Data => { SelectField => $Frontend{SelectField}, },
                     );
                 }
 
@@ -1315,7 +1278,7 @@ sub Run {
                 Data => {
                     Name      => 'Dynamic-Object',
                     StateType => 'dynamic',
-                },
+                    }
             );
             $Self->{LayoutObject}->Block(
                 Name => 'Selected',
@@ -1336,7 +1299,7 @@ sub Run {
                 Data => {
                     Name      => 'Static-File',
                     StateType => 'static',
-                },
+                    }
             );
             $Self->{LayoutObject}->Block(
                 Name => 'Selected',
@@ -1363,7 +1326,7 @@ sub Run {
         $Frontend{SelectValid} = $Self->{LayoutObject}->BuildSelection(
             Data => {
                 0 => 'invalid',
-                1 => 'valid',
+                1 => 'valid'
             },
             SelectedID => $Stat->{Valid},
             Name       => 'Valid',
@@ -2081,7 +2044,7 @@ sub Run {
             push @StatArray, [ ' ', 0 ];
         }
 
-        # Generate Filename
+        # Gernerate Filename
         my $Filename = $Self->{StatsObject}->StringAndTimestamp2Filename(
             String => $Stat->{Title} . ' Created',
         );
@@ -2101,7 +2064,7 @@ sub Run {
                 SystemTime => $Self->{TimeObject}->SystemTime(),
                 );
             my $Time = sprintf( "%04d-%02d-%02d %02d:%02d:%02d", $Y, $M, $D, $h, $m, $s );
-            my $Output;
+            my $Output = "Name: $Title; Created: $Time\n";
 
             # get Separator from language file
             my $UserCSVSeparator = $Self->{LayoutObject}->{LanguageObject}->{Separator};
@@ -2125,7 +2088,7 @@ sub Run {
 
         # pdf or html output
         elsif ( $Param{Format} eq 'Print' ) {
-            $Self->{MainObject}->Require('Kernel::System::PDF');
+            use Kernel::System::PDF;
             $Self->{PDFObject} = Kernel::System::PDF->new( %{$Self} );
 
             # PDF Output
@@ -2281,7 +2244,7 @@ sub Run {
                 );
             }
 
-            # return image to browser
+            # return image to bowser
             return $Self->{LayoutObject}->Attachment(
                 Filename    => $Filename . '.' . $Ext,
                 ContentType => "image/$Ext",
