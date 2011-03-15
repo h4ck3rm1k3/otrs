@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.31 2011/01/31 23:32:41 cg Exp $
+# $Id: OTRS.pm,v 1.32 2011/03/15 15:59:12 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.31 $) [1];
+$VERSION = qw($Revision: 1.32 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -540,11 +540,21 @@ sub _DefaultUserCheck {
         Comment     => 'There is no active root@localhost with default password.',
     };
 
-    # get userID for root@localhost (will probably be 1)
-    my $UserID = $Self->{UserObject}->UserLookup(
-        UserLogin => 'root@localhost',
+    # retrieve list of valid users
+    my %UserList = $Self->{UserObject}->UserList(
+        Type  => 'Short',
+        Valid => '1',
     );
-    return $Data if !$UserID;
+
+    my $SuperUserID;
+    USER:
+    for my $UserID ( sort keys %UserList ) {
+        if ( $UserList{$UserID} eq 'root@localhost' ) {
+            $SuperUserID = 1;
+            last USER;
+        }
+    }
+    return $Data if !$SuperUserID;
 
     # see if there is a default password attached
     my $DefaultPass = $Self->{AuthObject}->Auth(
@@ -552,14 +562,6 @@ sub _DefaultUserCheck {
         Pw   => 'root',
     );
     return $Data if !$DefaultPass;
-
-    # see if the account is valid
-    my %User = $Self->{UserObject}->GetUserData(
-        UserID  => $UserID,
-        ValidID => 1,
-    );
-
-    return $Data if !%User;
 
     $Data->{Comment} = "Change the password or invalidate the account 'root\@localhost'.";
     $Data->{Check}   = 'Critical';
