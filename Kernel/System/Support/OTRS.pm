@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.32 2011/03/15 15:59:12 mb Exp $
+# $Id: OTRS.pm,v 1.33 2011/03/15 16:10:33 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.32 $) [1];
+$VERSION = qw($Revision: 1.33 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -686,7 +686,7 @@ sub _GeneralSystemOverview {
     my $Customers = scalar keys %List;
     $Message .= " - Customers: " . $Customers . " \n";
 
-    # operative system
+    # operating system
     $Message .= " - Operative system: " . $^O;
 
     $Data = {
