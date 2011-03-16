@@ -2,7 +2,7 @@
 # CustomerTicketSearchResultShort.dtl - html for ticket status view (all tickets)
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerTicketSearchResultShort.dtl,v 1.40 2011/10/04 21:25:55 cr Exp $
+# $Id: CustomerTicketSearchResultShort.dtl,v 1.35.2.1 2011/03/16 15:28:16 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -28,7 +28,7 @@
             <h2>$Text{"Search Results for"}:</h2>
 <!-- dtl:block:SearchTerms -->
             <span>
-                $Text{"$Data{"Attribute"}"}: $QData{"Value"}
+                $QData{"Attribute"}: $QData{"Value"}
 # hide remove link, functionality is not yet implemented
 #                <a title="$Text{"Remove this Search Term."}" href="$Data{"SearchValue"}">&times;</a>
             </span>
@@ -57,18 +57,6 @@
                             $Text{"Age"}
                         </a>
                     </th>
-<!-- dtl:block:HeaderDynamicField -->
-                    <th class="DynamicField $Data{"CSS"}">
-<!-- dtl:block:HeaderDynamicFieldSortable -->
-                        <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Search;SortBy=DynamicField_$LQData{"DynamicFieldName"};Order=$LQData{"Order"};Filter=$LQData{"Filter"};Limit=$LQData{"Limit"};ShowClosedTickets=$LQData{"ShowClosed"};Type=$LQData{"Type"};Profile=$LQData{"Profile"};TakeLastSearch=1">
-                            $Text{"$Data{"Label"}"}
-                        </a>
-<!-- dtl:block:HeaderDynamicFieldSortable -->
-<!-- dtl:block:HeaderDynamicFieldNotSortable -->
-                        <span>$Text{"$Data{"Label"}"}</span>
-<!-- dtl:block:HeaderDynamicFieldNotSortable -->
-                    </th>
-<!-- dtl:block:HeaderDynamicField -->
                 </tr>
             </thead>
             <tbody>
@@ -81,13 +69,10 @@
 <!-- dtl:block:NoDataFoundMsg -->
 <!-- dtl:block:Record -->
                 <tr title="$QData{"TicketNumber"}">
-                    <td class="Status">$Text{"$Data{"State"}","18"}</td>
-                    <td class="Ticket"><a href="$Env{"Baselink"}Action=CustomerTicketZoom;TicketNumber=$Data{"TicketNumber"}">$Data{"TicketNumber"}</a></td>
-                    <td class="Title"><div><h2><a href="$Env{"Baselink"}Action=CustomerTicketZoom;TicketNumber=$Data{"TicketNumber"}">$QData{"Subject","60"}</a></h2>&nbsp;-&nbsp; $QData{"Body","200"}</div></td>
+                    <td class="Status">$Quote{"$Text{"$Data{"State"}"}","18"}</td>
+                    <td class="Ticket"><a href="$Env{"Baselink"}Action=CustomerTicketZoom;TicketID=$Data{"TicketID"}">$Data{"TicketNumber"}</a></td>
+                    <td class="Title"><div><h2><a href="$Env{"Baselink"}Action=CustomerTicketZoom;TicketID=$Data{"TicketID"}">$QData{"Subject","60"}</a></h2>&nbsp;-&nbsp; $QData{"Body","200"}</div></td>
                     <td class="Age" title="$TimeShort{"$Data{"Created"}"}">$QData{"Age","20"}</td>
-<!-- dtl:block:RecordDynamicField -->
-                    <td class="DynamicField" title="$QData{"Title"}">$Data{"Value"}</td>
-<!-- dtl:block:RecordDynamicField -->
                 </tr>
 <!-- dtl:block:Record -->
             </tbody>
@@ -113,7 +98,7 @@
 #                <dtl if ($Env{"Color"} eq "") { $Env{"Color"} = "searchpassive"; }>
 #                <tr valign="top">
 #                    <td class="$Env{"Color"}">
-#                        <a href="$Env{"Baselink"}Action=CustomerTicketZoom;TicketNumber=$LQData{"TicketNumber"};ArticleID=$LQData{"ArticleID"};QueueID=$LQData{"QueueID"}">
+#                        <a href="$Env{"Baselink"}Action=CustomerTicketZoom;TicketID=$Data{"TicketID"};ArticleID=$Data{"ArticleID"};QueueID=$Data{"QueueID"}">
 #                            $Data{"TicketNumber"}
 #                        </a>
 #                    </td>
@@ -123,7 +108,7 @@
 #                        <div title="$QData{"Subject"}">$QData{"Subject","30"}</div>&nbsp;
 #                    </td>
 #                    <td class="$Env{"Color"}">
-#                        <div title="$Text{"$Data{"State"}"}">$Text{"$Data{"State"}","30"}</div>
+#                        <div title="$Quote{"$Text{"$Data{"State"}"}"}">$Quote{"$Text{"$Data{"State"}"}","30"}</div>
 #                    </td>
 #                    <td class="$Env{"Color"}">
 #                        <div title="$QData{"CustomerID"}">$QData{"CustomerID","15"}</div>
