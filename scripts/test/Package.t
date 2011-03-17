@@ -2,7 +2,7 @@
 # Package.t - Package tests
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Package.t,v 1.34 2011/11/15 11:06:58 mg Exp $
+# $Id: Package.t,v 1.30.2.1 2011/03/17 12:19:29 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,47 +15,11 @@ use vars (qw($Self));
 
 use Kernel::System::Package;
 use File::Copy;
-use Kernel::System::Cache;
 
 # create local objects
 my $PackageObject = Kernel::System::Package->new( %{$Self} );
-my $CacheObject   = Kernel::System::Cache->new( %{$Self} );
 
 my $Home = $Self->{ConfigObject}->Get('Home');
-
-my $CachePopulate = sub {
-    my $CacheSet = $CacheObject->Set(
-        Type  => 'TicketTest',
-        Key   => 'Package',
-        Value => 'PackageValue',
-        TTL   => 24 * 60 * 60,
-    );
-    $Self->True(
-        $CacheSet,
-        "CacheSet successful",
-    );
-    my $CacheValue = $CacheObject->Get(
-        Type => 'TicketTest',
-        Key  => 'Package',
-    );
-    $Self->Is(
-        $CacheValue,
-        'PackageValue',
-        "CacheSet value",
-    );
-};
-
-my $CacheClearedCheck = sub {
-    my $CacheValue = $CacheObject->Get(
-        Type => 'TicketTest',
-        Key  => 'Package',
-    );
-    $Self->Is(
-        scalar $CacheValue,
-        scalar undef,
-        "CacheGet value was cleared",
-    );
-};
 
 my $String = '<?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
@@ -68,7 +32,6 @@ my $String = '<?xml version="1.0" encoding="utf-8" ?>
   <Description Lang="en">A test package (some test &lt; &gt; &amp;).</Description>
   <Description Lang="de">Ein Test Paket (some test &lt; &gt; &amp;).</Description>
   <ModuleRequired Version="1.112">Encode</ModuleRequired>
-  <Framework>3.1.x</Framework>
   <Framework>3.0.x</Framework>
   <Framework>2.5.x</Framework>
   <Framework>2.4.x</Framework>
@@ -150,16 +113,12 @@ $Self->True(
     '#1 RepositoryRemove()',
 );
 
-$CachePopulate->();
-
 my $PackageInstall = $PackageObject->PackageInstall( String => $String );
 
 $Self->True(
     $PackageInstall,
     '#1 PackageInstall()',
 );
-
-$CacheClearedCheck->();
 
 # check if the package is already installed - check by name
 $PackageIsInstalledByName = $PackageObject->PackageIsInstalled( Name => 'Test' );
@@ -201,16 +160,12 @@ $Self->True(
     '#1 PackageUninstall()',
 );
 
-$CachePopulate->();
-
 my $PackageInstall2 = $PackageObject->PackageInstall( String => $PackageBuild );
 
 $Self->True(
     $PackageInstall2,
     '#1 PackageInstall() - 2',
 );
-
-$CacheClearedCheck->();
 
 my $DeployCheck2 = $PackageObject->DeployCheck(
     Name    => 'Test',
@@ -270,12 +225,10 @@ $String = '<?xml version="1.0" encoding="utf-8" ?>
 
 # reinstall
 my $PackageReinstall = $PackageObject->PackageReinstall( String => $String );
-$Self->False(
-    $PackageReinstall,
+$Self->True(
+    !$PackageReinstall,
     '#1 PackageReinstall() - TestFrameworkCheck reinstalled',
 );
-
-$CachePopulate->();
 
 my $PackageUninstall2 = $PackageObject->PackageUninstall( String => $PackageBuild );
 
@@ -283,8 +236,6 @@ $Self->True(
     $PackageUninstall2,
     '#1 PackageUninstall() - 2',
 );
-
-$CacheClearedCheck->();
 
 $String = '<?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
@@ -296,7 +247,6 @@ $String = '<?xml version="1.0" encoding="utf-8" ?>
   <Description Lang="en">A test package.</Description>
   <Description Lang="de">Ein Test Paket.</Description>
   <PackageRequired Version="0.1">SomeNotExistingModule</PackageRequired>
-  <Framework>3.1.x</Framework>
   <Framework>3.0.x</Framework>
   <Framework>2.5.x</Framework>
   <Framework>2.4.x</Framework>
@@ -328,7 +278,6 @@ $String = '<?xml version="1.0" encoding="utf-8" ?>
   <Description Lang="en">A test package.</Description>
   <Description Lang="de">Ein Test Paket.</Description>
   <ModuleRequired Version="0.1">SomeNotExistingModule</ModuleRequired>
-  <Framework>3.1.x</Framework>
   <Framework>3.0.x</Framework>
   <Framework>2.5.x</Framework>
   <Framework>2.4.x</Framework>
@@ -359,7 +308,6 @@ $String = '<?xml version="1.0" encoding="utf-8" ?>
   <Description Lang="en">A test package.</Description>
   <Description Lang="de">Ein Test Paket.</Description>
   <ModuleRequired Version="12.999">Encode</ModuleRequired>
-  <Framework>3.1.x</Framework>
   <Framework>3.0.x</Framework>
   <Framework>2.5.x</Framework>
   <Framework>2.4.x</Framework>
@@ -391,7 +339,6 @@ my $String1 = '<?xml version="1.0" encoding="utf-8" ?>
   <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
   <Description Lang="en">A test package.</Description>
   <Description Lang="de">Ein Test Paket.</Description>
-  <Framework>3.1.x</Framework>
   <Framework>3.0.x</Framework>
   <Framework>2.5.x</Framework>
   <Framework>2.4.x</Framework>
@@ -408,7 +355,7 @@ my $String1 = '<?xml version="1.0" encoding="utf-8" ?>
 ';
 $PackageInstall = $PackageObject->PackageInstall( String => $String1 );
 $Self->True(
-    $PackageInstall,
+    $PackageInstall || 0,
     '#5 PackageInstall() - 1/3 File already exists in package X.',
 );
 my $String2 = '<?xml version="1.0" encoding="utf-8" ?>
@@ -420,7 +367,6 @@ my $String2 = '<?xml version="1.0" encoding="utf-8" ?>
   <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
   <Description Lang="en">A test package.</Description>
   <Description Lang="de">Ein Test Paket.</Description>
-  <Framework>3.1.x</Framework>
   <Framework>3.0.x</Framework>
   <Framework>2.5.x</Framework>
   <Framework>2.4.x</Framework>
@@ -450,7 +396,6 @@ my $String3 = '<?xml version="1.0" encoding="utf-8" ?>
   <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
   <Description Lang="en">A test package.</Description>
   <Description Lang="de">Ein Test Paket.</Description>
-  <Framework>3.1.x</Framework>
   <Framework>3.0.x</Framework>
   <Framework>2.5.x</Framework>
   <Framework>2.4.x</Framework>
@@ -475,7 +420,6 @@ my $String3a = '<?xml version="1.0" encoding="utf-8" ?>
   <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
   <Description Lang="en">A test package.</Description>
   <Description Lang="de">Ein Test Paket.</Description>
-  <Framework>3.1.x</Framework>
   <Framework>3.0.x</Framework>
   <Framework>2.5.x</Framework>
   <Framework>2.4.x</Framework>
@@ -508,7 +452,6 @@ my $String3b = '<?xml version="1.0" encoding="utf-8" ?>
   <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
   <Description Lang="en">A test package.</Description>
   <Description Lang="de">Ein Test Paket.</Description>
-  <Framework>3.1.x</Framework>
   <Framework>3.0.x</Framework>
   <Framework>2.5.x</Framework>
   <Framework>2.4.x</Framework>
@@ -559,16 +502,12 @@ my $String3b = '<?xml version="1.0" encoding="utf-8" ?>
 </otrs_package>
 ';
 
-$CachePopulate->();
-
 $PackageUpgrade = $PackageObject->PackageUpgrade( String => $String3b );
 
 $Self->True(
     $PackageUpgrade,
     '#5 PackageUpgrade() - ok.',
 );
-
-$CacheClearedCheck->();
 
 $Self->True(
     !-f $TmpDir . '/test1',
@@ -750,7 +689,6 @@ $String = '<?xml version="1.0" encoding="utf-8" ?>
   <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
   <Description Lang="en">A test package.</Description>
   <Description Lang="de">Ein Test Paket.</Description>
-  <Framework>3.1.x</Framework>
   <Framework>3.0.x</Framework>
   <Framework>2.5.x</Framework>
   <Framework>2.4.x</Framework>
@@ -821,7 +759,6 @@ $String = '<?xml version="1.0" encoding="utf-8" ?>
   <License>GNU GENERAL PUBLIC LICENSE Version 2, June 110101</License>
   <Description Lang="en">A test package.</Description>
   <Description Lang="de">Ein Test Paket.</Description>
-  <Framework>3.1.x</Framework>
   <Framework>3.0.x</Framework>
   <Framework>2.5.x</Framework>
   <Framework>2.4.x</Framework>
@@ -882,42 +819,6 @@ $Self->True(
     '#10 PackageUninstall() - post',
 );
 
-# _FileInstall checks with not allowed files
-my $FilesNotAllowed = [
-    'Kernel/Config.pm',
-    'Kernel/Config/Files/ZZZAuto.pm',
-    'Kernel/Config/Files/ZZZAAuto.pm',
-    'var/tmp/Cache/Tmp.cache',
-    'var/log/some_log',
-    '../../etc/passwd',
-];
-for my $FileNotAllowed ( @{$FilesNotAllowed} ) {
-    my $String = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>
-<otrs_package version=\"1.0\">
-  <Name>FilesNotAllowed</Name>
-  <Version>0.0.1</Version>
-  <Vendor>OTRS AG</Vendor>
-  <URL>http://otrs.org/</URL>
-  <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
-  <Description Lang=\"en\">A test package.</Description>
-  <Description Lang=\"de\">Ein Test Paket.</Description>
-  <Framework>3.1.x</Framework>
-  <Framework>3.0.x</Framework>
-  <BuildDate>2005-11-10 21:17:16</BuildDate>
-  <BuildHost>yourhost.example.com</BuildHost>
-  <Filelist>
-    <File Location=\"$FileNotAllowed\" Permission=\"644\" Encode=\"Base64\">aGVsbG8K</File>
-  </Filelist>
-</otrs_package>
-";
-    my $PackageInstall = $PackageObject->PackageInstall( String => $String );
-
-    $Self->False(
-        $PackageInstall,
-        "#11 PackageInstall() - File not allowed - $FileNotAllowed",
-    );
-}
-
 # find out if it is an developer installation with files
 # from the version control system.
 my $DeveloperSystem = 0;
@@ -930,10 +831,10 @@ if (
     $DeveloperSystem = 1;
 }
 
-# check #12 doesn't work on developer systems because there is no ARCHIVE file!
+# check #11 doesn't work on developer systems because there is no ARCHIVE file!
 if ( !$DeveloperSystem ) {
 
-    # 12 check "do not remove framework file if no backup exists"
+    # 11 check "do not remove framework file if no backup exists"
     my $RemoveFile          = $Home . '/' . 'bin/otrs.CheckDB.pl.save';
     my $RemoveFileFramework = $Home . '/' . 'bin/otrs.CheckDB.pl';
     copy( $RemoveFileFramework, $RemoveFileFramework . '.orig' );
@@ -946,7 +847,6 @@ if ( !$DeveloperSystem ) {
       <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
       <Description Lang="en">A test package.</Description>
       <Description Lang="de">Ein Test Paket.</Description>
-      <Framework>3.1.x</Framework>
       <Framework>3.0.x</Framework>
       <Framework>2.5.x</Framework>
       <Framework>2.4.x</Framework>
@@ -964,46 +864,46 @@ if ( !$DeveloperSystem ) {
     $PackageInstall = $PackageObject->PackageInstall( String => $String );
 
     $Self->True(
-        $PackageInstall,
-        '#12 PackageInstall() - TestFrameworkFileCheck installed',
+        $PackageInstall || 0,
+        '#11 PackageInstall() - TestFrameworkFileCheck installed',
     );
 
     # check if save file exists
     $Self->True(
-        -e $RemoveFile,
-        '#12 PackageInstall() - save file bin/otrs.CheckDB.pl.save exists',
+        -e $RemoveFile || 0,
+        '#11 PackageInstall() - save file bin/otrs.CheckDB.pl.save exists',
     );
 
     # check if save file exists (should not anymore)
     my $RemoveFileUnlink = unlink $RemoveFile;
     $Self->True(
-        $RemoveFileUnlink,
-        '#12 PackageInstall() - save file bin/otrs.CheckDB.pl.save got removed',
+        $RemoveFileUnlink || 0,
+        '#11 PackageInstall() - save file bin/otrs.CheckDB.pl.save got removed',
     );
 
     # check if save file exists (should not anymore)
     $Self->True(
         !-e $RemoveFile,
-        '#12 PackageInstall() - save file bin/otrs.CheckDB.pl.save does not exists',
+        '#11 PackageInstall() - save file bin/otrs.CheckDB.pl.save does not exists',
     );
 
     # unistall package
     $PackageUninstall = $PackageObject->PackageUninstall( String => $String );
-    $Self->False(
+    $Self->True(
         $PackageUninstall,
-        '#12 PackageUninstall()',
+        '#11 PackageUninstall()',
     );
 
     # check if save file exists (should not)
     $Self->True(
         !-e $RemoveFile,
-        '#12 PackageUninstall() - save file bin/otrs.CheckDB.pl.save does not exists',
+        '#11 PackageUninstall() - save file bin/otrs.CheckDB.pl.save does not exists',
     );
 
     # check if framework file exists
     $Self->True(
-        -e $RemoveFileFramework,
-        '#12 PackageUninstall() - save file bin/otrs.CheckDB.pl exists',
+        -e $RemoveFileFramework || 0,
+        '#11 PackageUninstall() - save file bin/otrs.CheckDB.pl exists',
     );
     move(
         $RemoveFileFramework . '.orig',
@@ -1011,10 +911,10 @@ if ( !$DeveloperSystem ) {
     );
 }
 
-# check #13 doesn't work on developer systems because there is no ARCHIVE file!
+# check #12 doesn't work on developer systems because there is no ARCHIVE file!
 if ( !$DeveloperSystem ) {
 
-    # 13 check "do create .save file on reinstall if it's a framework file"
+    # 12 check "do create .save file on reinstall if it's a framework file"
     my $SaveFile          = $Home . '/' . 'bin/otrs.CheckDB.pl.save';
     my $SaveFileFramework = $Home . '/' . 'bin/otrs.CheckDB.pl';
     copy( $SaveFileFramework, $SaveFileFramework . '.orig' );
@@ -1027,7 +927,6 @@ if ( !$DeveloperSystem ) {
       <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
       <Description Lang="en">A test package.</Description>
       <Description Lang="de">Ein Test Paket.</Description>
-      <Framework>3.1.x</Framework>
       <Framework>3.0.x</Framework>
       <Framework>2.5.x</Framework>
       <Framework>2.4.x</Framework>
@@ -1044,9 +943,9 @@ if ( !$DeveloperSystem ) {
     ';
     $PackageInstall = $PackageObject->PackageInstall( String => $String );
 
-    $Self->False(
-        $PackageInstall,
-        '#13 PackageInstall() - TestFrameworkFileCheck installed',
+    $Self->True(
+        $PackageInstall || 0,
+        '#12 PackageInstall() - TestFrameworkFileCheck installed',
     );
 
     # reinstall checks
@@ -1058,8 +957,8 @@ if ( !$DeveloperSystem ) {
         Permission => '644',
     );
     $Self->True(
-        $Write,
-        '#13 FileWrite() - bin/otrs.CheckDB.pl modified',
+        $Write || 0,
+        '#12 FileWrite() - bin/otrs.CheckDB.pl modified',
     );
     my $ReadOrig = $Self->{MainObject}->FileRead(
         Location => $SaveFileFramework,
@@ -1072,39 +971,35 @@ if ( !$DeveloperSystem ) {
 
     # check if save file exists (should not anymore)
     my $SaveFileUnlink = unlink $SaveFile;
-    $Self->False(
-        $SaveFileUnlink,
-        '#13 PackageInstall() - save file bin/otrs.CheckDB.pl.save got removed',
+    $Self->True(
+        $SaveFileUnlink || 0,
+        '#12 PackageInstall() - save file bin/otrs.CheckDB.pl.save got removed',
     );
 
     # check if save file exists (should not anymore)
     $Self->True(
         !-e $SaveFile,
-        '#13 PackageInstall() - save file bin/otrs.CheckDB.pl.save does not exists',
+        '#12 PackageInstall() - save file bin/otrs.CheckDB.pl.save does not exists',
     );
 
     # reinstall
-    $CachePopulate->();
-
     my $PackageReinstall = $PackageObject->PackageReinstall( String => $String );
     $Self->True(
-        $PackageReinstall,
-        '#13 PackageReinstall() - TestFrameworkFileCheck reinstalled',
+        $PackageReinstall || 0,
+        '#12 PackageReinstall() - TestFrameworkFileCheck reinstalled',
     );
-
-    $CacheClearedCheck->();
 
     # check if save file exists
     $Self->True(
         -e $SaveFile,
-        '#13 PackageReinstall() - save file bin/otrs.CheckDB.pl.save exists',
+        '#12 PackageReinstall() - save file bin/otrs.CheckDB.pl.save exists',
     );
 
     # unistall package
     $PackageUninstall = $PackageObject->PackageUninstall( String => $String );
     $Self->True(
         $PackageUninstall,
-        '#13 PackageUninstall()',
+        '#12 PackageUninstall()',
     );
 
     my $ReadLater = $Self->{MainObject}->FileRead(
@@ -1118,7 +1013,7 @@ if ( !$DeveloperSystem ) {
 
     $Self->True(
         ${$ReadOrig} eq ${$ReadLater},
-        '#13 PackageReinstall() - file bin/otrs.CheckDB.pl is still the orig',
+        '#12 PackageReinstall() - file bin/otrs.CheckDB.pl is still the orig',
     );
     move(
         $SaveFileFramework . '.orig',
