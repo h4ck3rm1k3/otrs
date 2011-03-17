@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.33 2011/03/15 16:10:33 mb Exp $
+# $Id: OTRS.pm,v 1.34 2011/03/17 14:44:24 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.33 $) [1];
+$VERSION = qw($Revision: 1.34 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -283,7 +283,7 @@ sub _OpenTicketCheck {
     if ( $#TicketIDs > 89990 ) {
         $Check = 'Failed';
         $Message
-            = 'You should not have more then 8000 open tickets in your system. You currently have over 89999! In case you want to improve your performance, close not needed open tickets.';
+            = 'You should not have more than 8000 open tickets in your system. You currently have over 89999! In case you want to improve your performance, close not needed open tickets.';
 
     }
     elsif ( $#TicketIDs > 10000 ) {
@@ -297,7 +297,7 @@ sub _OpenTicketCheck {
     elsif ( $#TicketIDs > 8000 ) {
         $Check = 'Critical';
         $Message
-            = 'You should not have more then 8000 open tickets in your system. You currently have '
+            = 'You should not have more than 8000 open tickets in your system. You currently have '
             . $#TicketIDs
             . '. In case you want to improve your performance, close not needed open tickets.';
 
