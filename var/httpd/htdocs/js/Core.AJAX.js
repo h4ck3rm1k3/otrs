@@ -1,8 +1,8 @@
 // --
 // Core.AJAX.js - provides the funcionality for AJAX calls
-// Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+// Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 // --
-// $Id: Core.AJAX.js,v 1.32 2012/01/09 11:48:29 mg Exp $
+// $Id: Core.AJAX.js,v 1.20.2.1 2011/03/18 06:35:04 mp Exp $
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (AGPL). If you
@@ -27,53 +27,35 @@ Core.AJAX = (function (TargetNS) {
      * @function
      * @private
      * @param {string} FieldID Id of the field which is updated via ajax
-     * @param {string} Show Show or hide the AJAX loader image
      * @description Shows and hides an ajax loader for every element which is updates via ajax
      */
-    function ToggleAJAXLoader(FieldID, Show) {
+    function ToggleAJAXLoader(FieldID) {
         var $Element = $('#' + FieldID),
             $Loader = $('#' + AJAXLoaderPrefix + FieldID),
             LoaderHTML = '<span id="' + AJAXLoaderPrefix + FieldID + '" class="AJAXLoader"></span>';
 
-        // Ignore hidden fields
-        if ($Element.is('[type=hidden]')) {
-            return;
+        if (!$Loader.length) {
+            if ( $Element.not('[type=hidden]').length ) {
+                $Element.after(LoaderHTML);
+                if (typeof ActiveAJAXCalls[FieldID] === 'undefined') {
+                    ActiveAJAXCalls[FieldID] = 0;
+                }
+                ActiveAJAXCalls[FieldID]++;
+            }
         }
-        // Element not present, reset counter and ignore
-        if (!$Element.length) {
+        else if ($Loader.is(':hidden')) {
+            $Loader.show();
+            if (typeof ActiveAJAXCalls[FieldID] === 'undefined') {
                 ActiveAJAXCalls[FieldID] = 0;
-                return;
-        }
-
-        // Init counter value, if needed.
-        // This counter stores the number of running AJAX requests for each field.
-        // The loader image will be shown if it is > 0.
-        if (typeof ActiveAJAXCalls[FieldID] === 'undefined') {
-            ActiveAJAXCalls[FieldID] = 0;
-        }
-
-        // Calculate counter
-        if (Show) {
+            }
             ActiveAJAXCalls[FieldID]++;
         }
         else {
             ActiveAJAXCalls[FieldID]--;
             if (ActiveAJAXCalls[FieldID] <= 0) {
+                $Loader.hide();
                 ActiveAJAXCalls[FieldID] = 0;
             }
-        }
-
-        // Show or hide the loader
-        if (ActiveAJAXCalls[FieldID] > 0) {
-            if (!$Loader.length) {
-                $Element.after(LoaderHTML);
-            }
-            else {
-                $Loader.show();
-            }
-        }
-        else {
-            $Loader.hide();
         }
     }
 
@@ -104,7 +86,6 @@ Core.AJAX = (function (TargetNS) {
             Data[Core.Config.Get('SessionName')] = Core.Config.Get('SessionID');
             Data[Core.Config.Get('CustomerPanelSessionName')] = Core.Config.Get('SessionID');
         }
-        Data.ChallengeToken = Core.Config.Get('ChallengeToken');
         return Data;
     }
 
@@ -124,44 +105,37 @@ Core.AJAX = (function (TargetNS) {
     /**
      * @function
      * @private
-     * @param {Object} Data The new field data.
-     *                  The keys are the IDs of the fields to be updated.
+     * @param {Object} Data The new field data
+     * @param {Object} FieldsToUpdate The array of field elements
      * @return nothing
      * @description Updates the given fields with the given data
      */
-    function UpdateFormElements(Data) {
-        if (typeof Data !== 'object') {
-            return;
-        }
-        $.each(Data, function (Key, Value) {
-            var $Element = $('#' + Key);
-
-            if (!$Element.length || !Value) {
-                return;
-            }
-
-            // Select elements
-            if ($Element.is('select')) {
-                $Element.empty();
-                $.each(Value, function (Index, Value) {
-                    var NewOption = new Option(Value[1], Value[0], Value[2], Value[3]);
-
-                    // Check if option must be disabled.
-                    if (Value[4]) {
-                        NewOption.disabled = true;
+    function UpdateFormElements(Data, FieldsToUpdate) {
+        $.each(FieldsToUpdate, function (Index, Value) {
+            var $Element = $('#' + Value),
+                ElementData;
+            if ($Element.length && Data) {
+                // Select elements
+                if ($Element.is('select')) {
+                    ElementData = Data[Value];
+                    if (ElementData) {
+                        $Element.empty();
+                        $.each(ElementData, function (Index, Value) {
+                            var NewOption = new Option(Value[1], Value[0], Value[2], Value[3]);
+                            // overwrite option text, because of wrong html quoting of text content
+                            // needed for IE
+                            NewOption.innerHTML = Value[1];
+                            $Element.append(NewOption);
+                        });
                     }
-
-                    // Overwrite option text, because of wrong html quoting of text content.
-                    // (This is needed for IE.)
-                    NewOption.innerHTML = Value[1];
-                    $Element.append(NewOption);
-
-                });
-                return;
+                }
+                // Other form elements
+                else {
+                    if (Data[Value]) {
+                        $Element.val(Value);
+                    }
+                }
             }
-
-            // Other form elements
-            $Element.val(Value);
         });
     }
 
@@ -192,11 +166,6 @@ Core.AJAX = (function (TargetNS) {
                         QueryString += encodeURIComponent(Name) + '=' + encodeURIComponent($(this).val() || 'on') + ";";
                     }
                 }
-                else if ($(this).is('select')) {
-                    $.each($(this).find('option:selected'), function(){
-                        QueryString += encodeURIComponent(Name) + '=' + encodeURIComponent($(this).val() || '') + ";";
-                    });
-                }
                 else {
                     QueryString += encodeURIComponent(Name) + '=' + encodeURIComponent($(this).val() || '') + ";";
                 }
@@ -211,9 +180,7 @@ Core.AJAX = (function (TargetNS) {
      * @param {jQueryObject} $EventElement The jQuery object of the element(s) which are included in the form that should be submitted
      * @param {String} Subaction The subaction parameter for the perl module
      * @param {String} ChangedElement The name of the element which was changed by the user
-     * @param {Object} FieldsToUpdate DEPRECATED.
-     *                      This used to be the names of the fields that should be updated with the server answer,
-     *                      but is not needed any more and will be removed in a future version of OTRS.
+     * @param {Object} FieldsToUpdate The names of the fields that should be updated with the server answer
      * @param {Function} [SuccessCallback] Callback function to be executed on AJAX success (optional).
      * @return nothing
      */
@@ -226,14 +193,11 @@ Core.AJAX = (function (TargetNS) {
         Data.ElementChanged = ChangedElement;
         QueryString = TargetNS.SerializeForm($EventElement, Data) + SerializeData(Data);
 
-        if (FieldsToUpdate) {
-            $.each(FieldsToUpdate, function (Index, Value) {
-                ToggleAJAXLoader(Value, true);
-            });
-        }
+        $.each(FieldsToUpdate, function (Index, Value) {
+            ToggleAJAXLoader(Value);
+        });
 
         $.ajax({
-            type: 'POST',
             url: URL,
             data: QueryString,
             dataType: 'json',
@@ -250,11 +214,9 @@ Core.AJAX = (function (TargetNS) {
                 }
             },
             complete: function () {
-                if (FieldsToUpdate) {
-                    $.each(FieldsToUpdate, function (Index, Value) {
-                        ToggleAJAXLoader(Value, false);
-                    });
-                }
+                $.each(FieldsToUpdate, function (Index, Value) {
+                    ToggleAJAXLoader(Value);
+                });
             },
             error: function () {
                 // We are out of the OTRS App scope, that's why an exception would not be caught. Therefor we handle the error manually.
@@ -283,7 +245,6 @@ Core.AJAX = (function (TargetNS) {
         QueryString += SerializeData(GetSessionInformation());
 
         $.ajax({
-            type: 'POST',
             url: URL,
             data: QueryString,
             dataType: 'html',
@@ -329,7 +290,6 @@ Core.AJAX = (function (TargetNS) {
         } else {
             Data = $.extend(Data, GetSessionInformation());
         }
-
         $.ajax({
             type: 'POST',
             url: URL,

@@ -1,8 +1,8 @@
 // --
 // Core.Agent.Search.js - provides the special module functions for the global search
-// Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+// Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 // --
-// $Id: Core.Agent.Search.js,v 1.49 2012/01/20 02:27:44 sb Exp $
+// $Id: Core.Agent.Search.js,v 1.38.2.1 2011/03/18 06:35:04 mp Exp $
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (AGPL). If you
@@ -136,46 +136,6 @@ Core.Agent.Search = (function (TargetNS) {
     /**
      * @function
      * @private
-     * @return 0 if no values were found, 1 if values where there
-     * @description Checks if any values were entered in the search.
-     *              If nothing at all exists, it alerts with translated:
-     *              "Please enter at least one search value or * to find anything"
-     */
-    function CheckForSearchedValues() {
-        // loop through the SerachForm labels
-        var SearchValueFlag = false;
-        $('#SearchForm label').each(function () {
-            var ElementName,
-                $Element;
-
-            // those with ID's are used for searching
-            if ( $(this).attr('id') ) {
-                    // substring "Label" (e.g. first five characters ) from the
-                    // label id, use the remaining name as name string for accessing
-                    // the form input's value
-                    ElementName = $(this).attr('id').substring(5);
-                    $Element = $('#SearchForm input[name='+ElementName+']');
-                    // If there's no input element with the selected name
-                    // find the next "select" element and use that one for checking
-                    if (!$Element.length) {
-                        $Element = $(this).next().find('select');
-                    }
-                    if ($Element.length) {
-                        if ( $Element.val() && $Element.val() !== '' ) {
-                            SearchValueFlag = true;
-                        }
-                    }
-            }
-        });
-        if (!SearchValueFlag) {
-           alert(Core.Config.Get('EmptySearchMsg'));
-        }
-        return SearchValueFlag;
-    }
-
-    /**
-     * @function
-     * @private
      * @return nothing
      * @description Shows waiting dialog until search screen is ready.
      */
@@ -234,14 +194,11 @@ Core.Agent.Search = (function (TargetNS) {
                     // show delete button
                     $('#SearchProfileDelete').show();
 
-                    // show profile link
-                    $('#SearchProfileAsLink').show();
-
                     // show save changes in template block
                     $('#SaveProfile').parent().show().prev().show().prev().show();
 
                     // set SaveProfile to 0
-                    $('#SaveProfile').removeAttr('checked');
+                    $('#SaveProfile').attr('checked', false);
                 }
 
                 // register add of attribute
@@ -256,12 +213,7 @@ Core.Agent.Search = (function (TargetNS) {
                 // register return key
                 $('#SearchForm').unbind('keypress.FilterInput').bind('keypress.FilterInput', function (Event) {
                     if ((Event.charCode || Event.keyCode) === 13) {
-                        if (!CheckForSearchedValues()) {
-                            return false;
-                        }
-                        else {
-                           $('#SearchForm').submit();
-                        }
+                        $('#SearchForm').submit();
                         return false;
                     }
                 });
@@ -281,23 +233,13 @@ Core.Agent.Search = (function (TargetNS) {
                     // Normal results mode will return HTML in the same window
                     if ($('#SearchForm #ResultForm').val() === 'Normal') {
 
-                        if (!CheckForSearchedValues()) {
-                            return false;
-                        }
-                        else {
-                           $('#SearchForm').submit();
-                           ShowWaitingDialog();
-                        }
+                        $('#SearchForm').submit();
+                        ShowWaitingDialog();
                     }
                     else { // Print and CSV should open in a new window, no waiting dialog
                         $('#SearchForm').attr('target', 'SearchResultPage');
-                        if (!CheckForSearchedValues()) {
-                            return false;
-                        }
-                        else {
-                           $('#SearchForm').submit();
-                           $('#SearchForm').attr('target', '');
-                        }
+                        $('#SearchForm').submit();
+                        $('#SearchForm').attr('target', '');
                     }
                     return false;
                 });
@@ -315,7 +257,6 @@ Core.Agent.Search = (function (TargetNS) {
                 // show add profile block or not
                 $('#SearchProfileNew').bind('click', function (Event) {
                     $('#SearchProfileAddBlock').toggle();
-                    $('#SearchProfileAddName').focus();
                     Event.preventDefault();
                     return false;
                 });
@@ -347,24 +288,10 @@ Core.Agent.Search = (function (TargetNS) {
                     $('#SaveProfile').parent().hide().prev().hide().prev().hide();
 
                     // set SaveProfile to 1
-                    $('#SaveProfile').attr('checked', 'checked');
+                    $('#SaveProfile').attr('checked', true);
 
-                    // show delete button
                     $('#SearchProfileDelete').show();
 
-                    // show profile link
-                    $('#SearchProfileAsLink').show();
-
-                    return false;
-                });
-
-                // direct link to profile
-                $('#SearchProfileAsLink').bind('click', function (Event) {
-                    var Profile = $('#SearchProfile').val(),
-                        Action = $('#SearchAction').val();
-
-                    window.location.href = Core.Config.Get('Baselink') + 'Action=' + Action +
-                    ';Subaction=Search;TakeLastSearch=1;SaveProfile=1;Profile=' + encodeURIComponent(Profile);
                     return false;
                 });
 
@@ -393,13 +320,7 @@ Core.Agent.Search = (function (TargetNS) {
                     });
 
                     if ($('#SearchProfile').val() && $('#SearchProfile').val() === 'last-search') {
-
-                        // hide delete link
                         $('#SearchProfileDelete').hide();
-
-                        // show profile link
-                        $('#SearchProfileAsLink').hide();
-
                     }
 
                     Event.preventDefault();

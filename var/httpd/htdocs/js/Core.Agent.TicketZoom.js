@@ -2,7 +2,7 @@
 // Core.Agent.TicketZoom.js - provides the special module functions for TicketZoom
 // Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 // --
-// $Id: Core.Agent.TicketZoom.js,v 1.36 2011/04/29 20:11:21 martin Exp $
+// $Id: Core.Agent.TicketZoom.js,v 1.34.2.1 2011/03/18 06:35:04 mp Exp $
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (AGPL). If you
@@ -23,32 +23,6 @@ Core.Agent = Core.Agent || {};
 Core.Agent.TicketZoom = (function (TargetNS) {
     var CheckURLHashTimeout,
         InitialArticleID;
-
-    /**
-     * @function
-     * @param {String} TicketID of ticket which get's shown
-     * @return nothing
-     *      Mark all articles as seen in frontend and backend.
-     *      Article Filters will not be considered
-     */
-    TargetNS.MarkTicketAsSeen = function (TicketID) {
-        TargetNS.TicketMarkAsSeenTimeout = window.setTimeout(function () {
-            // Mark old row as readed
-            $('#FixedTable .ArticleID').closest('tr').removeClass('UnreadArticles').find('span.UnreadArticles').remove();
-
-            // Mark article as seen in backend
-            var Data = {
-                Action: 'AgentTicketZoom',
-                Subaction: 'TicketMarkAsSeen',
-                TicketID: TicketID
-            };
-            Core.AJAX.FunctionCall(
-                Core.Config.Get('CGIHandle'),
-                Data,
-                function () {}
-            );
-        }, 3000);
-    };
 
     /**
      * @function

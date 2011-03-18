@@ -1,8 +1,8 @@
 // --
 // Core.Agent.TicketAction.js - provides functions for all ticket action popups
-// Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+// Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 // --
-// $Id: Core.Agent.TicketAction.js,v 1.13 2012/01/23 11:38:33 mg Exp $
+// $Id: Core.Agent.TicketAction.js,v 1.9.2.1 2011/03/18 06:35:04 mp Exp $
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (AGPL). If you
@@ -43,7 +43,7 @@ Core.Agent.TicketAction = (function (TargetNS) {
      */
     function OpenAddressBook() {
         var AddressBookIFrameURL, AddressBookIFrame;
-        AddressBookIFrameURL = Core.Config.Get('CGIHandle') + '?Action=AgentBook;To=' + encodeURIComponent($('#CustomerAutoComplete, #ToCustomer').val()) + ';Cc=' + encodeURIComponent($('#Cc, #CcCustomer').val()) + ';Bcc=' + encodeURIComponent($('#Bcc, #BccCustomer').val());
+        AddressBookIFrameURL = Core.Config.Get('CGIHandle') + '?Action=AgentBook;To=' + encodeURIComponent($('#CustomerAutoComplete').val()) + ';Cc=' + encodeURIComponent($('#Cc').val()) + ';Bcc=' + encodeURIComponent($('#Bcc').val());
         AddressBookIFrame = '<iframe class="TextOption" src="' + AddressBookIFrameURL + '"></iframe>';
         Core.UI.Dialog.ShowContentDialog(AddressBookIFrame, '', '10px', 'Center', true);
     }
@@ -117,44 +117,16 @@ Core.Agent.TicketAction = (function (TargetNS) {
         // Register Apply button event
         $('#Apply').bind('click', function (Event) {
             // Update ticket action popup fields
-            var $To, $Cc, $Bcc;
-
-            // Because we are in an iframe, we need to call the parent frames javascript function
-            // with a jQuery object which is in the parent frames context
-
-            // check if the multi selection feature is present
-            if ($('#CustomerAutoComplete', parent.document).length) {
-                // no multi select (AgentTicketForward)
-                $To = $('#CustomerAutoComplete', parent.document),
+            var $To = $('#CustomerAutoComplete', parent.document),
                 $Cc = $('#Cc', parent.document),
                 $Bcc = $('#Bcc', parent.document);
 
-                $To.val($('#ToCustomer').val());
-                $Cc.val($('#CcCustomer').val());
-                $Bcc.val($('#BccCustomer').val());
-            }
-            else {
-                // multi select is present
-                $To = $('#ToCustomer', parent.document),
-                $Cc = $('#CcCustomer', parent.document),
-                $Bcc = $('#BccCustomer', parent.document);
+            $To.val($('#To').val());
+            $Cc.val($('#Cc').val());
+            $Bcc.val($('#Bcc').val());
 
-                $.each($('#ToCustomer').val().split(/, ?/), function(Index, Value){
-                    $To.val(Value);
-                    parent.Core.Agent.CustomerSearch.AddTicketCustomer( 'ToCustomer', Value );
-                });
-
-                $.each($('#CcCustomer').val().split(/, ?/), function(Index, Value){
-                    $Cc.val(Value);
-                    parent.Core.Agent.CustomerSearch.AddTicketCustomer( 'CcCustomer', Value );
-                });
-
-                $.each($('#BccCustomer').val().split(/, ?/), function(Index, Value){
-                    $Bcc.val(Value);
-                    parent.Core.Agent.CustomerSearch.AddTicketCustomer( 'BccCustomer', Value );
-                });
-            }
-
+            // Because we are in an iframe, we need to call the parent frames javascript function
+            // with a jQuery object which is in the parent frames context
             parent.Core.UI.Dialog.CloseDialog($('.Dialog', parent.document));
         });
 
@@ -232,7 +204,7 @@ Core.Agent.TicketAction = (function (TargetNS) {
      * @param {Object} The name of the radio button to be selected
      */
     TargetNS.SelectRadioButton = function (Value, Name) {
-        $('input:radio[name=' + Name + '][value=' + Value + ']').attr('checked', 'checked');
+        $('input:radio[name=' + Name + '][value=' + Value + ']').attr('checked', true);
     };
 
     return TargetNS;

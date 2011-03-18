@@ -1,8 +1,8 @@
 // --
 // Core.UI.Table.js - Table specific functions
-// Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+// Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 // --
-// $Id: Core.UI.Table.js,v 1.10 2012/01/17 13:51:29 mab Exp $
+// $Id: Core.UI.Table.js,v 1.5.2.1 2011/03/18 06:35:04 mp Exp $
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (AGPL). If you
@@ -37,7 +37,7 @@ Core.UI.Table = (function (TargetNS) {
     TargetNS.InitCSSPseudoClasses = function ($Context) {
         var SelectorCount = 0;
         if (typeof $Context === 'undefined' || (isJQueryObject($Context) && $Context.length)) {
-            // comma-separated selectors have performance issues, so we add the different selectors after each other
+            // comma-seperated selectors have performance issues, so we add the different selectors after each other
             $('tr.Even', $Context)
                 .add('tr.Last', $Context)
                 .add('th.Last', $Context)
@@ -47,8 +47,8 @@ Core.UI.Table = (function (TargetNS) {
                 .removeClass('Even Last');
 
             // nth-child selector has heavy performance problems on big tables or lists
-            // Because these CSS classes are only used on IE7, we skip these for big tables and lists
-            SelectorCount = $('tr', $Context).length + $('li:not(.Header)', $Context).length;
+            // Because this CSS classes are only used on IE7, we skip this class for big tables and lists
+            SelectorCount = $('tr', $Context).length + $('li:not(.Header)', $Context).length
             if (SelectorCount < 200) {
                 $('tr:nth-child(even)', $Context)
                 .add('li:not(.Header):nth-child(even)', $Context)
@@ -56,55 +56,12 @@ Core.UI.Table = (function (TargetNS) {
             }
 
             // comma-seperated selectors have performance issues, so we add the different selectors after each other
-            $('tr:last-child', $Context).addClass('Last');
-            $('th:last-child', $Context).addClass('Last');
-            $('td:last-child', $Context).addClass('Last');
-            $('li:last-child', $Context).addClass('Last');
+            $('tr:last-child', $Context)
+                .add('th:last-child', $Context)
+                .add('td:last-child', $Context)
+                .add('li:last-child', $Context)
+                .addClass('Last');
         }
-    };
-
-    /**
-     * @function
-     * @description
-     *      This function re-calculates some css values for the fixed table headers.
-     *      The ControlRow can be of a different height in some cases. That needs adjustment of the following elements.
-     * @return nothing
-     */
-    TargetNS.InitFixedHeader = function () {
-        var $ControlRow,
-            ControlRowHeight = 0,
-            ControlRowLineHeight = 25,
-            FixedHeaderAdjustement = 0,
-            FixedHeaderTopPosition,
-            FixedHeaderContainerPadding;
-
-        // Only if a fixed table exists
-        if (!$('#FixedTable').length) {
-            return;
-        }
-
-        $ControlRow = $('.OverviewControl .ControlRow');
-
-        if (!$ControlRow.length) {
-            return;
-        }
-
-        ControlRowHeight = $ControlRow.height();
-        // Default CSS is defined for a ControlRow with one line
-        FixedHeaderAdjustement = ControlRowHeight - ControlRowLineHeight;
-
-        // Only continue if ControlRow has more than one line
-        if (FixedHeaderAdjustement <= 0) {
-            return;
-        }
-
-        // Adjust CSS
-        FixedHeaderContainerPadding = parseInt($('.Overview.FixedHeader').css('padding-top'), 10);
-        FixedHeaderTopPosition = parseInt($('.Overview.FixedHeader thead tr').css('top'), 10);
-
-        $('.Overview.FixedHeader').css('padding-top', (FixedHeaderContainerPadding + FixedHeaderAdjustement - 0) + 'px');
-        $('.Overview.FixedHeader thead tr').css('top', (FixedHeaderTopPosition + FixedHeaderAdjustement - 0) + 'px');
-
     };
 
     /**
@@ -140,23 +97,18 @@ Core.UI.Table = (function (TargetNS) {
                  * @description Ckeck if a text exist inside an element
                  */
                 function CheckText($Element, FilterText) {
-                    var Text;
-
-                    Text = $Element.text();
-                    if (Text && Text.toLowerCase().indexOf(FilterText) > -1){
+                    if ($Element.text().toLowerCase().indexOf(FilterText) > -1){
                         return true;
                     }
 
                     if ($Element.is('li, td')) {
-                        Text = $Element.attr('title');
-                        if (Text && Text.toLowerCase().indexOf(FilterText) > -1) {
+                        if ($Element.attr('title').toLowerCase().indexOf(FilterText) > -1) {
                             return true;
                         }
                     }
                     else {
                         $Element.find('td').each(function () {
-                            Text = $(this).attr('title');
-                            if (Text && Text.toLowerCase().indexOf(FilterText) > -1) {
+                            if ($(this).attr('title').toLowerCase().indexOf(FilterText) > -1) {
                                 return true;
                             }
                         });
