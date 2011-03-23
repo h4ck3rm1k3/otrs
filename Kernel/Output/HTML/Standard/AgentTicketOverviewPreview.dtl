@@ -2,7 +2,7 @@
 # AgentTicketOverviewPreview.dtl - provides HTML Ticket Overview
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketOverviewPreview.dtl,v 1.76 2011/12/05 20:56:03 mb Exp $
+# $Id: AgentTicketOverviewPreview.dtl,v 1.66.2.1 2011/03/23 17:40:27 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -114,7 +114,7 @@
                                 <label>$Text{"Created"}</label>$TimeLong{"$Data{"Created"}"}
                             </td>
                             <td>
-                                <label>$Text{"State"}</label><div title="$Text{"$Data{"State"}"}">$Text{"$Data{"State"}","26"}</div>
+                                <label>$Text{"State"}</label><div title="$Quote{"$Text{"$Data{"State"}"}"}">$Quote{"$Text{"$Data{"State"}"}","26"}</div>
                             </td>
                         </tr>
 <!-- dtl:block:Service -->
@@ -134,21 +134,16 @@
                                 <label>$Text{"Owner"}</label><div title="$QData{"UserFirstname"} $QData{"UserLastname"} ($QData{"Owner"})">$QData{"UserFirstname","15"} $QData{"UserLastname","15"}</div>
                             </td>
                             <td>
-                                <label>$Text{"Lock"}</label><div title="$Text{"$Data{"Lock"}"}">$Text{"$Data{"Lock"}","26"}</div>
+                                <label>$Text{"Lock"}</label><div title="$Quote{"$Text{"$Data{"Lock"}"}"}">$Quote{"$Text{"$Data{"Lock"}"}","26"}</div>
                             </td>
                         </tr>
                         <tr class="Middle">
                             <td>
 <!-- dtl:block:CustomerID -->
                                 <label>$Text{"CustomerID"}</label>
-<!-- dtl:block:CustomerIDRW -->
                                 <div title="$QData{"CustomerID"}"><a href="$Config{"CustomerDBLink"}" class="AsPopup PopupType_TicketAction" $Config{"CustomerDBLinkTarget"}>$QData{"CustomerID", "26"}</a></div>
-<!-- dtl:block:CustomerIDRW -->
-<!-- dtl:block:CustomerIDRO -->
-                                <div title="$QData{"CustomerID"}">$QData{"CustomerID", "26"}</div>
-<!-- dtl:block:CustomerIDRO -->
 <!-- dtl:block:CustomerName -->
-                                <div title="$QData{"CustomerName"}">$QData{"CustomerName","26"}</div>
+                                <div title="$QData{"CustomerName"}">$QData{"CustomerName","15"}</div>
 <!-- dtl:block:CustomerName -->
 <!-- dtl:block:CustomerID -->
                             </td>
@@ -181,53 +176,6 @@
 <!-- dtl:block:SolutionTime -->
                             </td>
                         </tr>
-
-<!-- dtl:block:DynamicFieldTableRow -->
-                        <tr class="$Data{"Class"}">
-<!-- dtl:block:DynamicFieldTableRowRecord -->
-                            <td>
-                                <label>$Text{"$Data{"Label"}"}</label>
-<!-- dtl:block:DynamicFieldTableRowRecordLink -->
-                                <div title="$Data{"Title"}"><a href="$Data{"Link"}" class="DynamicFieldLink">$Data{"Value"}</a></div>
-<!-- dtl:block:DynamicFieldTableRowRecordLink -->
-<!-- dtl:block:DynamicFieldTableRowRecordPlain -->
-                                <div title="$Data{"Title"}"><span>$Data{"Value"}</span></div>
-<!-- dtl:block:DynamicFieldTableRowRecordPlain -->
-                            </td>
-<!-- dtl:block:DynamicFieldTableRowRecord -->
-                        </tr>
-<!-- dtl:block:DynamicFieldTableRow -->
-
-# example of how to use fixed dynamic field blocks for customizations
-# Note: Field1 and Field2 are the names of the fields and had to be replaced with the actual
-# field names
-#                    <tr>
-#<!-- dtl:block:DynamicField_Field1_TableRowRecord -->
-#                        <td>
-#                            <label>$Text{"$Data{"Label"}"}</label>
-#<!-- dtl:block:DynamicField_Field1_TableRowRecordLink -->
-#                            <div title="$Data{"Title"}"><a href="$Data{"Link"}" class="DynamicFieldLink">$Data{"Value"}</a></div>
-#<!-- dtl:block:DynamicField_Field1_TableRowRecordLink -->
-#<!-- dtl:block:DynamicField_Field1_TableRowRecordPlain -->
-#                            <div title="$Data{"Title"}"><span>$Data{"Value"}</span></div>
-#<!-- dtl:block:DynamicField_Field1_TableRowRecordPlain -->
-#                        </td>
-#<!-- dtl:block:DynamicField_Field1_TableRowRecord -->
-#                    </tr>
-#                    <tr>
-#<!-- dtl:block:DynamicField_Field2_TableRowRecord -->
-#                        <td>
-#                            <label>$Text{"$Data{"Label"}"}</label>
-#<!-- dtl:block:DynamicField_Field2_TableRowRecordLink -->
-#                            <div title="$Data{"Title"}"><a href="$Data{"Link"}" class="DynamicFieldLink">$Data{"Value"}</a></div>
-#<!-- dtl:block:DynamicField_Field2_TableRowRecordLink -->
-#<!-- dtl:block:DynamicField_Field2_TableRowRecordPlain -->
-#                            <div title="$Data{"Title"}"><span>$Data{"Value"}</span></div>
-#<!-- dtl:block:DynamicField_Field2_TableRowRecordPlain -->
-#                        </td>
-#<!-- dtl:block:DynamicField_Field2_TableRowRecord -->
-#                    </tr>
-
                     </tbody>
                 </table>
             </div>
@@ -349,12 +297,8 @@ $Data{"Body"}
 <script type="text/javascript">//<![CDATA[
     Core.UI.StaticTableControl($('#OverviewControl'));
     $('.MasterAction').bind('click', function (Event) {
-        var $MasterActionLink = $(this).find('.MasterActionLink');
-        // only act if the link was not clicked directly
-        if (Event.target !== $MasterActionLink.get(0)) {
-            window.location = $MasterActionLink.attr('href');
-            return false;
-        }
+        window.location = $(this).find('.MasterActionLink').attr('href');
+        return false;
     });
     Core.UI.Accordion.Init($('.Preview > ul'), 'li h3 a', '.HiddenBlock');
 //]]></script>
@@ -373,10 +317,6 @@ $Data{"Body"}
         }
 
         Core.UI.Popup.OpenPopup($(this).attr('href'), PopupType);
-        return false;
-    });
-    $('a.DynamicFieldLink').bind('click', function (Event) {
-        Core.UI.Popup.OpenPopup($(this).attr('href'), 'DynamicFieldLink');
         return false;
     });
 //]]></script>
