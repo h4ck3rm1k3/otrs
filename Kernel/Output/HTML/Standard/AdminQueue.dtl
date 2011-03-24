@@ -1,8 +1,8 @@
 # --
 # AdminQueue.dtl - provides HTML form for AdminQueue
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminQueue.dtl,v 1.26 2012/01/09 14:04:29 mg Exp $
+# $Id: AdminQueue.dtl,v 1.22.2.1 2011/03/24 14:03:09 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -56,7 +56,7 @@
                             <th>$Text{"Name"}</th>
                             <th>$Text{"Group"}</th>
                             <th>$Text{"Comment"}</th>
-                            <th>$Text{"Validity"}</th>
+                            <th>$Text{"Valid"}</th>
                             <th>$Text{"Changed"}</th>
                             <th>$Text{"Created"}</th>
                         </tr>
@@ -281,7 +281,7 @@
                         </div>
                         <div class="Clear"></div>
 
-                        <label class="Mandatory" for="ValidID"><span class="Marker">*</span> $Text{"Validity"}:</label>
+                        <label class="Mandatory" for="ValidID"><span class="Marker">*</span> $Text{"Valid"}:</label>
                         <div class="Field">
                             $Data{"ValidOption"}
                             <div id="ValidIDError" class="TooltipErrorMessage">
@@ -295,7 +295,7 @@
 
                         <label for="Comment">$Text{"Comment"}:</label>
                         <div class="Field">
-                            <input type="text" name="Comment" id="Comment" value="$QData{"Comment"}" class="W50pc" maxlength="250"/>
+                            <input type="text" name="Comment" id="Comment" value="$QData{"Comment"}" class="W50pc" maxlength="150"/>
                         </div>
                         <div class="Clear"></div>
 
@@ -320,7 +320,9 @@
 <!-- dtl:block:TextArea -->
                         <label for="$QData{"Name"}">$Text{"$Data{"Label"}"}:</label>
                         <div class="Field">
-                            <textarea name="$QData{"Name"}" id="$QData{"Name"}" rows="$QData{"Rows"}" cols="$QData{"Cols"}">$QData{"SelectedID"}</textarea>
+                            <textarea name="$QData{"Name"}" id="$QData{"Name"}" rows="$QData{"Rows"}" cols="$QData{"Cols"}">
+                                $QData{"SelectedID"}
+                            </textarea>
                             <p class="FieldExplanation">
                                 $Text{"$Data{"Desc"}"}
                             </p>
