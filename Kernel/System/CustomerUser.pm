@@ -2,7 +2,7 @@
 # Kernel/System/CustomerUser.pm - some customer user functions
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerUser.pm,v 1.63 2011/03/24 17:47:48 en Exp $
+# $Id: CustomerUser.pm,v 1.61.2.1 2011/03/24 17:39:52 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::CustomerCompany;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.63 $) [1];
+$VERSION = qw($Revision: 1.61.2.1 $) [1];
 
 =head1 NAME
 
@@ -119,9 +119,7 @@ sub new {
 
 return customer source list
 
-    my %List = $CustomerUserObject->CustomerSourceList(
-        ReadOnly => 0 # optional, 1 returns only RO backends, 0 returns writable, if not passed returns all backends
-    );
+    my %List = $CustomerUserObject->CustomerSourceList();
 
 =cut
 
@@ -129,20 +127,11 @@ sub CustomerSourceList {
     my ( $Self, %Param ) = @_;
 
     my %Data;
-    SOURCE:
     for my $Count ( '', 1 .. 10 ) {
 
         # next if customer backend is not used
-        next SOURCE if !$Self->{ConfigObject}->Get("CustomerUser$Count");
-        if ( defined $Param{ReadOnly} ) {
-            my $CustomerBackendConfig = $Self->{ConfigObject}->Get("CustomerUser$Count");
-            if ( $Param{ReadOnly} ) {
-                next SOURCE if !$CustomerBackendConfig->{ReadOnly};
-            }
-            else {
-                next SOURCE if $CustomerBackendConfig->{ReadOnly};
-            }
-        }
+        next if !$Self->{ConfigObject}->Get("CustomerUser$Count");
+
         $Data{"CustomerUser$Count"} = $Self->{ConfigObject}->Get("CustomerUser$Count")->{Name}
             || "No Name $Count";
     }
@@ -692,6 +681,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.63 $ $Date: 2011/03/24 17:47:48 $
+$Revision: 1.61.2.1 $ $Date: 2011/03/24 17:39:52 $
 
 =cut
