@@ -1,8 +1,8 @@
 # --
 # AdminCustomerUserService.dtl - provides HTML form for AdminInterface
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminCustomerUserService.dtl,v 1.43 2012/01/09 11:16:46 mn Exp $
+# $Id: AdminCustomerUserService.dtl,v 1.39.2.1 2011/03/25 13:54:04 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -41,7 +41,7 @@
                             <button class="Primary" type="submit" value="$Text{"Search"}"><span>$Text{"Search"}</span></button>
                             <p class="FieldExplanation">
                                 <label for="CustomerUserSearch">
-                                    $Text{"Search for customers."} $Text{"Wildcards like '*' are allowed."}
+                                    $Text{"Search for customers (wildcards like '*' are allowed)."}
                                 </label>
                             </p>
                         </form>
@@ -145,13 +145,17 @@
 <!-- dtl:block:AllocateItemCountLimit -->
                                 </th>
                                 <th>
-                                    <input type="checkbox" id="SelectAllItemsSelected" name="ItemsSelected" title="$Text{"Toggle active state for all"}" value="" />
+                                    <input type="checkbox" id="ItemsSelected" name="ItemsSelected" title="$Text{"Toggle active state for all"}" value="" />
                                     $Text{"Active"}
 <!--dtl:js_on_document_complete-->
 <script type="text/javascript">//<![CDATA[
-Core.Form.InitSelectAllCheckboxes($('table td input:checkbox[name=ItemsSelected]'), $('#SelectAllItemsSelected'));
-$('input:checkbox[name=ItemsSelected]').bind('click', function () {
-    Core.Form.SelectAllCheckboxes($(this), $('#SelectAllItemsSelected'));
+$('#ItemsSelected').bind('click', function (Event) {
+    if ($(this).attr('checked')) {
+        $('input[name=' + $(this).attr('name') + ']').attr('checked', 'checked');
+    }
+    else {
+        $('input[name=' + $(this).attr('name') + ']').removeAttr('checked');
+    }
 });
 //]]></script>
 <!--dtl:js_on_document_complete-->
