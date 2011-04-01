@@ -1,8 +1,8 @@
 # --
-# CustomerAutoCompletion.t - frontend test AgentTicketPhone
+# CheckCustomerAutoCompletion.t - frontend test AgentTicketPhone
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerAutoCompletion.t,v 1.3 2011/04/01 13:24:35 mg Exp $
+# $Id: CustomerAutoCompletion.t,v 1.1.2.1 2011/04/01 12:41:38 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -138,11 +138,8 @@ for my $SeleniumScenario ( @{ $Helper->SeleniumScenariosGet() } ) {
                 # wait for autocomplete to load
                 sleep 0.2;
                 WAIT:
-                for ( 1 .. 10 ) {
-                    last WAIT
-                        if (
-                        eval { $sel->get_eval("this.browserbot.getCurrentWindow().\$.active") == 0 }
-                        );
+                for ( 1 .. 5 ) {
+                    last WAIT if ( eval { $sel->is_element_present("css=ul.ui-autocomplete") } );
                     sleep 1;
                 }
 
@@ -181,11 +178,8 @@ for my $SeleniumScenario ( @{ $Helper->SeleniumScenariosGet() } ) {
                 # wait for autocomplete to load
                 sleep 0.2;
                 WAIT:
-                for ( 1 .. 10 ) {
-                    last WAIT
-                        if (
-                        eval { $sel->get_eval("this.browserbot.getCurrentWindow().\$.active") == 0 }
-                        );
+                for ( 1 .. 5 ) {
+                    last WAIT if ( eval { $sel->is_element_present("css=ul.ui-autocomplete") } );
                     sleep 1;
                 }
 
