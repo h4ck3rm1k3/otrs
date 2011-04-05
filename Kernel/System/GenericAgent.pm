@@ -1,8 +1,8 @@
 # --
 # Kernel/System/GenericAgent.pm - generic agent system module
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: GenericAgent.pm,v 1.80 2012/01/11 17:28:26 jh Exp $
+# $Id: GenericAgent.pm,v 1.70.2.1 2011/04/05 08:50:27 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,12 +14,8 @@ package Kernel::System::GenericAgent;
 use strict;
 use warnings;
 
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
-use Kernel::System::VariableCheck qw(:all);
-
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.80 $) [1];
+$VERSION = qw($Revision: 1.70.2.1 $) [1];
 
 =head1 NAME
 
@@ -109,16 +105,6 @@ sub new {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
-    # create additional objects
-    $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new(%Param);
-    $Self->{BackendObject}      = Kernel::System::DynamicField::Backend->new(%Param);
-
-    # get the dynamic fields for ticket object
-    $Self->{DynamicField} = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid      => 1,
-        ObjectType => ['Ticket'],
-    );
-
     # debug
     $Self->{Debug} = $Param{Debug} || 0;
 
@@ -144,7 +130,6 @@ sub new {
         OwnerIDs                => 'ARRAY',
         LockIDs                 => 'ARRAY',
         TypeIDs                 => 'ARRAY',
-        ResponsibleIDs          => 'ARRAY',
         ServiceIDs              => 'ARRAY',
         SLAIDs                  => 'ARRAY',
         NewTitle                => 'SCALAR',
@@ -156,7 +141,6 @@ sub new {
         NewOwnerID              => 'SCALAR',
         NewLockID               => 'SCALAR',
         NewTypeID               => 'SCALAR',
-        NewResponsibleID        => 'SCALAR',
         NewServiceID            => 'SCALAR',
         NewSLAID                => 'SCALAR',
         ScheduleLastRun         => 'SCALAR',
@@ -169,14 +153,14 @@ sub new {
 
     # add time attributes
     for my $Type (
-        qw(Time ChangeTime CloseTime TimePending EscalationTime EscalationResponseTime EscalationUpdateTime EscalationSolutionTime)
+        qw(Time CloseTime TimePending EscalationTime EscalationResponseTime EscalationUpdateTime EscalationSolutionTime)
         )
     {
         my $Key = $Type . 'SearchType';
         $Map{$Key} = 'SCALAR';
     }
     for my $Type (
-        qw(TicketCreate TicketChange TicketClose TicketPending TicketEscalation TicketEscalationResponse TicketEscalationUpdate TicketEscalationSolution)
+        qw(TicketCreate TicketClose TicketPending TicketEscalation TicketEscalationResponse TicketEscalationUpdate TicketEscalationSolution)
         )
     {
         for my $Attribute (
@@ -188,23 +172,13 @@ sub new {
         }
     }
 
-    # Add Dynamic Fields attributes
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+    # add free text attributes
+    for my $Type ( 1 .. 16 ) {
+        my $Key   = 'TicketFreeKey' . $Type;
+        my $Value = 'TicketFreeText' . $Type;
 
-        # get the field type of the dynamic fields for edit and search
-        my $FieldValueType = $Self->{BackendObject}->TemplateValueTypeGet(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            FieldType          => 'All',
-        );
-
-        # Add field type to Map
-        if ( IsHashRefWithData($FieldValueType) ) {
-            for my $FieldName ( keys %{$FieldValueType} ) {
-                $Map{$FieldName} = $FieldValueType->{$FieldName};
-            }
-        }
+        $Map{$Key}   = 'ARRAY';
+        $Map{$Value} = 'ARRAY';
     }
 
     $Self->{Map} = \%Map;
@@ -239,7 +213,6 @@ sub JobRun {
 
     # get job from param
     my %Job;
-    my %DynamicFieldSearchTemplate;
     if ( $Param{Config} ) {
         %Job = %{ $Param{Config} };
 
@@ -273,19 +246,7 @@ sub JobRun {
                 $Job{New}->{$NewKey} = $DBJobRaw{$Key};
             }
             else {
-
-                # skip dynamic fields
-                if ( $Key !~ m{ DynamicField_ }xms ) {
-                    $Job{$Key} = $DBJobRaw{$Key};
-                }
-            }
-
-            # convert dynamic fields
-            if ( $Key =~ m{ \A DynamicField_ }xms ) {
-                $Job{New}->{$Key} = $DBJobRaw{$Key};
-            }
-            elsif ( $Key =~ m{ \A Search_DynamicField_ }xms ) {
-                $DynamicFieldSearchTemplate{$Key} = $DBJobRaw{$Key};
+                $Job{$Key} = $DBJobRaw{$Key};
             }
         }
         if ( exists $Job{SearchInArchive} && $Job{SearchInArchive} eq 'ArchivedTickets' ) {
@@ -296,54 +257,20 @@ sub JobRun {
         }
     }
 
-    # set dynamic fields search parameters
-    my %DynamicFieldSearchParameters;
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-        # get field value from the information extracted from Generic Agent job
-        my $Value = $Self->{BackendObject}->SearchFieldValueGet(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            Profile            => \%DynamicFieldSearchTemplate,
-        ) || '';
-
-        if ($Value) {
-
-            # get search attibutes
-            my $SearchParameter = $Self->{BackendObject}->CommonSearchFieldParameterBuild(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                Value              => $Value,
-            );
-
-            # add search attribute to the search structure
-            $DynamicFieldSearchParameters{ 'DynamicField_' . $DynamicFieldConfig->{Name} }
-                = $SearchParameter;
-        }
-    }
-
     my %Tickets;
 
     # escalation tickets
     if ( $Job{Escalation} ) {
-
-        my @Tickets = $Self->{TicketObject}->TicketSearch(
-            Result                           => 'ARRAY',
-            Limit                            => 100,
-            TicketEscalationTimeOlderMinutes => -( 3 * 8 * 60 ),       # 3 days, roughly
-            Permission                       => 'rw',
-            UserID                           => $Param{UserID} || 1,
-        );
-
-        for (@Tickets) {
-            if ( !$Job{Queue} ) {
+        if ( !$Job{Queue} ) {
+            my @Tickets = $Self->{TicketObject}->GetOverTimeTickets();
+            for (@Tickets) {
                 $Tickets{$_} = $Self->{TicketObject}->TicketNumberLookup( TicketID => $_ );
             }
-            else {
-                my %Ticket = $Self->{TicketObject}->TicketGet(
-                    TicketID      => $_,
-                    DynamicFields => 0,
-                );
+        }
+        else {
+            my @Tickets = $Self->{TicketObject}->GetOverTimeTickets();
+            for (@Tickets) {
+                my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $_ );
                 if ( $Ticket{Queue} eq $Job{Queue} ) {
                     $Tickets{$_} = $Ticket{TicketNumber};
                 }
@@ -364,7 +291,6 @@ sub JobRun {
             %Tickets = (
                 $Self->{TicketObject}->TicketSearch(
                     %Job,
-                    %DynamicFieldSearchParameters,
                     ConditionInline => 1,
                     StateType       => $Type,
                     Limit           => $Param{Limit} || 4000,
@@ -381,7 +307,6 @@ sub JobRun {
                 %Tickets = (
                     $Self->{TicketObject}->TicketSearch(
                         %Job,
-                        %DynamicFieldSearchParameters,
                         ConditionInline => 1,
                         Queues          => [$_],
                         StateType       => $Type,
@@ -396,7 +321,6 @@ sub JobRun {
             %Tickets = (
                 $Self->{TicketObject}->TicketSearch(
                     %Job,
-                    %DynamicFieldSearchParameters,
                     ConditionInline => 1,
                     StateType       => $Type,
                     Queues          => [ $Job{Queue} ],
@@ -407,10 +331,7 @@ sub JobRun {
             );
         }
         for ( keys %Tickets ) {
-            my %Ticket = $Self->{TicketObject}->TicketGet(
-                TicketID      => $_,
-                DynamicFields => 0,
-            );
+            my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $_ );
             if ( $Ticket{UntilTime} > 1 ) {
                 delete $Tickets{$_};
             }
@@ -429,12 +350,7 @@ sub JobRun {
                 }
             }
 
-            # also search in Dynamic fields search attributes
-            for my $DynamicFieldName ( keys %DynamicFieldSearchParameters ) {
-                $Count++;
-            }
-
-            # log no search attribute
+            # log no search attribut
             if ( !$Count ) {
                 $Self->{LogObject}->Log(
                     Priority => 'error',
@@ -450,7 +366,6 @@ sub JobRun {
             }
             %Tickets = $Self->{TicketObject}->TicketSearch(
                 %Job,
-                %DynamicFieldSearchParameters,
                 ConditionInline => 1,
                 Limit           => $Param{Limit} || 4000,
                 UserID          => $Param{UserID},
@@ -464,7 +379,6 @@ sub JobRun {
                 %Tickets = (
                     $Self->{TicketObject}->TicketSearch(
                         %Job,
-                        %DynamicFieldSearchParameters,
                         ConditionInline => 1,
                         Queues          => [$_],
                         Limit           => $Param{Limit} || 4000,
@@ -477,7 +391,6 @@ sub JobRun {
         else {
             %Tickets = $Self->{TicketObject}->TicketSearch(
                 %Job,
-                %DynamicFieldSearchParameters,
                 ConditionInline => 1,
                 Queues          => [ $Job{Queue} ],
                 Limit           => $Param{Limit} || 4000,
@@ -569,7 +482,6 @@ sub JobGet {
     # get time settings
     my %Map = (
         TicketCreate             => 'Time',
-        TicketChange             => 'ChangeTime',
         TicketClose              => 'CloseTime',
         TicketPending            => 'TimePending',
         TicketEscalation         => 'EscalationTime',
@@ -578,7 +490,7 @@ sub JobGet {
         TicketEscalationSolution => 'EscalationSolutionTime',
     );
     for my $Type (
-        qw(TicketCreate TicketChange TicketClose TicketPending TicketEscalation TicketEscalationResponse TicketEscalationUpdate TicketEscalationSolution)
+        qw(TicketCreate TicketClose TicketPending TicketEscalation TicketEscalationResponse TicketEscalationUpdate TicketEscalationSolution)
         )
     {
         my $SearchType = $Map{$Type} . 'SearchType';
@@ -858,7 +770,7 @@ sub _JobRunTicket {
                 || 'Note',
             Body => $Param{Config}->{New}->{Note}->{Body} || $Param{Config}->{New}->{NoteBody},
             MimeType       => 'text/plain',
-            Charset        => 'utf-8',
+            Charset        => $Self->{ConfigObject}->Get('DefaultCharset'),
             UserID         => $Param{UserID},
             HistoryType    => 'AddNote',
             HistoryComment => 'Generic Agent note added.',
@@ -1043,30 +955,6 @@ sub _JobRunTicket {
         );
     }
 
-    # set new responsible
-    if ( $Param{Config}->{New}->{Responsible} ) {
-        if ( $Self->{NoticeSTDOUT} ) {
-            print
-                "  - set responsible of Ticket $Ticket to '$Param{Config}->{New}->{Responsible}'\n";
-        }
-        $Self->{TicketObject}->TicketResponsibleSet(
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
-            NewUser  => $Param{Config}->{New}->{Responsible},
-        );
-    }
-    if ( $Param{Config}->{New}->{ResponsibleID} ) {
-        if ( $Self->{NoticeSTDOUT} ) {
-            print
-                "  - set responsible id of Ticket $Ticket to '$Param{Config}->{New}->{ResponsibleID}'\n";
-        }
-        $Self->{TicketObject}->TicketResponsibleSet(
-            TicketID  => $Param{TicketID},
-            UserID    => $Param{UserID},
-            NewUserID => $Param{Config}->{New}->{ResponsibleID},
-        );
-    }
-
     # set new lock
     if ( $Param{Config}->{New}->{Lock} ) {
         if ( $Self->{NoticeSTDOUT} ) {
@@ -1089,44 +977,49 @@ sub _JobRunTicket {
         );
     }
 
-    # set new dynamic fields options
-    # cycle trough the activated Dynamic Fields for this screen
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+    # set ticket free text options
+    for ( 1 .. 16 ) {
+        if (
+            defined $Param{Config}->{New}->{"TicketFreeKey$_"}
+            || defined $Param{Config}->{New}->{"TicketFreeText$_"}
+            )
+        {
+            my %Data;
+            $Data{TicketID} = $Param{TicketID};
+            $Data{UserID}   = $Param{UserID};
+            $Data{Counter}  = $_;
 
-        # extract the dynamic field value form the web request
-        my $Value = $Self->{BackendObject}->EditFieldValueGet(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            Template           => $Param{Config}->{New},
-            TransformDates     => 0,
-        );
+            if ( defined $Param{Config}->{New}->{"TicketFreeKey$_"} ) {
+                $Data{Key} = $Param{Config}->{New}->{"TicketFreeKey$_"};
+            }
 
-        if ( defined $Value && $Value ne '' ) {
-            my $Success = $Self->{BackendObject}->ValueSet(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                ObjectID           => $Param{TicketID},
-                Value              => $Value,
-                UserID             => 1,
-            );
+            # insert the freefieldkey, if only one key is possible
+            if (
+                !$Data{Key}
+                && ref $Self->{ConfigObject}->Get( 'TicketFreeKey' . $_ ) eq 'HASH'
+                )
+            {
+                my %TicketFreeKey = %{ $Self->{ConfigObject}->Get( 'TicketFreeKey' . $_ ) };
+                my @FreeKey       = keys %TicketFreeKey;
 
-            if ($Success) {
-                if ( $Self->{NoticeSTDOUT} ) {
-                    my $ValueStrg = $Self->{BackendObject}->ReadableValueRender(
-                        DynamicFieldConfig => $DynamicFieldConfig,
-                        Value              => $Value,
-                    );
-                    print "  - set ticket dynamic field $DynamicFieldConfig->{Name} "
-                        . "of Ticket $Ticket to $ValueStrg->{Title} '\n";
+                if ( $#FreeKey == 0 ) {
+                    $Data{Key} = $TicketFreeKey{ $FreeKey[0] };
                 }
             }
-            else {
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => "Coud not set dynamic field $DynamicFieldConfig->{Name} "
-                        . "for Ticket $Ticket.",
-                );
+
+            if ( defined $Param{Config}->{New}->{"TicketFreeText$_"} ) {
+                $Data{Value} = $Param{Config}->{New}->{"TicketFreeText$_"};
             }
+
+            if ( $Self->{NoticeSTDOUT} ) {
+                if ( defined $Data{Key} ) {
+                    print "  - set ticket free text of Ticket $Ticket to Key: '$Data{Key}'\n";
+                }
+                if ( defined $Data{Value} ) {
+                    print "  - set ticket free text of Ticket $Ticket to Text: '$Data{Value}'\n";
+                }
+            }
+            $Self->{TicketObject}->TicketFreeTextSet(%Data);
         }
     }
 
@@ -1278,6 +1171,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.80 $ $Date: 2012/01/11 17:28:26 $
+$Revision: 1.70.2.1 $ $Date: 2011/04/05 08:50:27 $
 
 =cut
