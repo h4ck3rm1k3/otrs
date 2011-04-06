@@ -2,7 +2,7 @@
 # Kernel/Output/HTML/LayoutTicket.pm - provides generic ticket HTML output
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: LayoutTicket.pm,v 1.140 2011/12/14 19:03:14 mb Exp $
+# $Id: LayoutTicket.pm,v 1.123.2.1 2011/04/06 16:38:52 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.140 $) [1];
+$VERSION = qw($Revision: 1.123.2.1 $) [1];
 
 sub AgentCustomerViewTable {
     my ( $Self, %Param ) = @_;
@@ -168,17 +168,16 @@ sub AgentCustomerViewTable {
 # !! DONT USE THIS FUNCTION !! Use BuildSelection() instead.
 #
 # Due to compatibility reason this function is still in use and will be removed
-# in a future release.
+# in a further release.
 
 sub AgentQueueListOption {
     my ( $Self, %Param ) = @_;
 
-    my $Size           = $Param{Size}                      ? "size='$Param{Size}'"  : '';
-    my $MaxLevel       = defined( $Param{MaxLevel} )       ? $Param{MaxLevel}       : 10;
-    my $SelectedID     = defined( $Param{SelectedID} )     ? $Param{SelectedID}     : '';
-    my $Selected       = defined( $Param{Selected} )       ? $Param{Selected}       : '';
-    my $CurrentQueueID = defined( $Param{CurrentQueueID} ) ? $Param{CurrentQueueID} : '';
-    my $Class          = defined( $Param{Class} )          ? $Param{Class}          : '';
+    my $Size       = $Param{Size}                  ? "size='$Param{Size}'" : '';
+    my $MaxLevel   = defined( $Param{MaxLevel} )   ? $Param{MaxLevel}      : 10;
+    my $SelectedID = defined( $Param{SelectedID} ) ? $Param{SelectedID}    : '';
+    my $Selected   = defined( $Param{Selected} )   ? $Param{Selected}      : '';
+    my $Class      = defined( $Param{Class} )      ? $Param{Class}         : '';
     my $SelectedIDRefArray = $Param{SelectedIDRefArray} || '';
     my $Multiple       = $Param{Multiple}                  ? 'multiple = "multiple"' : '';
     my $OptionTitle    = defined( $Param{OptionTitle} )    ? $Param{OptionTitle}     : 0;
@@ -223,10 +222,8 @@ sub AgentQueueListOption {
     if ( $Self->{ConfigObject}->Get('Ticket::Frontend::ListType') eq 'list' ) {
         $Param{MoveQueuesStrg} = $Self->BuildSelection(
             %Param,
-            HTMLQuote     => 0,
-            SelectedID    => $Param{SelectedID} || $Param{SelectedIDRefArray} || '',
-            SelectedValue => $Param{Selected},
-            Translation   => 0,
+            HTMLQuote => 0,
+            SelectedID => $Param{SelectedID} || $Param{SelectedIDRefArray} || '',
         );
         return $Param{MoveQueuesStrg};
     }
@@ -328,14 +325,6 @@ sub AgentQueueListOption {
                     . $String
                     . "</option>\n";
             }
-            elsif ( $CurrentQueueID eq $_ )
-            {
-                $Param{MoveQueuesStrg}
-                    .= '<option value="-" disabled="disabled"'
-                    . $OptionTitleHTMLValue . '>'
-                    . $String
-                    . "</option>\n";
-            }
             else {
                 $Param{MoveQueuesStrg}
                     .= '<option value="'
@@ -349,6 +338,481 @@ sub AgentQueueListOption {
     $Param{MoveQueuesStrg} .= "</select>\n";
 
     return $Param{MoveQueuesStrg};
+}
+
+sub AgentFreeText {
+    my ( $Self, %Param ) = @_;
+
+    my %NullOption;
+    my %SelectData;
+    my %Ticket;
+    my %Config;
+    my $Class = '';
+    if ( $Param{NullOption} ) {
+
+        #        $NullOption{''} = '-';
+        $SelectData{Size}     = 3;
+        $SelectData{Multiple} = 1;
+    }
+    if ( $Param{Ticket} ) {
+        %Ticket = %{ $Param{Ticket} };
+    }
+    if ( $Param{Config} ) {
+        %Config = %{ $Param{Config} };
+    }
+    if ( $Param{Class} ) {
+        $Class = $Param{Class};
+    }
+    my %Data;
+    for ( 1 .. 16 ) {
+
+        # key
+        if ( ref $Config{"TicketFreeKey$_"} eq 'HASH' && %{ $Config{"TicketFreeKey$_"} } ) {
+            my $Counter = 0;
+            my $LastKey = '';
+            for ( keys %{ $Config{"TicketFreeKey$_"} } ) {
+                $Counter++;
+                $LastKey = $_;
+            }
+            if ( $Counter == 1 && $Param{NullOption} ) {
+                if ($LastKey) {
+                    $Data{"TicketFreeKeyField$_"} = $Config{"TicketFreeKey$_"}->{$LastKey};
+                }
+            }
+            elsif ( $Counter > 1 ) {
+                $Data{"TicketFreeKeyField$_"} = $Self->BuildSelection(
+                    Data => { %NullOption, %{ $Config{"TicketFreeKey$_"} }, },
+                    Name => "TicketFreeKey$_",
+                    SelectedID  => $Ticket{"TicketFreeKey$_"},
+                    Translation => 0,
+                    Class       => 'TicketFreeKey',
+                    HTMLQuote   => 1,
+                    %SelectData,
+                );
+            }
+            else {
+                if ($LastKey) {
+                    $Data{"TicketFreeKeyField$_"}
+                        = $Config{"TicketFreeKey$_"}->{$LastKey}
+                        . '<input type="hidden" name="TicketFreeKey'
+                        . $_
+                        . '" value="'
+                        . $Self->Ascii2Html( Text => $LastKey ) . '"/>';
+                }
+            }
+        }
+        else {
+            if ( defined $Ticket{"TicketFreeKey$_"} ) {
+                if ( ref $Ticket{"TicketFreeKey$_"} eq 'ARRAY' ) {
+                    if ( $Ticket{"TicketFreeKey$_"}->[0] ) {
+                        $Ticket{"TicketFreeKey$_"} = $Ticket{"TicketFreeKey$_"}->[0];
+                    }
+                    else {
+                        $Ticket{"TicketFreeKey$_"} = '';
+                    }
+                }
+                $Data{"TicketFreeKeyField$_"}
+                    = '<input type="text" class="TicketFreeKey" name="TicketFreeKey'
+                    . $_
+                    . '" value="'
+                    . $Self->Ascii2Html( Text => $Ticket{"TicketFreeKey$_"} )
+                    . '" />';
+            }
+            else {
+                $Data{"TicketFreeKeyField$_"}
+                    = '<input type="text" class="TicketFreeKey" name="TicketFreeKey' . $_
+                    . '" value="" />';
+            }
+        }
+
+        # Add Validate and Error classes
+        my $ClassParam = "$Class ";
+        my $DataParam  = "";
+        if ( $Config{"Required"}->{$_} ) {
+            $ClassParam .= 'Validate_Required';
+            if ( ref $Config{"TicketFreeText$_"} eq 'HASH' ) {
+                $ClassParam .= 'Dropdown';
+            }
+            $ClassParam .= ' ';
+
+            $DataParam
+                .= '<div id="TicketFreeText'
+                . $_
+                . 'Error" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>';
+
+            # for TicketFreeKeyFields
+            $Data{"TicketFreeKeyField$_"} =
+                '<label id="LabelTicketFreeText' . $_
+                . '" class="Mandatory"><span class="Marker">*</span> '
+                . $Data{"TicketFreeKeyField$_"}
+                . ':</label>';
+        }
+        else {
+
+            # for TicketFreeKeyFields
+            $Data{"TicketFreeKeyField$_"} =
+                '<label id="LabelTicketFreeText' . $_ . '">'
+                . $Data{"TicketFreeKeyField$_"}
+                . ':</label>';
+        }
+
+        if ( $Config{"Error"}->{$_} ) {
+            $ClassParam .= 'ServerError ';
+            $DataParam
+                .= '<div id="TicketFreeText'
+                . $_
+                . 'ServerError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>';
+        }
+
+        # value
+        if ( ref $Config{"TicketFreeText$_"} eq 'HASH' ) {
+            $Data{"TicketFreeTextField$_"} = $Self->BuildSelection(
+                Data => { %NullOption, %{ $Config{"TicketFreeText$_"} }, },
+                Name => "TicketFreeText$_",
+                SelectedID  => $Ticket{"TicketFreeText$_"},
+                Translation => 0,
+                HTMLQuote   => 1,
+                Class       => "TicketFreeText $ClassParam",
+                %SelectData,
+            );
+
+            $Data{"TicketFreeTextField$_"} .= $DataParam;
+
+        }
+        else {
+            if ( defined $Ticket{"TicketFreeText$_"} ) {
+                if ( ref $Ticket{"TicketFreeText$_"} eq 'ARRAY' ) {
+                    if ( $Ticket{"TicketFreeText$_"}->[0] ) {
+                        $Ticket{"TicketFreeText$_"} = $Ticket{"TicketFreeText$_"}->[0];
+                    }
+                    else {
+                        $Ticket{"TicketFreeText$_"} = '';
+                    }
+                }
+                $Data{"TicketFreeTextField$_"}
+                    = '<input type="text" class="TicketFreeText '
+                    . $ClassParam
+                    . '" name="TicketFreeText'
+                    . $_
+                    . '" id="TicketFreeText'
+                    . $_
+                    . '" value="'
+                    . $Self->Ascii2Html( Text => $Ticket{"TicketFreeText$_"} )
+                    . '" />';
+
+                $Data{"TicketFreeTextField$_"} .= $DataParam;
+
+            }
+            else {
+                $Data{"TicketFreeTextField$_"}
+                    = '<input type="text" class="TicketFreeText ' . $ClassParam
+                    . '" name="TicketFreeText'
+                    . $_
+                    . '" id="TicketFreeText'
+                    . $_
+                    . '" value="" />';
+
+                $Data{"TicketFreeTextField$_"} .= $DataParam;
+            }
+        }
+    }
+    return %Data;
+}
+
+sub AgentFreeDate {
+    my ( $Self, %Param ) = @_;
+
+    my %NullOption;
+    my %SelectData;
+    my %Ticket;
+    my %Config;
+    my $Class = '';
+    if ( $Param{NullOption} ) {
+        $SelectData{Size}     = 3;
+        $SelectData{Multiple} = 1;
+    }
+    if ( $Param{Ticket} ) {
+        %Ticket = %{ $Param{Ticket} };
+    }
+    if ( $Param{Config} ) {
+        %Config = %{ $Param{Config} };
+    }
+    if ( $Param{Class} ) {
+        $Class = $Param{Class};
+    }
+    my %Data;
+    for my $Count ( 1 .. 6 ) {
+        my %TimePeriod;
+        if ( $Self->{ConfigObject}->Get( 'TicketFreeTimePeriod' . $Count ) ) {
+            %TimePeriod = %{ $Self->{ConfigObject}->Get( 'TicketFreeTimePeriod' . $Count ) };
+        }
+        $Data{ 'TicketFreeTime' . $Count } = $Self->BuildDateSelection(
+            %Param,
+            %Ticket,
+            Prefix                              => 'TicketFreeTime' . $Count,
+            Format                              => 'DateInputFormatLong',
+            'TicketFreeTime' . $Count . 'Class' => $Class,
+            DiffTime => $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Count ) || 0,
+            %TimePeriod,
+        );
+        if ( $Param{'Ticket'}->{ 'TicketFreeTime' . $Count . 'Required' } ) {
+            $Data{ 'TicketFreeTimeKey' . $Count } =
+                '<label class="Mandatory" id="LabelTicketFreeTime'
+                . $Count
+                . '"'
+                . ' for="TicketFreeTime'
+                . $Count
+                . 'Used">'
+                . '<span class="Marker">*</span> '
+                . $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Count )
+                . ':</label>';
+        }
+        else {
+            $Data{ 'TicketFreeTimeKey' . $Count } =
+                '<label id="LabelTicketFreeTime'
+                . $Count
+                . '"'
+                . ' for="TicketFreeTime'
+                . $Count
+                . 'Used">'
+                . $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Count )
+                . ':</label>';
+        }
+    }
+    return %Data;
+}
+
+sub TicketArticleFreeText {
+    my ( $Self, %Param ) = @_;
+
+    my %NullOption;
+    my %SelectData;
+    my %Article;
+    my %Config;
+    my $Class = '';
+    if ( $Param{NullOption} ) {
+        $SelectData{Size}     = 3;
+        $SelectData{Multiple} = 1;
+    }
+    if ( $Param{Article} ) {
+        %Article = %{ $Param{Article} };
+    }
+    if ( $Param{Config} ) {
+        %Config = %{ $Param{Config} };
+    }
+    if ( $Param{Class} ) {
+        $Class = $Param{Class};
+    }
+    my %Data;
+    for ( 1 .. 3 ) {
+
+        # key
+        if ( ref $Config{"ArticleFreeKey$_"} eq 'HASH' && %{ $Config{"ArticleFreeKey$_"} } ) {
+            my $Counter = 0;
+            my $LastKey = '';
+            for ( keys %{ $Config{"ArticleFreeKey$_"} } ) {
+                $Counter++;
+                $LastKey = $_;
+            }
+            if ( $Counter == 1 && $Param{NullOption} ) {
+                if ($LastKey) {
+                    $Data{"ArticleFreeKeyField$_"} = $Config{"ArticleFreeKey$_"}->{$LastKey};
+                }
+            }
+            elsif ( $Counter > 1 ) {
+                $Data{"ArticleFreeKeyField$_"} = $Self->BuildSelection(
+                    Data => { %NullOption, %{ $Config{"ArticleFreeKey$_"} }, },
+                    Name => "ArticleFreeKey$_",
+                    SelectedValue => $Article{"ArticleFreeKey$_"},
+                    Translation   => 0,
+                    Class         => 'ArticleFreeKey',
+                    HTMLQuote     => 1,
+                    %SelectData,
+                );
+            }
+            else {
+                if ($LastKey) {
+                    $Data{"ArticleFreeKeyField$_"}
+                        = $Config{"ArticleFreeKey$_"}->{$LastKey}
+                        . '<input type="hidden" name="ArticleFreeKey'
+                        . $_
+                        . '" value="'
+                        . $Self->Ascii2Html( Text => $LastKey ) . '"/>';
+                }
+            }
+        }
+        else {
+            if ( defined $Article{"ArticleFreeKey$_"} ) {
+                if ( ref $Article{"ArticleFreeKey$_"} eq 'ARRAY' ) {
+                    if ( $Article{"ArticleFreeKey$_"}->[0] ) {
+                        $Article{"ArticleFreeKey$_"} = $Article{"ArticleFreeKey$_"}->[0];
+                    }
+                    else {
+                        $Article{"ArticleFreeKey$_"} = '';
+                    }
+                }
+                $Data{"ArticleFreeKeyField$_"}
+                    = '<input type="text" class="ArticleFreeKey" name="ArticleFreeKey'
+                    . $_
+                    . '" value="'
+                    . $Self->Ascii2Html( Text => $Article{"ArticleFreeKey$_"} )
+                    . '" />';
+            }
+            else {
+                $Data{"ArticleFreeKeyField$_"}
+                    = '<input type="text" class="ArticleFreeKey" name="ArticleFreeKey' . $_
+                    . '" value="" />';
+            }
+        }
+
+        # Add Validate and Error classes
+        my $ClassParam = "$Class ";
+        my $DataParam  = "";
+        if ( $Config{"Required"}->{$_} ) {
+            $ClassParam .= 'Validate_Required';
+            if ( ref $Config{"ArticleFreeText$_"} eq 'HASH' ) {
+                $ClassParam .= 'Dropdown';
+            }
+            $ClassParam .= ' ';
+
+            $DataParam
+                .= '<div id="ArticleFreeText'
+                . $_
+                . 'Error" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>';
+
+            # for ArticleFreeKeyField
+            $Data{"ArticleFreeKeyField$_"} =
+                '<label id="LabelArticleFreeText' . $_
+                . '" class="Mandatory"><span class="Marker">*</span> '
+                . $Data{"ArticleFreeKeyField$_"}
+                . ':</label>';
+        }
+        else {
+
+            # for ArticleFreeKeyField
+            $Data{"ArticleFreeKeyField$_"} =
+                '<label id="LabelArticleFreeText' . $_ . '">'
+                . $Data{"ArticleFreeKeyField$_"}
+                . ':</label>';
+        }
+
+        if ( $Config{"Error"}->{$_} ) {
+            $ClassParam .= 'ServerError ';
+            $DataParam
+                .= '<div id="ArticleFreeText'
+                . $_
+                . 'ServerError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>';
+        }
+
+        # value
+        if ( ref $Config{"ArticleFreeText$_"} eq 'HASH' ) {
+            $Data{"ArticleFreeTextField$_"} = $Self->BuildSelection(
+                Data => { %NullOption, %{ $Config{"ArticleFreeText$_"} }, },
+                Name => "ArticleFreeText$_",
+                SelectedValue => $Article{"ArticleFreeText$_"},
+                Translation   => 0,
+                HTMLQuote     => 1,
+                Class         => "ArticleFreeText $ClassParam",
+                %SelectData,
+            );
+
+            $Data{"ArticleFreeTextField$_"} .= $DataParam;
+        }
+        else {
+            if ( defined $Article{"ArticleFreeText$_"} ) {
+                if ( ref $Article{"ArticleFreeText$_"} eq 'ARRAY' ) {
+                    if ( $Article{"ArticleFreeText$_"}->[0] ) {
+                        $Article{"ArticleFreeText$_"} = $Article{"ArticleFreeText$_"}->[0];
+                    }
+                    else {
+                        $Article{"ArticleFreeText$_"} = '';
+                    }
+                }
+                $Data{"ArticleFreeTextField$_"}
+                    = '<input type="text" class="ArticleFreeText '
+                    . $ClassParam
+                    . '" name="ArticleFreeText'
+                    . $_
+                    . '" id="ArticleFreeText'
+                    . $_
+                    . '" value="'
+                    . $Self->Ascii2Html( Text => $Article{"ArticleFreeText$_"} )
+                    . '" />';
+
+                $Data{"ArticleFreeTextField$_"} .= $DataParam;
+            }
+            else {
+                $Data{"ArticleFreeTextField$_"}
+                    = '<input type="text" class="ArticleFreeText ' . $ClassParam
+                    . '" name="ArticleFreeText'
+                    . $_
+                    . '" id="ArticleFreeText'
+                    . $_
+                    . '" value="" />';
+
+                $Data{"ArticleFreeTextField$_"} .= $DataParam;
+            }
+        }
+    }
+    return %Data;
+}
+
+sub CustomerFreeDate {
+    my ( $Self, %Param ) = @_;
+
+    my %NullOption;
+    my %SelectData;
+    my %Ticket;
+    my %Config;
+    if ( $Param{NullOption} ) {
+        $SelectData{Size}     = 3;
+        $SelectData{Multiple} = 1;
+    }
+    if ( $Param{Ticket} ) {
+        %Ticket = %{ $Param{Ticket} };
+    }
+    if ( $Param{Config} ) {
+        %Config = %{ $Param{Config} };
+    }
+    my %Data;
+    for my $Count ( 1 .. 6 ) {
+        my %TimePeriod;
+        if ( $Self->{ConfigObject}->Get( 'TicketFreeTimePeriod' . $Count ) ) {
+            %TimePeriod = %{ $Self->{ConfigObject}->Get( 'TicketFreeTimePeriod' . $Count ) };
+        }
+        $Data{ 'TicketFreeTime' . $Count } = $Self->BuildDateSelection(
+            Area => 'Customer',
+            %Param,
+            %Ticket,
+            Prefix   => 'TicketFreeTime' . $Count,
+            Format   => 'DateInputFormatLong',
+            DiffTime => $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Count ) || 0,
+            "TicketFreeTime${Count}Class" => 'DateSelection',
+            %TimePeriod,
+        );
+        if ( $Param{'Ticket'}->{ 'TicketFreeTime' . $Count . 'Required' } ) {
+            $Data{ 'TicketFreeTimeKey' . $Count } =
+                '<label class="Mandatory" id="LabelTicketFreeTime'
+                . $Count
+                . '" for="TicketFreeTime'
+                . $Count
+                . 'Used">'
+                . '<span class="Marker">*</span> '
+                . $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Count )
+                . ':</label>';
+        }
+        else {
+            $Data{ 'TicketFreeTimeKey' . $Count } =
+                '<label id="LabelTicketFreeTime'
+                . $Count
+                . '" for="TicketFreeTime'
+                . $Count
+                . 'Used">'
+                . $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Count )
+                . ':</label>';
+        }
+    }
+    return %Data;
 }
 
 =item ArticleQuote()
@@ -401,7 +865,6 @@ sub ArticleQuote {
             TicketID                   => $Param{TicketID},
             StripPlainBodyAsAttachment => 3,
             UserID                     => $Self->{UserID},
-            DynamicFields              => 0,
         );
 
         my %NotInlineAttachments;
@@ -457,22 +920,12 @@ sub ArticleQuote {
             my %Attachments = %{ $ArticleTmp->{Atms} };
             my %AttachmentAlreadyUsed;
             $Body =~ s{
-                (=|"|')cid:(.*?)("|'|>|\/>|\s)
+                "cid:(.*?)"
             }
             {
-                my $Start= $1;
-                my $ContentID = $2;
-                my $End = $3;
-
-                # improve html quality
-                if ( $Start ne '"' && $Start ne '\'' ) {
-                    $Start .= '"';
-                }
-                if ( $End ne '"' && $End ne '\'' ) {
-                    $End = '"' . $End;
-                }
 
                 # find attachment to include
+                my $ContentID = $1;
                 ATMCOUNT:
                 for my $AttachmentID ( sort keys %Attachments ) {
 
@@ -512,7 +965,7 @@ sub ArticleQuote {
                 }
 
                 # return link
-                $Start . $ContentID . $End;
+                '"' . $ContentID . '"';
             }egxi;
 
             # find inlines images using Content-Location instead of Content-ID
@@ -532,7 +985,7 @@ sub ArticleQuote {
                 $AttachmentPicture{ContentID} =~ s/>$//;
 
                 $Body =~ s{
-                    ("|')(\Q$AttachmentPicture{ContentID}\E)("|'|>|\/>|\s)
+                    (=|"|')(\Q$AttachmentPicture{ContentID}\E)("|'|>|\/>|\s)
                 }
                 {
                     my $Start= $1;
@@ -592,10 +1045,7 @@ sub ArticleQuote {
     }
 
     # as fallback use text body for quote
-    my %Article = $Self->{TicketObject}->ArticleGet(
-        ArticleID     => $Param{ArticleID},
-        DynamicFields => 0,
-    );
+    my %Article = $Self->{TicketObject}->ArticleGet( ArticleID => $Param{ArticleID} );
 
     # check if original content isn't text/plain or text/html, don't use it
     if ( !$Article{ContentType} ) {
@@ -673,12 +1123,11 @@ sub TicketListShow {
         Value     => $View,
     );
 
-    # update preferences if needed
-    my $Key = 'UserTicketOverview' . $Env->{Action};
-    if ( !$Self->{ConfigObject}->Get('DemoSystem') && $Self->{$Key} ne $View ) {
+    # update preferences
+    if ( !$Self->{ConfigObject}->Get('DemoSystem') ) {
         $Self->{UserObject}->SetPreferences(
             UserID => $Self->{UserID},
-            Key    => $Key,
+            Key    => 'UserTicketOverview' . $Env->{Action},
             Value  => $View,
         );
     }
@@ -704,6 +1153,7 @@ sub TicketListShow {
             $Self->{LogObject}->Log(
                 Priority => 'error',
                 Message  => "No Config option found for view mode $View, took $Key instead!",
+                Message  => 'Need Depend Param Ajax option!',
             );
             $View = $Key;
             last;
@@ -745,7 +1195,7 @@ sub TicketListShow {
         %Data = %{ $Config->{$Group}->{Data} };
     }
 
-    # calculate max. shown per page
+    # calculate max. sown page
     if ( $StartHit > $Param{Total} ) {
         my $Pages = int( ( $Param{Total} / $PageShown ) + 0.99999 );
         $StartHit = ( ( $Pages - 1 ) * $PageShown ) + 1;
@@ -763,15 +1213,14 @@ sub TicketListShow {
         IDPrefix  => $Env->{LayoutObject}->{Action},
     );
 
-    # build shown ticket per page
+    # build shown ticket a page
     $Param{RequestedURL}    = "Action=$Self->{Action}";
     $Param{Group}           = $Group;
     $Param{PreferencesKey}  = $PageShownPreferencesKey;
     $Param{PageShownString} = $Self->BuildSelection(
-        Name        => $PageShownPreferencesKey,
-        SelectedID  => $PageShown,
-        Translation => 0,
-        Data        => \%Data,
+        Name       => $PageShownPreferencesKey,
+        SelectedID => $PageShown,
+        Data       => \%Data,
     );
 
     # nav bar at the beginning of a overview
@@ -933,6 +1382,8 @@ sub TicketListShow {
 sub TicketMetaItemsCount {
     my ( $Self, %Param ) = @_;
     return ( 'Priority', 'New Article' );
+
+    #    return ('New Article', 'Locked', 'Watched');
 }
 
 sub TicketMetaItems {
@@ -946,65 +1397,106 @@ sub TicketMetaItems {
     my @Result;
 
     # show priority
-    push @Result, {
+    if (1) {
+        push @Result, {
 
-        #            Image => $Image,
-        Title      => $Param{Ticket}->{Priority},
-        Class      => 'Flag',
-        ClassSpan  => 'PriorityID-' . $Param{Ticket}->{PriorityID},
-        ClassTable => 'Flags',
-    };
+            #            Image => $Image,
+            Title      => $Param{Ticket}->{Priority},
+            Class      => 'Flag',
+            ClassSpan  => 'PriorityID-' . $Param{Ticket}->{PriorityID},
+            ClassTable => 'Flags',
+        };
+    }
 
     # show new article
-    my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
-        TicketID => $Param{Ticket}->{TicketID},
-        UserID   => $Self->{UserID},
-    );
+    if (1) {
+        my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
+            TicketID => $Param{Ticket}->{TicketID},
+            UserID   => $Self->{UserID},
+        );
 
-    # show if new message is in there
-    if ( $TicketFlag{Seen} ) {
-        push @Result, undef;
-    }
-    else {
-
-        # just show ticket flags if agent belongs to the ticket
-        my $ShowMeta;
-        if (
-            $Self->{UserID} == $Param{Ticket}->{OwnerID}
-            || $Self->{UserID} == $Param{Ticket}->{ResponsibleID}
-            )
-        {
-            $ShowMeta = 1;
+        # show if new message is in there
+        if ( $TicketFlag{Seen} ) {
+            push @Result, undef;
         }
-        if ( !$ShowMeta && $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
-            my %Watch = $Self->{TicketObject}->TicketWatchGet(
-                TicketID => $Param{Ticket}->{TicketID},
-            );
-            if ( $Watch{ $Self->{UserID} } ) {
+        else {
+
+            # just show ticket flags if agent belongs to the ticket
+            my $ShowMeta;
+            if (
+                $Self->{UserID} == $Param{Ticket}->{OwnerID}
+                || $Self->{UserID} == $Param{Ticket}->{ResponsibleID}
+                )
+            {
                 $ShowMeta = 1;
             }
-        }
+            if ( !$ShowMeta && $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
+                my %Watch = $Self->{TicketObject}->TicketWatchGet(
+                    TicketID => $Param{Ticket}->{TicketID},
+                );
+                if ( $Watch{ $Self->{UserID} } ) {
+                    $ShowMeta = 1;
+                }
+            }
 
-        # show ticket flags
-        my $Image = 'meta-new-inactive.png';
-        if ($ShowMeta) {
-            $Image = 'meta-new.png';
+            # show ticket flags
+            my $Image = 'meta-new-inactive.png';
+            if ($ShowMeta) {
+                $Image = 'meta-new.png';
+                push @Result, {
+                    Image      => $Image,
+                    Title      => 'Unread article(s) available',
+                    Class      => 'UnreadArticles',
+                    ClassSpan  => 'UnreadArticles Important',
+                    ClassTable => 'UnreadArticles',
+                };
+            }
+            else {
+                push @Result, {
+                    Image      => $Image,
+                    Title      => 'Unread article(s) available',
+                    Class      => 'UnreadArticles',
+                    ClassSpan  => 'UnreadArticles Unimportant',
+                    ClassTable => 'UnreadArticles',
+                };
+            }
+        }
+    }
+
+    # show if it's locked
+    if (0) {
+        if ( $Param{Ticket}->{Lock} eq 'lock' ) {
+            if ( $Param{Ticket}->{OwnerID} == $Self->{UserID} ) {
+                push @Result, {
+                    Image => 'meta-lock-own.gif',
+                    Title => 'Locked by you!',
+                };
+            }
+            else {
+                push @Result, {
+                    Image => 'meta-lock.gif',
+                    Title => 'Locked by somebody else!',
+                };
+            }
+        }
+        else {
+            push @Result, undef;
+        }
+    }
+
+    # check if it get watched
+    if ( 0 && $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
+        my %Watch = $Self->{TicketObject}->TicketWatchGet(
+            TicketID => $Param{Ticket}->{TicketID},
+        );
+        if ( $Watch{ $Self->{UserID} } ) {
             push @Result, {
-                Image      => $Image,
-                Title      => 'Unread article(s) available',
-                Class      => 'UnreadArticles',
-                ClassSpan  => 'UnreadArticles Important',
-                ClassTable => 'UnreadArticles',
+                Image => 'meta-watch.gif',
+                Title => 'Watched by you!',
             };
         }
         else {
-            push @Result, {
-                Image      => $Image,
-                Title      => 'Unread article(s) available',
-                Class      => 'UnreadArticles',
-                ClassSpan  => 'UnreadArticles Unimportant',
-                ClassTable => 'UnreadArticles',
-            };
+            push @Result, undef;
         }
     }
 

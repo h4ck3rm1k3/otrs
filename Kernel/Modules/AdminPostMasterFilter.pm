@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminPostMasterFilter.pm - to add/update/delete filters
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminPostMasterFilter.pm,v 1.38 2011/12/23 14:19:00 mg Exp $
+# $Id: AdminPostMasterFilter.pm,v 1.36.2.1 2011/04/06 16:37:27 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::PostMaster::Filter;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.38 $) [1];
+$VERSION = qw($Revision: 1.36.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -59,10 +59,6 @@ sub Run {
     # delete
     # ------------------------------------------------------------ #
     if ( $Self->{Subaction} eq 'Delete' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         if ( !$Self->{PostMasterFilter}->FilterDelete( Name => $Name ) ) {
             return $Self->{LayoutObject}->ErrorScreen();
         }

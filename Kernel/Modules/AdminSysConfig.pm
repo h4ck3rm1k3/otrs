@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSysConfig.pm - to change, import, export ConfigParameters
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSysConfig.pm,v 1.119 2011/11/29 13:13:26 mg Exp $
+# $Id: AdminSysConfig.pm,v 1.112.2.1 2011/04/06 16:37:27 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::SysConfig;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.119 $) [1];
+$VERSION = qw($Revision: 1.112.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -713,6 +713,9 @@ sub Run {
         # get the config level of the admin user
         my $ConfigLevel = $Self->{ConfigObject}->Get('ConfigLevel') || 0;
 
+        # Language
+        my $UserLang = $Self->{UserLanguage} || $Self->{ConfigObject}->Get('DefaultLanguage');
+
         # list all Items
         for (@List) {
 
@@ -1029,20 +1032,12 @@ sub ListConfigItem {
         if ( $Item->{String}->[1]->{Default} ) {
             $Default = $Item->{String}->[1]->{Default};
         }
-
-        my $InputType = 'text';
-
-        if ( $Item->{String}->[1]->{Type} && $Item->{String}->[1]->{Type} eq 'Password' ) {
-            $InputType = 'password';
-        }
-
         $Self->{LayoutObject}->Block(
             Name => 'ConfigElementString',
             Data => {
                 ElementKey => $ItemHash{Name},
                 Content    => $Item->{String}->[1]->{Content},
                 Default    => $Default,
-                InputType  => $InputType,
             },
         );
 
@@ -1320,7 +1315,7 @@ sub ListConfigItem {
         );
 
         # Array Element Group
-        for my $ArrayElement (qw(Group GroupRo)) {
+        for my $ArrayElement qw(Group GroupRo) {
             for my $Index ( 1 .. $#{ $FrontendModuleReg->{$ArrayElement} } ) {
 
                 $Self->{LayoutObject}->Block(
@@ -1401,7 +1396,7 @@ sub ListConfigItem {
             );
 
             # Array Element Group
-            for my $ArrayElement (qw(Group GroupRo)) {
+            for my $ArrayElement qw(Group GroupRo) {
                 for my $Index2 ( 1 .. $#{ $FrontendModuleReg->{NavBar}[$Index]{$ArrayElement} } ) {
                     $Self->{LayoutObject}->Block(
                         Name => 'ConfigElementFrontendModuleRegContentNavBar' . $ArrayElement,
@@ -1422,7 +1417,7 @@ sub ListConfigItem {
         if ( ref $FrontendModuleReg->{NavBarModule} eq 'ARRAY' ) {
             for my $Index ( 1 .. $#{ $FrontendModuleReg->{NavBarModule} } ) {
                 my %Data;
-                for my $Key (qw(Module Name Block Pri)) {
+                for my $Key qw (Module Name Block Prio) {
                     $Data{ 'Key' . $Key }     = $Key;
                     $Data{ 'Content' . $Key } = '';
                     if ( defined $FrontendModuleReg->{NavBarModule}->[1]->{$Key}->[1]->{Content} ) {
@@ -1446,7 +1441,7 @@ sub ListConfigItem {
         }
         elsif ( defined $FrontendModuleReg->{NavBarModule} ) {
             my %Data;
-            for my $Key (qw(Module Name Description Block Prio)) {
+            for my $Key qw (Module Name Description Block Prio) {
                 $Data{ 'Key' . $Key }     = $Key;
                 $Data{ 'Content' . $Key } = '';
                 if ( defined $FrontendModuleReg->{NavBarModule}->{$Key}->[1]->{Content} ) {

@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminCustomerCompany.pm - to add/update/delete customer companies
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminCustomerCompany.pm,v 1.26 2011/12/21 13:27:27 mg Exp $
+# $Id: AdminCustomerCompany.pm,v 1.22.2.1 2011/04/06 16:37:27 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,11 +15,10 @@ use strict;
 use warnings;
 
 use Kernel::System::CustomerCompany;
-use Kernel::System::ReferenceData;
 use Kernel::System::Valid;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.26 $) [1];
+$VERSION = qw($Revision: 1.22.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -35,7 +34,6 @@ sub new {
         }
     }
     $Self->{CustomerCompanyObject} = Kernel::System::CustomerCompany->new(%Param);
-    $Self->{ReferenceDataObject}   = Kernel::System::ReferenceData->new(%Param);
     $Self->{ValidObject}           = Kernel::System::Valid->new(%Param);
 
     return $Self;
@@ -74,10 +72,6 @@ sub Run {
     # change action
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'ChangeAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Note = '';
         my ( %GetParam, %Errors );
 
@@ -173,10 +167,6 @@ sub Run {
     # add action
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'AddAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Note = '';
         my ( %GetParam, %Errors );
         for my $Entry ( @{ $Self->{ConfigObject}->Get('CustomerCompany')->{Map} } ) {
@@ -254,6 +244,7 @@ sub Run {
         $Output .= $Self->{LayoutObject}->Footer();
         return $Output;
     }
+
 }
 
 sub _Edit {
@@ -307,36 +298,14 @@ sub _Edit {
                 # build ValidID string
                 $Block = 'Option';
                 $Param{Option} = $Self->{LayoutObject}->BuildSelection(
-                    Data =>
-                        $Self->{ConfigObject}->Get('CustomerCompany')->{Selections}
+                    Data => $Self->{ConfigObject}->Get('CustomerCompany')->{Selections}
                         ->{ $Entry->[0] },
                     Name  => $Entry->[0],
-                    Class => $OptionRequired . ' ' .
-                        ( $Param{Errors}->{ $Entry->[0] . 'Invalid' } || '' ),
+                    Class => $OptionRequired . ' '
+                        . ( $Param{Errors}->{ $Entry->[0] . 'Invalid' } || '' ),
                     Translation => 0,
                     SelectedID  => $Param{ $Entry->[0] },
                     Max         => 35,
-                );
-
-            }
-            elsif ( $Entry->[0] =~ /^CustomerCompanyCountry/i ) {
-                my $OptionRequired = '';
-                if ( $Entry->[4] ) {
-                    $OptionRequired = 'Validate_Required';
-                }
-
-                # build Country string
-                my $CountryList = $Self->{ReferenceDataObject}->CountryList();
-
-                $Block = 'Option';
-                $Param{Option} = $Self->{LayoutObject}->BuildSelection(
-                    Data         => $CountryList,
-                    PossibleNone => 1,
-                    Sort         => 'AlphanumericValue',
-                    Name         => $Entry->[0],
-                    Class        => $OptionRequired . ' ' .
-                        ( $Param{Errors}->{ $Entry->[0] . 'Invalid' } || '' ),
-                    SelectedID => defined( $Param{ $Entry->[0] } ) ? $Param{ $Entry->[0] } : 1,
                 );
             }
             elsif ( $Entry->[0] =~ /^ValidID/i ) {
