@@ -2,7 +2,7 @@
 # Kernel/Language.pm - provides multi language support
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Language.pm,v 1.79 2011/08/12 09:06:15 mg Exp $
+# $Id: Language.pm,v 1.77.2.1 2011/04/14 12:20:54 ub Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
 
-$VERSION = qw($Revision: 1.79 $) [1];
+$VERSION = qw($Revision: 1.77.2.1 $) [1];
 
 =head1 NAME
 
@@ -394,7 +394,7 @@ sub FormatTimeString {
 =item GetRecommendedCharset()
 
 Returns the recommended charset for frontend (based on translation
-file or utf-8).
+file or from DefaultCharset (from Kernel/Config.pm) is utf-8).
 
     my $Charset = $LanguageObject->GetRecommendedCharset().
 
@@ -410,7 +410,7 @@ sub GetRecommendedCharset {
     # if not, what charset shoud I use (take it from translation file)?
     return $Self->{Charset}->[-1] if $Self->{Charset};
 
-    return 'utf-8';
+    return $Self->{ConfigObject}->Get('DefaultCharset') || 'iso-8859-1';
 }
 
 =item GetPossibleCharsets()
@@ -532,6 +532,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.79 $ $Date: 2011/08/12 09:06:15 $
+$Revision: 1.77.2.1 $ $Date: 2011/04/14 12:20:54 $
 
 =cut
