@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminNotificationEvent.pm - to manage event-based notifications
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminNotificationEvent.pm,v 1.37 2011/12/23 14:09:31 mg Exp $
+# $Id: AdminNotificationEvent.pm,v 1.28.2.1 2011/04/26 22:32:17 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,12 +22,9 @@ use Kernel::System::SLA;
 use Kernel::System::State;
 use Kernel::System::Type;
 use Kernel::System::Valid;
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.37 $) [1];
+$VERSION = qw($Revision: 1.28.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -37,29 +34,21 @@ sub new {
     bless( $Self, $Type );
 
     # check all needed objects
-    for my $Needed (qw(ParamObject DBObject LayoutObject ConfigObject LogObject)) {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
+    for (qw(ParamObject DBObject LayoutObject ConfigObject LogObject)) {
+        if ( !$Self->{$_} ) {
+            $Self->{LayoutObject}->FatalError( Message => "Got no $_!" );
         }
     }
 
     $Self->{NotificationEventObject} = Kernel::System::NotificationEvent->new(%Param);
 
-    $Self->{PriorityObject}     = Kernel::System::Priority->new(%Param);
-    $Self->{StateObject}        = Kernel::System::State->new(%Param);
-    $Self->{LockObject}         = Kernel::System::Lock->new(%Param);
-    $Self->{ServiceObject}      = Kernel::System::Service->new(%Param);
-    $Self->{SLAObject}          = Kernel::System::SLA->new(%Param);
-    $Self->{TypeObject}         = Kernel::System::Type->new(%Param);
-    $Self->{ValidObject}        = Kernel::System::Valid->new(%Param);
-    $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new(%Param);
-    $Self->{BackendObject}      = Kernel::System::DynamicField::Backend->new(%Param);
-
-    # get the dynamic fields for this screen
-    $Self->{DynamicField} = $Self->{DynamicFieldObject}->DynamicFieldListGet(
-        Valid      => 1,
-        ObjectType => ['Ticket'],
-    );
+    $Self->{PriorityObject} = Kernel::System::Priority->new(%Param);
+    $Self->{StateObject}    = Kernel::System::State->new(%Param);
+    $Self->{LockObject}     = Kernel::System::Lock->new(%Param);
+    $Self->{ServiceObject}  = Kernel::System::Service->new(%Param);
+    $Self->{SLAObject}      = Kernel::System::SLA->new(%Param);
+    $Self->{TypeObject}     = Kernel::System::Type->new(%Param);
+    $Self->{ValidObject}    = Kernel::System::Valid->new(%Param);
 
     return $Self;
 }
@@ -78,14 +67,12 @@ sub Run {
         $Self->_Edit(
             Action => 'Change',
             %Data,
-            DynamicFieldValues => $Data{Data},
         );
         $Output .= $Self->{LayoutObject}->Output(
             TemplateFile => 'AdminNotificationEvent',
             Data         => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
-
         return $Output;
     }
 
@@ -95,57 +82,32 @@ sub Run {
     elsif ( $Self->{Subaction} eq 'ChangeAction' ) {
 
         # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
+        #        $Self->{LayoutObject}->ChallengeTokenCheck();
 
         my %GetParam;
-        for my $Parameter (qw(ID Name Subject Body Type Charset Comment ValidID Events)) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+        for (qw(ID Name Subject Body Type Charset Comment ValidID Events)) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ ) || '';
         }
-        for my $Parameter (
-            qw(Recipients RecipientAgents RecipientGroups RecipientRoles RecipientEmail
-            Events StateID QueueID PriorityID LockID TypeID ServiceID SLAID
-            CustomerID CustomerUserID
-            ArticleTypeID ArticleSubjectMatch ArticleBodyMatch ArticleAttachmentInclude
-            NotificationArticleTypeID)
+        for (
+            qw(Recipients RecipientAgents RecipientGroups RecipientRoles RecipientEmail Events StateID QueueID PriorityID LockID TypeID ServiceID SLAID CustomerID CustomerUserID ArticleTypeID ArticleSubjectMatch ArticleBodyMatch ArticleAttachmentInclude NotificationArticleTypeID)
             )
         {
-            my @Data = $Self->{ParamObject}->GetArray( Param => $Parameter );
+            my @Data = $Self->{ParamObject}->GetArray( Param => $_ );
             next if !@Data;
-            $GetParam{Data}->{$Parameter} = \@Data;
+            $GetParam{Data}->{$_} = \@Data;
         }
 
-        # to store dynamic fields profile data
-        my %DynamicFieldValues;
-
-        # get Dynamic fields for search from web request
-        # cycle trough the activated Dynamic Fields for this screen
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-            # extract the dynamic field value form the web request
-            my $DynamicFieldValue = $Self->{BackendObject}->SearchFieldValueGet(
-                DynamicFieldConfig     => $DynamicFieldConfig,
-                ParamObject            => $Self->{ParamObject},
-                ReturnProfileStructure => 1,
-                LayoutObject           => $Self->{LayoutObject},
-            );
-
-            # set the comple value structure in GetParam to store it later in the Generic Agent Job
-            if ( IsHashRefWithData($DynamicFieldValue) ) {
-
-                # set search structure for display
-                %DynamicFieldValues = ( %DynamicFieldValues, %{$DynamicFieldValue} );
-
-                #make all values array refs
-                for my $FieldName ( keys %{$DynamicFieldValue} ) {
-                    if ( ref $DynamicFieldValue->{$FieldName} ne 'ARRAY' ) {
-                        $DynamicFieldValue->{$FieldName} = [ $DynamicFieldValue->{$FieldName} ];
-                    }
-                }
-
-                # store special structure for match
-                $GetParam{Data} = { %{ $GetParam{Data} }, %{$DynamicFieldValue} };
+        # get free field params
+        for my $Count ( 1 .. 16 ) {
+            my $Key = "TicketFreeKey$Count";
+            my @Keys = $Self->{ParamObject}->GetArray( Param => $Key );
+            if (@Keys) {
+                $GetParam{Data}->{$Key} = \@Keys;
+            }
+            my $Value = "TicketFreeText$Count";
+            my @Values = $Self->{ParamObject}->GetArray( Param => $Value );
+            if (@Values) {
+                $GetParam{Data}->{$Value} = \@Values;
             }
         }
 
@@ -166,14 +128,13 @@ sub Run {
                 Data         => \%Param,
             );
             $Output .= $Self->{LayoutObject}->Footer();
-
             return $Output;
         }
         else {
-            for my $Needed (qw(Name Events Subject Body)) {
-                $GetParam{ $Needed . "ServerError" } = "";
-                if ( $GetParam{$Needed} eq '' ) {
-                    $GetParam{ $Needed . "ServerError" } = "ServerError";
+            for (qw(Name Events Subject Body)) {
+                $GetParam{ $_ . "ServerError" } = "";
+                if ( $GetParam{$_} eq '' ) {
+                    $GetParam{ $_ . "ServerError" } = "ServerError";
                 }
             }
             my $Output = $Self->{LayoutObject}->Header();
@@ -182,14 +143,12 @@ sub Run {
             $Self->_Edit(
                 Action => 'Change',
                 %GetParam,
-                DynamicFieldValues => \%DynamicFieldValues,
             );
             $Output .= $Self->{LayoutObject}->Output(
                 TemplateFile => 'AdminNotificationEvent',
                 Data         => \%Param,
             );
             $Output .= $Self->{LayoutObject}->Footer();
-
             return $Output;
         }
     }
@@ -198,18 +157,21 @@ sub Run {
     # add
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Add' ) {
-
+        my %GetParam = ();
+        for (qw(Name)) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ );
+        }
         my $Output = $Self->{LayoutObject}->Header();
         $Output .= $Self->{LayoutObject}->NavigationBar();
         $Self->_Edit(
             Action => 'Add',
+            %GetParam,
         );
         $Output .= $Self->{LayoutObject}->Output(
             TemplateFile => 'AdminNotificationEvent',
             Data         => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
-
         return $Output;
     }
 
@@ -219,56 +181,32 @@ sub Run {
     elsif ( $Self->{Subaction} eq 'AddAction' ) {
 
         # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
+        #        $Self->{LayoutObject}->ChallengeTokenCheck();
 
         my %GetParam;
-        for my $Parameter (qw(Name Subject Body Comment ValidID Events)) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+        for (qw(Name Subject Body Comment ValidID Events)) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ ) || '';
         }
-        for my $Parameter (
-            qw(Recipients RecipientAgents RecipientRoles RecipientGroups RecipientEmail Events StateID QueueID
-            PriorityID LockID TypeID ServiceID SLAID CustomerID CustomerUserID
-            ArticleTypeID ArticleSubjectMatch ArticleBodyMatch ArticleAttachmentInclude
-            NotificationArticleTypeID)
+        for (
+            qw(Recipients RecipientRoles RecipientAgents RecipientEmail Events StateID QueueID PriorityID LockID TypeID ServiceID SLAID CustomerID CustomerUserID ArticleTypeID ArticleSubjectMatch ArticleBodyMatch ArticleAttachmentInclude NotificationArticleTypeID)
             )
         {
-            my @Data = $Self->{ParamObject}->GetArray( Param => $Parameter );
+            my @Data = $Self->{ParamObject}->GetArray( Param => $_ );
             next if !@Data;
-            $GetParam{Data}->{$Parameter} = \@Data;
+            $GetParam{Data}->{$_} = \@Data;
         }
 
-        # to store dynamic fields profile data
-        my %DynamicFieldValues;
-
-        # get Dynamic fields for search from web request
-        # cycle trough the activated Dynamic Fields for this screen
-        DYNAMICFIELD:
-        for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-            # extract the dynamic field value form the web request
-            my $DynamicFieldValue = $Self->{BackendObject}->SearchFieldValueGet(
-                DynamicFieldConfig     => $DynamicFieldConfig,
-                ParamObject            => $Self->{ParamObject},
-                ReturnProfileStructure => 1,
-                LayoutObject           => $Self->{LayoutObject},
-            );
-
-            # set the comple value structure in GetParam to store it later in the Generic Agent Job
-            if ( IsHashRefWithData($DynamicFieldValue) ) {
-
-                # set search structure for display
-                %DynamicFieldValues = ( %DynamicFieldValues, %{$DynamicFieldValue} );
-
-                #make all values array refs
-                for my $FieldName ( keys %{$DynamicFieldValue} ) {
-                    if ( ref $DynamicFieldValue->{$FieldName} ne 'ARRAY' ) {
-                        $DynamicFieldValue->{$FieldName} = [ $DynamicFieldValue->{$FieldName} ];
-                    }
-                }
-
-                # store special structure for match
-                $GetParam{Data} = { %{ $GetParam{Data} }, %{$DynamicFieldValue} };
+        # get free field params
+        for my $Count ( 1 .. 16 ) {
+            my $Key = "TicketFreeKey$Count";
+            my @Keys = $Self->{ParamObject}->GetArray( Param => $Key );
+            if (@Keys) {
+                $GetParam{Data}->{$Key} = \@Keys;
+            }
+            my $Value = "TicketFreeText$Count";
+            my @Values = $Self->{ParamObject}->GetArray( Param => $Value );
+            if (@Values) {
+                $GetParam{Data}->{$Value} = \@Values;
             }
         }
 
@@ -290,14 +228,13 @@ sub Run {
                 Data         => \%Param,
             );
             $Output .= $Self->{LayoutObject}->Footer();
-
             return $Output;
         }
         else {
-            for my $Needed (qw(Name Events Subject Body)) {
-                $GetParam{ $Needed . "ServerError" } = "";
-                if ( $GetParam{$Needed} eq '' ) {
-                    $GetParam{ $Needed . "ServerError" } = "ServerError";
+            for (qw(Name Events Subject Body)) {
+                $GetParam{ $_ . "ServerError" } = "";
+                if ( $GetParam{$_} eq '' ) {
+                    $GetParam{ $_ . "ServerError" } = "ServerError";
                 }
             }
             my $Output = $Self->{LayoutObject}->Header();
@@ -306,14 +243,12 @@ sub Run {
             $Self->_Edit(
                 Action => 'Add',
                 %GetParam,
-                DynamicFieldValues => \%DynamicFieldValues,
             );
             $Output .= $Self->{LayoutObject}->Output(
                 TemplateFile => 'AdminNotificationEvent',
                 Data         => \%Param,
             );
             $Output .= $Self->{LayoutObject}->Footer();
-
             return $Output;
         }
     }
@@ -323,12 +258,9 @@ sub Run {
     # ------------------------------------------------------------ #
     if ( $Self->{Subaction} eq 'Delete' ) {
 
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my %GetParam;
-        for my $Parameter (qw(ID)) {
-            $GetParam{$Parameter} = $Self->{ParamObject}->GetParam( Param => $Parameter ) || '';
+        for (qw(ID)) {
+            $GetParam{$_} = $Self->{ParamObject}->GetParam( Param => $_ ) || '';
         }
 
         my $Delete = $Self->{NotificationEventObject}->NotificationDelete(
@@ -338,7 +270,6 @@ sub Run {
         if ( !$Delete ) {
             return $Self->{LayoutObject}->ErrorScreen();
         }
-
         return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
     }
 
@@ -354,7 +285,6 @@ sub Run {
             Data         => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
-
         return $Output;
     }
 
@@ -416,54 +346,53 @@ sub _Edit {
         $EventClass .= ' ' . $Param{EventsServerError};
     }
 
-    # build dynamic field list
-    # get the dynamic fields for ticket object
-    my $DynamicFields = $Self->{DynamicFieldObject}->DynamicFieldList(
-        Valid      => 1,
-        ObjectType => ['Ticket'],
-        ResultType => 'HASH',
-    );
-    my %DynamicFieldList =
-        map { 'TicketDynamicFieldUpdate_' . $_ => 'TicketDynamicFieldUpdate_' . $_ }
-        sort values %{$DynamicFields};
-
     # Build the list...
     $Param{EventsStrg} = $Self->{LayoutObject}->BuildSelection(
         Data => {
-            TicketStateUpdate                  => 'TicketStateUpdate',
-            TicketQueueUpdate                  => 'TicketQueueUpdate',
-            TicketCreate                       => 'TicketCreate',
-            TicketTitleUpdate                  => 'TicketTitleUpdate',
-            TicketTypeUpdate                   => 'TicketTypeUpdate',
-            TicketServiceUpdate                => 'TicketServiceUpdate',
-            TicketSLAUpdate                    => 'TicketSLAUpdate',
-            TicketUnlockTimeoutUpdate          => 'TicketUnlockTimeoutUpdate',
-            TicketCustomerUpdate               => 'TicketCustomerUpdate',
-            TicketPendingTimeUpdate            => 'TicketPendingTimeUpdate',
-            TicketLockUpdate                   => 'TicketLockUpdate',
-            TicketOwnerUpdate                  => 'TicketOwnerUpdate',
-            TicketResponsibleUpdate            => 'TicketResponsibleUpdate',
-            TicketPriorityUpdate               => 'TicketPriorityUpdate',
-            TicketSubscribe                    => 'TicketSubscribe',
-            TicketUnsubscribe                  => 'TicketUnsubscribe',
-            TicketAccountTime                  => 'TicketAccountTime',
-            TicketMerge                        => 'TicketMerge',
-            ArticleCreate                      => 'ArticleCreate',
-            ArticleFreeTextUpdate              => 'ArticleFreeTextUpdate',
-            ArticleSend                        => 'ArticleSend',
-            ArticleBounce                      => 'ArticleBounce',
-            EscalationResponseTimeNotifyBefore => 'EscalationResponseTimeNotifyBefore',
-            EscalationUpdateTimeNotifyBefore   => 'EscalationUpdateTimeNotifyBefore',
-            EscalationSolutionTimeNotifyBefore => 'EscalationSolutionTimeNotifyBefore',
-            EscalationResponseTimeStart        => 'EscalationResponseTimeStart',
-            EscalationUpdateTimeStart          => 'EscalationUpdateTimeStart',
-            EscalationSolutionTimeStart        => 'EscalationSolutionTimeStart',
-            EscalationResponseTimeStop         => 'EscalationResponseTimeStop',
-            EscalationUpdateTimeStop           => 'EscalationUpdateTimeStop',
-            EscalationSolutionTimeStop         => 'EscalationSolutionTimeStop',
-
-            # Special events for each DynamicField
-            %DynamicFieldList,
+            TicketStateUpdate         => 'TicketStateUpdate',
+            TicketQueueUpdate         => 'TicketQueueUpdate',
+            TicketCreate              => 'TicketCreate',
+            TicketTitleUpdate         => 'TicketTitleUpdate',
+            TicketTypeUpdate          => 'TicketTypeUpdate',
+            TicketServiceUpdate       => 'TicketServiceUpdate',
+            TicketSLAUpdate           => 'TicketSLAUpdate',
+            TicketUnlockTimeoutUpdate => 'TicketUnlockTimeoutUpdate',
+            TicketCustomerUpdate      => 'TicketCustomerUpdate',
+            TicketFreeTextUpdate1     => 'TicketFreeTextUpdate1',
+            TicketFreeTextUpdate2     => 'TicketFreeTextUpdate2',
+            TicketFreeTextUpdate3     => 'TicketFreeTextUpdate3',
+            TicketFreeTextUpdate4     => 'TicketFreeTextUpdate4',
+            TicketFreeTextUpdate5     => 'TicketFreeTextUpdate5',
+            TicketFreeTextUpdate6     => 'TicketFreeTextUpdate6',
+            TicketFreeTextUpdate7     => 'TicketFreeTextUpdate7',
+            TicketFreeTextUpdate8     => 'TicketFreeTextUpdate8',
+            TicketFreeTextUpdate9     => 'TicketFreeTextUpdate9',
+            TicketFreeTextUpdate10    => 'TicketFreeTextUpdate10',
+            TicketFreeTextUpdate11    => 'TicketFreeTextUpdate11',
+            TicketFreeTextUpdate12    => 'TicketFreeTextUpdate12',
+            TicketFreeTextUpdate13    => 'TicketFreeTextUpdate13',
+            TicketFreeTextUpdate14    => 'TicketFreeTextUpdate14',
+            TicketFreeTextUpdate15    => 'TicketFreeTextUpdate15',
+            TicketFreeTextUpdate16    => 'TicketFreeTextUpdate16',
+            TicketFreeTimeUpdate1     => 'TicketFreeTimeUpdate1',
+            TicketFreeTimeUpdate2     => 'TicketFreeTimeUpdate2',
+            TicketFreeTimeUpdate3     => 'TicketFreeTimeUpdate3',
+            TicketFreeTimeUpdate4     => 'TicketFreeTimeUpdate4',
+            TicketFreeTimeUpdate5     => 'TicketFreeTimeUpdate5',
+            TicketFreeTimeUpdate6     => 'TicketFreeTimeUpdate6',
+            TicketPendingTimeUpdate   => 'TicketPendingTimeUpdate',
+            TicketLockUpdate          => 'TicketLockUpdate',
+            TicketOwnerUpdate         => 'TicketOwnerUpdate',
+            TicketResponsibleUpdate   => 'TicketResponsibleUpdate',
+            TicketPriorityUpdate      => 'TicketPriorityUpdate',
+            TicketSubscribe           => 'TicketSubscribe',
+            TicketUnsubscribe         => 'TicketUnsubscribe',
+            TicketAccountTime         => 'TicketAccountTime',
+            TicketMerge               => 'TicketMerge',
+            ArticleCreate             => 'ArticleCreate',
+            ArticleFreeTextUpdate     => 'ArticleFreeTextUpdate',
+            ArticleSend               => 'ArticleSend',
+            ArticleBounce             => 'ArticleBounce',
         },
         Name       => 'Events',
         Multiple   => 1,
@@ -591,41 +520,47 @@ sub _Edit {
         );
     }
 
-    # create dynamic field HTML for set with historical data options
-    my $PrintDynamicFieldsSearchHeader = 1;
-
-    # cycle trough the activated Dynamic Fields for this screen
-    DYNAMICFIELD:
-    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-
-        # skip all dynamic fields where ObjectMatch is not yet implemented
-        next DYNAMICFIELD if !$Self->{BackendObject}->IsMatchable(
-            DynamicFieldConfig => $DynamicFieldConfig,
+    # get free text config options
+    my %TicketFreeText;
+    my %TicketFreeTextData;
+    for my $Count ( 1 .. 16 ) {
+        $TicketFreeText{ 'TicketFreeKey' . $Count } = $Self->{TicketObject}->TicketFreeTextGet(
+            Type   => 'TicketFreeKey' . $Count,
+            FillUp => 1,
+            Action => $Self->{Action},
+            UserID => $Self->{UserID},
         );
-
-        # get field html
-        my $DynamicFieldHTML = $Self->{BackendObject}->SearchFieldRender(
-            DynamicFieldConfig     => $DynamicFieldConfig,
-            Profile                => $Param{DynamicFieldValues} || {},
-            LayoutObject           => $Self->{LayoutObject},
-            ConfirmationCheckboxes => 1,
-            UseLabelHints          => 0,
+        $TicketFreeText{ 'TicketFreeText' . $Count } = $Self->{TicketObject}->TicketFreeTextGet(
+            Type   => 'TicketFreeText' . $Count,
+            FillUp => 1,
+            Action => $Self->{Action},
+            UserID => $Self->{UserID},
         );
+        $TicketFreeTextData{ 'TicketFreeKey' . $Count }
+            = $Param{Data}->{ 'TicketFreeKey' . $Count };
+        $TicketFreeTextData{ 'TicketFreeText' . $Count }
+            = $Param{Data}->{ 'TicketFreeText' . $Count };
+    }
 
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldHTML);
+    # generate the free text fields
+    my %TicketFreeTextHTML = $Self->{LayoutObject}->AgentFreeText(
+        Config     => \%TicketFreeText,
+        Ticket     => \%TicketFreeTextData,
+        NullOption => 1,
+    );
 
-        if ($PrintDynamicFieldsSearchHeader) {
-            $Self->{LayoutObject}->Block( Name => 'DynamicField' );
-            $PrintDynamicFieldsSearchHeader = 0;
-        }
+    # Free field settings
+    for my $Count ( 1 .. 16 ) {
 
-        # output dynamic field
+        next if ref $Self->{ConfigObject}->Get( 'TicketFreeKey' . $Count ) ne 'HASH';
+
+        # output free text field
         $Self->{LayoutObject}->Block(
-            Name => 'DynamicFieldElement',
+            Name => 'OverviewUpdateTicketFreeFieldElement',
             Data => {
-                Label => $DynamicFieldHTML->{Label},
-                Field => $DynamicFieldHTML->{Field},
+                ID             => 'TicketFreeText' . $Count,
+                TicketFreeKey  => $TicketFreeTextHTML{ 'TicketFreeKeyField' . $Count },
+                TicketFreeText => $TicketFreeTextHTML{ 'TicketFreeTextField' . $Count },
             },
         );
     }
@@ -719,7 +654,6 @@ sub _Overview {
             Data => {},
         );
     }
-
     return 1;
 }
 
