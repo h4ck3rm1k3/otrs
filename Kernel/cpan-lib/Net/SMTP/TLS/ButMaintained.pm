@@ -1,7 +1,7 @@
 package Net::SMTP::TLS::ButMaintained;
 
 BEGIN {
-    $Net::SMTP::TLS::ButMaintained::VERSION = '0.18';
+    $Net::SMTP::TLS::ButMaintained::VERSION = '0.16';
 }
 
 # ABSTRACT: An SMTP client supporting TLS and AUTH
@@ -42,14 +42,10 @@ sub new {
     my $me = bless \%args, $pkg;
 
     # read the line immediately after connecting
-    my ( $rsp, $txt, $more ) = $me->_response();
+    my ( $rsp, $txt ) = $me->_response();
     if ( not $rsp == 220 ) {
         croak "Could not connect to SMTP server: $host $txt\n";
     }
-
-    # empty the socket of any continuation lines
-    while ( $more eq '-' ) { ( $rsp, $txt, $more ) = $me->_response(); }
-
     $me->hello();    # the first hello, 2nd after starttls
     $me->starttls() if not $args{NoTLS};    # why we're here, after all
     $me->login() if ( $me->{User} and $me->{Password} );
@@ -346,17 +342,17 @@ Net::SMTP::TLS::ButMaintained - An SMTP client supporting TLS and AUTH
 
 =head1 VERSION
 
-version 0.18
+version 0.16
 
 =head1 SYNOPSIS
 
  use Net::SMTP::TLS::ButMaintained;
  my $mailer = Net::SMTP::TLS::ButMaintained->new(
- 	'your.mail.host',
-	Hello	=>	'some.host.name',
- 	Port	=>	25, #redundant
- 	User	=>	'emailguy',
- 	Password=>	's3cr3t');
+    'your.mail.host',
+    Hello   =>  'some.host.name',
+    Port    =>  25, #redundant
+    User    =>  'emailguy',
+    Password=>  's3cr3t');
  $mailer->mail('emailguy@your.mail.host');
  $mailer->to('someonecool@somewhere.else');
  $mailer->data;
@@ -432,7 +428,7 @@ Fayland Lam <fayland@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by Alexander Christian Westholm, Fayland Lam.
+This software is copyright (c) 2010 by Alexander Christian Westholm, Fayland Lam.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
