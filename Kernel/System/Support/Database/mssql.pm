@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database/mssql.pm - all required system information
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: mssql.pm,v 1.18 2010/05/28 07:27:55 mb Exp $
+# $Id: mssql.pm,v 1.19 2011/05/02 18:34:32 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::XML;
 use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.18 $) [1];
+$VERSION = qw($Revision: 1.19 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -45,7 +45,7 @@ sub AdminChecksGet {
     # get names of available checks from sysconfig
     my $Checks = $Self->{ConfigObject}->Get('Support::Database::MSSQL');
 
-    # find out which checks should are enabled in sysconfig
+    # find out which checks are enabled in sysconfig
     my @EnabledCheckFunctions;
     if ( $Checks && ref $Checks eq 'HASH' ) {
 
@@ -95,6 +95,56 @@ sub _VersionCheck {
     $Data = {
         Name        => 'Version',
         Description => 'Check database version.',
+        Comment     => $Message,
+        Check       => $Check,
+    };
+    return $Data;
+}
+
+sub _DatabaseSizeCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $Data = {};
+
+    # Database size check
+    my $Check   = 'Failed';
+    my $Message = 'Could not determine database size.';
+    $Self->{DBObject}->Prepare(
+        SQL   => 'exec sp_spaceused',
+        Limit => 1,
+    );
+
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        $Message = "Database $Row[0] is $Row[1] large, of which $Row[2] is available.";
+        $Check   = 'OK';
+    }
+
+    $Data = {
+        Name        => 'Size',
+        Description => 'Check database size.',
+        Comment     => $Message,
+        Check       => $Check,
+    };
+    return $Data;
+}
+
+sub _DatabaseHostnameCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $Data = {};
+
+    # Database size check
+    my $Check   = 'Failed';
+    my $Message = 'Could not determine database hostname.';
+
+    if ( my $DatabaseHost = $Self->{ConfigObject}->Get('DatabaseHost') ) {
+        $Message = $DatabaseHost;
+        $Check   = 'OK';
+    }
+
+    $Data = {
+        Name        => 'Hostname',
+        Description => 'Check database hostname.',
         Comment     => $Message,
         Check       => $Check,
     };
