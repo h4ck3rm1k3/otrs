@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.34 2011/03/17 14:44:24 mb Exp $
+# $Id: OTRS.pm,v 1.35 2011/05/02 18:32:37 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.34 $) [1];
+$VERSION = qw($Revision: 1.35 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -602,6 +602,9 @@ sub _GeneralSystemOverview {
         $Self->{ConfigObject}->Get('Product') . ' ' .
         $Self->{ConfigObject}->Get('Version') .
         "\n";
+    $Message .= ' - Location: ' .
+        $Self->{ConfigObject}->Get('Home') .
+        "\n";
     my %Search = (
         1 => {
             TableName   => 'ticket',
@@ -641,20 +644,20 @@ sub _GeneralSystemOverview {
 
     #  tickets per month (avg)
     my $MonthInSeconds   = 2626560;    # 60 * 60 * 24 * 30.4;
-    my $TicketWindowTime = 1;          # in monts
+    my $TicketWindowTime = 1;          # in months
     $Self->{DBObject}->Prepare(
         SQL => "select max(create_time_unix), min(create_time_unix) " .
             "from ticket where id > 1 ",
     );
-    my $TicketsMonts;
+    my $TicketsMonth;
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
 
         # months on unix time
-        $TicketsMonts = $Row[0] - $Row[1];
+        $TicketsMonth = $Row[0] - $Row[1];
     }
-    $TicketsMonts = $TicketsMonts / $MonthInSeconds;
-    if ( $TicketsMonts > 1 ) {
-        $TicketWindowTime = sprintf( "%.2f", $TicketsMonts );
+    $TicketsMonth = $TicketsMonth / $MonthInSeconds;
+    if ( $TicketsMonth > 1 ) {
+        $TicketWindowTime = sprintf( "%.2f", $TicketsMonth );
     }
     my $AverageTicketsMonth = $Search{1}->{Result} / $TicketWindowTime;
     $Message .= " - Tickets per month (avg): " . $AverageTicketsMonth . "\n";
@@ -687,11 +690,11 @@ sub _GeneralSystemOverview {
     $Message .= " - Customers: " . $Customers . " \n";
 
     # operating system
-    $Message .= " - Operative system: " . $^O;
+    $Message .= " - Operating system: " . $^O;
 
     $Data = {
         Name          => 'GeneralSystemOverview',
-        Description   => 'Diplay a general system overview',
+        Description   => 'Diplay general system overview',
         Comment       => 'General information about your system.',
         Check         => $Check,
         BlockStyle    => 'TextArea',
