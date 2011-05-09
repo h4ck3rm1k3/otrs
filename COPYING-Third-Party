@@ -1,5 +1,5 @@
 # --
-# $Id: COPYING-Third-Party,v 1.26 2011/11/28 12:20:00 mb Exp $
+# $Id: COPYING-Third-Party,v 1.12.2.1 2011/05/09 13:40:26 mb Exp $
 # --
 # A list of all included third party libraries.
 # --
@@ -94,14 +94,6 @@ o Name:    CPAN IO::Lines
   Note:    # Copyright (c) 1996 by Eryq.  All rights reserved.
            # Copyright (c) 1999,2001 by ZeeGee Software Inc. All rights reserved.
 
-o Name:    CPAN Locale::Codes
-  Web:     n/a
-  License: GNU v2 - http://www.gnu.org/licenses/gpl.html
-  Note:    # Copyright (c) 1997-2001 Canon Research Centre Europe (CRE).
-           # Copyright (c) 2001      Michael Hennecke (Locale::Currency)
-           # Copyright (c) 2001-2010 Neil Bowers
-           # Copyright (c) 2010-2011 Sullivan Beck
-
 o Name:    CPAN MIME::Tools
   Web:     n/a
   License: GNU v2 - http://www.gnu.org/licenses/gpl.html
@@ -187,48 +179,3 @@ o Name:    CPAN JavaScript::Minifier
   License: GNU v2 - http://www.gnu.org/licenses/gpl.html
   Note:    Copyright (C) 2007 by Peter Michaux
 
-o Name:    CPAN Proc::Daemon
-  Web:     n/a
-  License: GNU v2 - http://www.gnu.org/licenses/gpl.html
-  Note:    Copyright (C) 1997-2011 by Earl Hood and Detlef Pilzecker
-
-o Name:    CPAN YAML
-  Web:     n/a
-  License: GNU v2 - http://www.gnu.org/licenses/gpl.html
-  Note:    Copyright (c) 2005, 2006, 2008. Ingy döt Net.
-           # Copyright (c) 2001, 2002, 2005. Brian Ingerson.
-           # Some parts copyright (c) 2009 - 2010 Adam Kennedy
-
-o Name:    CPAN URI
-  Web:     n/a
-  License: # This library is free software; you can redistribute it
-           # and/or modify it under the same terms as Perl itself.
-  Note:    # Copyright 1995-2009 Gisle Aas.
-           # Copyright 1995 Martijn Koster.
-
-o Name:    CPAN HTTP::Message
-  Web:     n/a
-  License: GNU v2 - http://www.gnu.org/licenses/gpl.html
-  Note:    # Copyright 1995-2008 Gisle Aas.
-
-o Name:    CPAN LWP
-  Web:     http://github.com/gisle/libwww-perl
-  License: # This library is free software; you can redistribute it
-           # and/or modify it under the same terms as Perl itself.
-  Note:    # Copyright 1995-2009, Gisle Aas
-           # Copyright 1995, Martijn Koster
-
-o Name:    CPAN Mozilla::CA
-  Web:     n/a
-  License: Mozilla MPL 1.1 - http://www.mozilla.org/MPL/
-  Note:    # Copyright Ask Bjørn Hansen
-
-o Name:    CPAN parent
-  Web:     n/a
-  License: GNU v2 - http://www.gnu.org/licenses/gpl.html
-  Note:    # Copyright (c) 2007-10 Max Maischein <corion@cpan.org>
-
-o Name:    CPAN Class::Inspector
-  Web:     n/a
-  License: GNU v2 - http://www.gnu.org/licenses/gpl.html
-  Note:    # Copyright 2002 - 2011 Adam Kennedy.
