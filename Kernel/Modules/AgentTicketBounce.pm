@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AgentTicketBounce.pm - to bounce articles of tickets
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketBounce.pm,v 1.54 2012/01/24 00:08:45 cr Exp $
+# $Id: AgentTicketBounce.pm,v 1.49.2.1 2011/05/10 22:34:01 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,11 +18,10 @@ use Kernel::System::State;
 use Kernel::System::SystemAddress;
 use Kernel::System::CustomerUser;
 use Kernel::System::TemplateGenerator;
-use Kernel::System::VariableCheck qw(:all);
 use Mail::Address;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.54 $) [1];
+$VERSION = qw($Revision: 1.49.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -79,25 +78,6 @@ sub Run {
         return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
     }
 
-    # get ACL restrictions
-    $Self->{TicketObject}->TicketAcl(
-        Data          => '-',
-        TicketID      => $Self->{TicketID},
-        ReturnType    => 'Action',
-        ReturnSubType => '-',
-        UserID        => $Self->{UserID},
-    );
-    my %AclAction = $Self->{TicketObject}->TicketAclActionData();
-
-    # check if ACL resctictions if exist
-    if ( IsHashRefWithData( \%AclAction ) ) {
-
-        # show error screen if ACL prohibits this action
-        if ( defined $AclAction{ $Self->{Action} } && $AclAction{ $Self->{Action} } eq '0' ) {
-            return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
-        }
-    }
-
     # get lock state && write (lock) permissions
     if ( $Self->{Config}->{RequiredLock} ) {
         if ( !$Self->{TicketObject}->TicketLockGet( TicketID => $Self->{TicketID} ) ) {
@@ -132,7 +112,7 @@ sub Run {
                     Type  => 'Small',
                 );
                 $Output .= $Self->{LayoutObject}->Warning(
-                    Message => "Sorry, you need to be the ticket owner to perform this action.",
+                    Message => "Sorry, you need to be the owner to do this action!",
                     Comment => 'Please change the owner first.',
                 );
                 $Output .= $Self->{LayoutObject}->Footer(
@@ -166,10 +146,7 @@ sub Run {
         }
 
         # get article data
-        my %Article = $Self->{TicketObject}->ArticleGet(
-            ArticleID     => $Self->{ArticleID},
-            DynamicFields => 0,
-        );
+        my %Article = $Self->{TicketObject}->ArticleGet( ArticleID => $Self->{ArticleID}, );
 
         # prepare to (ReplyTo!) ...
         if ( $Article{ReplyTo} ) {
@@ -453,9 +430,11 @@ $Param{Signature}";
                 );
             }
         }
-        return $Self->{LayoutObject}->PopupClose(
-            URL => ( $Self->{LastScreenView} || 'Action=AgentDashboard' )
-        );
+        else {
+            return $Self->{LayoutObject}->PopupClose(
+                URL => ( $Self->{LastScreenView} || 'Action=AgentDashboard' )
+            );
+        }
     }
     return $Self->{LayoutObject}->ErrorScreen(
         Message => 'Wrong Subaction!!',
