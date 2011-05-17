@@ -3,7 +3,7 @@
 # scripts/restore.pl - the restore script
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: restore.pl,v 1.14 2011/05/17 14:48:36 mb Exp $
+# $Id: restore.pl,v 1.13.2.1 2011/05/17 14:49:24 mb Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -31,7 +31,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.14 $) [1];
+$VERSION = qw($Revision: 1.13.2.1 $) [1];
 
 use Getopt::Std;
 
