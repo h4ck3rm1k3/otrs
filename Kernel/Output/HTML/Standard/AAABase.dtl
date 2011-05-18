@@ -2,7 +2,7 @@
 # AAABase.dtl - $Text variable file
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AAABase.dtl,v 1.110 2011/12/15 15:14:52 mg Exp $
+# $Id: AAABase.dtl,v 1.99.2.1 2011/05/18 11:55:06 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -29,7 +29,7 @@ $Text{"last"}
 $Text{"before"}
 $Text{"Today"}
 $Text{"Tomorrow"}
-$Text{"Next week"}
+$Text{"Next Week"}
 $Text{"day"}
 $Text{"days"}
 $Text{"day(s)"}
@@ -72,9 +72,7 @@ $Text{"Settings"}
 $Text{"Example"}
 $Text{"Examples"}
 $Text{"valid"}
-$Text{"Valid"}
 $Text{"invalid"}
-$Text{"Invalid"}
 $Text{"* invalid"}
 $Text{"invalid-temporarily"}
 
@@ -221,17 +219,6 @@ $Text{"Create Database"}
 $Text{"System Settings"}
 $Text{"Mail Configuration"}
 $Text{"Finished"}
-$Text{"Install OTRS"}
-$Text{"Intro"}
-$Text{"License"}
-$Text{"Error"}
-$Text{"Create Database"}
-$Text{"Database"}
-$Text{"System Settings"}
-$Text{"Configure Mail"}
-$Text{"Finished"}
-$Text{"Database deleted."}
-$Text{"Database setup succesful!"}
 
 # misc
 $Text{"Login is needed!"}
@@ -245,7 +232,7 @@ $Text{"reverse"}
 $Text{"Facility"}
 $Text{"Time Zone"}
 $Text{"Pending till"}
-$Text{"Don't use the Superuser account to work with OTRS! Create new Agents and work with these accounts instead."}
+i$Text{"Don't use the Superuser account to work with OTRS! Create new Agents and work with these accounts instead."}
 $Text{"Dispatching by email To: field."}
 $Text{"Dispatching by selected Queue."}
 $Text{"No entry found!"}
@@ -256,11 +243,9 @@ $Text{"Cc: (%s) added database email!"}
 $Text{"(Click here to add)"}
 $Text{"Normal"}
 $Text{"Preview"}
-$Text{"Package not correctly deployed! Please reinstall the package."}
+$Text{"Package not correctly deployed! You should reinstall the Package again!"}
 $Text{"%s is not writable!"}
 $Text{"Cannot create %s!"}
-$Text{"Check to activate this date"}
-$Text{"You have Out of Office enabled, would you like to disable it?"}
 
 $Text{"Customer %s added"}
 $Text{"Role added!"}
@@ -277,12 +262,6 @@ $Text{"State updated!"}
 $Text{"Type added!"}
 $Text{"Type updated!"}
 $Text{"Customer updated!"}
-$Text{"Customer company added!"}
-$Text{"Customer company updated!"}
-$Text{"Mail account added!"}
-$Text{"Mail account updated!"}
-$Text{"System e-mail address added!"}
-$Text{"System e-mail address updated!"}
 
 $Text{"Contract"}
 $Text{"Online Customer: %s"}
@@ -377,7 +356,3 @@ $Text{"CTRL"}
 $Text{"SHIFT"}
 $Text{"Undo"}
 $Text{"Redo"}
-
-# scheduler
-$Text{"Scheduler process is registered but might not be running."}
-$Text{"Scheduler is not running."}
