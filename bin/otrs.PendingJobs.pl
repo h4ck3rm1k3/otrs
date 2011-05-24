@@ -3,7 +3,7 @@
 # bin/otrs.PendingJobs.pl - check pending tickets
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: otrs.PendingJobs.pl,v 1.8 2011/12/13 08:38:39 mg Exp $
+# $Id: otrs.PendingJobs.pl,v 1.5.2.1 2011/05/24 11:28:55 mb Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -30,7 +30,7 @@ use FindBin qw($RealBin);
 use lib dirname($RealBin);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.8 $) [1];
+$VERSION = qw($Revision: 1.5.2.1 $) [1];
 
 use Kernel::Config;
 use Kernel::System::Encode;
@@ -89,9 +89,8 @@ if (@PendingAutoStateIDs) {
 
         # get ticket data
         my %Ticket = $CommonObject{TicketObject}->TicketGet(
-            TicketID      => $TicketID,
-            UserID        => 1,
-            DynamicFields => 0,
+            TicketID => $TicketID,
+            UserID   => 1,
         );
 
         next TICKETID if $Ticket{UntilTime} >= 1;
@@ -169,9 +168,8 @@ if (@PendingReminderStateIDs) {
 
         # get ticket data
         my %Ticket = $CommonObject{TicketObject}->TicketGet(
-            TicketID      => $TicketID,
-            UserID        => 1,
-            DynamicFields => 0,
+            TicketID => $TicketID,
+            UserID   => 1,
         );
 
         next TICKETID if $Ticket{UntilTime} >= 1;
