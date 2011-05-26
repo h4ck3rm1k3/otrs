@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database/postgresql.pm - all required system information
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: postgresql.pm,v 1.19 2010/05/28 07:27:55 mb Exp $
+# $Id: postgresql.pm,v 1.20 2011/05/26 13:30:42 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::XML;
 use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.19 $) [1];
+$VERSION = qw($Revision: 1.20 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -242,22 +242,22 @@ sub _VersionCheck {
 
     # version check
     my $Check   = 'Failed';
-    my $Message = 'No database version found.';
+    my $Message = 'No PostgreSQL version found.';
     $Self->{DBObject}->Prepare( SQL => 'show server_version' );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         if ( $Row[0] =~ /^(\d{1,3}).*$/ ) {
             if ( $1 > 7 ) {
                 $Check   = 'OK';
-                $Message = "$Row[0]";
+                $Message = "PostgreSQL $Row[0]";
             }
             else {
                 $Check   = 'Failed';
-                $Message = "You use database version $Row[0], you should use 8.x or higner.";
+                $Message = "You use PostgreSQL version $Row[0], you should use 8.x or higner.";
             }
         }
         else {
             $Check   = 'Failed';
-            $Message = "Unknown version $Row[0].";
+            $Message = "Unknown PostgreSQL version $Row[0].";
         }
     }
     $Data = {
