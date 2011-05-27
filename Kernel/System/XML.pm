@@ -2,7 +2,7 @@
 # Kernel/System/XML.pm - lib xml
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: XML.pm,v 1.108 2011/08/12 09:06:15 mg Exp $
+# $Id: XML.pm,v 1.105.2.1 2011/05/27 13:11:20 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Cache;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.108 $) [1];
+$VERSION = qw($Revision: 1.105.2.1 $) [1];
 
 =head1 NAME
 
@@ -86,6 +86,8 @@ sub new {
     }
 
     $Self->{CacheObject} = Kernel::System::Cache->new( %{$Self} );
+
+    $Self->{DefaultCharset} = $Self->{ConfigObject}->Get('DefaultCharset');
 
     return $Self;
 }
@@ -507,7 +509,7 @@ generate an XML string from an XMLHash
 sub XMLHash2XML {
     my ( $Self, @XMLHash ) = @_;
 
-    my $Output = '<?xml version="1.0" encoding="utf-8"?>' . "\n";
+    my $Output = '<?xml version="1.0" encoding="' . $Self->{DefaultCharset} . '"?>' . "\n";
 
     $Self->{XMLHash2XMLLayer} = 0;
     for my $Key (@XMLHash) {
@@ -759,9 +761,9 @@ sub XMLParse {
 
         my $Parser = XML::Parser::Lite->new(
             Handlers => {
-                Start => sub { $Self->_HS(@_); },
-                End   => sub { $Self->_ES(@_); },
-                Char  => sub { $Self->_CS(@_); },
+                Start => \&_HS,
+                End   => \&_ES,
+                Char  => \&_CS,
             },
         );
         $Parser->parse( $Param{String} );
@@ -1388,7 +1390,7 @@ sub _Decode {
             $A->{$_} = $Self->{EncodeObject}->Convert(
                 Text  => $A->{$_},
                 From  => 'utf-8',
-                To    => 'utf-8',
+                To    => $Self->{DefaultCharset},
                 Force => 1,
             );
         }
@@ -1489,6 +1491,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.108 $ $Date: 2011/08/12 09:06:15 $
+$Revision: 1.105.2.1 $ $Date: 2011/05/27 13:11:20 $
 
 =cut
