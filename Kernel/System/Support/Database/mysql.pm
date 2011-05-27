@@ -2,7 +2,7 @@
 # Kernel/System/Support/Database/mysql.pm - all required system information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.30 2011/05/26 13:30:42 mb Exp $
+# $Id: mysql.pm,v 1.31 2011/05/27 14:33:33 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::XML;
 use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.30 $) [1];
+$VERSION = qw($Revision: 1.31 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -444,6 +444,54 @@ sub _TableCheck {
             Check       => 'Critical',
         };
     }
+    return $Data;
+}
+
+sub _DatabaseSizeCheck {
+    my ( $Self, %Param ) = @_;
+    my $Data = {};
+
+    # max_allowed_packet check
+    my $Check   = 'Failed';
+    my $Message = 'Could not determine database size.';
+    my $DBName;
+
+    $Self->{DBObject}->Prepare(
+        SQL   => "SELECT DATABASE()",
+        Limit => 1,
+    );
+
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            $DBName = $Row[0];
+        }
+    }
+
+    if ($DBName) {
+        $Self->{DBObject}->Prepare(
+            SQL => "SELECT ROUND((SUM(data_length + index_length) / 1024 / 1024 / 1024),3) "
+                . "FROM information_schema.TABLES WHERE table_schema = ? GROUP BY table_schema",
+            Bind  => [ \$DBName ],
+            Limit => 1,
+        );
+
+        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+            if ( $Row[0] ) {
+                $Message = "Database size is $Row[0] GB.";
+                $Check   = 'OK';
+            }
+        }
+    }
+    else {
+        $Message = 'Could not determine database name.';
+    }
+
+    $Data = {
+        Name        => 'Database Size',
+        Description => 'Size of the current database.',
+        Comment     => $Message,
+        Check       => $Check,
+    };
     return $Data;
 }
 
