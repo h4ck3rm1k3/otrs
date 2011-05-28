@@ -1,8 +1,8 @@
 # --
 # Kernel/System/iPhone.pm - all iPhone handle functions
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.62 2010/11/25 18:55:54 cr Exp $
+# $Id: iPhone.pm,v 1.63 2011/05/28 19:10:28 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -22,7 +22,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.62 $) [1];
+$VERSION = qw($Revision: 1.63 $) [1];
 
 =head1 NAME
 
@@ -240,8 +240,8 @@ Move    (Change ticket queue)
 
 Note, Close, Compose and Move, requires TicketID argument
 
-The retunig fields deppends on the Screen Argument and on the Settings in sysconfig for the iPhone
-and also general settings
+The fields that are returned depend on the Screen Argument and on the Settings in sysconfig for the iPhone
+as well as on general settings.
 
     my @Result = $iPhoneObject->ScreenConfig(
         Screen => "Phone",
@@ -790,7 +790,7 @@ sub Badges {
 
 =item EscalationView()
 
-Get the number of tikets on estalation status by state type or las customer article information from
+Get the number of tickets on estalation status by state type or last customer article information from
 each ticket in escalation status within a filter, if the "Filter" argument is specified.
 
     my @Result = $iPhoneObject->EscalationView(
@@ -804,9 +804,9 @@ each ticket in escalation status within a filter, if the "Filter" argument is sp
                             # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+    # a result could be
 
-    @Resutl = (
+    @Result = (
         {
             StateType                      => "Today",
             NumberOfTickets                => 2,
@@ -828,7 +828,7 @@ each ticket in escalation status within a filter, if the "Filter" argument is sp
         UserID  => 1,
         Filter  => "Today",
 
-        #Limit (optional) set to 100 by default, if not spcified
+        #Limit (optional) set to 100 by default, if not specified
         Limit   => 50,
 
         # OrderBy and SortBy (optional)
@@ -841,7 +841,7 @@ each ticket in escalation status within a filter, if the "Filter" argument is sp
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
             Age                              => 1596,
             ArticleID                        => 923,
@@ -997,7 +997,7 @@ sub EscalationView {
 
 =item StatusView()
 
-Get the number of tikets by status (open or closed) or last customer article information from each
+Get the number of tickets by status (open or closed) or last customer article information from each
 ticket in each status within an specified filter, if the "Filter" argument is specified.
 
     my @Result = $iPhoneObject->StatusView(
@@ -1013,7 +1013,7 @@ ticket in each status within an specified filter, if the "Filter" argument is sp
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
             StateType                      => "Open",
             NumberOfTickets                => 2,
@@ -1043,7 +1043,7 @@ ticket in each status within an specified filter, if the "Filter" argument is sp
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
              Age                              => 1596,
             ArticleID                        => 923,
@@ -1173,7 +1173,7 @@ sub StatusView {
 
 =item LockedView()
 
-Get the number of locked tikets by status type (all, new, reminder, reminder reached ) or last
+Get the number of locked tickets by status type (all, new, reminder, reminder reached ) or last
 customer article information from each locked ticket in each status within an specified filter, if
 the "Filter" argument is specified.
 
@@ -1190,7 +1190,7 @@ the "Filter" argument is specified.
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
             StateType                      => "All",
             NumberOfTickets                => 2,
@@ -1230,7 +1230,7 @@ the "Filter" argument is specified.
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
             Age                              => 1596,
             ArticleID                        => 923,
@@ -1401,7 +1401,7 @@ sub LockedView {
 
 =item WatchedView()
 
-Get the number of watched tikets by status type (all, new, reminder, reminder reached ) or last
+Get the number of watched tickets by status type (all, new, reminder, reminder reached ) or last
 custmer article information from each watched ticket in each status within an specified filter, if
 the "Filter" argument is specified.
 
@@ -1418,7 +1418,7 @@ the "Filter" argument is specified.
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
             StateType                      => "All",
             NumberOfTickets                => 2,
@@ -1458,7 +1458,7 @@ the "Filter" argument is specified.
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
             Age                              => 1596,
             ArticleID                        => 923,
@@ -1633,7 +1633,7 @@ sub WatchedView {
 
 =item ResponsibleView()
 
-Get the number of locked or unlocked tikets where the user is responsible for by status type
+Get the number of locked or unlocked tickets where the user is responsible for by status type
 (all, new, reminder, reminder reached ) or last customer article information from each ticket where
 the user is responsible for  in each status within an specified filter, if the "Filter" argument is
 specified.
@@ -1651,7 +1651,7 @@ specified.
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
             StateType                      => "All",
             NumberOfTickets                => 2,
@@ -1691,7 +1691,7 @@ specified.
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
             Age                              => 1596,
             ArticleID                        => 923,
@@ -1867,7 +1867,7 @@ sub ResponsibleView {
 
 =item QueueView()
 
-Get the number of viewable tikets by queue as well as basic queue information, or las customer
+Get the number of viewable tickets per queue as well as basic queue information, or last customer
 article information from each ticket within an specified queue, if the "Queue" argument is
 specified.
 
@@ -1884,7 +1884,7 @@ specified.
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
             QueueName                      => "Junk",
             NumberOfTickets                => 2,
@@ -1918,7 +1918,7 @@ specified.
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
             Age                              => 1596,
             ArticleID                        => 923,
@@ -2067,7 +2067,7 @@ Get the last customer article information of a ticket
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         {
             Age                              => 1596,
             ArticleID                        => 923,
@@ -2186,7 +2186,7 @@ Get information of a ticket
 
     #a result could be
 
-    @Resutl = (
+    @Result = (
         AccountedTime   => "5404",
         Age             => "681946",
         CustomerID      => "sw",
@@ -2536,7 +2536,7 @@ sub SLAsGet {
 }
 
 =item UsersGet()
-Get a Hash reference to all users that has rights on a Queue or the Users that has that queue in
+Get a Hash reference to all users that have rights on a Queue or the ssers that have that queue in
 the "My Queues" list
 
     my $Result = $iPhoneObject->UsersGet(
@@ -2603,7 +2603,7 @@ sub UsersGet {
 }
 
 =item NextStatesGet()
-Get a Hash reference to all possible stated based on a Ticket or Queue
+Get a Hash reference to all possible states based on a Ticket or Queue
 
     my $Result = $iPhoneObject->NextStatesGet(
         QueueID         => 3,  #|| TickeTID optional
@@ -2675,7 +2675,8 @@ sub PrioritiesGet {
 }
 
 =item CustomerSearch()
-Get a Hash reference to all possible customers matching the search paramenter, use "*" for all
+Get a Hash reference to all possible customers matching the given search
+parameter, use "*" for all.
 
     my $Result = $iPhoneObject->CustomerSearch(
         Search          => 'sw',
@@ -2716,7 +2717,7 @@ Close   (Close a tcket)
 Compose (Reply or response a ticket)
 Move    (Change ticket queue)
 
-The Arguments depends on the results of ScreenConfig()
+The arguments taken depend on the results of ScreenConfig()
 
 The result is the TicketID for Action Phone or ArticleID for the other actions
 
@@ -2814,7 +2815,7 @@ Get a Hash reference with information about the otrs iPhone Package extension
         UserID => 1;
     );
 
-    a resutl could be
+    a result could be
 
     $Result = [
         Name    => "iPhoneHandle"
@@ -2864,7 +2865,7 @@ Get the Customer ID from a given customer login
         CustomerUserID => "David";
     );
 
-    a resutl could be
+    a result could be
 
     $Result = "sw"
 
@@ -5729,6 +5730,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.62 2010/11/25 18:55:54 cr Exp $
+$Id: iPhone.pm,v 1.63 2011/05/28 19:10:28 mb Exp $
 
 =cut
