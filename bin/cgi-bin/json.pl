@@ -3,7 +3,7 @@
 # bin/cgi-bin/json.pl - json handle
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: json.pl,v 1.15 2011/06/14 09:12:24 martin Exp $
+# $Id: json.pl,v 1.16 2011/06/14 09:24:29 martin Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -53,7 +53,7 @@ use Kernel::System::iPhone;
 use Kernel::System::Web::Request;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.15 $) [1];
+$VERSION = qw($Revision: 1.16 $) [1];
 
 my $Self = Core->new();
 print "Content-Type: text/plain; \n";
@@ -205,7 +205,7 @@ sub Dispatch {
             );
             return $Self->Result();
         }
-        if ( $ObjectWhiteList->{$Object} && $Method =~ /$ObjectWhiteList->{$Object}/ ) {
+        if ( $ObjectWhiteList->{$Object} && $Method !~ /$ObjectWhiteList->{$Object}/ ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
                 Message  => "No access method '$Method' of '$Object'!",
