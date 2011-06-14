@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: iPhone.xml,v 1.12 2010/07/16 17:36:19 cr Exp $</CVS>
+    <CVS>$Id: iPhone.xml,v 1.13 2011/06/14 09:13:01 martin Exp $</CVS>
 
     <ConfigItem Name="iPhone::DebugLog" Required="1" Valid="1">
         <Description Translatable="1">Allows to enable a special log for all communication between iPhone and otrs.</Description>
@@ -1005,10 +1005,52 @@
             </Hash>
         </Setting>
     </ConfigItem>
-
-
-
-
-
-
+    <ConfigItem Name="iPhone::API::Object###ConfigObject" Required="1" Valid="1">
+        <Description Translatable="1">Configure access restrictions to objects of iPhone handle.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>API</SubGroup>
+        <Setting>
+            <String Regex=""></String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::API::Object###TimeObject" Required="1" Valid="1">
+        <Description Translatable="1">Configure access restrictions to objects of iPhone handle.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>API</SubGroup>
+        <Setting>
+            <String Regex=""></String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::API::Object###LogObject" Required="1" Valid="1">
+        <Description Translatable="1">Configure access restrictions to objects of iPhone handle.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>API</SubGroup>
+        <Setting>
+            <String Regex=""></String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::API::Object###DBObject" Required="1" Valid="1">
+        <Description Translatable="1">Configure access restrictions to objects of iPhone handle.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>API</SubGroup>
+        <Setting>
+            <String Regex=""></String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::API::Object###TicketObject" Required="1" Valid="1">
+        <Description Translatable="1">Configure access restrictions to objects of iPhone handle.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>API</SubGroup>
+        <Setting>
+            <String Regex="">(MoveList|MoveTicket)</String>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="iPhone::API::Object###CustomObject" Required="1" Valid="1">
+        <Description Translatable="1">Configure access restrictions to objects of iPhone handle.</Description>
+        <Group>iPhone</Group>
+        <SubGroup>API</SubGroup>
+        <Setting>
+            <String Regex=""></String>
+        </Setting>
+    </ConfigItem>
 </otrs_config>

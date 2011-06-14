@@ -3,7 +3,7 @@
 # bin/cgi-bin/json.pl - json handle
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: json.pl,v 1.14 2011/05/28 19:12:17 mb Exp $
+# $Id: json.pl,v 1.15 2011/06/14 09:12:24 martin Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -53,7 +53,7 @@ use Kernel::System::iPhone;
 use Kernel::System::Web::Request;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.14 $) [1];
+$VERSION = qw($Revision: 1.15 $) [1];
 
 my $Self = Core->new();
 print "Content-Type: text/plain; \n";
@@ -126,7 +126,7 @@ sub Dispatch {
         $Self->Log(
             Direction => 'Inbound',
             Message   => $Message,
-            )
+        );
     }
 
     # agent auth
@@ -195,13 +195,26 @@ sub Dispatch {
         return $Self->Result();
     }
 
-    if ( $Object =~ /^(DBObject|TicketObject123)$/ ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "No access to '$Object'!",
-        );
-        return $Self->Result();
+    # object white list
+    my $ObjectWhiteList = $Self->{ConfigObject}->Get('iPhone::API::Object');
+    if ($ObjectWhiteList) {
+        if ( !defined $ObjectWhiteList->{$Object} ) {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "No access to '$Object'!",
+            );
+            return $Self->Result();
+        }
+        if ( $ObjectWhiteList->{$Object} && $Method =~ /$ObjectWhiteList->{$Object}/ ) {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "No access method '$Method' of '$Object'!",
+            );
+            return $Self->Result();
+        }
     }
+
+    # ticket permission check
 
     if ( $Object eq 'CustomObject' ) {
         my @Result = $Self->{iPhoneObject}->$Method(
