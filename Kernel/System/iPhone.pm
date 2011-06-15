@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.64 2011/06/15 12:37:08 martin Exp $
+# $Id: iPhone.pm,v 1.65 2011/06/15 13:27:37 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.64 $) [1];
+$VERSION = qw($Revision: 1.65 $) [1];
 
 =head1 NAME
 
@@ -3634,7 +3634,7 @@ sub _GetScreenElements {
                     Options     => @Options,
                     Mandatory   => $Mandatory,
                     Default     => $Default || '',
-                    }
+                };
             }
             else {
                 $FreeTextElement = {
@@ -3647,7 +3647,7 @@ sub _GetScreenElements {
                     Max         => 200,
                     Mandatory   => $Mandatory,
                     Default     => $Default || '',
-                    }
+                };
             }
 
             push @ScreenElements, $FreeTextElement;
@@ -3750,7 +3750,7 @@ sub _GetScreenElements {
                     Options     => @Options,
                     Mandatory   => $Mandatory,
                     Default     => $Default || '',
-                    }
+                };
             }
             else {
                 $FreeTextElement = {
@@ -3763,7 +3763,7 @@ sub _GetScreenElements {
                     Max         => 200,
                     Mandatory   => $Mandatory,
                     Default     => $Default || '',
-                    }
+                };
             }
 
             push @ScreenElements, $FreeTextElement;
@@ -5776,6 +5776,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.64 2011/06/15 12:37:08 martin Exp $
+$Id: iPhone.pm,v 1.65 2011/06/15 13:27:37 martin Exp $
 
 =cut
