@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.63 2011/05/28 19:10:28 mb Exp $
+# $Id: iPhone.pm,v 1.64 2011/06/15 12:37:08 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,7 +14,6 @@ package Kernel::System::iPhone;
 use strict;
 use warnings;
 
-#use Kernel::System::Log;
 use Kernel::Language;
 use Kernel::System::CheckItem;
 use Kernel::System::Priority;
@@ -22,7 +21,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.63 $) [1];
+$VERSION = qw($Revision: 1.64 $) [1];
 
 =head1 NAME
 
@@ -262,7 +261,7 @@ as well as on general settings.
                 Action => "Phone",
             },
             Method => "ScreenActions",
-            Object => "CustomObject"},
+            Object => "CustomObject",
             Title => "New Phone Ticket"
        },
         Elements => (
@@ -2225,6 +2224,30 @@ Get information of a ticket
 sub TicketGet {
     my ( $Self, %Param ) = @_;
 
+    # permission check
+    my $Access;
+    if ( $Self->{'API3X'} ) {
+        $Access = $Self->{TicketObject}->TicketPermission(
+            Type     => 'ro',
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID}
+        );
+    }
+    else {
+        $Access = $Self->{TicketObject}->Permission(
+            Type     => 'ro',
+            TicketID => $Param{TicketID},
+            UserID   => $Param{UserID}
+        );
+    }
+    if ( !$Access ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "You need ro permissions!",
+        );
+        return;
+    }
+
     my %Color = (
         1 => '#cdcdcd',
         2 => '#cdcdcd',
@@ -2311,7 +2334,7 @@ Get information from an article
 
     my %Result = $iPhoneObject->ArticleGet()
         ArticleID  => 1054,
-        UserID   => 1,
+        UserID     => 1,
     );
 
     #a result could be
@@ -2335,7 +2358,7 @@ Get information from an article
         FirstResponseTimeEscalation      => 1,
         FirstResponseTimeWorkingTime     => -86700,
         FirstResponseTime                => -165902,
-        From                             => "\"David Prowse\" <pd@sw.com>"]}
+        From                             => "\"David Prowse\" <pd@sw.com>",
         LockID                           => 2,
         Lock                             => "lock",
         MimeType                         => "text/plain",
@@ -2379,7 +2402,30 @@ Get information from an article
 sub ArticleGet {
     my ( $Self, %Param ) = @_;
 
+    # permission check
     my %Article = $Self->{TicketObject}->ArticleGet(%Param);
+    my $Access;
+    if ( $Self->{'API3X'} ) {
+        $Access = $Self->{TicketObject}->TicketPermission(
+            Type     => 'ro',
+            TicketID => $Article{TicketID},
+            UserID   => $Param{UserID}
+        );
+    }
+    else {
+        $Access = $Self->{TicketObject}->Permission(
+            Type     => 'ro',
+            TicketID => $Article{TicketID},
+            UserID   => $Param{UserID}
+        );
+    }
+    if ( !$Access ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "You need ro permissions!",
+        );
+        return;
+    }
 
     if (%Article) {
         if ( $Self->{'API3X'} ) {
@@ -5730,6 +5776,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.63 2011/05/28 19:10:28 mb Exp $
+$Id: iPhone.pm,v 1.64 2011/06/15 12:37:08 martin Exp $
 
 =cut
