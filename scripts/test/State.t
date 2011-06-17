@@ -2,7 +2,7 @@
 # State.t - State tests
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: State.t,v 1.8 2011/06/17 08:42:57 mb Exp $
+# $Id: State.t,v 1.7.2.1 2011/06/17 10:10:08 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you

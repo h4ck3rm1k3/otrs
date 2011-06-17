@@ -1,8 +1,8 @@
 # --
-# Kernel/System/State.pm - All ticket state related functions
+# Kernel/System/State.pm - All state related function should be here eventually
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: State.pm,v 1.54 2011/06/19 20:28:11 mb Exp $
+# $Id: State.pm,v 1.48.2.1 2011/06/17 10:10:08 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,7 +20,7 @@ use Kernel::System::SysConfig;
 use Kernel::System::CacheInternal;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.54 $) [1];
+$VERSION = qw($Revision: 1.48.2.1 $) [1];
 
 =head1 NAME
 
@@ -28,7 +28,7 @@ Kernel::System::State - state lib
 
 =head1 SYNOPSIS
 
-All ticket state functions.
+All state functions.
 
 =head1 PUBLIC INTERFACE
 
@@ -92,8 +92,6 @@ sub new {
     for (qw(DBObject ConfigObject LogObject MainObject EncodeObject)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
-
-    # create addititional objects
     $Self->{ValidObject}         = Kernel::System::Valid->new(%Param);
     $Self->{CacheInternalObject} = Kernel::System::CacheInternal->new(
         %Param,
@@ -136,7 +134,7 @@ sub StateAdd {
 
     # store data
     return if !$Self->{DBObject}->Do(
-        SQL => 'INSERT INTO ticket_state (name, valid_id, type_id, comments,'
+        SQL => 'INSERT INTO ticket_state (name, valid_id, type_id, comments, '
             . ' create_time, create_by, change_time, change_by)'
             . ' VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
         Bind => [
@@ -211,8 +209,8 @@ sub StateGet {
 
     # sql
     my @Bind;
-    my $SQL = 'SELECT ts.id, ts.name, ts.valid_id, ts.comments, ts.type_id, tst.name,'
-        . ' ts.change_time, ts.create_time'
+    my $SQL = 'SELECT ts.id, ts.name, ts.valid_id, ts.comments, ts.type_id, tst.name, '
+        . ' ts.change_time, ts.create_time '
         . ' FROM ticket_state ts, ticket_state_type tst WHERE ts.type_id = tst.id AND ';
     if ( $Param{Name} ) {
         $SQL .= ' ts.name = ?';
@@ -323,18 +321,20 @@ sub StateUpdate {
 
 =item StateGetStatesByType()
 
-get list of states for a type or a list of state types.
+get list of state types
 
-Get all states with state type open and new:
-(available: new, open, closed, pending reminder, pending auto, removed, merged)
+    get all states with state type open and new
+    (available: new, open, closed, pending reminder, pending auto,
+    removed, merged)
 
     my @List = $StateObject->StateGetStatesByType(
         StateType => ['open', 'new'],
         Result    => 'ID', # HASH|ID|Name
     );
 
-Get all state types used by config option named like
-Ticket::ViewableStateType for "Viewable" state types.
+    get all state types used by config option named like
+
+    Ticket::ViewableStateType for "Viewable" state types
 
     my %List = $StateObject->StateGetStatesByType(
         Type   => 'Viewable',
@@ -411,12 +411,11 @@ sub StateGetStatesByType {
             push @StateType, $Param{StateType};
         }
     }
-    my $SQL = ''
-        . 'SELECT ts.id, ts.name, tst.name'
-        . ' FROM ticket_state ts, ticket_state_type tst'
-        . ' WHERE tst.id = ts.type_id'
-        . " AND tst.name IN ('${\(join '\', \'', sort @StateType)}' )"
-        . " AND ts.valid_id IN ( ${\(join ', ', $Self->{ValidObject}->ValidIDsGet())} )";
+    my $SQL = "SELECT ts.id, ts.name, tst.name  "
+        . " FROM ticket_state ts, ticket_state_type tst WHERE "
+        . " tst.id = ts.type_id AND "
+        . " tst.name IN ('${\(join '\', \'', sort @StateType)}' ) AND "
+        . " ts.valid_id IN ( ${\(join ', ', $Self->{ValidObject}->ValidIDsGet())} )";
     return if !$Self->{DBObject}->Prepare( SQL => $SQL );
 
     while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
@@ -495,11 +494,6 @@ sub StateList {
         $Valid = 0;
     }
 
-    # check cache
-    my $CacheKey = 'StateList::' . $Valid;
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-    return %{$Cache} if $Cache;
-
     # sql
     my $SQL = 'SELECT id, name FROM ticket_state';
     if ($Valid) {
@@ -510,10 +504,6 @@ sub StateList {
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         $Data{ $Row[0] } = $Row[1];
     }
-
-    # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Data );
-
     return %Data;
 }
 
@@ -522,11 +512,11 @@ sub StateList {
 returns the id or the name of a state
 
     my $StateID = $StateObject->StateLookup(
-        State => 'closed successful',
+        State => '3 normal',
     );
 
     my $State = $StateObject->StateLookup(
-        StateID => 2,
+        StateID => 1,
     );
 
 =cut
@@ -621,11 +611,6 @@ sub StateTypeList {
         return;
     }
 
-    # check cache
-    my $CacheKey = 'StateTypeList';
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
-    return %{$Cache} if $Cache;
-
     # sql
     return if !$Self->{DBObject}->Prepare(
         SQL => 'SELECT id, name FROM ticket_state_type',
@@ -634,10 +619,6 @@ sub StateTypeList {
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
         $Data{ $Row[0] } = $Row[1];
     }
-
-    # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Data );
-
     return %Data;
 }
 
@@ -648,8 +629,6 @@ returns the id or the name of a state type
     my $StateTypeID = $StateTypeObject->StateTypeLookup(
         StateType => 'pending auto',
     );
-
-or
 
     my $StateType = $StateTypeObject->StateTypeLookup(
         StateTypeID => 1,
@@ -733,6 +712,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.54 $ $Date: 2011/06/19 20:28:11 $
+$Revision: 1.48.2.1 $ $Date: 2011/06/17 10:10:08 $
 
 =cut
