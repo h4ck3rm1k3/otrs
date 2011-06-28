@@ -2,7 +2,7 @@
 # CHANGES - change log of the Support module for OTRS
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: CHANGES-Support,v 1.8 2011/03/15 16:10:44 mb Exp $
+# $Id: CHANGES-Support,v 1.9 2011/06/28 20:38:43 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -10,6 +10,7 @@
 # --
 
 1.2.7 2011-??-??
+ - 2011-07-28 Added OTRS::GeneralSystemOverview check.
  - 2011-03-15 Fixed bug#5504 - No UserID found for 'root@localhost' in error
     log when account 1 is renamed.
  - 2010-12-13 Fixed bug#6531 - Windows version detection doesn't return

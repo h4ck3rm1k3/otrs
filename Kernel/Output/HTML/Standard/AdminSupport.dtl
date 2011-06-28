@@ -1,8 +1,8 @@
 # --
 # AdminSupport.dtl - provides HTML form for AdminSupport
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.31 2010/12/01 00:10:26 cg Exp $
+# $Id: AdminSupport.dtl,v 1.32 2011/06/28 20:38:41 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -86,6 +86,44 @@
                     </li>
                 </ul>
 <!-- dtl:block:OverviewModuleRowTextArea -->
+
+
+
+<!-- dtl:block:OverviewModuleRowTableDataSimple -->
+                <ul>
+                    <li class="CheckResult CheckResult$QData{"Check"}">
+                        <h3>
+                            <span title="$QData{"Check"}" class="Flag Small">
+                                <span>$QData{"Check"}</span>
+                            </span>
+                            $QData{"Description"}
+                        </h3>
+                        <p class="SpacingTopSmall">$QData{"Comment"}</p>
+                        <div class="Spacing">
+                            <table class="DataTable">
+                                <thead>
+                                    <tr>
+                                        <th class="Center">Item</th>
+                                        <th class="Center">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+<!-- dtl:block:OverviewModuleTableRow -->
+                                    <tr>
+                                        <td><strong>$QData{"ItemKey"}</strong></td>
+                                        <td>$QData{"Value"}</td>
+                                    </tr>
+<!-- dtl:block:OverviewModuleTableRow -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </li>
+                </ul>
+<!-- dtl:block:OverviewModuleRowTableDataSimple -->
+
+
+
+
             </div>
         </div>
 <!-- dtl:block:OverviewModule -->

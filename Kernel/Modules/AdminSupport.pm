@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AdminSupport.pm - show support information
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.34 2010/11/04 21:43:22 cg Exp $
+# $Id: AdminSupport.pm,v 1.35 2011/06/28 20:38:42 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.34 $) [1];
+$VERSION = qw($Revision: 1.35 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -393,13 +393,34 @@ sub Run {
 
                 $RowHash->{BlockStyle} = $RowHash->{BlockStyle} || '';
 
-                # create new block with rotatory css
-                $Self->{LayoutObject}->Block(
-                    Name => 'OverviewModuleRow' . $RowHash->{BlockStyle},
-                    Data => {
-                        %{$RowHash},
-                    },
-                );
+                if ( $RowHash->{BlockStyle} ne 'TableDataSimple' ) {
+
+                    # create new block with rotatory css
+                    $Self->{LayoutObject}->Block(
+                        Name => 'OverviewModuleRow' . $RowHash->{BlockStyle},
+                        Data => {
+                            %{$RowHash},
+                        },
+                    );
+                }
+                else {
+                    $Self->{LayoutObject}->Block(
+                        Name => 'OverviewModuleRowTableDataSimple',
+                        Data => {
+                            %{$RowHash},
+                        },
+                    );
+                    my %TableValues = split( /[=;]/, $RowHash->{TableInfo} );
+                    for my $Item ( sort keys %TableValues ) {
+                        $Self->{LayoutObject}->Block(
+                            Name => 'OverviewModuleTableRow',
+                            Data => {
+                                ItemKey => $Item,
+                                Value   => $TableValues{$Item},
+                            },
+                        );
+                    }
+                }
             }
         }
         $Output .= $Self->{LayoutObject}->Output(

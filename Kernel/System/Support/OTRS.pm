@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.35 2011/05/02 18:32:37 mb Exp $
+# $Id: OTRS.pm,v 1.36 2011/06/28 20:38:42 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.35 $) [1];
+$VERSION = qw($Revision: 1.36 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -591,20 +591,18 @@ sub _DefaultSOAPUserCheck {
     return $Data;
 }
 
-# Total Ticket Amount
+# General System Overview
 sub _GeneralSystemOverview {
     my ( $Self, %Param ) = @_;
 
-    my $Data = {};
+    my $Data      = {};
+    my $TableInfo = '';
+    my $Counter   = 0;
 
-    my $Check   = 'OK';
-    my $Message = ' - Product: ' .
-        $Self->{ConfigObject}->Get('Product') . ' ' .
-        $Self->{ConfigObject}->Get('Version') .
-        "\n";
-    $Message .= ' - Location: ' .
-        $Self->{ConfigObject}->Get('Home') .
-        "\n";
+    my $Check = 'OK';
+
+    $TableInfo .= 'Product=' . $Self->{ConfigObject}->Get('Product') .
+        ' ' . $Self->{ConfigObject}->Get('Version') . ';';
     my %Search = (
         1 => {
             TableName   => 'ticket',
@@ -633,34 +631,30 @@ sub _GeneralSystemOverview {
         while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
             $Search{$Key}->{Result} = $Row[0];
         }
-        $Message .= " - " . $Search{$Key}->{Description} .
-            ": " . $Search{$Key}->{Result} .
-            "\n";
+        $TableInfo .= "$Search{$Key}->{Description}=$Search{$Key}->{Result};";
     }
 
     my $AvgArticlesTicket = $Search{2}->{Result} / $Search{1}->{Result};
     $AvgArticlesTicket = sprintf( "%.2f", $AvgArticlesTicket );
-    $Message .= " - Articles per ticket (avg): " . $AvgArticlesTicket . "\n";
+    $TableInfo .= "Articles per ticket (avg)=$AvgArticlesTicket;";
 
     #  tickets per month (avg)
     my $MonthInSeconds   = 2626560;    # 60 * 60 * 24 * 30.4;
-    my $TicketWindowTime = 1;          # in months
+    my $TicketWindowTime = 1;          # in monts
     $Self->{DBObject}->Prepare(
         SQL => "select max(create_time_unix), min(create_time_unix) " .
             "from ticket where id > 1 ",
     );
-    my $TicketsMonth;
+    my $TicketsMonts;
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
 
-        # months on unix time
-        $TicketsMonth = $Row[0] - $Row[1];
+        # months on seconds
+        $TicketsMonts = $Row[0] - $Row[1];
     }
-    $TicketsMonth = $TicketsMonth / $MonthInSeconds;
-    if ( $TicketsMonth > 1 ) {
-        $TicketWindowTime = sprintf( "%.2f", $TicketsMonth );
-    }
+    $TicketsMonts = $TicketsMonts / $MonthInSeconds;
     my $AverageTicketsMonth = $Search{1}->{Result} / $TicketWindowTime;
-    $Message .= " - Tickets per month (avg): " . $AverageTicketsMonth . "\n";
+    $AverageTicketsMonth = sprintf( "%.2f", $AverageTicketsMonth );
+    $TableInfo .= "Tickets per month (avg)=$AverageTicketsMonth;";
 
     #  attachments
     my $HowManyAttachments    = '';
@@ -678,8 +672,9 @@ sub _GeneralSystemOverview {
     $AverageAttachmentSize = sprintf( "%.2f", $AverageAttachmentSize );
     my $AvgAttachmentTicket = $HowManyAttachments / $Search{1}->{Result};
     $AvgAttachmentTicket = sprintf( "%.2f", $AvgAttachmentTicket );
-    $Message .= " - Attachments per ticket (avg): " . $AvgAttachmentTicket . "\n" .
-        " - Attachment size (avg): " . $AverageAttachmentSize . " KB\n";
+
+    $TableInfo .= "Attachments per ticket (avg)=$AvgAttachmentTicket;";
+    $TableInfo .= "Attachment size (avg)=$AverageAttachmentSize KB;";
 
     # customers
     my %List = $Self->{CustomerUserObject}->CustomerSearch(
@@ -687,18 +682,18 @@ sub _GeneralSystemOverview {
         Valid  => 0,
     );
     my $Customers = scalar keys %List;
-    $Message .= " - Customers: " . $Customers . " \n";
+    $TableInfo .= "Customers=$Customers;";
 
-    # operating system
-    $Message .= " - Operating system: " . $^O;
+    # operative system
+    $TableInfo .= "Operative system=$^O;";
 
     $Data = {
-        Name          => 'GeneralSystemOverview',
-        Description   => 'Diplay general system overview',
-        Comment       => 'General information about your system.',
-        Check         => $Check,
-        BlockStyle    => 'TextArea',
-        ContentString => $Message,
+        Name        => 'GeneralSystemOverview',
+        Description => 'Display a general system overview',
+        Comment     => 'General information about your system.',
+        Check       => $Check,
+        BlockStyle  => 'TableDataSimple',
+        TableInfo   => $TableInfo,
     };
     return $Data;
 }
