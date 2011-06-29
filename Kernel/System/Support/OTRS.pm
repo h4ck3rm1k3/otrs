@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.37 2011/06/29 04:45:21 cg Exp $
+# $Id: OTRS.pm,v 1.38 2011/06/29 04:52:53 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.37 $) [1];
+$VERSION = qw($Revision: 1.38 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -655,6 +655,8 @@ sub _GeneralSystemOverview {
     }
     $TicketWindowTime = ( $TicketCreateTimeMax - $TicketCreateTimeMin ) || 1;
     $TicketWindowTime = $TicketWindowTime / $MonthInSeconds;
+    $TicketWindowTime = 1
+        if $TicketWindowTime < 1;
     my $AverageTicketsMonth = $Search{1}->{Result} / $TicketWindowTime;
     $AverageTicketsMonth = sprintf( "%.2f", $AverageTicketsMonth );
     $TicketWindowTime    = sprintf( "%.2f", $TicketWindowTime );
