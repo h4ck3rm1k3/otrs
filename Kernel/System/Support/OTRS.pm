@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.36 2011/06/28 20:38:42 cg Exp $
+# $Id: OTRS.pm,v 1.37 2011/06/29 04:45:21 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.36 $) [1];
+$VERSION = qw($Revision: 1.37 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -639,33 +639,38 @@ sub _GeneralSystemOverview {
     $TableInfo .= "Articles per ticket (avg)=$AvgArticlesTicket;";
 
     #  tickets per month (avg)
-    my $MonthInSeconds   = 2626560;    # 60 * 60 * 24 * 30.4;
-    my $TicketWindowTime = 1;          # in monts
+    my $MonthInSeconds = 2626560;    # 60 * 60 * 24 * 30.4;
+    my $TicketWindowTime;            # in months
     $Self->{DBObject}->Prepare(
         SQL => "select max(create_time_unix), min(create_time_unix) " .
             "from ticket where id > 1 ",
     );
-    my $TicketsMonts;
+    my $TicketCreateTimeMax;
+    my $TicketCreateTimeMin;
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
 
         # months on seconds
-        $TicketsMonts = $Row[0] - $Row[1];
+        $TicketCreateTimeMax = $Row[0] || 0;
+        $TicketCreateTimeMin = $Row[1] || 0;
     }
-    $TicketsMonts = $TicketsMonts / $MonthInSeconds;
+    $TicketWindowTime = ( $TicketCreateTimeMax - $TicketCreateTimeMin ) || 1;
+    $TicketWindowTime = $TicketWindowTime / $MonthInSeconds;
     my $AverageTicketsMonth = $Search{1}->{Result} / $TicketWindowTime;
     $AverageTicketsMonth = sprintf( "%.2f", $AverageTicketsMonth );
+    $TicketWindowTime    = sprintf( "%.2f", $TicketWindowTime );
+    $TableInfo .= "Months between first and last ticket=$TicketWindowTime;";
     $TableInfo .= "Tickets per month (avg)=$AverageTicketsMonth;";
 
     #  attachments
-    my $HowManyAttachments    = '';
-    my $AverageAttachmentSize = 0;
+    my $HowManyAttachments;
+    my $AverageAttachmentSize;
     $Self->{DBObject}->Prepare(
         SQL => "select count(*), avg(content_size) from article_attachment " .
             "where content_type not like('text/html%')",
     );
     while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        $HowManyAttachments    = $Row[0];
-        $AverageAttachmentSize = $Row[1];
+        $HowManyAttachments    = $Row[0] || 0;
+        $AverageAttachmentSize = $Row[1] || 0;
     }
 
     $AverageAttachmentSize = int( $AverageAttachmentSize / 1024 );
