@@ -25,7 +25,6 @@
 /opt/otrs/Kernel/Config/GenericAgent.pm.dist
 /opt/otrs/Kernel/Config/GenericAgent.pm.examples
 /opt/otrs/Kernel/Config/Defaults.pm
-/opt/otrs/Kernel/GenericInterface*
 /opt/otrs/Kernel/Language.pm
 %dir /opt/otrs/Kernel/Language/
 /opt/otrs/Kernel/Modules*
@@ -33,7 +32,6 @@
 %dir /opt/otrs/Kernel/Output/HTML/
 %dir /opt/otrs/Kernel/Output/HTML/Standard/
 /opt/otrs/Kernel/Output/HTML/*.pm
-/opt/otrs/Kernel/Scheduler*
 /opt/otrs/Kernel/System*
 /opt/otrs/bin*
 /opt/otrs/scripts*
@@ -55,6 +53,7 @@
 
 %doc /opt/otrs/INSTAL*
 %doc /opt/otrs/UPGRADING
+%doc /opt/otrs/TODO
 %doc /opt/otrs/COPYING
 %doc /opt/otrs/COPYING-Third-Party
 %doc /opt/otrs/CHANGES
