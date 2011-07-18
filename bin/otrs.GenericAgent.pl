@@ -3,7 +3,7 @@
 # bin/otrs.GenericAgent.pl - a generic agent -=> e. g. close ale emails in a specific queue
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: otrs.GenericAgent.pl,v 1.6 2011/11/18 07:24:22 mb Exp $
+# $Id: otrs.GenericAgent.pl,v 1.4.2.1 2011/07/18 11:57:18 mb Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -30,7 +30,7 @@ use FindBin qw($RealBin);
 use lib dirname($RealBin);
 
 use vars qw($VERSION %Jobs @ISA);
-$VERSION = qw($Revision: 1.6 $) [1];
+$VERSION = qw($Revision: 1.4.2.1 $) [1];
 
 use Getopt::Std;
 use Kernel::Config;
@@ -242,15 +242,14 @@ sub ExecuteDBJobs {
             next if !$Match;
         }
 
-        # check if job already was running less than 10 minutes (+- 5 secs) ago
+        # check if job already was running
         my $CurrentTime = $CommonObject{TimeObject}->SystemTime();
         if (
             $DBJobRaw{ScheduleLastRunUnixTime}
-            && $CurrentTime < $DBJobRaw{ScheduleLastRunUnixTime} + ( 10 * 59 )
+            && $CurrentTime < $DBJobRaw{ScheduleLastRunUnixTime} + ( 10 * 60 )
             )
         {
-            my $SecsAgo = $CurrentTime - $DBJobRaw{ScheduleLastRunUnixTime};
-            print "Job '$DBJob' last finished $SecsAgo seconds ago. Skipping for now.\n";
+            print "Job '$DBJob' already finished!\n";
             next;
         }
 
