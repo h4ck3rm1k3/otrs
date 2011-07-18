@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/DashboardTicketGeneric.pm
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: DashboardTicketGeneric.pm,v 1.45 2012/01/12 18:34:21 cr Exp $
+# $Id: DashboardTicketGeneric.pm,v 1.38.2.1 2011/07/18 13:47:06 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.45 $) [1];
+$VERSION = qw($Revision: 1.38.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -129,7 +129,6 @@ sub Run {
 
     # get all search base attributes
     my %TicketSearch;
-    my %DynamicFieldsParameters;
     my @Params = split /;/, $Self->{Config}->{Attributes};
     for my $String (@Params) {
         next if !$String;
@@ -143,20 +142,6 @@ sub Run {
         {
             push @{ $TicketSearch{$Key} }, $Value;
         }
-
-        # check if parameter is a dynamic field and capture dynamic filed name (with DynamicField_)
-        # in $1 and the Operator in $2
-        # possible Dynamic Fields options include:
-        #   DyamicField_NameX_Equals=123;
-        #   DyamicField_NameX_Like=value*;
-        #   DyamicField_NameX_GreaterThan=2001-01-01 01:01:01;
-        #   DyamicField_NameX_GreaterThanEquals=2001-01-01 01:01:01;
-        #   DyamicField_NameX_LowerThan=2002-02-02 02:02:02;
-        #   DyamicField_NameX_LowerThanEquals=2002-02-02 02:02:02;
-        elsif ( $Key =~ m{\A (DynamicField_.+?) _ (.+?) \z}sxm ) {
-            $DynamicFieldsParameters{$1}->{$2} = $Value;
-        }
-
         elsif ( !defined $TicketSearch{$Key} ) {
             $TicketSearch{$Key} = $Value;
         }
@@ -171,7 +156,6 @@ sub Run {
     }
     %TicketSearch = (
         %TicketSearch,
-        %DynamicFieldsParameters,
         Permission => $Self->{Config}->{Permission} || 'ro',
         UserID => $Self->{UserID},
     );
@@ -186,7 +170,7 @@ sub Run {
     my %TicketSearchSummary = (
         Locked => {
             OwnerIDs => [ $Self->{UserID}, ],
-            Locks => [ 'lock', 'tmp_lock' ],
+            Locks    => ['lock'],
         },
         Watcher => {
             WatchUserIDs => [ $Self->{UserID}, ],
@@ -340,9 +324,8 @@ sub Run {
         $Count++;
         next if $Count < $Self->{StartHit};
         my %Ticket = $Self->{TicketObject}->TicketGet(
-            TicketID      => $TicketID,
-            UserID        => $Self->{UserID},
-            DynamicFields => 0,
+            TicketID => $TicketID,
+            UserID   => $Self->{UserID},
         );
 
         # create human age
