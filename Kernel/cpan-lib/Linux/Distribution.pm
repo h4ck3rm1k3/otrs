@@ -10,8 +10,9 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw( distribution_name distribution_version );
 
-our $VERSION = '0.14';
+our $VERSION = '0.20';
 
+our $release_files_directory='/etc';
 our $standard_release_file = 'lsb-release';
 
 our %release_files = (
@@ -38,7 +39,8 @@ our %release_files = (
     'yoper-release'         => 'yoper',
     'arch-release'          => 'arch',
     'libranet_version'      => 'libranet',
-    'va-release'            => 'va-linux'
+    'va-release'            => 'va-linux',
+    'pardus-release'        => 'pardus',
 );
 
 our %version_match = (
@@ -48,13 +50,15 @@ our %version_match = (
     'fedora'                => 'Fedora Core release (\d+) \(',
     'redflag'               => 'Red Flag (?:Desktop|Linux) (?:release |\()(.*?)(?: \(.+)?\)',
     'redhat'                => 'Red Hat Linux release (.*) \(',
-    'slackware'             => '^Slackware (.+)$'
+    'slackware'             => '^Slackware (.+)$',
+    'pardus'                => '^Pardus (.+)$',
+    'centos'                => '^CentOS release (.+)(?:\s\(Final\))',
 );
 
 
 if ($^O ne 'linux') {
-	require Carp;
-	Carp::croak 'you are trying to use a linux specific module on a different OS';
+#   require Carp;
+#   Carp::croak('you are trying to use a linux specific module on a different OS');
 }
 
 sub new {
@@ -76,11 +80,33 @@ sub distribution_name {
     if ($distro = $self->_get_lsb_info()){
         return $distro if ($distro);
     }
-    foreach (keys %release_files) {
-        if (-f "/etc/$_" && !-l "/etc/$_"){
-            if (-f "/etc/$_" && !-l "/etc/$_"){
+
+    foreach ('fedora-release') {
+        if (-f "$release_files_directory/$_" && !-l "$release_files_directory/$_"){
+            if (-f "$release_files_directory/$_" && !-l "$release_files_directory/$_"){
                 $self->{'DISTRIB_ID'} = $release_files{$_};
                 $self->{'release_file'} = $_;
+                return $self->{'DISTRIB_ID'};
+            }
+        }
+    }
+
+    foreach (keys %release_files) {
+        if (-f "$release_files_directory/$_" && !-l "$release_files_directory/$_"){
+            if (-f "$release_files_directory/$_" && !-l "$release_files_directory/$_"){
+                if ( $release_files{$_} eq 'redhat' ) {
+                    $self->{'pattern'} = $version_match{'centos'};
+                    $self->{'release_file'}='redhat-release';
+                    if ( $self->_get_file_info() ) {
+                        $self->{'DISTRIB_ID'} = 'centos';
+                        $self->{'release_file'} = $_;
+                        return $self->{'DISTRIB_ID'};
+                    } else {
+                        $self->{'pattern'}='';
+                    }
+                }
+                $self->{'release_file'} = $_;
+                $self->{'DISTRIB_ID'} = $release_files{$_};
                 return $self->{'DISTRIB_ID'};
             }
         }
@@ -105,7 +131,7 @@ sub _get_lsb_info {
     my $self = shift;
     my $field = shift || 'DISTRIB_ID';
     my $tmp = $self->{'release_file'};
-    if ( -r '/etc/' . $standard_release_file ) {
+    if ( -r "$release_files_directory/" . $standard_release_file ) {
         $self->{'release_file'} = $standard_release_file;
         $self->{'pattern'} = $field . '=(.+)';
         my $info = $self->_get_file_info();
@@ -121,9 +147,10 @@ sub _get_lsb_info {
 
 sub _get_file_info {
     my $self = shift;
-    open FH, '/etc/' . $self->{'release_file'} or die 'Cannot open file: /etc/' . $self->{'release_file'};
+    open my $fh, '<', "$release_files_directory/" . $self->{'release_file'} or die 'Cannot open file: '.$release_files_directory.'/' . $self->{'release_file'};
     my $info = '';
-    while (<FH>){
+    local $_;
+    while (<$fh>){
         chomp $_;
         ($info) = $_ =~ m/$self->{'pattern'}/;
         return "\L$info" if $info;
@@ -137,7 +164,7 @@ __END__
 
 =head1 NAME
 
-Linux::Distribution - Perl extension to guess on which Linux distribution we are running.
+Linux::Distribution - Perl extension to detect on which Linux distribution we are running.
 
 =head1 SYNOPSIS
 
@@ -145,16 +172,16 @@ Linux::Distribution - Perl extension to guess on which Linux distribution we are
 
   if(my $distro = distribution_name) {
         my $version = distribution_version();
-  	print "you are running $distro, version $version\n";
+    print "you are running $distro, version $version\n";
   } else {
-  	print "distribution unknown\n";
+    print "distribution unknown\n";
   }
 
   Or else do it OO:
 
   use Linux::Distribution qw(distribution_name distribution_version);
 
-  $linux = new Linux::Distribution;
+  my $linux = Linux::Distribution->new;
   if(my $distro = $linux->distribution_name()) {
         my $version = $linux->distribution_version();
         print "you are running $distro, version $version\n";
@@ -180,6 +207,7 @@ Add the capability of recognize the version of the distribution for all recogniz
 
 =head1 AUTHORS
 
+Alexandr Ciornii E<lt>alexchorny@gmail.comE<gt>, L<http://chorny.net>
 Alberto Re, E<lt>alberto@accidia.netE<gt>
 Judith Lebzelter, E<lt>judith@osdl.orgE<gt>
 
@@ -190,4 +218,3 @@ it under the same terms as Perl itself, either Perl version 5.8.5 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
-
