@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AdminPackageManager.pm - manage software packages
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminPackageManager.pm,v 1.105 2012/01/09 08:58:18 mg Exp $
+# $Id: AdminPackageManager.pm,v 1.98.2.1 2011/07/28 09:06:53 martin Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Package;
 use Kernel::System::Web::UploadCache;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.105 $) [1];
+$VERSION = qw($Revision: 1.98.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -49,7 +49,6 @@ sub Run {
     # ------------------------------------------------------------ #
     # check mod perl version and Apache::Reload
     # ------------------------------------------------------------ #
-
     if ( exists $ENV{MOD_PERL} ) {
         if ( defined $mod_perl::VERSION ) {
             if ( $mod_perl::VERSION >= 1.99 ) {
@@ -77,7 +76,7 @@ sub Run {
         }
     }
 
-    # secure mode message (don't allow this action until secure mode is enabled)
+    # secure mode message (don't allow this action untill secure mode is enabled)
     if ( !$Self->{ConfigObject}->Get('SecureMode') ) {
         $Self->{LayoutObject}->SecureMode();
     }
@@ -101,6 +100,9 @@ sub Run {
         }
         my %Structure = $Self->{PackageObject}->PackageParse( String => $Package );
         my $File = '';
+        if ( !$Location ) {
+
+        }
         if ( ref $Structure{Filelist} eq 'ARRAY' ) {
             for my $Hash ( @{ $Structure{Filelist} } ) {
                 if ( $Hash->{Location} eq $Location ) {
@@ -112,25 +114,14 @@ sub Run {
 
         # do not allow to read file with including .. path (security related)
         $LocalFile =~ s/\.\.//g;
-        if ( !$File ) {
+        if ( !-e $LocalFile ) {
             $Self->{LayoutObject}->Block(
                 Name => 'FileDiff',
                 Data => {
                     Location => $Location,
                     Name     => $Name,
                     Version  => $Version,
-                    Diff     => "No such file $LocalFile in package!",
-                },
-            );
-        }
-        elsif ( !-e $LocalFile ) {
-            $Self->{LayoutObject}->Block(
-                Name => 'FileDiff',
-                Data => {
-                    Location => $Location,
-                    Name     => $Name,
-                    Version  => $Version,
-                    Diff     => "No such file $LocalFile in local file system!",
+                    Diff     => "No such file $LocalFile!",
                 },
             );
         }
@@ -643,10 +634,6 @@ sub Run {
     # change repository
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'ChangeRepository' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Source = $Self->{ParamObject}->GetParam( Param => 'Source' ) || '';
         $Self->{SessionObject}->UpdateSessionID(
             SessionID => $Self->{SessionID},
@@ -660,10 +647,6 @@ sub Run {
     # install package
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Install' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Name    = $Self->{ParamObject}->GetParam( Param => 'Name' )    || '';
         my $Version = $Self->{ParamObject}->GetParam( Param => 'Version' ) || '';
 
@@ -681,10 +664,6 @@ sub Run {
     # install remote package
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'InstallRemote' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $File = $Self->{ParamObject}->GetParam( Param => 'File' ) || '';
 
         # download package
@@ -704,10 +683,6 @@ sub Run {
     # upgrade remote package
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'UpgradeRemote' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $File = $Self->{ParamObject}->GetParam( Param => 'File' ) || '';
 
         # download package
@@ -727,10 +702,6 @@ sub Run {
     # reinstall package
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Reinstall' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Name    = $Self->{ParamObject}->GetParam( Param => 'Name' )    || '';
         my $Version = $Self->{ParamObject}->GetParam( Param => 'Version' ) || '';
         my $IntroReinstallPre = $Self->{ParamObject}->GetParam( Param => 'IntroReinstallPre' )
@@ -803,10 +774,6 @@ sub Run {
     # reinstall action package
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'ReinstallAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Name    = $Self->{ParamObject}->GetParam( Param => 'Name' )    || '';
         my $Version = $Self->{ParamObject}->GetParam( Param => 'Version' ) || '';
         my $IntroReinstallPost = $Self->{ParamObject}->GetParam( Param => 'IntroReinstallPost' )
@@ -861,10 +828,6 @@ sub Run {
     # uninstall package
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Uninstall' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Name    = $Self->{ParamObject}->GetParam( Param => 'Name' )    || '';
         my $Version = $Self->{ParamObject}->GetParam( Param => 'Version' ) || '';
         my $IntroUninstallPre = $Self->{ParamObject}->GetParam( Param => 'IntroUninstallPre' )
@@ -936,10 +899,6 @@ sub Run {
     # uninstall action package
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'UninstallAction' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Name    = $Self->{ParamObject}->GetParam( Param => 'Name' )    || '';
         my $Version = $Self->{ParamObject}->GetParam( Param => 'Version' ) || '';
         my $IntroUninstallPost = $Self->{ParamObject}->GetParam( Param => 'IntroUninstallPost' )
@@ -997,10 +956,6 @@ sub Run {
     # install package
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'InstallUpload' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $FormID = $Self->{ParamObject}->GetParam( Param => 'FormID' ) || '';
         my %UploadStuff = $Self->{ParamObject}->GetUploadAll(
             Param  => 'FileUpload',
@@ -1054,10 +1009,6 @@ sub Run {
     # rebuild package
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'RebuildPackage' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Name    = $Self->{ParamObject}->GetParam( Param => 'Name' )    || '';
         my $Version = $Self->{ParamObject}->GetParam( Param => 'Version' ) || '';
 
@@ -1098,8 +1049,7 @@ sub Run {
         Data => { %List, %RepositoryRoot, },
         Name => 'Source',
         Max  => 40,
-        Translation => 0,
-        SelectedID  => $Source,
+        SelectedID => $Source,
     );
     $Self->{LayoutObject}->Block(
         Name => 'Overview',
@@ -1271,7 +1221,7 @@ sub Run {
         $Output .= $Self->{LayoutObject}->Notify(
             Priority => 'Error',
             Data     => "$ReinstallKey $NeedReinstall{$ReinstallKey}"
-                . ' - $Text{"Package not correctly deployed! Please reinstall the package."}',
+                . ' - $Text{"Package not correctly deployed! You should reinstall the Package again!"}',
             Link => '$Env{"Baselink"}Action=$Env{"Action"};Subaction=View;Name='
                 . $ReinstallKey
                 . ';Version='
@@ -1291,10 +1241,6 @@ sub _MessageGet {
     my $Title       = '';
     my $Description = '';
     my $Use         = 0;
-
-    my $Language = $Self->{LayoutObject}->{UserLanguage}
-        || $Self->{ConfigObject}->Get('DefaultLanguage');
-
     if ( $Param{Info} ) {
         for my $Tag ( @{ $Param{Info} } ) {
             if ( $Param{Type} ) {
@@ -1308,8 +1254,14 @@ sub _MessageGet {
                 $Description = $Tag->{Content};
                 $Title       = $Tag->{Title};
             }
-
-            if ( $Tag->{Lang} eq $Language ) {
+            if (
+                ( $Self->{UserLanguage} && $Tag->{Lang} eq $Self->{UserLanguage} )
+                || (
+                    !$Self->{UserLanguage}
+                    && $Tag->{Lang} eq $Self->{ConfigObject}->Get('DefaultLanguage')
+                )
+                )
+            {
                 $Description = $Tag->{Content};
                 $Title       = $Tag->{Title};
             }
