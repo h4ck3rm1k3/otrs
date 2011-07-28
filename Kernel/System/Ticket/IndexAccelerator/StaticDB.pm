@@ -2,7 +2,7 @@
 # Kernel/System/Ticket/IndexAccelerator/StaticDB.pm - static db queue ticket index module
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: StaticDB.pm,v 1.79 2011/11/25 10:06:30 mg Exp $
+# $Id: StaticDB.pm,v 1.76.2.1 2011/07/28 11:50:48 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.79 $) [1];
+$VERSION = qw($Revision: 1.76.2.1 $) [1];
 
 sub TicketAcceleratorUpdate {
     my ( $Self, %Param ) = @_;
@@ -31,11 +31,8 @@ sub TicketAcceleratorUpdate {
     # check if ticket is shown or not
     my $IndexUpdateNeeded = 0;
     my $IndexSelcected    = 0;
-    my %TicketData        = $Self->TicketGet(
-        %Param,
-        DynamicFields => 0,
-    );
-    my %IndexTicketData = $Self->GetIndexTicket(%Param);
+    my %TicketData        = $Self->TicketGet(%Param);
+    my %IndexTicketData   = $Self->GetIndexTicket(%Param);
     if ( !%IndexTicketData ) {
         $IndexUpdateNeeded = 1;
     }
@@ -150,10 +147,7 @@ sub TicketAcceleratorAdd {
     }
 
     # get ticket data
-    my %TicketData = $Self->TicketGet(
-        %Param,
-        DynamicFields => 0,
-    );
+    my %TicketData = $Self->TicketGet(%Param);
 
     # check if this ticket is still viewable
     my @ViewableStates = $Self->{StateObject}->StateGetStatesByType(
@@ -226,10 +220,7 @@ sub TicketLockAcceleratorAdd {
     }
 
     # get ticket data
-    my %TicketData = $Self->TicketGet(
-        %Param,
-        DynamicFields => 0,
-    );
+    my %TicketData = $Self->TicketGet(%Param);
     return if !$Self->{DBObject}->Do(
         SQL  => 'INSERT INTO ticket_lock_index (ticket_id) VALUES (?)',
         Bind => [ \$Param{TicketID} ],
@@ -480,6 +471,22 @@ sub _GetIndexTicketLock {
         $Hit = 1;
     }
     return $Hit;
+}
+
+sub GetOverTimeTickets {
+    my ( $Self, %Param ) = @_;
+
+    # get all overtime tickets
+    my @TicketIDs = $Self->TicketSearch(
+        Result                           => 'ARRAY',
+        Limit                            => 100,
+        TicketEscalationTimeOlderMinutes => -( 3 * 8 * 60 ),       # 3 days, roughly
+        Permission                       => 'rw',
+        UserID                           => $Param{UserID} || 1,
+    );
+
+    # return overtime tickets
+    return @TicketIDs;
 }
 
 1;
