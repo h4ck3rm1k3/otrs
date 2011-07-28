@@ -2,7 +2,7 @@
 # EmailParser.t - email parser tests
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: EmailParser.t,v 1.37 2011/08/12 09:06:15 mg Exp $
+# $Id: EmailParser.t,v 1.35.2.1 2011/07/28 15:09:09 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -138,11 +138,13 @@ $Self->Is(
     '4e78ae6bffb120669f50bca56965f552',
     "#3 md5 check",
 );
-$Self->Is(
-    $Attachments[1]->{Filename},
-    'utf-8-file-äöüß-カスタマ.txt',
-    "#3 GetAttachments()",
-);
+if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /utf/i ) {
+    $Self->Is(
+        $Attachments[1]->{Filename},
+        'utf-8-file-äöüß-カスタマ.txt',
+        "#3 GetAttachments()",
+    );
+}
 
 # test #4
 @Array = ();
@@ -161,21 +163,23 @@ $Self->Is(
     'iso-8859-15',
     "#4 GetCharset()",
 );
-$Self->Is(
-    $EmailParserObject->GetParam( WHAT => 'From' ),
-    'Hans BÄKOSchönland <me@bogen.net>',
-    "#4 From()",
-);
-$Self->Is(
-    $EmailParserObject->GetParam( WHAT => 'To' ),
-    'Namedyński (hans@example.com)',
-    "#4 To()",
-);
-$Self->Is(
-    $EmailParserObject->GetParam( WHAT => 'Subject' ),
-    'utf8: 使って / ISO-8859-1: Priorität"  / cp-1251: Сергей Углицких',
-    "#4 Subject()",
-);
+if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /utf/i ) {
+    $Self->Is(
+        $EmailParserObject->GetParam( WHAT => 'From' ),
+        'Hans BÄKOSchönland <me@bogen.net>',
+        "#4 From()",
+    );
+    $Self->Is(
+        $EmailParserObject->GetParam( WHAT => 'To' ),
+        'Namedyński (hans@example.com)',
+        "#4 To()",
+    );
+    $Self->Is(
+        $EmailParserObject->GetParam( WHAT => 'Subject' ),
+        'utf8: 使って / ISO-8859-1: Priorität"  / cp-1251: Сергей Углицких',
+        "#4 Subject()",
+    );
+}
 
 # match values
 my %Match = (
@@ -295,35 +299,39 @@ $Self->Is(
     '5ee767f3b68f24a9213e0bef82dc53e5',
     "#6 md5 check",
 );
-$Self->Is(
-    $Attachments[1]->{Filename},
-    'test-attachment-äöüß.pdf',
-    "#6 GetAttachments()",
-);
-
+if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /utf/i ) {
+    $Self->Is(
+        $Attachments[1]->{Filename},
+        'test-attachment-äöüß.pdf',
+        "#6 GetAttachments()",
+    );
+}
 $MD5 = $Self->{MainObject}->MD5sum( String => $Attachments[2]->{Content} ) || '';
 $Self->Is(
     $MD5,
     'bb29962e132ba159539f1e88b41663b1',
     "#6 md5 check",
 );
-$Self->Is(
-    $Attachments[2]->{Filename},
-    'test-attachment-äöüß-utf-8.txt',
-    "#6 GetAttachments()",
-);
-
+if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /utf/i ) {
+    $Self->Is(
+        $Attachments[2]->{Filename},
+        'test-attachment-äöüß-utf-8.txt',
+        "#6 GetAttachments()",
+    );
+}
 $MD5 = $Self->{MainObject}->MD5sum( String => $Attachments[3]->{Content} ) || '';
 $Self->Is(
     $MD5,
     '0596f2939525c6bd50fc2b649e40fbb6',
     "#6 md5 check",
 );
-$Self->Is(
-    $Attachments[3]->{Filename},
-    'test-attachment-äöüß-iso-8859-1.txt',
-    "#6 GetAttachments()",
-);
+if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /utf/i ) {
+    $Self->Is(
+        $Attachments[3]->{Filename},
+        'test-attachment-äöüß-iso-8859-1.txt',
+        "#6 GetAttachments()",
+    );
+}
 
 # test #7
 @Array = ();
