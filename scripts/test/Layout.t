@@ -2,7 +2,7 @@
 # scripts/test/Layout.t - layout module testscript
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Layout.t,v 1.56 2011/12/02 13:56:03 mg Exp $
+# $Id: Layout.t,v 1.48.2.1 2011/08/09 16:15:35 te Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -580,23 +580,6 @@ $Self->True(
     "Layout.t - zero test for SelectedID attribute in BuildSelection().",
 );
 
-# Ajax and OnChange exclude each other
-$HTMLCode = $LayoutObject->BuildSelection(
-    Data => {
-        0 => 'zero',
-        1 => 'one',
-        2 => 'two',
-    },
-    Name     => 'test',
-    OnChange => q{alert('just testing')},
-    Ajax     => {},
-);
-
-$Self->False(
-    $HTMLCode,
-    q{Layout.t - 'Ajax' and 'OnChange' exclude each other in BuildSelection().},
-);
-
 # test quoting and cutting of strings for $Quote, $QData and $QEnv
 @Tests = (
     {
@@ -702,34 +685,25 @@ $Self->True(
         Result => '<img alt="" src="cid:&lt;734083011@19102009-1795&gt;" />',
     },
     {
-        Name => '_RichTextReplaceLinkOfInlineContent() - generated itself',
+        Name => '_RichTextReplaceLinkOfInlineContent() - generated it self',
         String =>
             '<img width="343" height="563" alt="" src="/otrs-cvs/otrs-cvs/bin/cgi-bin/index.pl?Action=PictureUpload&amp;FormID=1255961382.1012148.29113074&amp;ContentID=inline244217.547683276.1255961382.1012148.29113074@vo7.vo.otrs.com" />',
         Result =>
             '<img width="343" height="563" alt="" src="cid:inline244217.547683276.1255961382.1012148.29113074@vo7.vo.otrs.com" />',
     },
     {
-        Name => '_RichTextReplaceLinkOfInlineContent() - generated itself, with newline',
+        Name => '_RichTextReplaceLinkOfInlineContent() - generated it self',
         String =>
             "<img width=\"343\" height=\"563\" alt=\"\"\nsrc=\"/otrs-cvs/otrs-cvs/bin/cgi-bin/index.pl?Action=PictureUpload&amp;FormID=1255961382.1012148.29113074&amp;ContentID=inline244217.547683276.1255961382.1012148.29113074\@vo7.vo.otrs.com\" />",
         Result =>
             "<img width=\"343\" height=\"563\" alt=\"\"\nsrc=\"cid:inline244217.547683276.1255961382.1012148.29113074\@vo7.vo.otrs.com\" />",
     },
     {
-        Name =>
-            '_RichTextReplaceLinkOfInlineContent() - generated itself, with internal and external image',
+        Name => '_RichTextReplaceLinkOfInlineContent() - generated it self',
         String =>
             '<img width="140" vspace="10" hspace="1" height="38" border="0" alt="AltText" src="http://www.otrs.com/fileadmin/templates/skins/skin_otrs/css/images/logo.gif" /> This text should be displayed <img width="400" height="81" border="0" alt="Description: cid:image001.jpg@01CC3AFE.F81F0B30" src="/otrs/index.pl?Action=PictureUpload&amp;FormID=1311080525.12118416.3676164&amp;ContentID=image001.jpg@01CC4216.1E22E9A0" id="Picture_x0020_1" />',
         Result =>
             '<img width="140" vspace="10" hspace="1" height="38" border="0" alt="AltText" src="http://www.otrs.com/fileadmin/templates/skins/skin_otrs/css/images/logo.gif" /> This text should be displayed <img width="400" height="81" border="0" alt="Description: cid:image001.jpg@01CC3AFE.F81F0B30" src="cid:image001.jpg@01CC4216.1E22E9A0" id="Picture_x0020_1" />',
-    },
-    {
-        Name =>
-            '_RichTextReplaceLinkOfInlineContent() - generated itself, with internal and external image, no space before />',
-        String =>
-            '<img width="140" vspace="10" hspace="1" height="38" border="0" alt="AltText" src="http://www.otrs.com/fileadmin/templates/skins/skin_otrs/css/images/logo.gif" /> This text should be displayed <img width="400" height="81" border="0" alt="Description: cid:image001.jpg@01CC3AFE.F81F0B30" src="/otrs/index.pl?Action=PictureUpload&amp;FormID=1311080525.12118416.3676164&amp;ContentID=image001.jpg@01CC4216.1E22E9A0" id="Picture_x0020_1"/>',
-        Result =>
-            '<img width="140" vspace="10" hspace="1" height="38" border="0" alt="AltText" src="http://www.otrs.com/fileadmin/templates/skins/skin_otrs/css/images/logo.gif" /> This text should be displayed <img width="400" height="81" border="0" alt="Description: cid:image001.jpg@01CC3AFE.F81F0B30" src="cid:image001.jpg@01CC4216.1E22E9A0" id="Picture_x0020_1"/>',
     },
 );
 
@@ -1204,58 +1178,6 @@ for my $Test (@Tests) {
         $Output,
         $Test->{Result},
         $Test->{Name},
-    );
-}
-
-my @LinkEncodeTests = (
-
-    { Source => '%',  Target => '%25', },
-    { Source => '&',  Target => '%26', },
-    { Source => '=',  Target => '%3D', },
-    { Source => '!',  Target => '%21', },
-    { Source => '"',  Target => '%22', },
-    { Source => '#',  Target => '%23', },
-    { Source => '$',  Target => '%24', },
-    { Source => '\'', Target => '%27', },
-    { Source => ',',  Target => '%2C', },
-    { Source => '+',  Target => '%2B', },
-    { Source => '?',  Target => '%3F', },
-    { Source => '|',  Target => '%7C', },
-    { Source => '/',  Target => '%2F', },
-
-    # According to the URL encoding RFC, the path segment of an URL must use %20 for space,
-    # while in the query string + is used normally. However, IIS does not understand + in the
-    # path segment, but understands %20 in the query string, like all others do as well.
-    # Therefore we use %20.
-    { Source => ' ', Target => '%20', },
-    { Source => ':', Target => '%3A', },
-    { Source => ';', Target => '%3B', },
-    { Source => '@', Target => '%40', },
-
-    # LinkEncode() on reserved characters
-    {
-        Source => '!*\'();:@&=+$,/?#[]',
-        Target => '%21%2A%27%28%29%3B%3A%40%26%3D%2B%24%2C%2F%3F%23%5B%5D',
-    },
-
-    # LinkEncode() on common characters
-    {
-        Source => '<>"{}|\`^% ',
-        Target => '%3C%3E%22%7B%7D%7C%5C%60%5E%25%20',
-    },
-
-    # LinkEncode() on normal characters
-    {
-        Source => 'normaltext123',
-        Target => 'normaltext123',
-    },
-);
-
-for my $LinkEncodeTest (@LinkEncodeTests) {
-    $Self->Is(
-        $LayoutObject->LinkEncode( $LinkEncodeTest->{Source} ),
-        $LinkEncodeTest->{Target},
-        "LinkEncode from '$LinkEncodeTest->{Source}' to '$LinkEncodeTest->{Target}'",
     );
 }
 
