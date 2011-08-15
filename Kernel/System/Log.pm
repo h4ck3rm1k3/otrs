@@ -2,7 +2,7 @@
 # Kernel/System/Log.pm - log wapper
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Log.pm,v 1.65 2011/08/15 13:43:12 mb Exp $
+# $Id: Log.pm,v 1.64.2.1 2011/08/15 13:42:19 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Encode;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.65 $) [1];
+$VERSION = qw($Revision: 1.64.2.1 $) [1];
 
 =head1 NAME
 
@@ -158,7 +158,7 @@ sub Log {
             # print line if upper caller module exists
             if ($Line1) {
                 my $VersionString;
-                eval { $VersionString = 'v' . ($Package1->VERSION || "UNKNOWN VERSION") };
+                eval { $VersionString = 'v' . $Package1->VERSION };
                 if ( !$VersionString || $VersionString eq 'v' ) {
                     $VersionString = 'unknown version';
                 }
@@ -308,6 +308,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.65 $ $Date: 2011/08/15 13:43:12 $
+$Revision: 1.64.2.1 $ $Date: 2011/08/15 13:42:19 $
 
 =cut
