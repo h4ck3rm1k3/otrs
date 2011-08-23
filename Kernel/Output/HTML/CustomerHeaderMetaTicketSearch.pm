@@ -2,7 +2,7 @@
 # Kernel/Output/HTML/CustomerHeaderMetaTicketSearch.pm
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerHeaderMetaTicketSearch.pm,v 1.2 2011/08/23 12:15:18 mb Exp $
+# $Id: CustomerHeaderMetaTicketSearch.pm,v 1.1.2.1 2011/08/23 12:46:55 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.2 $) [1];
+$VERSION = qw($Revision: 1.1.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
