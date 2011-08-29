@@ -10,7 +10,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw( distribution_name distribution_version );
 
-our $VERSION = '0.20';
+our $VERSION = '0.21';
 
 our $release_files_directory='/etc';
 our $standard_release_file = 'lsb-release';
@@ -18,6 +18,7 @@ our $standard_release_file = 'lsb-release';
 our %release_files = (
     'gentoo-release'        => 'gentoo',
     'fedora-release'        => 'fedora',
+    'centos-release'        => 'centos',
     'turbolinux-release'    => 'turbolinux',
     'mandrake-release'      => 'mandrake',
     'mandrakelinux-release' => 'mandrakelinux',
@@ -47,12 +48,13 @@ our %version_match = (
     'gentoo'                => 'Gentoo Base System release (.*)',
     'debian'                => '(.+)',
     'suse'                  => 'VERSION = (.*)',
-    'fedora'                => 'Fedora Core release (\d+) \(',
+    'fedora'                => 'Fedora(?: Core)? release (\d+) \(',
     'redflag'               => 'Red Flag (?:Desktop|Linux) (?:release |\()(.*?)(?: \(.+)?\)',
-    'redhat'                => 'Red Hat Linux release (.*) \(',
+    'redhat'                => 'Red Hat(?: Enterprise)? Linux(?: Server)? release (.*) \(',
     'slackware'             => '^Slackware (.+)$',
     'pardus'                => '^Pardus (.+)$',
-    'centos'                => '^CentOS release (.+)(?:\s\(Final\))',
+    'centos'                => '^CentOS(?: Linux)? release (.+)(?:\s\(Final\))',
+    'scientific'            => '^Scientific Linux release (.+) \(',
 );
 
 
@@ -95,15 +97,16 @@ sub distribution_name {
         if (-f "$release_files_directory/$_" && !-l "$release_files_directory/$_"){
             if (-f "$release_files_directory/$_" && !-l "$release_files_directory/$_"){
                 if ( $release_files{$_} eq 'redhat' ) {
-                    $self->{'pattern'} = $version_match{'centos'};
-                    $self->{'release_file'}='redhat-release';
-                    if ( $self->_get_file_info() ) {
-                        $self->{'DISTRIB_ID'} = 'centos';
-                        $self->{'release_file'} = $_;
-                        return $self->{'DISTRIB_ID'};
-                    } else {
-                        $self->{'pattern'}='';
+                    foreach my $rhel_deriv ('centos','scientific',) {
+                        $self->{'pattern'} = $version_match{$rhel_deriv};
+                        $self->{'release_file'}='redhat-release';
+                        if ( $self->_get_file_info() ) {
+                            $self->{'DISTRIB_ID'} = $rhel_deriv;
+                            $self->{'release_file'} = $_;
+                            return $self->{'DISTRIB_ID'};
+                        }
                     }
+                    $self->{'pattern'}='';
                 }
                 $self->{'release_file'} = $_;
                 $self->{'DISTRIB_ID'} = $release_files{$_};
@@ -193,9 +196,9 @@ Linux::Distribution - Perl extension to detect on which Linux distribution we ar
 
 This is a simple module that tries to guess on what linux distribution we are running by looking for release's files in /etc.  It now looks for 'lsb-release' first as that should be the most correct and adds ubuntu support.  Secondly, it will look for the distro specific files.
 
-It currently recognizes slackware, debian, suse, fedora, redhat, turbolinux, yellowdog, knoppix, mandrake, conectiva, immunix, tinysofa, va-linux, trustix, adamantix, yoper, arch-linux, libranet, gentoo, ubuntu and redflag.
+It currently recognizes slackware, debian, suse, fedora, redhat, turbolinux, yellowdog, knoppix, mandrake, conectiva, immunix, tinysofa, va-linux, trustix, adamantix, yoper, arch-linux, libranet, gentoo, ubuntu, scientific and redflag.
 
-It has function to get the version for debian, suse, redhat, gentoo, slackware, redflag and ubuntu(lsb). People running unsupported distro's are greatly encouraged to submit patches :-)
+It has function to get the version for debian, suse, fedora, redhat, gentoo, slackware, scientific, redflag and ubuntu(lsb). People running unsupported distro's are greatly encouraged to submit patches :-)
 
 =head2 EXPORT
 
@@ -218,3 +221,4 @@ it under the same terms as Perl itself, either Perl version 5.8.5 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
