@@ -2,7 +2,7 @@
 # Kernel/System/Support/OS.pm - all required system information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OS.pm,v 1.24 2011/08/29 10:21:58 mb Exp $
+# $Id: OS.pm,v 1.25 2011/08/29 10:29:26 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.24 $) [1];
+$VERSION = qw($Revision: 1.25 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -96,7 +96,7 @@ sub _DistributionCheck {
             my $DistributionName = Linux::Distribution::distribution_name();
             if ($DistributionName) {
                 my $DistributionVersion = Linux::Distribution::distribution_version() || '';
-                $Message = $DistributionName . ' ' . $DistributionVersion . 'is used.';
+                $Message = $DistributionName . ' ' . $DistributionVersion . ' is used.';
             }
             $ReturnHash = {
                 Name        => 'Distribution',
