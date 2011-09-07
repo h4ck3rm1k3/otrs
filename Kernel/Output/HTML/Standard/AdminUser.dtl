@@ -2,7 +2,7 @@
 # AdminUser.dtl - provides HTML form for AdminUser
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminUser.dtl,v 1.40 2011/12/23 13:47:18 mg Exp $
+# $Id: AdminUser.dtl,v 1.31.2.1 2011/09/07 20:53:50 en Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -27,19 +27,7 @@
                         <a href="$Env{"Baselink"}Action=$Env{"Action"}" class="CallForAction"><span>$Text{"Go to overview"}</span></a>
                     </li>
 <!-- dtl:block:ActionOverview -->
-<!-- dtl:block:ActionSearch -->
-                    <li>
-                        <form class="SearchBox" action="$Env{"CGIHandle"}" method="post">
-                            <input type="hidden" name="Action" value="$Env{"Action"}"/>
-                            <input type="hidden" name="Subaction" value="Search"/>
-                            <input type="text" name="Search" value="$QData{"Search"}" id="Search" title="$Text{"Search"}"/>
-                            <button type="submit" value="$Text{"Search"}">$Text{"Search"}</button>
-                        </form>
-                        <p class="FieldExplanation">
-                            $Text{"Wildcards like '*' are allowed."}
-                        </p>
-                    </li>
-<!-- dtl:block:ActionSearch -->
+
 <!-- dtl:block:ActionAdd -->
                     <li>
                         <a class="CallForAction Plus" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Add">
@@ -51,6 +39,25 @@
             </div>
         </div>
 <!-- dtl:block:ActionList -->
+
+<!-- dtl:block:UserFilter -->
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2><label for="FilterUser">$Text{"Filter for Agents"}</label></h2>
+            </div>
+            <div class="Content">
+                <ul>
+                    <li>
+                        <form action="">
+                            <fieldset>
+                                <input type="text" id="FilterUser" class="W50pc" name="FilterUser" value="" title="$Text{"Filter for Agents"}" />
+                            </fieldset>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+<!-- dtl:block:UserFilter -->
 
         <div class="WidgetSimple">
             <div class="Header">
@@ -93,7 +100,7 @@
 <!-- dtl:block:OverviewResultSwitchToUser -->
                             <th>$Text{"Login as"}</th>
 <!-- dtl:block:OverviewResultSwitchToUser -->
-                            <th>$Text{"Validity"}</th>
+                            <th>$Text{"Valid"}</th>
                             <th>$Text{"Changed"}</th>
                             <th>$Text{"Created"}</th>
                         </tr>
@@ -116,7 +123,7 @@
                             <td>$TimeShort{"$QData{"UserLastLoginTimestamp"}"}</td>
 <!-- dtl:block:OverviewResultRowSwitchToUser -->
                             <td>
-                                <a class="AsBlock" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Switch;UserID=$LQData{"UserID"};$QEnv{"ChallengeTokenParam"}">$Text{"Switch to agent"}</a>
+                                <a class="AsBlock" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Switch;UserID=$LQData{"UserID"}">$Text{"Switch to agent"}</a>
                             </td>
 <!-- dtl:block:OverviewResultRowSwitchToUser -->
                             <td>$Text{"$Data{"Valid"}"}</td>
@@ -124,6 +131,9 @@
                             <td>$TimeShort{"$QData{"CreateTime"}"}</td>
                         </tr>
 <!-- dtl:block:OverviewResultRow -->
+                        <tr class="FilterMessage Hidden">
+                            <td colspan="7">$Text{"No matches found."}</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -172,7 +182,7 @@
 
                         <label class="Mandatory" for="UserLogin"><span class="Marker">*</span> $Text{"Username"}:</label>
                         <div class="Field">
-                            <input type="text" name="UserLogin" id="UserLogin" value="$QData{"UserLogin"}" class="W50pc Validate_Required $QData{"UserLoginInvalid"}" maxlength="200"/>
+                            <input type="text" name="UserLogin" id="UserLogin" value="$QData{"UserLogin"}" class="W50pc Validate_Required $QData{"UserLoginInvalid"}" maxlength="100"/>
                             <div id="UserLoginError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
                             <div id="UserLoginServerError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
                         </div>
@@ -185,7 +195,7 @@
                             $Text{"Password"}:
                         </label>
                         <div class="Field">
-                            <input type="password" name="UserPw" id="UserPw" value="" class="W50pc $QData{"UserPwRequired"} $QData{"UserPwInvalid"} " maxlength="100"/>
+                            <input type="password" name="UserPw" id="UserPw" value="" class="W50pc $QData{"UserPwRequired"} $QData{"UserPwInvalid"} " maxlength="50"/>
                             <div id="UserPwError" class="TooltipErrorMessage"><p>$Text{"Password is required."}</p></div>
                             <div id="UserPwServerError" class="TooltipErrorMessage"><p>$Text{"Password is required."}</p></div>
                         </div>
@@ -213,7 +223,7 @@
                         </div>
                         <div class="Clear"></div>
 
-                        <label for="ValidID">$Text{"Validity"}:</label>
+                        <label for="ValidID">$Text{"Valid"}:</label>
                         <div class="Field">
                             $Data{"ValidOption"}
                         </div>
@@ -295,6 +305,11 @@
             </div>
 <!-- dtl:block:OverviewUpdate -->
         </div>
+<!-- dtl:js_on_document_complete -->
+<script type="text/javascript">//<![CDATA[
+    Core.UI.Table.InitTableFilter($('#FilterUser'), $('#User'));
+//]]></script>
+<!-- dtl:js_on_document_complete -->
     </div>
     <div class="Clear"></div>
 </div>
