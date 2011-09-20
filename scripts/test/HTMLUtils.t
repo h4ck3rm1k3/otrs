@@ -1,8 +1,8 @@
 # --
 # HTMLUtils.t - HTMLUtils tests
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: HTMLUtils.t,v 1.39 2012/01/17 14:56:17 mg Exp $
+# $Id: HTMLUtils.t,v 1.36.2.1 2011/09/20 12:21:59 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -679,33 +679,33 @@ for my $Test (@Tests) {
     },
     {
         Input =>
-            'Test http://example.example.local/example/index.pl?Action=AgentTicketZoom&TicketID=2 link with &',
+            'Test http://example.example.local/example/index.pl?Action=AgentZoom&TicketID=2 link with &',
         Result =>
-            'Test <a href="http://example.example.local/example/index.pl?Action=AgentTicketZoom&TicketID=2" title="http://example.example.local/example/index.pl?Action=AgentTicketZoom&TicketID=2">http://example.example.local/example/index.pl?Action=AgentTicketZoom&TicketID=2</a> link with &',
+            'Test <a href="http://example.example.local/example/index.pl?Action=AgentZoom&TicketID=2" title="http://example.example.local/example/index.pl?Action=AgentZoom&TicketID=2">http://example.example.local/example/index.pl?Action=AgentZoom&TicketID=2</a> link with &',
         Name   => 'LinkQuote - link params with &',
         Target => '',
     },
     {
         Input =>
-            'Test http://example.example.local/example/index.pl?Action=AgentTicketZoom&amp;TicketID=2 link with &amp;',
+            'Test http://example.example.local/example/index.pl?Action=AgentZoom&amp;TicketID=2 link with &amp;',
         Result =>
-            'Test <a href="http://example.example.local/example/index.pl?Action=AgentTicketZoom&amp;TicketID=2" title="http://example.example.local/example/index.pl?Action=AgentTicketZoom&amp;TicketID=2">http://example.example.local/example/index.pl?Action=AgentTicketZoom&amp;TicketID=2</a> link with &amp;',
+            'Test <a href="http://example.example.local/example/index.pl?Action=AgentZoom&amp;TicketID=2" title="http://example.example.local/example/index.pl?Action=AgentZoom&amp;TicketID=2">http://example.example.local/example/index.pl?Action=AgentZoom&amp;TicketID=2</a> link with &amp;',
         Name   => 'LinkQuote - link params with &amp;',
         Target => '',
     },
     {
         Input =>
-            'Test http://example.example.local/example/index.pl?Action=AgentTicketZoom;TicketID=2 link with ;',
+            'Test http://example.example.local/example/index.pl?Action=AgentZoom;TicketID=2 link with ;',
         Result =>
-            'Test <a href="http://example.example.local/example/index.pl?Action=AgentTicketZoom;TicketID=2" title="http://example.example.local/example/index.pl?Action=AgentTicketZoom;TicketID=2">http://example.example.local/example/index.pl?Action=AgentTicketZoom;TicketID=2</a> link with ;',
+            'Test <a href="http://example.example.local/example/index.pl?Action=AgentZoom;TicketID=2" title="http://example.example.local/example/index.pl?Action=AgentZoom;TicketID=2">http://example.example.local/example/index.pl?Action=AgentZoom;TicketID=2</a> link with ;',
         Name   => 'LinkQuote - link params with ;',
         Target => '',
     },
     {
         Input =>
-            '<br />http://cuba/otrs/index.pl?Action=AgentTicketZoom&amp;TicketID=4348<br /><br />Your OTRS Notification Master',
+            '<br />http://cuba/otrs/index.pl?Action=AgentZoom&amp;TicketID=4348<br /><br />Your OTRS Notification Master',
         Result =>
-            '<br /><a href="http://cuba/otrs/index.pl?Action=AgentTicketZoom&amp;TicketID=4348" title="http://cuba/otrs/index.pl?Action=AgentTicketZoom&amp;TicketID=4348">http://cuba/otrs/index.pl?Action=AgentTicketZoom&amp;TicketID=4348</a><br /><br />Your OTRS Notification Master',
+            '<br /><a href="http://cuba/otrs/index.pl?Action=AgentZoom&amp;TicketID=4348" title="http://cuba/otrs/index.pl?Action=AgentZoom&amp;TicketID=4348">http://cuba/otrs/index.pl?Action=AgentZoom&amp;TicketID=4348</a><br /><br />Your OTRS Notification Master',
         Name   => 'LinkQuote - just TLD given;',
         Target => '',
     },
@@ -1160,119 +1160,6 @@ for my $Test (@Tests) {
         $Test->{Result}->{Output},
         $Test->{Name},
     );
-}
-
-#
-# EmbeddedImagesExtract()
-#
-my $InlineImage
-    = '<img alt="text" src="data:image/gif;base64,R0lGODlhAQABAJH/AP///wAAAP///wAAACH/C0FET0JFOklSMS4wAt7tACH5BAEAAAIALAAAAAABAAEAAAICVAEAOw==" />';
-@Tests = (
-    {
-        Name   => 'no image',
-        Body   => '',
-        Result => {
-            Success     => 1,
-            Body        => qr|^$|,
-            Attachments => [],
-            }
-    },
-    {
-        Name   => 'no body',
-        Body   => undef,
-        Result => {
-            Success => 0,
-            }
-    },
-    {
-        Name   => 'single image',
-        Body   => "$InlineImage",
-        Result => {
-            Success     => 1,
-            Body        => qr|^<img alt="text" src="cid:.*?" />$|,
-            Attachments => [
-                {
-                    ContentType => qr|^image/gif;|,
-                }
-            ],
-            }
-    },
-    {
-        Name   => 'two images',
-        Body   => "123 $InlineImage 456 $InlineImage 789",
-        Result => {
-            Success => 1,
-            Body =>
-                qr|^123 <img alt="text" src="cid:.*?" /> 456 <img alt="text" src="cid:.*?" /> 789$|,
-            Attachments => [
-                {
-                    ContentType => qr|^image/gif;|,
-                },
-                {
-                    ContentType => qr|^image/gif;|,
-                }
-            ],
-            }
-    },
-    {
-        Name   => 'two images, only one embedded',
-        Body   => "123 $InlineImage 456 <img src=\"http://some.url/image.gif\" /> 789",
-        Result => {
-            Success => 1,
-            Body =>
-                qr|^123 <img alt="text" src="cid:.*?" /> 456 <img src=\"http://some.url/image.gif\" /> 789$|,
-            Attachments => [
-                {
-                    ContentType => qr|^image/gif;|,
-                },
-            ],
-            }
-    },
-);
-
-TEST:
-for my $Test (@Tests) {
-    my $Body = $Test->{Body};
-    my @Attachments;
-    my $Success = $HTMLUtilsObject->EmbeddedImagesExtract(
-        DocumentRef    => \$Body,
-        AttachmentsRef => \@Attachments,
-    );
-
-    $Self->Is(
-        $Success ? 1 : 0,
-        $Test->{Result}->{Success},
-        "$Test->{Name} success",
-    );
-
-    next TEST if !$Success;
-
-    $Self->True(
-        scalar $Body =~ ( $Test->{Result}->{Body} ),
-        "$Test->{Name} body after image extraction (body: $Body, check: $Test->{Result}->{Body})",
-    );
-
-    $Self->Is(
-        scalar @Attachments,
-        scalar @{ $Test->{Result}->{Attachments} },
-        "$Test->{Name} number of attachments",
-    );
-
-    my $Index = 0;
-    for my $Attachment (@Attachments) {
-
-        $Self->True(
-            scalar $Attachment->{ContentType}
-                =~ ( $Test->{Result}->{Attachments}->[$Index]->{ContentType} ),
-            "$Test->{Name} content type of attachment $Index (content type: $Attachment->{ContentType}, check: $Test->{Result}->{Attachments}->[$Index]->{ContentType})",
-        );
-        $Self->True(
-            scalar $Attachment->{Content},
-            "$Test->{Name} content of attachment $Index is not empty",
-        );
-
-        $Index++;
-    }
 }
 
 1;
