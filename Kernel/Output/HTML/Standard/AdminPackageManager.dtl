@@ -1,8 +1,8 @@
 # --
 # AdminPackageManager.dtl - provides global HTML AdminPackageManager
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminPackageManager.dtl,v 1.80 2012/01/09 08:58:18 mg Exp $
+# $Id: AdminPackageManager.dtl,v 1.75.2.1 2011/09/29 08:08:44 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -229,11 +229,11 @@
                 </div>
                 <div class="Content">
                     <p class="FieldExplanation">
-                        $Text{"Did not find a required feature? OTRS Group provides their subscription customers with exclusive Add-Ons:"}
-                        <a href="http://add-ons.otrs.com/">http://add-ons.otrs.com</a>.
+                        $Text{"Did you know that the OTRS Group offers"}
+                        <a href="http://www.otrs.com/solutions/subscriptions/feature-add-ons/">$Text{"helpful feature add-ons?"}</a>
                     </p>
                     <p class="FieldExplanation Center">
-                        <a href="http://add-ons.otrs.com">
+                        <a href="http://www.otrs.com/solutions/subscriptions/feature-add-ons/">
                             <img src="$Config{"Frontend::ImagePath"}/feature_add_ons.png" />
                         </a>
                     </p>
@@ -282,10 +282,10 @@
                                 <td title="$QData{"Description"}">$QData{"Description","55"}</td>
                                 <td>
 <!-- dtl:block:ShowRemotePackageInstall -->
-                                    <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=InstallRemote;Source=$LQData{"Source"};File=$LQData{"File"};Name=$LQData{"Name"};Version=$LQData{"Version"};$QEnv{"ChallengeTokenParam"}">$Text{"Install"}</a>
+                                    <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=InstallRemote;Source=$LQData{"Source"};File=$LQData{"File"};Name=$LQData{"Name"};Version=$LQData{"Version"}">$Text{"Install"}</a>
 <!-- dtl:block:ShowRemotePackageInstall -->
 <!-- dtl:block:ShowRemotePackageUpgrade -->
-                                    <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=UpgradeRemote;Source=$LQData{"Source"};File=$LQData{"File"};Name=$LQData{"Name"};Version=$LQData{"Version"};$QEnv{"ChallengeTokenParam"}">$Text{"Upgrade"}</a>
+                                    <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=UpgradeRemote;Source=$LQData{"Source"};File=$LQData{"File"};Name=$LQData{"Name"};Version=$LQData{"Version"}">$Text{"Upgrade"}</a>
 <!-- dtl:block:ShowRemotePackageUpgrade -->
                                 </td>
                             </tr>
@@ -339,15 +339,15 @@
                                 <td>$Text{"$Data{"Status"}"}</td>
                                 <td>
 <!-- dtl:block:ShowLocalPackageInstall -->
-                                    <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Install;Name=$LQData{"Name"};Version=$LQData{"Version"};$QEnv{"ChallengeTokenParam"}">$Text{"Install"}</a>
+                                    <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Install;Name=$LQData{"Name"};Version=$LQData{"Version"}">$Text{"Install"}</a>
                                     <br/><br/>
 <!-- dtl:block:ShowLocalPackageInstall -->
 <!-- dtl:block:ShowLocalPackageUninstall -->
-                                    <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Uninstall;Name=$LQData{"Name"};Version=$LQData{"Version"};$QEnv{"ChallengeTokenParam"}">$Text{"Uninstall"}</a>
+                                    <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Uninstall;Name=$LQData{"Name"};Version=$LQData{"Version"}">$Text{"Uninstall"}</a>
                                     <br/>
 <!-- dtl:block:ShowLocalPackageUninstall -->
 <!-- dtl:block:ShowLocalPackageReinstall -->
-                                    <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Reinstall;Name=$LQData{"Name"};Version=$LQData{"Version"};$QEnv{"ChallengeTokenParam"}" title="$Text{"Package not correctly deployed! Please reinstall the package."}">$Text{"Reinstall"}</a>
+                                    <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Reinstall;Name=$LQData{"Name"};Version=$LQData{"Version"}" title="$Text{"Package not correctly deployed! You should reinstall the package again!"}">$Text{"Reinstall"}</a>
                                     <br/>
 <!-- dtl:block:ShowLocalPackageReinstall -->
                                 </td>
@@ -394,14 +394,14 @@
 <!-- dtl:block:PackageDownloadRemote -->
 <!-- dtl:block:PackageRebuild -->
                         <li>
-                            <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=RebuildPackage;Name=$LQData{"Name"};Version=$LQData{"Version"};$QEnv{"ChallengeTokenParam"}" class="CallForAction">
+                            <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=RebuildPackage;Name=$LQData{"Name"};Version=$LQData{"Version"}" class="CallForAction">
                                 <span>$Text{"Rebuild package"}</span>
                             </a>
                         </li>
 <!-- dtl:block:PackageRebuild -->
 <!-- dtl:block:PackageReinstall -->
                         <li>
-                            <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Reinstall;Name=$LQData{"Name"};Version=$LQData{"Version"};$QEnv{"ChallengeTokenParam"}" class="CallForAction">
+                            <a href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Reinstall;Name=$LQData{"Name"};Version=$LQData{"Version"}" class="CallForAction">
                                 <span>$Text{"Reinstall package"}</span>
                             </a>
                         </li>
