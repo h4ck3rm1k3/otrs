@@ -2,7 +2,7 @@
 # AgentTicketForward.dtl - provides HTML form for AgentTicketForward
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketForward.dtl,v 1.94 2011/11/23 23:25:56 cr Exp $
+# $Id: AgentTicketForward.dtl,v 1.85.2.1 2011/10/10 12:53:24 sb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -10,7 +10,7 @@
 # --
 
 $Include{"AgentCustomerSearch"}
-<form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data" name="Compose" id="Compose" class="Validate PreventMultipleSubmits">
+<form action="$Env{"CGIHandle"}" method="post" enctype="multipart/form-data" name="compose" id="Compose" class="Validate PreventMultipleSubmits">
     <input type="hidden" name="Action" value="$Env{"Action"}"/>
     <input type="hidden" name="Subaction" value="SendEmail"/>
     <input type="hidden" name="TicketID" value="$QData{"TicketID"}"/>
@@ -21,7 +21,7 @@ $Include{"AgentCustomerSearch"}
 
     <div class="LayoutPopup ARIARoleMain">
         <div class="Header">
-            <h1>$Text{"Forward ticket: %s - %s", "$QData{"TicketNumber"}", "$QData{"Title","60"}"}</h1>
+            <h1>$Text{"Forward ticket: "} $QData{"TicketNumber"} - $QData{"Title","60"}</h1>
 
 <!-- dtl:block:TicketBack -->
             <p>
@@ -128,7 +128,7 @@ $Include{"RichTextEditor"}
 <!-- dtl:block:Attachment -->
                         <li>
                             $QData{"Filename"} ($QData{"Filesize"})
-                            <button type="submit" id="AttachmentDelete$QData{"FileID"}" name="AttachmentDelete$QData{"FileID"}" value="$Text{"Delete"}" class="SpacingLeft">$Text{"Delete"}</button>
+                            <button type="submit" id="AttachmentDelete$QData{"FileID"}" name="AttachmentDelete$QData{"FileID"}" value="$Text{"Delete"}">$Text{"Delete"}</button>
 <!--dtl:js_on_document_complete-->
 <script type="text/javascript">//<![CDATA[
     $('#AttachmentDelete$QData{"FileID"}').bind('click', function () {
@@ -158,13 +158,6 @@ $Include{"RichTextEditor"}
                 <label for="ComposeStateID">$Text{"Next ticket state"}:</label>
                 <div class="Field">
                     $Data{"NextStatesStrg"}
-<!--dtl:js_on_document_complete-->
-<script type="text/javascript">//<![CDATA[
-    $('#ComposeStateID').bind('change', function (Event) {
-        Core.AJAX.FormUpdate($('#Compose'), 'AJAXUpdate', 'ComposeStateID', [ $Data{"DynamicFieldNamesStrg"} ]);
-    });
-//]]></script>
-<!--dtl:js_on_document_complete-->
                 </div>
                 <div class="Clear"></div>
 
@@ -182,37 +175,78 @@ $Include{"RichTextEditor"}
                 </div>
                 <div class="Clear"></div>
 
-<!-- dtl:block:DynamicField -->
-                <div class="Row Row_DynamicField_$QData{"Name"}">
-                    $Data{"Label"}
-                    <div class="Field">
-                        $Data{"Field"}
-                    </div>
-                    <div class="Clear"></div>
+<!-- dtl:block:TicketFreeText -->
+                $Data{"TicketFreeKeyField"}
+                <div class="Field">
+                    $Data{"TicketFreeTextField"}
                 </div>
-<!-- dtl:block:DynamicField -->
+                <div class="Clear"></div>
+<!-- dtl:block:TicketFreeText -->
 
-# example of how to use fixed dynamic field blocks for customizations
-# Note: Field1 and Field2 are the names of the fields and had to be replaced with the actual
-# field names
-#<!-- dtl:block:DynamicField_Field1 -->
-#                <div class="Row Row_DynamicField_$QData{"Name"}">
-#                    $Data{"Label"}
-#                    <div class="Field">
-#                        $Data{"Field"}
-#                    </div>
-#                    <div class="Clear"></div>
+# example of how to use fixed ticket freetext blocks for customizations
+#<!-- dtl:block:TicketFreeText1 -->
+#               $Data{"TicketFreeKeyField1"}
+#               <div class="Field">
+#                   $Data{"TicketFreeTextField1"}
+#               </div>
+#               <div class="Clear"></div>
+#<!-- dtl:block:TicketFreeText1 -->
+#<!-- dtl:block:TicketFreeText2 -->
+#               $Data{"TicketFreeKeyField2"}
+#               <div class="Field">
+#                   $Data{"TicketFreeTextField2"}
+#               </div>
+#               <div class="Clear"></div>
+#<!-- dtl:block:TicketFreeText2 -->
+
+<!-- dtl:block:TicketFreeTime -->
+                $Data{"TicketFreeTimeKey"}
+                <div class="Field">
+                    $Data{"TicketFreeTime"}
+                    <div id="TicketFreeTime$Data{"Count"}UsedError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
+                </div>
+                <div class="Clear"></div>
+<!-- dtl:block:TicketFreeTime -->
+
+# example of how to use fixed ticket freetime blocks for customizations
+#<!-- dtl:block:TicketFreeTime1 -->
+#               <label>$Data{"TicketFreeTimeKey1"}:</label>
+#               <div class="Field">
+#                   $Data{"TicketFreeTime1"}
+#               </div>
+#               <div class="Clear"></div>
+#<!-- dtl:block:TicketFreeTime1 -->
+#<!-- dtl:block:TicketFreeTime2 -->
+#               <label>$Data{"TicketFreeTimeKey2"}:</label>
+#               <div class="Field">
+#                   $Data{"TicketFreeTime2"}
+#               </div>
+#               <div class="Clear"></div>
+#<!-- dtl:block:TicketFreeTime2 -->
+
+<!-- dtl:block:ArticleFreeText -->
+                $Data{"ArticleFreeKeyField"}
+                <div class="Field">
+                    $Data{"ArticleFreeTextField"}
+                </div>
+                <div class="Clear"></div>
+<!-- dtl:block:ArticleFreeText -->
+
+# example of how to use fixed ticket freetime blocks for customizations
+#<!-- dtl:block:ArticleFreeText1 -->
+#                $Data{"ArticleFreeKeyField1"}
+#                <div class="Field">
+#                    $Data{"ArticleFreeKeyField1"}
 #                </div>
-#<!-- dtl:block:DynamicField_Field1 -->
-#<!-- dtl:block:DynamicField_Field2 -->
-#                <div class="Row Row_DynamicField_$QData{"Name"}">
-#                    $Data{"Label"}
-#                    <div class="Field">
-#                        $Data{"Field"}
-#                    </div>
-#                    <div class="Clear"></div>
+#                <div class="Clear"></div>
+#<!-- dtl:block:ArticleFreeText1 -->
+#<!-- dtl:block:ArticleFreeText2 -->
+#                $Data{"ArticleFreeKeyField2"}
+#                <div class="Field">
+#                    $Data{"ArticleFreeKeyField2"}
 #                </div>
-#<!-- dtl:block:DynamicField_Field2 -->
+#                <div class="Clear"></div>
+#<!-- dtl:block:ArticleFreeText2 -->
 
 <!-- dtl:block:TimeUnitsLabel -->
                 <label for="TimeUnits">$Text{"Time units"}$Text{"$Config{"Ticket::Frontend::TimeUnits"}"}:</label>
