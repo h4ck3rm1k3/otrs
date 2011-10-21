@@ -3,7 +3,7 @@
 # bin/cgi-bin/rpc.pl - soap handle
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: rpc.pl,v 1.18 2011/12/20 12:32:21 mb Exp $
+# $Id: rpc.pl,v 1.14.2.1 2011/10/21 08:17:48 des Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -28,7 +28,6 @@ use warnings;
 use FindBin qw($Bin);
 use lib "$Bin/../..";
 use lib "$Bin/../../Kernel/cpan-lib";
-use lib "$Bin/../../Custom";
 
 use SOAP::Transport::HTTP;
 use Kernel::Config;
@@ -42,12 +41,11 @@ use Kernel::System::User;
 use Kernel::System::Group;
 use Kernel::System::Queue;
 use Kernel::System::CustomerUser;
-use Kernel::System::CustomerCompany;
 use Kernel::System::Ticket;
 use Kernel::System::LinkObject;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.18 $) [1];
+$VERSION = qw($Revision: 1.14.2.1 $) [1];
 
 SOAP::Transport::HTTP::CGI->dispatch_to('Core')->handle;
 
@@ -76,17 +74,16 @@ sub Dispatch {
         LogPrefix => 'OTRS-RPC',
         %CommonObject,
     );
-    $CommonObject{MainObject}            = Kernel::System::Main->new(%CommonObject);
-    $CommonObject{DBObject}              = Kernel::System::DB->new(%CommonObject);
-    $CommonObject{PIDObject}             = Kernel::System::PID->new(%CommonObject);
-    $CommonObject{TimeObject}            = Kernel::System::Time->new(%CommonObject);
-    $CommonObject{UserObject}            = Kernel::System::User->new(%CommonObject);
-    $CommonObject{GroupObject}           = Kernel::System::Group->new(%CommonObject);
-    $CommonObject{QueueObject}           = Kernel::System::Queue->new(%CommonObject);
-    $CommonObject{CustomerUserObject}    = Kernel::System::CustomerUser->new(%CommonObject);
-    $CommonObject{CustomerCompanyObject} = Kernel::System::CustomerCompany->new(%CommonObject);
-    $CommonObject{TicketObject}          = Kernel::System::Ticket->new(%CommonObject);
-    $CommonObject{LinkObject}            = Kernel::System::LinkObject->new(%CommonObject);
+    $CommonObject{MainObject}         = Kernel::System::Main->new(%CommonObject);
+    $CommonObject{DBObject}           = Kernel::System::DB->new(%CommonObject);
+    $CommonObject{PIDObject}          = Kernel::System::PID->new(%CommonObject);
+    $CommonObject{TimeObject}         = Kernel::System::Time->new(%CommonObject);
+    $CommonObject{UserObject}         = Kernel::System::User->new(%CommonObject);
+    $CommonObject{GroupObject}        = Kernel::System::Group->new(%CommonObject);
+    $CommonObject{QueueObject}        = Kernel::System::Queue->new(%CommonObject);
+    $CommonObject{CustomerUserObject} = Kernel::System::CustomerUser->new(%CommonObject);
+    $CommonObject{TicketObject}       = Kernel::System::Ticket->new(%CommonObject);
+    $CommonObject{LinkObject}         = Kernel::System::LinkObject->new(%CommonObject);
 
     my $RequiredUser     = $CommonObject{ConfigObject}->Get('SOAP::User');
     my $RequiredPassword = $CommonObject{ConfigObject}->Get('SOAP::Password');
@@ -123,19 +120,6 @@ sub Dispatch {
     return $CommonObject{$Object}->$Method(%Param);
 }
 
-=item DispatchMultipleTicketMethods()
-
-to dispatch multiple ticket methods and get the TicketID
-
-    my $TicketID = $RPC->DispatchMultipleTicketMethods(
-        $SOAP_User,
-        $SOAP_Pass,
-        'TicketObject',
-        [ { Method => 'TicketCreate', Parameter => \%TicketData }, { Method => 'ArticleCreate', Parameter => \%ArticleData } ],
-    );
-
-=cut
-
 sub DispatchMultipleTicketMethods {
     my ( $Self, $User, $Pw, $Object, $MethodParamArrayRef ) = @_;
 
@@ -150,17 +134,16 @@ sub DispatchMultipleTicketMethods {
         LogPrefix => 'OTRS-RPC',
         %CommonObject,
     );
-    $CommonObject{MainObject}            = Kernel::System::Main->new(%CommonObject);
-    $CommonObject{DBObject}              = Kernel::System::DB->new(%CommonObject);
-    $CommonObject{PIDObject}             = Kernel::System::PID->new(%CommonObject);
-    $CommonObject{TimeObject}            = Kernel::System::Time->new(%CommonObject);
-    $CommonObject{UserObject}            = Kernel::System::User->new(%CommonObject);
-    $CommonObject{GroupObject}           = Kernel::System::Group->new(%CommonObject);
-    $CommonObject{QueueObject}           = Kernel::System::Queue->new(%CommonObject);
-    $CommonObject{CustomerUserObject}    = Kernel::System::CustomerUser->new(%CommonObject);
-    $CommonObject{CustomerCompanyObject} = Kernel::System::CustomerCompany->new(%CommonObject);
-    $CommonObject{TicketObject}          = Kernel::System::Ticket->new(%CommonObject);
-    $CommonObject{LinkObject}            = Kernel::System::LinkObject->new(%CommonObject);
+    $CommonObject{MainObject}         = Kernel::System::Main->new(%CommonObject);
+    $CommonObject{DBObject}           = Kernel::System::DB->new(%CommonObject);
+    $CommonObject{PIDObject}          = Kernel::System::PID->new(%CommonObject);
+    $CommonObject{TimeObject}         = Kernel::System::Time->new(%CommonObject);
+    $CommonObject{UserObject}         = Kernel::System::User->new(%CommonObject);
+    $CommonObject{GroupObject}        = Kernel::System::Group->new(%CommonObject);
+    $CommonObject{QueueObject}        = Kernel::System::Queue->new(%CommonObject);
+    $CommonObject{CustomerUserObject} = Kernel::System::CustomerUser->new(%CommonObject);
+    $CommonObject{TicketObject}       = Kernel::System::Ticket->new(%CommonObject);
+    $CommonObject{LinkObject}         = Kernel::System::LinkObject->new(%CommonObject);
 
     my $RequiredUser     = $CommonObject{ConfigObject}->Get('SOAP::User');
     my $RequiredPassword = $CommonObject{ConfigObject}->Get('SOAP::Password');
