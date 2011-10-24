@@ -3,7 +3,7 @@
 # scripts/rpc-example.pl - soap example client
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: rpc-example.pl,v 1.8 2011/10/24 09:22:12 mg Exp $
+# $Id: rpc-example.pl,v 1.7.4.1 2011/10/24 09:22:20 mg Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
