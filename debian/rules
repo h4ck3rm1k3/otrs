@@ -18,6 +18,14 @@ binary-post-install/otrs2::
 	    scripts/database/otrs-initial_insert.postgresql.sql > \
 	    $(OTRS_DST)$(DB_DIR)/install/pgsql
 
+	# get rid of CVS dirs... 
+#	find $(OTRS_DST) -name CVS -type d -delete
+	find $(OTRS_DST) -name CVS -type d -exec rm -rf {} \;
+	find $(OTRS_DST) -name .cvsignore -type f -delete
+#	rm -rf	$(OTRS_DST)/var/lib/otrs/article/CVS/
+#	find $(OTRS_DST) -name CVS -type d | xargs rm -rf 
+#	find $(OTRS_DST) -name .cvsignore -type d | xargs rm -rf 
+
 	# I guess we do not need {redhat,suse,fedora}* stuff in Debian
 	rm -f $(OTRS_DST)$(OTRSHOME)/scripts/fedora* \
 	      $(OTRS_DST)$(OTRSHOME)/scripts/redhat* \
