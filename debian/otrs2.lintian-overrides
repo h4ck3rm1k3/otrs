@@ -18,4 +18,4 @@ otrs2: embedded-javascript-library var/lib/otrs/httpd/htdocs/js/thirdparty/ckedi
 otrs2: embedded-javascript-library var/lib/otrs/httpd/htdocs/js/thirdparty/ckeditor-3.4.2/_source/core/ckeditor.js
 otrs2: embedded-javascript-library var/lib/otrs/httpd/htdocs/js/thirdparty/ckeditor-3.4.2/adapters/jquery.js
 otrs2: embedded-javascript-library var/lib/otrs/httpd/htdocs/js/thirdparty/ckeditor-3.4.2/ckeditor.js
-otrs2: duplicate-changelog-files usr/share/doc/otrs2/CHANGES.gz usr/share/doc/otrs2/changelog.gz
+
