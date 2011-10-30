@@ -579,3 +579,5 @@ The Debian packaging is © 2009-2011, Patrick Matthäi <pmatthaei@debian.org> an
 is licensed under the GPL-3.
 On Debian systems, the complete text of the GNU General
 Public License can be found in `/usr/share/common-licenses/GPL-3'.
+
+It was modified 2011, James Michael DuPont <JamesMikeDuPont@gmail.com> and is under the same license.

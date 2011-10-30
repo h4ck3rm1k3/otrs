@@ -2,4 +2,3 @@ Kernel/Config* Kernel/Language* Kernel/Modules Kernel/Output Kernel/System usr/s
 bin scripts .fetchmailrc.dist       usr/share/otrs/
 var/*                               var/lib/otrs/
 debian/maintenance.html.dist       usr/share/otrs/
-ARCHIVE                            var/lib/otrs/

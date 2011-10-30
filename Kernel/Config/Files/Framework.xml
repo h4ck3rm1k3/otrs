@@ -5567,8 +5567,8 @@ via the Preferences button after logging in.
         <Setting>
             <Array>
                 <Item>thirdparty/json/json2.js</Item>
-                <Item>thirdparty/jquery-1.6.4/jquery.js</Item>
-                <Item>thirdparty/jquery-ui-1.8.16/jquery-ui.js</Item>
+                <Item>thirdparty/jquery/jquery.js</Item>
+                <Item>thirdparty/jquery-ui/jquery-ui.js</Item>
                 <Item>thirdparty/jquery-validate-1.9/jquery.validate.js</Item>
                 <Item>thirdparty/stacktrace-0.3/stacktrace.js</Item>
                 <Item>Core.JavaScriptEnhancements.js</Item>
@@ -5655,9 +5655,9 @@ via the Preferences button after logging in.
         <SubGroup>Core::Web</SubGroup>
         <Setting>
             <Array>
-                <Item>thirdparty/jquery-1.6.4/jquery.js</Item>
+                <Item>thirdparty/jquery/jquery.js</Item>
                 <Item>thirdparty/jquery-validate-1.9/jquery.validate.js</Item>
-                <Item>thirdparty/jquery-ui-1.8.16/jquery-ui.js</Item>
+                <Item>thirdparty/jquery-ui/jquery-ui.js</Item>
                 <Item>thirdparty/stacktrace-0.3/stacktrace.js</Item>
                 <Item>Core.Debug.js</Item>
                 <Item>Core.Data.js</Item>

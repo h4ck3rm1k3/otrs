@@ -1,3 +1,9 @@
+otrs2 (3.0.0-trunk) unstable; urgency=high
+
+  * Experimental packaging
+
+ -- James Michael DuPont <jamesmikedupont@gmail.com>  Sun, 30 Oct 2011 22:23:23 +0100
+
 otrs2 (3.0.10+dfsg1-2) unstable; urgency=high
 
   * Correct SetPermission paths in README.Debian. There was a typo, which fucks

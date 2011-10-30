@@ -6,40 +6,18 @@ OTRSHOME := /usr/share/otrs
 DB_DIR   := /usr/share/dbconfig-common/data/otrs2
 OTRS_DST := $(CURDIR)/debian/otrs2/
 
-makebuilddir/otrs2::
-	@if [ -d doc/manual ]; then \
-		echo 'The manual is provided by a separate package otrs2-doc, please remove it.'; \
-		exit 1; \
-	fi
+#makebuilddir/otrs2::
+#	@if [ -d doc/manual ]; then \
+#		echo 'The manual is provided by a separate package otrs2-doc, please remove it.'; \
+#		exit 1; \
+#	fi
 
 binary-post-install/otrs2::
 	# setup dbconfig-common
 	cat scripts/database/otrs-schema.postgresql.sql \
 	    scripts/database/otrs-initial_insert.postgresql.sql > \
 	    $(OTRS_DST)$(DB_DIR)/install/pgsql
-	cp  scripts/DBUpdate-to-2.1.postgresql.sql \
-	    $(OTRS_DST)$(DB_DIR)/upgrade/pgsql/2.1
-	cp  scripts/DBUpdate-to-2.2.postgresql.sql \
-	    $(OTRS_DST)$(DB_DIR)/upgrade/pgsql/2.2
-	cp  scripts/DBUpdate-to-2.3.postgresql.sql \
-	    $(OTRS_DST)$(DB_DIR)/upgrade/pgsql/2.3
-	cp  scripts/DBUpdate-to-2.4.postgresql.sql \
-	    $(OTRS_DST)$(DB_DIR)/upgrade/pgsql/2.4
-	cp  scripts/DBUpdate-to-3.0.postgresql.sql \
-	    $(OTRS_DST)$(DB_DIR)/upgrade/pgsql/3.0
-	cat scripts/database/otrs-schema.mysql.sql \
-	    scripts/database/otrs-initial_insert.mysql.sql > \
-	    $(OTRS_DST)$(DB_DIR)/install/mysql
-	cp  scripts/DBUpdate-to-2.1.mysql.sql \
-	    $(OTRS_DST)$(DB_DIR)/upgrade/mysql/2.1
-	cp  scripts/DBUpdate-to-2.2.mysql.sql \
-	    $(OTRS_DST)$(DB_DIR)/upgrade/mysql/2.2
-	cp  scripts/DBUpdate-to-2.3.mysql.sql \
-	    $(OTRS_DST)$(DB_DIR)/upgrade/mysql/2.3
-	cp  scripts/DBUpdate-to-2.4.mysql.sql \
-	    $(OTRS_DST)$(DB_DIR)/upgrade/mysql/2.4
-	cp  scripts/DBUpdate-to-3.0.mysql.sql \
-	    $(OTRS_DST)$(DB_DIR)/upgrade/mysql/3.0
+
 	# I guess we do not need {redhat,suse,fedora}* stuff in Debian
 	rm -f $(OTRS_DST)$(OTRSHOME)/scripts/fedora* \
 	      $(OTRS_DST)$(OTRSHOME)/scripts/redhat* \

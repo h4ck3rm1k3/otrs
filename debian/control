@@ -1,7 +1,7 @@
 Source: otrs2
 Section: web
 Priority: optional
-Maintainer: Patrick Matthäi <pmatthaei@debian.org>
+Maintainer: James Michael DuPont <jamesmikedupont@gmail.com>
 Uploaders: Thomas Mueller <thomas@chaschperli.ch>
 Standards-Version: 3.9.2
 Build-Depends: cdbs, debhelper (>= 7)
@@ -27,6 +27,7 @@ Suggests: otrs2-doc-en | otrs2-doc-de, libnet-ldap-perl, libencode-hanextra-perl
 Breaks: otrs (<< 3.0)
 Replaces: otrs (<< 3.0)
 Description: Open Ticket Request System
+ This is an experimental branch of otrs for my learning purposes.
  OTRS is an Open source Ticket Request System (also well known as
  trouble ticket system) with many features to manage customer telephone
  calls and e-mails. The system is built to allow your support, sales,
@@ -38,10 +39,12 @@ Description: Open Ticket Request System
  automatic upgrade path from version 1.3, please consult
  /usr/share/doc/otrs2/README.Debian.gz for more information about that.
 
+
 Package: otrs
 Architecture: all
 Depends: ${misc:Depends}, otrs2 (>= 3.0)
 Description: Open Ticket Request System (transitional package)
+ This is an experimental branch of otrs for my learning purposes.
  OTRS is an Open source Ticket Request System (also well known as
  trouble ticket system) with many features to manage customer telephone
  calls and e-mails. The system is built to allow your support, sales,
