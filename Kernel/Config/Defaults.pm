@@ -904,7 +904,7 @@ sub LoadDefaults {
 
     # Customer Common JS
     $Self->{'Loader::Customer::CommonJS'}->{'000-Framework'} =  [
-      'thirdparty/jquery-1.6.4/jquery.js',
+      'thirdparty/jquery/jquery.js',
       'thirdparty/stacktrace-0.3/stacktrace.js',
       'Core.Debug.js',
       'Core.Exception.js',
@@ -918,8 +918,8 @@ sub LoadDefaults {
     # Agent Common JS
     $Self->{'Loader::Agent::CommonJS'}->{'000-Framework'} =  [
       'thirdparty/json/json2.js',
-      'thirdparty/jquery-1.6.4/jquery.js',
-      'thirdparty/jquery-ui-1.8.16/jquery-ui.js',
+      'thirdparty/jquery/jquery.js',
+      'thirdparty/jquery-ui/jquery-ui.js',
       'thirdparty/jquery-validate-1.9/jquery.validate.js',
       'thirdparty/stacktrace-0.3/stacktrace.js',
       'Core.JavaScriptEnhancements.js',

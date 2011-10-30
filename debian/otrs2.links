@@ -7,7 +7,8 @@ var/lib/otrs/Config/ZZZAuto.pm  usr/share/otrs/Kernel/Config/Files/ZZZAuto.pm
 var/lib/otrs/Config/ZZZAAuto.pm usr/share/otrs/Kernel/Config/Files/ZZZAAuto.pm
 usr/share/javascript/prototype/prototype.js var/lib/otrs/httpd/htdocs/js/prototype.js
 var/spool/otrs var/lib/otrs/spool_dir
-usr/share/javascript/jquery-ui var/lib/otrs/httpd/htdocs/js/thirdparty/jquery-ui
+usr/share/javascript/jquery-ui  var/lib/otrs/httpd/htdocs/js/thirdparty/jquery-ui
+usr/share/javascript/jquery     var/lib/otrs/httpd/htdocs/js/thirdparty/jquery
 var/lib/otrs/ARCHIVE usr/share/otrs/ARCHIVE
 usr/share/fonts/truetype/ttf-dejavu/DejaVuSans-Bold.ttf var/lib/otrs/fonts/DejaVuSans-Bold.ttf
 usr/share/fonts/truetype/ttf-dejavu/DejaVuSans-BoldOblique.ttf var/lib/otrs/fonts/DejaVuSans-BoldOblique.ttf
