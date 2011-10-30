@@ -1,0 +1,77 @@
+# --
+# AgentTicketCustomer.dtl - provides HTML for AgentTicketCustomer.pm
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# --
+# $Id: AgentTicketCustomer.dtl,v 1.37 2011/01/27 10:35:37 bes Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+$Include{"AgentCustomerSearch"}
+
+<!-- dtl:block:Customer -->
+<div class="LayoutPopup ARIARoleMain">
+    <div class="Header">
+        <h1>$Text{"Change customer of ticket"}: $QData{"TicketNumber"} - $QData{"Title","60"}</h1>
+        <p>
+            <a class="CancelClosePopup" href="#">$Text{"Cancel & close window"}</a>
+        </p>
+    </div>
+
+    <div class="Content">
+        <div class="LayoutFixedSidebar SidebarLast">
+            <div id="CustomerInfo" class="SidebarColumn WidgetSimple">
+                <div class="Header">
+                    <h2>$Text{"Customer Data"}: $QData{"CustomerID"}</h2>
+                </div>
+                <div class="Content">
+                    $Data{"Table"}
+                </div>
+            </div>
+
+
+            <div class="ContentColumn">
+                <div class="Header">
+                    <h2>$Text{"Options"}</h2>
+                </div>
+                <div class="Content">
+                    <form action="$Env{"CGIHandle"}" id="MainForm" method="post" name="compose" class="Validate">
+                        <input type="hidden" name="Action" value="$Env{"Action"}"/>
+                        <input type="hidden" name="Subaction" value="Update"/>
+                        <input type="hidden" name="TicketID" value="$QData{"TicketID"}"/>
+                        <input type="hidden" name="SelectedCustomerUser" id="SelectedCustomerUser" value=""/>
+                        <fieldset class="TableLike FixedLabel">
+                            <label for="CustomerAutoComplete">$Text{"Customer user"}:</label>
+                            <div class="Field">
+                                <input id="CustomerAutoComplete" type="text" name="CustomerUserID" value="$QData{"CustomerUserID"}" class="W75pc AutocompleteOff Validate_Required $QData{"CustomerUserIDInvalid"}"/>
+                                <div id="CustomerAutoCompleteError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
+                                <div id="CustomerAutoCompleteServerError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
+                            </div>
+                            <div class="Clear"></div>
+
+                            <label for="CustomerID">$Text{"CustomerID"}:</label>
+                            <div class="Field">
+                                <input type="text" id="CustomerID" name="CustomerID" value="$QData{"CustomerID"}" class="W50pc Validate_Required $QData{"CustomerIDInvalid"}"/>
+                                <div id="CustomerIDError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
+                                <div id="CustomerIDServerError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
+                            </div>
+                            <div class="Clear"></div>
+                            <div class="Field SpacingTop">
+<!-- put the button here and not into the footer, because the CustomerTickets table can be very long -->
+                                <button class="Primary" id="Submit" accesskey="g" title="$Text{"Submit"} (g)" type="submit" value="$Text{"Submit"}">$Text{"Submit"}</button>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+            </div>
+            <div class="Clear"></div>
+        </div>
+
+        <div id="CustomerTickets"></div>
+
+    </div>
+    <div class="Footer"></div>
+</div>
+<!-- dtl:block:Customer -->

@@ -1,0 +1,42 @@
+# translation of otrs2.po to swedish
+# Copyright (C) 2008
+# This file is distributed under the same license as the otrs2 package.
+#
+# Martin Bagge <brother@bsnet.se>, 2008.
+msgid ""
+msgstr ""
+"Project-Id-Version: otrs2\n"
+"Report-Msgid-Bugs-To: otrs2@packages.debian.org\n"
+"POT-Creation-Date: 2010-02-15 16:23+0100\n"
+"PO-Revision-Date: 2008-10-26 19:17+0100\n"
+"Last-Translator: Martin Bagge <brother@bsnet.se>\n"
+"Language-Team: swedish <debian-l10n-swedish@lists.debian.org>\n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#. Type: boolean
+#. Description
+#: ../templates:1001
+msgid "Should the database user name be reset to otrs?"
+msgstr "Ska databasanvändaren återställas till 'otrs'?"
+
+#. Type: boolean
+#. Description
+#: ../templates:1001
+msgid ""
+"You have configured ident authentication, which is recommended, together "
+"with a database username that is not the default 'otrs'. That will only work "
+"with special hand crafted PostgreSQL setups. It is recommended to reset the "
+"username to 'otrs'. If you do not choose this option and the installation "
+"fails you should consult the file /usr/share/doc/otrs2/README.Debian."
+msgstr ""
+"Du har valt att använda 'ident' som indentifikationsmetod, detta är det "
+"rekomenderade sättet. Dock har du valt att använda en databasanvändare som "
+"inte kallas 'otrs'.Denna kombination fungerar endast i specialinställda "
+"PostgreSQL-installationer. Du bör återställa databasanvändarens användarnamn "
+"till 'otrs'. Om installationen avbryts på grund av att du inte valt 'rätt' "
+"på denna frågan så finns ytterligare information i filen /usr/share/doc/"
+"otrs2/README.Debian."

@@ -1,0 +1,4 @@
+.[mp]*.dist
+debian/postgresql*.sh
+scripts/*.conf
+scripts/rpc-example.pl

@@ -1,0 +1,673 @@
+/**
+ * @project     OTRS (http://www.otrs.org) - Agent Frontend
+ * @version     $Revision: 1.45 $
+ * @copyright   OTRS AG
+ * @license     AGPL (http://www.gnu.org/licenses/agpl.txt)
+ */
+
+/**
+ * @package     Skin "Default"
+ * @section     Default Settings
+ */
+
+@media screen,projection,tv,handheld {
+
+/**
+ * @subsection  Fonts
+ */
+
+body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    text-align: left;
+}
+
+.RTL {
+    text-align: right;
+    /* this will inherit to all elemtents because of reset.css */
+    direction: rtl;
+}
+
+/**
+ * @subsection  Print elements - Only show when page is printed
+ */
+.PrintOnly {
+    display: none;
+}
+
+/**
+ * @subsection  Hidden elements - Elements that are hidden at first
+ */
+.Hidden {
+    display: none;
+}
+
+/**
+ * @subsection      ARIA (Accessibility)
+ * @subsubsection   AlertMessage
+ * @note            This definition allows to create text on the page
+ *                  which is not seen, but will be read by the screen reader.
+ *                  display: none; cannot be used in this case.
+ */
+
+.ARIAAlertMessage {
+    position: absolute;
+    left: -10000px;
+    right: auto;
+    top: -10000px;
+}
+
+.RTL .ARIAAlertMessage {
+    left: auto;
+    right: -10000px;
+}
+
+/**
+ * @subsection  ElementPool - Hide elements for later use with JavaScript
+ */
+#UIElementPool {
+    display: none;
+}
+
+/**
+ * @subsection  Links
+ */
+
+a {
+    color: #F92;
+    text-decoration: none;
+}
+
+a:hover,
+a:focus {
+    color: #F72;
+}
+
+/**
+ * @subsection  Headings
+ */
+h1 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+h2 {
+    font-size: 14px;
+    color: #474747;
+    margin-bottom: 10px;
+}
+
+h3 {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+h4 {
+    color: #333;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+h5 {
+    color: #333;
+    margin-bottom: 5px;
+}
+
+/**
+ * @subsection  Paragraphs
+ * @note        Use paragraphs instead of <div>s for text-only, multiline content!
+ */
+p {
+    /* increase line-height for readability */
+    line-height: 1.3em;
+}
+
+/**
+ * @subsection  Code Examples
+ */
+code {
+    font-family: monospace;
+}
+
+/**
+ * @subsection  Text modifiers
+ */
+strong {
+    font-weight: bold;
+}
+
+em {
+    font-style: italic;
+}
+
+/**
+ * @subsection  Definition lists
+ */
+dl {
+    margin: 5px 0;
+}
+
+dt {
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 1.3em;
+    margin-top: 5px;
+}
+
+dd {
+    line-height: 1.3em;
+    margin-left: 15px;
+    margin-right: 0;
+}
+
+.RTL dd {
+    margin-left: 0;
+    margin-right: 15px;
+}
+
+/**
+ * @subsection  Text
+ */
+.Center {
+    text-align: center;
+}
+
+.Left {
+    text-align: left;
+}
+
+.Right {
+    text-align: right;
+}
+
+.Error {
+    color: #ff505e;
+}
+
+.Warning {
+    color: #ff505e;
+}
+
+.Notice {
+    color: #333;
+}
+
+.Confirmation {
+    color: #069d07;
+}
+
+.Small {
+    font-size: 90%;
+}
+
+/**
+ * @note    Use the class InvisibleText to hide text from the screen,
+ *          while it is still recognized and read by screen readers.
+ */
+.InvisibleText {
+    width: 0;
+    height: 0;
+    display: inline-block;
+    text-indent: -9999px;
+    white-space: nowrap;
+    position: absolute;
+}
+
+/**
+ * @subsection  Spacings
+ */
+.Spacing {
+    margin: 13px;
+}
+
+.SpacingTop {
+    margin-top: 13px;
+}
+
+.SpacingTopSmall {
+    margin-top: 8px;
+}
+
+.SpacingTopLarge {
+    margin-top: 89px;
+}
+
+.SpacingBottom {
+    margin-bottom: 13px;
+}
+
+.SpacingBottomMedium {
+    margin-bottom: 34px !important;
+}
+
+.SpacingBottomLarge {
+    margin-bottom: 89px;
+}
+
+.SpacingLeft {
+    margin-left: 10px;
+}
+
+/**
+ * @subsection  Indents
+ */
+.Indent {
+    padding-left: 13px !important;
+}
+
+/**
+ * @subsection  Box alignment
+ */
+.CenterBox {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+/**
+ * @subsection  Controlling the display: value
+ * @note        This is especially helpful for links. When
+ *              they have this class, the entire block will be clickable.
+ */
+.AsBlock {
+    display: block;
+}
+
+/**
+ * @subsection  Clear
+ */
+.Clear {
+    float: none !important;
+    clear: both !important;
+}
+
+.ClearLeft,
+.RTL .ClearRight {
+    float: none !important;
+    clear: left !important;
+}
+
+.ClearRight,
+.RTL .ClearLeft {
+    float: none !important;
+    clear: right !important;
+}
+
+/**
+ * @subsection  MainBox
+ */
+.MainBox {
+    position: relative;
+    padding: 4px 16px 8px 8px;
+}
+
+.RTL .MainBox {
+    padding: 4px 8px 8px 16px;
+}
+
+.OverviewBox {
+    position: relative;
+}
+
+.MainBox > h1 {
+    margin: 0;
+    padding: 5px 8px 8px;
+    position: relative;
+}
+
+.OverviewBox > h1 {
+    margin: 0;
+    padding: 8px 11px 7px;
+    position: relative;
+}
+
+/**
+ * @subsection  Standard Widths
+ */
+.W10pc {
+    width: 10%;
+}
+
+.W20pc {
+    width: 20%;
+}
+
+.W25pc {
+    width: 25%;
+}
+
+.W33pc {
+    width: 33%;
+}
+
+.W50pc {
+    width: 50%;
+}
+
+.W75pc {
+    width: 75%;
+}
+
+.W100pc {
+    width: 100%;
+}
+
+.W50px {
+    width: 50px;
+}
+
+.W950px {
+    width: 950px;
+}
+
+/**
+ * @subsection  Customizable logos
+ */
+#LoginLogo {
+    background: transparent url(../img/loginlogo_default.png) center no-repeat;
+    height: 100px;
+}
+
+
+/**
+ * @subsection  MessageBox
+ */
+
+.MessageBox {
+    margin: -2px 18px 0 10px;
+    border: 1px solid #B9821C;
+    background: #F39C19;
+    -webkit-border-bottom-right-radius: 4px;
+    -webkit-border-bottom-left-radius: 4px;
+    -moz-border-radius-bottomright: 4px;
+    -moz-border-radius-bottomleft: 4px;
+    border-bottom-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    -moz-box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+    -webkit-box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 1;
+}
+
+.RTL .MessageBox {
+    margin: -2px 10px 0 18px;
+}
+
+.MessageBox p {
+    padding: 7px 12px 6px;
+    font-weight: bold;
+    border-left: 1px solid #F6AF2F;
+    border-right: 1px solid #F6AF2F;
+    -webkit-border-bottom-right-radius: 2px;
+    -webkit-border-bottom-left-radius: 2px;
+    -moz-border-radius-bottomright: 2px;
+    -moz-border-radius-bottomleft: 2px;
+    border-bottom-right-radius: 2px;
+    border-bottom-left-radius: 2px;
+}
+
+.MessageBox p,
+.MessageBox a {
+    color: #442A0B;
+}
+
+.MessageBox a {
+    text-decoration: underline;
+}
+
+.MessageBox > p + p {
+    margin-top: 2px;
+}
+
+.MessageBox.Error {
+    border-color: #A6281C;
+    background: #F03432;
+}
+
+.MessageBox.Error p {
+    border-color: #F25146;
+}
+
+.MessageBox.Error p,
+.MessageBox.Error a {
+    color: #000;
+}
+
+.MessageBox.Confirmation {
+    border-color: #049E35;
+    background: #1AEE47;
+}
+
+.MessageBox.Confirmation p {
+    border-color: #36F374;
+}
+
+.MessageBox.Confirmation p,
+.MessageBox.Confirmation a {
+    color: #044016;
+}
+
+/**
+ * @subsection  Flag
+ */
+.Flag {
+    background: transparent url(../img/flag_shadow.png) no-repeat scroll 0 0;
+    height: 18px;
+    width: 24px;
+}
+
+.Flag.Small {
+    width: 17px;
+    height: 10px;
+    background-position: bottom right;
+}
+
+.Flag span {
+    display: block;
+    height: 16px;
+    margin-right: 2px;
+    text-indent: -9999px;
+    cursor: pointer;
+    /* set a default color for priorities */
+    background-color: #cdcdcd;
+}
+
+.Flag.Small span {
+    height: 8px;
+}
+
+.Flag span.Escalated {
+    background-color:#ff505e;
+}
+
+.Flag span.New {
+    background-color: #8bef4d;
+}
+
+.Flag span.Warning {
+    background-color: #ffdd50;
+}
+
+.Flag span.PriorityID-1 {
+    background-color:#03c4f0;
+}
+
+.Flag span.PriorityID-2 {
+    background-color:#83bfc8;
+}
+
+.Flag span.PriorityID-3 {
+    background-color:#cdcdcd;
+}
+
+.Flag span.PriorityID-4 {
+    background-color:#ffaaaa;
+}
+
+.Flag span.PriorityID-5 {
+    background-color:#ff505e;
+}
+
+/**
+ * @subsection  "Unread" star
+ */
+span.UnreadArticles {
+    display: block;
+    text-indent: -9999px;
+    background: transparent url(../img/stars.png) no-repeat;
+    width: 16px;
+    height: 20px;
+}
+
+span.UnreadArticles.Important {
+    background-position: top;
+}
+
+span.UnreadArticles.Unimportant {
+    background-position: 0 -20px;
+}
+
+tbody tr:hover span.UnreadArticles {
+    background-position: 0 -40px;
+}
+
+/**
+ * @subsection  Charts
+ */
+.Chart {
+    width: 240px;
+    height: 200px;
+}
+
+#ChartTooltip {
+    padding: 2px 8px 3px;
+    background: #000;
+    color: #FFF;
+    font-size: 11px;
+    opacity: 0.8;
+    -moz-border-radius: 8px;
+    -webkit-border-radius: 8px;
+    border-radius: 8px;
+    position: absolute;
+}
+
+/**
+ * @subsection  Datepicker
+ */
+.DatepickerIcon {
+    margin: 0 0 0 4px;
+    height: 16px;
+    width: 16px;
+    background: transparent url(../img/icons/calendar.png) no-repeat;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.RTL .DatepickerIcon {
+    margin: 0 4px 0 0;
+}
+
+/* Vacation Days */
+td.Highlight a.ui-state-default {
+    border: 1px solid #fad42e;
+    background: url(../img/datepicker_vacation_days.png) repeat-x;
+}
+
+/* Today */
+.ui-datepicker-current-day {
+}
+
+/*Weekend*/
+.ui-datepicker-week-end {
+}
+
+/**
+ * @subsection  Autocompletion
+ */
+
+.ui-autocomplete {
+    z-index: 20 !important;
+}
+
+/**
+ * @subsection  Icons
+ */
+.IconInline {
+    display: inline-block;
+}
+
+.IconPDF {
+    width: 16px;
+    height: 16px;
+    background-image: url(../img/icons/document-pdf.png);
+}
+
+.IconSave {
+    width: 16px;
+    height: 16px;
+    background-image: url(../img/icons/disk.png);
+}
+
+.IconReady {
+    width: 16px;
+    height: 16px;
+    background-image: url(../img/icons/tick.png);
+}
+
+.IconNotReady {
+    width: 16px;
+    height: 16px;
+    background-image: url(../img/icons/cross.png);
+}
+
+.IconNotReadyGrey {
+    width: 16px;
+    height: 16px;
+    background-image: url(../img/icons/cross_sw.png);
+}
+
+/**
+ * @subsection  Dialog popup width
+ */
+iframe.TextOption {
+    width: 500px;
+    height: 400px;
+}
+
+iframe.TextOption.SpellCheck {
+    width: 800px;
+}
+
+iframe.TextOption.Customer {
+    width: 800px;
+}
+
+/**
+ * @subsection global search
+ */
+#SearchForm {
+    width: 560px;
+    padding-right: 20px;
+}
+
+#ArticleFilterDialogForm {
+    width: 450px;
+    height: 300px;
+}
+
+#ContextSettingsDialog {
+    width: 450px;
+    max-height: 100px;
+}
+
+/**
+ * @subsection global message format
+ */
+.ArticleBody {
+    font-family: monospace,fixed;
+}
+
+} /* end @media */
+

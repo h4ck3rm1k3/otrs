@@ -1,0 +1,19 @@
+# --
+# README - readme file of Custom directory
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# --
+# $Id: README,v 1.3 2011/02/21 12:27:17 ub Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+In case you need to modify already existing framework file for customizations,
+do this in the $OTRS_HOME/Custom/ directory.
+
+Example:
+
+You need to modify Kernel/System/Service.pm to add an customization, copy
+Kernel/System/Service.pm to Custom/Kernel/System/Service.pm and modify it.
+This module will get used.

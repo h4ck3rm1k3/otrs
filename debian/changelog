@@ -1,0 +1,983 @@
+otrs2 (3.0.10+dfsg1-2) unstable; urgency=high
+
+  * Correct SetPermission paths in README.Debian. There was a typo, which fucks
+    up the whole file system permissions.
+    Closes: #638982
+  * Correct the cron timing of GenericAgent, so that syslog will not be spammed
+    down.
+    Closes: #639504
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Wed, 31 Aug 2011 21:43:25 +0200
+
+otrs2 (3.0.10+dfsg1-1) unstable; urgency=low
+
+  * New upstream release.
+  * Adjust lintian overrides.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Fri, 26 Aug 2011 22:30:03 +0200
+
+otrs2 (3.0.9+dfsg1-1) unstable; urgency=low
+
+  [ Thomas Mueller ]
+  * Add new dependency libjson-perl (Closes: #630475)
+
+  [ Patrick Matthäi ]
+  * New upstream release.
+    - Fixes command line parsing for otrs.DeleteCache.pl.
+      Closes: #631113
+    - Refresh hunky patches 16-disable-DashboardProductNotify and
+      21-use-debian-libjs-packages.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Wed, 06 Jul 2011 20:42:26 +0200
+
+otrs2 (3.0.8+dfsg1-1) unstable; urgency=low
+
+  [ Thomas Mueller ]
+  * New upstream release.
+  * Removed patches:
+    - 10-permissions.diff (SetPermissions.sh is removed)
+    - 11-emailsyntax.diff (applied upstream)
+    - 12-remove-maxrequestsperchild.diff (replaced file)
+    - 14-dont-print-messages.diff (SetPermissions.sh is removed)
+  * New patches:
+    - 20-use-native-digest-sha.diff (upstream ships with Digest::SHA::PurePerl)
+    - 21-use-debian-libjs-packages.diff
+  * Refreshed patches: all the remaining
+  * New dependencies:
+    - (suggests) libencode-hanextra-perl (Required to handle mails with several
+      Chinese character sets)
+    - libdigest-sha-perl
+    - libcss-minifier-perl
+    - libjavascript-minifier-perl
+    - libjs-jquery-ui
+    - libjs-jquery
+  * Could not use debian package of ckeditor, because the embedded is patched
+    for OTRS.
+
+  [ Patrick Matthäi ]
+  * New upstream release 3.0.8.
+    - Refresh 15-usable-apache-config.diff.
+    - Refresh 16-disable-DashboardProductNotify.diff.
+    - Refresh 20-use-native-digest-sha.diff.
+    - Refresh 21-use-debian-libjs-packages.diff.
+  * Merge 2.4.9+dfsg1-3+squeeze1 changelog.
+  * Provide a new package otrs, which depends on the otrs2 package, to not
+    confuse users, that this is only otrs in version 2.x. We do not migrate
+    the files to the otrs package, to avoid new bugs.
+  * Adjust debian/watch to report all otrs updates.
+  * Rework most parts of the package to work with more than one binary package.
+  * Refresh lintian overrides.
+  * Refresh copyright.
+  * Update debconf translations to the current policy.
+  * Add new dependency libjavascript-minifier-perl.
+  * Add new dependency libcss-minifier-perl.
+  * Remove patch 17-remove-DashboardTicketStats.diff. The statistic does not
+    need flash anymore.
+  * Adjust debian/copyright. OTRS is licensed under the terms of the AGPL-3
+    license.
+  * Add new lintian overrides.
+  * Remove all embedded ttf-dejavu fonts and link against them.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Sun, 29 May 2011 10:10:41 +0200
+
+otrs2 (2.4.10+dfsg1-3) unstable; urgency=high
+
+  * Fix bug with upgrades from Lenny to Squeeze, because of an missing sanity
+    check in preinst.
+    Closes: #625605
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Thu, 05 May 2011 19:31:30 +0200
+
+otrs2 (2.4.10+dfsg1-2) unstable; urgency=low
+
+  [ Thomas Mueller ]
+  * Add patches:
+    - 16-disable-DashboardProductNotify.diff
+    - 17-remove-DashboardTicketStats.diff (Closes: #594486)
+    - 18-nice-packagemanager-permissions-message.diff
+    - 19-fix-SetPermissions-to-include-some-more-dirs.diff
+  * Add myself as uploader.
+
+  [ Patrick Matthäi ]
+  * Suggest to use SetPermissions.pl with otrs user otrs, instead of www-data,
+    so that the ArticleStorageFS engine works.
+    Closes: #624348
+  * Override false positive lintian warnings.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Fri, 29 Apr 2011 19:02:08 +0200
+
+otrs2 (2.4.10+dfsg1-1) unstable; urgency=low
+
+  * New upstream release.
+    - Refreshed 11-emailsyntax.diff.
+    - Refreshed 15-usable-apache-config.diff.
+  * Bump Standards-Version to 3.9.2 (no changes needed).
+  * Fix debian/watch to also detect version with more than one decimal place.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Sat, 16 Apr 2011 11:07:16 +0200
+
+otrs2 (2.4.9+dfsg1-5) unstable; urgency=high
+
+  * Do not fail at postinst, if invoke-rc.d is forbidden.
+    Closes: #619007
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Fri, 25 Mar 2011 21:51:04 +0100
+
+otrs2 (2.4.9+dfsg1-4) unstable; urgency=low
+
+  * Add danish translation from Joe Dalton.
+    Closes: #605433
+  * Change to postgresql by default for automated tests.
+    Closes: #606707
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Sun, 06 Feb 2011 15:29:23 +0100
+
+otrs2 (2.4.9+dfsg1-3+squeeze1) stable-security; urgency=high
+
+  [ Thomas Mueller ]
+  * Add security patch:
+    - 16-security-osa-2011-01.diff
+      * Title: Several XSS attacks possible
+      * CVE: CVE-2011-1518
+      * Upstream information: http://otrs.org/advisory/OSA-2011-01-en/
+
+  [ Patrick Matthäi ]
+  * Fix bug with upgrades from Lenny to Squeeze, because of an missing sanity
+    check in preinst.
+    Closes: #625605
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Thu, 05 May 2011 19:05:08 +0200
+
+otrs2 (2.4.9+dfsg1-3) unstable; urgency=low
+
+  * Change debian/watch, to only show 2.x.x releases.
+  * Do not rely on umask. Set the needed mode explicitly in debian/postinst.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Sat, 27 Nov 2010 16:50:46 +0100
+
+otrs2 (2.4.9+dfsg1-2) unstable; urgency=high
+
+  * Fix an error (unknown command in postinst) with initial installations, if
+    postgres is used as backend. Thanks to Munroe Sollog for providing
+    additional information.
+  * ZZZAuto.pm is not available with new installations, where OTRS later fails.
+    Again much thanks to Munroe Sollog for helping to debug and test it!
+    Closes: #601734
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Mon, 08 Nov 2010 19:42:47 +0100
+
+otrs2 (2.4.9+dfsg1-1) unstable; urgency=high
+
+  * New upstream release.
+    - Fixes a XSS attack in AgentTicketZoom from HTML e-mails described in
+      OSA-2010-03.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Tue, 26 Oct 2010 18:26:43 +0200
+
+otrs2 (2.4.8+dfsg1-1) unstable; urgency=medium
+
+  * New upstream bugfix releases.
+    - Refreshed patches 13-dont-chown-links.diff and 05-opt.diff.
+    - Fixes multiple XSS and denial of service vulnerabilities mentioned in
+      OSA-2010-02.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Mon, 20 Sep 2010 16:34:38 +0200
+
+otrs2 (2.4.7+dfsg1-1) unstable; urgency=high
+
+  * Strip out yui from the source in the dfsg version.
+    Closes: #591196
+  * Depend on libjs-yui and link to this package, instead of using the embedded
+    yui version. This changes make the flash ticket statistics unuseable!
+    Closes: #592146
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Mon, 09 Aug 2010 19:43:44 +0200
+
+otrs2 (2.4.7-6) unstable; urgency=high
+
+  * Bump Standards-Version to 3.9.1 (no changes needed).
+  * Remove quilt from build depends.
+  * Move libdbd-mysql-perl | libdbd-pg-perl, libgd-text-perl and
+    libgd-graph-perl packages from recommends to depends.
+    Closes: #591003
+  * Replace hardcoded perl dependency with ${perl:Depends}.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Sat, 31 Jul 2010 10:19:36 +0200
+
+otrs2 (2.4.7-5) unstable; urgency=low
+
+  * Add spanish debconf translation from Camaleón.
+    Closes: #584440
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Thu, 03 Jun 2010 21:18:41 +0200
+
+otrs2 (2.4.7-4) unstable; urgency=high
+
+  * Check if mod_perl is available before we enable it.
+    Closes: #561889
+  * Do not configure the otrs configurations and database, if
+    /etc/otrs/database.pm is not available.
+    Closes: #580964
+  * Move /var/lib/otrs/spool to /var/spool/.
+    Closes: #580987
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Tue, 11 May 2010 14:42:32 +0200
+
+otrs2 (2.4.7-3) unstable; urgency=low
+
+  * Make /var/lib/otrs/Config/ writeable for www-data, so that configurations
+    from OTRS are working.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Sat, 03 Apr 2010 16:20:55 +0200
+
+otrs2 (2.4.7-2) unstable; urgency=low
+
+  * Merge changelog from all stable Lenny uploads.
+  * Drop obsoleted patch 01-upgrade.diff.
+  * Extend the 11-emailsyntax.diff patch, by also removing the valid email
+    addresses from the Framework.xml.
+  * Adjust copyright years and add my own copyright notice.
+  * OTRS is licensed under the terms of the AGPL-3 since a longer time.
+  * Fix typo in filename: s/maintainance.html/maintenance.html/.
+  * Change the default order of the database recommends from postgresql to
+    mysql.
+  * s/_description/_Description/ in debian/templates.
+  * Update all translations.
+  * Add libmail-pop3client-perl, libpdf-api2-perl, libsoap-lite-perl,
+    libnet-imap-simple-perl, libnet-imap-simple-ssl-perl and
+    libnet-smtp-ssl-perl as dependencies, so that there are no missing modules
+    for the functions of OTRS.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Tue, 16 Feb 2010 13:42:53 +0100
+
+otrs2 (2.4.7-1) unstable; urgency=high
+
+  * New upstream release.
+    - Fixed CVE-2010-0438, which allows SQL-Injection in the OTRS core.
+  * Bump Standards-Version to 3.8.4 (no changes needed).
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Sun, 07 Feb 2010 23:15:34 +0100
+
+otrs2 (2.4.6-2) unstable; urgency=high
+
+  * Depend on libapache2-reload-perl instead of libapache2-mod-perl2, so that
+    all required Perl modules are available on Apache installations.
+  * Add new patch 15-usable-apache-config, which creates a usable Apache
+    configuration. Also delete the patches 06-misc-upstream and 08-apache and
+    changed the patches 05-opt.diff and 12-remove-maxrequestsperchild, so that
+    all changes to the Apache configuration are done about only one patch.
+    Closes: #566021
+  * Describe in README.Debian the problem with a working package manager and
+    also discribe, how to get it working anyway.
+    Closes: #383776
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Wed, 20 Jan 2010 20:00:41 +0100
+
+otrs2 (2.4.6-1) unstable; urgency=low
+
+  * New upstream release.
+    Closes: #564919
+    - Refresh hunky 04-backup.diff patch.
+    - Fix permissions of new file usr/share/otrs/bin/fcgi-bin/installer.pl.
+  * Override three lintian warnings about embedded javascript libraries, those
+    issues are not fixable currently.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Tue, 12 Jan 2010 20:00:53 +0100
+
+otrs2 (2.4.5-5) unstable; urgency=low
+
+  * Add dependency libxml-feedpp-perl.
+    Closes: #563510
+  * Add $remote_fs as dependency in the init script. Thanks lintian.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Mon, 04 Jan 2010 18:13:12 +0100
+
+otrs2 (2.4.5-4) unstable; urgency=high
+
+  * Revert the fckeditor changes from the last upload. This change breaks the
+    whole editor. Bump urgency to high again.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Wed, 30 Dec 2009 09:36:45 +0100
+
+otrs2 (2.4.5-3) unstable; urgency=high
+
+  * Move libapache2-mod-perl2 to depends.
+    Closes: #561889
+  * Do not use the embedded fckeditor.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Thu, 24 Dec 2009 12:01:19 +0100
+
+otrs2 (2.4.5-2) unstable; urgency=low
+
+  * Fix permissions of ZZZAAuto.pm file to have a working SysConfig manager.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Thu, 17 Dec 2009 19:29:41 +0100
+
+otrs2 (2.4.5-1) unstable; urgency=low
+
+  * New maintainer.
+    Closes: #515300
+  * New upstream release.
+    Closes: #539712
+    - Rediff all patches, they failed to apply in this release.
+    - The location of the prototype.js has been changed.
+    - Fix some new borked permission errors.
+    - Install the new database schemes.
+    - Add 13-dont-chown-links.diff patch.
+  * Convert package to the 3.0 (quilt) format.
+    - Drop debian/README.source.
+  * Remove Vcs fields.
+  * Remove versioned package of postgresql.
+    Closes: #559613
+  * Update to debhelper 7 and use dh to install the lintian overrides.
+  * Move quilt to Build-Depends-Indep.
+  * Add some notes to README.Debian, where you can find the otrs2 installation
+    and what are the initial login data.
+  * Clean up properly the Config directory on purge.
+  * Do not be so verbose on installing and upgrading otrs2 and add the patch
+    14-dont-print-messages.diff for this.
+    Closes: #543748
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Sun, 06 Dec 2009 14:23:50 +0100
+
+otrs2 (2.3.4-7) unstable; urgency=medium
+
+  * QA upload.
+  * Move libtext-csv-perl from recommends to depends. Without it, otrs will not
+    work and apache will fail to start on upgrades from Lenny to Squeeze.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Wed, 02 Dec 2009 10:30:40 +0100
+
+otrs2 (2.3.4-6) unstable; urgency=high
+
+  * QA upload.
+  * Do not use the embedded copy of prototype.js anymore.
+    Closes: #555267
+    - This also fixes CVE-2007-2383 and CVE-2008-7220.
+      Closes: #555266
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Tue, 10 Nov 2009 20:14:00 +0100
+
+otrs2 (2.3.4-5) unstable; urgency=high
+
+  * QA upload.
+  * Update cron.diff patch and add the missing otrs systemuser for the
+    PostMaster cronjob.
+    Closes: #552470
+  * Add remove-maxrequestsperchild.diff patch, which removes the
+    MaxRequestsPerChild Apache options from the config files.
+    Closes: #548073
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Sun, 01 Nov 2009 12:23:55 +0100
+
+otrs2 (2.3.4-4) unstable; urgency=low
+
+  * QA upload.
+  * Add emailsyntax.diff patch, which removes all valid domains from the email
+    address syntax check.
+    Closes: #541309
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Mon, 12 Oct 2009 12:49:07 +0200
+
+otrs2 (2.3.4-3) unstable; urgency=low
+
+  * QA upload.
+  * Only execute a2enmod, if it is available on the system. Thanks for the
+    patch to Hilmar Preusse <hille42@web.de>.
+    Closes: #524315
+  * Add missing patch descriptions. This fixes several
+    quilt-patch-missing-description warnings.
+  * Add ${misc:Depends} as dependency. Fixes lintian warning.
+  * Bump Standards-Version to 3.8.3.
+    - Add debian/README.source.
+  * Remove unused lintian overrides about both extra-license-file.
+  * Use a Vcs-Svn URI, which does not need an authentication. Thanks lintian.
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Sun, 11 Oct 2009 21:31:45 +0200
+
+otrs2 (2.3.4-2) unstable; urgency=low
+
+  * Set Maintainer to Debian QA Group.
+
+ -- Torsten Werner <twerner@debian.org>  Fri, 28 Aug 2009 10:30:35 +0200
+
+otrs2 (2.3.4-1) unstable; urgency=low
+
+  * New upstream release
+  * Replace access to /var/lib/otrs directory by symlink in /usr/share/otrs.
+    (Closes: #513327)
+  * Add Japanese debconf translation; thanks to Hideki Yamane. (Closes:
+    #512978)
+
+ -- Torsten Werner <twerner@debian.org>  Wed, 11 Feb 2009 21:50:43 +0100
+
+otrs2 (2.3.3-1) unstable; urgency=low
+
+  * New upstream release (Closes: #507738)
+  * Refresh patch opt.diff.
+  * Replace /usr/share/otrs/Kernel/Config/Files/ZZZ?Auto.pm by a symlink to
+    /var/lib/otrs/Config/ZZZ?Auto.pm. (Closes: #475737)
+    - Move /usr/share/otrs/Kernel/Config/Files/ZZZAuto.pm to
+      /var/lib/otrs/Config/ZZZAuto.pm in preinst.
+    - Rebuild /var/lib/otrs/Config/ZZZAAuto.pm in postinst.
+    - Enable patch permission.diff.
+  * Fix some lintian warnings:
+    - scripts/rcp-example.pl is an example file
+    - Make all perl scripts in scripts/tools/ executable.
+  * Add swedish debconf translation thanks to Martin Bagge.
+    (Closes: #503608)
+
+ -- Torsten Werner <twerner@debian.org>  Sun, 11 Jan 2009 00:16:27 +0100
+
+otrs2 (2.3.2-2) unstable; urgency=low
+
+  * merge from testing branch:
+    - Do not load the module Apache2::Reload if it is not installed.
+      (Closes: #494683)
+
+ -- Torsten Werner <twerner@debian.org>  Thu, 23 Oct 2008 06:49:37 +0200
+
+otrs2 (2.3.2-1) unstable; urgency=low
+
+  * new upstream release - Bora Bora
+  * Update Recommends: postgresql-8.3.
+  * Add Recommends: libtext-csv-perl.
+  * Add patch upgrade.diff for upgrading postgres databases.
+
+ -- Torsten Werner <twerner@debian.org>  Wed, 01 Oct 2008 22:31:17 +0200
+
+otrs2 (2.2.7-3) unstable; urgency=low
+
+  * Change Depends: libmime-tools-perl instead of libmime-perl.
+    (Closes: #485927)
+  * Increase Standards-Version: 3.8.0 (no changes needed).
+  * Add a lintian override for empty directories.
+
+ -- Torsten Werner <twerner@debian.org>  Mon, 11 Aug 2008 04:49:46 +0200
+
+otrs2 (2.2.7-2lenny3) stable-security; urgency=high
+
+  * Added patch fix-sql-injection.diff, which adds missing security quoting in
+    SQL statements. Authenticated users may become administrative privileges.
+    This fixes CVE-2010-0438.
+  * Change maintainer also in security upload (for further users questions).
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Mon, 08 Feb 2010 00:03:27 +0100
+
+otrs2 (2.2.7-2lenny2) stable-proposed-updates; urgency=low
+
+  * QA upload.
+  * Add remove-maxrequestsperchild.diff patch, which removes the
+    MaxRequestsPerChild Apache options from the config files.
+    Closes: #548073
+  * Add emailsyntax.diff patch, which removes all valid domains from the email
+    address syntax check.
+    Closes: #541309
+  * Only execute a2enmod, if it is available on the system. Thanks for the
+    patch to Hilmar Preusse <hille42@web.de>.
+    Closes: #524315
+  * Recommend postgresql-8.3 instead of the non-existing postgresql-8.2.
+    Closes: #535004
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Thu, 05 Nov 2009 18:36:56 +0100
+
+otrs2 (2.2.7-2lenny1) testing-proposed-updates; urgency=low
+
+  * Do not load the module Apache2::Reload if it is not installed.
+    (Closes: #494683)
+
+ -- Torsten Werner <twerner@debian.org>  Thu, 23 Oct 2008 06:36:29 +0200
+
+otrs2 (2.2.7-2) unstable; urgency=high
+
+  * Disable the patch permissions.diff again because OTRS can't work with such
+    permissions. It breaks because it can't write files that are 'use'd.
+    (Closes: #487817)
+
+ -- Torsten Werner <twerner@debian.org>  Wed, 25 Jun 2008 20:16:47 +0200
+
+otrs2 (2.2.7-1) unstable; urgency=low
+
+  * new upstream release
+  * Add patch permissions.diff that makes the permissions of files in ~otrs
+    more strict. Let's hope it does not break to much. (Closes: #475737)
+  * The file debian/watch now ignores beta versions.
+
+ -- Torsten Werner <twerner@debian.org>  Wed, 11 Jun 2008 19:09:01 +0200
+
+otrs2 (2.2.6-1) unstable; urgency=low
+
+  * new upstream release
+  * Remove patch osa-2008-01.diff because that change has been applied
+    upstream.
+  * Change Standards-Version: 3.7.3 (no changes).
+  * Fix debian/copyright.
+
+ -- Torsten Werner <twerner@debian.org>  Mon, 31 Mar 2008 23:59:54 +0200
+
+otrs2 (2.2.5-2) unstable; urgency=high
+
+  * Add patch osa-2008-01.diff to fix http://otrs.org/advisory/OSA-2008-01-en/
+  * Set urgency to high because of the security problem.
+
+ -- Torsten Werner <twerner@debian.org>  Thu, 20 Mar 2008 21:24:39 +0100
+
+otrs2 (2.2.5-1) unstable; urgency=low
+
+  * new upstream release (Closes: #463830)
+  * Fix link to documentation. (Closes: #465755)
+
+ -- Torsten Werner <twerner@debian.org>  Wed, 05 Mar 2008 21:36:38 +0100
+
+otrs2 (2.2.4-1) unstable; urgency=low
+
+  * new upstream release
+  * Add Vcs and Homepage headers to debian/control.
+  * Switch to debhelper 5.
+  * Add dutch debconf translation. (Closes: #449414)
+
+ -- Torsten Werner <twerner@debian.org>  Sat, 08 Dec 2007 21:43:01 +0100
+
+otrs2 (2.2.3-1) unstable; urgency=low
+
+  * new upstream version (Closes: #434602, #438525)
+  * Change Depends: apache2 | httpd-cgi and downgrade Depends:
+    libapache2-mod-perl2 to Recommends. (Closes: #434205)
+  * Change Recommends: postgresql-8.2 instead of 8.1.
+
+ -- Torsten Werner <twerner@debian.org>  Tue, 18 Sep 2007 20:41:49 +0200
+
+otrs2 (2.2.2-1) unstable; urgency=low
+
+  * new upstream release
+  * Add portuguese translation. (Closes: #437058)
+
+ -- Torsten Werner <twerner@debian.org>  Fri, 10 Aug 2007 19:57:04 +0200
+
+otrs2 (2.2.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Torsten Werner <twerner@debian.org>  Mon,  2 Jul 2007 20:10:06 +0200
+
+otrs2 (2.2.0~beta3-1) experimental; urgency=low
+
+  * New upstream release
+  * Clean up debian/rules.
+  * Merge changes from trunk.
+
+ -- Torsten Werner <twerner@debian.org>  Tue, 17 Apr 2007 00:25:44 +0200
+
+otrs2 (2.2.0~beta2-1) experimental; urgency=low
+
+  * New upstream version.
+  * Refreshed one patch.
+  * Updated download location in debian/copyright.
+
+ -- Torsten Werner <twerner@debian.org>  Tue, 17 Apr 2007 00:09:49 +0200
+
+otrs2 (2.1.7-2) unstable; urgency=low
+
+  * Upgraded libxml-parser-perl from Recommends to Depends.
+  * Enhance debian/watch.
+
+ -- Torsten Werner <twerner@debian.org>  Mon, 14 May 2007 22:20:25 +0200
+
+otrs2 (2.1.7-1) unstable; urgency=low
+
+  * New upstream version.
+  * Clean up and refresh the patches.
+
+ -- Torsten Werner <twerner@debian.org>  Sat, 14 Apr 2007 17:58:55 +0200
+
+otrs2 (2.1.6-1) unstable; urgency=low
+
+  * new upstream version
+  * Remove $SVN$ stuff from debian/changelog.
+  * Add russian debconf translation thanks to Yuriy Talakan. (Closes: #414093)
+
+ -- Torsten Werner <twerner@debian.org>  Mon, 19 Mar 2007 23:31:58 +0100
+
+otrs2 (2.1.5-3) unstable; urgency=low
+
+  * Switch off the web based installer.
+  * Changed Recommends: libtext-diff-perl to Depends.
+
+ -- Torsten Werner <twerner@debian.org>  Sat,  3 Mar 2007 22:12:31 +0100
+
+otrs2 (2.1.5-2) unstable; urgency=low
+
+  * Don't reload apache2 in postrm if it is not installed. (Closes: #411781)
+
+ -- Torsten Werner <twerner@debian.org>  Sun, 25 Feb 2007 10:47:38 +0100
+
+otrs2 (2.1.5-1) unstable; urgency=low
+
+  * new upstream version
+
+ -- Torsten Werner <twerner@debian.org>  Fri, 23 Feb 2007 21:09:35 +0100
+
+otrs2 (2.1.4-2) experimental; urgency=low
+
+  * Add option '+FollowSymLinks' to apache configuration. (Closes: #394844)
+
+ -- Torsten Werner <twerner@debian.org>  Sat, 13 Jan 2007 19:03:45 +0100
+
+otrs2 (2.1.4-1) experimental; urgency=low
+
+  * new upstream release
+  * Move patches directory into debian directory.
+  * Refreshed one patch.
+
+ -- Torsten Werner <twerner@debian.org>  Tue, 19 Dec 2006 21:33:23 +0100
+
+otrs2 (2.1.3-1) experimental; urgency=low
+
+  * New upstream release
+  * Refresh most patches.
+  * Merge changes from trunk.
+  * Add Recommends: libtext-diff-perl. (Closes: #393243)
+
+ -- Torsten Werner <twerner@debian.org>  Sun, 19 Nov 2006 16:35:31 +0100
+
+otrs2 (2.1.1-1) experimental; urgency=low
+
+  * Merge changes from trunk.
+  * New upstream version.
+  * Refresh some patches.
+  * Add Depends: libcrypt-passwdmd5-perl.
+  * Disable probably broken patch autoconfig.diff.
+  * Depend on newer dbconfig-common.
+
+ -- Torsten Werner <twerner@debian.org>  Sun,  8 Oct 2006 12:57:44 +0200
+
+otrs2 (2.0.99beta1-3) experimental; urgency=low
+
+  * merge changes from trunk (version 2.0.4p01-14)
+
+ -- Torsten Werner <twerner@debian.org>  Wed, 23 Aug 2006 09:05:23 +0200
+
+otrs2 (2.0.99beta1-2) experimental; urgency=low
+
+  * merge changes from trunk (version 2.0.4p01-13)
+
+ -- Torsten Werner <twerner@debian.org>  Sat, 19 Aug 2006 16:44:17 +0200
+
+otrs2 (2.0.99beta1-1) experimental; urgency=low
+
+  * new upstream version
+  * refreshed patches/backup.diff and patches/database.diff
+  * disabled check for manual in debian/rules because the manual is not
+    provided in upstream's tarball
+  * merged changes 201:HEAD from experimental branch
+  * support database upgrades
+
+ -- Torsten Werner <twerner@debian.org>  Sat,  5 Aug 2006 08:29:08 +0200
+
+otrs2 (2.0.4p01-14) unstable; urgency=low
+
+  * add french debconf translation thanks to Christian Perrier,
+    closes: #384580
+  * yet another fix for the cron jobs thanks to Laurent Bonnaud,
+    closes: #385763
+
+ -- Torsten Werner <twerner@debian.org>  Sun,  3 Sep 2006 23:07:08 +0200
+
+otrs2 (2.0.4p01-13) unstable; urgency=medium
+
+  * add patch autoconfig.diff, closes: #350270
+  * remove /var/lib/otrs/tmp in postrm
+  * refined debian/templates, closes: #382639
+  * add german debconf translation
+  * enable Apache2::Reload & Co.
+  * add patch postmaster.diff to temporarily not accepting new email messages
+    if OTRS is in maintainance mode
+  * reorganised cron config to support the init script
+  * add some safety checks for nonessential packages in debian/postrm
+  * add link to the online documentation
+
+ -- Torsten Werner <twerner@debian.org>  Sun, 20 Aug 2006 23:34:47 +0200
+
+otrs2 (2.0.4p01-12) unstable; urgency=low
+
+  * reorganized the documentation of the Debian package
+
+ -- Torsten Werner <twerner@debian.org>  Sat,  5 Aug 2006 10:46:46 +0200
+
+otrs2 (2.0.4p01-11) experimental; urgency=low
+
+  * warn the user when authentication method is 'ident' but the database user
+    is not 'otrs'
+  * apache config: point 'ErrorDocument 404' to index.pl
+  * try to import database settings from older versions into dbconfig-common
+  * add a versioned Depends: on dbconfig-common
+  * add an init script for OTRS
+  * fixes in the apache configuration
+  * support for mysql
+
+ -- Torsten Werner <twerner@debian.org>  Sat,  5 Aug 2006 10:36:40 +0200
+
+otrs2 (2.0.4p01-10) experimental; urgency=low
+
+  * start using dbconfig-common for database configuration
+
+ -- Torsten Werner <twerner@debian.org>  Sat, 29 Jul 2006 19:48:48 +0200
+
+otrs2 (2.0.4p01-9) unstable; urgency=low
+
+  * create otrs user in debian/preinst now instead of debian/postinst
+  * fixes in debian/postinst and debian/postrm
+  * force-reload apache in debian/postinst because we might enable mod_perl
+  * make sure apache's perl module is enabled
+  * rescue old apache configuration before installing a new one
+  * documentation fixes
+  * added more Recommends and Suggests, closes: #378672
+
+ -- Torsten Werner <twerner@debian.org>  Wed, 19 Jul 2006 21:41:37 +0200
+
+otrs2 (2.0.4p01-8) experimental; urgency=low
+
+  * more /opt fixes
+  * some cosmetic changes in debian/
+  * switch to ucf for managing config files
+  * remove preinst that was needed for upgrading old otrs packages
+  * updated Depends in debian/control
+  * add a 'quick installation' section to debian/README.Debian
+  * use mod-perl
+
+ -- Torsten Werner <twerner@debian.org>  Mon, 17 Jul 2006 23:19:14 +0200
+
+otrs2 (2.0.4p01-7) unstable; urgency=low
+
+  * switched to mergeWithUpstream mode of svn-buildpackage
+  * switched to quilt for managing upstream changes
+  * lintian fixes
+  * don't move the Output directory from /usr/share/otrs/ to /etc/otrs
+  * removed bashism
+  * fixed permissions of *.pm and *.png files
+  * other minor cleanups
+
+ -- Torsten Werner <twerner@debian.org>  Sun,  9 Jul 2006 22:21:49 +0200
+
+otrs2 (2.0.4p01-6) unstable; urgency=low
+
+  * removed the PDF manuals because they will be provided with source code by
+    a separate package 'otrs2-doc'
+
+ -- Torsten Werner <twerner@debian.org>  Tue, 20 Jun 2006 23:35:00 +0200
+
+otrs2 (2.0.4p01-5) unstable; urgency=low
+
+  [ Noèl Köthe ]
+  * corrected tar options in scripts/backup.pl, closes: #361448
+  * corrected FSF address in debian/copyright (lintian error)
+  * added adduser to the dependency because we use it in postinst
+    (lintian warning)
+  * updated Standards-Version to 3.7.2. no changes needed
+
+  [ Torsten Werner ]
+  * renamed package to otrs2, closes: #367959
+
+ -- Torsten Werner <twerner@debian.org>  Thu, 18 May 2006 23:55:19 +0200
+
+otrs (2.0.4p01-4) unstable; urgency=low
+
+  * reverted last change
+  * applied patch from Thorsten Sandfuchs
+
+ -- Torsten Werner <twerner@debian.org>  Wed,  8 Mar 2006 21:21:54 +0100
+
+otrs (2.0.4p01-3) unstable; urgency=low
+
+  * reverted change to backup.pl
+  * moved scripts/{backup,restore}.pl to /usr/share/doc/otrs/examples/, please
+    read NEWS.Debian for more information, closes: #355328
+
+ -- Torsten Werner <twerner@debian.org>  Mon,  6 Mar 2006 20:41:55 +0100
+
+otrs (2.0.4p01-2) unstable; urgency=low
+
+  [ Noèl Köthe ]
+  * corrected spelling errors in README.Debian, closes: #310854
+  [ Torsten Werner ]
+  * added debian/NEWS.Debian
+  * fixed scripts/backup.pl to backup the configuration files,
+    closes: #355328
+  * fix for apache2-perl-startup.pl (mentioned in #293062)
+  * added checks for existing binaries in cronjobs, closes: #316340
+
+ -- Torsten Werner <twerner@debian.org>  Sun,  5 Mar 2006 14:54:03 +0100
+
+otrs (2.0.4p01-1) unstable; urgency=low
+
+  * new upstream version, closes: #332441
+  * it fixes a security bug: http://otrs.org/advisory/OSA-2005-01-en/
+  * please consider applying any patches to alioth's svn repository, see
+    https://alioth.debian.org/projects/pkg-otrs/
+
+ -- Torsten Werner <twerner@debian.org>  Tue, 22 Nov 2005 21:57:05 +0100
+
+otrs (2.0.1p01-1) experimental; urgency=low
+
+  * new upstream version, closes: #310696
+  * added debian/watch
+
+ -- Torsten Werner <twerner@debian.org>  Sat,  6 Aug 2005 23:24:20 +0200
+
+otrs (1.3.2p01-5) unstable; urgency=high
+
+  * work around for very old dpkg bug: $OTRSHOME/Kernel/Output in now really a
+    symlink to /etc/Output (that is why urgency is high), closes: #301245
+
+ -- Torsten Werner <twerner@debian.org>  Tue,  5 Apr 2005 23:09:33 +0200
+
+otrs (1.3.2p01-4) unstable; urgency=low
+
+  * added some 'test -x ...' to the cron jobs, closes: #297454
+  * removed symlink /usr/share/otrs/.fetchmailrc because it does not work and
+    it is not necessary anyway
+  * moved $OTRSHOME/Kernel/Output into /etc/, closes: #291512
+
+ -- Torsten Werner <twerner@debian.org>  Sun,  6 Mar 2005 15:10:40 +0100
+
+otrs (1.3.2p01-3) unstable; urgency=low
+
+  * applied patch for debian/links and bin/SetPermissions.sh from Sven
+    Wilhelm, closes: #281515
+  * minor fixes for debian/post*
+
+ -- Torsten Werner <twerner@debian.org>  Wed, 29 Dec 2004 16:38:44 +0100
+
+otrs (1.3.2p01-2) unstable; urgency=low
+
+  * upload to unstable
+
+ -- Torsten Werner <twerner@debian.org>  Thu, 11 Nov 2004 21:24:29 +0100
+
+otrs (1.3.2p01-1) experimental; urgency=low
+
+  * fixed ErrorDocument in scripts/apache2-httpd.include.conf
+  * added #DEBHELPER# to otrs.preinst
+  * thanks to Andreas Tille for helping
+
+ -- Torsten Werner <twerner@debian.org>  Fri, 22 Oct 2004 23:38:54 +0200
+
+otrs (1.3.2p01-0.1) unstable; urgency=low
+
+  * NMU but no official upload - just helping the maintainer and leave him the upload
+  * New upstream version
+  * Split packages into
+    - otrs (code)
+    - otrs-doc-en (English documentation)
+    - otrs-doc-de (German dosumentation)
+    The language split seems to make sense because of the size of the documentation
+    and the assumption that only one language will be neede on a normal system.
+  * Left out the SGML source for the documentation.  Remark: It should be checked
+    whether it is reasonable to rebuild the HTML and PDF version at build time
+    from SGML.
+  * Make use of debian/otrs.{docs,examples} instead of using only
+    debian/otrs.install
+  * Fight against lintian warnings:
+    - Removed copy of GPL from /usr/share/doc/otrs
+    - Added lintian.overrides for files which look like extra license files
+    - Fix permission of example files
+    - Removed '#!/bin/sh' from apache2*-perl-startup.pl scripts
+    - Removed {redhat,suse,fedora}* scripts
+    - Added missing '!' to sync_node.sh
+  * Added link to /usr/lib/cgi-bin which enables access without Apache
+    configuration changes.
+  * Postrm script now also removes .*_history files of otrs user
+  * Postrm also removes log files.
+    ATTENTION:  Just feel free to keep log files but I think it is better to
+    ask a debconf question instead of just keeping stuff in /var/lib/otrs which
+    users might like to get rid of.
+  * Moved .fetchmailrc to /etc/otrs/fetchmailrc and adjusted cron file
+  * Verified occurences of /opt/otrs in the code
+    - scripts/apache2*-perl-startup.pl:
+        use lib "/opt/otrs/";
+        use lib "/opt/otrs/Kernel/cpan-lib";
+      changed to /usr/share/otrs/...  and uncommented
+         use DBD::mysql ();
+      because also other databases might be used.  It was not yet verified which
+      further consequences this might have be.
+    - All other occurences of the string "/opt/otrs" are inside comments or
+      some strings of error messages which do not really harm.
+    Closes: #25802
+  * Tried to increase help for local administrators
+    - Added example script for setting up a PostgreSQL server as it was suggested
+      in http://bugs.debian.org/cgi-bin/272113
+      In addition to the problems described there it was observed that the
+      permissions for www-data are to restrictive which can be fixed by
+      the further example script which is provided.
+    - Added hints to README.Debian how to change PostgreSQL configuration.
+    - Move apache configuration examples to /usr/share/doc/otrs/examples
+    - Changed path names also in apache-httpd.include.conf (in case a user
+      sticks to Apache 1.x)
+
+ -- Andreas Tille <tille@debian.org>  Wed, 20 Oct 2004 08:00:05 +0200
+
+otrs (1.2.4-2) unstable; urgency=high
+
+  * fixed Recommends on mod-perl, closes: 272858
+  * set urgency to high because it is a minor fix
+
+ -- Torsten Werner <twerner@debian.org>  Wed, 29 Sep 2004 21:51:38 +0200
+
+otrs (1.2.4-1) unstable; urgency=low
+
+  * new upstream version, closes: #258766
+  * added Recommends: procmail | maildrop, aspell | ispell
+  * moved manual to /usr/share/doc/otrs/, closes: #258782
+  * moved var stuff to /var/lib/otrs/
+  * moved config files to /etc/otrs/
+
+ -- Torsten Werner <twerner@debian.org>  Fri, 16 Jul 2004 23:28:26 +0200
+
+otrs (1.2.3-7) unstable; urgency=low
+
+  * fixed apache2-httpd.include.conf
+  * added Depends: libauthen-sasl-perl, libdate-pcalc-perl,
+    libemail-valid-perl, libio-stringy-perl, libmime-perl, libmailtools-perl
+  * removed directory Kernel/cpan-lib/
+
+ -- Torsten Werner <twerner@debian.org>  Sun, 20 Jun 2004 23:28:42 +0200
+
+otrs (1.2.3-6) unstable; urgency=low
+
+  * moved from /opt into /usr/share
+  * added Recommends: libgd-text-perl, libgd-graph-perl
+
+ -- Torsten Werner <twerner@debian.org>  Sun, 20 Jun 2004 20:42:04 +0200
+
+otrs (1.2.3-5) experimental; urgency=low
+
+  * install Kernel/Config/GenericAgent.pm during first install
+  * fixed call to SetPermissions.sh in postinst
+
+ -- Torsten Werner <twerner@debian.org>  Mon, 26 Apr 2004 22:34:12 +0200
+
+otrs (1.2.3-4) experimental; urgency=low
+
+  * Depends: libdbi-perl and Recommends: libdbd-mysql-perl | libdbd-pg-perl
+    added
+
+ -- Torsten Werner <twerner@debian.org>  Thu, 22 Apr 2004 22:43:18 +0200
+
+otrs (1.2.3-3) experimental; urgency=low
+
+  * more Depends and Recommends in debian/control
+
+ -- Torsten Werner <twerner@debian.org>  Mon, 19 Apr 2004 23:29:01 +0200
+
+otrs (1.2.3-2) experimental; urgency=low
+
+  * corrected some files in debian/ that have been forgotten before the first
+    upload
+
+ -- Torsten Werner <twerner@debian.org>  Sun, 18 Apr 2004 12:26:43 +0200
+
+otrs (1.2.3-1) experimental; urgency=low
+
+  * initial release
+
+ -- Torsten Werner <twerner@debian.org>  Fri, 16 Apr 2004 18:49:35 +0200

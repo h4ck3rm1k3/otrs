@@ -1,0 +1,20 @@
+Author: Thomas Mueller <thomas@chaschperli.ch>
+Description: Show a more descriptive error message if the package manager fails
+  because of filesystem permission.
+
+
+--- a/Kernel/System/Package.pm
++++ b/Kernel/System/Package.pm
+@@ -139,8 +139,10 @@
+ 
+     # permission check
+     if ( !$Self->_FileSystemCheck() ) {
+-        die "ERROR: Need write permission in OTRS home\n"
+-            . "Try: \$OTRS_HOME/bin/otrs.SetPermissions.pl !!!\n";
++        die "ERROR: Need write permission in OTRS home\n\n"
++            . "Debian policies deny the right for webapplications to change files in /usr.\n\n"
++            . "To break this security rule, run the command below on the server as user root:\n\n"
++            . "/usr/share/otrs/bin/otrs.SetPermissions.pl --otrs-user=otrs --otrs-group=www-data --web-user=www-data --web-group=www-data /usr/share/otrs \n";
+     }
+ 
+     return $Self;

@@ -1,0 +1,36 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          otrs2
+# Required-Start:    $local_fs $remote_fs
+# Required-Stop:     $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: switches otrs2 from maintainance into active mode and back
+### END INIT INFO
+
+
+case "$1" in
+    start)
+    if [ -L /usr/share/otrs/var/httpd/htdocs/maintenance.html ]; then
+        rm  /usr/share/otrs/var/httpd/htdocs/maintenance.html
+    fi
+    ln -s /etc/otrs/cron /etc/cron.d/otrs
+    ;;
+
+    stop)
+    ln -s /etc/otrs/maintenance.html /usr/share/otrs/var/httpd/htdocs/
+    if [ -L /etc/cron.d/otrs ]; then
+      rm /etc/cron.d/otrs
+    fi
+    ;;
+    restart|force-reload|reload)
+    ;;
+    *)
+	echo "Usage: $0 {start|stop|restart|force-reload|reload}" >&2
+	exit 1
+    ;;
+esac
+
+exit 0
+

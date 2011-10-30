@@ -1,0 +1,34 @@
+# --
+# AdminSecureMode.dtl - provides HTML for secure mode message
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# --
+# $Id: AdminSecureMode.dtl,v 1.6 2010/07/02 11:31:34 mg Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+<div class="MainBox AriaRoleMain">
+    <div class="W33pc SpacingTopLarge SpacingBottomLarge CenterBox">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Secure mode needs to be enabled!"}</h2>
+            </div>
+            <div class="Content">
+
+                <p>
+                    $Text{"Secure mode will (normally) be set after the initial installation is completed."}
+                </p>
+                <p>
+                    $Text{"Secure mode must be disabled in order to reinstall using the web-installer."}
+                </p>
+                <p class="SpacingTopSmall">
+                    <a href="$Env{"Baselink"}Action=AdminSysConfig;Subaction=Edit;SysConfigGroup=Framework;SysConfigSubGroup=Core">
+                        $Text{"If secure mode is not activated, activate it via SysConfig because your application is already running."}
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

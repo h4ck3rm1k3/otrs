@@ -1,0 +1,67 @@
+# otrs2 po-debconf translation to Spanish
+# Copyright (C) 2010 Software in the Public Interest
+# This file is distributed under the same license as the otrs2 package.
+#
+# Changes:
+# - Initial translation
+# Camaleón <noelamac@gmail.com>, 2010
+#
+# - Updates
+#
+#
+# Traductores, si no conocen el formato PO, merece la pena leer la
+# documentación de gettext, especialmente las secciones dedicadas a este
+# formato, por ejemplo ejecutando:
+# info -n '(gettext)PO Files'
+# info -n '(gettext)Header Entry'
+#
+# Equipo de traducción al español, por favor lean antes de traducir
+# los siguientes documentos:
+#
+# - El proyecto de traducción de Debian al español
+# http://www.debian.org/intl/spanish/
+# especialmente las notas y normas de traducción en
+# http://www.debian.org/intl/spanish/notas
+#
+# - La guía de traducción de po's de debconf:
+# /usr/share/doc/po-debconf/README-trans
+# o http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: otrs2 2.4.7-4\n"
+"Report-Msgid-Bugs-To: otrs2@packages.debian.org\n"
+"POT-Creation-Date: 2010-02-15 16:23+0100\n"
+"PO-Revision-Date: 2010-05-19 09:56+0100\n"
+"Last-Translator: Camaleón <noelamac@gmail.com>\n"
+"Language-Team: Debian Spanish <debian-l10n-spanish@lists.debian.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Spanish\n"
+
+#. Type: boolean
+#. Description
+#: ../templates:1001
+msgid "Should the database user name be reset to otrs?"
+msgstr ""
+"¿Se debe restablecer el nombre de usuario de la base de datos a «otrs»?"
+
+#. Type: boolean
+#. Description
+#: ../templates:1001
+msgid ""
+"You have configured ident authentication, which is recommended, together "
+"with a database username that is not the default 'otrs'. That will only work "
+"with special hand crafted PostgreSQL setups. It is recommended to reset the "
+"username to 'otrs'. If you do not choose this option and the installation "
+"fails you should consult the file /usr/share/doc/otrs2/README.Debian."
+msgstr ""
+"Ha configurado una autenticación de tipo «ident», que es lo recomendado, así "
+"como un nombre de usuario para la base de datos distinto del predeterminado "
+"(«otrs»). Eso sólo funcionará con configuraciones especiales de PostgreSQL "
+"que se hayan realizado de forma manual. Se recomienda restablecer el nombre "
+"de usuario a «otrs». Si no selecciona esta opción y se produce un error en "
+"la instalación, debería consultar el archivo «/usr/share/doc/otrs2/README."
+"Debian»."

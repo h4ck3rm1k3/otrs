@@ -1,0 +1,13 @@
+CVS
+.#*
+*.old
+*.log
+*.out
+*.cache
+.project
+.externalToolBuilders
+.gnupg
+.settings
+.includepath
+Fred.sopm
+CHANGES-Fred

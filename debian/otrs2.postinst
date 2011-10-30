@@ -1,0 +1,103 @@
+#!/bin/sh
+
+set -e
+
+OTRSHOME=/usr/share/otrs
+CONFIGFILES="Kernel/Config.pm Kernel/Config/GenericAgent.pm maintenance.html"
+
+setup_database()
+{
+  . /usr/share/dbconfig-common/dpkg/postinst
+  dbc_generate_include="perl:/etc/otrs/database.pm"
+  dbc_generate_include_owner="otrs:www-data"
+  dbc_generate_include_perms="0640"
+  dbc_first_version="2.0.4p01-10"
+  dbc_go otrs2 "$@"
+}
+
+setup_ZZZ()
+{
+	# Create the needed ZZZAuto package, if it is not available.
+	if [ ! -f /var/lib/otrs/Config/ZZZAuto.pm ]; then
+		echo 'package Kernel::Config::Files::ZZZAuto;
+sub Load {}
+1;' \
+			> /var/lib/otrs/Config/ZZZAuto.pm
+		chown root:www-data /var/lib/otrs/Config/ZZZAuto.pm
+		chmod 0664 /var/lib/otrs/Config/ZZZAuto.pm
+	fi
+}
+
+setup_cron()
+{
+  # save old cron config to new file /etc/otrs/cron before removing it
+  if [ -e /etc/cron.d/otrs_aaa_base ]; then
+    cat /etc/cron.d/otrs_* > /etc/otrs/cron
+    for FILE in /etc/cron.d/otrs_*; do
+      ucf --purge $FILE
+      mv -f $FILE $FILE.dpkg-old
+    done
+  fi
+
+  # register the new cron config
+  TMPFILE=$(mktemp)
+  cat /var/lib/otrs/cron/* > $TMPFILE
+  ucf --three-way --debconf-ok $TMPFILE /etc/otrs/cron
+  rm -f $TMPFILE
+}
+
+setup_apache()
+{
+  if [ -e /etc/otrs/apache2-httpd.include.conf -a \
+     ! -e /etc/apache2/conf.d/otrs2 ]; then
+    mv /etc/otrs/apache2-httpd.include.conf /etc/apache2/conf.d/otrs2
+  fi
+  ucf --three-way --debconf-ok $OTRSHOME/scripts/apache2-httpd.include.conf \
+    /etc/apache2/conf.d/otrs2
+  if [ -f /etc/apache2/mods-available/perl.load ]; then
+	  a2enmod perl
+  fi
+  a2enmod rewrite
+  db_stop
+  invoke-rc.d apache2 force-reload || true
+}
+
+. /usr/share/debconf/confmodule
+
+case "$1" in
+  configure|reconfigure)
+  setup_database "$@"
+  for FILE in $CONFIGFILES; do
+    ucf --three-way --debconf-ok $OTRSHOME/$FILE.dist /etc/otrs/$FILE
+  done
+  setup_cron
+  ucf --three-way --debconf-ok $OTRSHOME/.fetchmailrc.dist /etc/otrs/fetchmailrc
+  chmod 600 /etc/otrs/fetchmailrc
+  if [ -x /usr/sbin/a2enmod ]; then
+	  setup_apache
+  fi
+  setup_ZZZ
+  if [ -f /etc/otrs/database.pm ]; then
+	  /usr/share/otrs/bin/otrs.RebuildConfig.pl > /dev/null 2>&1
+  fi
+  $OTRSHOME/bin/otrs.SetPermissions.pl --otrs-user=otrs --otrs-group=www-data --web-user=www-data --web-group=www-data --secure $OTRSHOME > /dev/null 2>&1
+  if [ -f /var/lib/otrs/Config/ZZZAAuto.pm ]; then
+	  chown root:www-data /var/lib/otrs/Config/ZZZAAuto.pm
+  fi
+  chown root:www-data /var/lib/otrs/Config
+  chown otrs:www-data /var/spool/otrs
+  chmod 0775 /var/lib/otrs/Config/
+  chmod 0775 /var/spool/otrs
+  ;;
+
+  install)
+  ;;
+
+  *)
+  echo "postinst called with unknown argument \`$1'" 1>&2
+  exit 1
+  ;;
+esac
+
+#DEBHELPER#
+

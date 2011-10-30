@@ -1,0 +1,62 @@
+# Use the new native Digest::SHA module.
+
+diff -Naur otrs-3.0.8.orig/bin/otrs.CheckModules.pl otrs-3.0.8/bin/otrs.CheckModules.pl
+--- otrs-3.0.8.orig/bin/otrs.CheckModules.pl	2011-03-11 15:02:14.000000000 +0100
++++ otrs-3.0.8/bin/otrs.CheckModules.pl	2011-05-26 20:30:13.000000000 +0200
+@@ -64,7 +64,7 @@
+         Required => 1,
+     },
+     {
+-        Module   => 'Digest::SHA::PurePerl',
++        Module   => 'Digest::SHA',
+         Version  => '5.48',
+         Required => 1,
+         Comment  => 'Required to authenticate users and customers using SHA-1 or SHA-2 methods',
+diff -Naur otrs-3.0.8.orig/Kernel/System/Auth/DB.pm otrs-3.0.8/Kernel/System/Auth/DB.pm
+--- otrs-3.0.8.orig/Kernel/System/Auth/DB.pm	2010-08-02 18:53:02.000000000 +0200
++++ otrs-3.0.8/Kernel/System/Auth/DB.pm	2011-05-26 20:30:13.000000000 +0200
+@@ -15,7 +15,7 @@
+ use warnings;
+ 
+ use Crypt::PasswdMD5 qw(unix_md5_crypt);
+-use Digest::SHA::PurePerl qw(sha1_hex sha256_hex);
++use Digest::SHA qw(sha1_hex sha256_hex);
+ 
+ use Kernel::System::Valid;
+ 
+diff -Naur otrs-3.0.8.orig/Kernel/System/CustomerAuth/DB.pm otrs-3.0.8/Kernel/System/CustomerAuth/DB.pm
+--- otrs-3.0.8.orig/Kernel/System/CustomerAuth/DB.pm	2011-04-01 17:25:37.000000000 +0200
++++ otrs-3.0.8/Kernel/System/CustomerAuth/DB.pm	2011-05-26 20:30:13.000000000 +0200
+@@ -15,7 +15,7 @@
+ use warnings;
+ 
+ use Crypt::PasswdMD5 qw(unix_md5_crypt);
+-use Digest::SHA::PurePerl qw(sha1_hex sha256_hex);
++use Digest::SHA qw(sha1_hex sha256_hex);
+ 
+ use vars qw($VERSION);
+ $VERSION = qw($Revision: 1.32.2.2 $) [1];
+diff -Naur otrs-3.0.8.orig/Kernel/System/CustomerUser/DB.pm otrs-3.0.8/Kernel/System/CustomerUser/DB.pm
+--- otrs-3.0.8.orig/Kernel/System/CustomerUser/DB.pm	2010-11-25 12:09:01.000000000 +0100
++++ otrs-3.0.8/Kernel/System/CustomerUser/DB.pm	2011-05-26 20:30:13.000000000 +0200
+@@ -15,7 +15,7 @@
+ use warnings;
+ 
+ use Crypt::PasswdMD5 qw(unix_md5_crypt);
+-use Digest::SHA::PurePerl qw(sha1_hex sha256_hex);
++use Digest::SHA qw(sha1_hex sha256_hex);
+ 
+ use Kernel::System::CheckItem;
+ use Kernel::System::Valid;
+diff -Naur otrs-3.0.8.orig/Kernel/System/User.pm otrs-3.0.8/Kernel/System/User.pm
+--- otrs-3.0.8.orig/Kernel/System/User.pm	2011-01-26 14:22:13.000000000 +0100
++++ otrs-3.0.8/Kernel/System/User.pm	2011-05-26 20:30:13.000000000 +0200
+@@ -15,7 +15,7 @@
+ use warnings;
+ 
+ use Crypt::PasswdMD5 qw(unix_md5_crypt);
+-use Digest::SHA::PurePerl qw(sha1_hex sha256_hex);
++use Digest::SHA qw(sha1_hex sha256_hex);
+ 
+ use Kernel::System::CheckItem;
+ use Kernel::System::Valid;

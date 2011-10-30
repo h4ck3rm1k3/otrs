@@ -1,0 +1,52 @@
+Source: otrs2
+Section: web
+Priority: optional
+Maintainer: Patrick Matthäi <pmatthaei@debian.org>
+Uploaders: Thomas Mueller <thomas@chaschperli.ch>
+Standards-Version: 3.9.2
+Build-Depends: cdbs, debhelper (>= 7)
+Build-Depends-Indep: po-debconf
+Homepage: http://www.otrs.org
+
+Package: otrs2
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}, libapache2-reload-perl | httpd-cgi,
+ libauthen-sasl-perl, libcrypt-passwdmd5-perl, libdate-pcalc-perl,
+ libemail-valid-perl,  libio-stringy-perl, libmime-tools-perl,
+ libmailtools-perl, adduser, ucf, debconf, dbconfig-common (>= 1.8.24),
+ libtext-diff-perl, libxml-parser-perl, libjs-prototype, libtext-csv-perl,
+ libxml-feedpp-perl, libmail-pop3client-perl, libpdf-api2-perl,
+ libsoap-lite-perl, libnet-imap-simple-perl, libnet-imap-simple-ssl-perl,
+ libnet-smtp-ssl-perl, libdbd-pg-perl | libdbd-mysql-perl, libgd-text-perl,
+ libgd-graph-perl, libdbi-perl, libjs-yui, libdigest-sha-perl, libjs-jquery-ui,
+ libjs-jquery, libjavascript-minifier-perl, libcss-minifier-perl,
+ ttf-dejavu-extra, ttf-dejavu-core, libjson-perl
+Recommends: postgresql | mysql-server,
+ procmail | maildrop, aspell | ispell
+Suggests: otrs2-doc-en | otrs2-doc-de, libnet-ldap-perl, libencode-hanextra-perl
+Breaks: otrs (<< 3.0)
+Replaces: otrs (<< 3.0)
+Description: Open Ticket Request System
+ OTRS is an Open source Ticket Request System (also well known as
+ trouble ticket system) with many features to manage customer telephone
+ calls and e-mails. The system is built to allow your support, sales,
+ pre-sales, billing, internal IT, helpdesk, etc. department to react
+ quickly to inbound inquiries. For a detailed documentation see package
+ otrs-doc-en or otrs-doc-de.
+ .
+ This package ships version 2 of OTRS. Note that there is no fully
+ automatic upgrade path from version 1.3, please consult
+ /usr/share/doc/otrs2/README.Debian.gz for more information about that.
+
+Package: otrs
+Architecture: all
+Depends: ${misc:Depends}, otrs2 (>= 3.0)
+Description: Open Ticket Request System (transitional package)
+ OTRS is an Open source Ticket Request System (also well known as
+ trouble ticket system) with many features to manage customer telephone
+ calls and e-mails. The system is built to allow your support, sales,
+ pre-sales, billing, internal IT, helpdesk, etc. department to react
+ quickly to inbound inquiries. For a detailed documentation see package
+ otrs-doc-en or otrs-doc-de.
+ .
+ This transitional package depends on the otrs2 3.x series package.

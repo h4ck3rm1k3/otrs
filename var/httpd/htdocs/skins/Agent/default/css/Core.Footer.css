@@ -1,0 +1,92 @@
+/**
+ * This CSS defines the general Footer shown on all modules/sites.
+ *
+ * @project     OTRS (http://www.otrs.org) - Agent Frontend
+ * @version     $Revision: 1.2 $
+ * @copyright   OTRS AG
+ * @license     AGPL (http://www.gnu.org/licenses/agpl.txt)
+ */
+
+/**
+ * @package     Skin "Default"
+ * @section     Footer
+ */
+
+@media screen,projection,tv,handheld {
+
+#Footer {
+    margin-top: 1px;
+    min-height: 15px;
+    padding: 12px 9px 8px;
+    border-top: 1px solid #999;
+    font-size: 10px;
+    position: relative;
+    clear: both;
+}
+
+#Footer a,
+#Footer ul li a {
+    color: #9E9E9E;
+}
+
+#Footer a:hover,
+#Footer ul li a:hover,
+#Footer div.TopOfPage a:hover {
+    text-decoration: underline;
+}
+
+#Footer ul {
+    position: absolute;
+    top: 12px;
+    left: 212px;
+    right: auto;
+}
+
+.RTL #Footer ul {
+    left: auto;
+    right: 212px;
+}
+
+#Footer ul li {
+    float: left;
+    padding: 0 4px 0 4px;
+    border-left: 1px solid #9E9E9E;
+}
+
+.RTL #Footer ul li {
+    float: right;
+    border-left: none;
+    border-right: 1px solid #9E9E9E;
+}
+
+#Footer ul li:first-child {
+    border: none;
+}
+
+#Footer div.TopOfPage {
+    position: absolute;
+    top: 12px;
+    right: 33px;
+}
+
+.RTL #Footer div.TopOfPage {
+    left: 33px;
+    right: auto;
+}
+
+#Footer div.TopOfPage a {
+    background: transparent url(../img/arrow_top.png) no-repeat right;
+    padding-left: 0;
+    padding-right: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.RTL #Footer div.TopOfPage a {
+    background: transparent url(../img/arrow_top.png) no-repeat left;
+    padding-left: 16px;
+    padding-right: 0;
+}
+
+
+} /* end @media */

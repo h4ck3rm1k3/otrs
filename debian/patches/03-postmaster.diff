@@ -1,0 +1,14 @@
+# Do not get emails with PostMaster, if otrs2 is put into maintenance mode.
+
+--- a/bin/otrs.PostMaster.pl
++++ b/bin/otrs.PostMaster.pl
+@@ -82,6 +82,9 @@
+ # database being unavailable) can be trapped without causing a
+ # bounce
+ eval {
++    if ( -l "/var/lib/otrs/httpd/htdocs/maintenance.html" ) {
++        die "OTRS is in maintainance mode, please try again later.\n";
++    }
+ 
+     # create needed objects
+     $CommonObject{DBObject} = Kernel::System::DB->new(%CommonObject);

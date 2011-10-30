@@ -1,0 +1,26 @@
+Author: Thomas Mueller <thomas@chaschperli.ch>
+Description: fix SetPermissions.pl to include the var/httpd directory
+
+--- a/bin/otrs.SetPermissions.pl
++++ b/bin/otrs.SetPermissions.pl
+@@ -149,7 +149,7 @@
+ 
+ # var/*
+ 
+-print "Setting permissions on $DestDir/var\n";
++print "Setting permissions on $DestDir/var and $DestDir/doc\n";
+ 
+ # set the var directory to OTRS and webserver user
+ my @Dirs = (
+@@ -158,7 +158,10 @@
+     "$DestDir/var/tmp",
+     "$DestDir/var/spool",
+     "$DestDir/var/stats",
+-    "$DestDir/var/sessions"
++    "$DestDir/var/sessions",
++    "$DestDir/var/httpd",
++    "$DestDir/var/packagesetup",
++    "$DestDir/doc"
+ );
+ for my $Dir (@Dirs) {
+     if ( !-e $Dir ) {

@@ -1,0 +1,76 @@
+# Fix some backup and restore operations.
+
+--- a/scripts/backup.pl
++++ b/scripts/backup.pl
+@@ -196,11 +196,19 @@
+     exit 1;
+ }
+ 
++# backup all Symlinks
++if (!system("find -type l -print0 | xargs -0 tar -czf $Directory/SymLinks.tar.gz")) {
++    print "done\n";
++}
++else {
++    print "failed\n";
++}
++
+ # backup Kernel/Config.pm
+ print "Backup $Directory/Config.tar.gz ... ";
+ if (
+     !system(
+-        "tar -czf $Directory/Config.tar.gz Kernel/Config.pm Kernel/Config/Files/ZZZA*.pm Kernel/Config/GenericAgen*.pm"
++        "tar -czhf $Directory/Config.tar.gz Kernel/Config.pm Kernel/Config/Files/ZZZA*.pm Kernel/Config/GenericAgen*.pm"
+     )
+     )
+ {
+@@ -213,7 +221,7 @@
+ # backup application
+ if ($FullBackup) {
+     print "Backup $Directory/Application.tar.gz ... ";
+-    if ( !system("tar -czf $Directory/Application.tar.gz .") ) {
++    if ( !system("tar -czhf $Directory/Application.tar.gz .") ) {
+         print "done\n";
+     }
+     else {
+@@ -224,7 +232,7 @@
+ # backup vardir
+ else {
+     print "Backup $Directory/VarDir.tar.gz ... ";
+-    if ( !system("tar -czf $Directory/VarDir.tar.gz var/") ) {
++    if ( !system("tar -czhf $Directory/VarDir.tar.gz var/") ) {
+         print "done\n";
+     }
+     else {
+@@ -235,7 +243,7 @@
+ # backup datadir
+ if ( $ArticleDir !~ m/\Q$Home\E/ ) {
+     print "Backup $Directory/DataDir.tar.gz ... ";
+-    if ( !system("tar -czf $Directory/DataDir.tar.gz $ArticleDir") ) {
++    if ( !system("tar -czhf $Directory/DataDir.tar.gz $ArticleDir") ) {
+         print "done\n";
+     }
+     else {
+--- a/scripts/restore.pl
++++ b/scripts/restore.pl
+@@ -176,6 +176,21 @@
+     system("tar -xzf $Opts{b}/DataDir.tar.gz");
+ }
+ 
++# restore symlinked structure
++if (-e "$Opts{'b'}/SymLinks.tar.gz") {
++    print "Restore $Opts{'b'}/SymLinks.tar.gz ...\n";
++    mkdir $Opts{'d'}."/tmpdir";
++    # deflate Symlinks into temporary directory
++    system("cd $Opts{'d'}.\"/tmpdir/\" && tar -xzf $Opts{'b'}/SymLinks.tar.gz");
++    # check if the destination files exist or abort
++    system("cd $Opts{'d'} && ".'find tmpdir/ -type l -print0 | xargs -0 perl -e \'foreach(@ARGV) { die "Destination: ".readlink($_)." exists! Abort." if (not -x readlink) }\'');
++    # otherwise restore them to the location from the symlink
++    system("cd $Opts{'d'} && ".'find tmpdir/ -type l -print0 | xargs -0 perl -e \'foreach (@ARGV) { $link = readlink; $_ =~ s|[^/]*/||; system("mv $_ $link"); symlink $link, $_ }\'');
++    # delete temporary directory
++    system("cd $Opts{'d'} && rm -rf tmpdir");
++}
++
++
+ # import database
+ if ( $DB =~ m/mysql/i ) {
+     print "create $DB\n";

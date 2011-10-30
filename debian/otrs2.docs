@@ -1,0 +1,4 @@
+doc/*.box
+doc/*.dia
+[RTU]*
+C[HR]*

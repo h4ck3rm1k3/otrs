@@ -1,0 +1,16 @@
+Author: Thomas Mueller <thomas@chaschperli.ch>
+Description: Disable "Product News" dashboard widget as it refers to
+  upstream not to the debian package.
+
+diff -Naur otrs-3.0.9.orig/Kernel/Config/Files/Framework.xml otrs-3.0.9/Kernel/Config/Files/Framework.xml
+--- otrs-3.0.9.orig/Kernel/Config/Files/Framework.xml	2011-06-14 11:09:24.000000000 +0200
++++ otrs-3.0.9/Kernel/Config/Files/Framework.xml	2011-07-05 19:16:27.659635652 +0200
+@@ -5181,7 +5181,7 @@
+                 <Item Key="URL">http://otrs.org/product.xml</Item>
+                 <Item Key="Block">ContentLarge</Item>
+                 <Item Key="Group">admin</Item>
+-                <Item Key="Default">1</Item>
++                <Item Key="Default">0</Item>
+                 <Item Key="CacheTTLLocal">1440</Item>
+             </Hash>
+         </Setting>

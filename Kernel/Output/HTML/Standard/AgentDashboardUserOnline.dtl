@@ -1,0 +1,60 @@
+# --
+# AgentDashboardUserOnline.dtl - provides HTML for global dashboard
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# --
+# $Id: AgentDashboardUserOnline.dtl,v 1.26 2010/11/05 08:51:40 mb Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+<!-- dtl:block:ContentSmallUserOnlineFilter -->
+<ul class="UserFilter Tab Actions">
+    <li class="$QData{"Agent::Selected"}"><a href="#" id="Dashboard$QData{"Name"}Agent" class="$QData{"Agent::Selected"}">$Text{"Agents"} ($QData{"Agent"})</a></li>
+    <li class="$QData{"Customer::Selected"}"><a href="#" id="Dashboard$QData{"Name"}Customer" class="$QData{"Customer::Selected"}">$Text{"Customers"} ($QData{"Customer"})</a></li>
+<!-- dtl:js_on_document_complete -->
+<script type="text/javascript">//<![CDATA[
+    $('#Dashboard$QData{"Name"}Agent').unbind('click').bind('click', function(){
+        Core.AJAX.ContentUpdate($('#Dashboard$QData{"Name"}'), '$Env{"Baselink"}Action=$Env{"Action"};Subaction=Element;Name=$QData{"Name"};Filter=Agent', function () {
+            Core.UI.Table.InitCSSPseudoClasses($('#Dashboard$QData{"Name"}'));
+        });
+        return false;
+    });
+    $('#Dashboard$QData{"Name"}Customer').unbind('click').bind('click', function(){
+        Core.AJAX.ContentUpdate($('#Dashboard$QData{"Name"}'), '$Env{"Baselink"}Action=$Env{"Action"};Subaction=Element;Name=$QData{"Name"};Filter=Customer', function () {
+            Core.UI.Table.InitCSSPseudoClasses($('#Dashboard$QData{"Name"}'));
+        });
+        return false;
+    });
+//]]></script>
+<!-- dtl:js_on_document_complete -->
+</ul>
+<!-- dtl:block:ContentSmallTicketGenericFilterNavBar -->
+<span class="Pagination">
+    $Data{"SiteNavBar"}
+</span>
+<!-- dtl:block:ContentSmallTicketGenericFilterNavBar -->
+
+<!-- dtl:block:ContentSmallUserOnlineFilter -->
+<table class="DataTable">
+    <tbody>
+<!-- dtl:block:ContentSmallUserOnlineRow -->
+        <tr>
+            <td>
+                $QData{"UserFirstname"} $QData{"UserLastname"}
+<!-- dtl:block:ContentSmallUserOnlineRowEmail -->
+                ($QData{"UserEmail","50"})
+<!-- dtl:block:ContentSmallUserOnlineRowEmail -->
+            </td>
+        </tr>
+<!-- dtl:block:ContentSmallUserOnlineRow -->
+<!-- dtl:block:ContentSmallUserOnlineNone -->
+        <tr>
+            <td>
+                $Text{"none"}
+            </td>
+        </tr>
+<!-- dtl:block:ContentSmallUserOnlineNone -->
+    </tbody>
+</table>

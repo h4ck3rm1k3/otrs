@@ -1,0 +1,10 @@
+Template: otrs2/resetdbuser
+Type: boolean
+_Description: Should the database user name be reset to otrs?
+ You have configured ident authentication, which is recommended, together
+ with a database username that is not the default 'otrs'. That will only
+ work with special hand crafted PostgreSQL setups. It is recommended to
+ reset the username to 'otrs'. If you do not choose this option and the
+ installation fails you should consult the file
+ /usr/share/doc/otrs2/README.Debian.
+Default: true

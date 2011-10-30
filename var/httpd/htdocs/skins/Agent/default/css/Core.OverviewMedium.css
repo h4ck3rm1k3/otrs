@@ -1,0 +1,255 @@
+/**
+ * @project     OTRS (http://www.otrs.org) - Agent Frontend
+ * @version     $Revision: 1.23 $
+ * @copyright   OTRS AG
+ * @license     AGPL (http://www.gnu.org/licenses/agpl.txt)
+ */
+
+/**
+ * @package     Skin "Default"
+ * @section     OverviewMedium
+ */
+
+@media screen,projection,tv,handheld {
+
+/**
+ * @subsection  Medium View Overview
+ */
+#TicketOverviewMedium {
+    margin-top: 64px;
+}
+
+.OverviewMedium {
+    margin: 8px 16px 8px 8px;
+}
+
+.RTL .OverviewMedium {
+    margin-right: 8px;
+    margin-left: 16px;
+}
+
+#EmptyMessageMedium {
+   padding: 20px 8px 8px;
+   border-bottom: 1px solid #DDD;
+   min-height:15px;
+}
+
+.OverviewMedium li {
+    position: relative;
+    border-left: 1px solid #C5C5C5;
+    border-right: 1px solid #C5C5C5;
+    border-bottom: 1px solid #C5C5C5;
+    min-height: 105px;
+}
+
+.OverviewMedium li ul.InlineActions {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    display: none;
+    background-color: #EEE;
+    opacity: 0.9;
+    filter: alpha(opacity=90);
+    height: 100%;
+    margin-right: 0px;
+    padding-right: 10px;
+    padding-left: 5px;
+    height: 28px;
+    float: right;
+    -webkit-border-bottom-left-radius: 5px;
+    -moz-border-radius-bottomleft: 5px;
+    border-bottom-left-radius: 5px;
+    cursor: auto;
+    box-shadow: -2px 2px 3px #666, 0px 2px 3px #666, -2px 0 3px #666;
+    -webkit-box-shadow: -2px 2px 3px #666, 0px 2px 3px #666, -2px 0 3px #666;
+    -moz-box-shadow: -2px 2px 3px #666, 0px 2px 3px #666, -2px 0 3px #666;
+}
+
+.OverviewMedium li ul.InlineActions li {
+    height: auto;
+    min-height: 0;
+    border: none;
+}
+
+.OverviewMedium li ul.InlineActions li form {
+    padding-top: 7px;
+}
+
+.OverviewMedium li ul.InlineActions li form select{
+    font-size: 11px;
+}
+
+.OverviewMedium li ul.InlineActions li a {
+    color: #000;
+}
+
+.OverviewMedium li ul.InlineActions li.Even {
+    background-color: transparent;
+}
+
+.OverviewMedium li ul.InlineActions li:nth-child(even) {
+    background-color: transparent;
+}
+
+.OverviewMedium li div.Content {
+    padding-top: 12px;
+    padding-bottom: 0;
+    cursor: pointer;
+    position: relative;
+}
+
+.OverviewMedium li div.Shadow {
+    height: 5px;
+    width: 100%;
+}
+
+.OverviewMedium li:hover div.Shadow {
+    background: transparent url(../img/table_medium_hover_bottom.png) repeat-x;
+}
+
+.OverviewMedium li:hover div.Content {
+    background: transparent url(../img/table_medium_hover.png) repeat-x;
+}
+
+.OverviewMedium li:hover div.Content .Infos a {
+    color: #fff;
+}
+
+.OverviewMedium li.Last {
+    border-bottom: 1px solid #BBB;
+}
+
+.OverviewMedium li.Even {
+    background-color: #EEE;
+}
+
+.OverviewMedium li:nth-child(even) {
+    background-color: #EEE;
+}
+
+.OverviewMedium input.Checkbox {
+    position: absolute;
+    top: 9px;
+    left: 5px;
+}
+
+.RTL .OverviewMedium input.Checkbox {
+    left: auto;
+    right: 5px;
+}
+
+.OverviewMedium div.Flag {
+    position: absolute;
+    left: -3px;
+    top: 37px;
+}
+
+.RTL .OverviewMedium div.Flag {
+    left: auto;
+    right: -3px;
+}
+
+.OverviewMedium div.UnreadArticles {
+    position: absolute;
+    left: 4px;
+    top: 60px;
+}
+
+.RTL .OverviewMedium div.UnreadArticles {
+    left: auto;
+    right: 4px;
+}
+
+.OverviewMedium li:hover span.UnreadArticles {
+    background-position: 0 -40px;
+}
+
+.OverviewMedium h2 {
+    margin-left: 45px;
+    font-size: 14px;
+    font-weight: bold;
+    width: 97%;
+}
+
+.RTL .OverviewMedium h2 {
+    margin-left: 0;
+    margin-right: 45px;
+}
+
+.OverviewMedium h2 a {
+    color: #000;
+    display: block;
+}
+
+.OverviewMedium table.Infos {
+    margin-top: 2px;
+    margin-left: 45px;
+    table-layout: fixed;
+    width: 97%;
+}
+
+.RTL .OverviewMedium table.Infos {
+    margin-left: 0;
+    margin-right: 45px;
+}
+
+.OverviewMedium table.Infos tr.Last td {
+    padding: 0 0 0 10px;
+}
+
+.RTL .OverviewMedium table.Infos tr.Last td {
+    padding: 0 10px 0 0;
+}
+
+.OverviewMedium table.Infos td {
+    width: 16.67%;
+    padding: 0 10px 5px 10px;
+    overflow: hidden;
+    border-left: 1px dotted #CCC;
+    line-height: 16px;
+}
+
+.OverviewMedium table.Infos td {
+    border-left: none;
+    border-right: 1px dotted #CCC;
+}
+
+.OverviewMedium table.Infos td.Last {
+    border-right: none;
+}
+
+.OverviewMedium table.Infos td:first-child {
+    padding: 0 0 5px 0;
+    border-left: none;
+}
+
+.RTL .OverviewMedium table.Infos td:first-child {
+    padding: 0 10px 5px 10px;
+}
+
+.OverviewMedium table.Infos tr.Last td:first-child {
+    padding: 0;
+}
+
+.RTL .OverviewMedium table.Infos tr.Last td:first-child {
+    padding: 0 10px 5px 10px;
+}
+
+.OverviewMedium li:hover table.Infos td label {
+    color: #634e2d;
+}
+
+.OverviewMedium table.Infos td label {
+    display: block;
+    margin-bottom: 2px;
+    color: #888;
+    font-weight: bold;
+}
+
+.OverviewMedium div.DynamicFieldSeparator {
+    border-bottom: 1px dotted #CCCCCC;
+    margin-left: 2pc;
+    margin-right: 2pc;
+}
+
+} /* end @media */

@@ -1,0 +1,545 @@
+/**
+ * This file containts the CSS Styles for the header
+ * with it's toolbar, the userbar and the whole main navigation
+ *
+ * @project     OTRS (http://www.otrs.org) - Agent Frontend
+ * @version     $Revision: 1.12 $
+ * @copyright   OTRS AG
+ * @license     AGPL (http://www.gnu.org/licenses/agpl.txt)
+ */
+
+/**
+ * @package     Skin "Default"
+ * @section     Header
+ */
+
+@media screen,projection,tv,handheld {
+
+/**
+ * @subsection  Header
+ */
+#Header {
+    height: 72px;
+    padding: 10px 0 12px;
+    background: url(../img/header_bg.png) repeat-x;
+    color: #FFF;
+    position: relative;
+    z-index: 10;
+}
+
+/**
+ * @subsection  Logo
+ */
+#Logo {
+    top: -4px;
+    right: 38px;
+    width: 244px;
+    height: 67px;
+    background: url(../img/logo_bg.png) no-repeat;
+    position: absolute;
+}
+
+.RTL #Logo {
+    right: auto;
+    left: 38px;
+}
+
+
+/**
+ * @subsection  Toolbar
+ */
+#ToolBar {
+    top: 12px;
+    left: 14px;
+    position: absolute;
+}
+
+.RTL #ToolBar {
+    left: auto;
+    right: 14px;
+}
+
+#ToolBar li {
+    width: 24px;
+    height: 34px;
+    margin: 0 5px;
+    float: left;
+    position: relative;
+}
+
+.RTL #ToolBar li {
+    float: right;
+}
+
+#ToolBar li.Extended {
+    width: auto;
+}
+
+#ToolBar li.Extended form * {
+    float: left;
+}
+
+#ToolBar li.Extended form select {
+    margin-top: 1px;
+}
+
+#ToolBar a .Gloss,
+#ToolBar a {
+    background: url(../img/toolbar_sprite.png) no-repeat;
+}
+
+#ToolBar a .Gloss {
+    left: 0;
+    top: 20px;
+    height: 14px;
+    width: 24px;
+    position: absolute;
+}
+
+.RTL #ToolBar a .Gloss {
+    left: auto;
+    right: 0;
+}
+
+#ToolBar a {
+    height: 20px;
+    width: 24px;
+    text-indent: -9999px;
+    position: relative;
+    display: block;
+}
+
+#ToolBar .Locked a {
+    background-position: 0 0;
+}
+
+#ToolBar .Locked a .Gloss {
+    background-position: 0 -20px;
+}
+
+#ToolBar .Locked.New a {
+    background-position: -24px 0;
+}
+    
+#ToolBar .Locked.New a .Gloss {
+    background-position: -24px -20px;
+}
+    
+#ToolBar .Locked.Reached a {
+    background-position: -48px 0;
+}
+    
+#ToolBar .Locked.Reached a .Gloss {
+    background-position: -48px -20px;
+}
+    
+#ToolBar .Watcher a {
+    background-position: -72px 0;
+}
+    
+#ToolBar .Watcher a .Gloss {
+    background-position: -72px -20px;
+}
+
+#ToolBar .Watcher.New a {
+    background-position: -96px 0;
+}
+    
+#ToolBar .Watcher.New a .Gloss {
+    background-position: -96px -20px;
+}
+    
+#ToolBar .Watcher.Reached a {
+    background-position: -120px 0;
+}
+    
+#ToolBar .Watcher.Reached a .Gloss {
+    background-position: -120px -20px;
+}
+    
+#ToolBar .Responsible a {
+    background-position: -144px 0;
+}
+    
+#ToolBar .Responsible a .Gloss {
+    background-position: -144px -20px;
+}
+    
+#ToolBar .Responsible.New a {
+    background-position: -168px 0;
+}
+    
+#ToolBar .Responsible.New a .Gloss {
+    background-position: -168px -20px;
+}
+    
+#ToolBar .Responsible.Reached a {
+    background-position: -192px 0;
+}
+    
+#ToolBar .Responsible.Reached a .Gloss {
+    background-position: -192px -20px;
+}
+    
+#ToolBar .EmailTicket a {
+    background-position: -216px 0;
+}
+    
+#ToolBar .EmailTicket a .Gloss {
+    background-position: -216px -20px;
+}
+    
+#ToolBar .PhoneTicket a {
+    background-position: -240px 0;
+}
+    
+#ToolBar .PhoneTicket a .Gloss {
+    background-position: -240px -20px;
+}
+    
+#ToolBar .QueueView a {
+    background-position: -264px 0;
+}
+    
+#ToolBar .QueueView a .Gloss {
+    background-position: -264px -20px;
+}
+    
+#ToolBar .StatusView a {
+    background-position: -288px 0;
+}
+    
+#ToolBar .StatusView a .Gloss {
+    background-position: -288px -20px;
+}
+    
+#ToolBar .EscalationView a {
+    background-position: -312px 0;
+}
+    
+#ToolBar .EscalationView a .Gloss {
+    background-position: -312px -20px;
+}
+
+#ToolBar a span.Counter {
+    position: absolute;
+    right: -5px;
+    left: auto;
+    top: -5px;
+    width: auto;
+    font-size: 11px;
+    color: #FFF;
+    background: transparent;
+    text-indent: 0 !important;
+}
+
+.RTL #ToolBar a span.Counter {
+    right: auto;
+    left: -5px;
+}
+
+/**
+ * @subsection  UserInfo
+ */
+#UserInfo {
+    top: 8px;
+    right: 17px;
+    padding: 4px 25px 0 0;
+    color: #BBB;
+    font-size: 11px;
+    position: absolute;
+    cursor: default;
+}
+
+.RTL #UserInfo {
+    right: auto;
+    left: 17px;
+    padding: 4px 0 0 25px;
+}
+
+#UserInfo a.LogoutButton {
+    top: 4px;
+    right: 0;
+    width: 20px;
+    height: 18px;
+    text-indent: -9999px;
+    background: url(../img/logout_sprite.png) no-repeat left top;
+    position: absolute;
+}
+
+.RTL #UserInfo a.LogoutButton {
+    right: auto;
+    left: 0;
+}
+
+#UserInfo a:hover.LogoutButton {
+    background-position: left bottom;
+}
+
+.RTL #UserInfo a:hover.LogoutButton {
+    background-position: right bottom;
+}
+
+/**
+ * @subsection      Navigation Level-0
+ */
+#Navigation {
+    top: 51px;
+    left: 10px;
+    position: absolute;
+    z-index: 20;
+}
+
+.RTL #Navigation {
+    left: auto;
+    right: 10px;
+}
+
+/**
+ * @subsection      Main hover effect
+ */
+#Navigation > li,
+#Navigation > li > a {
+    background: url(../img/navigation_sprite.png) repeat-x 0 0;
+}
+
+#Navigation > li {
+    padding-left: 2px;
+    padding-right: 0;
+    float: left;
+    background-position: top left;
+    position: relative;
+}
+
+.RTL #Navigation > li {
+    float: right;
+}
+
+#Navigation > li > a {
+    height: 31px;
+    padding: 4px 26px 3px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 12px;
+    color: #DDD;
+    background-position: top right;
+    text-transform: uppercase;
+    display: block;
+}
+
+.RTL #Navigation > li > a {
+    padding: 4px 4px 3px 26px;
+}
+
+#Navigation > li:hover {
+    background-position: left -38px;
+    background-color: #F2B13E;
+    cursor: pointer;
+}
+
+#Navigation > li:hover > a {
+    color: #FFF;
+    background-position: right -38px;
+    background-color: #F2B13E;
+}
+
+#Navigation > li:active {
+    background-position: left -114px;
+}
+
+#Navigation > li:active > a {
+    background-position: right -114px;
+}
+
+#Navigation > .Selected {
+    background-position: left -76px;
+    background-color: #F92;
+    z-index: 90;
+}
+
+#Navigation > .Selected > a {
+    color: #FFF;
+    background-position: right -76px;
+    background-color: #F92;
+}
+
+/**
+ * @subsection      Search icon
+ */
+#Navigation .Search {
+    width: 16px;
+}
+
+#Navigation a span.SearchIcon {
+    top: 7px;
+    left: 15px;
+    width: 17px;
+    height: 16px;
+    text-indent: -9999px;
+    background: url(../img/search_bg.png) no-repeat left top;
+    display: block;
+    position: absolute;
+}
+
+/**
+ * @subsection      Navigation Second level
+ */
+
+#Navigation > li > div {
+    display: none;
+}
+
+#Navigation > .Active > div {
+    position: absolute;
+    top: 27px;
+    left: -5px;
+    display: block;
+    z-index: 99;
+}
+
+.RTL #Navigation > .Active > div {
+    left: auto;
+    right: -9px;
+}
+
+#Navigation > .Active .ShadowTop {
+    height: 14px;
+    background: url(../img/navigation_shadow_top.png) no-repeat;
+    width: 254px;
+}
+
+.RTL #Navigation > .Active .ShadowTop {
+    background-position: top right;
+}
+
+#Navigation > .Active .Footer {
+    position: absolute;
+    bottom: 10px;
+    height: 8px;
+    width: 240px;
+    margin-left: 5px;
+    background: #333;
+}
+
+.RTL #Navigation > .Active .Footer {
+    margin-left: 0;
+    margin-right: 9px;
+}
+
+#Navigation > .Active .ShadowBottom {
+    height: 10px;
+    width: 254px;
+    background: url(../img/navigation_shadow_bottom.png) no-repeat;
+}
+
+#Navigation > .Active .Shadow {
+    width: 254px;
+    background: url(../img/navigation_shadow.png) repeat-y;
+}
+
+.RTL #Navigation > .Active .Shadow {
+    background-position: top right;
+}
+
+#Navigation > .Active .Shadow > ul {
+    position: relative;
+    top: -8px;
+    width: 240px;
+    margin-left: 5px;
+    margin-top: 1px;
+    background: #333;
+}
+
+.RTL #Navigation > .Active .Shadow > ul {
+    margin-right: 9px;
+}
+
+#Navigation > .Active .Shadow > ul > li {
+    font-size: 11px;
+    line-height: 11px;
+    margin-top: -1px;
+    position: relative;
+}
+
+#Navigation > .Active .Shadow > ul > li:hover {
+    background: url(../img/navigation_hover.png) repeat-x;
+}
+
+#Navigation > .Active .Shadow > ul > li:hover > a {
+    color: #000;
+}
+
+#Navigation > .Active .Shadow > ul > li:hover > a > span {
+    background-position: bottom;
+}
+
+#Navigation > .Active .Shadow > ul > li > a {
+    display: block;
+    position: relative;
+    color: #DDD;
+    padding: 4px 10px 4px 8px;
+    background: transparent url(../img/navigation_isolator.png) no-repeat top center;
+}
+
+#Navigation > .Active .Shadow > ul > li:first-child > a {
+    background-image: none;
+}
+
+#Navigation > .Active .Shadow > ul > li > a > span {
+    display: block;
+    position: absolute;
+    background: url(../img/triangle_bg.png) no-repeat top;
+    height: 5px;
+    width: 9px;
+    right: 10px;
+    top: 7px;
+}
+
+.RTL #Navigation > .Active .Shadow > ul > li > a > span {
+    right: auto;
+    left: 10px;
+}
+
+/**
+ * @subsection      Navigation Third and Fourth level
+ */
+
+#Navigation > .Active li > div {
+    display: none;
+}
+
+#Navigation > .Active .Active > div {
+    position: absolute;
+    top: 0;
+    z-index: 1;
+    display: block;
+}
+
+#Navigation > .Active .Active > div.Right {
+    left: 232px;
+}
+
+.RTL #Navigation > .Active .Active > div.Right {
+    left: -242px;
+}
+
+#Navigation > .Active .Active > div.Left {
+    left: -242px;
+}
+
+.RTL #Navigation > .Active .Active > div.Left {
+    left: 232px;
+}
+
+#Navigation > .Active .Active .Shadow > ul,
+#Navigation > .Active .Active .Footer {
+    background: #202020;
+}
+
+#Navigation > .Active .Active .Active .Shadow > ul,
+#Navigation > .Active .Active .Active .Footer {
+    background: #000;
+}
+
+
+} /* end @media */

@@ -1,0 +1,208 @@
+# --
+# UPGRADING - upgrading OTRS
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# --
+# $Id: UPGRADING,v 1.56 2011/10/24 08:48:53 mg Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+These instructions are for people upgrading OTRS from "3.0" to "3.1",
+and applies both for RPM and source code (tarball) upgrades.
+
+If you are running a lower version of OTRS you have to follow the upgrade path
+to 3.0 first (1.1->1.2->1.3->2.0->2.1->2.2->2.3->2.4->3.0->3.1 ...)!
+
+Please note that if you upgrade from OTRS 2.2 or earlier, you have to
+take an extra step; read http://bugs.otrs.org/show_bug.cgi?id=6798
+
+If you need to do a "patch level upgrade", which is an upgrade for instance
+from OTRS version 3.1.0 to 3.1.1, you should skip steps 8 and 11.
+
+
+1) Stop all relevant services
+   --------------------------
+
+    e. g. (depends on used services):
+
+    shell> /etc/init.d/cron stop
+    shell> /etc/init.d/postfix stop
+    shell> /etc/init.d/apache stop
+
+
+2) Backup everything below $OTRS_HOME (default: OTRS_HOME=/opt/otrs)
+   -----------------------------------------------------------------
+
+    o Kernel/Config.pm
+    o Kernel/Config/GenericAgent.pm
+    o Kernel/Config/Files/ZZZAuto.pm
+    o var/*
+    o as well as the database
+
+
+3) Make sure that you have backed up everything ;-)
+   ------------------------------------------------
+
+4) Setup new system (optional)
+   ---------------------------
+
+   If possible try this install on a separate machine for testing first.
+
+
+5) Install the new release (tar or RPM)
+   ------------------------------------
+
+   With the tarball:
+
+    shell> cd /opt
+    shell> tar -xzf otrs-x.x.x.tar.gz
+    shell> ln -s otrs-x.x.x otrs
+
+    Restore old configuration files.
+    o Kernel/Config.pm
+    o Kernel/Config/GenericAgent.pm
+    o Kernel/Config/Files/ZZZAuto.pm
+
+
+   With the RPM:
+
+    shell> rpm -Uvh otrs-x.x.x.-01.rpm
+
+    Restore old configuration files is not needed, done by RPM.
+
+6) Own themes
+   ----------
+
+   Themes are located under $OTRS_HOME/Kernel/Output/HTML/*/*.dtl (default: OTRS_HOME=/opt/otrs)
+
+
+7) Set file permissions
+   --------------------
+
+   If the tarball is used, execute:
+
+     shell> cd /opt/otrs/
+     shell> bin/otrs.SetPermissions.pl
+
+   with the permissions needed for your system setup.
+
+
+8) Apply the database changes
+   --------------------------
+
+     shell> cd /opt/otrs/
+
+
+    SCHEMA UPDATE PART 1:
+    =====================
+
+    MySQL:
+     shell> cat scripts/DBUpdate-to-3.1.mysql.sql | mysql -p -f -u root otrs
+
+    PostgreSQL 8.2+:
+     shell> cat scripts/DBUpdate-to-3.1.postgresql.sql | psql otrs
+
+    PostgreSQL, older versions:
+     shell> cat scripts/DBUpdate-to-3.1.postgresql_before_8_2.sql | psql otrs
+
+
+    NOTE: If you use PostgreSQL 8.1 or earlier, you need to activate the new legacy driver
+    for these older versions. Do this by adding a new line to your Kernel/Config.pm like this:
+
+    $Self->{DatabasePostgresqlBefore82} = 1;
+
+
+    DATABASE MIGRATION SCRIPT
+    =========================
+
+    shell> cat scripts/DBUpdate-to-3.1.pl
+
+    Do not continue the upgrading process if this script did not work properly for you.
+    Otherwise data loss may occur.
+
+
+    SCHEMA UPDATE PART 2:
+    =====================
+
+    MySQL:
+     shell> cat scripts/DBUpdate-to-3.1-post.mysql.sql | mysql -p -f -u root otrs
+
+    PostgreSQL 8.2+:
+     shell> cat scripts/DBUpdate-to-3.1-post.postgresql.sql | psql otrs
+
+    PostgreSQL, older versions:
+     shell> cat scripts/DBUpdate-to-3.1-post.postgresql_before_8_2.sql | psql otrs
+
+
+9) Refresh the configuration cache and delete caches
+    -------------------------------------------------
+
+    Please run:
+
+    shell> bin/otrs.RebuildConfig.pl
+    shell> bin/otrs.DeleteCache.pl
+
+
+10) Restart your services
+    ---------------------
+
+    e. g. (depends on used services):
+
+    shell> /etc/init.d/apache start
+    shell> /etc/init.d/postfix start
+    shell> /etc/init.d/cron start
+
+    Now you can log into your system.
+
+
+11) Check installed packages
+    ------------------------
+    In the package manager, check if all packages are still marked as
+    correctly installed or if any require reinstallation or even a package upgrade.
+
+
+12) Check for encoding issues
+    -------------------------
+
+    OTRS 3.1 only allows UTF-8 as internal charset.
+    Non-UTF-8 installations of OTRS must switch to UTF-8.
+
+
+XX) TicketHistory
+    -------------
+
+    The TicketHistory type TicketFreeTextUpdate was renamed to
+    TicketDynamicFieldUpdate. If you have any custom reporting using this,
+    please adjust it.
+
+
+XX) Ticket Event handlers
+    ---------------------
+
+    The Event name TicketFreeTextUpdate was renamed to TicketDynamicFieldUpdate,
+    and ArticleFreeTextUpdate was renamed to ArticleDynamicFieldUpdate. If you have any
+    custom event handlers for these events, please adapt them.
+
+
+XX) DynamicField User Preferences Module
+    ------------------------------------
+
+    If you had one or more active custom settings for "PreferencesGroups###Freetext",
+    you need to adapt them to work with the new DynamicFields engine. The PrefKey
+    setting must be changed to "UserDynamicField_DynamicField", where the part after
+    the _ is the name of the dynamic field. Existing values would need to be renamed
+    in the database as well.
+
+
+XX) Escalation Events
+    -----------------
+
+    If you want to use the new escalation events in your system, you need to activate the
+    corresponding GenericAgent job in Kernel/Config/GenericAcent.pm. Please look into
+    Kernel/Config/GenericAgent.pm.dist for an example of how to do this.
+
+
+12) Well done!
+    ----------

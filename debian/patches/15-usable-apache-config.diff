@@ -1,0 +1,80 @@
+# Create a usable Apache configuration with mod_perl for Debian.
+
+diff -Naur otrs-3.0.8.orig/scripts/apache2-httpd.include.conf otrs-3.0.8/scripts/apache2-httpd.include.conf
+--- otrs-3.0.8.orig/scripts/apache2-httpd.include.conf	2011-04-20 00:09:24.000000000 +0200
++++ otrs-3.0.8/scripts/apache2-httpd.include.conf	2011-05-26 20:20:29.000000000 +0200
+@@ -4,8 +4,8 @@
+ # --
+ 
+ # agent, admin and customer frontend
+-ScriptAlias /otrs/ "/opt/otrs/bin/cgi-bin/"
+-Alias /otrs-web/ "/opt/otrs/var/httpd/htdocs/"
++ScriptAlias /otrs/ "/usr/share/otrs/bin/cgi-bin/"
++Alias /otrs-web/ "/usr/share/otrs/var/httpd/htdocs/"
+ 
+ # activate this if you are using an Oracle database
+ #SetEnv ORACLE_HOME /path/to/your/oracle/
+@@ -17,7 +17,7 @@
+ <IfModule mod_perl.c>
+ 
+     # load all otrs modules
+-    Perlrequire /opt/otrs/scripts/apache2-perl-startup.pl
++    Perlrequire /usr/share/otrs/scripts/apache2-perl-startup.pl
+ 
+     # Apache::Reload - Reload Perl Modules when Changed on Disk
+     PerlModule Apache2::Reload
+@@ -28,43 +28,46 @@
+     <Location /otrs>
+ #        ErrorDocument 403 /otrs/customer.pl
+         ErrorDocument 403 /otrs/index.pl
++		ErrorDocument 404 /otrs/index.pl
+         SetHandler  perl-script
+         PerlResponseHandler ModPerl::Registry
+-        Options +ExecCGI
++        Options +ExecCGI +FollowSymLinks
+         PerlOptions +ParseHeaders
+         PerlOptions +SetupEnv
+         Order allow,deny
+         Allow from all
++		<IfModule mod_rewrite.c>
++			RewriteEngine On
++			RewriteCond /usr/share/otrs/var/httpd/htdocs/maintenance.html -l
++			RewriteRule ^.*$ /otrs-web/maintenance.html
++		</IfModule>
+     </Location>
+ 
+ </IfModule>
+ 
+ # directory settings
+-<Directory "/opt/otrs/bin/cgi-bin/">
++<Directory "/usr/share/otrs/bin/cgi-bin/">
+     AllowOverride None
+     Options +ExecCGI -Includes
+     Order allow,deny
+     Allow from all
+ </Directory>
+-<Directory "/opt/otrs/var/httpd/htdocs/">
++<Directory "/usr/share/otrs/var/httpd/htdocs/">
+     AllowOverride None
+     Order allow,deny
+     Allow from all
+ </Directory>
+ 
+ <IfModule mod_headers.c>
+-    <Directory "/opt/otrs/var/httpd/htdocs/skins/*/*/css-cache">
++    <Directory "/usr/share/otrs/var/httpd/htdocs/skins/*/*/css-cache">
+         <FilesMatch "\.(css|CSS)$">
+             Header set Cache-Control "max-age=2592000 must-revalidate"
+         </FilesMatch>
+     </Directory>
+ 
+-    <Directory "/opt/otrs/var/httpd/htdocs/js/js-cache">
++    <Directory "/usr/share/otrs/var/httpd/htdocs/js_new/js-cache">
+         <FilesMatch "\.(js|JS)$">
+             Header set Cache-Control "max-age=2592000 must-revalidate"
+         </FilesMatch>
+     </Directory>
+ </IfModule>
+-
+-# MaxRequestsPerChild (so no apache child will be to big!)
+-MaxRequestsPerChild 4000

@@ -1,0 +1,21 @@
+otrs2: package-contains-broken-symlink usr/share/otrs/Kernel/Config.pm etc/otrs/Kernel/Config.pm
+otrs2: package-contains-broken-symlink usr/share/otrs/Kernel/Config/Files/ZZZAAuto.pm var/lib/otrs/Config/ZZZAAuto.pm
+otrs2: package-contains-broken-symlink usr/share/otrs/Kernel/Config/Files/ZZZAuto.pm var/lib/otrs/Config/ZZZAuto.pm
+otrs2: package-contains-broken-symlink usr/share/otrs/Kernel/Config/GenericAgent.pm etc/otrs/Kernel/Config/GenericAgent.pm
+otrs2: package-contains-broken-symlink var/lib/otrs/httpd/htdocs/yui/2.7.0/build usr/share/javascript/yui
+otrs2: package-contains-broken-symlink var/lib/otrs/httpd/htdocs/js/thirdparty/jquery usr/share/javascript/jquery
+otrs2: package-contains-broken-symlink var/lib/otrs/httpd/htdocs/js/thirdparty/jquery-ui usr/share/javascript/jquery-ui
+otrs2: package-contains-broken-symlink var/lib/otrs/fonts/DejaVuSans-Bold.ttf usr/share/fonts/truetype/ttf-dejavu/DejaVuSans-Bold.ttf
+otrs2: package-contains-broken-symlink var/lib/otrs/fonts/DejaVuSans-BoldOblique.ttf usr/share/fonts/truetype/ttf-dejavu/DejaVuSans-BoldOblique.ttf
+otrs2: package-contains-broken-symlink var/lib/otrs/fonts/DejaVuSans-Oblique.ttf usr/share/fonts/truetype/ttf-dejavu/DejaVuSans-Oblique.ttf
+otrs2: package-contains-broken-symlink var/lib/otrs/fonts/DejaVuSans.ttf usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf
+otrs2: package-contains-broken-symlink var/lib/otrs/fonts/DejaVuSansMono-Bold.ttf usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono-Bold.ttf
+otrs2: package-contains-broken-symlink var/lib/otrs/fonts/DejaVuSansMono-BoldOblique.ttf usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono-BoldOblique.ttf
+otrs2: package-contains-broken-symlink var/lib/otrs/fonts/DejaVuSansMono-Oblique.ttf usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono-Oblique.ttf
+otrs2: package-contains-broken-symlink var/lib/otrs/fonts/DejaVuSansMono.ttf usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono.ttf
+otrs2: extra-license-file usr/share/otrs/Kernel/Output/HTML/Standard/InstallerLicense.dtl
+otrs2: embedded-javascript-library var/lib/otrs/httpd/htdocs/js/thirdparty/ckeditor-3.4.2/_source/adapters/jquery.js
+otrs2: embedded-javascript-library var/lib/otrs/httpd/htdocs/js/thirdparty/ckeditor-3.4.2/_source/core/ckeditor.js
+otrs2: embedded-javascript-library var/lib/otrs/httpd/htdocs/js/thirdparty/ckeditor-3.4.2/adapters/jquery.js
+otrs2: embedded-javascript-library var/lib/otrs/httpd/htdocs/js/thirdparty/ckeditor-3.4.2/ckeditor.js
+otrs2: duplicate-changelog-files usr/share/doc/otrs2/CHANGES.gz usr/share/doc/otrs2/changelog.gz

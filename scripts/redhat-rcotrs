@@ -1,0 +1,286 @@
+#!/bin/sh
+# --
+# redhat-rcotrs - rc script of otrs for RedHat Linux
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+# chkconfig: 2345 92 92
+# description: Open Ticket Request System
+# config: /etc/sysconfig/otrs
+
+#
+# load the configuration
+#
+if test -r /etc/sysconfig/otrs; then
+    . /etc/sysconfig/otrs
+else
+    echo "ERROR: Can't find /etc/sysconfig/otrs!"
+    exit 5;
+fi
+
+#
+# fillup PATH - just beware perl "warnings" (unimportant)
+#
+PATH=$PATH:
+export PATH
+
+#
+# check needed files
+#
+if ! test -r $OTRS_POSTMASTER; then
+    echo "Error: $OTRS_POSTMASTER not found!"
+    exit 5
+fi
+
+if ! test -d $OTRS_SPOOLDIR; then
+    echo "Error: $OTRS_SPOOLDIR not found!"
+    exit 5
+fi
+
+if ! test -r $OTRS_CHECKDB; then
+    echo "Error: $OTRS_CHECKDB not found!"
+    exit 5
+fi
+
+if ! test -r $OTRS_CHECKSCHEDULER; then
+    echo "Error: $OTRS_CHECKSCHEDULER not found!"
+    exit 5
+fi
+
+#
+# main part
+#
+case "$1" in
+    # ------------------------------------------------------
+    # start
+    # ------------------------------------------------------
+    start)
+      echo $"Starting $OTRS_PROG.."
+
+      # --
+      # test if apache is running..
+      # --
+      if test $OTRS_HTTP_RUNNING -gt 0; then
+    echo -n " Checking httpd ..."
+        if $OTRS_USED_WEBSERVER_TEST >/dev/null 2>&1; then
+          echo " done."
+        else
+          echo "  failed!"
+          echo "  --> Please start the web server first! (service $OTRS_USED_WEBSERVER start) <--"
+          exit 1
+        fi
+      else
+          echo " Disabled: httpd check!"
+      fi
+
+      # --
+      # database connection
+      # --
+      echo -n " Checking database connection... "
+      if ! $OTRS_CHECKDB -s 1; then
+          echo " Error! "
+      echo "  Maybe your database isn't configured yet? "
+          echo ""
+          echo " Try the web installer to configure your database: "
+          echo ""
+          echo "     -->> http://$OTRS_HOST/$OTRS_HTTP_LOCATION/installer.pl <<-- "
+          echo ""
+          echo " or configure your database with README.database (DB - Setup Example)    "
+          exit 1;
+      else
+          echo " done."
+      fi
+
+      # --
+      # OTRS Scheduler Service
+      # --
+      echo -n " Checking OTRS Scheduler Service... "
+      if ! $OTRS_SCHEDULER_TEST >/dev/null 2>&1; then
+          echo " Error! "
+      echo "  This can happen if your database is not configured yet. "
+          exit 1;
+      else
+          echo " done."
+      fi  
+
+      # --
+      # enable otrs.PostMaster.pl
+      # --
+      echo -n " Enable $OTRS_POSTMASTER ..."
+      if chmod 755 $OTRS_POSTMASTER; then
+          echo " done."
+      else
+          echo " failed."
+      fi
+
+      # --
+      # check otrs spool dir
+      # --
+      echo -n " Checking otrs spool dir... "
+      for i in $OTRS_SPOOLDIR/* ; do
+          # process old emails
+          if echo $i | grep -v '*' >> /dev/null; then
+              echo -n "   Starting otrs PostMaster... ($i) "
+              if cat $i | $OTRS_POSTMASTER >> /dev/null 2>&1; then
+                  rm $i && echo "(remove email) done.";
+              else
+                  echo "failed."
+              fi
+          fi
+      done
+      echo " done."
+
+      # --
+      # Cron stuff
+      # --
+      if test $OTRS_CRON_RUNNING -gt 0; then
+        echo -e " Creating cronjobs (source $OTRS_CRON_DIR/*) ..."
+        if mkdir -p $OTRS_CRON_DIR; cd $OTRS_CRON_DIR && ls * |grep -v '.dist'|grep -v '.save'|grep -v 'CVS'|grep -v '.rpm'| xargs cat > $OTRS_CRON_TMP_FILE && crontab $OTRS_CRON_USER $OTRS_CRON_TMP_FILE ; then
+          echo " done."
+        else
+          echo " failed!"
+          exit 1
+        fi
+      else
+          echo " Disabled: cronjobs!"
+      fi
+
+      echo ""
+      echo "  -->> http://$OTRS_HOST/$OTRS_HTTP_LOCATION/index.pl <<-- "
+      echo $"Final start of $OTRS_PROG.. done"
+    ;;
+    # ------------------------------------------------------
+    # stop
+    # ------------------------------------------------------
+    stop)
+      echo "Shutting down OTRS "
+
+      # --
+      # disable otrs.PostMaster.pl
+      # --
+      echo -n " Disable $OTRS_POSTMASTER ..."
+      if chmod 644 $OTRS_POSTMASTER; then
+          echo " done."
+      else
+          echo " failed."
+      fi
+
+      # --
+      # stop cron stuff
+      # --
+      if test $OTRS_CRON_RUNNING -gt 0; then
+        echo -e " Shutting down cronjobs ..."
+    if crontab $OTRS_CRON_USER -r ; then
+          echo " done."
+        else
+          echo " failed!"
+          exit 1
+        fi
+      else
+          echo " Disabled: cronjobs!"
+      fi
+
+      # --
+      # stop scheduler
+      # --
+      if test $OTRS_SCHEDULER_RUNNING -gt 0; then
+          echo -e " Shutting down OTRS scheduler ..."
+          $OTRS_SCHEDULER -a stop
+          echo " done."
+      fi
+      
+      echo $"Final shutdown of $OTRS_PROG.. done"
+    ;;
+    # ------------------------------------------------------
+    # restart
+    # ------------------------------------------------------
+    restart)
+      $0 stop
+      $0 start
+      # Remember status and be quiet
+    ;;
+    # ------------------------------------------------------
+    # cleanup
+    # ------------------------------------------------------
+    cleanup)
+      # --
+      # check otrs spool dir
+      # --
+      echo -n " Checking otrs spool dir... "
+      for i in $OTRS_SPOOLDIR/* ; do
+          # process old emails
+          if echo $i | grep -v '*' >> /dev/null ;then
+            echo ""
+            echo -n "   Starting otrs PostMaster... ($i) "
+            if cat $i | $OTRS_POSTMASTER >> /dev/null 2>&1 ; then
+               echo -n "remove email... " && (rm $i || echo "failed.")
+            else
+               echo "failed."
+            fi
+          fi
+      done
+      echo " done."
+    ;;
+    # ------------------------------------------------------
+    # status
+    # ------------------------------------------------------
+    status)
+      # --
+      # httpd
+      # --
+      /sbin/service $OTRS_USED_WEBSERVER status
+
+      # --
+      # db check
+      # --
+      echo -n "Checking database connection... "
+      if ! $OTRS_CHECKDB -s 1; then
+          echo " Error! "
+      echo " Maybe your database isn't configured yet? "
+      else
+          echo "done."
+      fi
+
+      # --
+      # scheduler check
+      # --
+      echo -n "Checking OTRS Scheduler service.... "
+      if ! $OTRS_CHECKSCHEDULER -s 1; then
+          echo " Error! "
+      echo " Maybe your database isn't configured yet? "
+      else
+          echo "done."
+      fi
+
+      # --
+      # postmaster check
+      # --
+      echo -n "Checking $OTRS_POSTMASTER ... "
+      if test -x $OTRS_POSTMASTER; then
+          echo "(active) done."
+      else
+          echo "(not active) failed."
+      fi
+
+      # --
+      # spool dir
+      # --
+      echo -n "Checking otrs spool dir... "
+      for i in $OTRS_SPOOLDIR/* ; do
+          # echo old emails
+          echo $i | grep -v '*' > /dev/null && \
+            echo "" && \
+            echo -n " (message:$i) found! "
+      done
+      echo "done."
+    ;;
+    *)
+    echo "Usage: $0 {start|stop|status|restart|cleanup}"
+    exit 1
+esac
+
+# Inform the caller not only verbosely and set an exit status.
+

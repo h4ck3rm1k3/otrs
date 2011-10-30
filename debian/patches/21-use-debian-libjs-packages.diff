@@ -1,0 +1,28 @@
+# Use the system libjs package, instead of the embedded one.
+
+diff -Naur otrs-3.0.9.orig/Kernel/Config/Files/Framework.xml otrs-3.0.9/Kernel/Config/Files/Framework.xml
+--- otrs-3.0.9.orig/Kernel/Config/Files/Framework.xml	2011-07-05 19:24:57.659635549 +0200
++++ otrs-3.0.9/Kernel/Config/Files/Framework.xml	2011-07-05 19:23:51.475635563 +0200
+@@ -5569,8 +5569,8 @@
+         <Setting>
+             <Array>
+                 <Item>thirdparty/json/json2.js</Item>
+-                <Item>thirdparty/jquery-1.4.4/jquery.js</Item>
+-                <Item>thirdparty/jquery-ui-1.8.7/jquery-ui.js</Item>
++                <Item>thirdparty/jquery/jquery.js</Item>
++                <Item>thirdparty/jquery-ui/jquery-ui.js</Item>
+                 <Item>thirdparty/jquery-validate-1.7/jquery.validate.js</Item>
+                 <Item>thirdparty/stacktrace/stacktrace.js</Item>
+                 <Item>Core.JavaScriptEnhancements.js</Item>
+@@ -5657,9 +5657,9 @@
+         <SubGroup>Core::Web</SubGroup>
+         <Setting>
+             <Array>
+-                <Item>thirdparty/jquery-1.4.4/jquery.js</Item>
++                <Item>thirdparty/jquery/jquery.js</Item>
+                 <Item>thirdparty/jquery-validate-1.7/jquery.validate.js</Item>
+-                <Item>thirdparty/jquery-ui-1.8.7/jquery-ui.js</Item>
++                <Item>thirdparty/jquery-ui/jquery-ui.js</Item>
+                 <Item>thirdparty/stacktrace/stacktrace.js</Item>
+                 <Item>Core.Debug.js</Item>
+                 <Item>Core.Data.js</Item>

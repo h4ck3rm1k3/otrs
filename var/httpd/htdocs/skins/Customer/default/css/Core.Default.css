@@ -1,0 +1,310 @@
+/**
+ * @project     OTRS (http://www.otrs.org) - Customer Frontend
+ * @version     $Revision: 1.14 $
+ * @copyright   OTRS AG
+ * @license     AGPL (http://www.gnu.org/licenses/agpl.txt)
+ */
+
+@media screen,projection,tv,handheld {
+
+/**
+ * @package     OTRS Framework
+ * @section     Default
+ */
+body {
+    font: 12px/14px Arial, sans-serif;
+    -webkit-text-stroke:1px transparent;
+}
+
+.RTL {
+    text-align: right;
+    direction: rtl;
+}
+
+input {
+   font-family: Arial, sans-serif;
+}
+
+a {
+    color: #F92;
+}
+
+a:hover {
+    color: #F72;
+}
+
+p {
+    margin: 13px 0 5px;
+    color: #666;
+}
+
+h1 {
+    font-size: 21px;
+    font-weight: bold;
+}
+
+h2 {
+    padding-left: 2px;
+    margin-bottom: 14px;
+    font-size: 18px;
+    font-weight: normal;
+}
+
+h4 {
+    font-weight: bold;
+}
+
+strong {
+    font-weight: bold;
+}
+
+/**
+ * @subsection  Header
+ */
+
+#Header {
+    padding: 21px 34px 18px;
+    background: #A7AAAA url(../img/GradientSmall.png) repeat-x 0 0;
+    border-bottom: 1px solid #999;
+    text-shadow: 0 1px 0 #EEE;
+}
+
+#Header a {
+    color: #222;
+    outline: none;
+}
+
+#Header #Logo {
+    position: absolute;
+    top: 2px;
+    right: 25px;
+    width: 135px;
+    height: 50px;
+    background: transparent url(../img/logo.png) no-repeat;
+}
+
+/* RTL Button placement - development purpose only */
+#Header button {
+    position: absolute;
+    width: 100px;
+    margin: 0;
+    top: 17px;
+    right: 21px;
+} .RTL #Header button { display: none; }
+
+/**
+ * @subsection  Content
+ */
+
+.Content {
+    padding: 13px 21px;
+    border-top: 1px solid #EEE;
+}
+
+/**
+ * @subsection  Javascript enhancement
+ */
+
+.JavaScriptAvailable .Overview tbody tr,
+.JavaScriptAvailable .MessageHeader {
+    cursor: pointer;
+}
+
+/**
+ * @subsection  RichText Editor overwrites
+ */
+
+form #cke_RichText {
+    border: none;
+}
+
+form #cke_RichText span.cke_wrapper {
+    background: #E4E4E4;
+}
+
+/**
+ * @subsection  Footer
+ */
+#Footer {
+    width: 100%;
+    margin-top: 3px;
+    color: #CCC;
+    overflow: hidden;
+}
+
+#Footer ul {
+    float: left;
+}
+
+.RTL #Footer ul {
+    float: right;
+}
+
+#Footer ul li {
+    float: left;
+    padding: 0 4px 0 0;
+}
+
+.RTL #Footer ul li {
+    float: right;
+    padding: 0 0 0 4px;
+}
+
+#Footer a {
+    margin: 8px 8px 7px;
+    color: #CCC;
+    font-weight: bold;
+    float: left;
+}
+
+#Footer a:hover {
+    color: #F92;
+}
+
+.RTL #Footer a {
+    float: right;
+}
+
+/**
+ * @subsection  Clear
+ */
+.Clear {
+    float: none !important;
+    clear: both !important;
+}
+
+div.Clear {
+    padding: 0;
+    height: 0 !important;
+    line-height: 0;
+}
+
+/**
+ * @subsection  Placeholder
+ */
+
+.Placeholder {
+    padding: 21px;
+}
+
+.Placeholder h2 {
+    padding: 0 2px;
+    font-size: 24px;
+    line-height: 1em;
+    border-bottom: 1px dashed #BBB;
+    display: inline;
+}
+
+.Placeholder p {
+    max-width: 400px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 18px;
+}
+
+.Hidden {
+    display: none;
+}
+
+#EmptyMessage {
+    border-bottom: 1px solid #DDD;
+}
+
+.WidgetSimple {
+    padding: 34px 34px 21px;
+    width: 600px;
+}
+
+.WidgetSimple .Error {
+    color: #FF505E;
+}
+
+.WidgetSimple h2 {
+    margin-bottom: 5px;
+}
+
+.WidgetSimple .Content {
+    padding: 13px 0;
+}
+
+.WidgetSimple textarea {
+    width: 100%;
+    height: 180px;
+}
+
+/**
+ * @subsection  Datepicker
+ */
+.DatepickerIcon {
+    margin: 0 0 0 4px;
+    height: 16px;
+    width: 16px;
+    background: transparent url(../img/icons/calendar.png) no-repeat;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.RTL .DatepickerIcon {
+    margin: 0 4px 0 0;
+}
+
+/* Vacation Days */
+td.Highlight a.ui-state-default {
+    border: 1px solid #fad42e;
+    background: url(../img/datepicker_vacation_days.png) repeat-x;
+}
+
+/* Today */
+.ui-datepicker-current-day {
+}
+
+/*Weekend*/
+.ui-datepicker-week-end {
+}
+
+ /**
+ * @subsection      ARIA (Accessibility)
+ * @subsubsection   AlertMessage
+ * @note            This definition allows to create text on the page
+ *                  which is not seen, but will be read by the screen reader.
+ *                  display: none; cannot be used in this case.
+ */
+
+.ARIAAlertMessage {
+    position: absolute;
+    left: -10000px;
+    right: auto;
+    top: -10000px;
+}
+
+.RTL .ARIAAlertMessage {
+    left: auto;
+    right: -10000px;
+}
+
+/**
+ * @note        Give the user a hint about linked label elements (they are clickable and
+ *                  give focus to the linked element.
+ */
+
+form label[for] {
+    cursor: pointer;
+}
+
+form input.Error,
+form textarea.Error {
+    border-color: #ff505e;
+}
+
+form select.Error {
+    color: #ff505e;
+}
+
+/**
+ * @subsection global message format
+ */
+.ArticleBody{
+    font-family: monospace,fixed;
+}
+
+} /* end @media */

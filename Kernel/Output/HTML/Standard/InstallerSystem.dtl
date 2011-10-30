@@ -1,0 +1,137 @@
+# --
+# InstallerSystem.dtl - provides the system data for the Installer
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# --
+# $Id: InstallerSystem.dtl,v 1.24 2010/11/10 12:35:57 mg Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+<!-- dtl:block:System-->
+<div class="Center">
+    <ul id="ProgressBar" class="ProgressBarElements4 SpacingTop SpacingBottom">
+        <li class="Highlighted NoLink First">
+            <span>
+                <a href="#">$Text{"Step %s", "1"}<span>$Text{"License"}</span></a>
+            </span>
+        </li>
+        <li class="Highlighted NoLink">
+            <span>
+                <a href="#">$Text{"Step %s", "2"}<span>$Text{"Database Settings"}</span></a>
+            </span>
+        </li>
+        <li class="Highlighted Active NoLink">
+            <span>
+                <a href="#">$Text{"Step %s", "3"}<span>$Text{"General Specifications and Mail Settings"}</span></a>
+            </span>
+        </li>
+        <li class="Last">
+            <span>
+                <a href="#">$Text{"Step %s", "4"}<span>$Text{"Finish"}</span></a>
+            </span>
+        </li>
+    </ul>
+</div>
+
+<div class="W50pc SpacingTop SpacingBottom CenterBox">
+    <form action="$Env{"CGIHandle"}" method="post">
+        <input type="hidden" name="Action" value="Installer"/>
+        <input type="hidden" name="Subaction" value="ConfigureMail"/>
+
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"$Data{"Item"}"} ($Data{"Step"})</h2>
+            </div>
+
+            <div class="Content">
+                <fieldset class="TableLike">
+                    <label for="SystemID">$Text{"SystemID"}:</label>
+                    <div class="Field">
+                        $Data{"SystemIDString"}
+                        <p class="FieldExplanation">
+                            $Text{"The identifier of the system. Each ticket number and each HTTP session ID contain this number."}
+                        </p>
+                    </div>
+                    <div class="Clear"></div>
+
+                    <label for="FQDN">$Text{"System FQDN"}:</label>
+                    <div class="Field">
+                        <input type="text" id="FQDN" name="FQDN" value="$Config{"FQDN"}" class="W33pc"/>
+                        <p class="FieldExplanation">
+                            $Text{"Fully qualified domain name of your system."}
+                        </p>
+                    </div>
+                    <div class="Clear"></div>
+
+                    <label for="AdminEmail">$Text{"AdminEmail"}:</label>
+                    <div class="Field">
+                        <input type="text" id="AdminEmail" name="AdminEmail" value="$Config{"AdminEmail"}" class="W33pc"/>
+                        <p class="FieldExplanation">
+                            $Text{"Email address of the system administrator."}
+                        </p>
+                    </div>
+                    <div class="Clear"></div>
+
+                    <label for="Organization">$Text{"Organization"}:</label>
+                    <div class="Field">
+                        <input type="text" id="Organization" name="Organization" value="$Config{"Organization"}" class="W33pc"/>
+                    </div>
+                    <div class="Clear"></div>
+
+                    <h4>
+                        $Text{"Log"}
+                    </h4>
+                    <div class="Clear"></div>
+
+                    <label for="LogModule">$Text{"LogModule"}:</label>
+                    <div class="Field">
+                        $Data{"LogModuleString"}
+                        <p class="FieldExplanation">
+                            $Text{"Log backend to use."}
+                        </p>
+                    </div>
+                    <div class="Clear"></div>
+
+                    <label for="LogModule::LogFile">$Text{"LogFile"}:</label>
+                    <div class="Field">
+                        <input type="text" id="LogModule::LogFile" name="LogModule::LogFile" value="$Config{"LogModule::LogFile"}" class="W33pc"/>
+                        <p class="FieldExplanation">
+                            $Text{"Log file location is only needed for File-LogModule!"}
+                        </p>
+                    </div>
+                    <div class="Clear"></div>
+
+                    <h4>
+                        $Text{"Webfrontend"}
+                    </h4>
+                    <div class="Clear"></div>
+
+                    <label for="DefaultLanguage">$Text{"Default language"}:</label>
+                    <div class="Field">
+                        $Data{"LanguageString"}
+                        <p class="FieldExplanation">
+                            $Text{"Default language."}
+                        </p>
+                    </div>
+                    <div class="Clear"></div>
+
+                    <label for="CheckMXRecord">$Text{"CheckMXRecord"}:</label>
+                    <div class="Field">
+                        $Data{"SelectCheckMXRecord"}
+                        <p class="FieldExplanation">
+                            $Text{"Email addresses that are manually entered are checked against the MX records found in DNS. Don't use this option if your DNS is slow or does not resolve public addresses."}
+                        </p>
+                    </div>
+                    <div class="Clear"></div>
+                </fieldset>
+
+                <div class="SpacingTop Right">
+                    <button class="Primary" type="submit" value="$Text{"Next..."}">$Text{"Next..."}</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<!-- dtl:block:System-->

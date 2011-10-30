@@ -1,0 +1,24 @@
+# Do not chown and chmod links.
+
+--- a/bin/otrs.SetPermissions.pl
++++ b/bin/otrs.SetPermissions.pl
+@@ -301,6 +301,9 @@
+ 
+ sub safeChown {
+     my ( $User, $Group, $File ) = @_;
++	if(-l $File){
++		return;
++	}
+     if ( !chown( $User, $Group, $File ) ) {
+         die("Error in chown $User $Group $File: $!\n");
+     }
+@@ -308,6 +311,9 @@
+ 
+ sub safeChmod {
+     my ( $Mode, $File ) = @_;
++	if(-l $File or $File =~ /otrs\.SetPermissions\./){
++		return;
++	}
+     if ( !chmod( $Mode, $File ) ) {
+         die("Error in chmod $Mode $File: $!\n");
+     }

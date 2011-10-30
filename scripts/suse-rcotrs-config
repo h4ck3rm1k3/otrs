@@ -1,0 +1,72 @@
+# --
+# rcscript config settings for OTRS (http://otrs.org/)
+# --
+# $Id: suse-rcotrs-config,v 1.6 2011/08/22 10:59:17 mb Exp $
+# --
+
+# 
+# program name
+# 
+OTRS_PROG="OTRS"
+
+# 
+# OTRS home (root) directory
+#
+OTRS_ROOT=/opt/otrs
+
+# 
+# if one of these is false, it will not be checked at the startup!
+# 
+OTRS_HTTP_RUNNING=1
+OTRS_CRON_RUNNING=1
+OTRS_SCHEDULER_RUNNING=1
+
+#
+# Used webserver [apache]
+#
+OTRS_USED_WEBSERVER=Apache
+OTRS_USED_WEBSERVER_RCSCRIPT=rcapache
+
+#
+# cron stuff
+# 
+OTRS_CRON_DIR=$OTRS_ROOT/var/cron
+OTRS_CRON_TMP_FILE=$OTRS_ROOT/var/tmp/cron
+OTRS_CRON_USER=" -u otrs "
+
+# 
+# get host name
+#
+OTRS_HOST=`hostname -f`
+
+# 
+# OTRS location - means http://host/$OTRS_HTTP_LOCATION/index.pl
+# 
+OTRS_HTTP_LOCATION="otrs"
+
+# 
+# location of otrs.PostMaster.pl 
+# 
+OTRS_POSTMASTER=$OTRS_ROOT/bin/otrs.PostMaster.pl
+
+#
+# location of otrs.CheckDB.pl 
+#
+OTRS_CHECKDB=$OTRS_ROOT/bin/otrs.CheckDB.pl
+
+#
+# location of otrs.CleanUp.pl
+#
+OTRS_CLEANUP=$OTRS_ROOT/bin/otrs.CleanUp.pl
+
+#
+# location of otrs.Scheduler.pl
+#
+OTRS_SCHEDULER=$OTRS_ROOT/bin/otrs.Scheduler.pl
+
+OTRS_SCHEDULER_TEST="$OTRS_SCHEDULER -a status | grep 'Running'"
+
+# 
+# location of OTRS spool dir
+# 
+OTRS_SPOOLDIR=$OTRS_ROOT/var/spool

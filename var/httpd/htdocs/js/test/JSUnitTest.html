@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <link rel="stylesheet" href="../thirdparty/qunit-1.1.0/qunit.css" type="text/css"/>
+
+    <title>OTRS 3.1 &ndash; UnitTest Results</title>
+</head>
+<body>
+    <h1 id="qunit-header">OTRS 3.1 &ndash; UnitTest Results</h1>
+    <h2 id="qunit-banner"></h2>
+    <h2 id="qunit-userAgent"></h2>
+    <ol id="qunit-tests"></ol>
+
+
+    <!-- UnitTest code goes here -->
+    <script type="text/javascript" src="../thirdparty/qunit-1.1.0/qunit.js"></script>
+    <!--
+        Now always load library first and then the UnitTest file for it.
+        The UnitTest file is responsible for runnint the tests.
+    -->
+    <script type="text/javascript" src="../thirdparty/jquery-1.6.4/jquery.js"></script>
+
+    <script type="text/javascript" src="../Core.Exception.js"></script>
+    <script type="text/javascript" src="../Core.Debug.js"></script>
+    <script type="text/javascript" src="../Core.Data.js"></script>
+    <script type="text/javascript" src="Core.Debug.UnitTest.js"></script>
+    <script type="text/javascript">
+        Core.Debug.RunUnitTests();
+    </script>
+    <script type="text/javascript" src="../thirdparty/json/json2.js"></script>
+    <script type="text/javascript" src="../Core.JSON.js"></script>
+    <script type="text/javascript" src="../Core.Config.js"></script>
+    <script type="text/javascript" src="Core.Config.UnitTest.js"></script>
+    <script type="text/javascript">
+        Core.Config.RunUnitTests();
+    </script>
+    <script type="text/javascript" src="Core.Data.UnitTest.js"></script>
+    <script type="text/javascript">
+        Core.Data.RunUnitTests();
+    </script>
+    <script type="text/javascript" src="Core.JSON.UnitTest.js"></script>
+    <script type="text/javascript">
+        Core.JSON.RunUnitTests();
+    </script>
+    <script type="text/javascript" src="../Core.AJAX.js"></script>
+    <script type="text/javascript" src="Core.AJAX.UnitTest.js"></script>
+    <script type="text/javascript">
+        Core.AJAX.RunUnitTests();
+    </script>
+    <script type="text/javascript" src="../Core.UI.Accessibility.js"></script>
+    <script type="text/javascript" src="Core.UI.Accessibility.UnitTest.js"></script>
+    <script type="text/javascript">
+        Core.UI.Accessibility.RunUnitTests();
+    </script>
+    <script type="text/javascript" src="../Core.UI.Popup.js"></script>
+    <script type="text/javascript" src="Core.UI.Popup.UnitTest.js"></script>
+    <script type="text/javascript">
+        Core.UI.Popup.RunUnitTests();
+    </script>
+    <script type="text/javascript" src="../Core.Form.js"></script>
+    <script type="text/javascript" src="Core.Form.UnitTest.js"></script>
+    <script type="text/javascript">
+        Core.Form.RunUnitTests();
+    </script>
+    <script type="text/javascript" src="../thirdparty/jquery-ui-1.8.16/jquery-ui.js"></script>
+    <script type="text/javascript" src="../thirdparty/jquery-validate-1.9/jquery.validate.js"></script>
+    <script type="text/javascript" src="../Core.UI.Dialog.js"></script>
+    <script type="text/javascript" src="../Core.UI.RichTextEditor.js"></script>
+    <script type="text/javascript" src="../Core.Form.ErrorTooltips.js"></script>
+    <script type="text/javascript" src="../Core.Form.Validate.js"></script>
+    <script type="text/javascript" src="Core.Form.Validate.UnitTest.js"></script>
+    <script type="text/javascript">
+        Core.Form.Validate.RunUnitTests();
+    </script>
+    <script type="text/javascript" src="../Core.JavaScriptEnhancements.js"></script>
+    <script type="text/javascript" src="Core.JavaScriptEnhancements.UnitTest.js"></script>
+    <script type="text/javascript">
+        Core.JavaScriptEnhancements.RunUnitTests();
+    </script>
+
+
+</body>
+</html>

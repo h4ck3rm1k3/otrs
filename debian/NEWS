@@ -1,0 +1,68 @@
+otrs (2.0.4p01-13) unstable; urgency=low
+
+  The cron jobs are now handled by the init script /etc/init.d/otrs2. The
+  content of the files /etc/cron.d/otrs_* will be moved to /etc/otrs/cron
+  before the files are renamed to /etc/cron.d/otrs_*.dpkg-old when upgrading
+  from older package versions. You may remove those backup files.
+
+  There is now some online documentation at
+  http://www.writely.com/View.aspx?docid=drm3kmx_0cbr3x9 and it is recommended
+  to read it.
+
+ -- Torsten Werner <twerner@debian.org>  Sat, 19 Aug 2006 18:08:07 +0200
+
+otrs (2.0.4p01-11) unstable; urgency=low
+
+  The otrs2 package now uses dbconfig-common which enables automatic database
+  setup, upgrades and removal. Currently dbconfig-common only supports
+  postgresql and mysql. If you are using a different database type you should
+  answer 'No' to the question if you want to use dbconfig-common and you must
+  setup your database manually.
+
+  The package now has an init script which can set OTRS in maintenance.html mode
+  when 'stopped'. You can adjust /etc/otrs/maintenance.html to you local
+  needs.
+
+ -- Torsten Werner <twerner@debian.org>  Sat,  5 Aug 2006 08:39:22 +0200
+
+otrs (2.0.4p01-9) unstable; urgency=low
+
+  The apache configuration file has been moved to /etc/apache2/conf.d/otrs2.
+
+ -- Torsten Werner <twerner@debian.org>  Tue, 18 Jul 2006 07:16:08 +0200
+
+otrs (2.0.4p01-4) unstable; urgency=low
+
+  The file backup.pl and restore.pl have been restored. It mainly follows this
+  algorithm:
+
+  backup.pl
+  1. store every link file to a seperate tar-archive
+  2. store the archives with tar --dereference (short: -h) to store the actual
+  content of the files
+
+  restore.pl
+  1. restores SymLink.tar.gz into a temp-directory
+  2. takes all symlink-information from theses symlinks and moves the files to
+  the original destination-directory (which need to be empty, at least
+  concerning the copied files)
+  3. sets the symlinks as they were in the first place
+
+ -- Torsten Werner <twerner@debian.org>  Wed,  8 Mar 2006 21:22:14 +0100
+
+otrs (2.0.4p01-3) unstable; urgency=low
+
+  The files backup.pl and restore.pl have been moved to the directory
+  /usr/share/doc/examples/ because otrs is _not_ a general purpose backup tool.
+  If you want to use those examples to backup your OTRS installation you have
+  to change them for yourself to suit your needs. Patches for the scripts are
+  welcome of course.
+
+ -- Torsten Werner <twerner@debian.org>  Mon,  6 Mar 2006 20:46:11 +0100
+
+otrs (2.0.4p01-2) unstable; urgency=low
+
+  Note that OTRS version 2 has changed the database schema and you should read
+  /usr/share/doc/otrs/UPGRADING and /usr/share/doc/otrs/README.Debian.
+
+ -- Torsten Werner <twerner@debian.org>  Sun,  5 Mar 2006 14:28:12 +0100

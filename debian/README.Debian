@@ -1,0 +1,69 @@
+Initial password and location:
+------------------------------
+
+After you have finished the setup, you will find your otrs2 under this URL:
+	http://localhost/otrs/index.pl
+
+The initial username is: root@localhost
+The initial password is: root
+
+Please change this after you have logged in!
+
+
+OTRS package manager:
+---------------------
+
+otrs2 includes by default a package manager. This will not work with the Debian
+package, because to have it work, we need to relax too many file permissions.
+
+Also have a look here:
+	http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=475737
+
+But if you are aware of the security issues and you realy need the integrated
+package manager, then execute the following:
+	/usr/share/otrs/bin/otrs.SetPermissions.pl --otrs-user=otrs --otrs-group=www-data --web-user=www-data --web-group=www-data /usr/share/otrs/
+	/usr/share/otrs/bin/otrs.SetPermissions.pl --otrs-user=otrs --otrs-group=www-data --web-user=www-data --web-group=www-data /var/lib/otrs/
+
+ -- Patrick Matthäi <pmatthaei@debian.org>  Sun, 06 Dec 2009 13:13:55 +0100
+
+
+Notes from the previous package maintainer:
+-------------------------------------------
+
+Please read http://docs.google.com/Doc?id=drm3kmx_0cbr3x9 first!
+
+Thank you.
+
+
+The setup of the database is now handled by dbconfig-common. It supports
+currently postgresql and mysql. If you are using other database types you have
+to choose 'No' when asked if you want to us dbconfig-common and you have to
+setup the database yourself. The files in /usr/share/otrs/scripts/database/ and
+/usr/share/otrs/scripts/ might be helpful. They contain schemas, schema updates
+and initial inserts.
+
+I have removed most of the description how to setup the database manually. If
+you want to do it manually and don't know how to start, please use tools like
+pgadmin3 or mysql-navigator, respectively.
+
+The following SQL statement might be useful for postgresql (if your db is
+called 'otrs2') to give apache access to your db:
+
+  grant all on database otrs2 to "www-data";
+
+If you have done something wrong, you can always call
+
+  dpkg-reconfigure otrs2
+
+again.
+
+otrs will be installed into /usr/share/otrs instead of the upstream
+/opt/otrs to conform to Debian policy.
+
+Cron jobs are automatically installed into /etc/cron.d/. The otrs user will be
+created automatically. Please edit /etc/otrs/Kernel/Config.pm if necessary to
+have reasonable defaults.
+
+Torsten Werner <twerner@debian.org>
+
+SVN $Id: README.Debian 348 2008-03-05 20:37:50Z twerner $

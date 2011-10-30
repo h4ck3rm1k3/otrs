@@ -1,0 +1,41 @@
+# translation of otrs2 debconf to Portuguese
+# Copyright (C) 2007 Américo Monteiro
+# This file is distributed under the same license as the otrs2 package.
+#
+# Américo Monteiro <a_monteiro@netcabo.pt>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: otrs2 2.2.1-1\n"
+"Report-Msgid-Bugs-To: otrs2@packages.debian.org\n"
+"POT-Creation-Date: 2010-02-15 16:23+0100\n"
+"PO-Revision-Date: 2007-08-09 20:44+0100\n"
+"Last-Translator: Américo Monteiro <a_monteiro@netcabo.pt>\n"
+"Language-Team: Portuguese <traduz@debianpt.org>\n"
+"Language: pt\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#. Type: boolean
+#. Description
+#: ../templates:1001
+msgid "Should the database user name be reset to otrs?"
+msgstr "Deverá o nome de utilizador da base de dados ser reiniciado para otrs?"
+
+#. Type: boolean
+#. Description
+#: ../templates:1001
+msgid ""
+"You have configured ident authentication, which is recommended, together "
+"with a database username that is not the default 'otrs'. That will only work "
+"with special hand crafted PostgreSQL setups. It is recommended to reset the "
+"username to 'otrs'. If you do not choose this option and the installation "
+"fails you should consult the file /usr/share/doc/otrs2/README.Debian."
+msgstr ""
+"Você configurou uma identidade de autenticação, o que é recomendado, em "
+"conjunto com um nome de utilizador de base de dados que não é a omissão "
+"'otrs'. Isto só irá funcionar com configurações do PostgreSQL especialmente "
+"concebidas à mão. É recomendado reiniciar o nome de utilizador para 'otrs'. "
+"Se você não escolher esta opção e a instalação falhar, você deverá consultar "
+"o ficheiro /usr/share/doc/otrs2/README.Debian."

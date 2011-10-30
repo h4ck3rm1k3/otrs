@@ -1,0 +1,37 @@
+#!/bin/sh 
+
+set -e
+
+OTRSHOME=/usr/share/otrs
+
+case "$1" in
+  install)
+  adduser --system --home $OTRSHOME --no-create-home --ingroup www-data otrs
+  ;;
+
+  upgrade)
+  # see bug #475737 - we replace it by a symlink
+  ZZZAUTOPM=$OTRSHOME/Kernel/Config/Files/ZZZAuto.pm
+  if [ -r $ZZZAUTOPM -a ! -L $ZZZAUTOPM ]; then
+    mkdir -p /var/lib/otrs/Config
+    mv $ZZZAUTOPM /var/lib/otrs/Config/
+  fi
+  if [ -e "/var/lib/otrs/httpd/htdocs/yui/2.7.0/build" ]; then
+    if [ ! -h "/var/lib/otrs/httpd/htdocs/yui/2.7.0/build" ]; then
+	  # Remove old yui build dir, so that dpkg replaces it with the
+	  # new symlink.
+	  rm -rf "/var/lib/otrs/httpd/htdocs/yui/2.7.0/build"
+    fi
+  fi
+  ;;
+
+  abort-upgrade)
+  ;;
+
+  *)
+  echo "preinst called with unknown argument \`$1'" 1>&2
+  exit 1
+  ;;
+esac
+
+#DEBHELPER#

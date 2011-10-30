@@ -1,0 +1,64 @@
+
+%config(noreplace) /opt/otrs/Kernel/Config.pm
+%config(noreplace) /opt/otrs/Kernel/Config/GenericAgent.pm
+%config(noreplace) /opt/otrs/var/log/TicketCounter.log
+%config(noreplace) /opt/otrs/.procmailrc
+%config(noreplace) /opt/otrs/.fetchmailrc
+%config(noreplace) /opt/otrs/.mailfilter
+%config(noreplace) /opt/otrs/Kernel/Output/HTML/Standard/*.dtl
+%config(noreplace) /opt/otrs/Kernel/Language/*.pm
+%config(noreplace) /opt/otrs/var/cron/*
+%config(noreplace) /opt/otrs/var/logo-otrs.png
+
+%dir /opt/otrs/
+/opt/otrs/RELEASE
+/opt/otrs/ARCHIVE
+/opt/otrs/.procmailrc.dist
+/opt/otrs/.fetchmailrc.dist
+/opt/otrs/.mailfilter.dist
+%dir /opt/otrs/Custom/
+/opt/otrs/Custom/README
+%dir /opt/otrs/Kernel/
+%dir /opt/otrs/Kernel/Config/
+/opt/otrs/Kernel/Config.pm.dist
+/opt/otrs/Kernel/Config/Files/
+/opt/otrs/Kernel/Config/GenericAgent.pm.dist
+/opt/otrs/Kernel/Config/GenericAgent.pm.examples
+/opt/otrs/Kernel/Config/Defaults.pm
+/opt/otrs/Kernel/GenericInterface*
+/opt/otrs/Kernel/Language.pm
+%dir /opt/otrs/Kernel/Language/
+/opt/otrs/Kernel/Modules*
+%dir /opt/otrs/Kernel/Output/
+%dir /opt/otrs/Kernel/Output/HTML/
+%dir /opt/otrs/Kernel/Output/HTML/Standard/
+/opt/otrs/Kernel/Output/HTML/*.pm
+/opt/otrs/Kernel/Scheduler*
+/opt/otrs/Kernel/System*
+/opt/otrs/bin*
+/opt/otrs/scripts*
+%dir /opt/otrs/var/
+%dir /opt/otrs/var/packages/*.opm
+%dir /opt/otrs/var/article/
+/opt/otrs/var/httpd/
+/opt/otrs/var/fonts/
+%dir /opt/otrs/var/log/
+%dir /opt/otrs/var/sessions/
+%dir /opt/otrs/var/spool/
+%dir /opt/otrs/var/cron/
+%dir /opt/otrs/var/tmp/
+%dir /opt/otrs/var/stats/
+/opt/otrs/var/stats/*.xml
+%dir /opt/otrs/var/tmp/Cache
+
+/opt/otrs/Kernel/cpan-lib*
+
+%doc /opt/otrs/INSTAL*
+%doc /opt/otrs/UPGRADING
+%doc /opt/otrs/TODO
+%doc /opt/otrs/COPYING
+%doc /opt/otrs/COPYING-Third-Party
+%doc /opt/otrs/CHANGES
+%doc /opt/otrs/READM*
+%doc /opt/otrs/doc*
+%doc /opt/otrs/CREDITS

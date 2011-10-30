@@ -1,0 +1,101 @@
+# Use the created system user "otrs" for cronjobs.
+
+--- a/var/cron/aaa_base.dist
++++ b/var/cron/aaa_base.dist
+@@ -10,4 +10,4 @@
+ # --
+ 
+ # Who gets the cron emails?
+-MAILTO="root@localhost"
++#MAILTO="root@localhost"
+--- a/var/cron/fetchmail.dist
++++ b/var/cron/fetchmail.dist
+@@ -10,5 +10,5 @@
+ # --
+ 
+ # fetch every 5 minutes emails via fetchmail
+-#*/5 * * * * [ -x /usr/bin/fetchmail ] && /usr/bin/fetchmail -a >> /dev/null
+-#*/5 * * * *    /usr/bin/fetchmail -a --ssl >> /dev/null
++#*/5 * * * * otrs [ -x /usr/bin/fetchmail ] && /usr/bin/fetchmail -a > /dev/null
++#*/5 * * * * otrs [ -x /usr/bin/fetchmail ] && /usr/bin/fetchmail -a --ssl > /dev/null
+--- a/var/cron/generic_agent-database.dist
++++ b/var/cron/generic_agent-database.dist
+@@ -10,4 +10,4 @@
+ # --
+ 
+ # start generic agent every 10 minutes
+-*/10 * * * *    $HOME/bin/otrs.GenericAgent.pl -c db >> /dev/null
++*/10 * * * *   otrs test -x $HOME/bin/otrs.GenericAgent.pl &&  $HOME/bin/otrs.GenericAgent.pl -c db > /dev/null
+--- a/var/cron/generic_agent.dist
++++ b/var/cron/generic_agent.dist
+@@ -10,8 +10,8 @@
+ # --
+ 
+ # start generic agent every 20 minutes
+-*/20 * * * *    $HOME/bin/otrs.GenericAgent.pl >> /dev/null
++*/20 * * * * otrs test -x $HOME/bin/otrs.GenericAgent.pl && $HOME/bin/otrs.GenericAgent.pl > /dev/null
+ 
+ # example to execute otrs.GenericAgent.pl on 23:00 with
+ # Kernel::Config::GenericAgentMove job file
+-#0 23 * * * $HOME/bin/otrs.GenericAgent.pl -c "Kernel::Config::GenericAgentMove" >> /dev/null
++#0 23 * * * otrs test -x i$HOME/bin/otrs.GenericAgent.pl && $HOME/bin/otrs.GenericAgent.pl -c "Kernel::Config::GenericAgentMove" > /dev/null
+--- a/var/cron/pending_jobs.dist
++++ b/var/cron/pending_jobs.dist
+@@ -10,4 +10,4 @@
+ # --
+ 
+ # check every 120 min the pending jobs
+-45 */2 * * *    $HOME/bin/otrs.PendingJobs.pl >> /dev/null
++45 */2 * * *  otrs test -x $HOME/bin/otrs.PendingJobs.pl && $HOME/bin/otrs.PendingJobs.pl > /dev/null
+--- a/var/cron/postmaster.dist
++++ b/var/cron/postmaster.dist
+@@ -10,5 +10,5 @@
+ # --
+ 
+ # check daily the spool directory of OTRS
+-#10 0 * * * * [ -e /etc/init.d/otrs ] && /etc/init.d/otrs cleanup >> /dev/null; [ -e /etc/rc.d/init.d/otrs ] && /etc/rc.d/init.d/otrs cleanup >> /dev/null
+-10 0 * * *  $HOME/bin/otrs.cleanup >> /dev/null
++#10 0 * * * * otrs [ -e /etc/init.d/otrs ] && /etc/init.d/otrs cleanup > /dev/null; [ -e /etc/rc.d/init.d/otrs ] && /etc/rc.d/init.d/otrs cleanup > /dev/null
++10 0 * * * otrs [ -x $HOME/bin/otrs.cleanup ] && $HOME/bin/otrs.cleanup > /dev/null
+--- a/var/cron/postmaster_mailbox.dist
++++ b/var/cron/postmaster_mailbox.dist
+@@ -10,4 +10,4 @@
+ # --
+ 
+ # fetch emails every 10 minutes
+-*/10 * * * *    $HOME/bin/otrs.PostMasterMailbox.pl >> /dev/null
++*/10 * * * * otrs $HOME/bin/otrs.PostMasterMailbox.pl > /dev/null
+--- a/var/cron/rebuild_ticket_index.dist
++++ b/var/cron/rebuild_ticket_index.dist
+@@ -10,4 +10,4 @@
+ # --
+ 
+ # just every day
+-01 01 * * * $HOME/bin/otrs.RebuildTicketIndex.pl >> /dev/null
++01 01 * * * otrs test -x $HOME/bin/otrs.RebuildTicketIndex.pl && $HOME/bin/otrs.RebuildTicketIndex.pl > /dev/null
+--- a/var/cron/session.dist
++++ b/var/cron/session.dist
+@@ -10,4 +10,4 @@
+ # --
+ 
+ # delete every 120 minutes old/idle session ids
+-55 */2 * * *    $HOME/bin/otrs.DeleteSessionIDs.pl --expired >> /dev/null
++55 */2 * * * otrs test -x $HOME/bin/otrs.DeleteSessionIDs.pl && $HOME/bin/otrs.DeleteSessionIDs.pl --expired > /dev/null
+--- a/var/cron/unlock.dist
++++ b/var/cron/unlock.dist
+@@ -10,4 +10,4 @@
+ # --
+ 
+ # unlock every hour old locked tickets
+-35 * * * *  $HOME/bin/otrs.UnlockTickets.pl --timeout >> /dev/null
++35 * * * * otrs test -x $HOME/bin/otrs.UnlockTickets.pl && $HOME/bin/otrs.UnlockTickets.pl --timeout > /dev/null
+--- a/var/cron/cache.dist
++++ b/var/cron/cache.dist
+@@ -10,5 +10,5 @@
+ # --
+ 
+ # delete expired cache weekly (Sunday mornings)
+-20 0 * * 0  $HOME/bin/otrs.DeleteCache.pl --expired >> /dev/null
+-30 0 * * 0  $HOME/bin/otrs.LoaderCache.pl -o delete >> /dev/null
++20 0 * * 0 otrs test -x $HOME/bin/otrs.DeleteCache.pl && $HOME/bin/otrs.DeleteCache.pl --expired > /dev/null
++30 0 * * 0 otrs test -x $HOME/bin/otrs.LoaderCache.pl && $HOME/bin/otrs.LoaderCache.pl -o delete > /dev/null

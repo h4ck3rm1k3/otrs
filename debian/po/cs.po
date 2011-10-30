@@ -1,0 +1,39 @@
+# Czech translation of otrs2 debconf messages.
+# Copyright (C) 2006
+# This file is distributed under the same license as the otrs2 package.
+# Miroslav Kure <kurem@debian.cz>, 2006.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: otrs2\n"
+"Report-Msgid-Bugs-To: otrs2@packages.debian.org\n"
+"POT-Creation-Date: 2010-02-15 16:23+0100\n"
+"PO-Revision-Date: 2006-10-06 19:49+0200\n"
+"Last-Translator: Miroslav Kure <kurem@debian.cz>\n"
+"Language-Team: Czech <debian-l10n-czech@lists.debian.org>\n"
+"Language: cs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../templates:1001
+msgid "Should the database user name be reset to otrs?"
+msgstr "Přejmenovat databázového uživatele zpět na otrs?"
+
+#. Type: boolean
+#. Description
+#: ../templates:1001
+msgid ""
+"You have configured ident authentication, which is recommended, together "
+"with a database username that is not the default 'otrs'. That will only work "
+"with special hand crafted PostgreSQL setups. It is recommended to reset the "
+"username to 'otrs'. If you do not choose this option and the installation "
+"fails you should consult the file /usr/share/doc/otrs2/README.Debian."
+msgstr ""
+"Podle doporučení jste nastavili autentizaci pomocí ident, ovšem jméno "
+"databázového uživatele není výchozí 'otrs'. To bude fungovat pouze s ručně "
+"upraveným nastavením PostgreSQL. Je doporučeno změnit uživatelské jméno zpět "
+"na 'otrs'. Pokud tuto možnost zamítnete a instalace selže, měli byste se "
+"poradit se souborem /usr/share/doc/otrs2/README.Debian."

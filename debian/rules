@@ -1,0 +1,70 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+
+OTRSHOME := /usr/share/otrs
+DB_DIR   := /usr/share/dbconfig-common/data/otrs2
+OTRS_DST := $(CURDIR)/debian/otrs2/
+
+makebuilddir/otrs2::
+	@if [ -d doc/manual ]; then \
+		echo 'The manual is provided by a separate package otrs2-doc, please remove it.'; \
+		exit 1; \
+	fi
+
+binary-post-install/otrs2::
+	# setup dbconfig-common
+	cat scripts/database/otrs-schema.postgresql.sql \
+	    scripts/database/otrs-initial_insert.postgresql.sql > \
+	    $(OTRS_DST)$(DB_DIR)/install/pgsql
+	cp  scripts/DBUpdate-to-2.1.postgresql.sql \
+	    $(OTRS_DST)$(DB_DIR)/upgrade/pgsql/2.1
+	cp  scripts/DBUpdate-to-2.2.postgresql.sql \
+	    $(OTRS_DST)$(DB_DIR)/upgrade/pgsql/2.2
+	cp  scripts/DBUpdate-to-2.3.postgresql.sql \
+	    $(OTRS_DST)$(DB_DIR)/upgrade/pgsql/2.3
+	cp  scripts/DBUpdate-to-2.4.postgresql.sql \
+	    $(OTRS_DST)$(DB_DIR)/upgrade/pgsql/2.4
+	cp  scripts/DBUpdate-to-3.0.postgresql.sql \
+	    $(OTRS_DST)$(DB_DIR)/upgrade/pgsql/3.0
+	cat scripts/database/otrs-schema.mysql.sql \
+	    scripts/database/otrs-initial_insert.mysql.sql > \
+	    $(OTRS_DST)$(DB_DIR)/install/mysql
+	cp  scripts/DBUpdate-to-2.1.mysql.sql \
+	    $(OTRS_DST)$(DB_DIR)/upgrade/mysql/2.1
+	cp  scripts/DBUpdate-to-2.2.mysql.sql \
+	    $(OTRS_DST)$(DB_DIR)/upgrade/mysql/2.2
+	cp  scripts/DBUpdate-to-2.3.mysql.sql \
+	    $(OTRS_DST)$(DB_DIR)/upgrade/mysql/2.3
+	cp  scripts/DBUpdate-to-2.4.mysql.sql \
+	    $(OTRS_DST)$(DB_DIR)/upgrade/mysql/2.4
+	cp  scripts/DBUpdate-to-3.0.mysql.sql \
+	    $(OTRS_DST)$(DB_DIR)/upgrade/mysql/3.0
+	# I guess we do not need {redhat,suse,fedora}* stuff in Debian
+	rm -f $(OTRS_DST)$(OTRSHOME)/scripts/fedora* \
+	      $(OTRS_DST)$(OTRSHOME)/scripts/redhat* \
+	      $(OTRS_DST)$(OTRSHOME)/scripts/rpc-example.pl \
+	      $(OTRS_DST)$(OTRSHOME)/scripts/suse* \
+	      $(OTRS_DST)$(OTRSHOME)/bin/Cron4Win32.pl
+	# fix some permissions
+	chmod a+x $(OTRS_DST)$(OTRSHOME)/scripts/tools/*.pl
+	chmod a+x $(OTRS_DST)$(OTRSHOME)/bin/otrs.*
+	chmod a+x $(OTRS_DST)$(OTRSHOME)/scripts/*.pl
+	chmod a+x $(OTRS_DST)/usr/share/otrs/bin/fcgi-bin/installer.pl
+	# fix a security issue, link against the system prototype.js
+	rm -f $(OTRS_DST)/var/lib/otrs/httpd/htdocs/js/prototype.js
+	# remove embedded jquery
+	rm -rf $(OTRS_DST)/var/lib/otrs/httpd/htdocs/js/thirdparty/jquery-1.*
+	# remove embedded jquery-ui
+	rm -rf $(OTRS_DST)/var/lib/otrs/httpd/htdocs/js/thirdparty/jquery-ui-1.*
+	# Remove embedded ttf-dejavu fonts.
+	rm -f $(OTRS_DST)/var/lib/otrs/fonts/DejaVu*.ttf
+	# Move away the spool directory.
+	rm -r $(OTRS_DST)/var/lib/otrs/spool
+	mv $(OTRS_DST)/var/lib/otrs/spool_dir $(OTRS_DST)/var/lib/otrs/spool
+	# and yeah this fucking cdbs magic..
+	dh_link -potrs2
+	rm $(OTRS_DST)/var/lib/otrs/spool_dir
+
+get-orig-source:
+	-uscan --upstream-version 0

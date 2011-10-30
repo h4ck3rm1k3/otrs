@@ -1,0 +1,48 @@
+#!/bin/sh 
+
+set -e
+
+CONFIGFILES="Kernel/Config.pm Kernel/Config/GenericAgent.pm maintenance.html"
+
+purge_conffile()
+{
+  if [ -x /usr/bin/ucf ]; then
+    ucf --purge $1
+  fi
+  rm -f $1 $1.dpkg-* $1.ucf-*
+}
+
+. /usr/share/debconf/confmodule
+
+if [ -e /usr/share/dbconfig-common/dpkg/postrm ]; then
+  . /usr/share/dbconfig-common/dpkg/postrm
+  dbc_go otrs2 "$@"
+fi
+
+if [ "$1" = purge ]; then
+  deluser otrs || true
+  # Remove possible remainings from working as otrs user
+  rm -f /usr/share/otrs/.*history
+  # Remove log and tmp files
+  rm -rf /var/lib/otrs/log /var/lib/otrs/tmp
+  for FILE in $CONFIGFILES; do
+    purge_conffile /etc/otrs/$FILE
+  done
+  purge_conffile /etc/otrs/cron
+  purge_conffile /etc/otrs/fetchmailrc
+  purge_conffile /etc/apache2/conf.d/otrs2
+  purge_conffile /etc/otrs/database.pm
+  rm -f /var/lib/otrs/httpd/htdocs/maintenance.html
+  rm -rf /usr/share/otrs
+  rm -rf /var/lib/otrs/Config
+fi
+
+#DEBHELPER#
+
+if [ "$1" = purge ]; then
+  db_stop
+  if [ -f /etc/init.d/apache2 ]; then
+    invoke-rc.d apache2 reload 
+  fi
+fi
+

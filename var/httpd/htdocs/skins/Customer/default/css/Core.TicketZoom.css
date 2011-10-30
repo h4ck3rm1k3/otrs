@@ -1,0 +1,428 @@
+/**
+ * @project     OTRS (http://www.otrs.org) - Customer Frontend
+ * @version     $Revision: 1.9 $
+ * @copyright   OTRS AG
+ * @license     AGPL (http://www.gnu.org/licenses/agpl.txt)
+ */
+
+@media screen,projection,tv,handheld {
+
+/**
+ * @package     OTRS Framework - Skin "Default"
+ * @section     TicketZoom
+ */
+
+/**
+ * @section     Header
+ */
+
+.TicketZoom .Content {
+    padding: 8px 10px 0;
+}
+
+.TicketHeader h2 {
+    margin: 3px 0 0;
+    padding-left: 36px;
+    font-size: 24px;
+    line-height: 24px;
+    position: relative;
+    float: left;
+}
+.RTL .TicketHeader h2 {
+    padding: 0 36px 0 0;
+    float: right;
+}
+
+.TicketHeader .TicketHook {
+    color: #666;
+    font-size: 12px;
+}
+
+.Flag span.PriorityID-1 {
+    background-color:#03c4f0;
+}
+
+.Flag span.PriorityID-2 {
+    background-color:#83bfc8;
+}
+
+.Flag span.PriorityID-3 {
+    background-color:#cdcdcd;
+}
+
+.Flag span.PriorityID-4 {
+    background-color:#ffaaaa;
+}
+
+.Flag span.PriorityID-5 {
+    background-color:#ff505e;
+}
+
+.Flag {
+    top: 2px;
+    left: 6px;
+    width: 21px;
+    height: 16px;
+    line-height: 16px;
+    text-indent: -9999px;
+    position: absolute;
+    -moz-box-shadow: 0 1px 0 #EEE;
+    -webkit-box-shadow: 0 1px 0 #EEE;
+    box-shadow: 0 1px 0 #EEE;
+    display: block;
+}
+
+.RTL .Flag {
+    left: auto;
+    right: 6px;
+}
+
+.Flag span {
+    height: 15px;
+    line-height: 15px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    display: block;
+}
+
+#Metadata {
+    padding: 9px 8px 2px;
+    line-height: 20px;
+    float: right;
+}
+
+.RTL #Metadata {
+    float: left;
+}
+
+#Metadata li {
+    margin: 0 5px;
+    float: left;
+}
+
+.RTL #Metadata li {
+    float: right;
+}
+
+#Metadata li .Key {
+    color: #666;
+}
+
+#Metadata .Print {
+    width: 16px;
+    height: 16px;
+    margin: 0 0 0 2px;
+    line-height: 16px;
+    background: url(../img/printer.png) no-repeat;
+    text-indent: -9999px;
+    display: block;
+}
+
+.RTL #Metadata .Print {
+    margin: -2px 4px 0 0;
+}
+
+.TicketZoom .Age {
+    width: auto;
+    padding: 0;
+}
+
+/**
+ * @section     Messages
+ */
+
+#Messages {
+    border: 1px solid #E9E9E9;
+    border-bottom: 1px solid #DDD;
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    -webkit-box-shadow: 0 0 3px #EEE;
+    -moz-box-shadow: 0 0 3px #EEE;
+    box-shadow: 0 0 2px #EEE;
+    position: relative;
+    z-index: 10;
+}
+
+#Messages li {
+    border-top: 1px solid #FFF;
+    position: relative;
+}
+
+#Messages li:first-child,
+#Messages li:first-child .MessageHeader {
+    -webkit-border-top-left-radius: 5px;
+    -webkit-border-top-right-radius: 5px;
+    -moz-border-radius-topleft: 5px;
+    -moz-border-radius-topright: 5px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+#Messages li:last-child,
+#Messages li:last-child .MessageHeader,
+#Messages li:last-child .MessageContent {
+    -webkit-border-bottom-right-radius: 5px;
+    -webkit-border-bottom-left-radius: 5px;
+    -moz-border-radius-bottomright: 5px;
+    -moz-border-radius-bottomleft: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+#Messages li:last-child .MessageHeader,
+#Messages li.Visible:last-child .MessageContent {
+    border-width: 0;
+}
+
+#Messages li.Visible:last-child .MessageHeader {
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    border-radius: 0;
+    border-width: 1px;
+}
+
+.MessageHeader {
+    padding: 5px 8px 3px;
+    color: #6A6A6A;
+    background: #A7AAAA url("../img/GradientSmall.png") repeat-x 0 0;
+    border-bottom: 1px solid #D6D6D6;
+    text-shadow: 0 1px 0 #FFF;
+    position: relative;
+}
+
+.Visible .MessageHeader,
+.Visible .MessageHeader a {
+    color: #222;
+}
+
+.MessageHeader a {
+    color: #6A6A6A;
+}
+
+.MessageHeader h3 {
+    font-weight: bold;
+    float: left;
+}
+
+.RTL .MessageHeader h3 {
+    float: right;
+}
+
+.MessageHeader h3 span {
+    font-weight: normal;
+}
+
+.MessageHeader .Age {
+    float: right;
+}
+
+.RTL .MessageHeader .Age {
+    float: left;
+}
+
+.MessageBody {
+    height: 0;
+    overflow: hidden;
+}
+
+#Messages li.Visible .MessageBody {
+    height: auto;
+}
+
+.SeperatorRow {
+    border-top: 1px solid #FFF;
+    border-bottom: 1px solid #E8E8E8;
+    background: #FCFCFC;
+    background: -moz-linear-gradient(top, #FFF, #FCFCFC);
+    background: -webkit-gradient(linear, left top, left bottom, from(#FDFDFD), to(#F7F7F7));
+}
+
+.Details {
+    padding: 4px 13px;
+    font-size: 11px;
+    color: #525252;
+    line-height: 16px;
+}
+.Details .Label {
+    width: 65px;
+    margin: 0 3px;
+    color: #AAA;
+    float: left;
+    text-align: right;
+}
+.RTL .Details .Label {
+    text-align: left;
+}
+
+.Details .Attachments {
+    padding-top: 2px;
+}
+
+.Details .Attachments .Label {
+    background: url(../img/paper-clip.png) no-repeat right;
+    text-indent: -9999px;
+    text-align:left;
+}
+.RTL .Details .Attachments .Label {
+    background-position: left;
+    text-indent: -9999px;
+    text-align:right;
+}
+
+.Details .Attachments div {
+    display: inline-block;
+}
+
+.Details .Attachments span {
+    margin-right: 12px;
+}
+
+.RTL .Details .Attachments span {
+    margin-right: 0;
+    margin-left: 12px;
+}
+
+.DownloadAttachment a {
+    color: #000;
+}
+
+.MessageContent {
+    padding: 13px 8px;
+    background: #FFF;
+    border-bottom: 1px solid #E9E9E9;
+}
+
+.TicketZoom iframe {
+    width: 100%;
+    border: none;
+}
+
+#FollowUp  {
+    margin: 0 13px 8px;
+    color: #6A6A6A;
+    background: #F0F0F0;
+    background: -moz-linear-gradient(top, #F9F9F9, #F0F0F0);
+    background: -webkit-gradient(linear, left top, left bottom, from(#F9F9F9), to(#F0F0F0));
+    border-left: 1px solid #D6D6D6;
+    border-right: 1px solid #D6D6D6;
+    -webkit-border-bottom-right-radius: 5px;
+    -webkit-border-bottom-left-radius: 5px;
+    -moz-border-radius-bottomright: 5px;
+    -moz-border-radius-bottomleft: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    display: inline-block;
+    position: relative;
+}
+
+#FollowUp.Visible {
+    border-bottom: 1px solid #D6D6D6;
+}
+
+.JavaScriptAvailable #FollowUp {
+    margin-bottom: 21px;
+}
+
+.JavaScriptAvailable #FollowUp #Messenger {
+    height: 0;
+    overflow: hidden;
+}
+
+#FollowUp.Visible #Messenger {
+    height: auto;
+    border-top: 1px solid #EEE;
+}
+
+#Messenger #Subject {
+    width: 300px;
+    margin: 8px 8px 0;
+    color: #444;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    -moz-border-radius: 0;
+    -webkit-border-radius: 0;
+}
+
+#Messenger textarea {
+    display: block;
+}
+
+#Messenger textarea:focus {
+    border-color: #888;
+}
+
+#Messenger fieldset {
+    margin: 8px 7px 10px;
+    border-color: #D6D6D6;
+}
+
+.Attachment {
+    padding: 9px 0 4px 138px;
+}
+
+.RTL .Attachment {
+    padding: 9px 138px 4px 0;
+}
+
+#Messenger .ActionRow {
+    margin: 0 -1px -1px;
+    padding: 8px 13px;
+    background-position: -30px;
+    border: 1px solid #B8BBBB;
+    -webkit-border-bottom-right-radius: 3px;
+    -webkit-border-bottom-left-radius: 3px;
+    -moz-border-radius-bottomright: 3px;
+    -moz-border-radius-bottomleft: 3px;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    text-shadow: none;
+}
+
+#ReplyButton {
+    bottom: -22px;
+    height: 10px;
+    margin: 0 13px;
+    padding: 4px 8px 7px 24px;
+    color: #999;
+    background: #F0F0F0 url(../img/reply.png) no-repeat 6px 6px;
+    background: url(../img/reply.png) no-repeat 6px 6px, -moz-linear-gradient(top, #F0F0F0, #EEE);
+    background: url(../img/reply.png) no-repeat 6px 6px, -webkit-gradient(linear, left top, left bottom, from(#F0F0F0), to(#EEE));
+    border: 1px solid #D6D6D6;
+    border-top: none;
+    -webkit-border-bottom-right-radius: 5px;
+    -webkit-border-bottom-left-radius: 5px;
+    -moz-border-radius-bottomright: 5px;
+    -moz-border-radius-bottomleft: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    display: none;
+    position: absolute;
+    -webkit-box-shadow: 0 0 3px #F6F9F9;
+    -moz-box-shadow: 0 0 3px #F6F9F9;
+    box-shadow: 0 0 2px #F6F9F9;
+}
+
+.JavaScriptAvailable #ReplyButton {
+    display: block;
+}
+
+#ReplyButton:hover {
+    color: #555;
+}
+
+.Visible #ReplyButton {
+    display: none;
+}
+
+/**
+ * @subsection  Message colors
+ */
+
+.agent {
+
+}
+
+} /* end @media */
