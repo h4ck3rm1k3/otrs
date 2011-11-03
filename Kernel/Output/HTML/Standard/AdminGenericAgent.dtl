@@ -2,7 +2,7 @@
 # AdminGenericAgent.dtl - provides HTML form for AdminGenericAgent.pm
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminGenericAgent.dtl,v 1.93 2011/12/21 14:53:25 mg Exp $
+# $Id: AdminGenericAgent.dtl,v 1.83.2.1 2011/11/03 15:21:36 des Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -48,7 +48,7 @@
                         <tr>
                             <th>$Text{"Name"}</th>
                             <th>$Text{"Last run"}</th>
-                            <th>$Text{"Validity"}</th>
+                            <th>$Text{"Valid"}</th>
                             <th>$Text{"Delete"}</th>
                             <th>$Text{"Run Now!"}</th>
                         </tr>
@@ -71,12 +71,12 @@
                             <td>$TimeLong{"$QData{"ScheduleLastRun"}"}</td>
                             <td>$Text{"$Data{"ShownValid"}"}</td>
                             <td class="Center">
-                                <a class="TrashCan" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Delete;Profile=$LQData{"Name"};$QEnv{"ChallengeTokenParam"}" title="$Text{"Delete this task"}">
+                                <a class="TrashCan" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Delete;Profile=$LQData{"Name"}" title="$Text{"Delete this task"}">
                                     $Text{"Delete this task"}
                                 </a>
                             </td>
                             <td>
-                                <a class="AsBlock" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=RunNow;Profile=$LQData{"Name"};$QEnv{"ChallengeTokenParam"}">
+                                <a class="AsBlock" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=RunNow;Profile=$LQData{"Name"}">
                                     $Text{"Run this task"}
                                 </a>
                             </td>
@@ -113,7 +113,7 @@
                         </div>
                         <div class="Clear"></div>
 
-                        <label for="Valid">$Text{"Validity"}:</label>
+                        <label for="Valid">$Text{"Valid"}:</label>
                         <div class="Field">
                             $Data{"ValidOption"}
                         </div>
@@ -291,30 +291,23 @@
                         </div>
                         <div class="Clear"></div>
 
-<!-- dtl:block:TicketResponsible -->
-                        <label for="ResponsibleIDs">$Text{"Agent"}/$Text{"Responsible"}:</label>
-                        <div class="Field">
-                            $Data{"ResponsibleStrg"}
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:TicketResponsible -->
-
                         <label for="LockIDs">$Text{"Ticket lock"}:</label>
                         <div class="Field">
                             $Data{"LockOption"}
                         </div>
                         <div class="Clear"></div>
-<!-- dtl:block:DynamicField -->
-                        <label>$Text{"Dynamic Fields"}</label>
+<!-- dtl:block:TicketFreeField -->
+                        <label>$Text{"TicketFreeFields"}</label>
                         <div class="Clear"></div>
-<!-- dtl:block:DynamicFieldElement -->
-                        $Data{"Label"}
+<!-- dtl:block:TicketFreeFieldElement -->
+                        $Data{"TicketFreeKey"}
                         <div class="Field">
-                            $Data{"Field"}
+                            $Data{"TicketFreeText"}
                         </div>
                         <div class="Clear"></div>
-<!-- dtl:block:DynamicFieldElement -->
-<!-- dtl:block:DynamicField -->
+<!-- dtl:block:TicketFreeFieldElement -->
+<!-- dtl:block:TicketFreeField -->
+
                         <label for="TimeSearchTypeNone">$Text{"Create times"}:</label>
                         <div class="Field">
                             <input type="radio" name="TimeSearchType" id="TimeSearchTypeNone" value="" $Data{"TimeSearchType::None"}/>
@@ -331,25 +324,6 @@
                         <div class="Field">
                             <input type="radio" name="TimeSearchType" value="TimeSlot" $Data{"TimeSearchType::TimeSlot"}/>
                             $Text{"Ticket created between"} $Data{"TicketCreateTimeStart"} $Text{"and"} $Data{"TicketCreateTimeStop"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label for="ChangeTimeSearchTypeNone">$Text{"Change times"}:</label>
-                        <div class="Field">
-                            <input type="radio" name="ChangeTimeSearchType" id="ChangeTimeSearchTypeNone" value="" $Data{"ChangeTimeSearchType::None"}/>
-                            $Text{"No change time settings."}
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
-                            <input type="radio" name="ChangeTimeSearchType" value="TimePoint" $Data{"ChangeTimeSearchType::TimePoint"}/>
-                            $Text{"Ticket changed"} $Data{"TicketChangeTimePointStart"} $Data{"TicketChangeTimePoint"} $Data{"TicketChangeTimePointFormat"}.
-                        </div>
-                        <div class="Clear"></div>
-
-                        <div class="Field">
-                            <input type="radio" name="ChangeTimeSearchType" value="TimeSlot" $Data{"ChangeTimeSearchType::TimeSlot"}/>
-                            $Text{"Ticket changed between"} $Data{"TicketChangeTimeStart"} $Text{"and"} $Data{"TicketChangeTimeStop"}.
                         </div>
                         <div class="Clear"></div>
 
@@ -523,14 +497,6 @@
                         </div>
                         <div class="Clear"></div>
 
-<!-- dtl:block:NewTicketResponsible -->
-                        <label for="NewResponsibleID">$Text{"Set new agent"}/$Text{"new responsible"}:</label>
-                        <div class="Field">
-                            $Data{"NewResponsibleStrg"}
-                        </div>
-                        <div class="Clear"></div>
-<!-- dtl:block:NewTicketResponsible -->
-
                         <label for="NewLockID">$Text{"Set new ticket lock"}:</label>
                         <div class="Field">
                             $Data{"NewLockOption"}
@@ -561,17 +527,17 @@
                         </div>
                         <div class="Clear"></div>
 <!-- dtl:block:NewTicketType -->
-<!-- dtl:block:NewDynamicField -->
-                        <label>$Text{"New Dynamic Field Values"}</label>
+<!-- dtl:block:NewTicketFreeField -->
+                        <label>$Text{"New TicketFreeFields"}</label>
                         <div class="Clear"></div>
-<!-- dtl:block:NewDynamicFieldElement -->
-                        $Data{"Label"}
+<!-- dtl:block:NewTicketFreeFieldElement -->
+                        <label>$Data{"NewTicketFreeKey"}</label>
                         <div class="Field">
-                            $Data{"Field"}
+                            $Data{"NewTicketFreeText"}
                         </div>
                         <div class="Clear"></div>
-<!-- dtl:block:NewDynamicFieldElement -->
-<!-- dtl:block:NewDynamicField -->
+<!-- dtl:block:NewTicketFreeFieldElement -->
+<!-- dtl:block:NewTicketFreeField -->
 <!-- dtl:block:NewArchiveFlag -->
                         <label for="NewArchiveFlag">$Text{"Archive selected tickets"}:</label>
                         <div class="Field">
@@ -756,7 +722,7 @@
                     <a class="CallForAction" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Update;Profile=$LQData{"Name"}">
                         <span>$Text{"Edit job"}</span>
                     </a>
-                    <a class="CallForAction" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=RunNow;Profile=$LQData{"Name"};$QEnv{"ChallengeTokenParam"}">
+                    <a class="CallForAction" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=RunNow;Profile=$LQData{"Name"}">
                         <span>$Text{"Run job"}</span>
                     </a>
                     $Text{"or"}
@@ -794,9 +760,9 @@
                             </td>
                             <td>$QData{"Age"}</td>
                             <td>$QData{"From","30"}$QData{"Subject","30"}</td>
-                            <td>$Text{"$Data{"State"}"}</td>
+                            <td>$Quote{"$Text{"$Data{"State"}"}","30"}</td>
                             <td>$QData{"Queue","30"}</td>
-                            <td>$QData{"Owner","30"} ($QData{"UserFirstname"} $QData{"UserLastname"})</td>
+                            <td>$QData{"Owner","30"}($QData{"UserFirstname"} $QData{"UserLastname"})</td>
                             <td>
                                 <a class="AsBlock" href="$Env{"Baselink"}Action=AgentTicketCustomer;TicketID=$LQData{"TicketID"}">
                                     $QData{"CustomerID", "15"}
