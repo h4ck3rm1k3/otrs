@@ -2,7 +2,7 @@
 # Kernel/Modules/AgentTicketForward.pm - to forward a message
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketForward.pm,v 1.114 2011/10/24 21:47:16 cr Exp $
+# $Id: AgentTicketForward.pm,v 1.117 2011/11/01 18:44:19 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -26,7 +26,7 @@ use Kernel::System::VariableCheck qw(:all);
 use Mail::Address;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.114 $) [1];
+$VERSION = qw($Revision: 1.117 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -396,6 +396,9 @@ sub Form {
                 $Self->{Config}->{DynamicField}->{ $DynamicFieldConfig->{Name} } == 2,
             LayoutObject => $Self->{LayoutObject},
             ParamObject  => $Self->{ParamObject},
+
+            # AgentTicketForward does not support AJAXUpdate
+            AJAXUpdate => 0,
             );
     }
 
@@ -570,6 +573,9 @@ sub SendEmail {
             ErrorMessage => $ValidationResult->{ErrorMessage} || '',
             LayoutObject => $Self->{LayoutObject},
             ParamObject  => $Self->{ParamObject},
+
+            # AgentTicketForward does not support AJAXUpdate
+            AJAXUpdate => 0,
             );
     }
 
@@ -867,9 +873,7 @@ sub _Mask {
     my ( $Self, %Param ) = @_;
 
     # add none selection to the list
-    if ( !$Self->{Config}->{StateDefault} ) {
-        $Param{NextStates}->{''} = '-';
-    }
+    $Param{NextStates}->{''} = '-';
 
     # build next states string
     my %State;
@@ -954,6 +958,7 @@ sub _Mask {
         $Self->{LayoutObject}->Block(
             Name => 'DynamicField',
             Data => {
+                Name  => $DynamicFieldConfig->{Name},
                 Label => $DynamicFieldHTML->{Label},
                 Field => $DynamicFieldHTML->{Field},
             },
@@ -963,6 +968,7 @@ sub _Mask {
         $Self->{LayoutObject}->Block(
             Name => 'DynamicField_' . $DynamicFieldConfig->{Name},
             Data => {
+                Name  => $DynamicFieldConfig->{Name},
                 Label => $DynamicFieldHTML->{Label},
                 Field => $DynamicFieldHTML->{Field},
             },

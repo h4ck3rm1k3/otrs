@@ -3,7 +3,7 @@
 # DBUpdate-to-3.1.pl - update script to migrate OTRS 3.0.x to 3.1.x
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: DBUpdate-to-3.1.pl,v 1.31 2011/10/28 22:56:32 cg Exp $
+# $Id: DBUpdate-to-3.1.pl,v 1.43 2011/11/02 22:14:26 cr Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -31,7 +31,7 @@ use lib dirname($RealBin);
 use lib dirname($RealBin) . '/Kernel/cpan-lib';
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.31 $) [1];
+$VERSION = qw($Revision: 1.43 $) [1];
 
 use Getopt::Std qw();
 use Kernel::Config;
@@ -67,7 +67,10 @@ EOF
     # create common objects
     my $CommonObject = _CommonObjectsBase();
 
-    print "Step 1 of 13: Refresh configuration cache... ";
+    # define the number of steps
+    my $Steps = 18;
+
+    print "Step 1 of $Steps: Refresh configuration cache... ";
     RebuildConfig($CommonObject);
     print "done.\n\n";
 
@@ -75,16 +78,11 @@ EOF
     $CommonObject = _CommonObjectsBase();
 
     # check framework version
-    print "Step 2 of 13: Check framework version... ";
+    print "Step 2 of $Steps: Check framework version... ";
     _CheckFrameworkVersion($CommonObject);
     print "done.\n\n";
 
-    # upgrade MSSQL data types
-    print "Step 3 of 13: Upgrade Microsoft SQL Server data types... ";
-    _MSSQLUpgrade($CommonObject);
-    print "done.\n\n";
-
-    print "Step 4 of 13: Creating DynamicField tables (if necessary)... ";
+    print "Step 3 of $Steps: Creating DynamicField tables (if necessary)... ";
     if ( _CheckDynamicFieldTables($CommonObject) ) {
         print "done.\n\n";
     }
@@ -93,21 +91,21 @@ EOF
     }
 
     # insert dynamic field records, if necessary
-    print "Step 5 of 13: Create new dynamic fields for free fields (text, key, date)... ";
+    print "Step 4 of $Steps: Create new dynamic fields for free fields (text, key, date)... ";
     if ( !_IsFreefieldsMigrationAlreadyDone($CommonObject) ) {
         _DynamicFieldCreation($CommonObject);
     }
     print "done.\n\n";
 
     # migrate ticket free field
-    print "Step 6 of 13: Migrate ticket free fields to dynamic fields.. \n";
+    print "Step 5 of $Steps: Migrate ticket free fields to dynamic fields... \n";
     if ( !_IsFreefieldsMigrationAlreadyDone($CommonObject) ) {
         my $TicketMigrated = _DynamicFieldTicketMigration($CommonObject);
     }
     print "done.\n\n";
 
     # migrate ticket free field
-    print "Step 7 of 13: Migrate article free fields to dynamic fields.. \n";
+    print "Step 6 of $Steps: Migrate article free fields to dynamic fields... \n";
     if ( !_IsFreefieldsMigrationAlreadyDone($CommonObject) ) {
         my $ArticleMigrated = _DynamicFieldArticleMigration($CommonObject);
     }
@@ -115,7 +113,7 @@ EOF
 
     # verify ticket migration
     my $VerificationTicketData = 1;
-    print "Step 8 of 13: Verify if ticket data was successfully migrated.. ";
+    print "Step 7 of $Steps: Verify if ticket data was successfully migrated... ";
     if ( !_IsFreefieldsMigrationAlreadyDone($CommonObject) ) {
         $VerificationTicketData = _VerificationTicketData($CommonObject);
     }
@@ -123,7 +121,7 @@ EOF
 
     # verify article migration
     my $VerificationArticleData = 1;
-    print "Step 9 of 13: Verify if article data was successfully migrated.. ";
+    print "Step 8 of $Steps: Verify if article data was successfully migrated... ";
     if ( !_IsFreefieldsMigrationAlreadyDone($CommonObject) ) {
         $VerificationArticleData = _VerificationArticleData($CommonObject);
     }
@@ -137,12 +135,12 @@ EOF
     }
 
     # Migrate free fields configuration
-    print "Step 10 of 13: Migrate free fields configuration.. ";
+    print "Step 9 of $Steps: Migrate free fields configuration... ";
     _MigrateFreeFieldsConfiguration($CommonObject);
     print "done.\n\n";
 
     print
-        "Step 11 of 13: Update history type from 'TicketFreeTextUpdate' to 'TicketDynamicFieldUpdate'... ";
+        "Step 10 of $Steps: Update history type from 'TicketFreeTextUpdate' to 'TicketDynamicFieldUpdate'... ";
     if ( _UpdateHistoryType($CommonObject) ) {
         print "done.\n\n";
     }
@@ -151,7 +149,7 @@ EOF
     }
 
     # Migrate free fields configuration
-    print "Step 12 of 13: Migrate free fields window configuration.. ";
+    print "Step 11 of $Steps: Migrate free fields window configuration... ";
     if ( _MigrateWindowConfiguration($CommonObject) ) {
         print "done.\n\n";
     }
@@ -159,9 +157,63 @@ EOF
         print "Error!\n\n";
     }
 
-    # Migrate free fields configuration
-    print "Step 13 of 13: Migrate free fields stats configuration.. ";
+    # Migrate free fields configuration for stats
+    print "Step 12 of $Steps: Migrate free fields stats configuration... ";
     if ( _MigrateStatsConfiguration($CommonObject) ) {
+        print "done.\n\n";
+    }
+    else {
+        print "Error!\n\n";
+    }
+
+    # Migrate free fields configuration for generic agent jobs
+    print "Step 13 of $Steps: Migrate free fields generic agent jobs configuration.. ";
+    if ( _MigrateGenericAgentJobConfiguration($CommonObject) ) {
+        print "done.\n\n";
+    }
+    else {
+        print "Error!\n\n";
+    }
+
+    # Migrate free fields configuration for Post Master
+    print "Step 14 of $Steps: Migrate free fields post master configuration.. ";
+    if ( _MigratePostMasterConfiguration($CommonObject) ) {
+        print "done.\n\n";
+    }
+    else {
+        print "Error!\n\n";
+    }
+
+    # Migrate free fields responses configuration
+    print "Step 15 of $Steps: Migrate free fields standard responses configuration.. ";
+    if ( _MigrateResponsesConfiguration($CommonObject) ) {
+        print "done.\n\n";
+    }
+    else {
+        print "Error!\n\n";
+    }
+
+    # Migrate free fields auto responses configuration
+    print "Step 16 of $Steps: Migrate free fields auto responses configuration.. ";
+    if ( _MigrateAutoResponsesConfiguration($CommonObject) ) {
+        print "done.\n\n";
+    }
+    else {
+        print "Error!\n\n";
+    }
+
+    # Migrate free fields salutations configuration
+    print "Step 17 of $Steps: Migrate free fields salutations configuration.. ";
+    if ( _MigrateSalutationsConfiguration($CommonObject) ) {
+        print "done.\n\n";
+    }
+    else {
+        print "Error!\n\n";
+    }
+
+    # Migrate free fields signatures configuration
+    print "Step 18 of $Steps: Migrate free fields signatures configuration.. ";
+    if ( _MigrateSignaturesConfiguration($CommonObject) ) {
         print "done.\n\n";
     }
     else {
@@ -257,69 +309,6 @@ sub _CheckFrameworkVersion {
         die "Not framework version required"
     }
 
-    return 1;
-}
-
-=item _MSSQLUpgrade()
-
-Upgrade Microsoft SQL Server database field types.
-
-    _MSSQLUpgrade();
-
-=cut
-
-sub _MSSQLUpgrade {
-    my $CommonObject = shift;
-
-    my $DBType = $CommonObject->{ConfigObject}->Get('Database::Type') || '';
-    if ( $DBType ne 'mssql' ) {
-        print "Only needed for Microsoft SQL Server. Skipping.\n\n";
-        return 1;
-    }
-
-    print "\n\nMigrating database fields...\n";
-    my $SQL = "SELECT table_name, column_name, data_type,"
-        . " character_maximum_length, is_nullable"
-        . " FROM information_schema.columns"
-        . " WHERE data_type = 'TEXT' OR data_type = 'VARCHAR'";
-
-    return if !$CommonObject->{DBObject}->Prepare( SQL => $SQL );
-    my @Columns;
-    while ( my @Row = $CommonObject->{DBObject}->FetchrowArray() ) {
-        push @Columns, {
-            'Table'    => $Row[0],
-            'Column'   => $Row[1],
-            'DataType' => $Row[2],
-            'Size'     => $Row[3],
-            'Null'     => $Row[4],
-            }
-    }
-    print "Found " . scalar @Columns . " columns to alter.\n\n";
-    open my $outfile, '>', 'upgrade.mssql';
-
-    for my $Column (@Columns) {
-        print
-            "Updating table $Column->{Table}, column $Column->{Column} of type $Column->{DataType}...\n";
-
-        if ( $Column->{Null} eq 'YES' ) {
-            $Column->{Nullable} = 'NULL';
-        }
-        else {
-            $Column->{Nullable} = 'NOT NULL';
-        }
-
-        if ( $Column->{DataType} eq 'TEXT' ) {
-            $Column->{Size} = 'MAX';
-        }
-        return if !$CommonObject->{DBObject}->Do(
-            SQL  => 'ALTER TABLE ? ALTER COLUMN ? NVARCHAR( ? ) ?',
-            Bind => [
-                \$Column->{Table}, \$Column->{Column},
-                \$Column->{Size},  \$Column->{Nullable},
-            ],
-        );
-    }
-    close $outfile;
     return 1;
 }
 
@@ -1382,6 +1371,51 @@ sub _MigrateWindowConfiguration {
         }
 
     }
+
+    # AgentTicketSearch configuration
+
+    my $WindowConfig =
+        $CommonObject->{ConfigObject}->Get('Ticket::Frontend::AgentTicketSearch');
+
+    my $ExistingSetting = $CommonObject->{ConfigObject}->Get('Ticket::Frontend::AgentTicketSearch')
+        || {};
+    my %ValuesToSet = %{ $ExistingSetting->{DynamicField} || {} };
+
+    if ( defined $WindowConfig->{Defaults} ) {
+
+        my $Config = $WindowConfig->{Defaults};
+
+        for my $Index ( 1 .. 16 ) {
+
+            my $FieldName = 'TicketFreeText' . $Index;
+            if ( defined $DynamicFields->{$FieldName} && $Config->{$FieldName} ) {
+
+                $ValuesToSet{$FieldName} = $Config->{$FieldName};
+            }
+        }
+
+        for my $Index ( 1 .. 5 ) {
+
+            my $FieldName = 'TicketFreeTime' . $Index;
+            if ( defined $DynamicFields->{$FieldName} && $Config->{$FieldName} ) {
+
+                $ValuesToSet{$FieldName} = $Config->{$FieldName};
+            }
+        }
+    }
+
+    my $Success = $SysConfigObject->ConfigItemUpdate(
+        Valid => 1,
+        Key   => 'Ticket::Frontend::AgentTicketSearch###DynamicField',
+        Value => \%ValuesToSet,
+    );
+
+    if ( !$Success ) {
+        print
+            "Could not migrate the config values on AgentTicketSearch window!\n";
+        return 0;
+    }
+
     return 1;
 }
 
@@ -1465,12 +1499,12 @@ sub _MigrateStatsConfiguration {
         # update database
         my $SuccessStatsUpdate = $DBConnectionObject->Do(
             SQL =>
-                'UPDATE xml_storage '
-                . 'SET xml_content_value = ? '
-                . 'WHERE xml_type = ? '
-                . 'AND xml_key = ? '
-                . 'AND xml_content_key = ? '
-                . 'AND xml_content_value = ?',
+                'UPDATE xml_storage
+                SET xml_content_value = ?
+                WHERE xml_type = ?
+                    AND xml_key = ?
+                    AND xml_content_key = ?
+                    AND xml_content_value = ?',
             Bind => [
                 \$StatRecordConfig->{XMLContentValueNew},
                 \$StatRecordConfig->{XMLType},
@@ -1491,6 +1525,763 @@ sub _MigrateStatsConfiguration {
     }
 
     # return success
+    return 1;
+}
+
+=item _MigrateGenericAgentJobConfiguration($CommonObject)
+
+migrates the configuration of the free fields for each generic agent job to the
+new dynamic field structure.
+
+    _MigrateGenericAgentJobConfiguration($CommonObject);
+
+=cut
+
+sub _MigrateGenericAgentJobConfiguration {
+    my $CommonObject = shift;
+
+    # create additional objects
+    my $DynamicFieldObject = Kernel::System::DynamicField->new( %{$CommonObject} );
+
+    # create new db connection
+    my $DBConnectionObject = Kernel::System::DB->new( %{ $CommonObject->{DBObject} } );
+
+    # get DynamicFields list
+    my $DynamicFields = $DynamicFieldObject->DynamicFieldList(
+        Valid      => 0,
+        ResultType => 'HASH',
+    );
+
+    # reverse the DynamicFields list to create a lookup table
+    $DynamicFields = { reverse %{$DynamicFields} };
+
+    # find all free fields for search to be migrated
+    return if !$DBConnectionObject->Prepare(
+        SQL => "SELECT gaj.job_name, gaj.job_key, gaj.job_value
+            FROM generic_agent_jobs gaj
+            WHERE gaj.job_key like 'TicketFree%'
+            ORDER BY gaj.job_name",
+    );
+
+    my @SearchRecordsToChange;
+
+    # loop trought all results
+    while ( my @Row = $DBConnectionObject->FetchrowArray() ) {
+
+        # get field details
+        my %JobRecordConfig = (
+            JobName  => $Row[0],
+            JobKey   => $Row[1],
+            JobValue => $Row[2],
+        );
+
+        # save field details
+        push @SearchRecordsToChange, \%JobRecordConfig;
+    }
+
+    # set search prefix
+    my $SearchPrefix = 'Search_DynamicField_';
+
+    JOBFIELDCONFIG:
+    for my $JobRecordConfig (@SearchRecordsToChange) {
+
+        # check if the migarted dynamic field is available
+        next JOBFIELDCONFIG if !$DynamicFields->{ $JobRecordConfig->{JobKey} };
+
+        # append search prefix to search free fields
+        $JobRecordConfig->{JobKeyNew} = $SearchPrefix . $JobRecordConfig->{JobKey};
+
+        # update database
+        my $SuccessJobUpdate = $DBConnectionObject->Do(
+            SQL => "UPDATE generic_agent_jobs gaj
+                SET gaj.job_key = ?
+                WHERE gaj.job_name = ?
+                    AND gaj.job_key = ?
+                    AND gaj.job_value = ?",
+            Bind => [
+                \$JobRecordConfig->{JobKeyNew},
+                \$JobRecordConfig->{JobName},
+                \$JobRecordConfig->{JobKey},
+                \$JobRecordConfig->{JobValue},
+            ],
+        );
+
+        # check for errors
+        if ( !$SuccessJobUpdate ) {
+            print "Could not migrate the Generic Agent Job $JobRecordConfig->{JobKey}"
+                . " field $JobRecordConfig->{JobKey}\n";
+
+            return 0;
+        }
+    }
+
+    # find all free fields for set to be migrated
+    return if !$DBConnectionObject->Prepare(
+        SQL => "SELECT gaj.job_name, gaj.job_key, gaj.job_value
+            FROM generic_agent_jobs gaj
+            WHERE gaj.job_key like 'NewTicketFree%'
+            ORDER BY gaj.job_name",
+    );
+
+    my @SetRecordsToChange;
+
+    # loop trought all results
+    while ( my @Row = $DBConnectionObject->FetchrowArray() ) {
+
+        # get field details
+        my %JobRecordConfig = (
+            JobName  => $Row[0],
+            JobKey   => $Row[1],
+            JobValue => $Row[2],
+        );
+
+        # save field details
+        push @SetRecordsToChange, \%JobRecordConfig;
+    }
+
+    # set the set prefix
+    my $SetPrefix = 'DynamicField_';
+
+    JOBFIELDCONFIG:
+    for my $JobRecordConfig (@SetRecordsToChange) {
+
+        # remove the new prefix
+        $JobRecordConfig->{JobKeyTemp} = $JobRecordConfig->{JobKey};
+        $JobRecordConfig->{JobKeyTemp} =~ s{New}{};
+
+        # check if the migarted dynamic field is available
+        next JOBFIELDCONFIG if !$DynamicFields->{ $JobRecordConfig->{JobKeyTemp} };
+
+        # append set prefix to set free fields
+        $JobRecordConfig->{JobKeyNew} = $SetPrefix . $JobRecordConfig->{JobKeyTemp};
+
+        if ( $JobRecordConfig->{JobValue} ) {
+
+            # update database
+            my $SuccessJobUpdate = $DBConnectionObject->Do(
+                SQL => "UPDATE generic_agent_jobs gaj
+                    SET gaj.job_key = ?
+                    WHERE gaj.job_name = ?
+                        AND gaj.job_key = ?
+                        AND gaj.job_value = ?",
+                Bind => [
+                    \$JobRecordConfig->{JobKeyNew},
+                    \$JobRecordConfig->{JobName},
+                    \$JobRecordConfig->{JobKey},
+                    \$JobRecordConfig->{JobValue},
+                ],
+            );
+
+            # check for errors
+            if ( !$SuccessJobUpdate ) {
+                print "Could not migrate the Generic Agent Job $JobRecordConfig->{JobKey}"
+                    . " field $JobRecordConfig->{JobKey}\n";
+
+                return 0;
+            }
+        }
+        else {
+
+            # delete empty options
+            my $SuccessJobDelete = $DBConnectionObject->Do(
+                SQL => "DELETE FROM generic_agent_jobs
+                    WHERE job_name = ?
+                        AND job_key = ?
+                        AND job_value = ?",
+                Bind => [
+                    \$JobRecordConfig->{JobName},
+                    \$JobRecordConfig->{JobKey},
+                    \$JobRecordConfig->{JobValue},
+                ],
+            );
+
+            # check for errors
+            if ( !$SuccessJobDelete ) {
+                print "Could not delete empty field $JobRecordConfig->{JobKey} from the "
+                    . "Generic Agent Job $JobRecordConfig->{JobKey}\n";
+
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+=item _MigratePostMasterConfiguration($CommonObject)
+
+migrates the configuration of the free fields for PostMaster module into the
+new dynamic field structure.
+
+    _MigratePostMasterConfiguration($CommonObject);
+
+=cut
+
+sub _MigratePostMasterConfiguration {
+    my $CommonObject = shift;
+
+    # Purge cache first to make sure that the DF API works correctly
+    #   after we made inserts by hand.
+    my $CacheObject = Kernel::System::Cache->new( %{$CommonObject} );
+    $CacheObject->CleanUp(
+        Type => 'DynamicField',
+    );
+
+    # create additional objects
+    my $DynamicFieldObject = Kernel::System::DynamicField->new( %{$CommonObject} );
+    my $SysConfigObject    = Kernel::System::SysConfig->new( %{$CommonObject} );
+
+    # get current dynamic fields
+    my $DynamicFields = $DynamicFieldObject->DynamicFieldList(
+        Valid      => 0,
+        ResultType => 'HASH',
+    );
+
+    # set values as keys
+    $DynamicFields = { reverse %{$DynamicFields} };
+
+    # Post Master configuration
+    my $ExistingSetting = $CommonObject->{ConfigObject}->Get('PostmasterX-Header');
+    my @ValuesToSet = @{ $ExistingSetting || () };
+
+    if ( scalar @ValuesToSet ) {
+
+        # transform the array from config into a hash
+        # in order to facility the interaction with the values
+        my %CurrentXHeaders = map { $_ => 1 } @ValuesToSet;
+
+        # migration for ticket fields
+        my %XHeadersToChange = (
+            'X-OTRS-TicketKey'            => 'TicketFreeKey',
+            'X-OTRS-TicketValue'          => 'TicketFreeText',
+            'X-OTRS-FollowUp-TicketKey'   => 'TicketFreeKey',
+            'X-OTRS-FollowUp-TicketValue' => 'TicketFreeText',
+        );
+
+        for my $Key ( sort keys %XHeadersToChange ) {
+            for my $Index ( 1 .. 16 ) {
+
+                # set header and field name
+                my $HeaderName = $Key . $Index;
+                my $FieldName  = $XHeadersToChange{$Key} . $Index;
+
+                if ( defined $DynamicFields->{$FieldName} && defined $CurrentXHeaders{$HeaderName} )
+                {
+
+                    # set header name for dynamic field
+                    my $NewHeaderName = 'X-OTRS-DynamicField-' . $FieldName;
+
+                    # delete old element
+                    delete $CurrentXHeaders{$HeaderName};
+
+                    # set new element
+                    $CurrentXHeaders{$NewHeaderName} = 1;
+
+                    # update rows in postmaster_filter table
+                    my $SuccessUpdate = $CommonObject->{DBObject}->Do(
+                        SQL =>
+                            "UPDATE postmaster_filter SET f_key=? WHERE f_key=?",
+                        Bind => [
+                            \$NewHeaderName, \$HeaderName,
+                        ],
+                    );
+
+                    if ( !$SuccessUpdate ) {
+                        print "Could not possible to change the key for the post master filter!\n";
+                    }
+
+                }
+            }
+        }
+
+        # migration for time fields
+        %XHeadersToChange = (
+            'X-OTRS-TicketTime'          => 'TicketFreeTime',
+            'X-OTRS-FollowUp-TicketTime' => 'TicketFreeTime',
+        );
+
+        for my $Key ( sort keys %XHeadersToChange ) {
+            for my $Index ( 1 .. 6 ) {
+
+                my $HeaderName = $Key . $Index;
+                my $FieldName  = $XHeadersToChange{$Key} . $Index;
+                if ( defined $DynamicFields->{$FieldName} && defined $CurrentXHeaders{$HeaderName} )
+                {
+
+                    # set header name for dynamic field
+                    my $NewHeaderName = 'X-OTRS-DynamicField-' . $FieldName;
+
+                    # delete old element
+                    delete $CurrentXHeaders{$HeaderName};
+
+                    # set new element
+                    $CurrentXHeaders{$NewHeaderName} = 1;
+
+                    # update rows in postmaster_filter table
+                    my $SuccessUpdate = $CommonObject->{DBObject}->Do(
+                        SQL =>
+                            "UPDATE postmaster_filter SET f_key=? WHERE f_key=?",
+                        Bind => [
+                            \$NewHeaderName, \$HeaderName,
+                        ],
+                    );
+
+                    if ( !$SuccessUpdate ) {
+                        print "Could not possible to change the key for the post master filter!\n";
+                    }
+
+                }
+            }
+        }
+
+        # migration for article fields
+        %XHeadersToChange = (
+            'X-OTRS-ArticleKey'            => 'ArticleFreeKey',
+            'X-OTRS-ArticleValue'          => 'ArticleFreeText',
+            'X-OTRS-FollowUp-ArticleKey'   => 'ArticleFreeKey',
+            'X-OTRS-FollowUp-ArticleValue' => 'ArticleFreeText',
+        );
+
+        for my $Key ( sort keys %XHeadersToChange ) {
+            for my $Index ( 1 .. 3 ) {
+
+                my $HeaderName = $Key . $Index;
+                my $FieldName  = $XHeadersToChange{$Key} . $Index;
+                if ( defined $DynamicFields->{$FieldName} && defined $CurrentXHeaders{$HeaderName} )
+                {
+
+                    # set header name for dynamic field
+                    my $NewHeaderName = 'X-OTRS-DynamicField-' . $FieldName;
+
+                    # delete old element
+                    delete $CurrentXHeaders{$HeaderName};
+
+                    # set new element
+                    $CurrentXHeaders{$NewHeaderName} = 1;
+
+                    # update rows in postmaster_filter table
+                    my $SuccessUpdate = $CommonObject->{DBObject}->Do(
+                        SQL =>
+                            "UPDATE postmaster_filter SET f_key=? WHERE f_key=?",
+                        Bind => [
+                            \$NewHeaderName, \$HeaderName,
+                        ],
+                    );
+
+                    if ( !$SuccessUpdate ) {
+                        print "Could not possible to change the key for the post master filter!\n";
+                    }
+
+                }
+            }
+        }
+
+        # revert values from hash into an array
+        @ValuesToSet = sort keys %CurrentXHeaders;
+
+    }
+
+    # execute the update action in sysconfig
+    my $Success = $SysConfigObject->ConfigItemUpdate(
+        Valid => 1,
+        Key   => 'PostmasterX-Header',
+        Value => \@ValuesToSet,
+    );
+
+    if ( !$Success ) {
+        print
+            "Could not migrate the config values on AgentTicketSearch window!\n";
+        return 0;
+    }
+
+    return 1;
+}
+
+=item _MigrateResponsesConfiguration($CommonObject)
+
+migrates the configuration of the free fields for each response to the
+new dynamic field structure.
+
+    _MigrateResponsesConfiguration($CommonObject);
+
+=cut
+
+sub _MigrateResponsesConfiguration {
+    my $CommonObject = shift;
+
+    # create additional objects
+    my $DynamicFieldObject = Kernel::System::DynamicField->new( %{$CommonObject} );
+
+    # create new db connection
+    my $DBConnectionObject = Kernel::System::DB->new( %{ $CommonObject->{DBObject} } );
+
+    # get DynamicFields list
+    my $DynamicFields = $DynamicFieldObject->DynamicFieldList(
+        Valid      => 0,
+        ResultType => 'HASH',
+    );
+
+    # reverse the DynamicFields list to create a lookup table
+    $DynamicFields = { reverse %{$DynamicFields} };
+
+    # localize dynamic fields
+    my %LocalDynamicFields = %{$DynamicFields};
+
+    # use only dynamic fields migrated from Ticket Free Fields
+    FIELDNAME:
+    for my $FieldName ( keys %LocalDynamicFields ) {
+        next FIELDNAME if $FieldName =~ m{\A TicketFree ( ?: Text|Key|Time ) \d+ \Z}xms;
+        delete $LocalDynamicFields{$FieldName};
+    }
+
+    # find all responses that has defined free fields tags
+    return if !$DBConnectionObject->Prepare(
+        SQL => "SELECT sr.id, sr.name, sr.text
+            FROM standard_response sr
+            WHERE sr.text like '%OTRS_TICKET_TicketFree%'
+            ORDER BY sr.id",
+    );
+
+    my @ResponseRecordsToChange;
+
+    # loop trought all results
+    while ( my @Row = $DBConnectionObject->FetchrowArray() ) {
+
+        # get response details
+        my %ResponseRecordConfig = (
+            ResponseID      => $Row[0],
+            ResponseName    => $Row[1],
+            ResponseText    => $Row[2],
+            ResponseTextNew => $Row[2]
+        );
+
+        for my $FieldName ( keys %LocalDynamicFields ) {
+
+            # replace all ocurrences of this $FieldName
+            $ResponseRecordConfig{ResponseTextNew}
+                =~ s{OTRS_TICKET_$FieldName}{OTRS_TICKET_DynamicField_$FieldName}gsx;
+        }
+
+        # save redord details to update DB later
+        push @ResponseRecordsToChange, \%ResponseRecordConfig;
+    }
+
+    for my $ResponseRecordConfig (@ResponseRecordsToChange) {
+
+        # update database
+        my $SuccessResponseUpdate = $DBConnectionObject->Do(
+            SQL => "UPDATE standard_response sr
+                SET sr.text = ?
+                WHERE sr.id = ?
+                    AND sr.name = ?",
+            Bind => [
+                \$ResponseRecordConfig->{ResponseTextNew},
+                \$ResponseRecordConfig->{ResponseID},
+                \$ResponseRecordConfig->{ResponseName},
+            ],
+        );
+
+        # check for errors
+        if ( !$SuccessResponseUpdate ) {
+            print "Could not migrate the Response $ResponseRecordConfig->{ResponseName}\n";
+            return 0;
+        }
+    }
+    return 1;
+}
+
+=item _MigrateAutoResponsesConfiguration($CommonObject)
+
+migrates the configuration of the free fields for each auto response to the
+new dynamic field structure.
+
+    _MigrateResponsesConfiguration($CommonObject);
+
+=cut
+
+sub _MigrateAutoResponsesConfiguration {
+    my $CommonObject = shift;
+
+    # create additional objects
+    my $DynamicFieldObject = Kernel::System::DynamicField->new( %{$CommonObject} );
+
+    # create new db connection
+    my $DBConnectionObject = Kernel::System::DB->new( %{ $CommonObject->{DBObject} } );
+
+    # get DynamicFields list
+    my $DynamicFields = $DynamicFieldObject->DynamicFieldList(
+        Valid      => 0,
+        ResultType => 'HASH',
+    );
+
+    # reverse the DynamicFields list to create a lookup table
+    $DynamicFields = { reverse %{$DynamicFields} };
+
+    # localize dynamic fields
+    my %LocalDynamicFields = %{$DynamicFields};
+
+    # use only dynamic fields migrated from Ticket Free Fields
+    FIELDNAME:
+    for my $FieldName ( keys %LocalDynamicFields ) {
+        next FIELDNAME if $FieldName =~ m{\A TicketFree ( ?: Text|Key|Time ) \d+ \Z}xms;
+        delete $LocalDynamicFields{$FieldName};
+    }
+
+    # find all auto responses that has defined free fields tags
+    return if !$DBConnectionObject->Prepare(
+        SQL => "SELECT ar.id, ar.name, ar.text0, ar.text1, ar.text2
+            FROM auto_response ar
+            WHERE ar.text0 like '%OTRS_TICKET_TicketFree%'
+                OR ar.text1 like '%OTRS_TICKET_TicketFree%'
+                OR ar.text2 like '%OTRS_TICKET_TicketFree%'
+            ORDER BY ar.id",
+    );
+
+    my @AutoResponseRecordsToChange;
+
+    # loop trought all results
+    while ( my @Row = $DBConnectionObject->FetchrowArray() ) {
+
+        # get auto response details
+        my %AutoResponseRecordConfig = (
+            AutoResponseID       => $Row[0],
+            AutoResponseName     => $Row[1],
+            AutoResponseText0    => $Row[2],
+            AutoResponseText0New => $Row[2],
+            AutoResponseText1    => $Row[3],
+            AutoResponseText1New => $Row[3],
+            AutoResponseText2    => $Row[4],
+            AutoResponseText2New => $Row[4],
+        );
+
+        for my $FieldName ( keys %LocalDynamicFields ) {
+
+            # replace all ocurrences of this $FieldName
+            $AutoResponseRecordConfig{AutoResponseText0New}
+                =~ s{OTRS_TICKET_$FieldName}{OTRS_TICKET_DynamicField_$FieldName}gsx;
+
+            $AutoResponseRecordConfig{AutoResponseText1New}
+                =~ s{OTRS_TICKET_$FieldName}{OTRS_TICKET_DynamicField_$FieldName}gsx;
+
+            if ( $AutoResponseRecordConfig{AutoResponseText2New} ) {
+                $AutoResponseRecordConfig{AutoResponseText2New}
+                    =~ s{OTRS_TICKET_$FieldName}{OTRS_TICKET_DynamicField_$FieldName}gsx;
+            }
+        }
+
+        # save redord details to update DB later
+        push @AutoResponseRecordsToChange, \%AutoResponseRecordConfig;
+    }
+
+    for my $AutoResponseRecordConfig (@AutoResponseRecordsToChange) {
+
+        # update database
+        my $SuccessAutoResponseUpdate = $DBConnectionObject->Do(
+            SQL => "UPDATE auto_response ar
+                SET ar.text0 = ?, ar.text1 = ?, ar.text2 = ?
+                WHERE ar.id = ?
+                    AND ar.name = ?",
+            Bind => [
+                \$AutoResponseRecordConfig->{AutoResponseText0New},
+                \$AutoResponseRecordConfig->{AutoResponseText1New},
+                \$AutoResponseRecordConfig->{AutoResponseText2New},
+                \$AutoResponseRecordConfig->{AutoResponseID},
+                \$AutoResponseRecordConfig->{AutoResponseName},
+            ],
+        );
+
+        # check for errors
+        if ( !$SuccessAutoResponseUpdate ) {
+            print "Could not migrate the Auto Response "
+                . "$AutoResponseRecordConfig->{AutoResponseName}\n";
+            return 0;
+        }
+    }
+    return 1;
+}
+
+=item _MigrateSalutationsConfiguration($CommonObject)
+
+migrates the configuration of the free fields for each salutation to the
+new dynamic field structure.
+
+    _MigrateSalutationsConfiguration($CommonObject);
+
+=cut
+
+sub _MigrateSalutationsConfiguration {
+    my $CommonObject = shift;
+
+    # create additional objects
+    my $DynamicFieldObject = Kernel::System::DynamicField->new( %{$CommonObject} );
+
+    # create new db connection
+    my $DBConnectionObject = Kernel::System::DB->new( %{ $CommonObject->{DBObject} } );
+
+    # get DynamicFields list
+    my $DynamicFields = $DynamicFieldObject->DynamicFieldList(
+        Valid      => 0,
+        ResultType => 'HASH',
+    );
+
+    # reverse the DynamicFields list to create a lookup table
+    $DynamicFields = { reverse %{$DynamicFields} };
+
+    # localize dynamic fields
+    my %LocalDynamicFields = %{$DynamicFields};
+
+    # use only dynamic fields migrated from Ticket Free Fields
+    FIELDNAME:
+    for my $FieldName ( keys %LocalDynamicFields ) {
+        next FIELDNAME if $FieldName =~ m{\A TicketFree ( ?: Text|Key|Time ) \d+ \Z}xms;
+        delete $LocalDynamicFields{$FieldName};
+    }
+
+    # find all salutations that has defined free fields tags
+    return if !$DBConnectionObject->Prepare(
+        SQL => "SELECT s.id, s.name, s.text
+            FROM salutation s
+            WHERE s.text like '%OTRS_TICKET_TicketFree%'
+            ORDER BY s.id",
+    );
+
+    my @SalutationRecordsToChange;
+
+    # loop trought all results
+    while ( my @Row = $DBConnectionObject->FetchrowArray() ) {
+
+        # get salutation details
+        my %SalutationRecordConfig = (
+            SalutationID      => $Row[0],
+            SalutationName    => $Row[1],
+            SalutationText    => $Row[2],
+            SalutationTextNew => $Row[2]
+        );
+
+        for my $FieldName ( keys %LocalDynamicFields ) {
+
+            # replace all ocurrences of this $FieldName
+            $SalutationRecordConfig{SalutationTextNew}
+                =~ s{OTRS_TICKET_$FieldName}{OTRS_TICKET_DynamicField_$FieldName}gsx;
+        }
+
+        # save redord details to update DB later
+        push @SalutationRecordsToChange, \%SalutationRecordConfig;
+    }
+
+    for my $SalutationRecordConfig (@SalutationRecordsToChange) {
+
+        # update database
+        my $SuccessSalutationUpdate = $DBConnectionObject->Do(
+            SQL => "UPDATE salutation s
+                SET s.text = ?
+                WHERE s.id = ?
+                    AND s.name = ?",
+            Bind => [
+                \$SalutationRecordConfig->{SalutationTextNew},
+                \$SalutationRecordConfig->{SalutationID},
+                \$SalutationRecordConfig->{SalutationName},
+            ],
+        );
+
+        # check for errors
+        if ( !$SuccessSalutationUpdate ) {
+            print "Could not migrate the Salutation $SalutationRecordConfig->{SalutationName}\n";
+            return 0;
+        }
+    }
+    return 1;
+}
+
+=item _MigrateSignaturesConfiguration($CommonObject)
+
+migrates the configuration of the free fields for each signature to the
+new dynamic field structure.
+
+    _MigrateSignaturesConfiguration($CommonObject);
+
+=cut
+
+sub _MigrateSignaturesConfiguration {
+    my $CommonObject = shift;
+
+    # create additional objects
+    my $DynamicFieldObject = Kernel::System::DynamicField->new( %{$CommonObject} );
+
+    # create new db connection
+    my $DBConnectionObject = Kernel::System::DB->new( %{ $CommonObject->{DBObject} } );
+
+    # get DynamicFields list
+    my $DynamicFields = $DynamicFieldObject->DynamicFieldList(
+        Valid      => 0,
+        ResultType => 'HASH',
+    );
+
+    # reverse the DynamicFields list to create a lookup table
+    $DynamicFields = { reverse %{$DynamicFields} };
+
+    # localize dynamic fields
+    my %LocalDynamicFields = %{$DynamicFields};
+
+    # use only dynamic fields migrated from Ticket Free Fields
+    FIELDNAME:
+    for my $FieldName ( keys %LocalDynamicFields ) {
+        next FIELDNAME if $FieldName =~ m{\A TicketFree ( ?: Text|Key|Time ) \d+ \Z}xms;
+        delete $LocalDynamicFields{$FieldName};
+    }
+
+    # find all signatures that has defined free fields tags
+    return if !$DBConnectionObject->Prepare(
+        SQL => "SELECT s.id, s.name, s.text
+            FROM signature s
+            WHERE s.text like '%OTRS_TICKET_TicketFree%'
+            ORDER BY s.id",
+    );
+
+    my @SignatureRecordsToChange;
+
+    # loop trought all results
+    while ( my @Row = $DBConnectionObject->FetchrowArray() ) {
+
+        # get signature details
+        my %SignatureRecordConfig = (
+            SignatureID      => $Row[0],
+            SignatureName    => $Row[1],
+            SignatureText    => $Row[2],
+            SignatureTextNew => $Row[2]
+        );
+
+        for my $FieldName ( keys %LocalDynamicFields ) {
+
+            # replace all ocurrences of this $FieldName
+            $SignatureRecordConfig{SignatureTextNew}
+                =~ s{OTRS_TICKET_$FieldName}{OTRS_TICKET_DynamicField_$FieldName}gsx;
+        }
+
+        # save redord details to update DB later
+        push @SignatureRecordsToChange, \%SignatureRecordConfig;
+    }
+
+    for my $SignatureRecordConfig (@SignatureRecordsToChange) {
+
+        # update database
+        my $SuccessSignatureUpdate = $DBConnectionObject->Do(
+            SQL => "UPDATE signature s
+                SET s.text = ?
+                WHERE s.id = ?
+                    AND s.name = ?",
+            Bind => [
+                \$SignatureRecordConfig->{SignatureTextNew},
+                \$SignatureRecordConfig->{SignatureID},
+                \$SignatureRecordConfig->{SignatureName},
+            ],
+        );
+
+        # check for errors
+        if ( !$SuccessSignatureUpdate ) {
+            print "Could not migrate the Signature $SignatureRecordConfig->{SignatureName}\n";
+            return 0;
+        }
+    }
     return 1;
 }
 

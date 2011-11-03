@@ -2,7 +2,7 @@
 # Kernel/System/DynamicField/Backend/Multiselect.pm - Delegate for DynamicField Multiselect backend
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Multiselect.pm,v 1.27 2011/10/28 17:54:04 cg Exp $
+# $Id: Multiselect.pm,v 1.35 2011/11/02 18:04:12 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::DynamicFieldValue;
 use Kernel::System::DynamicField::Backend::BackendCommon;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.27 $) [1];
+$VERSION = qw($Revision: 1.35 $) [1];
 
 =head1 NAME
 
@@ -168,10 +168,13 @@ sub EditFieldRender {
     my $FieldName   = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
     my $FieldLabel  = $Param{DynamicFieldConfig}->{Label};
 
+    my $Value = '';
+
     # set the field value or default
-    my $Value = $FieldConfig->{DefaultValue} || '';
-    $Value = $Param{Value}
-        if defined $Param{Value};
+    if ( $Param{UseDefaultValue} ) {
+        $Value = $FieldConfig->{DefaultValue} || '';
+    }
+    $Value = $Param{Value} if defined $Param{Value};
 
     #d extract the dynamic field value form the web request
     my $FieldValue = $Self->EditFieldValueGet(
@@ -211,12 +214,21 @@ sub EditFieldRender {
         @Values = ($Value);
     }
 
+    # set PossibleNone attribute
+    my $FieldPossibleNone;
+    if ( defined $Param{OverridePossibleNone} ) {
+        $FieldPossibleNone = $Param{OverridePossibleNone};
+    }
+    else {
+        $FieldPossibleNone = $FieldConfig->{PossibleNone} || 0;
+    }
+
     my $HTMLString = $Param{LayoutObject}->BuildSelection(
         Data         => $SelectionData,
         Name         => $FieldName,
         SelectedID   => \@Values,
         Translation  => $FieldConfig->{TranslatableValues} || 0,
-        PossibleNone => $FieldConfig->{PossibleNone} || 0,
+        PossibleNone => $FieldPossibleNone,
         Class        => $FieldClass,
         HTMLQuote    => 1,
         Multiple     => 1,
@@ -251,6 +263,38 @@ EOF
 EOF
     }
 
+    if ( $Param{AJAXUpdate} ) {
+
+        my $FieldSelector = '#' . $FieldName;
+
+        my $FieldsToUpdate;
+        if ( IsArrayRefWithData( $Param{UpdatableFields} ) ) {
+            my $FirstItem = 1;
+            FIELD:
+            for my $Field ( @{ $Param{UpdatableFields} } ) {
+                next FIELD if $Field eq $FieldName;
+                if ($FirstItem) {
+                    $FirstItem = 0;
+                }
+                else {
+                    $FieldsToUpdate .= ', ';
+                }
+                $FieldsToUpdate .= "'" . $Field . "'";
+            }
+        }
+
+        #add js to call FormUpdate()
+        $HTMLString .= <<"EOF";
+<!--dtl:js_on_document_complete-->
+<script type="text/javascript">//<![CDATA[
+    \$('$FieldSelector').bind('change', function (Event) {
+        Core.AJAX.FormUpdate(\$(this).parents('form'), 'AJAXUpdate', '$FieldName', [ $FieldsToUpdate ]);
+    });
+//]]></script>
+<!--dtl:js_on_document_complete-->
+EOF
+    }
+
     # call EditLabelRender on the common backend
     my $LabelString = $Self->{BackendCommonObject}->EditLabelRender(
         DynamicFieldConfig => $Param{DynamicFieldConfig},
@@ -269,10 +313,30 @@ EOF
 sub EditFieldValueGet {
     my ( $Self, %Param ) = @_;
 
-    # get dynamic field value form param
-    my @ReturnData = $Param{ParamObject}
-        ->GetArray( Param => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name} );
-    return \@ReturnData;
+    my $FieldName = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
+
+    my $Value;
+
+    # check if there is a Template and retreive the dinalic field value from there
+    if ( IsHashRefWithData( $Param{Template} ) ) {
+        $Value = $Param{Template}->{$FieldName};
+    }
+
+    # otherwise get dynamic field value form param
+    else {
+        my @Data = $Param{ParamObject}->GetArray( Param => $FieldName );
+
+        $Value = \@Data;
+    }
+
+    if ( defined $Param{ReturnTemplateStructure} && $Param{ReturnTemplateStructure} eq 1 ) {
+        return {
+            $FieldName => $Value,
+        };
+    }
+
+    # for this field the normal return an the ReturnValueStructure are the same
+    return $Value;
 }
 
 sub EditFieldValueValidate {
@@ -354,59 +418,63 @@ sub DisplayValueRender {
     my @ReadableValues;
     my @ReadableTitles;
 
+    my $ShowValueEllipsis;
+    my $ShowTitleEllipsis;
+
     VALUEITEM:
     for my $Item (@Values) {
         next VALUEITEM if !$Item;
 
+        my $ReadableValue = $Item;
+
         if ( $PossibleValues->{$Item} ) {
-
-            # get readeble value
-            my $ReadableValue = $PossibleValues->{$Item};
-
-            my $ReadableLength = length $ReadableValue;
-
-            # check if needed to translate values
+            $ReadableValue = $PossibleValues->{$Item};
             if ($TranslatableValues) {
-
-                # translate value
                 $ReadableValue = $Param{LayoutObject}->{LanguageObject}->Get($ReadableValue);
             }
-
-            # set title equal value
-            my $ReadableTitle = $ReadableValue;
-
-            # cut strings if needed
-            if ( $ValueMaxChars ne '' ) {
-                $ReadableValue = substr $ReadableValue, 0, $ValueMaxChars;
-
-                # decrease the max parameter
-                $ValueMaxChars = $ValueMaxChars - $ReadableLength;
-                $ValueMaxChars = 0 if $ValueMaxChars < 0;
-            }
-
-            if ( $TitleMaxChars ne '' ) {
-                $ReadableTitle = substr $ReadableTitle, 0, $TitleMaxChars;
-
-                # decrease the max parameter
-                $TitleMaxChars = $TitleMaxChars - $ReadableLength;
-                $TitleMaxChars = 0 if $TitleMaxChars < 0;
-            }
-
-            # HTMLOuput transformations
-            if ( $Param{HTMLOutput} ) {
-
-                $ReadableValue = $Param{LayoutObject}->Ascii2Html(
-                    Text => $ReadableValue,
-                );
-
-                $ReadableTitle = $Param{LayoutObject}->Ascii2Html(
-                    Text => $ReadableTitle,
-                );
-            }
-
-            push @ReadableValues, $ReadableValue;
-            push @ReadableTitles, $ReadableTitle;
         }
+
+        my $ReadableLength = length $ReadableValue;
+
+        # set title equal value
+        my $ReadableTitle = $ReadableValue;
+
+        # cut strings if needed
+        if ( $ValueMaxChars ne '' ) {
+
+            $ShowValueEllipsis = 1 if ( length $ReadableValue > $ValueMaxChars );
+            $ReadableValue = substr $ReadableValue, 0, $ValueMaxChars;
+
+            # decrease the max parameter
+            $ValueMaxChars = $ValueMaxChars - $ReadableLength;
+            $ValueMaxChars = 0 if $ValueMaxChars < 0;
+
+        }
+
+        if ( $TitleMaxChars ne '' ) {
+
+            $ShowTitleEllipsis = 1 if ( length $ReadableTitle > $ValueMaxChars );
+            $ReadableTitle = substr $ReadableTitle, 0, $TitleMaxChars;
+
+            # decrease the max parameter
+            $TitleMaxChars = $TitleMaxChars - $ReadableLength;
+            $TitleMaxChars = 0 if $TitleMaxChars < 0;
+        }
+
+        # HTMLOuput transformations
+        if ( $Param{HTMLOutput} ) {
+
+            $ReadableValue = $Param{LayoutObject}->Ascii2Html(
+                Text => $ReadableValue,
+            );
+
+            $ReadableTitle = $Param{LayoutObject}->Ascii2Html(
+                Text => $ReadableTitle,
+            );
+        }
+
+        push @ReadableValues, $ReadableValue if length $ReadableValue;
+        push @ReadableTitles, $ReadableTitle if length $ReadableTitle;
     }
 
     # get specific field settings
@@ -415,9 +483,11 @@ sub DisplayValueRender {
     # set new line separator
     my $ItemSeparator = $FieldConfig->{ItemSeparator} || ', ';
 
-    # HTMLOuput transformations
     $Value = join( $ItemSeparator, @ReadableValues );
     $Title = join( $ItemSeparator, @ReadableTitles );
+
+    $Value .= '...' if $ShowValueEllipsis;
+    $Title .= '...' if $ShowTitleEllipsis;
 
     # create return structure
     my $Data = {
@@ -440,7 +510,7 @@ sub SearchFieldRender {
 
     # take config from field config
     my $FieldConfig = $Param{DynamicFieldConfig}->{Config};
-    my $FieldName   = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
+    my $FieldName   = 'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name};
     my $FieldLabel  = $Param{DynamicFieldConfig}->{Label};
 
     my $Value;
@@ -522,14 +592,14 @@ sub SearchFieldValueGet {
     # get dynamic field value form param object
     if ( defined $Param{ParamObject} ) {
         my @FieldValues = $Param{ParamObject}
-            ->GetArray( Param => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name} );
+            ->GetArray( Param => 'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name} );
 
         $Value = \@FieldValues;
     }
 
     # otherwise get the value from the profile
     elsif ( defined $Param{Profile} ) {
-        $Value = $Param{Profile}->{ 'DynamicField_' . $Param{DynamicFieldConfig}->{Name} };
+        $Value = $Param{Profile}->{ 'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name} };
     }
     else {
         return;
@@ -537,7 +607,7 @@ sub SearchFieldValueGet {
 
     if ( defined $Param{ReturnProfileStructure} && $Param{ReturnProfileStructure} eq 1 ) {
         return {
-            'DynamicField_' . $Param{DynamicFieldConfig}->{Name} => $Value,
+            'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name} => $Value,
         };
     }
 
@@ -620,13 +690,13 @@ sub StatsFieldParameterBuild {
 
     return {
         Values             => $Values,
-        Name               => 'DynamicField_' . $Param{DynamicFieldConfig}->{Label},
+        Name               => $Param{DynamicFieldConfig}->{Label},
         Element            => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name},
         TranslatableValues => $Param{DynamicFieldconfig}->{Config}->{TranslatableValues},
     };
 }
 
-sub StatsSearchFieldParameterBuild {
+sub CommonSearchFieldParameterBuild {
     my ( $Self, %Param ) = @_;
 
     my $Operator = 'Equals';
@@ -653,22 +723,13 @@ sub ReadableValueRender {
         @Values = ( $Param{Value} );
     }
 
-    # get real values
-    my $PossibleValues = $Param{DynamicFieldConfig}->{Config}->{PossibleValues};
-
     my @ReadableValues;
 
     VALUEITEM:
     for my $Item (@Values) {
         next VALUEITEM if !$Item;
 
-        my $ReadableValue = $Item;
-        if ( $PossibleValues->{$Item} ) {
-
-            # get readeble value
-            $ReadableValue = $PossibleValues->{$Item};
-        }
-        push @ReadableValues, $ReadableValue;
+        push @ReadableValues, $Item;
     }
 
     # set new line separator
@@ -679,8 +740,12 @@ sub ReadableValueRender {
     $Title = $Value;
 
     # cut strings if needed
-    $Value = substr $Value, 0, $Param{ValueMaxChars} if $Param{ValueMaxChars};
-    $Title = substr $Title, 0, $Param{TitleMaxChars} if $Param{TitleMaxChars};
+    if ( $Param{ValueMaxChars} && length($Value) > $Param{ValueMaxChars} ) {
+        $Value = substr( $Value, 0, $Param{ValueMaxChars} ) . '...';
+    }
+    if ( $Param{TitleMaxChars} && length($Title) > $Param{TitleMaxChars} ) {
+        $Title = substr( $Title, 0, $Param{TitleMaxChars} ) . '...';
+    }
 
     # create return structure
     my $Data = {
@@ -689,6 +754,40 @@ sub ReadableValueRender {
     };
 
     return $Data;
+}
+
+sub TemplateValueTypeGet {
+    my ( $Self, %Param ) = @_;
+
+    my $FieldName = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
+
+    # set the field types
+    my $EditValueType   = 'ARRAY';
+    my $SearchValueType = 'ARRAY';
+
+    # return the correct structure
+    if ( $Param{FieldType} eq 'Edit' ) {
+        return {
+            $FieldName => $EditValueType,
+            }
+    }
+    elsif ( $Param{FieldType} eq 'Search' ) {
+        return {
+            'Search_' . $FieldName => $SearchValueType,
+            }
+    }
+    else {
+        return {
+            $FieldName             => $EditValueType,
+            'Search_' . $FieldName => $SearchValueType,
+            }
+    }
+}
+
+sub IsAJAXUpdateable {
+    my ( $Self, %Param ) = @_;
+
+    return 1;
 }
 
 1;

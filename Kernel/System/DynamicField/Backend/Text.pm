@@ -2,7 +2,7 @@
 # Kernel/System/DynamicField/Backend/Text.pm - Delegate for DynamicField Text backend
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Text.pm,v 1.46 2011/10/27 17:47:04 cg Exp $
+# $Id: Text.pm,v 1.52 2011/11/02 18:04:12 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::DynamicFieldValue;
 use Kernel::System::DynamicField::Backend::BackendCommon;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.46 $) [1];
+$VERSION = qw($Revision: 1.52 $) [1];
 
 =head1 NAME
 
@@ -143,10 +143,13 @@ sub EditFieldRender {
     my $FieldName   = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
     my $FieldLabel  = $Param{DynamicFieldConfig}->{Label};
 
+    my $Value = '';
+
     # set the field value or default
-    my $Value = $FieldConfig->{DefaultValue} || '';
-    $Value = $Param{Value}
-        if defined $Param{Value};
+    if ( $Param{UseDefaultValue} ) {
+        $Value = $FieldConfig->{DefaultValue} || '';
+    }
+    $Value = $Param{Value} if defined $Param{Value};
 
     # extract the dynamic field value form the web request
     my $FieldValue = $Self->EditFieldValueGet(
@@ -220,9 +223,28 @@ EOF
 sub EditFieldValueGet {
     my ( $Self, %Param ) = @_;
 
-    # get dynamic field value form param
-    return $Param{ParamObject}
-        ->GetParam( Param => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name} );
+    my $FieldName = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
+
+    my $Value;
+
+    # check if there is a Template and retreive the dinalic field value from there
+    if ( IsHashRefWithData( $Param{Template} ) ) {
+        $Value = $Param{Template}->{$FieldName};
+    }
+
+    # otherwise get dynamic field value form param
+    else {
+        $Value = $Param{ParamObject}->GetParam( Param => $FieldName );
+    }
+
+    if ( defined $Param{ReturnTemplateStructure} && $Param{ReturnTemplateStructure} eq '1' ) {
+        return {
+            $FieldName => $Value,
+        };
+    }
+
+    # for this field the normal return an the ReturnValueStructure are the same
+    return $Value;
 }
 
 sub EditFieldValueValidate {
@@ -263,8 +285,8 @@ sub DisplayValueRender {
     }
 
     # get raw Title and Value strings from field value
-    my $Value = $Param{Value} || '';
-    my $Title = $Param{Value} || '';
+    my $Value = defined $Param{Value} ? $Param{Value} : '';
+    my $Title = $Value;
 
     # HTMLOuput transformations
     if ( $Param{HTMLOutput} ) {
@@ -277,6 +299,14 @@ sub DisplayValueRender {
             Text => $Title,
             Max => $Param{TitleMaxChars} || '',
         );
+    }
+    else {
+        if ( $Param{ValueMaxChars} && length($Value) > $Param{ValueMaxChars} ) {
+            $Value = substr( $Value, 0, $Param{ValueMaxChars} ) . '...';
+        }
+        if ( $Param{TitleMaxChars} && length($Title) > $Param{TitleMaxChars} ) {
+            $Title = substr( $Title, 0, $Param{TitleMaxChars} ) . '...';
+        }
     }
 
     # create return structure
@@ -299,7 +329,7 @@ sub SearchFieldRender {
 
     # take config from field config
     my $FieldConfig = $Param{DynamicFieldConfig}->{Config};
-    my $FieldName   = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
+    my $FieldName   = 'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name};
     my $FieldLabel  = $Param{DynamicFieldConfig}->{Label};
 
     # set the field value
@@ -343,12 +373,12 @@ sub SearchFieldValueGet {
     # get dynamic field value form param object
     if ( defined $Param{ParamObject} ) {
         $Value = $Param{ParamObject}
-            ->GetParam( Param => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name} );
+            ->GetParam( Param => 'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name} );
     }
 
     # otherwise get the value from the profile
     elsif ( defined $Param{Profile} ) {
-        $Value = $Param{Profile}->{ 'DynamicField_' . $Param{DynamicFieldConfig}->{Name} };
+        $Value = $Param{Profile}->{ 'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name} };
     }
     else {
         return;
@@ -356,7 +386,7 @@ sub SearchFieldValueGet {
 
     if ( defined $Param{ReturnProfileStructure} && $Param{ReturnProfileStructure} eq 1 ) {
         return {
-            'DynamicField_' . $Param{DynamicFieldConfig}->{Name} => $Value,
+            'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name} => $Value,
         };
     }
 
@@ -393,16 +423,25 @@ sub StatsFieldParameterBuild {
     my ( $Self, %Param ) = @_;
 
     return {
-        Name    => 'DynamicField_' . $Param{DynamicFieldConfig}->{Label},
+        Name    => $Param{DynamicFieldConfig}->{Label},
         Element => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name},
     };
 }
 
-sub StatsSearchFieldParameterBuild {
+sub CommonSearchFieldParameterBuild {
     my ( $Self, %Param ) = @_;
 
+    my $Value = $Param{Value};
+
+    # set operator
     my $Operator = 'Equals';
-    my $Value    = $Param{Value};
+
+    # search for a wild card in the value
+    if ( $Value && $Value =~ m{\*} ) {
+
+        # change oprator
+        $Operator = 'Like';
+    }
 
     return {
         $Operator => $Value,
@@ -412,13 +451,16 @@ sub StatsSearchFieldParameterBuild {
 sub ReadableValueRender {
     my ( $Self, %Param ) = @_;
 
-    # get raw Title and Value strings from field value
-    my $Value = $Param{Value} || '';
-    my $Title = $Param{Value} || '';
+    my $Value = defined $Param{Value} ? $Param{Value} : '';
+    my $Title = $Value;
 
     # cut strings if needed
-    $Value = substr $Value, 0, $Param{ValueMaxChars} if $Param{ValueMaxChars};
-    $Title = substr $Title, 0, $Param{TitleMaxChars} if $Param{TitleMaxChars};
+    if ( $Param{ValueMaxChars} && length($Value) > $Param{ValueMaxChars} ) {
+        $Value = substr( $Value, 0, $Param{ValueMaxChars} ) . '...';
+    }
+    if ( $Param{TitleMaxChars} && length($Title) > $Param{TitleMaxChars} ) {
+        $Title = substr( $Title, 0, $Param{TitleMaxChars} ) . '...';
+    }
 
     # create return structure
     my $Data = {
@@ -427,6 +469,40 @@ sub ReadableValueRender {
     };
 
     return $Data;
+}
+
+sub TemplateValueTypeGet {
+    my ( $Self, %Param ) = @_;
+
+    my $FieldName = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
+
+    # set the field types
+    my $EditValueType   = 'SCALAR';
+    my $SearchValueType = 'SCALAR';
+
+    # return the correct structure
+    if ( $Param{FieldType} eq 'Edit' ) {
+        return {
+            $FieldName => $EditValueType,
+            }
+    }
+    elsif ( $Param{FieldType} eq 'Search' ) {
+        return {
+            'Search_' . $FieldName => $SearchValueType,
+            }
+    }
+    else {
+        return {
+            $FieldName             => $EditValueType,
+            'Search_' . $FieldName => $SearchValueType,
+            }
+    }
+}
+
+sub IsAJAXUpdateable {
+    my ( $Self, %Param ) = @_;
+
+    return 0;
 }
 
 1;

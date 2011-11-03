@@ -2,7 +2,7 @@
 # Kernel/Modules/AgentTicketActionCommon.pm - common file for several modules
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketActionCommon.pm,v 1.58 2011/10/24 21:47:16 cr Exp $
+# $Id: AgentTicketActionCommon.pm,v 1.60 2011/11/01 18:44:19 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -430,6 +430,11 @@ sub Run {
                 ErrorMessage => $ValidationResult->{ErrorMessage} || '',
                 LayoutObject => $Self->{LayoutObject},
                 ParamObject  => $Self->{ParamObject},
+
+                # AgentTicketFreeText, AgentTicketNote, AgentTicketOwner, AgentTicketPending,
+                # AgentTicketClose, AgentTicketPriority and AgentTicketResponsible does not support
+                # AJAXUpdate
+                AJAXUpdate => 0,
                 );
         }
 
@@ -794,6 +799,11 @@ sub Run {
                     $Self->{Config}->{DynamicField}->{ $DynamicFieldConfig->{Name} } == 2,
                 LayoutObject => $Self->{LayoutObject},
                 ParamObject  => $Self->{ParamObject},
+
+                # AgentTicketFreeText, AgentTicketNote, AgentTicketOwner, AgentTicketPending,
+                # AgentTicketClose, AgentTicketPriority and AgentTicketResponsible does not support
+                # AJAXUpdate
+                AJAXUpdate => 0,
                 );
         }
 
@@ -1254,6 +1264,7 @@ sub _Mask {
         $Self->{LayoutObject}->Block(
             Name => 'DynamicField',
             Data => {
+                Name  => $DynamicFieldConfig->{Name},
                 Label => $DynamicFieldHTML->{Label},
                 Field => $DynamicFieldHTML->{Field},
             },
@@ -1263,6 +1274,7 @@ sub _Mask {
         $Self->{LayoutObject}->Block(
             Name => 'DynamicField_' . $DynamicFieldConfig->{Name},
             Data => {
+                Name  => $DynamicFieldConfig->{Name},
                 Label => $DynamicFieldHTML->{Label},
                 Field => $DynamicFieldHTML->{Field},
             },

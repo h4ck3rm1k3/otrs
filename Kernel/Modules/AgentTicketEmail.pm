@@ -2,7 +2,7 @@
 # Kernel/Modules/AgentTicketEmail.pm - to compose initial email to customer
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketEmail.pm,v 1.179 2011/10/26 16:56:19 cg Exp $
+# $Id: AgentTicketEmail.pm,v 1.184 2011/11/02 13:11:05 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -27,7 +27,7 @@ use Kernel::System::VariableCheck qw(:all);
 use Mail::Address;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.179 $) [1];
+$VERSION = qw($Revision: 1.184 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -348,8 +348,10 @@ sub Run {
                     Value                => $Value,
                     Mandatory =>
                         $Self->{Config}->{DynamicField}->{ $DynamicFieldConfig->{Name} } == 2,
-                    LayoutObject => $Self->{LayoutObject},
-                    ParamObject  => $Self->{ParamObject},
+                    LayoutObject    => $Self->{LayoutObject},
+                    ParamObject     => $Self->{ParamObject},
+                    AJAXUpdate      => 1,
+                    UpdatableFields => $Self->_GetFieldsToUpdate(),
                     );
             }
 
@@ -617,6 +619,8 @@ sub Run {
                 ErrorMessage => $ValidationResult->{ErrorMessage} || '',
                 LayoutObject => $Self->{LayoutObject},
                 ParamObject  => $Self->{ParamObject},
+                AJAXUpdate   => 1,
+                UpdatableFields => $Self->_GetFieldsToUpdate(),
                 );
         }
 
@@ -1133,6 +1137,17 @@ sub Run {
             $GetParam{From} = $Queue{Email};
         }
 
+        # convert dynamic field values into a structure for ACLs
+        my %DynamicFieldACLParameters;
+        DYNAMICFIELD:
+        for my $DynamcField ( keys %DynamicFieldValues ) {
+            next DYNAMICFIELD if !$DynamcField;
+            next DYNAMICFIELD if !$DynamicFieldValues{$DynamcField};
+
+            $DynamicFieldACLParameters{ 'DynamicField_' . $DynamcField }
+                = $DynamicFieldValues{$DynamcField};
+        }
+
         # get list type
         my $TreeView = 0;
         if ( $Self->{ConfigObject}->Get('Ticket::Frontend::ListType') eq 'tree' ) {
@@ -1153,23 +1168,27 @@ sub Run {
         );
         my $NextStates = $Self->_GetNextStates(
             %GetParam,
+            DynamicField   => \%DynamicFieldACLParameters,
             CustomerUserID => $CustomerUser || '',
-            QueueID        => $QueueID      || 1,
+            QueueID        => $QueueID || 1,
         );
         my $Priorities = $Self->_GetPriorities(
             %GetParam,
+            DynamicField   => \%DynamicFieldACLParameters,
             CustomerUserID => $CustomerUser || '',
-            QueueID        => $QueueID      || 1,
+            QueueID        => $QueueID || 1,
         );
         my $Services = $Self->_GetServices(
             %GetParam,
+            DynamicField   => \%DynamicFieldACLParameters,
             CustomerUserID => $CustomerUser || '',
-            QueueID        => $QueueID      || 1,
+            QueueID        => $QueueID || 1,
         );
         my $SLAs = $Self->_GetSLAs(
             %GetParam,
+            DynamicField   => \%DynamicFieldACLParameters,
             CustomerUserID => $CustomerUser || '',
-            QueueID        => $QueueID      || 1,
+            QueueID        => $QueueID || 1,
             Services       => $Services,
         );
 
@@ -1190,7 +1209,8 @@ sub Run {
             my $ACL = $Self->{TicketObject}->TicketAcl(
                 Action        => $Self->{Action},
                 TicketID      => $Self->{TicketID},
-                QueueID       => $GetParam{DestQueueID} || 0,
+                QueueID       => $QueueID || 0,
+                DynamicField  => \%DynamicFieldACLParameters,
                 Type          => 'DynamicField_' . $DynamicFieldConfig->{Name},
                 ReturnType    => 'Ticket',
                 ReturnSubType => 'DynamicField_' . $DynamicFieldConfig->{Name},
@@ -1852,6 +1872,7 @@ sub _MaskEmailNew {
         $Self->{LayoutObject}->Block(
             Name => 'DynamicField',
             Data => {
+                Name  => $DynamicFieldConfig->{Name},
                 Label => $DynamicFieldHTML->{Label},
                 Field => $DynamicFieldHTML->{Field},
             },
@@ -1861,6 +1882,7 @@ sub _MaskEmailNew {
         $Self->{LayoutObject}->Block(
             Name => 'DynamicField_' . $DynamicFieldConfig->{Name},
             Data => {
+                Name  => $DynamicFieldConfig->{Name},
                 Label => $DynamicFieldHTML->{Label},
                 Field => $DynamicFieldHTML->{Field},
             },
@@ -1988,6 +2010,30 @@ sub _MaskEmailNew {
 
     # get output back
     return $Self->{LayoutObject}->Output( TemplateFile => 'AgentTicketEmail', Data => \%Param );
+}
+
+sub _GetFieldsToUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # set the fields that can be updatable via AJAXUpdate
+    my @UpdatableFields
+        = qw( Dest NextStateID PriorityID ServiceID SLAID SignKeyID CryptKeyID To Cc Bcc );
+
+    # cycle trough the activated Dynamic Fields for this screen
+    DYNAMICFIELD:
+    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
+        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+
+        my $Updateable = $Self->{BackendObject}->IsAJAXUpdateable(
+            DynamicFieldConfig => $DynamicFieldConfig,
+        );
+
+        next DYNAMICFIELD if !$Updateable;
+
+        push @UpdatableFields, 'DynamicField_' . $DynamicFieldConfig->{Name};
+    }
+
+    return \@UpdatableFields;
 }
 
 1;

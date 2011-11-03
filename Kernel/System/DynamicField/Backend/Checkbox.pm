@@ -2,7 +2,7 @@
 # Kernel/System/DynamicField/Backend/Checkbox.pm - Delegate for DynamicField Checkbox backend
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Checkbox.pm,v 1.34 2011/10/27 17:47:04 cg Exp $
+# $Id: Checkbox.pm,v 1.42 2011/11/02 19:53:51 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::DynamicFieldValue;
 use Kernel::System::DynamicField::Backend::BackendCommon;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.34 $) [1];
+$VERSION = qw($Revision: 1.42 $) [1];
 
 =head1 NAME
 
@@ -140,8 +140,12 @@ sub EditFieldRender {
     my $FieldName   = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
     my $FieldLabel  = $Param{DynamicFieldConfig}->{Label};
 
+    my $Value;
+
     # set the field value or default
-    my $Value = $FieldConfig->{DefaultValue} || '';
+    if ( $Param{UseDefaultValue} ) {
+        $Value = $FieldConfig->{DefaultValue} || '';
+    }
     $Value = $Param{Value} if defined $Param{Value};
 
     # extract the dynamic field value form the web request
@@ -154,14 +158,14 @@ sub EditFieldRender {
     if ( defined $FieldValue && IsHashRefWithData($FieldValue) ) {
         if (
             !defined $FieldValue->{FieldValue} &&
-            defined $FieldValue->{HiddenValue} && $FieldValue->{HiddenValue} eq '1'
+            defined $FieldValue->{UsedValue} && $FieldValue->{UsedValue} eq '1'
             )
         {
             $Value = '0';
         }
         elsif (
-            defined $FieldValue->{FieldValue}  && $FieldValue->{FieldValue}  eq '1' &&
-            defined $FieldValue->{HiddenValue} && $FieldValue->{HiddenValue} eq '1'
+            defined $FieldValue->{FieldValue} && $FieldValue->{FieldValue} eq '1' &&
+            defined $FieldValue->{UsedValue}  && $FieldValue->{UsedValue}  eq '1'
             )
         {
             $Value = '1';
@@ -183,10 +187,36 @@ sub EditFieldRender {
     # set error css class
     $FieldClass .= ' ServerError' if $Param{ServerError};
 
-    my $FieldNameHidden = $FieldName . "Hidden";
-    my $HTMLString      = <<"EOF";
+    my $FieldNameUsed = $FieldName . "Used";
+
+    my $HTMLString = <<"EOF";
+<input type="hidden" id="$FieldNameUsed" name="$FieldNameUsed" value="1" />
+EOF
+
+    if ( $Param{ConfirmationNeeded} ) {
+
+        # set checked property
+        my $FieldUsedChecked0 = '';
+        my $FieldUsedChecked1 = '';
+        if ( $FieldValue->{UsedValue} ) {
+            $FieldUsedChecked1 = 'checked="checked"';
+        }
+        else {
+            $FieldUsedChecked0 = 'checked="checked"';
+        }
+
+        my $FieldNameUsed0 = $FieldNameUsed . '0';
+        my $FieldNameUsed1 = $FieldNameUsed . '1';
+        $HTMLString = <<"EOF";
+<input type="radio" id="$FieldNameUsed0" name="$FieldNameUsed" value="" $FieldUsedChecked0 />
+Ignore this field.
+<div class="clear"></div>
+<input type="radio" id="$FieldNameUsed1" name="$FieldNameUsed" value="1" $FieldUsedChecked1 />
+EOF
+    }
+
+    $HTMLString .= <<"EOF";
 <input type="checkbox" class="$FieldClass" id="$FieldName" name="$FieldName" title="$FieldLabel" $FieldChecked value="1" />
-<input type="hidden" id="$FieldNameHidden" name="$FieldNameHidden" value="1" />
 EOF
 
     if ( $Param{Mandatory} ) {
@@ -235,23 +265,45 @@ EOF
 sub EditFieldValueGet {
     my ( $Self, %Param ) = @_;
 
+    my $FieldName = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
+
     my %Data;
 
-    # get dynamic field value form param
-    $Data{FieldValue} = $Param{ParamObject}
-        ->GetParam( Param => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name} );
+    # check if there is a Template and retreive the dinalic field value from there
+    if ( IsHashRefWithData( $Param{Template} ) ) {
 
-    # get dynamic field hidden value form param
-    $Data{HiddenValue} = $Param{ParamObject}
-        ->GetParam( Param => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name} . 'Hidden' );
+        # get dynamic field value form Template
+        $Data{FieldValue} = $Param{Template}->{$FieldName};
+
+        # get dynamic field used value form Template
+        $Data{UsedValue} = $Param{Template}->{ $FieldName . 'Used' };
+    }
+
+    # otherwise get dynamic field value form param
+    else {
+
+        # get dynamic field value form param
+        $Data{FieldValue} = $Param{ParamObject}->GetParam( Param => $FieldName );
+
+        # get dynamic field used value form param
+        $Data{UsedValue} = $Param{ParamObject}->GetParam( Param => $FieldName . 'Used' );
+    }
 
     # check if return value structure is nedded
     if ( defined $Param{ReturnValueStructure} && $Param{ReturnValueStructure} eq '1' ) {
         return \%Data;
     }
 
+    # check if return template structure is nedded
+    if ( defined $Param{ReturnTemplateStructure} && $Param{ReturnTemplateStructure} eq '1' ) {
+        return {
+            $FieldName          => $Data{FieldValue},
+            $FieldName . 'Used' => $Data{UsedValue},
+        };
+    }
+
     # return undef if the hidden value is not present
-    return if !$Data{HiddenValue};
+    return if !$Data{UsedValue};
 
     # set the correct return value
     my $Value = '0';
@@ -307,9 +359,9 @@ sub DisplayValueRender {
     }
 
     # convert value to user frendly string
-    my $Value = 'Yes';
+    my $Value = 'Checked';
     if ( $Param{Value} ne 1 ) {
-        $Value = 'No';
+        $Value = 'Unchecked';
     }
 
     # always translate value
@@ -339,11 +391,20 @@ sub SearchFieldRender {
 
     # take config from field config
     my $FieldConfig = $Param{DynamicFieldConfig}->{Config};
-    my $FieldName   = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
+    my $FieldName   = 'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name};
     my $FieldLabel  = $Param{DynamicFieldConfig}->{Label};
 
+    my $Value;
+    my @DefaultValue;
+
+    if ( defined $Param{DefaultValue} ) {
+        my @DefaultValue = split /;/, $Param{DefaultValue};
+    }
+
     # set the field value
-    my $Value = $Param{DefaultValue};
+    if (@DefaultValue) {
+        $Value = \@DefaultValue;
+    }
 
     # get the field value, this fuction is always called after the profile is loaded
     my $FieldValue = $Self->SearchFieldValueGet(%Param);
@@ -353,15 +414,18 @@ sub SearchFieldRender {
         $Value = $FieldValue;
     }
 
-    # value must be 1, 0 or -1
-    if ( $Value && $Value >= 1 ) {
-        $Value = 1;
-    }
-    elsif ( !defined $Value || !$Value ) {
-        $Value = 0;
-    }
-    else {
-        $Value = -1;
+    for my $Item ( @{$Value} ) {
+
+        # value must be 1, '' or -1
+        if ( !defined $Item || !$Item ) {
+            $Item = '';
+        }
+        elsif ( $Item && $Item >= 1 ) {
+            $Item = 1;
+        }
+        else {
+            $Item = -1;
+        }
     }
 
     # check and set class if necessary
@@ -377,7 +441,7 @@ sub SearchFieldRender {
         Translation  => 1,
         PossibleNone => 1,
         Class        => $FieldClass,
-        Multiple     => 0,
+        Multiple     => 1,
         HTMLQuote    => 1,
     );
 
@@ -402,13 +466,15 @@ sub SearchFieldValueGet {
 
     # get dynamic field value form param object
     if ( defined $Param{ParamObject} ) {
-        $Value = $Param{ParamObject}
-            ->GetParam( Param => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name} );
+        my @FieldValues = $Param{ParamObject}
+            ->GetArray( Param => 'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name} );
+
+        $Value = \@FieldValues;
     }
 
     # otherwise get the value from the profile
     elsif ( defined $Param{Profile} ) {
-        $Value = $Param{Profile}->{ 'DynamicField_' . $Param{DynamicFieldConfig}->{Name} };
+        $Value = $Param{Profile}->{ 'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name} };
     }
     else {
         return;
@@ -416,7 +482,7 @@ sub SearchFieldValueGet {
 
     if ( defined $Param{ReturnProfileStructure} && $Param{ReturnProfileStructure} eq 1 ) {
         return {
-            'DynamicField_' . $Param{DynamicFieldConfig}->{Name} => $Value,
+            'Search_DynamicField_' . $Param{DynamicFieldConfig}->{Name} => $Value,
         };
     }
 
@@ -433,16 +499,50 @@ sub SearchFieldParameterBuild {
 
     if ($Value) {
 
-        # set the display value
-        $DisplayValue = $Value eq 1 ? 'Checked' : 'Unchecked';
+        if ( ref $Value eq "ARRAY" ) {
+            my @DisplayItemList;
+            ITEM:
+            for my $Item ( @{$Value} ) {
 
-        # translate the value
-        $DisplayValue = $Param{LayoutObject}->{LanguageObject}->Get($DisplayValue);
-    }
+                # set the display value
+                my $DisplayItem
+                    = $Item eq 1
+                    ? 'Checked'
+                    : $Item eq -1 ? 'Unchecked'
+                    :               '';
 
-    # set the correct value for "unchecked" (-1) search options
-    if ( $Value && $Value eq -1 ) {
-        $Value = '0';
+                # translate the value
+                $DisplayItem = $Param{LayoutObject}->{LanguageObject}->Get($DisplayItem);
+
+                push @DisplayItemList, $DisplayItem;
+
+                # set the correct value for "unchecked" (-1) search options
+                if ( $Item && $Item eq -1 ) {
+                    $Item = '0';
+                }
+            }
+
+            # combine different values into one string
+            $DisplayValue = join ' + ', @DisplayItemList;
+
+        }
+        else {
+
+            # set the display value
+            $DisplayValue
+                = $Value eq 1
+                ? 'Checked'
+                : $Value eq -1 ? 'Unchecked'
+                :                '';
+
+            # translate the value
+            $DisplayValue = $Param{LayoutObject}->{LanguageObject}->Get($DisplayValue);
+        }
+
+        # set the correct value for "unchecked" (-1) search options
+        if ( $Value && $Value eq -1 ) {
+            $Value = '0';
+        }
     }
 
     # return search parameter structure
@@ -462,13 +562,13 @@ sub StatsFieldParameterBuild {
             '1' => 'Checked',
             '0' => 'Unchecked',
         },
-        Name               => 'DynamicField_' . $Param{DynamicFieldConfig}->{Label},
+        Name               => $Param{DynamicFieldConfig}->{Label},
         Element            => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name},
         TranslatableValues => 1,
     };
 }
 
-sub StatsSearchFieldParameterBuild {
+sub CommonSearchFieldParameterBuild {
     my ( $Self, %Param ) = @_;
 
     my $Operator = 'Equals';
@@ -482,23 +582,10 @@ sub StatsSearchFieldParameterBuild {
 sub ReadableValueRender {
     my ( $Self, %Param ) = @_;
 
-    # check for Null value
-    if ( !defined $Param{Value} ) {
-        $Param{Value} = 0;
-    }
-
-    # convert value to user frendly string
-    my $Value = 'Yes';
-    if ( $Param{Value} ne 1 ) {
-        $Value = 'No';
-    }
+    my $Value = defined $Param{Value} ? $Param{Value} : '';
 
     # Title is always equal to Value
     my $Title = $Value;
-
-    # cut strings if needed
-    $Value = substr $Value, 0, $Param{ValueMaxChars} if $Param{ValueMaxChars};
-    $Title = substr $Title, 0, $Param{TitleMaxChars} if $Param{TitleMaxChars};
 
     # create return structure
     my $Data = {
@@ -507,6 +594,40 @@ sub ReadableValueRender {
     };
 
     return $Data;
+}
+
+sub TemplateValueTypeGet {
+    my ( $Self, %Param ) = @_;
+
+    my $FieldName = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
+
+    # set the field types
+    my $EditValueType   = 'SCALAR';
+    my $SearchValueType = 'ARRAY';
+
+    # return the correct structure
+    if ( $Param{FieldType} eq 'Edit' ) {
+        return {
+            $FieldName => $EditValueType,
+            }
+    }
+    elsif ( $Param{FieldType} eq 'Search' ) {
+        return {
+            'Search_' . $FieldName => $SearchValueType,
+            }
+    }
+    else {
+        return {
+            $FieldName             => $EditValueType,
+            'Search_' . $FieldName => $SearchValueType,
+            }
+    }
+}
+
+sub IsAJAXUpdateable {
+    my ( $Self, %Param ) = @_;
+
+    return 0;
 }
 
 1;
