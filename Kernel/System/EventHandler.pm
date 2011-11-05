@@ -13,8 +13,9 @@ package Kernel::System::EventHandler;
 
 use strict;
 use warnings;
-
 use vars qw($VERSION);
+use YAML;
+
 $VERSION = qw($Revision: 1.9 $) [1];
 
 =head1 NAME
@@ -269,6 +270,8 @@ sub EventHandlerTransaction {
     # execute events on end of transaction
     if ( $Self->{EventHandlerPipe} ) {
         for my $Params ( @{ $Self->{EventHandlerPipe} } ) {
+	    warn Dump(%Param);
+	    warn Dump($Params);
             $Self->EventHandler(
                 %Param,
                 %{$Params},

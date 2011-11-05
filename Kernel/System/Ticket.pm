@@ -36,9 +36,9 @@ use Kernel::System::LinkObject;
 use Kernel::System::EventHandler;
 use Kernel::System::DynamicField;
 use Kernel::System::DynamicField::Backend;
-
 use Kernel::System::VariableCheck qw(:all);
-
+use Carp qw(confess);
+use Data::Dumper;
 use vars qw(@ISA $VERSION);
 $VERSION = qw($Revision: 1.526 $) [1];
 
@@ -124,7 +124,7 @@ sub new {
             $Self->{$Needed} = $Param{$Needed};
         }
         else {
-            die "Got no $Needed!";
+            confess "Got no $Needed! as parameter to new :" .join (",",(keys %Param));
         }
     }
 

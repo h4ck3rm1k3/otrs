@@ -13,7 +13,7 @@ package Kernel::System::CustomerUser;
 
 use strict;
 use warnings;
-
+use Carp qw[confess];
 use Kernel::System::CustomerCompany;
 
 use vars qw(@ISA $VERSION);
@@ -86,6 +86,9 @@ sub new {
     }
 
     # load generator customer preferences module
+    confess "Customer preferences not set " unless  $Self->{ConfigObject}->Get('CustomerPreferences');
+
+
     my $GeneratorModule = $Self->{ConfigObject}->Get('CustomerPreferences')->{Module}
         || 'Kernel::System::CustomerUser::Preferences::DB';
     if ( $Self->{MainObject}->Require($GeneratorModule) ) {

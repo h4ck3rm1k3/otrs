@@ -2085,10 +2085,8 @@ sub new {
                 my $Require = 1;
                 if ( exists $ENV{MOD_PERL} ) {
 
-                    # if mod_perl 2.x is used, check if Apache::Reload is use
-                    # on win32 Apache::Reload is not working correctly, so do also use "do"
-                    my $OS = $^O;
-                    if ( $mod_perl::VERSION >= 1.99 && $OS ne 'MSWin32') {
+
+                    if ( $mod_perl::VERSION >= 1.99) {
                         my $ApacheReload = 0;
                         for my $Module ( keys %INC ) {
                             $Module =~ s/\//::/g;

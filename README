@@ -8,6 +8,11 @@
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
+What is this version?
+=====================
+This is an experimental debian packaging for otrs.
+It contains code from the latest CSV head revision and is patched directly with the debian packages.
+
 
 What is OTRS?
 =============
