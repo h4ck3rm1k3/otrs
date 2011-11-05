@@ -1,8 +1,8 @@
 # --
-# Kernel/Modules/AdminQueueResponses.pm - to manage queue <-> responses assignments
+# Kernel/Modules/AdminQueueResponses.pm - to add/update/delete groups <-> users
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminQueueResponses.pm,v 1.47 2011/12/23 14:23:11 mg Exp $
+# $Id: AdminQueueResponses.pm,v 1.41.2.1 2011/11/05 16:58:54 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::Queue;
 use Kernel::System::StandardResponse;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.47 $) [1];
+$VERSION = qw($Revision: 1.41.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -44,19 +44,19 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     # ------------------------------------------------------------ #
-    # response <-> queues 1:n
+    # user <-> group 1:n
     # ------------------------------------------------------------ #
     if ( $Self->{Subaction} eq 'Response' ) {
 
-        # get response data
+        # get user data
         my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
         my %StandardResponseData
             = $Self->{StandardResponseObject}->StandardResponseGet( ID => $ID );
 
-        # get queues
+        # get queue data
         my %QueueData = $Self->{QueueObject}->QueueList( Valid => 1 );
 
-        # get assigned queues
+        # get role member
         my %Member = $Self->{QueueObject}->GetStandardResponses(
             StandardResponseID => $ID,
         );
@@ -75,19 +75,19 @@ sub Run {
     }
 
     # ------------------------------------------------------------ #
-    # responses <-> Queue n:1
+    # group <-> user n:1
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Queue' ) {
 
-        # get queue data
+        # get group data
         my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
         my %QueueData = $Self->{QueueObject}->QueueGet( ID => $ID );
 
-        # get responses
+        # get user list
         my %StandardResponseData
             = $Self->{StandardResponseObject}->StandardResponseList( Valid => 1 );
 
-        # get assigned responses
+        # get role member
         my %Member = $Self->{QueueObject}->GetStandardResponses(
             QueueID => $ID,
         );
@@ -106,61 +106,79 @@ sub Run {
     }
 
     # ------------------------------------------------------------ #
-    # add responses to queue
+    # add user to groups
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'ChangeQueue' ) {
 
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        # get new queues
+        # get new role member
         my @IDs = $Self->{ParamObject}->GetArray( Param => 'Queue' );
 
         my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
 
-        # update db
-        $Self->{DBObject}->Do(
-            SQL  => 'DELETE FROM queue_standard_response WHERE queue_id = ?',
-            Bind => [ \$ID ],
-        );
-        for my $NewID (@IDs) {
-            next if !$NewID;
+        # get user list
+        my %StandardResponseData
+            = $Self->{StandardResponseObject}->StandardResponseList( Valid => 1 );
+        for my $StandardResponseID ( keys %StandardResponseData ) {
+            my $Active = 0;
+            for my $QueueID (@IDs) {
+                next if $QueueID ne $StandardResponseID;
+                $Active = 1;
+                last;
+            }
+
+            # update db
             $Self->{DBObject}->Do(
-                SQL => 'INSERT INTO queue_standard_response (queue_id, standard_response_id, '
-                    . 'create_time, create_by, change_time, change_by) VALUES '
-                    . ' (?, ?, current_timestamp, ?, current_timestamp, ?)',
-                Bind => [ \$ID, \$NewID, \$Self->{UserID}, \$Self->{UserID} ],
+                SQL  => 'DELETE FROM queue_standard_response WHERE queue_id = ?',
+                Bind => [ \$ID ],
             );
+            for my $NewID (@IDs) {
+                next if !$NewID;
+                $Self->{DBObject}->Do(
+                    SQL => 'INSERT INTO queue_standard_response (queue_id, standard_response_id, '
+                        . 'create_time, create_by, change_time, change_by) VALUES '
+                        . ' (?, ?, current_timestamp, ?, current_timestamp, ?)',
+                    Bind => [ \$ID, \$NewID, \$Self->{UserID}, \$Self->{UserID} ],
+                );
+            }
         }
+
         return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
     }
 
     # ------------------------------------------------------------ #
-    # add queues to response
+    # groups to user
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'ChangeResponse' ) {
 
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
-        # get new queues
+        # get new role member
         my @IDs = $Self->{ParamObject}->GetArray( Param => 'Response' );
 
         my $ID = $Self->{ParamObject}->GetParam( Param => 'ID' );
 
-        # update db
-        $Self->{DBObject}->Do(
-            SQL  => 'DELETE FROM queue_standard_response WHERE standard_response_id = ?',
-            Bind => [ \$ID ],
-        );
-        for my $NewID (@IDs) {
-            next if !$NewID;
+        # get user list
+        my %QueueData = $Self->{QueueObject}->QueueList( Valid => 1 );
+        for my $QueueID ( keys %QueueData ) {
+            my $Active = 0;
+            for my $StandardResponseID (@IDs) {
+                next if $StandardResponseID ne $QueueID;
+                $Active = 1;
+                last;
+            }
+
+            # update db
             $Self->{DBObject}->Do(
-                SQL => 'INSERT INTO queue_standard_response (queue_id, standard_response_id, '
-                    . 'create_time, create_by, change_time, change_by) VALUES '
-                    . ' (?, ?, current_timestamp, ?, current_timestamp, ?)',
-                Bind => [ \$NewID, \$ID, \$Self->{UserID}, \$Self->{UserID} ],
+                SQL  => 'DELETE FROM queue_standard_response WHERE standard_response_id = ?',
+                Bind => [ \$ID ],
             );
+            for my $NewID (@IDs) {
+                next if !$NewID;
+                $Self->{DBObject}->Do(
+                    SQL => 'INSERT INTO queue_standard_response (queue_id, standard_response_id, '
+                        . 'create_time, create_by, change_time, change_by) VALUES '
+                        . ' (?, ?, current_timestamp, ?, current_timestamp, ?)',
+                    Bind => [ \$NewID, \$ID, \$Self->{UserID}, \$Self->{UserID} ],
+                );
+            }
         }
 
         return $Self->{LayoutObject}->Redirect( OP => "Action=$Self->{Action}" );
