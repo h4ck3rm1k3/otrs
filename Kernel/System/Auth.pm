@@ -1,8 +1,8 @@
 # --
-# Kernel/System/Auth.pm - provides the authentication
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Kernel/System/Auth.pm - provides the authentification
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Auth.pm,v 1.54 2012/01/19 08:30:35 mg Exp $
+# $Id: Auth.pm,v 1.42.2.1 2011/11/07 13:15:57 des Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,15 +17,15 @@ use warnings;
 use Kernel::System::Valid;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.54 $) [1];
+$VERSION = qw($Revision: 1.42.2.1 $) [1];
 
 =head1 NAME
 
-Kernel::System::Auth - agent authentication module.
+Kernel::System::Auth - agent autentification module.
 
 =head1 SYNOPSIS
 
-The authentication module for the agent interface.
+The autentification module for the agent interface.
 
 =head1 PUBLIC INTERFACE
 
@@ -140,10 +140,10 @@ sub new {
 
 =item GetOption()
 
-Get module options. Currently there is just one option, "PreAuth".
+Get module options. Currently exists just one option, "PreAuth".
 
-    if ( $AuthObject->GetOption( What => 'PreAuth' ) ) {
-        print "No login screen is needed. Authentication is based on some other options. E. g. $ENV{REMOTE_USER}\n";
+    if ($AuthObject->GetOption(What => 'PreAuth')) {
+        print "No login screen is needed. Autentificaion is based on some other options. E. g. $ENV{REMOTE_USER}\n";
     }
 
 =cut
@@ -156,9 +156,9 @@ sub GetOption {
 
 =item Auth()
 
-The authentication function.
+The autentificaion function.
 
-    if ( $AuthObject->Auth( User => $User, Pw => $Pw ) ) {
+    if ($AuthObject->Auth(User => $User, Pw => $Pw)) {
         print "Auth ok!\n";
     }
     else {
@@ -183,18 +183,11 @@ sub Auth {
         # next on no success
         next if !$User;
 
-        # configured auth sync backend
-        my $AuthSyncBackend = $Self->{ConfigObject}->Get("AuthModule${Count}::UseSyncBackend");
+        # sync used auth backend
+        if ( $Self->{"AuthSyncBackend$Count"} ) {
 
-        # sync with configured auth backend
-        if ( defined $AuthSyncBackend ) {
-
-            # if $AuthSyncBackend is defined but empty, don't sync with any backend
-            if ($AuthSyncBackend) {
-
-                # sync configured backend
-                $Self->{$AuthSyncBackend}->Sync( %Param, User => $User );
-            }
+            # sync same backend as auth was successfully
+            $Self->{"AuthSyncBackend$Count"}->Sync( %Param, User => $User );
         }
 
         # use all 11 sync backends
@@ -236,6 +229,7 @@ sub Auth {
             my %User = $Self->{UserObject}->GetUserData(
                 UserID => $UserID,
                 Valid  => 1,
+                Cached => 1,
             );
             my $Count = $User{UserLoginFailed} || 0;
             $Count++;
@@ -272,7 +266,7 @@ sub Auth {
 
     # remember login attributes
     my $UserID = $Self->{UserObject}->UserLookup(
-        UserLogin => $User,
+        UserLogin => $Param{User},
     );
     if ($UserID) {
 
@@ -289,13 +283,6 @@ sub Auth {
             Value  => $Self->{TimeObject}->SystemTime(),
             UserID => $UserID,
         );
-
-        # last login preferences update
-        $Self->{UserObject}->SetPreferences(
-            Key    => 'UserLastLoginTimestamp',
-            Value  => $Self->{TimeObject}->CurrentTimestamp(),
-            UserID => $UserID,
-        );
     }
 
     # return auth user
@@ -308,7 +295,7 @@ sub Auth {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
+This software is part of the OTRS project (http://otrs.org/).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
@@ -318,6 +305,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.54 $ $Date: 2012/01/19 08:30:35 $
+$Revision: 1.42.2.1 $ $Date: 2011/11/07 13:15:57 $
 
 =cut
