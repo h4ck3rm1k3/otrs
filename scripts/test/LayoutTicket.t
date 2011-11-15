@@ -2,7 +2,7 @@
 # scripts/test/LayoutTicket.t - layout module testscript
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: LayoutTicket.t,v 1.7 2011/11/17 11:32:28 mg Exp $
+# $Id: LayoutTicket.t,v 1.4.2.1 2011/11/15 10:11:23 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -23,35 +23,18 @@ use Kernel::System::User;
 use Kernel::Output::HTML::Layout;
 
 # create local objects
-my $ConfigObject  = Kernel::Config->new();
-my $SessionObject = Kernel::System::AuthSession->new(
-    %{$Self},
-    ConfigObject => $ConfigObject,
-);
-my $GroupObject = Kernel::System::Group->new(
-    %{$Self},
-    ConfigObject => $ConfigObject,
-);
-my $UserObject = Kernel::System::User->new(
-    %{$Self},
-    ConfigObject => $ConfigObject,
-);
-my $TicketObject = Kernel::System::Ticket->new(
-    %{$Self},
-    ConfigObject => $ConfigObject,
-);
-my $ParamObject = Kernel::System::Web::Request->new(
+my $SessionObject = Kernel::System::AuthSession->new( %{$Self} );
+my $GroupObject   = Kernel::System::Group->new( %{$Self} );
+my $UserObject    = Kernel::System::User->new( %{$Self} );
+my $TicketObject  = Kernel::System::Ticket->new( %{$Self} );
+my $ParamObject   = Kernel::System::Web::Request->new(
     %{$Self},
     WebRequest => $Param{WebRequest} || 0,
-    ConfigObject => $ConfigObject,
 );
-my $UploadCacheObject = Kernel::System::Web::UploadCache->new(
-    %{$Self},
-    ConfigObject => $ConfigObject,
-);
-my $FormID       = $UploadCacheObject->FormIDCreate();
-my $LayoutObject = Kernel::Output::HTML::Layout->new(
-    ConfigObject       => $ConfigObject,
+my $UploadCacheObject = Kernel::System::Web::UploadCache->new( %{$Self} );
+my $FormID            = $UploadCacheObject->FormIDCreate();
+my $LayoutObject      = Kernel::Output::HTML::Layout->new(
+    ConfigObject       => $Self->{ConfigObject},
     LogObject          => $Self->{LogObject},
     TimeObject         => $Self->{TimeObject},
     MainObject         => $Self->{MainObject},
@@ -140,6 +123,7 @@ $TicketObject->ArticleWriteAttachment(
     ArticleID   => $ArticleID,
     UserID      => 1,
 );
+
 $TicketObject->ArticleWriteAttachment(
     Filename    => 'image4.png',
     MimeType    => 'image/png',
@@ -149,6 +133,7 @@ $TicketObject->ArticleWriteAttachment(
     ArticleID   => $ArticleID,
     UserID      => 1,
 );
+
 $TicketObject->ArticleWriteAttachment(
     Filename    => 'image.bmp',
     MimeType    => 'image/bmp',
@@ -167,7 +152,7 @@ my @Tests = (
         },
         BodyRegExp => [
             '<b>Test HTML document.<\/b>',
-            '<img src="[^;]+?Action=PictureUpload;FormID=[0-9.]+;SessionID=123;ContentID=1234" border="0">',
+            '<img src=".+?Action=PictureUpload;.+?SessionID=123;ContentID=1234" border="0">',
         ],
         AttachmentsInclude => 1,
         Attachment         => {
@@ -182,7 +167,7 @@ my @Tests = (
         },
         BodyRegExp => [
             '<b>Test HTML document.<\/b>',
-            '<img src="[^;]+?Action=PictureUpload;FormID=[0-9.]+;SessionID=123;ContentID=_1_09B1841409B1651C003EDE23C325785D" border="0">',
+            '<img src=".+?Action=PictureUpload;.+?SessionID=123;ContentID=_1_09B1841409B1651C003EDE23C325785D" border="0">',
         ],
         AttachmentsInclude => 1,
         Attachment         => {
@@ -195,7 +180,7 @@ my @Tests = (
         },
         BodyRegExp => [
             '<b>Test HTML document.<\/b>',
-            '<img src="[^;]+?Action=PictureUpload;FormID=[0-9.]+;SessionID=123;ContentID=1234" border="0">',
+            '<img src=".+?Action=PictureUpload;.+?SessionID=123;ContentID=1234" border="0">',
         ],
         AttachmentsInclude => 0,
         Attachment         => {
@@ -235,7 +220,7 @@ my @Tests = (
             'Frontend::RichText' => 1,
         },
         BodyRegExp => [
-            '<img src="[^;]+?Action=PictureUpload;FormID=[0-9.]+;SessionID=123;ContentID=Untitled%2520Attachment" border="0">',
+            '<img src=".+?Action=PictureUpload;.+?SessionID=123;ContentID=Untitled%2520Attachment" border="0">',
         ],
         AttachmentsInclude => 0,
         Attachment         => {
@@ -249,7 +234,7 @@ for my $Test (@Tests) {
 
     # set config settings
     for my $Key ( sort keys %{ $Test->{Config} } ) {
-        $ConfigObject->Set(
+        $Self->{ConfigObject}->Set(
             Key   => $Key,
             Value => $Test->{Config}->{$Key},
         );
