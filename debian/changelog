@@ -1,8 +1,11 @@
 otrs2 (3.0.0-trunk) unstable; urgency=high
 
+  [ James Michael DuPont ]
   * Experimental packaging
 
- -- James Michael DuPont <jamesmikedupont@gmail.com>  Sun, 30 Oct 2011 22:23:23 +0100
+  [ mdupont ]
+
+ -- James Michael DuPont (http://flossk.org) <JamesMikeDuPont@googlemail.com>  Sun, 06 Nov 2011 09:20:00 +1200
 
 otrs2 (3.0.10+dfsg1-2) unstable; urgency=high
 
