@@ -3,7 +3,7 @@
 # otrs.MarkTicketAsSeen.pl - set all ticket to seen
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: otrs.MarkTicketAsSeen.pl,v 1.4 2011/11/16 09:02:13 mb Exp $
+# $Id: otrs.MarkTicketAsSeen.pl,v 1.2.2.1 2011/11/16 08:51:54 mb Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -30,7 +30,7 @@ use FindBin qw($RealBin);
 use lib dirname($RealBin);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.4 $) [1];
+$VERSION = qw($Revision: 1.2.2.1 $) [1];
 
 use Getopt::Std;
 use Kernel::Config;
@@ -44,13 +44,12 @@ use Kernel::System::Ticket;
 
 # get options
 my %Opts = ();
-getopts( 'ha', \%Opts );
+getopts( 'hs:', \%Opts );
 if ( $Opts{h} ) {
     print "otrs.MarkTicketAsSeen.pl <Revision $VERSION> - mark tickets as seen by the agent\n";
     print "Copyright (C) 2001-2011 OTRS AG, http://otrs.org/\n\n";
-    print "usage: otrs.MarkTicketAsSeen.pl [-a]\n\n";
-    print "If you pass '-a' it will update ALL tickets, otherwise only non-closed\n";
-    print "tickets will be updated.\n";
+    print "usage: otrs.MarkTicketAsSeen.pl [-s Open]\n\n";
+    print "If you pass '-s Open' it will only update non-closed tickets.\n";
     exit 1;
 }
 
@@ -72,7 +71,7 @@ $CommonObject{TicketObject} = Kernel::System::Ticket->new(%CommonObject);
 $CommonObject{ConfigObject}->{'Ticket::EventModulePost'} = undef;
 
 my %Search;
-if ( !$Opts{a} ) {
+if ( defined $Opts{s} && $Opts{s} eq 'Open' ) {
     print "Only processing tickets that are not closed:\n";
     $Search{StateType} = 'Open';
 }
