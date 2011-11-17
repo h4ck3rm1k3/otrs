@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.40 2011/11/17 23:20:53 cg Exp $
+# $Id: OTRS.pm,v 1.41 2011/11/17 23:24:38 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.40 $) [1];
+$VERSION = qw($Revision: 1.41 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -664,24 +664,29 @@ sub _GeneralSystemOverview {
     $TableInfo .= "Tickets per month (avg)=$AverageTicketsMonth;";
 
     #  attachments
-    my $HowManyAttachments;
-    my $AverageAttachmentSize;
-    $Self->{DBObject}->Prepare(
-        SQL => "select count(*), avg(content_size) from article_attachment " .
-            "where content_type not like('text/html%')",
-    );
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
-        $HowManyAttachments    = $Row[0] || 0;
-        $AverageAttachmentSize = $Row[1] || 0;
+    my $StorageModule = $Self->{ConfigObject}->Get('Ticket::StorageModule') || '';
+
+    if ( $StorageModule eq 'Kernel::System::Ticket::ArticleStorageDB' ) {
+        my $HowManyAttachments;
+        my $AverageAttachmentSize = 0;
+        $Self->{DBObject}->Prepare(
+            SQL => "select id, content_size from article_attachment " .
+                "where content_type not like('text/html%')",
+        );
+        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+            $HowManyAttachments++;
+            $AverageAttachmentSize = $AverageAttachmentSize + $Row[1];
+        }
+
+        $AverageAttachmentSize = $AverageAttachmentSize / $HowManyAttachments;
+        $AverageAttachmentSize = int( $AverageAttachmentSize / 1024 );
+        $AverageAttachmentSize = sprintf( "%.2f", $AverageAttachmentSize );
+        my $AvgAttachmentTicket = $HowManyAttachments / $Search{1}->{Result};
+        $AvgAttachmentTicket = sprintf( "%.2f", $AvgAttachmentTicket );
+
+        $TableInfo .= "Attachments per ticket (avg)=$AvgAttachmentTicket;";
+        $TableInfo .= "Attachment size (avg)=$AverageAttachmentSize KB;";
     }
-
-    $AverageAttachmentSize = int( $AverageAttachmentSize / 1024 );
-    $AverageAttachmentSize = sprintf( "%.2f", $AverageAttachmentSize );
-    my $AvgAttachmentTicket = $HowManyAttachments / $Search{1}->{Result};
-    $AvgAttachmentTicket = sprintf( "%.2f", $AvgAttachmentTicket );
-
-    $TableInfo .= "Attachments per ticket (avg)=$AvgAttachmentTicket;";
-    $TableInfo .= "Attachment size (avg)=$AverageAttachmentSize KB;";
 
     # customers
     $Self->{DBObject}->Prepare(
