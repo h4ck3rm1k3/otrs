@@ -2,7 +2,7 @@
 # Kernel/System/Support/OTRS.pm - all required otrs information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: OTRS.pm,v 1.39 2011/06/29 09:02:25 mb Exp $
+# $Id: OTRS.pm,v 1.40 2011/11/17 23:20:53 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::Package;
 use Kernel::System::Auth;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.39 $) [1];
+$VERSION = qw($Revision: 1.40 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -684,12 +684,17 @@ sub _GeneralSystemOverview {
     $TableInfo .= "Attachment size (avg)=$AverageAttachmentSize KB;";
 
     # customers
-    my %List = $Self->{CustomerUserObject}->CustomerSearch(
-        Search => '*',
-        Valid  => 0,
+    $Self->{DBObject}->Prepare(
+        SQL => "select COUNT(DISTINCT(customer_user_id)) " .
+            "from ticket",
     );
-    my $Customers = scalar keys %List;
-    $TableInfo .= "Customers=$Customers;";
+    my $Customers;
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+
+        # months on seconds
+        $Customers = $Row[0] || 0;
+    }
+    $TableInfo .= "Customers with at least one ticket=$Customers;";
 
     # operating system
     $TableInfo .= "Operating system=$^O;";

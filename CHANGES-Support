@@ -2,7 +2,7 @@
 # CHANGES - change log of the Support module for OTRS
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: CHANGES-Support,v 1.12 2011/11/17 19:33:51 cg Exp $
+# $Id: CHANGES-Support,v 1.13 2011/11/17 23:20:53 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -10,6 +10,7 @@
 # --
 
 1.2.8 2011-??-??
+ - 2011-11-17 Fixed bug#7524 - Newest OTRS Support check cause issue with LDAP customerDB.
  - 2011-11-17 Fixed bug#7604 - Support package can be over 100MB in size.
  - 2011-07-27 Fixed bug#7491 - Support module fails on CentOS6 by upgrading
     bundled Linux::Distribution module to 0.20.
