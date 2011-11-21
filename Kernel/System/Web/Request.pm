@@ -2,7 +2,7 @@
 # Kernel/System/Web/Request.pm - a wrapper for CGI.pm or Apache::Request.pm
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: Request.pm,v 1.41 2011/11/21 10:20:47 mg Exp $
+# $Id: Request.pm,v 1.37.2.1 2011/11/21 09:00:42 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::CheckItem;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.41 $) [1];
+$VERSION = qw($Revision: 1.37.2.1 $) [1];
 
 =head1 NAME
 
@@ -61,18 +61,8 @@ create param object
         LogObject    => $LogObject,
         EncodeObject => $EncodeObject,
         MainObject   => $MainObject,
-        WebRequest   => CGI::Fast->new(), # optional, e. g. if fast cgi is used
+
     );
-
-If Kernel::System::Web::Request is instantiated several times, they will share the
-same CGI data (this can be helpful in filters which do not have access to the
-ParamObject, for example.
-
-If you need to reset the CGI data before creating a new instance, use
-
-    CGI::initialize_globals();
-
-before calling Kernel::System::Web::Request->new();
 
 =cut
 
@@ -331,10 +321,8 @@ sub _GetUploadInfo {
 set a cookie
 
     $ParamObject->SetCookie(
-        Key     => ID,
-        Value   => 123456,
-        Expires => '+3660s',
-        Secure  => 1,           # optional, set secure attribute to disable cookie on HTTP (HTTPS only)
+        Key   => ID,
+        Value => 123456,
     );
 
 =cut
@@ -346,7 +334,6 @@ sub SetCookie {
         -name    => $Param{Key},
         -value   => $Param{Value},
         -expires => $Param{Expires},
-        -secure  => $Param{Secure},
     );
 }
 
@@ -382,6 +369,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.41 $ $Date: 2011/11/21 10:20:47 $
+$Revision: 1.37.2.1 $ $Date: 2011/11/21 09:00:42 $
 
 =cut
