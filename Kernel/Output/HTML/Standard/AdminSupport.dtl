@@ -2,7 +2,7 @@
 # AdminSupport.dtl - provides HTML form for AdminSupport
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.dtl,v 1.32 2011/06/28 20:38:41 cg Exp $
+# $Id: AdminSupport.dtl,v 1.33 2011/11/22 18:10:45 cg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -219,12 +219,6 @@ $Include{"AdminSupportLicenseText"}
                     <input type="hidden" name="$QData{"Name"}" value="$QData{"Value"}"/>
 <!-- dtl:block:SenderInformationHidden -->
                     <fieldset class="TableLike">
-                        <label for="Sender">$Text{"Email"}:</label>
-                        <div class="Field">
-                            <input type="text" id="Sender" name="Sender" value="$QData{"SenderAdress"}" class="W50pc" readonly="readonly" />
-                        </div>
-                        <div class="Clear"></div>
-
                         <label for="Salutation">$Text{"Salutation"}:</label>
                         <div class="Field">
                             <input type="text" id="Salutation" name="Salutation" value="$QData{"SenderSalutation"}" class="W50pc" readonly="readonly" />
@@ -234,6 +228,12 @@ $Include{"AdminSupportLicenseText"}
                         <label for="Name">$Text{"Name"}:</label>
                         <div class="Field">
                             <input type="text" id="Name" name="Name" value="$QData{"SenderName"}" class="W50pc" readonly="readonly" />
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="Sender">$Text{"Email"}:</label>
+                        <div class="Field">
+                            <input type="text" id="Sender" name="Sender" value="$QData{"SenderAdress"}" class="W50pc" readonly="readonly" />
                         </div>
                         <div class="Clear"></div>
 
@@ -276,9 +276,9 @@ $Include{"AdminSupportLicenseText"}
 
                         <div class="Value">
                             <p class="">
-                                <strong>$Text{"Enterprise Support and Enterprise Subscription information"}</strong><br/>
-                                $Text{"No, I'm not yet an ((otrs)) 'Enterprise Subscription' or 'Enterprise Support' customer. Please review my support package without any commitment and send me information only and without responsibility, about the different ((otrs)) Enterprise packages"}:
+                                <strong>$Text{"Service Subscription"}</strong><br/>
                                 <input type="checkbox" id="SendInfo" name="SendInfo" value="1" checked="checked"/>
+                                $Text{"Please recommend me a Service Subscription to optimize my OTRS"}.
                             </p>
                         </div>
                         <div class="Clear"></div>
