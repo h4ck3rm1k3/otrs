@@ -2,7 +2,7 @@
 # Kernel/Modules/AdminSupport.pm - show support information
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.36 2011/11/22 17:40:11 cg Exp $
+# $Id: AdminSupport.pm,v 1.37 2011/11/24 15:08:09 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.36 $) [1];
+$VERSION = qw($Revision: 1.37 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -166,17 +166,17 @@ sub Run {
             if ($SendMessage) {
                 $Output .= $Self->{LayoutObject}->Notify(
                     Priority => 'warning',
-                    Info     => "Sent to ((otrs))!",
+                    Info     => "Sent package to OTRS Group.",
                 );
             }
             else {
                 $Output .= $Self->{LayoutObject}->Notify(
                     Priority => 'warning',
-                    Info     => 'Can not send email to the ((otrs)) support team!' . "\n\n"
-                        . "You will find the otrs system information package at\n"
-                        . "If you would like to use OTRS support services please send the package to support\@otrs.com or call\n"
-                        . "our support team by phone to review the next step.\n\n"
-                        . "You can find more information about OTRS support or face-to-face contact information at\n"
+                    Info     => 'Can not send email to OTRS Group!' . "\n\n"
+                        . "You can download the support package and send it in manually if needed.\n"
+                        . "If you would like to use OTRS services please send the package to support\@otrs.com or call\n"
+                        . "our team by phone to review the next step.\n\n"
+                        . "You can find more information about OTRS services as well as contact information at\n"
                         . 'http://www.otrs.com/' . "\n\n",
                 );
             }
