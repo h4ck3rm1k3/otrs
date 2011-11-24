@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-    <CVS>$Id: Support.sopm,v 1.28 2011/11/18 03:55:40 cg Exp $</CVS>
+    <CVS>$Id: Support.sopm,v 1.29 2011/11/24 10:57:29 mg Exp $</CVS>
     <Name>Support</Name>
     <Version>0.0.0</Version>
     <Framework>3.1.x</Framework>
@@ -8,10 +8,10 @@
     <URL>http://otrs.org/</URL>
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
     <Description Lang="en">Verifies System settings and gives performance tips.</Description>
-    <Description Lang="de">Das Support Assessment Modul prüft fehlerhafte System-Einstellungen und gibt Performance-Tips.</Description>
+    <Description Lang="de">Das Support-Assessment-Modul prüft fehlerhafte System-Einstellungen und gibt Performance-Tips.</Description>
     <Description Lang="es">Comprueba configuraciones del sistema y brinda consejos de rendimiento.</Description>
     <IntroInstallPost Title="Notice - Introduction" Lang="en">The Support assessment module provides system checks and can help to find setup errors. After installation it can be accessed from the Administration Interface, in the System Administration panel.</IntroInstallPost>
-    <IntroInstallPost Title="Hinweis - Einführung" Lang="de">Die Verknüpfung zum Support Assessment Modul ist in der vierten Spalte des Administrations-Bereichs hinterlegt. Mit ihr können System-Checks ausgeführt werden, um Fehler im Setup zu finden.</IntroInstallPost>
+    <IntroInstallPost Title="Hinweis - Einführung" Lang="de">Das Support-Assessment-Modul bietet Systemüberprüfungen an, mit denen Einrichtungsfehler erkannt werden können. Nach der Installation kann es über den Administrationsbereich im Abschnitt System-Administration aufgerufen werden.</IntroInstallPost>
     <IntroInstallPost Title="Notice - Introduction" Lang="es">El módulo de evaluación de soporte proporciona comprobaciones del sistema y puede ayudar a encontrar errores de configuración. Después de la instalación se puede acceder desde la Interfaz de Administración, en el panel de administración del sistema.</IntroInstallPost>
     <Filelist>
         <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupport.dtl"/>
