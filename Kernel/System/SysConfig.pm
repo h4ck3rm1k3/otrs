@@ -2,7 +2,7 @@
 # Kernel/System/SysConfig.pm - all system config tool functions
 # Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: SysConfig.pm,v 1.32 2011/12/21 09:52:28 mg Exp $
+# $Id: SysConfig.pm,v 1.28.2.1 2011/12/06 10:22:09 des Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::Config;
 use Kernel::Language;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.32 $) [1];
+$VERSION = qw($Revision: 1.28.2.1 $) [1];
 
 =head1 NAME
 
@@ -107,8 +107,13 @@ sub new {
     $Self->{Home} = $Self->{ConfigObject}->Get('Home');
 
     # set utf8 if used
-    $Self->{utf8}     = 1;
-    $Self->{FileMode} = ':utf8';
+    if ( $Self->{ConfigObject}->Get('DefaultCharset') =~ /^utf(-8|8)$/i ) {
+        $Self->{utf8}     = 1;
+        $Self->{FileMode} = ':utf8';
+    }
+    else {
+        $Self->{FileMode} = '';
+    }
 
     # create xml object
     $Self->{XMLObject} = Kernel::System::XML->new(%Param);
@@ -179,22 +184,27 @@ sub WriteDefault {
 
     # write default config file
     my $Out;
-    $Out .= "# OTRS config file (automatically generated)\n";
-    $Out .= "# VERSION:1.1\n";
-    $Out .= "package Kernel::Config::Files::ZZZAAuto;\n";
-    if ( $Self->{utf8} ) {
-        $Out .= "use utf8;\n";
+    if ( !open( $Out, ">$Self->{FileMode}", "$Self->{Home}/Kernel/Config/Files/ZZZAAuto.pm" ) ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't write $Self->{Home}/Kernel/Config/Files/ZZZAAuto.pm: $!!",
+        );
+        return;
     }
-    $Out .= "sub Load {\n";
-    $Out .= "    my (\$File, \$Self) = \@_;\n";
-    $Out .= $File;
-    $Out .= "}\n";
-    $Out .= "1;\n";
 
-    return $Self->_FileWriteAtomic(
-        Filename => "$Self->{Home}/Kernel/Config/Files/ZZZAAuto.pm",
-        Content  => \$Out,
-    );
+    print $Out "# OTRS config file (automatically generated)\n";
+    print $Out "# VERSION:1.1\n";
+    print $Out "package Kernel::Config::Files::ZZZAAuto;\n";
+    if ( $Self->{utf8} ) {
+        print $Out "use utf8;\n";
+    }
+    print $Out "sub Load {\n";
+    print $Out "    my (\$File, \$Self) = \@_;\n";
+    print $Out $File;
+    print $Out "}\n";
+    print $Out "1;\n";
+    close($Out);
+    return 1;
 }
 
 =item Download()
@@ -390,22 +400,28 @@ sub CreateConfig {
 
     # write new config file
     my $Out;
-    $Out .= "# OTRS config file (automatically generated)\n";
-    $Out .= "# VERSION:1.1\n";
-    $Out .= "package Kernel::Config::Files::ZZZAuto;\n";
-    if ( $Self->{utf8} ) {
-        $Out .= "use utf8;\n";
+    if ( !open( $Out, ">$Self->{FileMode}", "$Home/Kernel/Config/Files/ZZZAuto.pm" ) ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't write $Home/Kernel/Config/Files/ZZZAuto.pm!",
+        );
+        return;
     }
-    $Out .= "sub Load {\n";
-    $Out .= "    my (\$File, \$Self) = \@_;\n";
-    $Out .= $File;
-    $Out .= "}\n";
-    $Out .= "1;\n";
 
-    return $Self->_FileWriteAtomic(
-        Filename => "$Self->{Home}/Kernel/Config/Files/ZZZAuto.pm",
-        Content  => \$Out,
-    );
+    print $Out "# OTRS config file (automatically generated)\n";
+    print $Out "# VERSION:1.1\n";
+    print $Out "package Kernel::Config::Files::ZZZAuto;\n";
+    if ( $Self->{utf8} ) {
+        print $Out "use utf8;\n";
+    }
+    print $Out "sub Load {\n";
+    print $Out "    my (\$File, \$Self) = \@_;\n";
+    print $Out $File;
+    print $Out "}\n";
+    print $Out "1;\n";
+    close($Out);
+
+    return 1;
 }
 
 =item ConfigItemUpdate()
@@ -524,15 +540,20 @@ sub ConfigItemUpdate {
     }
     close($In);
 
-    my $Content;
-    for my $Line ( reverse @FileNew ) {
-        $Content .= $Line;
+    # write it to file
+    if ( !open( $Out, ">$Self->{FileMode}", "$Home/Kernel/Config/Files/ZZZAuto.pm" ) ) {
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Can't write $Home/Kernel/Config/Files/ZZZAuto.pm: $!",
+        );
+        return;
     }
 
-    return $Self->_FileWriteAtomic(
-        Filename => "$Self->{Home}/Kernel/Config/Files/ZZZAuto.pm",
-        Content  => \$Content,
-    );
+    for my $Line ( reverse @FileNew ) {
+        print $Out $Line;
+    }
+    close($Out);
+    return 1;
 }
 
 =item ConfigItemGet()
@@ -1601,16 +1622,19 @@ sub _Init {
                     my $Dump = $Self->{MainObject}->Dump( \@XMLHash, 'ascii' );
                     $Dump =~ s/\$VAR1/\$XMLHashRef/;
                     my $Out;
-
-                    if ( $Self->{utf8} ) {
-                        $Out .= "use utf8;\n";
+                    if ( open( $Out, ">$Self->{FileMode}", $FileCache ) ) {
+                        if ( $Self->{utf8} ) {
+                            print $Out "use utf8;\n";
+                        }
+                        print $Out $Dump . "\n1;";
+                        close($Out);
                     }
-                    $Out .= $Dump . "\n1;";
-
-                    $Self->_FileWriteAtomic(
-                        Filename => $FileCache,
-                        Content  => \$Out,
-                    );
+                    else {
+                        $Self->{LogObject}->Log(
+                            Priority => 'error',
+                            Message  => "Can't write cache file $FileCache: $!",
+                        );
+                    }
                 }
             }
         }
@@ -1763,12 +1787,8 @@ sub _DataDiff {
         # compare %A with %B and remove it if checked
         for my $Key ( keys %A ) {
 
-            # Check if both are undefined
-            if ( !defined $A{$Key} && !defined $B{$Key} ) {
-                delete $A{$Key};
-                delete $B{$Key};
-                next;
-            }
+            # do nothing, it's ok
+            next if !defined $A{$Key} && !defined $B{$Key};
 
             # return diff, because its different
             return 1 if !defined $A{$Key} || !defined $B{$Key};
@@ -1817,54 +1837,6 @@ sub DESTROY {
         # write default file
         $Self->WriteDefault();
     }
-    return 1;
-}
-
-=item _FileWriteAtomic()
-
-writes a file in an atomic operation. This is achieved by creating
-a temporary file, filling and renaming it. This avoids inconsistent states
-when the file is updated.
-
-    my $Success = $SysConfigObject->_FileWriteAtomic(
-        Filename => "$Self->{Home}/Kernel/Config/Files/ZZZAAuto.pm",
-        Content  => \$NewContent,
-    );
-
-=cut
-
-sub _FileWriteAtomic {
-    my ( $Self, %Param ) = @_;
-
-    for (qw(Filename Content)) {
-        if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-
-    my $TempFilename = $Param{Filename} . '.' . $$;
-    my $FH;
-
-    if ( !open( $FH, ">$Self->{FileMode}", $TempFilename ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Can't open file $TempFilename!",
-        );
-        return;
-    }
-
-    print $FH ${ $Param{Content} };
-    close $FH;
-
-    if ( !rename $TempFilename, $Param{Filename} ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Could not rename $TempFilename to $Param{Filename}!"
-        );
-        return;
-    }
-
     return 1;
 }
 
@@ -2283,6 +2255,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.32 $ $Date: 2011/12/21 09:52:28 $
+$Revision: 1.28.2.1 $ $Date: 2011/12/06 10:22:09 $
 
 =cut
