@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/CustomerUserGenericTicket.pm
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerUserGenericTicket.pm,v 1.20 2012/01/23 14:43:21 mg Exp $
+# $Id: CustomerUserGenericTicket.pm,v 1.16.2.1 2011/12/12 16:20:20 jp Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.20 $) [1];
+$VERSION = qw($Revision: 1.16.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -25,10 +25,7 @@ sub new {
     bless( $Self, $Type );
 
     # get needed objects
-    for (
-        qw(ConfigObject LogObject DBObject LayoutObject TicketObject MainObject EncodeObject UserID)
-        )
-    {
+    for (qw(ConfigObject LogObject DBObject LayoutObject TicketObject MainObject UserID)) {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
@@ -146,16 +143,6 @@ sub Run {
         else {
             $URL .= ';' . $Key . '=' . $Self->{LayoutObject}->LinkEncode( $TicketSearch{$Key} );
         }
-    }
-
-    if ( defined $Param{Config}->{CustomerUserLogin} && $Param{Config}->{CustomerUserLogin} ) {
-        my $CustomerUserLoginEscaped = $Self->{DBObject}->QueryStringEscape(
-            QueryString => $Param{Data}->{UserLogin},
-        );
-
-        $TicketSearch{CustomerUserLogin} = $CustomerUserLoginEscaped;
-        $URL .= ';CustomerUserLogin='
-            . $Self->{LayoutObject}->LinkEncode($CustomerUserLoginEscaped);
     }
 
     my $Count = $Self->{TicketObject}->TicketSearch(
