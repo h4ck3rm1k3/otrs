@@ -1,0 +1,237 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_Auth {
+	label="Kernel::System::Auth";
+	"Kernel::System::Auth::new";
+}
+subgraph cluster_Kernel_System_Log_SysLog {
+	label="Kernel::System::Log::SysLog";
+	"Kernel::System::Log::SysLog::Log";
+	"Kernel::System::Log::SysLog::new";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_Kernel_System_Cache {
+	label="Kernel::System::Cache";
+	"Kernel::System::Cache::new";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::new";
+}
+subgraph cluster_File_stat {
+	label="File::stat";
+	"File::stat::BEGIN@22";
+	"File::stat::BEGIN@5";
+	"File::stat::BEGIN@4";
+	"File::stat::BEGIN@11";
+	"File::stat::BEGIN@54";
+	"File::stat::BEGIN@27";
+	"File::stat::BEGIN@2";
+	"File::stat::BEGIN@12";
+	"File::stat::import";
+}
+subgraph cluster_XSLoader {
+	label="XSLoader";
+	"XSLoader::load";
+}
+subgraph cluster_Kernel_System_Cache_FileStorable {
+	label="Kernel::System::Cache::FileStorable";
+	"Kernel::System::Cache::FileStorable::new";
+}
+subgraph cluster_Kernel_System_Log {
+	label="Kernel::System::Log";
+	"Kernel::System::Log::new";
+}
+subgraph cluster_Kernel_System_Web_Request {
+	label="Kernel::System::Web::Request";
+	"Kernel::System::Web::Request::new";
+}
+subgraph cluster_Kernel_System_Auth_DB {
+	label="Kernel::System::Auth::DB";
+	"Kernel::System::Auth::DB::new";
+}
+subgraph cluster_File_Glob {
+	label="File::Glob";
+	"File::Glob::GLOB_CSH";
+	"File::Glob::BEGIN@3";
+	"File::Glob::BEGIN@7";
+	"File::Glob::CORE:match";
+}
+subgraph cluster_Kernel_Config {
+	label="Kernel::Config";
+	"Kernel::Config::BEGIN@117";
+	"Kernel::Config::Load";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_Kernel_System_Time {
+	label="Kernel::System::Time";
+	"Kernel::System::Time::new";
+}
+subgraph cluster_File_Basename {
+	label="File::Basename";
+	"File::Basename::dirname";
+}
+subgraph cluster_Kernel_Output_HTML_Layout {
+	label="Kernel::Output::HTML::Layout";
+	"Kernel::Output::HTML::Layout::_DisableBannerCheck";
+	"Kernel::Output::HTML::Layout::Login";
+	"Kernel::Output::HTML::Layout::new";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::BEGIN@42";
+	"Kernel::Config::Defaults::LoadDefaults";
+	"Kernel::Config::Defaults::CORE:open";
+	"Kernel::Config::Defaults::BEGIN@36";
+	"Kernel::Config::Defaults::new";
+	"Kernel::Config::Defaults::CORE:close";
+	"Kernel::Config::Defaults::BEGIN@31";
+	"Kernel::Config::Defaults::CORE:readline";
+	"Kernel::Config::Defaults::Get";
+	"Kernel::Config::Defaults::BEGIN@24";
+	"Kernel::Config::Defaults::CORE:ftis";
+	"Kernel::Config::Defaults::BEGIN@25";
+	"Kernel::Config::Defaults::BEGIN@38";
+	"Kernel::Config::Defaults::BEGIN@41";
+	"Kernel::Config::Defaults::CORE:match";
+	"Kernel::Config::Defaults::CORE:substcont";
+	"Kernel::Config::Defaults::BEGIN@1975";
+	"Kernel::Config::Defaults::BEGIN@35";
+	"Kernel::Config::Defaults::CORE:subst";
+	"Kernel::Config::Defaults::BEGIN@39";
+	"Kernel::Config::Defaults::BEGIN@37";
+	"Kernel::Config::Defaults::BEGIN@29";
+}
+subgraph cluster_Class_Struct {
+	label="Class::Struct";
+	"Class::Struct::struct";
+}
+subgraph cluster_Kernel_System_AuthSession {
+	label="Kernel::System::AuthSession";
+	"Kernel::System::AuthSession::new";
+}
+subgraph cluster_Kernel_System_User_Preferences_DB {
+	label="Kernel::System::User::Preferences::DB";
+	"Kernel::System::User::Preferences::DB::new";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::Run";
+	"Kernel::System::Web::InterfaceAgent::new";
+}
+subgraph cluster_Digest_base {
+	label="Digest::base";
+	"Digest::base::BEGIN@3";
+	"Digest::base::BEGIN@4";
+}
+subgraph cluster_Kernel_Language {
+	label="Kernel::Language";
+	"Kernel::Language::new";
+}
+subgraph cluster_Digest_MD5 {
+	label="Digest::MD5";
+	"Digest::MD5::BEGIN@3";
+	"Digest::MD5::BEGIN@4";
+}
+subgraph cluster_lib {
+	label="lib";
+	"lib::import";
+}
+subgraph cluster_Kernel_System_AuthSession_DB {
+	label="Kernel::System::AuthSession::DB";
+	"Kernel::System::AuthSession::DB::new";
+}
+subgraph cluster_Kernel_System_User {
+	label="Kernel::System::User";
+	"Kernel::System::User::new";
+}
+"Kernel::Config::Defaults::new" -> "Kernel::Config::Load";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@42";
+"Kernel::Config::Defaults::new" -> "Kernel::Config::Defaults::LoadDefaults";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::Config::Defaults::new";
+"Kernel::Config::Defaults::new" -> "Kernel::Config::Defaults::CORE:close";
+"Kernel::Config::Defaults::BEGIN@1975" -> "File::Glob::CORE:match";
+"Kernel::System::User::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::User::Preferences::DB::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Time::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Web::Request::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Cache::FileStorable::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Log::SysLog::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::Output::HTML::Layout::_DisableBannerCheck" -> "Kernel::Config::Defaults::Get";
+"Kernel::Output::HTML::Layout::Login" -> "Kernel::Config::Defaults::Get";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Log::SysLog::Log" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::AuthSession::DB::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::Language::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Auth::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::DB::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Cache::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::AuthSession::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Auth::DB::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Log::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@38";
+"Kernel::Config::Defaults::BEGIN@39" -> "File::Basename::dirname";
+"Kernel::Config::Defaults::BEGIN@38" -> "File::Basename::dirname";
+"Kernel::Config::Defaults::BEGIN@37" -> "File::Basename::dirname";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@12";
+"Kernel::Config::Defaults::BEGIN@1975" -> "File::Glob::GLOB_CSH";
+"Kernel::Config::Defaults::new" -> "Kernel::Config::Defaults::CORE:match";
+"Kernel::Config::Defaults::BEGIN@42" -> "Exporter::import";
+"Kernel::Config::Defaults::BEGIN@36" -> "Exporter::import";
+"Kernel::Config::Defaults::BEGIN@41" -> "Exporter::import";
+"Kernel::Config::Defaults::BEGIN@35" -> "Exporter::import";
+"Kernel::Config::Defaults::new" -> "Kernel::Config::Defaults::CORE:substcont";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@1975";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@11";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@54";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@31";
+"Kernel::Config::Defaults::new" -> "Kernel::Config::Defaults::CORE:readline";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@24";
+"Kernel::Config::Defaults::BEGIN@25" -> "warnings::import";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@35";
+"Kernel::Config::Defaults::new" -> "Kernel::Config::Defaults::CORE:subst";
+"Kernel::Config::Defaults::BEGIN@42" -> "Digest::base::BEGIN@3";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@39";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@27";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@4";
+"Kernel::Config::Defaults::BEGIN@42" -> "Digest::base::BEGIN@4";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@36";
+"Kernel::Config::Defaults::new" -> "Kernel::Config::Defaults::CORE:open";
+"Kernel::Config::Defaults::BEGIN@1975" -> "File::Glob::BEGIN@7";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@2";
+"Kernel::Config::Defaults::BEGIN@31" -> "vars::import";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@25";
+"Kernel::Config::Defaults::BEGIN@41" -> "Class::Struct::struct";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@29";
+"Kernel::Config::Defaults::BEGIN@39" -> "lib::import";
+"Kernel::Config::Defaults::BEGIN@38" -> "lib::import";
+"Kernel::Config::Defaults::BEGIN@37" -> "lib::import";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@5";
+"Kernel::Config::Defaults::BEGIN@1975" -> "File::Glob::BEGIN@3";
+"Kernel::Config::Defaults::BEGIN@42" -> "XSLoader::load";
+"Kernel::Config::Defaults::BEGIN@1975" -> "XSLoader::load";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::import";
+"Kernel::Config::Defaults::BEGIN@42" -> "Digest::MD5::BEGIN@4";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@22";
+"Kernel::Config::Defaults::BEGIN@42" -> "Digest::MD5::BEGIN@3";
+"Kernel::Config::Defaults::new" -> "Kernel::Config::Defaults::CORE:ftis";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@41";
+"Kernel::Config::Defaults::BEGIN@24" -> "strict::import";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@37";
+}

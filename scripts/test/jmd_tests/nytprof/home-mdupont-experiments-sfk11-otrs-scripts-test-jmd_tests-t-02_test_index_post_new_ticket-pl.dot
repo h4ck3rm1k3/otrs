@@ -1,0 +1,238 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Internals {
+	label="Internals";
+	"Internals::SvREADONLY";
+}
+subgraph cluster_Config {
+	label="Config";
+	"Config::FETCH";
+}
+subgraph cluster_Encode {
+	label="Encode";
+	"Encode::from_to";
+}
+subgraph cluster_DBI {
+	label="DBI";
+	"DBI::setup_driver";
+	"DBI::disconnect_all";
+	"DBI::__ANON__[DBI.pm:721]";
+	"DBI::END";
+	"DBI::connect";
+}
+subgraph cluster_base {
+	label="base";
+	"base::import";
+}
+subgraph cluster_Encode_XS {
+	label="Encode::XS";
+	"Encode::XS::encode";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::CORE:regcomp";
+	"warnings::CORE:match";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::CORE:regcomp";
+	"strict::bits";
+	"strict::CORE:match";
+}
+subgraph cluster_DBI_common {
+	label="DBI::common";
+	"DBI::common::DESTROY";
+	"DBI::common::STORE";
+	"DBI::common::FETCH";
+}
+subgraph cluster_attributes {
+	label="attributes";
+	"attributes::import";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::Do";
+	"Kernel::System::DB::Disconnect";
+}
+subgraph cluster_Kernel_System_Log {
+	label="Kernel::System::Log";
+	"Kernel::System::Log::new";
+}
+subgraph cluster_Regexp {
+	label="Regexp";
+	"Regexp::DESTROY";
+}
+subgraph cluster_version {
+	label="version";
+	"version::BEGIN@1";
+}
+subgraph cluster_DBI_dr {
+	label="DBI::dr";
+	"DBI::dr::disconnect_all";
+	"DBI::dr::connect";
+}
+subgraph cluster_constant {
+	label="constant";
+	"constant::import";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_DBD_Pg_dr {
+	label="DBD::Pg::dr";
+	"DBD::Pg::dr::connect";
+}
+subgraph cluster_mro {
+	label="mro";
+	"mro::method_changed_in";
+}
+subgraph cluster_DBD_Pg {
+	label="DBD::Pg";
+	"DBD::Pg::BEGIN@20";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::Run";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@24";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@29";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@14";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@26";
+	"Kernel::System::Web::InterfaceAgent::new";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@30";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@31";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@21";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@15";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@25";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@17";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@23";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@22";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@27";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@32";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@28";
+}
+subgraph cluster_main {
+	label="main";
+	"main::BEGIN@33";
+	"main::BEGIN@30";
+	"main::BEGIN@25";
+	"main::BEGIN@24";
+	"main::BEGIN@32";
+	"main::BEGIN@40";
+	"main::BEGIN@28";
+	"main::NULL";
+	"main::RUNTIME";
+	"main::BEGIN@29";
+	"main::BEGIN@31";
+}
+subgraph cluster_DBI_db {
+	label="DBI::db";
+	"DBI::db::connected";
+	"DBI::db::do";
+	"DBI::db::disconnect";
+}
+subgraph cluster_UNIVERSAL {
+	label="UNIVERSAL";
+	"UNIVERSAL::isa";
+	"UNIVERSAL::VERSION";
+	"UNIVERSAL::can";
+}
+subgraph cluster_FindBin {
+	label="FindBin";
+	"FindBin::BEGIN@95";
+	"FindBin::BEGIN@98";
+	"FindBin::BEGIN@205";
+	"FindBin::BEGIN@99";
+	"FindBin::BEGIN@100";
+}
+subgraph cluster_lib {
+	label="lib";
+	"lib::BEGIN@6";
+	"lib::BEGIN@8";
+	"lib::import";
+}
+subgraph cluster_DBD__mem_common {
+	label="DBD::_mem::common";
+	"DBD::_mem::common::DESTROY";
+}
+subgraph cluster_JSON {
+	label="JSON";
+	"JSON::BEGIN@2";
+}
+"main::BEGIN@28" -> "FindBin::BEGIN@100";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@26";
+"DBI::__ANON__[DBI.pm:721]" -> "DBI::db::connected";
+"constant::import" -> "mro::method_changed_in";
+"main::BEGIN@24" -> "strict::CORE:match";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@25";
+"main::NULL" -> "DBD::_mem::common::DESTROY";
+"main::RUNTIME" -> "main::BEGIN@30";
+"main::RUNTIME" -> "DBI::END";
+"main::BEGIN@24" -> "strict::bits";
+"main::RUNTIME" -> "main::BEGIN@24";
+"main::BEGIN@28" -> "Exporter::import";
+"DBI::dr::connect" -> "DBD::Pg::dr::connect";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@32";
+"Kernel::System::Log::new" -> "UNIVERSAL::can";
+"attributes::import" -> "UNIVERSAL::can";
+"main::BEGIN@28" -> "FindBin::BEGIN@98";
+"main::BEGIN@29" -> "lib::BEGIN@6";
+"main::BEGIN@25" -> "warnings::CORE:match";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@14";
+"DBI::disconnect_all" -> "DBI::dr::disconnect_all";
+"DBI::setup_driver" -> "UNIVERSAL::isa";
+"base::import" -> "UNIVERSAL::isa";
+"main::BEGIN@24" -> "strict::CORE:regcomp";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@30";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@21";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@15";
+"main::RUNTIME" -> "main::BEGIN@33";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@23";
+"main::BEGIN@25" -> "warnings::import";
+"constant::import" -> "Internals::SvREADONLY";
+"DBD::Pg::BEGIN@20" -> "Regexp::DESTROY";
+"main::BEGIN@28" -> "FindBin::BEGIN@99";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@22";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@27";
+"Kernel::System::DB::Do" -> "DBI::db::do";
+"main::RUNTIME" -> "main::BEGIN@29";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@29";
+"main::RUNTIME" -> "main::BEGIN@32";
+"main::RUNTIME" -> "main::BEGIN@40";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@31";
+"main::BEGIN@33" -> "vars::import";
+"DBD::Pg::dr::connect" -> "DBI::common::FETCH";
+"DBI::__ANON__[DBI.pm:721]" -> "DBI::common::FETCH";
+"main::RUNTIME" -> "main::BEGIN@28";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@28";
+"main::BEGIN@30" -> "lib::import";
+"main::BEGIN@31" -> "lib::import";
+"main::BEGIN@29" -> "lib::import";
+"main::BEGIN@28" -> "FindBin::BEGIN@95";
+"main::RUNTIME" -> "Kernel::System::Web::InterfaceAgent::Run";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@24";
+"main::RUNTIME" -> "main::BEGIN@25";
+"DBI::__ANON__[DBI.pm:721]" -> "DBI::dr::connect";
+"main::BEGIN@28" -> "FindBin::BEGIN@205";
+"main::RUNTIME" -> "Kernel::System::Web::InterfaceAgent::new";
+"main::NULL" -> "DBI::common::DESTROY";
+"main::RUNTIME" -> "main::BEGIN@31";
+"main::BEGIN@29" -> "Config::FETCH";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@17";
+"Kernel::System::DB::Disconnect" -> "DBI::db::disconnect";
+"main::BEGIN@25" -> "warnings::CORE:regcomp";
+"main::BEGIN@29" -> "lib::BEGIN@8";
+"version::BEGIN@1" -> "UNIVERSAL::VERSION";
+"JSON::BEGIN@2" -> "UNIVERSAL::VERSION";
+"main::BEGIN@24" -> "strict::import";
+"DBD::Pg::dr::connect" -> "DBI::common::STORE";
+"DBI::__ANON__[DBI.pm:721]" -> "DBI::common::STORE";
+"DBI::connect" -> "DBI::common::STORE";
+"Encode::from_to" -> "Encode::XS::encode";
+}

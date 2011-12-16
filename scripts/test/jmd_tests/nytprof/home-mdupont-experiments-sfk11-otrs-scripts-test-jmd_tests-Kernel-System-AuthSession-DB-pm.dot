@@ -1,0 +1,72 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_XSLoader {
+	label="XSLoader";
+	"XSLoader::load";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_MIME_Base64 {
+	label="MIME::Base64";
+	"MIME::Base64::BEGIN@3";
+	"MIME::Base64::BEGIN@4";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_Kernel_System_AuthSession {
+	label="Kernel::System::AuthSession";
+	"Kernel::System::AuthSession::new";
+}
+subgraph cluster_main {
+	label="main";
+	"main::NULL";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::Require";
+}
+subgraph cluster_Kernel_System_AuthSession_DB {
+	label="Kernel::System::AuthSession::DB";
+	"Kernel::System::AuthSession::DB::BEGIN@17";
+	"Kernel::System::AuthSession::DB::BEGIN@14";
+	"Kernel::System::AuthSession::DB::BEGIN@16";
+	"Kernel::System::AuthSession::DB::BEGIN@15";
+	"Kernel::System::AuthSession::DB::BEGIN@19";
+	"Kernel::System::AuthSession::DB::_SyncToStorage";
+	"Kernel::System::AuthSession::DB::DESTROY";
+	"Kernel::System::AuthSession::DB::new";
+}
+"Kernel::System::AuthSession::DB::BEGIN@17" -> "MIME::Base64::BEGIN@3";
+"Kernel::System::AuthSession::DB::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::AuthSession::DB::BEGIN@17" -> "MIME::Base64::BEGIN@4";
+"Kernel::System::AuthSession::DB::BEGIN@17" -> "Exporter::import";
+"Kernel::System::AuthSession::DB::BEGIN@16" -> "Exporter::import";
+"Kernel::System::AuthSession::DB::DESTROY" -> "Kernel::System::AuthSession::DB::_SyncToStorage";
+"Kernel::System::Main::Require" -> "Kernel::System::AuthSession::DB::BEGIN@15";
+"Kernel::System::Main::Require" -> "Kernel::System::AuthSession::DB::BEGIN@14";
+"Kernel::System::Main::Require" -> "Kernel::System::AuthSession::DB::BEGIN@16";
+"Kernel::System::AuthSession::DB::BEGIN@15" -> "warnings::import";
+"main::NULL" -> "Kernel::System::AuthSession::DB::DESTROY";
+"Kernel::System::Main::Require" -> "Kernel::System::AuthSession::DB::BEGIN@19";
+"Kernel::System::AuthSession::new" -> "Kernel::System::AuthSession::DB::new";
+"Kernel::System::AuthSession::DB::BEGIN@19" -> "vars::import";
+"Kernel::System::Main::Require" -> "Kernel::System::AuthSession::DB::BEGIN@17";
+"Kernel::System::AuthSession::DB::BEGIN@17" -> "XSLoader::load";
+"Kernel::System::AuthSession::DB::BEGIN@14" -> "strict::import";
+}

@@ -1,0 +1,74 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Config {
+	label="Config";
+	"Config::BEGIN@35";
+	"Config::CORE:subst";
+	"Config::TIEHASH";
+	"Config::CORE:match";
+	"Config::BEGIN@5";
+	"Config::fetch_string";
+	"Config::AUTOLOAD";
+	"Config::import";
+	"Config::CORE:pack";
+	"Config::BEGIN@9";
+	"Config::launcher";
+	"Config::CORE:substcont";
+	"Config::CORE:unpack";
+	"Config::FETCH";
+}
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::BEGIN@24";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_Kernel_System_Time {
+	label="Kernel::System::Time";
+	"Kernel::System::Time::BEGIN@17";
+}
+subgraph cluster_Time_Local {
+	label="Time::Local";
+	"Time::Local::BEGIN@5";
+}
+subgraph cluster_main {
+	label="main";
+	"main::BEGIN@29";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::BEGIN@20";
+}
+subgraph cluster_lib {
+	label="lib";
+	"lib::BEGIN@6";
+}
+subgraph cluster_IPC_SysV {
+	label="IPC::SysV";
+	"IPC::SysV::BEGIN@22";
+}
+"Config::AUTOLOAD" -> "Config::CORE:match";
+"Config::AUTOLOAD" -> "Config::CORE:pack";
+"lib::BEGIN@6" -> "Config::BEGIN@35";
+"Config::FETCH" -> "Config::AUTOLOAD";
+"Config::BEGIN@35" -> "strict::unimport";
+"Config::AUTOLOAD" -> "Config::CORE:substcont";
+"Config::FETCH" -> "Config::fetch_string";
+"Config::FETCH" -> "Config::launcher";
+"Config::AUTOLOAD" -> "Config::CORE:unpack";
+"lib::BEGIN@6" -> "Config::TIEHASH";
+"Config::AUTOLOAD" -> "Config::BEGIN@5";
+"Time::Local::BEGIN@5" -> "Config::import";
+"lib::BEGIN@6" -> "Config::import";
+"DynaLoader::BEGIN@24" -> "Config::import";
+"IPC::SysV::BEGIN@22" -> "Config::import";
+"lib::BEGIN@6" -> "Config::BEGIN@9";
+"Kernel::System::Time::BEGIN@17" -> "Config::FETCH";
+"Kernel::System::Main::BEGIN@20" -> "Config::FETCH";
+"main::BEGIN@29" -> "Config::FETCH";
+"Config::AUTOLOAD" -> "Config::CORE:subst";
+"Config::BEGIN@9" -> "strict::import";
+}

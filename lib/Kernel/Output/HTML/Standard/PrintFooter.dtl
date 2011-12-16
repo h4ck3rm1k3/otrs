@@ -1,0 +1,22 @@
+# --
+# PrintFooter.dtl - provides global print footer
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# --
+# $Id: PrintFooter.dtl,v 1.12 2010/07/02 12:02:24 mg Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+<font size="-2" title="$Config{"HttpType"}://$QData{"Host"}">
+<b>$Text{"URL"}:</b> $Config{"HttpType"}://$QData{"Host","100"}
+</font>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>

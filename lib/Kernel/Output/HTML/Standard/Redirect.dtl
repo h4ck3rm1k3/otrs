@@ -1,0 +1,17 @@
+# --
+# Redirect.dtl - provides global HTML redirect header
+# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+# --
+# $Id: Redirect.dtl,v 1.11 2009/02/16 11:07:25 tr Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+#
+# http redirect headers
+Content-Type: text/html; charset=$Env{"UserCharset"};
+Status: 302 Moved
+location: $Data{"Redirect"}
+
+document <a href="$Data{"Redirect"}">moved</a>

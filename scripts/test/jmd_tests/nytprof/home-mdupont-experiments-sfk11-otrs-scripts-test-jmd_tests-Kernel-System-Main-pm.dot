@@ -1,0 +1,239 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_Auth {
+	label="Kernel::System::Auth";
+	"Kernel::System::Auth::new";
+}
+subgraph cluster_Config {
+	label="Config";
+	"Config::FETCH";
+}
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::BEGIN@17";
+	"DynaLoader::BEGIN@24";
+	"DynaLoader::bootstrap";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_Kernel_System_Cache {
+	label="Kernel::System::Cache";
+	"Kernel::System::Cache::new";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::new";
+}
+subgraph cluster_File_stat {
+	label="File::stat";
+	"File::stat::import";
+}
+subgraph cluster_XSLoader {
+	label="XSLoader";
+	"XSLoader::load";
+}
+subgraph cluster_Kernel_System_Cache_FileStorable {
+	label="Kernel::System::Cache::FileStorable";
+	"Kernel::System::Cache::FileStorable::BEGIN@15";
+	"Kernel::System::Cache::FileStorable::BEGIN@18";
+	"Kernel::System::Cache::FileStorable::BEGIN@20";
+	"Kernel::System::Cache::FileStorable::BEGIN@14";
+	"Kernel::System::Cache::FileStorable::CORE:umask";
+}
+subgraph cluster_Unicode_Normalize {
+	label="Unicode::Normalize";
+	"Unicode::Normalize::BEGIN@11";
+	"Unicode::Normalize::BEGIN@14";
+	"Unicode::Normalize::BEGIN@12";
+	"Unicode::Normalize::BEGIN@3";
+	"Unicode::Normalize::BEGIN@10";
+	"Unicode::Normalize::BEGIN@9";
+}
+subgraph cluster_File_Glob {
+	label="File::Glob";
+	"File::Glob::csh_glob";
+}
+subgraph cluster_Kernel_System_Auth_DB {
+	label="Kernel::System::Auth::DB";
+	"Kernel::System::Auth::DB::BEGIN@14";
+	"Kernel::System::Auth::DB::BEGIN@20";
+	"Kernel::System::Auth::DB::BEGIN@15";
+	"Kernel::System::Auth::DB::BEGIN@17";
+	"Kernel::System::Auth::DB::BEGIN@22";
+	"Kernel::System::Auth::DB::BEGIN@18";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_Kernel_Output_HTML_Layout {
+	label="Kernel::Output::HTML::Layout";
+	"Kernel::Output::HTML::Layout::new";
+}
+subgraph cluster_AutoLoader {
+	label="AutoLoader";
+	"AutoLoader::BEGIN@138";
+	"AutoLoader::BEGIN@30";
+	"AutoLoader::BEGIN@4";
+	"AutoLoader::BEGIN@186";
+	"AutoLoader::BEGIN@3";
+	"AutoLoader::BEGIN@13";
+}
+subgraph cluster_Kernel_System_AuthSession {
+	label="Kernel::System::AuthSession";
+	"Kernel::System::AuthSession::new";
+}
+subgraph cluster_Kernel_System_User_Preferences_DB {
+	label="Kernel::System::User::Preferences::DB";
+	"Kernel::System::User::Preferences::DB::BEGIN@14";
+	"Kernel::System::User::Preferences::DB::BEGIN@17";
+	"Kernel::System::User::Preferences::DB::BEGIN@15";
+}
+subgraph cluster_Data_Dumper {
+	label="Data::Dumper";
+	"Data::Dumper::BEGIN@22";
+	"Data::Dumper::BEGIN@16";
+	"Data::Dumper::BEGIN@683";
+	"Data::Dumper::BEGIN@20";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::new";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@23";
+}
+subgraph cluster_overload {
+	label="overload";
+	"overload::BEGIN@139";
+}
+subgraph cluster_Kernel_Language {
+	label="Kernel::Language";
+	"Kernel::Language::new";
+}
+subgraph cluster_Kernel_System_DB_postgresql {
+	label="Kernel::System::DB::postgresql";
+	"Kernel::System::DB::postgresql::BEGIN@14";
+	"Kernel::System::DB::postgresql::BEGIN@17";
+	"Kernel::System::DB::postgresql::BEGIN@15";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::CORE:subst";
+	"Kernel::System::Main::Require";
+	"Kernel::System::Main::BEGIN@22";
+	"Kernel::System::Main::BEGIN@14";
+	"Kernel::System::Main::BEGIN@19";
+	"Kernel::System::Main::CORE:ftdir";
+	"Kernel::System::Main::CORE:ftfile";
+	"Kernel::System::Main::BEGIN@18";
+	"Kernel::System::Main::BEGIN@15";
+	"Kernel::System::Main::BEGIN@24";
+	"Kernel::System::Main::BEGIN@20";
+	"Kernel::System::Main::new";
+	"Kernel::System::Main::BEGIN@17";
+	"Kernel::System::Main::DirectoryRead";
+}
+subgraph cluster_Kernel_Language_en {
+	label="Kernel::Language::en";
+	"Kernel::Language::en::BEGIN@17";
+	"Kernel::Language::en::BEGIN@15";
+	"Kernel::Language::en::BEGIN@14";
+}
+subgraph cluster_Kernel_System_AuthSession_DB {
+	label="Kernel::System::AuthSession::DB";
+	"Kernel::System::AuthSession::DB::BEGIN@19";
+	"Kernel::System::AuthSession::DB::BEGIN@17";
+	"Kernel::System::AuthSession::DB::BEGIN@14";
+	"Kernel::System::AuthSession::DB::BEGIN@16";
+	"Kernel::System::AuthSession::DB::BEGIN@15";
+}
+subgraph cluster_Kernel_System_User {
+	label="Kernel::System::User";
+	"Kernel::System::User::new";
+}
+"Kernel::System::Main::Require" -> "Kernel::System::Cache::FileStorable::BEGIN@15";
+"Kernel::System::Main::Require" -> "Kernel::System::Main::CORE:subst";
+"Kernel::System::Main::BEGIN@20" -> "AutoLoader::BEGIN@138";
+"Kernel::System::Main::Require" -> "Kernel::System::Cache::FileStorable::BEGIN@20";
+"Kernel::System::Main::Require" -> "Kernel::System::DB::postgresql::BEGIN@15";
+"Kernel::System::Main::DirectoryRead" -> "Kernel::System::Main::CORE:ftdir";
+"Kernel::System::Main::BEGIN@18" -> "Data::Dumper::BEGIN@22";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Main::new";
+"Kernel::System::Main::BEGIN@20" -> "AutoLoader::BEGIN@3";
+"Kernel::System::Main::Require" -> "Kernel::Language::en::BEGIN@17";
+"Kernel::System::Main::Require" -> "Kernel::System::DB::postgresql::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@19";
+"Kernel::System::Main::BEGIN@19" -> "Exporter::import";
+"Kernel::System::Main::BEGIN@18" -> "Exporter::import";
+"Kernel::System::Main::BEGIN@20" -> "Exporter::import";
+"Kernel::System::Main::BEGIN@17" -> "Exporter::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@24";
+"Kernel::System::Main::Require" -> "Kernel::Language::en::BEGIN@15";
+"Kernel::System::Main::BEGIN@20" -> "AutoLoader::BEGIN@4";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@9";
+"Kernel::System::Main::BEGIN@20" -> "DynaLoader::bootstrap";
+"Kernel::System::Main::Require" -> "Kernel::System::Auth::DB::BEGIN@15";
+"Kernel::System::Main::Require" -> "Kernel::System::AuthSession::DB::BEGIN@15";
+"Kernel::System::Main::Require" -> "Kernel::System::Auth::DB::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@20";
+"Kernel::System::Main::Require" -> "Kernel::System::Auth::DB::BEGIN@20";
+"Kernel::System::Main::Require" -> "Kernel::System::AuthSession::DB::BEGIN@14";
+"Kernel::System::Main::Require" -> "Kernel::System::AuthSession::DB::BEGIN@16";
+"Kernel::System::Main::Require" -> "Kernel::Language::en::BEGIN@14";
+"Kernel::System::Main::BEGIN@15" -> "warnings::import";
+"Kernel::System::Main::BEGIN@18" -> "Data::Dumper::BEGIN@16";
+"Kernel::System::Main::Require" -> "Kernel::System::Cache::FileStorable::BEGIN@14";
+"Kernel::System::Main::Require" -> "Kernel::System::Auth::DB::BEGIN@18";
+"Kernel::Language::new" -> "Kernel::System::Main::DirectoryRead";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::System::Main::DirectoryRead";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@14";
+"Kernel::System::Main::BEGIN@20" -> "DynaLoader::BEGIN@24";
+"Kernel::System::Main::BEGIN@18" -> "Data::Dumper::BEGIN@683";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@22";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@14";
+"Kernel::System::Main::BEGIN@20" -> "AutoLoader::BEGIN@186";
+"Kernel::System::Main::Require" -> "Kernel::System::AuthSession::DB::BEGIN@19";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@11";
+"Kernel::System::Main::Require" -> "Kernel::System::Auth::DB::BEGIN@22";
+"Kernel::System::Main::BEGIN@18" -> "Data::Dumper::BEGIN@20";
+"Kernel::System::Main::BEGIN@24" -> "vars::import";
+"Kernel::System::Main::Require" -> "Kernel::System::User::Preferences::DB::BEGIN@17";
+"Kernel::System::Main::Require" -> "Kernel::System::Cache::FileStorable::BEGIN@18";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@10";
+"Kernel::System::Main::BEGIN@20" -> "DynaLoader::BEGIN@17";
+"Kernel::System::Main::Require" -> "Kernel::System::AuthSession::DB::BEGIN@17";
+"Kernel::System::Main::Require" -> "Kernel::System::Auth::DB::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@18";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@15";
+"Kernel::System::Main::BEGIN@18" -> "XSLoader::load";
+"Kernel::System::Main::BEGIN@20" -> "AutoLoader::BEGIN@13";
+"Kernel::System::Main::Require" -> "Kernel::System::Cache::FileStorable::CORE:umask";
+"Kernel::System::Main::BEGIN@19" -> "File::stat::import";
+"Kernel::System::Main::DirectoryRead" -> "File::Glob::csh_glob";
+"Kernel::System::Main::BEGIN@20" -> "Config::FETCH";
+"Kernel::System::Main::Require" -> "Kernel::System::User::Preferences::DB::BEGIN@14";
+"Kernel::Language::new" -> "Kernel::System::Main::Require";
+"Kernel::System::User::new" -> "Kernel::System::Main::Require";
+"Kernel::System::Auth::new" -> "Kernel::System::Main::Require";
+"Kernel::System::DB::new" -> "Kernel::System::Main::Require";
+"Kernel::System::AuthSession::new" -> "Kernel::System::Main::Require";
+"Kernel::System::Cache::new" -> "Kernel::System::Main::Require";
+"Kernel::System::Main::Require" -> "Kernel::System::Main::CORE:ftfile";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@12";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@3";
+"Kernel::System::Main::BEGIN@14" -> "strict::import";
+"Kernel::System::Main::BEGIN@20" -> "AutoLoader::BEGIN@30";
+"Kernel::System::Main::BEGIN@18" -> "overload::BEGIN@139";
+"Kernel::System::Main::Require" -> "Kernel::System::DB::postgresql::BEGIN@17";
+"Kernel::System::Main::Require" -> "Kernel::System::User::Preferences::DB::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@17";
+}

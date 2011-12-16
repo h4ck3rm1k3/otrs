@@ -1,0 +1,107 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_Log_SysLog {
+	label="Kernel::System::Log::SysLog";
+	"Kernel::System::Log::SysLog::BEGIN@17";
+	"Kernel::System::Log::SysLog::BEGIN@19";
+	"Kernel::System::Log::SysLog::BEGIN@14";
+	"Kernel::System::Log::SysLog::BEGIN@15";
+	"Kernel::System::Log::SysLog::Log";
+	"Kernel::System::Log::SysLog::new";
+}
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::bootstrap";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::Do";
+}
+subgraph cluster_Kernel_System_Log {
+	label="Kernel::System::Log";
+	"Kernel::System::Log::BEGIN@17";
+	"Kernel::System::Log::CORE:shmget";
+	"Kernel::System::Log::Log";
+	"Kernel::System::Log::BEGIN@14";
+	"Kernel::System::Log::new";
+	"Kernel::System::Log::BEGIN@19";
+	"Kernel::System::Log::BEGIN@15";
+	"Kernel::System::Log::CORE:match";
+}
+subgraph cluster_Kernel_System_Encode {
+	label="Kernel::System::Encode";
+	"Kernel::System::Encode::BEGIN@19";
+	"Kernel::System::Encode::BEGIN@15";
+	"Kernel::System::Encode::new";
+	"Kernel::System::Encode::BEGIN@17";
+	"Kernel::System::Encode::BEGIN@14";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::DESTROY";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@22";
+	"Kernel::System::Web::InterfaceAgent::new";
+}
+subgraph cluster_UNIVERSAL {
+	label="UNIVERSAL";
+	"UNIVERSAL::can";
+}
+subgraph cluster_IPC_SysV {
+	label="IPC::SysV";
+	"IPC::SysV::BEGIN@19";
+	"IPC::SysV::BEGIN@21";
+	"IPC::SysV::BEGIN@20";
+	"IPC::SysV::CORE:match";
+	"IPC::SysV::BEGIN@80";
+	"IPC::SysV::BEGIN@22";
+}
+"Kernel::System::Web::InterfaceAgent::BEGIN@22" -> "Kernel::System::Log::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@22" -> "Kernel::System::Log::BEGIN@14";
+"Kernel::System::Log::new" -> "Kernel::System::Log::SysLog::BEGIN@19";
+"Kernel::System::Web::InterfaceAgent::BEGIN@22" -> "Kernel::System::Log::BEGIN@15";
+"Kernel::System::Log::new" -> "IPC::SysV::BEGIN@22";
+"Kernel::System::Log::new" -> "Kernel::System::Log::SysLog::BEGIN@17";
+"Kernel::System::Log::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Log::BEGIN@17" -> "Kernel::System::Encode::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Log::new";
+"Kernel::System::Log::new" -> "UNIVERSAL::can";
+"Kernel::System::Log::new" -> "DynaLoader::bootstrap";
+"Kernel::System::Log::Log" -> "Kernel::System::Log::SysLog::Log";
+"Kernel::System::Log::new" -> "Kernel::System::Log::CORE:shmget";
+"Kernel::System::Log::new" -> "IPC::SysV::BEGIN@19";
+"Kernel::System::Log::new" -> "Kernel::System::Log::SysLog::BEGIN@15";
+"Kernel::System::Log::BEGIN@15" -> "warnings::import";
+"Kernel::System::Log::new" -> "IPC::SysV::BEGIN@80";
+"Kernel::System::Log::new" -> "IPC::SysV::CORE:match";
+"Kernel::System::Log::new" -> "Kernel::System::Log::SysLog::BEGIN@14";
+"Kernel::System::Log::Log" -> "Kernel::System::Log::CORE:match";
+"Kernel::System::Log::BEGIN@17" -> "Kernel::System::Encode::BEGIN@15";
+"Kernel::System::Log::BEGIN@19" -> "vars::import";
+"Kernel::System::Log::new" -> "IPC::SysV::BEGIN@21";
+"Kernel::System::Log::new" -> "Kernel::System::Encode::new";
+"Kernel::System::Log::new" -> "IPC::SysV::BEGIN@20";
+"Kernel::System::Log::new" -> "Kernel::System::Log::SysLog::new";
+"Kernel::System::Log::BEGIN@17" -> "Kernel::System::Encode::BEGIN@17";
+"Kernel::System::Log::BEGIN@17" -> "Kernel::System::Encode::BEGIN@19";
+"Kernel::System::Web::InterfaceAgent::DESTROY" -> "Kernel::System::Log::Log";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Log::Log";
+"Kernel::System::DB::Do" -> "Kernel::System::Log::Log";
+"Kernel::System::Web::InterfaceAgent::BEGIN@22" -> "Kernel::System::Log::BEGIN@19";
+"Kernel::System::Log::BEGIN@14" -> "strict::import";
+}

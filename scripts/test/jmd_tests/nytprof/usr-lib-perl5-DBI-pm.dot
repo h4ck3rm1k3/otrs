@@ -1,0 +1,235 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::bootstrap";
+}
+subgraph cluster_DBI {
+	label="DBI";
+	"DBI::SQL_SMALLINT";
+	"DBI::BEGIN@160";
+	"DBI::BEGIN@269";
+	"DBI::bootstrap";
+	"DBI::CORE:match";
+	"DBI::BEGIN@157";
+	"DBI::BEGIN@681";
+	"DBI::BEGIN@273";
+	"DBI::END";
+	"DBI::SQL_INTEGER";
+	"DBI::SQL_FLOAT";
+	"DBI::install_driver";
+	"DBI::BEGIN@953";
+	"DBI::BEGIN@856";
+	"DBI::CORE:subst";
+	"DBI::connect";
+	"DBI::BEGIN@524";
+	"DBI::BEGIN@827";
+	"DBI::setup_driver";
+	"DBI::BEGIN@158";
+	"DBI::_new_handle";
+	"DBI::SQL_NUMERIC";
+	"DBI::SQL_REAL";
+	"DBI::BEGIN@1019";
+	"DBI::SQL_DECIMAL";
+	"DBI::BEGIN@793";
+	"DBI::__ANON__[DBI.pm:721]";
+	"DBI::_install_method";
+	"DBI::_new_dbh";
+	"DBI::disconnect_all";
+	"DBI::SQL_DOUBLE";
+	"DBI::_new_drh";
+	"DBI::BEGIN@156";
+}
+subgraph cluster_DBD_Pg_db {
+	label="DBD::Pg::db";
+	"DBD::Pg::db::BEGIN@252";
+	"DBD::Pg::db::BEGIN@250";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_DBI__firesafe {
+	label="DBI::_firesafe";
+	"DBI::_firesafe::BEGIN@14";
+	"DBI::_firesafe::BEGIN@13";
+	"DBI::_firesafe::BEGIN@15";
+}
+subgraph cluster_DBI_common {
+	label="DBI::common";
+	"DBI::common::STORE";
+	"DBI::common::FETCH";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::BEGIN@17";
+	"Kernel::System::DB::BEGIN@11";
+	"Kernel::System::DB::Connect";
+}
+subgraph cluster_DBD___st {
+	label="DBD::_::st";
+	"DBD::_::st::BEGIN@1801";
+}
+subgraph cluster_DBI_var {
+	label="DBI::var";
+	"DBI::var::TIESCALAR";
+}
+subgraph cluster_Exporter_Heavy {
+	label="Exporter::Heavy";
+	"Exporter::Heavy::heavy_export_ok_tags";
+	"Exporter::Heavy::heavy_require_version";
+}
+subgraph cluster_version {
+	label="version";
+	"version::__ANON__[version.pm:185]";
+}
+subgraph cluster_DBI_dr {
+	label="DBI::dr";
+	"DBI::dr::disconnect_all";
+	"DBI::dr::connect";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::export_ok_tags";
+	"Exporter::require_version";
+}
+subgraph cluster_DBD___common {
+	label="DBD::_::common";
+	"DBD::_::common::BEGIN@1332";
+	"DBD::_::common::CORE:match";
+	"DBD::_::common::trace_msg";
+	"DBD::_::common::install_method";
+}
+subgraph cluster_DBD_Pg_dr {
+	label="DBD::Pg::dr";
+	"DBD::Pg::dr::connect";
+	"DBD::Pg::dr::BEGIN@172";
+}
+subgraph cluster_DBD_Pg {
+	label="DBD::Pg";
+	"DBD::Pg::BEGIN@20";
+	"DBD::Pg::BEGIN@24";
+	"DBD::Pg::BEGIN@22";
+	"DBD::Pg::driver";
+	"DBD::Pg::BEGIN@23";
+	"DBD::Pg::BEGIN@25";
+}
+subgraph cluster_main {
+	label="main";
+	"main::RUNTIME";
+}
+subgraph cluster_DBD_Pg_DefaultValue {
+	label="DBD::Pg::DefaultValue";
+	"DBD::Pg::DefaultValue::new";
+}
+subgraph cluster_DBI_db {
+	label="DBI::db";
+	"DBI::db::connected";
+}
+subgraph cluster_UNIVERSAL {
+	label="UNIVERSAL";
+	"UNIVERSAL::isa";
+}
+subgraph cluster_DBD___dr {
+	label="DBD::_::dr";
+	"DBD::_::dr::BEGIN@1434";
+}
+subgraph cluster_DBI_DBI_tie {
+	label="DBI::DBI_tie";
+	"DBI::DBI_tie::TIEHASH";
+}
+subgraph cluster_DBD___db {
+	label="DBD::_::db";
+	"DBD::_::db::BEGIN@1495";
+}
+"DBI::install_driver" -> "DBD::Pg::BEGIN@24";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@160";
+"DBD::_::common::install_method" -> "DBD::_::common::CORE:match";
+"DBI::install_driver" -> "DBI::_firesafe::BEGIN@13";
+"DBI::__ANON__[DBI.pm:721]" -> "DBI::db::connected";
+"DBI::install_driver" -> "Exporter::require_version";
+"main::RUNTIME" -> "DBI::END";
+"Kernel::System::DB::BEGIN@17" -> "DBI::DBI_tie::TIEHASH";
+"DBI::install_driver" -> "DBD::Pg::BEGIN@25";
+"DBI::install_driver" -> "DBD::Pg::db::BEGIN@250";
+"DBI::connect" -> "DBI::install_driver";
+"DBI::install_driver" -> "version::__ANON__[version.pm:185]";
+"Kernel::System::DB::BEGIN@17" -> "DBD::_::dr::BEGIN@1434";
+"DBI::install_driver" -> "DynaLoader::bootstrap";
+"DBI::BEGIN@160" -> "DynaLoader::bootstrap";
+"DBI::install_driver" -> "DBD::Pg::DefaultValue::new";
+"DBI::install_driver" -> "Exporter::Heavy::heavy_export_ok_tags";
+"DBI::BEGIN@160" -> "Exporter::Heavy::heavy_export_ok_tags";
+"DBI::BEGIN@269" -> "strict::unimport";
+"DBI::BEGIN@681" -> "strict::unimport";
+"DBI::BEGIN@953" -> "strict::unimport";
+"DBI::BEGIN@856" -> "strict::unimport";
+"DBI::BEGIN@524" -> "strict::unimport";
+"DBI::BEGIN@827" -> "strict::unimport";
+"DBI::BEGIN@1019" -> "strict::unimport";
+"DBI::BEGIN@793" -> "strict::unimport";
+"DBI::disconnect_all" -> "DBI::dr::disconnect_all";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@827";
+"Kernel::System::DB::BEGIN@17" -> "DBD::_::common::BEGIN@1332";
+"DBI::setup_driver" -> "UNIVERSAL::isa";
+"Kernel::System::DB::BEGIN@17" -> "DBI::var::TIESCALAR";
+"DBI::install_driver" -> "DBI::SQL_DECIMAL";
+"DBD::Pg::driver" -> "DBD::_::common::install_method";
+"Kernel::System::DB::BEGIN@17" -> "DBI::_install_method";
+"DBD::_::common::install_method" -> "DBI::_install_method";
+"DBD::Pg::dr::connect" -> "DBI::_new_dbh";
+"Kernel::System::DB::BEGIN@17" -> "DBD::_::db::BEGIN@1495";
+"DBI::install_driver" -> "DBD::Pg::BEGIN@20";
+"DBI::END" -> "DBI::disconnect_all";
+"DBD::Pg::driver" -> "DBI::_new_drh";
+"DBI::install_driver" -> "DBI::SQL_DOUBLE";
+"Kernel::System::DB::BEGIN@17" -> "DBD::_::st::BEGIN@1801";
+"DBI::install_driver" -> "DBI::SQL_SMALLINT";
+"DBI::install_driver" -> "DBI::_firesafe::BEGIN@15";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@269";
+"DBI::END" -> "DBD::_::common::trace_msg";
+"DynaLoader::bootstrap" -> "DBI::bootstrap";
+"DBI::BEGIN@160" -> "DBI::CORE:match";
+"DBI::install_driver" -> "Exporter::export_ok_tags";
+"DBI::BEGIN@160" -> "Exporter::export_ok_tags";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@157";
+"DBI::install_driver" -> "Exporter::Heavy::heavy_require_version";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@681";
+"DBI::install_driver" -> "DBD::Pg::db::BEGIN@252";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@273";
+"DBI::install_driver" -> "DBI::SQL_INTEGER";
+"DBI::__ANON__[DBI.pm:721]" -> "DBI::common::FETCH";
+"DBI::install_driver" -> "DBI::SQL_FLOAT";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@953";
+"DBI::install_driver" -> "DBI::CORE:subst";
+"DBI::connect" -> "DBI::CORE:subst";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@856";
+"DBI::install_driver" -> "DBD::Pg::driver";
+"Kernel::System::DB::Connect" -> "DBI::connect";
+"DBI::install_driver" -> "DBI::_firesafe::BEGIN@14";
+"DBI::__ANON__[DBI.pm:721]" -> "DBI::dr::connect";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@524";
+"DBI::install_driver" -> "DBI::setup_driver";
+"Kernel::System::DB::BEGIN@17" -> "DBI::setup_driver";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@158";
+"DBI::_new_dbh" -> "DBI::_new_handle";
+"DBI::_new_drh" -> "DBI::_new_handle";
+"DBI::install_driver" -> "DBI::SQL_NUMERIC";
+"DBI::install_driver" -> "DBI::SQL_REAL";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@1019";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@793";
+"DBI::connect" -> "DBI::__ANON__[DBI.pm:721]";
+"DBI::install_driver" -> "DBD::Pg::BEGIN@22";
+"Kernel::System::DB::BEGIN@17" -> "Kernel::System::DB::BEGIN@11";
+"DBI::install_driver" -> "DBD::Pg::dr::BEGIN@172";
+"DBD::_::dr::BEGIN@1434" -> "strict::import";
+"DBD::_::common::BEGIN@1332" -> "strict::import";
+"DBD::_::db::BEGIN@1495" -> "strict::import";
+"DBD::_::st::BEGIN@1801" -> "strict::import";
+"DBI::BEGIN@273" -> "strict::import";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@156";
+"DBI::install_driver" -> "DBD::Pg::BEGIN@23";
+"DBI::__ANON__[DBI.pm:721]" -> "DBI::common::STORE";
+"DBI::connect" -> "DBI::common::STORE";
+}

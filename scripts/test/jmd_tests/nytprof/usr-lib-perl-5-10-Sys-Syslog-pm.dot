@@ -1,0 +1,197 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_Log_SysLog {
+	label="Kernel::System::Log::SysLog";
+	"Kernel::System::Log::SysLog::BEGIN@17";
+	"Kernel::System::Log::SysLog::Log";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_XSLoader {
+	label="XSLoader";
+	"XSLoader::load";
+}
+subgraph cluster_Sys_Syslog {
+	label="Sys::Syslog";
+	"Sys::Syslog::LOG_UPTO";
+	"Sys::Syslog::LOG_MASK";
+	"Sys::Syslog::CORE:connect";
+	"Sys::Syslog::setlogsock";
+	"Sys::Syslog::can_load";
+	"Sys::Syslog::disconnect_log";
+	"Sys::Syslog::LOG_DEBUG";
+	"Sys::Syslog::xlate";
+	"Sys::Syslog::BEGIN@4";
+	"Sys::Syslog::syslog";
+	"Sys::Syslog::CORE:select";
+	"Sys::Syslog::CORE:ftsock";
+	"Sys::Syslog::BEGIN@8";
+	"Sys::Syslog::CORE:match";
+	"Sys::Syslog::CORE:syswrite";
+	"Sys::Syslog::CORE:sselect";
+	"Sys::Syslog::LOG_PRIMASK";
+	"Sys::Syslog::BEGIN@5";
+	"Sys::Syslog::BEGIN@13";
+	"Sys::Syslog::connect_unix";
+	"Sys::Syslog::BEGIN@514";
+	"Sys::Syslog::_syslog_send_socket";
+	"Sys::Syslog::BEGIN@7";
+	"Sys::Syslog::BEGIN@1";
+	"Sys::Syslog::BEGIN@88";
+	"Sys::Syslog::_PATH_LOG";
+	"Sys::Syslog::constant";
+	"Sys::Syslog::connection_ok";
+	"Sys::Syslog::closelog";
+	"Sys::Syslog::BEGIN@3";
+	"Sys::Syslog::BEGIN@156";
+	"Sys::Syslog::BEGIN@543";
+	"Sys::Syslog::LOG_USER";
+	"Sys::Syslog::BEGIN@78";
+	"Sys::Syslog::BEGIN@6";
+	"Sys::Syslog::BEGIN@2";
+	"Sys::Syslog::BEGIN@10";
+	"Sys::Syslog::BEGIN@9";
+	"Sys::Syslog::CORE:close";
+	"Sys::Syslog::CORE:socket";
+	"Sys::Syslog::openlog";
+	"Sys::Syslog::connect_log";
+	"Sys::Syslog::BEGIN@150";
+}
+subgraph cluster_Socket {
+	label="Socket";
+	"Socket::BEGIN@193";
+	"Socket::BEGIN@10";
+	"Socket::BEGIN@6";
+	"Socket::sockaddr_un";
+	"Socket::BEGIN@7";
+}
+subgraph cluster_POSIX_SigRt {
+	label="POSIX::SigRt";
+	"POSIX::SigRt::BEGIN@66";
+	"POSIX::SigRt::BEGIN@62";
+	"POSIX::SigRt::BEGIN@64";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_POSIX_SigAction {
+	label="POSIX::SigAction";
+	"POSIX::SigAction::BEGIN@58";
+}
+subgraph cluster_POSIX {
+	label="POSIX";
+	"POSIX::setlocale";
+	"POSIX::import";
+	"POSIX::BEGIN@9";
+	"POSIX::BEGIN@3";
+	"POSIX::BEGIN@39";
+	"POSIX::BEGIN@2";
+	"POSIX::BEGIN@40";
+	"POSIX::BEGIN@11";
+	"POSIX::BEGIN@13";
+	"POSIX::strftime";
+}
+subgraph cluster_Tie_StdHash {
+	label="Tie::StdHash";
+	"Tie::StdHash::TIEHASH";
+}
+subgraph cluster_warnings_register {
+	label="warnings::register";
+	"warnings::register::import";
+}
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::LOG_UPTO";
+"Sys::Syslog::BEGIN@10" -> "Socket::BEGIN@10";
+"Sys::Syslog::BEGIN@9" -> "POSIX::SigRt::BEGIN@66";
+"Sys::Syslog::syslog" -> "Sys::Syslog::LOG_MASK";
+"Kernel::System::Log::SysLog::Log" -> "Sys::Syslog::setlogsock";
+"Sys::Syslog::connect_unix" -> "Sys::Syslog::CORE:connect";
+"Sys::Syslog::BEGIN@9" -> "Tie::StdHash::TIEHASH";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::LOG_DEBUG";
+"Sys::Syslog::xlate" -> "Sys::Syslog::LOG_DEBUG";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@4";
+"Kernel::System::Log::SysLog::Log" -> "Sys::Syslog::syslog";
+"Sys::Syslog::connect_unix" -> "Sys::Syslog::CORE:ftsock";
+"Sys::Syslog::BEGIN@9" -> "POSIX::SigAction::BEGIN@58";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@8";
+"Sys::Syslog::_syslog_send_socket" -> "Sys::Syslog::CORE:syswrite";
+"Sys::Syslog::connection_ok" -> "Sys::Syslog::CORE:sselect";
+"Sys::Syslog::syslog" -> "Sys::Syslog::LOG_PRIMASK";
+"Sys::Syslog::BEGIN@10" -> "Socket::BEGIN@7";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@5";
+"Sys::Syslog::BEGIN@8" -> "Exporter::import";
+"Sys::Syslog::BEGIN@5" -> "Exporter::import";
+"Sys::Syslog::BEGIN@7" -> "Exporter::import";
+"Sys::Syslog::BEGIN@10" -> "Exporter::import";
+"Sys::Syslog::connect_log" -> "Sys::Syslog::connect_unix";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@7";
+"Sys::Syslog::BEGIN@13" -> "strict::unimport";
+"Sys::Syslog::BEGIN@514" -> "strict::unimport";
+"Sys::Syslog::BEGIN@156" -> "strict::unimport";
+"Sys::Syslog::BEGIN@543" -> "strict::unimport";
+"Sys::Syslog::BEGIN@150" -> "strict::unimport";
+"Sys::Syslog::connect_unix" -> "Sys::Syslog::_PATH_LOG";
+"Sys::Syslog::setlogsock" -> "Sys::Syslog::_PATH_LOG";
+"Sys::Syslog::xlate" -> "Sys::Syslog::constant";
+"Sys::Syslog::syslog" -> "Sys::Syslog::connection_ok";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@78";
+"Sys::Syslog::syslog" -> "POSIX::setlocale";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@2";
+"Sys::Syslog::BEGIN@3" -> "warnings::import";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@10";
+"Sys::Syslog::disconnect_log" -> "Sys::Syslog::CORE:close";
+"Sys::Syslog::connect_unix" -> "Sys::Syslog::CORE:socket";
+"Sys::Syslog::syslog" -> "Sys::Syslog::connect_log";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@150";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@3";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@2";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@11";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::can_load";
+"Sys::Syslog::closelog" -> "Sys::Syslog::disconnect_log";
+"Sys::Syslog::connect_unix" -> "Socket::sockaddr_un";
+"Sys::Syslog::syslog" -> "Sys::Syslog::xlate";
+"Sys::Syslog::connect_log" -> "Sys::Syslog::CORE:select";
+"Sys::Syslog::BEGIN@88" -> "vars::import";
+"Sys::Syslog::BEGIN@78" -> "vars::import";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::CORE:match";
+"Sys::Syslog::xlate" -> "Sys::Syslog::CORE:match";
+"Sys::Syslog::syslog" -> "Sys::Syslog::CORE:match";
+"Sys::Syslog::BEGIN@9" -> "POSIX::SigRt::BEGIN@62";
+"Sys::Syslog::BEGIN@9" -> "POSIX::import";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@9";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@13";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@514";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@13";
+"Sys::Syslog::syslog" -> "POSIX::strftime";
+"Sys::Syslog::syslog" -> "Sys::Syslog::_syslog_send_socket";
+"Sys::Syslog::can_load" -> "Sys::Syslog::BEGIN@1";
+"Sys::Syslog::BEGIN@10" -> "Socket::BEGIN@6";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@88";
+"Sys::Syslog::BEGIN@9" -> "POSIX::SigRt::BEGIN@64";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@39";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@3";
+"Kernel::System::Log::SysLog::Log" -> "Sys::Syslog::closelog";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@40";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@543";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@156";
+"Sys::Syslog::xlate" -> "Sys::Syslog::LOG_USER";
+"Sys::Syslog::BEGIN@10" -> "XSLoader::load";
+"Sys::Syslog::BEGIN@9" -> "XSLoader::load";
+"Sys::Syslog::BEGIN@10" -> "Socket::BEGIN@193";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@6";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@9";
+"Sys::Syslog::BEGIN@2" -> "strict::import";
+"Kernel::System::Log::SysLog::Log" -> "Sys::Syslog::openlog";
+"Sys::Syslog::BEGIN@4" -> "warnings::register::import";
+}

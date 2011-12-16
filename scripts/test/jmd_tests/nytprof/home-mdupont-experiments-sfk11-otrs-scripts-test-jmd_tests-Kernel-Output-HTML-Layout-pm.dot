@@ -1,0 +1,162 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_HTMLUtils {
+	label="Kernel::System::HTMLUtils";
+	"Kernel::System::HTMLUtils::BEGIN@14";
+	"Kernel::System::HTMLUtils::new";
+	"Kernel::System::HTMLUtils::BEGIN@17";
+	"Kernel::System::HTMLUtils::BEGIN@15";
+}
+subgraph cluster_Kernel_System_JSON {
+	label="Kernel::System::JSON";
+	"Kernel::System::JSON::BEGIN@19";
+	"Kernel::System::JSON::BEGIN@17";
+	"Kernel::System::JSON::BEGIN@14";
+	"Kernel::System::JSON::new";
+	"Kernel::System::JSON::BEGIN@15";
+}
+subgraph cluster_Mail_Address {
+	label="Mail::Address";
+	"Mail::Address::BEGIN@11";
+	"Mail::Address::BEGIN@9";
+	"Mail::Address::BEGIN@6";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_URI_Escape {
+	label="URI::Escape";
+	"URI::Escape::BEGIN@2";
+	"URI::Escape::BEGIN@143";
+	"URI::Escape::BEGIN@142";
+	"URI::Escape::CORE:qr";
+	"URI::Escape::BEGIN@151";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_Kernel_Output_HTML_Layout {
+	label="Kernel::Output::HTML::Layout";
+	"Kernel::Output::HTML::Layout::CORE:ftfile";
+	"Kernel::Output::HTML::Layout::CORE:match";
+	"Kernel::Output::HTML::Layout::LoaderCreateAgentCSSCalls";
+	"Kernel::Output::HTML::Layout::_BlockTemplatePreferences";
+	"Kernel::Output::HTML::Layout::BEGIN@19";
+	"Kernel::Output::HTML::Layout::CORE:regcomp";
+	"Kernel::Output::HTML::Layout::_DisableBannerCheck";
+	"Kernel::Output::HTML::Layout::Login";
+	"Kernel::Output::HTML::Layout::new";
+	"Kernel::Output::HTML::Layout::BEGIN@15";
+	"Kernel::Output::HTML::Layout::BEGIN@22";
+	"Kernel::Output::HTML::Layout::CORE:subst";
+	"Kernel::Output::HTML::Layout::CORE:close";
+	"Kernel::Output::HTML::Layout::BEGIN@14";
+	"Kernel::Output::HTML::Layout::_BlockTemplatesReplace";
+	"Kernel::Output::HTML::Layout::CORE:open";
+	"Kernel::Output::HTML::Layout::BEGIN@24";
+	"Kernel::Output::HTML::Layout::BEGIN@17";
+	"Kernel::Output::HTML::Layout::Print";
+	"Kernel::Output::HTML::Layout::BEGIN@18";
+	"Kernel::Output::HTML::Layout::CORE:ftis";
+	"Kernel::Output::HTML::Layout::_Output";
+	"Kernel::Output::HTML::Layout::Block";
+	"Kernel::Output::HTML::Layout::BEGIN@21";
+	"Kernel::Output::HTML::Layout::Output";
+	"Kernel::Output::HTML::Layout::CORE:readline";
+	"Kernel::Output::HTML::Layout::LoaderCreateAgentJSCalls";
+	"Kernel::Output::HTML::Layout::CORE:print";
+	"Kernel::Output::HTML::Layout::CORE:sort";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::Run";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@32";
+}
+subgraph cluster_Kernel_Language {
+	label="Kernel::Language";
+	"Kernel::Language::GetRecommendedCharset";
+	"Kernel::Language::new";
+	"Kernel::Language::BEGIN@14";
+	"Kernel::Language::BEGIN@19";
+	"Kernel::Language::BEGIN@15";
+	"Kernel::Language::Time";
+	"Kernel::Language::BEGIN@17";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::DirectoryRead";
+}
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@19";
+"Kernel::Output::HTML::Layout::BEGIN@21" -> "Mail::Address::BEGIN@9";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Language::Time";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@15";
+"Kernel::Output::HTML::Layout::BEGIN@22" -> "URI::Escape::CORE:qr";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Output::HTML::Layout::CORE:subst";
+"Kernel::Output::HTML::Layout::Output" -> "Kernel::Output::HTML::Layout::CORE:subst";
+"Kernel::Output::HTML::Layout::_BlockTemplatePreferences" -> "Kernel::Output::HTML::Layout::CORE:subst";
+"Kernel::Output::HTML::Layout::_Output" -> "Kernel::Output::HTML::Layout::CORE:subst";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@14";
+"Kernel::Output::HTML::Layout::_Output" -> "Kernel::Output::HTML::Layout::_BlockTemplatesReplace";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::Output::HTML::Layout::Print";
+"Kernel::Output::HTML::Layout::_DisableBannerCheck" -> "Kernel::Config::Defaults::Get";
+"Kernel::Output::HTML::Layout::Login" -> "Kernel::Config::Defaults::Get";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::Output::HTML::Layout::BEGIN@22" -> "URI::Escape::BEGIN@143";
+"Kernel::Output::HTML::Layout::Login" -> "Kernel::Output::HTML::Layout::LoaderCreateAgentJSCalls";
+"Kernel::Output::HTML::Layout::BEGIN@22" -> "URI::Escape::BEGIN@142";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Output::HTML::Layout::CORE:sort";
+"Kernel::Output::HTML::Layout::BEGIN@19" -> "Kernel::System::JSON::BEGIN@14";
+"Kernel::Output::HTML::Layout::BEGIN@18" -> "Kernel::System::HTMLUtils::BEGIN@17";
+"Kernel::Output::HTML::Layout::_BlockTemplatesReplace" -> "Kernel::Output::HTML::Layout::_BlockTemplatePreferences";
+"Kernel::Output::HTML::Layout::BEGIN@17" -> "Kernel::Language::BEGIN@15";
+"Kernel::Output::HTML::Layout::BEGIN@19" -> "Kernel::System::JSON::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@22";
+"Kernel::Output::HTML::Layout::BEGIN@18" -> "Kernel::System::HTMLUtils::BEGIN@15";
+"Kernel::Output::HTML::Layout::BEGIN@22" -> "URI::Escape::BEGIN@151";
+"Kernel::Output::HTML::Layout::BEGIN@17" -> "Kernel::Language::BEGIN@17";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Language::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@18";
+"Kernel::Output::HTML::Layout::BEGIN@15" -> "warnings::import";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Language::GetRecommendedCharset";
+"Kernel::Output::HTML::Layout::Output" -> "Kernel::Output::HTML::Layout::CORE:readline";
+"Kernel::Output::HTML::Layout::BEGIN@17" -> "Kernel::Language::BEGIN@19";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::System::Main::DirectoryRead";
+"Kernel::Output::HTML::Layout::BEGIN@21" -> "Mail::Address::BEGIN@11";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::System::HTMLUtils::new";
+"Kernel::Output::HTML::Layout::Login" -> "Kernel::Output::HTML::Layout::LoaderCreateAgentCSSCalls";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Output::HTML::Layout::CORE:regcomp";
+"Kernel::Output::HTML::Layout::Login" -> "Kernel::Output::HTML::Layout::_DisableBannerCheck";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::Output::HTML::Layout::Login";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::Output::HTML::Layout::new";
+"Kernel::Output::HTML::Layout::BEGIN@21" -> "Mail::Address::BEGIN@6";
+"Kernel::Output::HTML::Layout::Output" -> "Kernel::Output::HTML::Layout::CORE:open";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@24";
+"Kernel::Output::HTML::Layout::BEGIN@24" -> "vars::import";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Output::HTML::Layout::CORE:ftis";
+"Kernel::Output::HTML::Layout::Output" -> "Kernel::Output::HTML::Layout::_Output";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@21";
+"Kernel::Output::HTML::Layout::Login" -> "Kernel::Output::HTML::Layout::Output";
+"Kernel::Output::HTML::Layout::BEGIN@22" -> "URI::Escape::BEGIN@2";
+"Kernel::Output::HTML::Layout::Output" -> "Kernel::Output::HTML::Layout::CORE:ftfile";
+"Kernel::Output::HTML::Layout::BEGIN@19" -> "Kernel::System::JSON::BEGIN@19";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Output::HTML::Layout::CORE:match";
+"Kernel::Output::HTML::Layout::BEGIN@18" -> "Kernel::System::HTMLUtils::BEGIN@14";
+"Kernel::Output::HTML::Layout::Output" -> "Kernel::Output::HTML::Layout::CORE:close";
+"Kernel::Output::HTML::Layout::BEGIN@19" -> "Kernel::System::JSON::BEGIN@15";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::System::JSON::new";
+"Kernel::Output::HTML::Layout::Login" -> "Kernel::Output::HTML::Layout::Block";
+"Kernel::Output::HTML::Layout::BEGIN@17" -> "Kernel::Language::BEGIN@14";
+"Kernel::Output::HTML::Layout::BEGIN@14" -> "strict::import";
+"Kernel::Output::HTML::Layout::Print" -> "Kernel::Output::HTML::Layout::CORE:print";
+}

@@ -1,0 +1,28 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_File_Basename {
+	label="File::Basename";
+	"File::Basename::BEGIN@43";
+}
+subgraph cluster_re {
+	label="re";
+	"re::BEGIN@4";
+	"re::import";
+	"re::BEGIN@5";
+	"re::bits";
+}
+"re::BEGIN@5" -> "warnings::import";
+"File::Basename::BEGIN@43" -> "re::BEGIN@5";
+"File::Basename::BEGIN@43" -> "re::import";
+"re::import" -> "re::bits";
+"File::Basename::BEGIN@43" -> "re::BEGIN@4";
+"re::BEGIN@4" -> "strict::import";
+}

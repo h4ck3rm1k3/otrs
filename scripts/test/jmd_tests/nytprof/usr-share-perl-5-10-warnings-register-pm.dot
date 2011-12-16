@@ -1,0 +1,44 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_vars {
+	label="vars";
+	"vars::BEGIN@7";
+}
+subgraph cluster_Tie_Hash {
+	label="Tie::Hash";
+	"Tie::Hash::BEGIN@6";
+}
+subgraph cluster_Sys_Syslog {
+	label="Sys::Syslog";
+	"Sys::Syslog::BEGIN@4";
+}
+subgraph cluster_Socket {
+	label="Socket";
+	"Socket::BEGIN@7";
+}
+subgraph cluster_constant {
+	label="constant";
+	"constant::BEGIN@4";
+}
+subgraph cluster_Class_Struct {
+	label="Class::Struct";
+	"Class::Struct::BEGIN@8";
+}
+subgraph cluster_overload {
+	label="overload";
+	"overload::BEGIN@139";
+}
+subgraph cluster_warnings_register {
+	label="warnings::register";
+	"warnings::register::mkMask";
+	"warnings::register::import";
+}
+"warnings::register::import" -> "warnings::register::mkMask";
+"constant::BEGIN@4" -> "warnings::register::import";
+"Class::Struct::BEGIN@8" -> "warnings::register::import";
+"Tie::Hash::BEGIN@6" -> "warnings::register::import";
+"vars::BEGIN@7" -> "warnings::register::import";
+"overload::BEGIN@139" -> "warnings::register::import";
+"Sys::Syslog::BEGIN@4" -> "warnings::register::import";
+"Socket::BEGIN@7" -> "warnings::register::import";
+}

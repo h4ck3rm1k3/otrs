@@ -1,0 +1,65 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_JSON {
+	label="Kernel::System::JSON";
+	"Kernel::System::JSON::BEGIN@19";
+	"Kernel::System::JSON::BEGIN@17";
+	"Kernel::System::JSON::BEGIN@14";
+	"Kernel::System::JSON::new";
+	"Kernel::System::JSON::BEGIN@15";
+}
+subgraph cluster_JSON_XS {
+	label="JSON::XS";
+	"JSON::XS::allow_nonref";
+	"JSON::XS::new";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_Output_HTML_Layout {
+	label="Kernel::Output::HTML::Layout";
+	"Kernel::Output::HTML::Layout::new";
+	"Kernel::Output::HTML::Layout::BEGIN@19";
+}
+subgraph cluster_JSON_Backend_PP {
+	label="JSON::Backend::PP";
+	"JSON::Backend::PP::BEGIN@380";
+}
+subgraph cluster_JSON {
+	label="JSON";
+	"JSON::BEGIN@5";
+	"JSON::import";
+	"JSON::BEGIN@9";
+	"JSON::BEGIN@6";
+	"JSON::_load_xs";
+	"JSON::BEGIN@4";
+	"JSON::BEGIN@315";
+}
+"Kernel::System::JSON::BEGIN@17" -> "JSON::BEGIN@6";
+"Kernel::Output::HTML::Layout::BEGIN@19" -> "Kernel::System::JSON::BEGIN@14";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::BEGIN@4";
+"Kernel::Output::HTML::Layout::BEGIN@19" -> "Kernel::System::JSON::BEGIN@17";
+"Kernel::System::JSON::BEGIN@15" -> "warnings::import";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::BEGIN@5";
+"Kernel::System::JSON::BEGIN@19" -> "vars::import";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::Backend::PP::BEGIN@380";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::import";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::_load_xs";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::BEGIN@315";
+"Kernel::Output::HTML::Layout::BEGIN@19" -> "Kernel::System::JSON::BEGIN@19";
+"Kernel::Output::HTML::Layout::BEGIN@19" -> "Kernel::System::JSON::BEGIN@15";
+"Kernel::System::JSON::new" -> "JSON::XS::new";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::BEGIN@9";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::System::JSON::new";
+"Kernel::System::JSON::new" -> "JSON::XS::allow_nonref";
+"Kernel::System::JSON::BEGIN@14" -> "strict::import";
+}

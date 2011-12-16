@@ -1,0 +1,190 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_DBI {
+	label="DBI";
+	"DBI::BEGIN@273";
+	"DBI::BEGIN@160";
+	"DBI::BEGIN@1019";
+	"DBI::BEGIN@793";
+	"DBI::BEGIN@524";
+	"DBI::BEGIN@269";
+	"DBI::_install_method";
+	"DBI::BEGIN@827";
+	"DBI::setup_driver";
+	"DBI::BEGIN@953";
+	"DBI::BEGIN@158";
+	"DBI::BEGIN@856";
+	"DBI::BEGIN@157";
+	"DBI::BEGIN@681";
+	"DBI::BEGIN@156";
+	"DBI::connect";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::DESTROY";
+	"Kernel::System::DB::CORE:subst";
+	"Kernel::System::DB::BEGIN@17";
+	"Kernel::System::DB::CORE:match";
+	"Kernel::System::DB::new";
+	"Kernel::System::DB::Do";
+	"Kernel::System::DB::Disconnect";
+	"Kernel::System::DB::BEGIN@19";
+	"Kernel::System::DB::Connect";
+	"Kernel::System::DB::BEGIN@15";
+	"Kernel::System::DB::BEGIN@14";
+	"Kernel::System::DB::BEGIN@11";
+	"Kernel::System::DB::BEGIN@21";
+}
+subgraph cluster_XSLoader {
+	label="XSLoader";
+	"XSLoader::load";
+}
+subgraph cluster_bytes {
+	label="bytes";
+	"bytes::length";
+	"bytes::AUTOLOAD";
+}
+subgraph cluster_Kernel_System_Log {
+	label="Kernel::System::Log";
+	"Kernel::System::Log::Log";
+}
+subgraph cluster_DBD___st {
+	label="DBD::_::st";
+	"DBD::_::st::BEGIN@1801";
+}
+subgraph cluster_DBI_var {
+	label="DBI::var";
+	"DBI::var::TIESCALAR";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_DBD___common {
+	label="DBD::_::common";
+	"DBD::_::common::BEGIN@1332";
+}
+subgraph cluster_Kernel_System_Time {
+	label="Kernel::System::Time";
+	"Kernel::System::Time::new";
+	"Kernel::System::Time::CurrentTimestamp";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_List_Util {
+	label="List::Util";
+	"List::Util::BEGIN@11";
+	"List::Util::BEGIN@12";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::Run";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@27";
+}
+subgraph cluster_main {
+	label="main";
+	"main::NULL";
+}
+subgraph cluster_Kernel_System_DB_postgresql {
+	label="Kernel::System::DB::postgresql";
+	"Kernel::System::DB::postgresql::LoadPreferences";
+	"Kernel::System::DB::postgresql::new";
+}
+subgraph cluster_DBI_db {
+	label="DBI::db";
+	"DBI::db::do";
+	"DBI::db::disconnect";
+}
+subgraph cluster_Scalar_Util {
+	label="Scalar::Util";
+	"Scalar::Util::BEGIN@9";
+	"Scalar::Util::BEGIN@10";
+	"Scalar::Util::weaken";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::Require";
+}
+subgraph cluster_DBD___dr {
+	label="DBD::_::dr";
+	"DBD::_::dr::BEGIN@1434";
+}
+subgraph cluster_DBI_DBI_tie {
+	label="DBI::DBI_tie";
+	"DBI::DBI_tie::TIEHASH";
+}
+subgraph cluster_DBD___db {
+	label="DBD::_::db";
+	"DBD::_::db::BEGIN@1495";
+}
+"Kernel::System::DB::new" -> "Kernel::System::Time::new";
+"main::NULL" -> "Kernel::System::DB::DESTROY";
+"Kernel::System::Web::InterfaceAgent::BEGIN@27" -> "Kernel::System::DB::BEGIN@17";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@160";
+"Kernel::System::DB::Do" -> "bytes::AUTOLOAD";
+"Kernel::System::DB::BEGIN@17" -> "Scalar::Util::weaken";
+"Kernel::System::Web::InterfaceAgent::BEGIN@27" -> "Kernel::System::DB::BEGIN@21";
+"Kernel::System::DB::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::DB::BEGIN@17" -> "DBI::DBI_tie::TIEHASH";
+"Kernel::System::DB::BEGIN@17" -> "Exporter::import";
+"Kernel::System::DB::BEGIN@17" -> "DBD::_::dr::BEGIN@1434";
+"Kernel::System::DB::BEGIN@17" -> "List::Util::BEGIN@12";
+"Kernel::System::DB::Do" -> "Kernel::System::DB::CORE:subst";
+"Kernel::System::DB::new" -> "Kernel::System::DB::Connect";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@827";
+"Kernel::System::DB::BEGIN@17" -> "DBD::_::common::BEGIN@1332";
+"Kernel::System::Web::InterfaceAgent::BEGIN@27" -> "Kernel::System::DB::BEGIN@14";
+"Kernel::System::DB::BEGIN@17" -> "DBI::var::TIESCALAR";
+"Kernel::System::DB::BEGIN@17" -> "Scalar::Util::BEGIN@10";
+"Kernel::System::DB::BEGIN@17" -> "List::Util::BEGIN@11";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::DB::new";
+"Kernel::System::DB::BEGIN@15" -> "warnings::import";
+"Kernel::System::DB::BEGIN@17" -> "DBI::_install_method";
+"Kernel::System::DB::BEGIN@17" -> "DBD::_::db::BEGIN@1495";
+"Kernel::System::DB::Do" -> "DBI::db::do";
+"Kernel::System::DB::BEGIN@17" -> "DBD::_::st::BEGIN@1801";
+"Kernel::System::DB::new" -> "Kernel::System::DB::postgresql::new";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@269";
+"Kernel::System::DB::Connect" -> "Kernel::System::DB::Do";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@157";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@681";
+"Kernel::System::DB::BEGIN@21" -> "vars::import";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@273";
+"Kernel::System::DB::Do" -> "bytes::length";
+"Kernel::System::Web::InterfaceAgent::BEGIN@27" -> "Kernel::System::DB::BEGIN@19";
+"Kernel::System::DB::DESTROY" -> "Kernel::System::DB::Disconnect";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@953";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@856";
+"Kernel::System::DB::Connect" -> "DBI::connect";
+"Kernel::System::DB::new" -> "Kernel::System::DB::postgresql::LoadPreferences";
+"Kernel::System::DB::BEGIN@17" -> "Scalar::Util::BEGIN@9";
+"Kernel::System::DB::new" -> "Kernel::System::DB::CORE:match";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@524";
+"Kernel::System::DB::BEGIN@17" -> "DBI::setup_driver";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@158";
+"Kernel::System::DB::BEGIN@17" -> "XSLoader::load";
+"Kernel::System::DB::Do" -> "Kernel::System::Log::Log";
+"Kernel::System::DB::new" -> "Kernel::System::Main::Require";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@1019";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@793";
+"Kernel::System::DB::Disconnect" -> "DBI::db::disconnect";
+"Kernel::System::DB::Do" -> "Kernel::System::Time::CurrentTimestamp";
+"Kernel::System::Web::InterfaceAgent::BEGIN@27" -> "Kernel::System::DB::BEGIN@15";
+"Kernel::System::DB::BEGIN@17" -> "Kernel::System::DB::BEGIN@11";
+"Kernel::System::DB::BEGIN@14" -> "strict::import";
+"Kernel::System::DB::BEGIN@17" -> "DBI::BEGIN@156";
+}

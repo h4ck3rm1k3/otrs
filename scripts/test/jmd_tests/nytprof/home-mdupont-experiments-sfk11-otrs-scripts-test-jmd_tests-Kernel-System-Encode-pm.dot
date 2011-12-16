@@ -1,0 +1,116 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Encode {
+	label="Encode";
+	"Encode::BEGIN@13";
+	"Encode::CORE:match";
+	"Encode::predefine_encodings";
+	"Encode::BEGIN@242";
+	"Encode::BEGIN@8";
+	"Encode::_utf8_off";
+	"Encode::BEGIN@48";
+	"Encode::BEGIN@6";
+	"Encode::BEGIN@9";
+	"Encode::from_to";
+	"Encode::BEGIN@5";
+	"Encode::resolve_alias";
+}
+subgraph cluster_Kernel_System_Log_SysLog {
+	label="Kernel::System::Log::SysLog";
+	"Kernel::System::Log::SysLog::Log";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_XSLoader {
+	label="XSLoader";
+	"XSLoader::load";
+}
+subgraph cluster_Kernel_System_Log {
+	label="Kernel::System::Log";
+	"Kernel::System::Log::BEGIN@17";
+	"Kernel::System::Log::new";
+}
+subgraph cluster_Kernel_System_Encode {
+	label="Kernel::System::Encode";
+	"Kernel::System::Encode::BEGIN@19";
+	"Kernel::System::Encode::Convert";
+	"Kernel::System::Encode::BEGIN@14";
+	"Kernel::System::Encode::CORE:binmode";
+	"Kernel::System::Encode::EncodeInternalUsed";
+	"Kernel::System::Encode::SetIO";
+	"Kernel::System::Encode::EncodeInput";
+	"Kernel::System::Encode::CharsetInternal";
+	"Kernel::System::Encode::BEGIN@15";
+	"Kernel::System::Encode::new";
+	"Kernel::System::Encode::BEGIN@17";
+}
+subgraph cluster_Kernel_System_Web_Request {
+	label="Kernel::System::Web::Request";
+	"Kernel::System::Web::Request::GetParam";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::new";
+}
+subgraph cluster_Kernel_Language {
+	label="Kernel::Language";
+	"Kernel::Language::GetRecommendedCharset";
+}
+subgraph cluster_Encode_utf8 {
+	label="Encode::utf8";
+	"Encode::utf8::BEGIN@325";
+}
+subgraph cluster_Encode_Config {
+	label="Encode::Config";
+	"Encode::Config::BEGIN@7";
+	"Encode::Config::BEGIN@8";
+	"Encode::Config::CORE:match";
+}
+"Kernel::System::Encode::SetIO" -> "Kernel::System::Encode::CORE:binmode";
+"Kernel::System::Web::Request::GetParam" -> "Kernel::System::Encode::EncodeInput";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@5";
+"Kernel::System::Log::SysLog::Log" -> "Kernel::System::Encode::Convert";
+"Kernel::System::Log::BEGIN@17" -> "Kernel::System::Encode::BEGIN@14";
+"Kernel::System::Encode::BEGIN@17" -> "Exporter::import";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@242";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::Config::BEGIN@8";
+"Kernel::System::Encode::Convert" -> "Encode::_utf8_off";
+"Kernel::System::Encode::Convert" -> "Encode::from_to";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::utf8::BEGIN@325";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::Config::CORE:match";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::Config::BEGIN@7";
+"Kernel::System::Encode::BEGIN@15" -> "warnings::import";
+"Kernel::Language::GetRecommendedCharset" -> "Kernel::System::Encode::EncodeInternalUsed";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@9";
+"Kernel::System::Encode::EncodeInternalUsed" -> "Kernel::System::Encode::CharsetInternal";
+"Kernel::System::Log::BEGIN@17" -> "Kernel::System::Encode::BEGIN@15";
+"Kernel::System::Encode::Convert" -> "Encode::resolve_alias";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::CORE:match";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@13";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::predefine_encodings";
+"Kernel::System::Encode::BEGIN@19" -> "vars::import";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@48";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@6";
+"Kernel::System::Log::new" -> "Kernel::System::Encode::new";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Encode::new";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@8";
+"Kernel::System::Log::BEGIN@17" -> "Kernel::System::Encode::BEGIN@17";
+"Kernel::System::Encode::BEGIN@17" -> "XSLoader::load";
+"Kernel::System::Log::BEGIN@17" -> "Kernel::System::Encode::BEGIN@19";
+"Kernel::System::Encode::new" -> "Kernel::System::Encode::SetIO";
+"Kernel::System::Encode::BEGIN@14" -> "strict::import";
+}

@@ -1,0 +1,66 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_File_Basename {
+	label="File::Basename";
+	"File::Basename::BEGIN@52";
+	"File::Basename::BEGIN@371";
+	"File::Basename::BEGIN@50";
+	"File::Basename::CORE:substcont";
+	"File::Basename::dirname";
+	"File::Basename::fileparse_set_fstype";
+	"File::Basename::CORE:subst";
+	"File::Basename::fileparse";
+	"File::Basename::CORE:regcomp";
+	"File::Basename::_strip_trailing_sep";
+	"File::Basename::CORE:match";
+	"File::Basename::BEGIN@43";
+	"File::Basename::BEGIN@51";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::BEGIN@39";
+	"Kernel::Config::Defaults::BEGIN@38";
+	"Kernel::Config::Defaults::BEGIN@37";
+}
+subgraph cluster_re {
+	label="re";
+	"re::BEGIN@4";
+	"re::import";
+	"re::BEGIN@5";
+}
+subgraph cluster_FindBin {
+	label="FindBin";
+	"FindBin::init";
+	"FindBin::BEGIN@99";
+}
+"File::Basename::dirname" -> "File::Basename::fileparse";
+"FindBin::init" -> "File::Basename::fileparse";
+"FindBin::BEGIN@99" -> "File::Basename::BEGIN@51";
+"FindBin::BEGIN@99" -> "File::Basename::BEGIN@371";
+"FindBin::BEGIN@99" -> "File::Basename::BEGIN@50";
+"Kernel::Config::Defaults::BEGIN@39" -> "File::Basename::dirname";
+"Kernel::Config::Defaults::BEGIN@38" -> "File::Basename::dirname";
+"Kernel::Config::Defaults::BEGIN@37" -> "File::Basename::dirname";
+"File::Basename::_strip_trailing_sep" -> "File::Basename::CORE:subst";
+"File::Basename::dirname" -> "File::Basename::_strip_trailing_sep";
+"FindBin::BEGIN@99" -> "File::Basename::fileparse_set_fstype";
+"FindBin::BEGIN@99" -> "File::Basename::BEGIN@43";
+"File::Basename::BEGIN@52" -> "warnings::import";
+"File::Basename::BEGIN@43" -> "re::BEGIN@5";
+"File::Basename::fileparse_set_fstype" -> "File::Basename::CORE:regcomp";
+"File::Basename::BEGIN@43" -> "re::import";
+"File::Basename::fileparse" -> "File::Basename::CORE:match";
+"File::Basename::fileparse_set_fstype" -> "File::Basename::CORE:match";
+"File::Basename::BEGIN@43" -> "re::BEGIN@4";
+"FindBin::BEGIN@99" -> "File::Basename::BEGIN@52";
+"File::Basename::_strip_trailing_sep" -> "File::Basename::CORE:substcont";
+"File::Basename::BEGIN@50" -> "strict::import";
+}

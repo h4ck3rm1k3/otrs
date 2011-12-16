@@ -1,0 +1,47 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::bootstrap";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::unimport";
+	"warnings::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Unicode_Normalize {
+	label="Unicode::Normalize";
+	"Unicode::Normalize::BEGIN@14";
+	"Unicode::Normalize::CORE:pack";
+	"Unicode::Normalize::bootstrap";
+	"Unicode::Normalize::BEGIN@11";
+	"Unicode::Normalize::BEGIN@12";
+	"Unicode::Normalize::BEGIN@10";
+	"Unicode::Normalize::BEGIN@3";
+	"Unicode::Normalize::BEGIN@9";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::BEGIN@20";
+}
+"Unicode::Normalize::BEGIN@3" -> "Unicode::Normalize::CORE:pack";
+"Unicode::Normalize::BEGIN@14" -> "warnings::unimport";
+"Unicode::Normalize::BEGIN@12" -> "Exporter::import";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@9";
+"Unicode::Normalize::BEGIN@11" -> "warnings::import";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@14";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@11";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@10";
+"DynaLoader::bootstrap" -> "Unicode::Normalize::bootstrap";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@12";
+"Kernel::System::Main::BEGIN@20" -> "Unicode::Normalize::BEGIN@3";
+"Unicode::Normalize::BEGIN@10" -> "strict::import";
+}

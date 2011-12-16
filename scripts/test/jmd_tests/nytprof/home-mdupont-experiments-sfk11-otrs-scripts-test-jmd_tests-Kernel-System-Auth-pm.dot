@@ -1,0 +1,68 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_Auth {
+	label="Kernel::System::Auth";
+	"Kernel::System::Auth::BEGIN@14";
+	"Kernel::System::Auth::new";
+	"Kernel::System::Auth::BEGIN@15";
+	"Kernel::System::Auth::BEGIN@19";
+	"Kernel::System::Auth::BEGIN@17";
+	"Kernel::System::Auth::GetOption";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_Auth_DB {
+	label="Kernel::System::Auth::DB";
+	"Kernel::System::Auth::DB::GetOption";
+	"Kernel::System::Auth::DB::new";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_Kernel_System_Valid {
+	label="Kernel::System::Valid";
+	"Kernel::System::Valid::new";
+	"Kernel::System::Valid::BEGIN@15";
+	"Kernel::System::Valid::BEGIN@19";
+	"Kernel::System::Valid::BEGIN@14";
+	"Kernel::System::Valid::BEGIN@17";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::Run";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@28";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::Require";
+}
+"Kernel::System::Auth::GetOption" -> "Kernel::System::Auth::DB::GetOption";
+"Kernel::System::Web::InterfaceAgent::BEGIN@28" -> "Kernel::System::Auth::BEGIN@19";
+"Kernel::System::Auth::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Auth::new" -> "Kernel::System::Auth::DB::new";
+"Kernel::System::Auth::new" -> "Kernel::System::Valid::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@28" -> "Kernel::System::Auth::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Auth::new";
+"Kernel::System::Auth::BEGIN@15" -> "warnings::import";
+"Kernel::System::Auth::BEGIN@17" -> "Kernel::System::Valid::BEGIN@19";
+"Kernel::System::Auth::BEGIN@17" -> "Kernel::System::Valid::BEGIN@15";
+"Kernel::System::Auth::BEGIN@17" -> "Kernel::System::Valid::BEGIN@14";
+"Kernel::System::Auth::BEGIN@19" -> "vars::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@28" -> "Kernel::System::Auth::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Auth::GetOption";
+"Kernel::System::Auth::BEGIN@17" -> "Kernel::System::Valid::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@28" -> "Kernel::System::Auth::BEGIN@14";
+"Kernel::System::Auth::new" -> "Kernel::System::Main::Require";
+"Kernel::System::Auth::BEGIN@14" -> "strict::import";
+}

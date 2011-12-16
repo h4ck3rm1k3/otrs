@@ -1,0 +1,41 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::Do";
+}
+subgraph cluster_bytes {
+	label="bytes";
+	"bytes::BEGIN@4";
+	"bytes::BEGIN@27";
+	"bytes::import";
+	"bytes::BEGIN@9";
+	"bytes::BEGIN@34";
+	"bytes::AUTOLOAD";
+	"bytes::BEGIN@17";
+	"bytes::BEGIN@22";
+}
+subgraph cluster_Data_Dumper {
+	label="Data::Dumper";
+	"Data::Dumper::BEGIN@683";
+}
+subgraph cluster_Encode_utf8 {
+	label="Encode::utf8";
+	"Encode::utf8::BEGIN@325";
+}
+"Kernel::System::DB::Do" -> "bytes::AUTOLOAD";
+"bytes::BEGIN@4" -> "bytes::import";
+"bytes::BEGIN@27" -> "bytes::import";
+"Data::Dumper::BEGIN@683" -> "bytes::import";
+"bytes::BEGIN@9" -> "bytes::import";
+"bytes::BEGIN@34" -> "bytes::import";
+"Encode::utf8::BEGIN@325" -> "bytes::import";
+"bytes::BEGIN@17" -> "bytes::import";
+"bytes::BEGIN@22" -> "bytes::import";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@17";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@27";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@9";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@4";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@34";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@22";
+}

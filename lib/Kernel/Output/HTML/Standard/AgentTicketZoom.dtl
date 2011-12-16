@@ -1,0 +1,628 @@
+# --
+# AgentTicketZoom.dtl - provides HTML for AgentTicketZoom.pm
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# --
+# $Id: AgentTicketZoom.dtl,v 1.195 2011/09/30 11:35:43 mg Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+<!-- dtl:block:ArticleFilterDialog -->
+<!--dtl:js_on_document_complete-->
+<script type="text/javascript">//<![CDATA[
+    $('#SetArticleFilter').bind('click', function (Event) {
+        Core.UI.Dialog.ShowContentDialog($('#ArticleFilterDialog'), '$JSText{"Article filter"}', '20px', 'Center', true, [
+            {
+                Label: "$JSText{"Apply"}",
+                Function: function () {
+                    var Data = Core.AJAX.SerializeForm($('#ArticleFilterDialogForm'));
+                    Core.AJAX.FunctionCall(Core.Config.Get('CGIHandle'), Data, function () {
+                        location.reload();
+                    }, 'text');
+                }
+            },
+            {
+                Label: "$JSText{"Reset"}",
+                Function: function () {
+                    $('#ArticleTypeFilter').val('');
+                    $('#ArticleSenderTypeFilter').val('');
+                }
+            }
+        ]);
+        return false;
+    });
+    $('#ResetArticleFilter').bind('click', function (Event) {
+        var Data = {
+            Action:       'AgentTicketZoom',
+            Subaction:    'ArticleFilterSet',
+            TicketID:     '$QData{"TicketID"}',
+            SaveDefaults: 1
+        };
+        Core.AJAX.FunctionCall(Core.Config.Get('CGIHandle'), Data, function () {
+            location.reload();
+        });
+    });
+//]]></script>
+<!--dtl:js_on_document_complete-->
+<div id="ArticleFilterDialog" class="Hidden">
+    <form action="$Env{"CGIHandle"}" method="post" id="ArticleFilterDialogForm" name="ArticleFilterDialogForm">
+        <input type="hidden" value="AgentTicketZoom" name="Action"/>
+        <input type="hidden" value="ArticleFilterSet" name="Subaction"/>
+        <input type="hidden" value="$QData{"TicketID"}" name="TicketID"/>
+        <fieldset class="TableLike">
+            <label for="ArticleTypeFilter">$Text{"Article Type"}:</label>
+            <div class="Field">
+                $Data{"ArticleTypeFilterString"}
+            </div>
+            <div class="Clear"></div>
+            <label for="ArticleSenderTypeFilter">$Text{"Sender Type"}:</label>
+            <div class="Field">
+                $Data{"ArticleSenderTypeFilterString"}
+            </div>
+            <div class="Clear"></div>
+            <label for="SaveDefaults">$Text{"Save filter settings as default"}:</label>
+            <div class="Field">
+                <input type="checkbox" id="SaveDefaults" name="SaveDefaults" value="1" />
+            </div>
+        </fieldset>
+    </form>
+</div>
+<!-- dtl:block:ArticleFilterDialog -->
+
+<!-- dtl:block:Header -->
+<div class="MainBox ARIARoleMain">
+    <div class="ClearLeft"></div>
+    <div class="Headline">
+        <div class="Flag" title="$Text{"$Data{"Priority"}"}"><span class="PriorityID-$QData{"PriorityID"}">$Text{"$Data{"Priority"}"}</span></div>
+        <h1 title="$Text{"Zoom"} $Config{"Ticket::Hook"}$Data{"TicketNumber"} &ndash; $QData{"Title", "70"}">
+            $Config{"Ticket::Hook"}$Data{"TicketNumber"} <span>&mdash;</span> $QData{"Title", "60"}
+        </h1>
+    </div>
+
+    <div class="LayoutFixedSidebar SidebarLast">
+        <div class="SidebarColumn">
+            <div class="WidgetSimple">
+                <div class="Header">
+                    <h2>$Text{"Ticket Information"}</h2>
+                </div>
+                <div class="Content">
+                    <fieldset class="TableLike FixedLabelSmall">
+<!-- dtl:block:Type -->
+                        <label>$Text{"Type"}:</label>
+                        <p class="Value" title="$QData{"Type"}">$QData{"Type","18"}</p>
+                        <div class="Clear"></div>
+<!-- dtl:block:Type -->
+                        <label>$Text{"State"}:</label>
+                        <p class="Value" title="$Text{"$Data{"State"}"}">$Text{"$Data{"State"}","18"}</p>
+                        <div class="Clear"></div>
+
+                        <label>$Text{"Locked"}:</label>
+                        <p class="Value" title="$Text{"$Data{"Lock"}"}">$Text{"$Data{"Lock"}","18"}</p>
+                        <div class="Clear"></div>
+
+                        <label>$Text{"Priority"}:</label>
+                        <p class="Value" title="$Text{"$Data{"Priority"}"}">$Text{"$Data{"Priority"}","18"}</p>
+                        <div class="Clear"></div>
+
+                        <label>$Text{"Queue"}:</label>
+                        <p class="Value" title="$QData{"Queue"}">$QData{"Queue","18"}</p>
+                        <div class="Clear"></div>
+
+<!-- dtl:block:Service -->
+                        <label>$Text{"Service"}:</label>
+                        <p class="Value" title="$QData{"Service"}">$QData{"Service","18"}</p>
+                        <div class="Clear"></div>
+<!-- dtl:block:Service -->
+<!-- dtl:block:SLA -->
+                        <label>$Text{"Service Level Agreement"}:</label>
+                        <p class="Value" title="$QData{"SLA"}">$QData{"SLA","18"}</p>
+                        <div class="Clear"></div>
+<!-- dtl:block:SLA -->
+                    </fieldset>
+
+                    <fieldset class="TableLike FixedLabelSmall">
+<!-- dtl:block:FirstResponseTime -->
+                        <label>$Text{"First Response Time"}:</label>
+                        <div class="Value">
+                            <p title="$Text{"Service Time"}: $QData{"FirstResponseTimeWorkingTime"}" class="$QData{"FirstResponseTimeClass"}">
+                                $QData{"FirstResponseTimeHuman"}
+                                <br/>
+                                $TimeShort{"$QData{"FirstResponseTimeDestinationDate"}"}
+                            </p>
+                        </div>
+                        <div class="Clear"></div>
+<!-- dtl:block:FirstResponseTime -->
+<!-- dtl:block:UpdateTime -->
+                        <label>$Text{"Update Time"}:</label>
+                        <div class="Value">
+                            <p title="$Text{"Service Time"}: $QData{"UpdateTimeWorkingTime"}" class="$QData{"UpdateTimeClass"}">
+                                $QData{"UpdateTimeHuman"}
+                                <br/>
+                                $TimeShort{"$QData{"UpdateTimeDestinationDate"}"}
+                            </p>
+                        </div>
+                        <div class="Clear"></div>
+<!-- dtl:block:UpdateTime -->
+<!-- dtl:block:SolutionTime -->
+                        <label>$Text{"Solution Time"}:</label>
+                        <div class="Value">
+                            <p title="$Text{"Service Time"}: $QData{"SolutionTimeWorkingTime"}" class="$QData{"SolutionTimeClass"}">
+                                $QData{"SolutionTimeHuman"}
+                                <br/>
+                                $TimeShort{"$QData{"SolutionTimeDestinationDate"}"}
+                            </p>
+                        </div>
+                        <div class="Clear"></div>
+<!-- dtl:block:SolutionTime -->
+                    </fieldset>
+
+                    <fieldset class="TableLike FixedLabelSmall">
+                        <label>$Text{"CustomerID"}:</label>
+                        <p class="Value">
+                            <a href="$Config{"CustomerDBLink"}" class="AsPopup PopupType_TicketAction" $Config{"CustomerDBLinkTarget"}>$QData{"CustomerID", "18"}</a>
+                        </p>
+                        <div class="Clear"></div>
+<!-- dtl:block:TotalAccountedTime -->
+                        <label>$Text{"Accounted time"}:</label>
+                        <p class="Value">$Data{"TicketTimeUnits"}</p>
+                        <div class="Clear"></div>
+
+<!-- dtl:block:TotalAccountedTime -->
+<!-- dtl:block:PendingUntil -->
+                        <label>$Text{"Pending till"}:</label>
+                        <p class="Value $QData{"PendingUntilClass"}">$Data{"PendingUntil"}</p>
+                        <div class="Clear"></div>
+<!-- dtl:block:PendingUntil -->
+<!-- dtl:block:Owner -->
+                        <label>$Text{"Owner"}:</label>
+                        <p class="Value" title="$QData{"UserFirstname"} $QData{"UserLastname"} ($QData{"UserLogin"})">$Quote{"$Data{"UserFirstname"} $Data{"UserLastname"}","18"}</p>
+                        <div class="Clear"></div>
+
+<!-- dtl:block:Owner -->
+<!-- dtl:block:Responsible -->
+                        <label>$Text{"Responsible"}:</label>
+                        <p class="Value" title="$QData{"UserFirstname"} $QData{"UserLastname"} ($QData{"UserLogin"})">$Quote{"$Data{"UserFirstname"} $Data{"UserLastname"}","18"}</p>
+                        <div class="Clear"></div>
+
+<!-- dtl:block:Responsible -->
+                    </fieldset>
+
+# show ticket dynamic fields
+                    <fieldset class="TableLike FixedLabelSmall">
+<!-- dtl:block:TicketDynamicField -->
+                        <label>$Text{"$Data{"Label"}"}:</label>
+                        <p class="Value">
+<!-- dtl:block:TicketDynamicFieldLink -->
+                            <span title="$QData{"Title"}"><a href="$Data{"Link"}" target="_blank">$Data{"Value"}</a></span>
+<!-- dtl:block:TicketDynamicFieldLink -->
+<!-- dtl:block:TicketDynamicFieldPlain -->
+                            <span title="$QData{"Title"}">$Data{"Value"}</span>
+<!-- dtl:block:TicketDynamicFieldPlain -->
+                        </p>
+                        <div class="Clear"></div>
+<!-- dtl:block:TicketDynamicField -->
+                    </fieldset>
+
+# example of how to use fixed dynamic field blocks for customizations
+# Note: Field1 and Field2 are the names of the fields and had to be replaced with the actual
+# field names
+#                    <fieldset class="TableLike FixedLabelSmall">
+#<!-- dtl:block:TicketDynamicField_Field1 -->
+#                        <label>$Text{"$Data{"Label"}"}:</label>
+#                        <p class="Value">
+#<!-- dtl:block:TicketDynamicField_Field1_Link -->
+#                            <span title="$QData{"Title"}"><a href="$Data{"Link"}" target="_blank">$Data{"Value"}</a></span>
+#<!-- dtl:block:TicketDynamicField_Field1_Link -->
+#<!-- dtl:block:TicketDynamicField_Field1_Plain -->
+#                            <span title="$QData{"Title"}">$Data{"Value"}</span>
+#<!-- dtl:block:TicketDynamicField_Field1_Plain -->
+#                        </p>
+#<!-- dtl:block:TicketDynamicField_Field1 -->
+#                    </fieldset>
+#                    <fieldset class="TableLike FixedLabelSmall">
+#<!-- dtl:block:TicketDynamicField_Field2 -->
+#                        <label>$Text{"$Data{"Label"}"}:</label>
+#                        <p class="Value">
+#<!-- dtl:block:TicketDynamicField_Field2_Link -->
+#                            <span title="$QData{"Title"}"><a href="$Data{"Link"}" target="_blank">$Data{"Value"}</a></span>
+#<!-- dtl:block:TicketDynamicField_Field2_Link -->
+#<!-- dtl:block:TicketDynamicField_Field2_Plain -->
+#                            <span title="$QData{"Title"}">$Data{"Value"}</span>
+#<!-- dtl:block:TicketDynamicField_Field2_Plain -->
+#                        </p>
+#<!-- dtl:block:TicketDynamicField_Field2 -->
+#                    </fieldset>
+                </div>
+            </div>
+            <div class="WidgetSimple">
+                <div class="Header">
+                    <h2>$Text{"Customer Information"}</h2>
+                </div>
+                <div class="Content">
+# show customer info table
+<!-- dtl:block:CustomerTable -->
+                    $Data{"CustomerTable"}
+<!-- dtl:block:CustomerTable -->
+                </div>
+            </div>
+<!-- dtl:block:LinkTableSimple -->
+            <div class="WidgetSimple DontPrint">
+                <div class="Header">
+                    <h2>$Text{"Linked Objects"}</h2>
+                </div>
+                <div class="Content">
+                    $Data{"LinkTableStrg"}
+                </div>
+            </div>
+<!-- dtl:block:LinkTableSimple -->
+        </div>
+        <div class="ContentColumn">
+            <div class="ControlRow">
+                <h2>$QData{"ArticleCount"} $Text{"Article(s)"}</h2>
+                <div class="AdditionalInformation">
+                    $Text{"Age"}: $Data{"Age"} &ndash; $Text{"Created"}: $TimeShort{"$Data{"Created"}"}
+                </div>
+            </div>
+            <div class="ActionRow">
+                <ul class="Actions">
+<!-- dtl:block:TicketMenu -->
+                    <li>
+                        <a href="$Env{"Baselink"}$Data{"Link"}" class="$QData{"Class"}" $Data{"LinkParam"} title="$Text{"$Data{"Description"}"}">$Text{"$Data{"Name"}"}</a>
+                    </li>
+<!-- dtl:block:TicketMenu -->
+<!-- dtl:block:MoveLink -->
+                    <li class="$QData{"Class"}">
+                        <form title="$Text{"Move ticket to a different queue"}" action="$Env{"CGIHandle"}" method="post">
+                            <input type="hidden" name="Action" value="AgentTicketMove"/>
+                            <input type="hidden" name="QueueID" value="$QData{"QueueID"}"/>
+                            <input type="hidden" name="TicketID" value="$QData{"TicketID"}"/>
+                            <label for="DestQueueID" class="InvisibleText">$Text{"Change queue"}:</label>
+                            $Data{"MoveQueuesStrg"}
+                        </form>
+<!-- dtl:js_on_document_complete -->
+<script type="text/javascript">//<![CDATA[
+    $('#DestQueueID').bind('change', function (Event) {
+        $(this).closest('form').submit();
+    });
+//]]></script>
+<!-- dtl:js_on_document_complete -->
+                    </li>
+<!-- dtl:block:MoveLink -->
+<!-- dtl:block:MoveForm -->
+                    <li>
+                        <a href="$Env{"Baselink"}Action=AgentTicketMove;TicketID=$LQData{"TicketID"};" class="AsPopup PopupType_TicketAction" title="$Text{"Change Queue"}">$Text{"Change Queue"}</a>
+                    </li>
+<!-- dtl:block:MoveForm -->
+                </ul>
+                <div class="Clear"></div>
+            </div>
+
+            <div id="ArticleTree">
+$Data{"ArticleTree"}
+            </div>
+
+            <div id="ArticleItems">
+$Data{"ArticleItems"}
+            </div>
+
+<!-- dtl:block:LinkTableComplex -->
+            <div class="Content">
+                $Data{"LinkTableStrg"}
+            </div>
+<!-- dtl:block:LinkTableComplex -->
+
+        </div>
+        <div class="Clear"></div>
+    </div>
+
+</div>
+<!-- dtl:block:Header -->
+
+
+
+<!-- dtl:block:Tree -->
+<div id="ArticleTable"  class="FixedHeader">
+    <div class="ControlRow">
+<!-- dtl:block:ArticleFilterDialogLink -->
+        <div class="ArticleFilter Icons">
+            <span class="InvisibleText">$Text{"Article Filter"}:</span>
+# Only show one: Set or Reset.
+#<!-- dtl:block:ArticleFilterSetLink -->
+            <a href="#" id="SetArticleFilter" title="$Text{"Add Filter"}"><span>$Text{"Set"}</span></a>
+#<!-- dtl:block:ArticleFilterSetLink -->
+<!-- dtl:block:ArticleFilterResetLink -->
+            <a class="Active" href="#" id="ResetArticleFilter" title="$Text{"Reset Filter"}"><span>$Text{"Reset"}</span></a>
+<!-- dtl:block:ArticleFilterResetLink -->
+        </div>
+<!-- dtl:block:ArticleFilterDialogLink -->
+        <div class="ArticleView Icons">
+            <span class="InvisibleText">$Text{"Article"} $Text{"View"}:</span>
+<!-- dtl:block:Expand -->
+            <a class="OneArticle Active" href="$Env{"Baselink"}Action=AgentTicketZoom;TicketID=$LQData{"TicketID"};ArticleID=$LQData{"ArticleID"};ZoomExpand=0" title="$Text{"Show one article"}"><span>$Text{"Show one article"}</span></a>
+            <a class="AllArticles" href="$Env{"Baselink"}Action=AgentTicketZoom;TicketID=$LQData{"TicketID"};ArticleID=$LQData{"ArticleID"};ZoomExpand=1" title="$Text{"Show all articles"}"><span>$Text{"Show all articles"}</span></a>
+<!-- dtl:block:Expand -->
+<!-- dtl:block:Collapse -->
+            <a class="OneArticle" href="$Env{"Baselink"}Action=AgentTicketZoom;TicketID=$LQData{"TicketID"};ArticleID=$LQData{"ArticleID"};ZoomExpand=0" title="$Text{"Show one article"}"><span>$Text{"Show one article"}</span></a>
+            <a class="AllArticles Active" href="$Env{"Baselink"}Action=AgentTicketZoom;TicketID=$LQData{"TicketID"};ArticleID=$LQData{"ArticleID"};ZoomExpand=1" title="$Text{"Show all articles"}"><span>$Text{"Show all articles"}</span></a>
+<!-- dtl:block:Collapse -->
+        </div>
+        <div class="Clear"></div>
+    </div>
+    <div id="ArticleTableBody" class="ActionRow">
+        <div class="Scroller">
+            <table id="FixedTable" class="TableSmall NoCellspacing">
+                <thead>
+                    <tr>
+                        <th class="UnreadArticles"><a class="UnreadArticles" href="#" title="$Text{"Unread articles"}"><span class="UnreadArticles"></span></a></th>
+                        <th class="No Sortable"><a href="#">$Text{"No."}</a></th>
+                        <th class="Type Sortable"><a href="#">$Text{"Type"}</a></th>
+                        <th class="Direction Sortable"><a href="#" title="$Text{"Direction"}"><span class="Direction"><!--Direction--></span></a></th>
+                        <th class="From Sortable"><a href="#">$Text{"From"}</a></th>
+                        <th class="Subject Sortable"><a href="#">$Text{"Subject"}</a></th>
+                        <th class="Created Sortable"><a href="#">$Text{"Created"}</a></th>
+                        <th class="Attachments Last"><a href="#" title="$Text{"Attachments"}"><span><!--Attachments--></span></a></th>
+                    </tr>
+                </thead>
+                <tbody>
+<!-- dtl:block:TreeItem -->
+                    <tr class="$QData{"SenderType"}-$QData{"ArticleType"} $QData{"ClassRow"}" id="Row$LQData{"Count"}">
+                        <td class="$QData{"Class"} UnreadArticles Fixed NonTextContent">
+<!-- dtl:block:TreeItemNewArticle -->
+                            <span class="$QData{"Class"}" title="$Text{"Unread Article!"}">$Text{"Unread Article!"}</span>
+<!-- dtl:block:TreeItemNewArticle -->
+<!-- dtl:block:TreeItemNoNewArticle -->
+                            <span class="NoContent"></span>
+<!-- dtl:block:TreeItemNoNewArticle -->
+                        </td>
+                        <td class="No">
+                            $QData{"Count"}
+                            <input type="hidden" class="ArticleInfo" name="Link$LQData{"Count"}" value="$Env{"Baselink"}Action=AgentTicketZoom;Subaction=ArticleUpdate;Count=$LQData{"Count"};TicketID=$QData{"TicketID"};ArticleID=$QData{"ArticleID"};"/>
+                            <input type="hidden" class="ArticleID" value="$QData{"ArticleID"}" />
+                            <input type="hidden" class="SortData" value="$QData{"Count"}" />
+                        </td>
+                        <td class="Type">
+                            <div>$Text{"$Data{"SenderType"}"} &ndash; $Text{"$Data{"ArticleType"}"}</div>
+                            <input type="hidden" class="SortData" value="$Text{"$Data{"SenderType"}"} &ndash; $Text{"$Data{"ArticleType"}"}" />
+                        </td>
+                        <td class="Direction">
+<!-- dtl:block:TreeItemDirectionIncoming -->
+                            <span class="Direction Incoming" title="$Text{"Incoming message"}"></span>
+                            <input type="hidden" class="SortData" value="0" />
+<!-- dtl:block:TreeItemDirectionIncoming -->
+<!-- dtl:block:TreeItemDirectionOutgoing -->
+                            <span class="Direction Outgoing" title="$Text{"Outgoing message"}"></span>
+                            <input type="hidden" class="SortData" value="1" />
+<!-- dtl:block:TreeItemDirectionOutgoing -->
+<!-- dtl:block:TreeItemDirectionInternal -->
+                            <span class="Direction Internal" title="$Text{"Internal message"}"></span>
+                            <input type="hidden" class="SortData" value="2" />
+<!-- dtl:block:TreeItemDirectionInternal -->
+                        </td>
+                        <td class="From">
+                            <div title="$QData{"From"}"><a href="#">$QData{"FromRealname","34"}</a></div>
+                            <input type="hidden" class="SortData" value="$QData{"From"}" />
+                        </td>
+                        <td class="Subject">
+                            <div title="$QData{"Subject"}"><a href="#">$QData{"Subject","36"}</a></div>
+                            <input type="hidden" class="SortData" value="$QData{"Subject"}" />
+                        </td>
+                        <td class="Created">
+                            <a href="#">$TimeShort{"$QData{"Created"}"}</a>
+# Include custom sorting information: date in ISO format.
+# Other date formats cannot be sorted reliably.
+                            <input type="hidden" class="SortData" value="$QData{"Created"}" />
+                        </td>
+                        <td class="Attachments Attachment Fixed NonTextContent">
+<!-- dtl:block:TreeItemAttachment -->
+<!-- dtl:block:TreeItemAttachmentIconSingle -->
+# show attachment preview data in tooltip
+                            <a class="Attachment" title="$Text{"Attachment"} $QData{"Filename"} ($QData{"Filesize"})" rel="TicketAttachment$QData{"Count"}"></a>
+<!-- dtl:block:TreeItemAttachmentIconSingle -->
+<!-- dtl:block:TreeItemAttachmentIconMultiple -->
+# no preview data in tooltip
+                            <a class="Attachment" title="$Text{"Attachments"}" rel="TicketAttachment$QData{"Count"}"></a>
+<!-- dtl:block:TreeItemAttachmentIconMultiple -->
+                            <div id="TicketAttachment$QData{"Count"}" class="AttachmentData Hidden">
+                                <div class="Attachment InnerContent">
+<!-- dtl:block:TreeItemAttachmentItem -->
+                                    <div class="AttachmentElement">
+                                        <h3>
+# bugfix for bug#5579 - Spaces in filenames are converted to + characters when downloading in IE.
+# $QData{"Filename"} need to be the filename, take care that it is not $LQData{""}
+                                            <a href="$Env{"CGIHandle"}/$QData{"Filename"}?Action=AgentTicketAttachment;ArticleID=$LQData{"ArticleID"};FileID=$LQData{"FileID"}" $Data{"Target"}>$QData{"Filename"}</a>
+                                        </h3>
+                                        <p>$QData{"Filesize"}</p>
+                                    </div>
+<!-- dtl:block:TreeItemAttachmentItem -->
+                                </div>
+                            </div>
+<!-- dtl:block:TreeItemAttachment -->
+<!-- dtl:block:TreeItemNoAttachment -->
+                            <span class="NoContent"></span>
+<!-- dtl:block:TreeItemNoAttachment -->
+                        </td>
+                    </tr>
+<!-- dtl:block:TreeItem -->
+                </tbody>
+            </table>
+        </div>
+        <div class="Handle ui-resizable-handle ui-resizable-s">
+            <a href="#">$Text{"Resize"}</a>
+        </div>
+    </div>
+</div>
+<!-- dtl:block:Tree -->
+
+<!-- dtl:block:ArticleItem -->
+<div>
+    <a name="Article$QData{"ArticleID"}"></a>
+    <div class="WidgetBox SpacingTop Expanded">
+        <div class="LightRow Header">
+            <div class="WidgetAction Toggle"><a href="#" title="$Text{"Show or hide the content"}"><span></span></a></div>
+            <h2>#$QData{"Count"} &ndash; $QData{"Subject","60"}</h2>
+            <div class="AdditionalInformation SpacingLoader">
+                $Text{"Created"}: $TimeShort{"$Data{"Created"}"}
+            </div>
+        </div>
+        <div class="LightRow Bottom">
+            <ul class="Actions">
+<!-- dtl:block:ArticleMenu-->
+                <li>
+                    <a href="$Env{"Baselink"}$Data{"Link"}" class="$QData{"Class"}" $Data{"LinkParam"} title="$Text{"$Data{"Description"}"}">$Text{"$Data{"Name"}"}</a>
+                </li>
+<!-- dtl:block:ArticleMenu-->
+
+<!-- dtl:block:ArticleReplyAsDropdown -->
+                <li>
+                    <form title="$Text{"$Data{"Name"}"}" action="$Env{"CGIHandle"}" method="get" id="$QData{"FormID"}">
+                        <input type="hidden" name="Action" value="$QData{"Action"}"/>
+                        <input type="hidden" name="TicketID" value="$QData{"TicketID"}"/>
+                        <input type="hidden" name="ArticleID" value="$QData{"ArticleID"}"/>
+                        <input type="hidden" name="ReplyAll" value="$QData{"ReplyAll"}"/>
+                        <label for="$QData{"ResponseElementID"}" class="InvisibleText">$Text{"$Data{"Name"}"}:</label>
+                        $Data{"StandardResponsesStrg"}
+                    </form>
+<!-- dtl:block:ArticleReplyAsDropdownJSOnLoad -->
+<script type="text/javascript">//<![CDATA[
+$('#$QData{"FormID"} select[name=ResponseID]').bind('change', function (Event) {
+    var URL;
+
+    if ($(this).val() > 0) {
+        URL = Core.Config.Get('Baselink') + $(this).parents().serialize();
+        Core.UI.Popup.OpenPopup(URL, 'TicketAction');
+        // reset the select box so that it can be used again from the same window
+        $(this).val('0');
+    }
+});
+//]]></script>
+<!-- dtl:block:ArticleReplyAsDropdownJSOnLoad -->
+<!-- dtl:block:ArticleReplyAsDropdownJSStatic -->
+<!-- dtl:js_on_document_complete -->
+<script type="text/javascript">//<![CDATA[
+$('#$QData{"FormID"} select[name=ResponseID]').bind('change', function (Event) {
+    var URL;
+
+    if ($(this).val() > 0) {
+        URL = Core.Config.Get('Baselink') + $(this).parents().serialize();
+        Core.UI.Popup.OpenPopup(URL, 'TicketAction');
+        // reset the select box so that it can be used again from the same window
+        $(this).val('0');
+    }
+});
+//]]></script>
+<!-- dtl:js_on_document_complete -->
+<!-- dtl:block:ArticleReplyAsDropdownJSStatic -->
+                </li>
+<!-- dtl:block:ArticleReplyAsDropdown -->
+            </ul>
+            <div class="ClearLeft"></div>
+        </div>
+
+        <div class="Content">
+            <div class="ArticleMailHeader">
+                <fieldset class="TableLike FixedLabelSmall">
+<!-- dtl:block:RowRecipient -->
+                    <label>$Text{"$Data{"Key"}"}:</label>
+                    <p class="Value" title="$QData{"Value"}">$QData{"Realname","200"}</p>
+                    <div class="Clear"></div>
+<!-- dtl:block:RowRecipient -->
+<!-- dtl:block:RowData -->
+                    <label>$Text{"$Data{"Key"}"}:</label>
+                    <p class="Value" title="$QData{"Value"}">$QData{"Value","200"}</p>
+                    <div class="Clear"></div>
+<!-- dtl:block:RowData -->
+
+# show article dynamic fields
+<!-- dtl:block:ArticleDynamicField -->
+                    <label>$Text{"$Data{"Label"}"}:</label>
+                    <p class="Value" title="$QData{"Title"}">$Data{"Value"}</p>
+                    <div class="Clear"></div>
+<!-- dtl:block:ArticleDynamicField -->
+
+# example of how to use fixed dynamic field blocks for customizations
+# Note: Field1 and Field2 are the names of the fields and had to be replaced with the actual
+# field names
+#<!-- dtl:block:ArticleDynamicField_Field1 -->
+#                        <label>$Text{"$Data{"Label"}"}:</label>
+#                        <p class="Value" title="$QData{"Title"}">$Data{"Value"}</p>
+#                        <div class="Clear"></div>
+#<!-- dtl:block:ArticleDynamicField_Field1 -->
+#<!-- dtl:block:ArticleDynamicField_Field2 -->
+#                        <label>$Text{"$Data{"Label"}"}:</label>
+#                        <p class="Value" title="$QData{"Title"}">$Data{"Value"}</p>
+#                        <div class="Clear"></div>
+#<!-- dtl:block:ArticleDynamicField_Field2 -->
+
+# show article options like signed, crypted, ...
+<!-- dtl:block:ArticleOption -->
+                    <label>$Text{"$Data{"Key"}"}:</label>
+                    <div title="$QData{"Value"}" class="$QData{"Result"} Value">$QData{"Value","160"}</div>
+                    <div class="Clear"></div>
+<!-- dtl:block:ArticleOption -->
+
+# show article accounted time
+<!-- dtl:block:ArticleAccountedTime -->
+                    <label>$Text{"$Data{"Key"}"}:</label>
+                    <p class="Value">$QData{"Value"}</p>
+                    <div class="Clear"></div>
+<!-- dtl:block:ArticleAccountedTime -->
+
+# show attachments
+<!-- dtl:block:ArticleAttachment -->
+                    <label>$Text{"Attachment"}:</label>
+                    <p class="Value">
+<!-- dtl:block:ArticleAttachmentRow -->
+<!-- dtl:block:ArticleAttachmentRowLink -->
+                        <a class="$QData{"Class"}" href="$Data{"Link"}" $Data{"Target"} title="$Text{"$Data{"Action"}"}">$QData{"Filename"}</a> $QData{"DataFileSize"}
+<!-- dtl:block:ArticleAttachmentRowLink -->
+<!-- dtl:block:ArticleAttachmentRowNoLink -->
+                        $QData{"Filename"}, $QData{"Filesize"}
+<!-- dtl:block:ArticleAttachmentRowNoLink -->
+                        <br />
+<!-- dtl:block:ArticleAttachmentRow -->
+                    </p>
+                    <div class="Clear"></div>
+<!-- dtl:block:ArticleAttachment -->
+                </fieldset>
+            </div>
+            <div class="ArticleMailContent">
+<!-- dtl:block:BodyPlain -->
+$Data{"BodyNote"}
+                <div class="ArticleBody">
+$Data{"Body"}
+                </div>
+<!-- dtl:block:BodyPlain -->
+<!-- dtl:block:BodyHTML -->
+                <div>
+# execute IFrame JS asynchronously. Otherwise it could happen before our API was loaded
+                    <iframe width="100%" frameborder="0" id="Iframe$QData{"ArticleID"}" onload="window.setTimeout( function (){ if (typeof Core === 'object' && typeof Core.Agent === 'object' && typeof Core.Agent.TicketZoom === 'object') { Core.Agent.TicketZoom.IframeAutoHeight($('#Iframe$QData{"ArticleID"}')); } }, 500);" src="$Env{"Baselink"}Action=AgentTicketAttachment;Subaction=HTMLView;ArticleID=$QData{"ArticleID"};FileID=$QData{"AttachmentIDOfHTMLBody"}"></iframe>
+                </div>
+<!-- dtl:block:BodyHTML -->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- dtl:block:ArticleItemMarkAsSeen -->
+<!-- dtl:js_on_document_complete -->
+<script type="text/javascript">//<![CDATA[
+    Core.Agent.TicketZoom.MarkAsSeen($QData{"TicketID"}, $QData{"ArticleID"});
+//]]></script>
+<!-- dtl:js_on_document_complete -->
+<!-- dtl:block:ArticleItemMarkAsSeen -->
+<!-- dtl:block:ArticleItem -->
+
+<!-- dtl:block:TicketItemMarkAsSeen -->
+<!-- dtl:js_on_document_complete -->
+<script type="text/javascript">//<![CDATA[
+    Core.Agent.TicketZoom.MarkTicketAsSeen($QData{"TicketID"});
+//]]></script>
+<!-- dtl:js_on_document_complete -->
+<!-- dtl:block:TicketItemMarkAsSeen -->
+
+<!-- dtl:js_on_document_complete -->
+<script type="text/javascript">//<![CDATA[
+    Core.Agent.TicketZoom.Init({ ArticleTableHeight: parseInt('$Env{"UserTicketZoomArticleTableHeight"}', 10)});
+//]]></script>
+<!-- dtl:js_on_document_complete -->

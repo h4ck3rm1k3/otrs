@@ -1,0 +1,88 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Storable {
+	label="Storable";
+	"Storable::bootstrap";
+}
+subgraph cluster_Config {
+	label="Config";
+	"Config::import";
+}
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::CORE:ftfile";
+	"DynaLoader::BEGIN@17";
+	"DynaLoader::CORE:ftsize";
+	"DynaLoader::BEGIN@24";
+	"DynaLoader::dl_undef_symbols";
+	"DynaLoader::dl_find_symbol";
+	"DynaLoader::dl_load_file";
+	"DynaLoader::CORE:subst";
+	"DynaLoader::dl_load_flags";
+	"DynaLoader::dl_install_xsub";
+	"DynaLoader::CORE:ftdir";
+	"DynaLoader::bootstrap";
+}
+subgraph cluster_DBI {
+	label="DBI";
+	"DBI::install_driver";
+	"DBI::BEGIN@160";
+	"DBI::bootstrap";
+}
+subgraph cluster_Kernel_System_Cache_FileStorable {
+	label="Kernel::System::Cache::FileStorable";
+	"Kernel::System::Cache::FileStorable::BEGIN@18";
+}
+subgraph cluster_Kernel_System_Log {
+	label="Kernel::System::Log";
+	"Kernel::System::Log::new";
+}
+subgraph cluster_Unicode_Normalize {
+	label="Unicode::Normalize";
+	"Unicode::Normalize::bootstrap";
+}
+subgraph cluster_Digest_SHA {
+	label="Digest::SHA";
+	"Digest::SHA::bootstrap";
+}
+subgraph cluster_DBD_Pg {
+	label="DBD::Pg";
+	"DBD::Pg::bootstrap";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::BEGIN@20";
+}
+subgraph cluster_Kernel_System_User {
+	label="Kernel::System::User";
+	"Kernel::System::User::BEGIN@18";
+}
+subgraph cluster_IPC_SysV {
+	label="IPC::SysV";
+	"IPC::SysV::bootstrap";
+}
+"DynaLoader::bootstrap" -> "DynaLoader::dl_find_symbol";
+"DynaLoader::bootstrap" -> "DynaLoader::CORE:ftsize";
+"DynaLoader::bootstrap" -> "DynaLoader::dl_load_file";
+"DBI::install_driver" -> "DynaLoader::bootstrap";
+"Kernel::System::Cache::FileStorable::BEGIN@18" -> "DynaLoader::bootstrap";
+"Kernel::System::Log::new" -> "DynaLoader::bootstrap";
+"DBI::BEGIN@160" -> "DynaLoader::bootstrap";
+"Kernel::System::Main::BEGIN@20" -> "DynaLoader::bootstrap";
+"Kernel::System::User::BEGIN@18" -> "DynaLoader::bootstrap";
+"DynaLoader::bootstrap" -> "DynaLoader::CORE:ftfile";
+"DynaLoader::bootstrap" -> "DynaLoader::CORE:subst";
+"DynaLoader::bootstrap" -> "Storable::bootstrap";
+"Kernel::System::Main::BEGIN@20" -> "DynaLoader::BEGIN@24";
+"DynaLoader::BEGIN@24" -> "Config::import";
+"DynaLoader::bootstrap" -> "DBI::bootstrap";
+"DynaLoader::bootstrap" -> "DynaLoader::CORE:ftdir";
+"DynaLoader::bootstrap" -> "DynaLoader::dl_undef_symbols";
+"Kernel::System::Main::BEGIN@20" -> "DynaLoader::BEGIN@17";
+"DynaLoader::bootstrap" -> "Unicode::Normalize::bootstrap";
+"DynaLoader::bootstrap" -> "Digest::SHA::bootstrap";
+"DynaLoader::bootstrap" -> "DynaLoader::dl_load_flags";
+"DynaLoader::bootstrap" -> "DynaLoader::dl_install_xsub";
+"DynaLoader::bootstrap" -> "IPC::SysV::bootstrap";
+"DynaLoader::bootstrap" -> "DBD::Pg::bootstrap";
+}

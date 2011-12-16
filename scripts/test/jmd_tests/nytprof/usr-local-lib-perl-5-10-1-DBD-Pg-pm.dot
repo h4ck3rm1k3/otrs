@@ -1,0 +1,137 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::bootstrap";
+}
+subgraph cluster_DBI {
+	label="DBI";
+	"DBI::_new_dbh";
+	"DBI::install_driver";
+	"DBI::_new_drh";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_DBD_Pg_db {
+	label="DBD::Pg::db";
+	"DBD::Pg::db::_login";
+	"DBD::Pg::db::BEGIN@252";
+	"DBD::Pg::db::BEGIN@250";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_DBI__firesafe {
+	label="DBI::_firesafe";
+	"DBI::_firesafe::BEGIN@14";
+	"DBI::_firesafe::BEGIN@13";
+	"DBI::_firesafe::BEGIN@15";
+}
+subgraph cluster_DBI_common {
+	label="DBI::common";
+	"DBI::common::STORE";
+	"DBI::common::FETCH";
+}
+subgraph cluster_Regexp {
+	label="Regexp";
+	"Regexp::DESTROY";
+}
+subgraph cluster_version {
+	label="version";
+	"version::BEGIN@7";
+	"version::BEGIN@4";
+	"version::import";
+	"version::BEGIN@153";
+	"version::BEGIN@127";
+	"version::CORE:regcomp";
+	"version::BEGIN@1";
+	"version::BEGIN@142";
+	"version::CORE:qr";
+	"version::BEGIN@5";
+}
+subgraph cluster_DBI_dr {
+	label="DBI::dr";
+	"DBI::dr::connect";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_DBD___common {
+	label="DBD::_::common";
+	"DBD::_::common::install_method";
+}
+subgraph cluster_DBD_Pg_dr {
+	label="DBD::Pg::dr";
+	"DBD::Pg::dr::CORE:subst";
+	"DBD::Pg::dr::connect";
+	"DBD::Pg::dr::BEGIN@172";
+	"DBD::Pg::dr::CORE:match";
+}
+subgraph cluster_DBD_Pg {
+	label="DBD::Pg";
+	"DBD::Pg::BEGIN@20";
+	"DBD::Pg::BEGIN@24";
+	"DBD::Pg::BEGIN@22";
+	"DBD::Pg::bootstrap";
+	"DBD::Pg::driver";
+	"DBD::Pg::BEGIN@23";
+	"DBD::Pg::BEGIN@25";
+}
+subgraph cluster_DBD_Pg_DefaultValue {
+	label="DBD::Pg::DefaultValue";
+	"DBD::Pg::DefaultValue::new";
+}
+subgraph cluster_version_vxs {
+	label="version::vxs";
+	"version::vxs::stringify";
+}
+"DBI::install_driver" -> "DBD::Pg::BEGIN@24";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@127";
+"DBI::install_driver" -> "DBI::_firesafe::BEGIN@13";
+"DBD::Pg::dr::connect" -> "DBD::Pg::dr::CORE:subst";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@142";
+"DBI::install_driver" -> "DBD::Pg::BEGIN@25";
+"DBI::install_driver" -> "DBD::Pg::db::BEGIN@250";
+"DBD::Pg::db::BEGIN@250" -> "Exporter::import";
+"DBI::dr::connect" -> "DBD::Pg::dr::connect";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@5";
+"DBI::install_driver" -> "DBD::Pg::DefaultValue::new";
+"DBD::Pg::BEGIN@20" -> "version::CORE:regcomp";
+"DBI::_firesafe::BEGIN@14" -> "warnings::import";
+"DBD::Pg::BEGIN@20" -> "Regexp::DESTROY";
+"DBD::Pg::driver" -> "DBD::_::common::install_method";
+"DBD::Pg::dr::connect" -> "DBI::_new_dbh";
+"DBI::install_driver" -> "DBD::Pg::BEGIN@20";
+"DBD::Pg::driver" -> "DBI::_new_drh";
+"DBI::install_driver" -> "DBI::_firesafe::BEGIN@15";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@1";
+"DBD::Pg::dr::connect" -> "DBD::Pg::db::_login";
+"DBD::Pg::BEGIN@20" -> "version::CORE:qr";
+"DBI::install_driver" -> "DBD::Pg::db::BEGIN@252";
+"DBD::Pg::driver" -> "version::vxs::stringify";
+"DBD::Pg::BEGIN@25" -> "vars::import";
+"DBD::Pg::dr::connect" -> "DBI::common::FETCH";
+"DBI::install_driver" -> "DBD::Pg::driver";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@7";
+"DBI::install_driver" -> "DBI::_firesafe::BEGIN@14";
+"DBD::Pg::BEGIN@20" -> "version::import";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@4";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@153";
+"DBD::Pg::dr::connect" -> "DBD::Pg::dr::CORE:match";
+"DBI::install_driver" -> "DBD::Pg::BEGIN@22";
+"DBI::install_driver" -> "DBD::Pg::dr::BEGIN@172";
+"DBI::_firesafe::BEGIN@13" -> "strict::import";
+"DBD::Pg::db::BEGIN@252" -> "strict::import";
+"DBD::Pg::dr::BEGIN@172" -> "strict::import";
+"DynaLoader::bootstrap" -> "DBD::Pg::bootstrap";
+"DBI::install_driver" -> "DBD::Pg::BEGIN@23";
+"DBD::Pg::dr::connect" -> "DBI::common::STORE";
+}

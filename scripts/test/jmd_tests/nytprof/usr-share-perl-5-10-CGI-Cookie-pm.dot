@@ -1,0 +1,32 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_CGI {
+	label="CGI";
+	"CGI::import";
+	"CGI::cookie";
+}
+subgraph cluster_overload {
+	label="overload";
+	"overload::import";
+}
+subgraph cluster_CGI_Cookie {
+	label="CGI::Cookie";
+	"CGI::Cookie::BEGIN@19";
+	"CGI::Cookie::BEGIN@20";
+	"CGI::Cookie::BEGIN@18";
+	"CGI::Cookie::fetch";
+	"CGI::Cookie::get_raw_cookie";
+}
+"CGI::Cookie::fetch" -> "CGI::Cookie::get_raw_cookie";
+"CGI::Cookie::BEGIN@19" -> "CGI::import";
+"CGI::Cookie::BEGIN@18" -> "Exporter::import";
+"CGI::cookie" -> "CGI::Cookie::fetch";
+"CGI::Cookie::BEGIN@20" -> "overload::import";
+"CGI::cookie" -> "CGI::Cookie::BEGIN@20";
+"CGI::cookie" -> "CGI::Cookie::BEGIN@18";
+"CGI::cookie" -> "CGI::Cookie::BEGIN@19";
+}

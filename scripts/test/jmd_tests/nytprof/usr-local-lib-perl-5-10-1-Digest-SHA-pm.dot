@@ -1,0 +1,57 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::bootstrap";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_integer {
+	label="integer";
+	"integer::import";
+}
+subgraph cluster_Digest_SHA {
+	label="Digest::SHA";
+	"Digest::SHA::bootstrap";
+	"Digest::SHA::BEGIN@5";
+	"Digest::SHA::BEGIN@8";
+	"Digest::SHA::BEGIN@6";
+	"Digest::SHA::BEGIN@7";
+}
+subgraph cluster_Fcntl {
+	label="Fcntl";
+	"Fcntl::BEGIN@184";
+	"Fcntl::BEGIN@159";
+	"Fcntl::BEGIN@9";
+	"Fcntl::BEGIN@3";
+	"Fcntl::BEGIN@7";
+}
+subgraph cluster_Kernel_System_User {
+	label="Kernel::System::User";
+	"Kernel::System::User::BEGIN@18";
+}
+"Digest::SHA::BEGIN@7" -> "Fcntl::BEGIN@3";
+"Kernel::System::User::BEGIN@18" -> "Digest::SHA::BEGIN@8";
+"Digest::SHA::BEGIN@7" -> "Exporter::import";
+"Digest::SHA::BEGIN@7" -> "Fcntl::BEGIN@159";
+"Digest::SHA::BEGIN@6" -> "vars::import";
+"Kernel::System::User::BEGIN@18" -> "Digest::SHA::BEGIN@7";
+"Digest::SHA::BEGIN@7" -> "Fcntl::BEGIN@7";
+"Digest::SHA::BEGIN@8" -> "integer::import";
+"Kernel::System::User::BEGIN@18" -> "Digest::SHA::BEGIN@6";
+"Kernel::System::User::BEGIN@18" -> "Digest::SHA::BEGIN@5";
+"DynaLoader::bootstrap" -> "Digest::SHA::bootstrap";
+"Digest::SHA::BEGIN@7" -> "Fcntl::BEGIN@184";
+"Digest::SHA::BEGIN@7" -> "Fcntl::BEGIN@9";
+"Digest::SHA::BEGIN@5" -> "strict::import";
+}

@@ -1,0 +1,57 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_Kernel_System_Cache {
+	label="Kernel::System::Cache";
+	"Kernel::System::Cache::BEGIN@15";
+	"Kernel::System::Cache::BEGIN@17";
+	"Kernel::System::Cache::new";
+	"Kernel::System::Cache::BEGIN@14";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_Group {
+	label="Kernel::System::Group";
+	"Kernel::System::Group::new";
+}
+subgraph cluster_Kernel_System_Valid {
+	label="Kernel::System::Valid";
+	"Kernel::System::Valid::new";
+	"Kernel::System::Valid::BEGIN@17";
+}
+subgraph cluster_Kernel_System_CacheInternal {
+	label="Kernel::System::CacheInternal";
+	"Kernel::System::CacheInternal::BEGIN@16";
+	"Kernel::System::CacheInternal::BEGIN@15";
+	"Kernel::System::CacheInternal::BEGIN@14";
+	"Kernel::System::CacheInternal::new";
+	"Kernel::System::CacheInternal::BEGIN@18";
+}
+subgraph cluster_Kernel_System_User {
+	label="Kernel::System::User";
+	"Kernel::System::User::new";
+}
+"Kernel::System::User::new" -> "Kernel::System::CacheInternal::new";
+"Kernel::System::Group::new" -> "Kernel::System::CacheInternal::new";
+"Kernel::System::Valid::new" -> "Kernel::System::CacheInternal::new";
+"Kernel::System::Valid::BEGIN@17" -> "Kernel::System::CacheInternal::BEGIN@16";
+"Kernel::System::Valid::BEGIN@17" -> "Kernel::System::CacheInternal::BEGIN@14";
+"Kernel::System::CacheInternal::new" -> "Kernel::System::Cache::new";
+"Kernel::System::CacheInternal::BEGIN@15" -> "warnings::import";
+"Kernel::System::CacheInternal::BEGIN@18" -> "vars::import";
+"Kernel::System::CacheInternal::BEGIN@16" -> "Kernel::System::Cache::BEGIN@15";
+"Kernel::System::CacheInternal::BEGIN@16" -> "Kernel::System::Cache::BEGIN@14";
+"Kernel::System::Valid::BEGIN@17" -> "Kernel::System::CacheInternal::BEGIN@15";
+"Kernel::System::CacheInternal::BEGIN@16" -> "Kernel::System::Cache::BEGIN@17";
+"Kernel::System::Valid::BEGIN@17" -> "Kernel::System::CacheInternal::BEGIN@18";
+"Kernel::System::CacheInternal::BEGIN@14" -> "strict::import";
+}

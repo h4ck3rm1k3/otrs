@@ -1,0 +1,37 @@
+# --
+# AgentNavigationBar.dtl - provides global HTML NavigationBar
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# --
+# $Id: AgentNavigationBar.dtl,v 1.86 2010/11/08 11:17:56 martin Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+<ul id="Navigation" class="ARIARoleNavigation">
+<!-- dtl:block:ItemArea -->
+    <li id="nav-$QData{"NameForID"}" class="$QData{"CSS"}">
+        <a href="$Env{"Baselink"}$Data{"Link"}" title="$Text{"$Data{"Name"}"}$QData{"AccessKeyReference"}" accesskey="$QData{"AccessKey"}" $Data{"LinkOption"}>$Text{"$Data{"Name"}"}</a>
+<!-- dtl:block:ItemAreaSub -->
+        <div>
+            <div class="ShadowTop"></div>
+            <div class="Shadow">
+                <ul id="nav-$QData{"NameForID"}-container">
+<!-- dtl:block:ItemAreaSubItem -->
+                    <li id="nav-$QData{"NameTop"}-$QData{"NameForID"}">
+                        <a href="$Env{"Baselink"}$Data{"Link"}" title="$Text{"$Data{"Description"}"}$QData{"AccessKeyReference"}" accesskey="$QData{"AccessKey"}" $Data{"LinkOption"}>$Text{"$Data{"Name"}"}</a>
+                    </li>
+<!-- dtl:block:ItemAreaSubItem -->
+                </ul>
+                <div class="Footer"></div>
+            </div>
+            <div class="ShadowBottom"></div>
+        </div>
+<!-- dtl:block:ItemAreaSub -->
+    </li>
+<!-- dtl:block:ItemArea -->
+    <li id="nav-search">
+        <a class="Search ARIARoleSearch ARIAHasPopup" id="GlobalSearchNav" href="$Env{"Baselink"}Action=AgentTicketSearch" title="$Text{"Search"}"><span class="SearchIcon">$Text{"Search"}</span></a>
+    </li>
+</ul>

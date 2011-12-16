@@ -1,0 +1,69 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_File_stat {
+	label="File::stat";
+	"File::stat::BEGIN@22";
+	"File::stat::BEGIN@5";
+	"File::stat::BEGIN@4";
+	"File::stat::BEGIN@11";
+	"File::stat::BEGIN@54";
+	"File::stat::BEGIN@27";
+	"File::stat::BEGIN@2";
+	"File::stat::BEGIN@12";
+	"File::stat::import";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::BEGIN@41";
+}
+subgraph cluster_Class_Struct {
+	label="Class::Struct";
+	"Class::Struct::BEGIN@11";
+	"Class::Struct::import";
+	"Class::Struct::BEGIN@7";
+	"Class::Struct::BEGIN@108";
+	"Class::Struct::BEGIN@8";
+	"Class::Struct::BEGIN@99";
+	"Class::Struct::BEGIN@188";
+	"Class::Struct::BEGIN@5";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::BEGIN@19";
+}
+"File::stat::BEGIN@27" -> "Class::Struct::import";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@12";
+"File::stat::BEGIN@54" -> "strict::unimport";
+"File::stat::BEGIN@27" -> "Class::Struct::BEGIN@5";
+"File::stat::BEGIN@27" -> "Class::Struct::BEGIN@7";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@11";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@54";
+"File::stat::BEGIN@27" -> "Class::Struct::BEGIN@8";
+"File::stat::BEGIN@27" -> "Class::Struct::BEGIN@99";
+"File::stat::BEGIN@5" -> "warnings::import";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@27";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@4";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@2";
+"File::stat::BEGIN@22" -> "vars::import";
+"File::stat::BEGIN@27" -> "Class::Struct::BEGIN@188";
+"File::stat::BEGIN@27" -> "Class::Struct::BEGIN@11";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@5";
+"Kernel::System::Main::BEGIN@19" -> "File::stat::import";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::import";
+"Kernel::Config::Defaults::BEGIN@41" -> "File::stat::BEGIN@22";
+"File::stat::BEGIN@27" -> "Class::Struct::BEGIN@108";
+"File::stat::BEGIN@4" -> "strict::import";
+}

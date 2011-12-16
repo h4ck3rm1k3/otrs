@@ -1,0 +1,89 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Internals {
+	label="Internals";
+	"Internals::SvREADONLY";
+}
+subgraph cluster_Encode {
+	label="Encode";
+	"Encode::BEGIN@8";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_constant {
+	label="constant";
+	"constant::import";
+	"constant::BEGIN@4";
+	"constant::BEGIN@3";
+	"constant::BEGIN@38";
+	"constant::CORE:regcomp";
+	"constant::BEGIN@101";
+	"constant::BEGIN@2";
+	"constant::BEGIN@6";
+	"constant::CORE:match";
+}
+subgraph cluster_mro {
+	label="mro";
+	"mro::method_changed_in";
+}
+subgraph cluster_CGI {
+	label="CGI";
+	"CGI::BEGIN@32";
+}
+subgraph cluster_Time_Local {
+	label="Time::Local";
+	"Time::Local::BEGIN@28";
+	"Time::Local::BEGIN@30";
+	"Time::Local::BEGIN@29";
+}
+subgraph cluster_JSON_Backend_XS {
+	label="JSON::Backend::XS";
+	"JSON::Backend::XS::BEGIN@18";
+	"JSON::Backend::XS::BEGIN@11";
+	"JSON::Backend::XS::BEGIN@9";
+}
+subgraph cluster_warnings_register {
+	label="warnings::register";
+	"warnings::register::import";
+}
+subgraph cluster_Encode_Alias {
+	label="Encode::Alias";
+	"Encode::Alias::BEGIN@6";
+}
+subgraph cluster_MultipartBuffer {
+	label="MultipartBuffer";
+	"MultipartBuffer::BEGIN@3812";
+}
+"constant::import" -> "mro::method_changed_in";
+"Encode::BEGIN@8" -> "constant::BEGIN@2";
+"Encode::BEGIN@8" -> "constant::BEGIN@4";
+"Encode::BEGIN@8" -> "constant::BEGIN@6";
+"Encode::Alias::BEGIN@6" -> "constant::import";
+"CGI::BEGIN@32" -> "constant::import";
+"Time::Local::BEGIN@28" -> "constant::import";
+"MultipartBuffer::BEGIN@3812" -> "constant::import";
+"Time::Local::BEGIN@30" -> "constant::import";
+"Encode::BEGIN@8" -> "constant::import";
+"JSON::Backend::XS::BEGIN@9" -> "constant::import";
+"JSON::Backend::XS::BEGIN@18" -> "constant::import";
+"JSON::Backend::XS::BEGIN@11" -> "constant::import";
+"Time::Local::BEGIN@29" -> "constant::import";
+"constant::BEGIN@38" -> "strict::unimport";
+"constant::BEGIN@101" -> "strict::unimport";
+"constant::import" -> "constant::CORE:regcomp";
+"constant::import" -> "Internals::SvREADONLY";
+"Encode::BEGIN@8" -> "constant::BEGIN@38";
+"constant::BEGIN@6" -> "vars::import";
+"Encode::BEGIN@8" -> "constant::BEGIN@3";
+"constant::import" -> "constant::CORE:match";
+"constant::BEGIN@3" -> "strict::import";
+"Encode::BEGIN@8" -> "constant::BEGIN@101";
+"constant::BEGIN@4" -> "warnings::register::import";
+}

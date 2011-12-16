@@ -1,0 +1,33 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Tie_Hash {
+	label="Tie::Hash";
+	"Tie::Hash::BEGIN@5";
+	"Tie::Hash::BEGIN@6";
+}
+subgraph cluster_Sys_Syslog {
+	label="Sys::Syslog";
+	"Sys::Syslog::BEGIN@9";
+}
+subgraph cluster_POSIX_SigRt {
+	label="POSIX::SigRt";
+	"POSIX::SigRt::BEGIN@64";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_Tie_StdHash {
+	label="Tie::StdHash";
+	"Tie::StdHash::TIEHASH";
+}
+subgraph cluster_warnings_register {
+	label="warnings::register";
+	"warnings::register::import";
+}
+"Sys::Syslog::BEGIN@9" -> "Tie::StdHash::TIEHASH";
+"Tie::Hash::BEGIN@5" -> "Exporter::import";
+"POSIX::SigRt::BEGIN@64" -> "Tie::Hash::BEGIN@5";
+"POSIX::SigRt::BEGIN@64" -> "Tie::Hash::BEGIN@6";
+"Tie::Hash::BEGIN@6" -> "warnings::register::import";
+}

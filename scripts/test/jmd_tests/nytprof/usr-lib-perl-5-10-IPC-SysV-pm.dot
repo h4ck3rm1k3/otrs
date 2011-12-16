@@ -1,0 +1,50 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Config {
+	label="Config";
+	"Config::import";
+}
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::bootstrap";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_Kernel_System_Log {
+	label="Kernel::System::Log";
+	"Kernel::System::Log::new";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_IPC_SysV {
+	label="IPC::SysV";
+	"IPC::SysV::BEGIN@19";
+	"IPC::SysV::bootstrap";
+	"IPC::SysV::BEGIN@21";
+	"IPC::SysV::BEGIN@20";
+	"IPC::SysV::CORE:match";
+	"IPC::SysV::BEGIN@80";
+	"IPC::SysV::BEGIN@22";
+}
+"Kernel::System::Log::new" -> "IPC::SysV::BEGIN@22";
+"IPC::SysV::BEGIN@21" -> "Exporter::import";
+"IPC::SysV::BEGIN@80" -> "strict::unimport";
+"Kernel::System::Log::new" -> "IPC::SysV::BEGIN@19";
+"Kernel::System::Log::new" -> "IPC::SysV::BEGIN@80";
+"Kernel::System::Log::new" -> "IPC::SysV::CORE:match";
+"IPC::SysV::BEGIN@22" -> "Config::import";
+"IPC::SysV::BEGIN@20" -> "vars::import";
+"Kernel::System::Log::new" -> "IPC::SysV::BEGIN@21";
+"Kernel::System::Log::new" -> "IPC::SysV::BEGIN@20";
+"DynaLoader::bootstrap" -> "IPC::SysV::bootstrap";
+"IPC::SysV::BEGIN@19" -> "strict::import";
+}

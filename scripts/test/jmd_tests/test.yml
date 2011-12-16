@@ -1,0 +1,1118 @@
+---
+- EncodeObject
+- &1 !!perl/hash:Kernel::System::Encode
+  ConfigObject: &2 !!perl/hash:Kernel::Config
+    AdminEmail: admin@example.com
+    ArticleDir: /tmp
+    AttachmentDownloadType: attachment
+    AuthModule: Kernel::System::Auth::DB
+    CGILogPrefix: OTRS-CGI
+    CheckEmailAddresses: 1
+    CheckEmailInvalidAddress: '@(example)\.(..|...)$'
+    CheckEmailValidAddress: '^(root@localhost|admin@localhost)$'
+    CheckMXRecord: 1
+    Customer::AuthModule: Kernel::System::CustomerAuth::DB
+    Customer::AuthModule::DB::CustomerKey: login
+    Customer::AuthModule::DB::CustomerPassword: pw
+    Customer::AuthModule::DB::Table: customer_user
+    CustomerCompany:
+      CustomerCompanyKey: customer_id
+      CustomerCompanyListFields:
+        - customer_id
+        - name
+      CustomerCompanySearchFields:
+        - customer_id
+        - name
+      CustomerCompanySearchListLimit: 250
+      CustomerCompanySearchPrefix: ''
+      CustomerCompanySearchSuffix: '*'
+      CustomerCompanyValid: valid_id
+      Map:
+        -
+          - CustomerID
+          - CustomerID
+          - customer_id
+          - 0
+          - 1
+          - var
+          - ''
+          - 0
+        -
+          - CustomerCompanyName
+          - Company
+          - name
+          - 1
+          - 1
+          - var
+          - ''
+          - 0
+        -
+          - CustomerCompanyStreet
+          - Street
+          - street
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - CustomerCompanyZIP
+          - Zip
+          - zip
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - CustomerCompanyCity
+          - City
+          - city
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - CustomerCompanyCountry
+          - Country
+          - country
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - CustomerCompanyURL
+          - URL
+          - url
+          - 1
+          - 0
+          - var
+          - '$Data{"CustomerCompanyURL"}'
+          - 0
+        -
+          - CustomerCompanyComment
+          - Comment
+          - comments
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - ValidID
+          - Valid
+          - valid_id
+          - 0
+          - 1
+          - int
+          - ''
+          - 0
+      Params:
+        Table: customer_company
+      Selections:
+        CustomerCompanyCountry:
+          -: -
+          Afghanistan: Afghanistan
+          Albania: Albania
+          Algeria: Algeria
+          American Samoa: American Samoa
+          Andorra: Andorra
+          Angola: Angola
+          Anguilla: Anguilla
+          Antarctica: Antarctica
+          Antigua and Barbuda: Antigua and Barbuda
+          Argentina: Argentina
+          Armenia: Armenia
+          Aruba: Aruba
+          Australia: Australia
+          Austria: Austria
+          Azerbaijan: Azerbaijan
+          Bahamas: Bahamas
+          Bahrain: Bahrain
+          Bangladesh: Bangladesh
+          Barbados: Barbados
+          Belarus: Belarus
+          Belgium: Belgium
+          Belize: Belize
+          Benin: Benin
+          Bermuda: Bermuda
+          Bhutan: Bhutan
+          Bolivia: Bolivia
+          Bosnia and Herzegowina: Bosnia and Herzegowina
+          Botswana: Botswana
+          Bouvet Island: Bouvet Island
+          Brazil: Brazil
+          British Indian Ocean Territory: British Indian Ocean Territory
+          Brunei Darussalam: Brunei Darussalam
+          Bulgaria: Bulgaria
+          Burkina Faso: Burkina Faso
+          Burundi: Burundi
+          Cambodia: Cambodia
+          Cameroon: Cameroon
+          Canada: Canada
+          Cape Verde: Cape Verde
+          Cayman Islands: Cayman Islands
+          Central African Republic: Central African Republic
+          Chad: Chad
+          Chile: Chile
+          China: China
+          Christmas Island: Christmas Island
+          Cocos (Keeling) Islands: Cocos (Keeling) Islands
+          Colombia: Colombia
+          Comoros: Comoros
+          'Congo, Democratic Republic of': 'Congo, Democratic Republic of'
+          'Congo, Republic of': 'Congo, Republic of'
+          Cook Islands: Cook Islands
+          Costa Rica: Costa Rica
+          Cote d'Ivoire: Cote d'Ivoire
+          Croatia: Croatia
+          Cuba: Cuba
+          Cyprus: Cyprus
+          Czech Republic: Czech Republic
+          Denmark: Denmark
+          Djibouti: Djibouti
+          Dominica: Dominica
+          Dominican Republic: Dominican Republic
+          Ecuador: Ecuador
+          Egypt: Egypt
+          El Salvador: El Salvador
+          Equatorial Guinea: Equatorial Guinea
+          Eritrea: Eritrea
+          Estonia: Estonia
+          Ethiopia: Ethiopia
+          Falkland Islands (Malvinas): Falkland Islands (Malvinas)
+          Faroe Islands: Faroe Islands
+          Fiji: Fiji
+          Finland: Finland
+          France: France
+          French Guiana: French Guiana
+          French Polynesia: French Polynesia
+          French Southern Territories: French Southern Territories
+          Gabon: Gabon
+          Gambia: Gambia
+          Georgia: Georgia
+          Germany: Germany
+          Ghana: Ghana
+          Gibraltar: Gibraltar
+          Greece: Greece
+          Greenland: Greenland
+          Grenada: Grenada
+          Guadeloupe: Guadeloupe
+          Guam: Guam
+          Guatemala: Guatemala
+          Guinea: Guinea
+          Guinea-bissau: Guinea-bissau
+          Guyana: Guyana
+          Haiti: Haiti
+          Heard and Mc Donald Islands: Heard and Mc Donald Islands
+          Honduras: Honduras
+          Hong Kong: Hong Kong
+          Hungary: Hungary
+          Iceland: Iceland
+          India: India
+          Indonesia: Indonesia
+          Iran (Islamic Republic of): Iran (Islamic Republic of)
+          Iraq: Iraq
+          Ireland: Ireland
+          Israel: Israel
+          Italy: Italy
+          Jamaica: Jamaica
+          Japan: Japan
+          Jordan: Jordan
+          Kazakhstan: Kazakhstan
+          Kenya: Kenya
+          Kiribati: Kiribati
+          "Korea, Democratic People's Republic of": "Korea, Democratic People's Republic of"
+          'Korea, Republic of': 'Korea, Republic of'
+          Kuwait: Kuwait
+          Kyrgyzstan: Kyrgyzstan
+          Lao People's Democratic Republic: Lao People's Democratic Republic
+          Latvia: Latvia
+          Lebanon: Lebanon
+          Lesotho: Lesotho
+          Liberia: Liberia
+          Libyan Arab Jamahiriya: Libyan Arab Jamahiriya
+          Liechtenstein: Liechtenstein
+          Lithuania: Lithuania
+          Luxembourg: Luxembourg
+          Macau: Macau
+          'Macedonia, the Former Yugoslav Republic of': 'Macedonia, the Former Yugoslav Republic of'
+          Madagascar: Madagascar
+          Malawi: Malawi
+          Malaysia: Malaysia
+          Maldives: Maldives
+          Mali: Mali
+          Malta: Malta
+          Marshall Islands: Marshall Islands
+          Martinique: Martinique
+          Mauritania: Mauritania
+          Mauritius: Mauritius
+          Mayotte: Mayotte
+          Mexico: Mexico
+          'Micronesia, Federated States of': 'Micronesia, Federated States of'
+          'Moldova, Republic of': 'Moldova, Republic of'
+          Monaco: Monaco
+          Mongolia: Mongolia
+          Montserrat: Montserrat
+          Morocco: Morocco
+          Mozambique: Mozambique
+          Myanmar: Myanmar
+          Namibia: Namibia
+          Nauru: Nauru
+          Nepal: Nepal
+          Netherlands: Netherlands
+          Netherlands Antilles: Netherlands Antilles
+          New Caledonia: New Caledonia
+          New Zealand: New Zealand
+          Nicaragua: Nicaragua
+          Niger: Niger
+          Nigeria: Nigeria
+          Niue: Niue
+          Norfolk Island: Norfolk Island
+          Northern Mariana Islands: Northern Mariana Islands
+          Norway: Norway
+          Oman: Oman
+          Pakistan: Pakistan
+          Palau: Palau
+          'Palestinian Territory, oCCUPIED': 'Palestinian Territory, oCCUPIED'
+          Panama: Panama
+          Papua New Guinea: Papua New Guinea
+          Paraguay: Paraguay
+          Peru: Peru
+          Philippines: Philippines
+          Pitcairn: Pitcairn
+          Poland: Poland
+          Portugal: Portugal
+          Puerto Rico: Puerto Rico
+          Qatar: Qatar
+          Reunion: Reunion
+          Romania: Romania
+          Russian Federation: Russian Federation
+          Rwanda: Rwanda
+          Saint Helena: Saint Helena
+          Saint Kitts and Nevis: Saint Kitts and Nevis
+          Saint Lucia: Saint Lucia
+          Saint Pierre and Miquelon: Saint Pierre and Miquelon
+          Saint Vincent and the Grenadines: Saint Vincent and the Grenadines
+          Samoa: Samoa
+          San Marino: San Marino
+          Sao tome and Principe: Sao tome and Principe
+          Saudi Arabia: Saudi Arabia
+          Senegal: Senegal
+          Serbia and Montenegro: Serbia and Montenegro
+          Seychelles: Seychelles
+          Sierra Leone: Sierra Leone
+          Singapore: Singapore
+          Slovakia: Slovakia
+          Slovenia: Slovenia
+          Solomon Islands: Solomon Islands
+          Somalia: Somalia
+          South Africa: South Africa
+          South Georgia and the South Sandwich Islands: South Georgia and the South Sandwich Islands
+          Spain: Spain
+          Sri Lanka: Sri Lanka
+          Sudan: Sudan
+          Suriname: Suriname
+          Svalbard and Jan Mayen Islands: Svalbard and Jan Mayen Islands
+          Swaziland: Swaziland
+          Sweden: Sweden
+          Switzerland: Switzerland
+          Syrian Arab Republic: Syrian Arab Republic
+          Taiwan: Taiwan
+          Tajikistan: Tajikistan
+          Thailand: Thailand
+          Timor-Leste: Timor-Leste
+          Togo: Togo
+          Tokelau: Tokelau
+          Tonga: Tonga
+          Trinidad and Tobago: Trinidad and Tobago
+          Tunisia: Tunisia
+          Turkey: Turkey
+          Turkmenistan: Turkmenistan
+          Turks and Caicos Islands: Turks and Caicos Islands
+          Tuvalu: Tuvalu
+          Uganda: Uganda
+          Ukraine: Ukraine
+          United Arab Emirates: United Arab Emirates
+          United Kingdom: United Kingdom
+          United States: United States
+          United States Minor outlying Islands: United States Minor outlying Islands
+          Uruguay: Uruguay
+          Uzbekistan: Uzbekistan
+          Vanuatu: Vanuatu
+          Vatican City State (Holy See): Vatican City State (Holy See)
+          Venezuela: Venezuela
+          Viet nam: Viet nam
+          Virgin Islands (British): Virgin Islands (British)
+          Virgin Islands (U.S.): Virgin Islands (U.S.)
+          Wallis and Futuna Islands: Wallis and Futuna Islands
+          Western Sahara: Western Sahara
+          Yemen: Yemen
+          Zambia: Zambia
+          Zimbabwe: Zimbabwe
+    CustomerFrontend::CommonObject: {}
+    CustomerFrontend::CommonParam: {}
+    CustomerFrontend::Module:
+      CustomerLogin:
+        Loader:
+          JavaScript:
+            - Core.Customer.Login.js
+    CustomerGroupAlwaysGroups:
+      - users
+      - info
+    CustomerGroupSupport: 0
+    CustomerPanelBodyLostPassword: |2
+      
+      Hi <OTRS_USERFIRSTNAME>,
+      
+      you or someone impersonating you has requested to change your OTRS
+      password.
+      
+      New Password: <OTRS_NEWPW>
+      
+      http://yourhost.example.com/otrs/customer.pl
+      
+      Your OTRS Notification Master
+    CustomerPanelBodyNewAccount: |2
+      
+      Hi <OTRS_USERFIRSTNAME>,
+      
+      you or someone impersonating you has created a new OTRS account for
+      you (<OTRS_USERFIRSTNAME> <OTRS_USERLASTNAME>).
+      
+      Login: <OTRS_USERLOGIN>
+      Password: <OTRS_USERPASSWORD>
+      
+      http://yourhost.example.com/otrs/customer.pl
+      
+      Your OTRS Notification Master
+    CustomerPanelCreateAccount: 1
+    CustomerPanelLostPassword: 1
+    CustomerPanelSessionName: CSID
+    CustomerPanelSubjectLostPassword: New OTRS Password!
+    CustomerPanelSubjectNewAccount: New OTRS Account!
+    CustomerPanelUserID: 1
+    CustomerPreferences:
+      Params: {}
+    CustomerUser:
+      CustomerID: customer_id
+      CustomerKey: login
+      CustomerUserEmailUniqCheck: 1
+      CustomerUserListFields:
+        - first_name
+        - last_name
+        - email
+      CustomerUserNameFields:
+        - title
+        - first_name
+        - last_name
+      CustomerUserPostMasterSearchFields:
+        - email
+      CustomerUserSearchFields:
+        - login
+        - first_name
+        - last_name
+        - customer_id
+      CustomerUserSearchListLimit: 250
+      CustomerUserSearchPrefix: '*'
+      CustomerUserSearchSuffix: '*'
+      CustomerValid: valid_id
+      Map:
+        -
+          - UserTitle
+          - Title
+          - title
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - UserFirstname
+          - Firstname
+          - first_name
+          - 1
+          - 1
+          - var
+          - ''
+          - 0
+        -
+          - UserLastname
+          - Lastname
+          - last_name
+          - 1
+          - 1
+          - var
+          - ''
+          - 0
+        -
+          - UserLogin
+          - Username
+          - login
+          - 1
+          - 1
+          - var
+          - ''
+          - 0
+        -
+          - UserPassword
+          - Password
+          - pw
+          - 0
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - UserEmail
+          - Email
+          - email
+          - 1
+          - 1
+          - var
+          - ''
+          - 0
+        -
+          - UserCustomerID
+          - CustomerID
+          - customer_id
+          - 0
+          - 1
+          - var
+          - ''
+          - 0
+        -
+          - UserPhone
+          - Phone
+          - phone
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - UserFax
+          - Fax
+          - fax
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - UserMobile
+          - Mobile
+          - mobile
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - UserStreet
+          - Street
+          - street
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - UserZip
+          - Zip
+          - zip
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - UserCity
+          - City
+          - city
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - UserCountry
+          - Country
+          - country
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - UserComment
+          - Comment
+          - comments
+          - 1
+          - 0
+          - var
+          - ''
+          - 0
+        -
+          - ValidID
+          - Valid
+          - valid_id
+          - 0
+          - 1
+          - int
+          - ''
+          - 0
+      Module: Kernel::System::CustomerUser::DB
+      Name: Database Backend
+      Params:
+        CaseSensitive: 0
+        Table: customer_user
+      Selections: {}
+    Database: otrs2
+    DatabaseDSN: DBI:Pg:dbname=otrs2;host=localhost;port=5432;
+    DatabaseHost: localhost
+    DatabasePw: 6EgaoMxp7Ygs
+    DatabaseUser: otrs
+    DatabaseUserTable: users
+    DatabaseUserTableUser: login
+    DatabaseUserTableUserID: id
+    DatabaseUserTableUserPW: pw
+    Debug: 0
+    DefaultCharset: utf-8
+    DefaultLanguage: en
+    DefaultTheme: Standard
+    DefaultUsedLanguages:
+      ar_SA: Arabic (Saudi Arabia)
+      bg: Bulgarian (&#x0411;&#x044a;&#x043b;&#x0433;&#x0430;&#x0440;&#x0441;&#x043a;&#x0438;)
+      cs: Czech (&#x010c;esky)
+      ct: Catal&agrave;
+      da: Dansk
+      de: Deutsch
+      el: Greek (&#x0395;&#x03bb;&#x03bb;&#x03b7;&#x03bd;&#x03b9;&#x03ba;&#x03ac;)
+      en: English (United States)
+      en_CA: English (Canada)
+      en_GB: English (United Kingdom)
+      es: Espa&ntilde;ol
+      es_MX: Espa&ntilde;ol (M&eacute;xico)
+      et: Eesti
+      fa: Persian (&#x0641;&#x0627;&#x0631;&#x0633;&#x0649;)
+      fi: Suomi
+      fr: Fran&ccedil;ais
+      hi: Hindi
+      hr: Hrvatski
+      hu: Magyar
+      it: Italiano
+      ja: Japanese (&#x65e5;&#x672c;&#x8a9e)
+      lt: Lietuvi&#371; kalba
+      lv: Latvijas
+      nb_NO: Norsk bokm&aring;l
+      nl: Nederlands
+      pl: Polski
+      pt: Portugu&ecirc;s
+      pt_BR: Portugu&ecirc;s Brasileiro
+      ru: Russian (&#x0420;&#x0443;&#x0441;&#x0441;&#x043a;&#x0438;&#x0439;)
+      sk_SK: Slovak (Sloven&#x010d;ina)
+      sr_Cyrl: Serbian Latin (Srpski)
+      sr_Latn: Serbian Cyrillic (&#1089;&#1088;&#1087;&#1089;&#1082;&#1080;)
+      sv: Svenska
+      tr: T&uuml;rk&ccedil;e
+      uk: Ukrainian (&#x0423;&#x043a;&#x0440;&#x0430;&#x0457;&#x043d;&#x0441;&#x044c;&#x043a;&#x0430;)
+      vi_VN: Vietnam (Vi&#x0246;t Nam)
+      zh_CN: Chinese (Sim.) (&#x7b80;&#x4f53;&#x4e2d;&#x6587;)
+      zh_TW: Chinese (Tradi.) (&#x6b63;&#x9ad4;&#x4e2d;&#x6587;)
+    DefaultValid: valid
+    DefaultViewLines: 6000
+    DefaultViewNewLine: 90
+    DemoSystem: 0
+    DynamicFields::Backend:
+      test:
+        Module: Funky
+        somesub: !!perl/code '{ "DUMMY" }'
+    FQDN: yourhost.example.com
+    Frontend::CSSPath: /otrs-web/css/
+    Frontend::CommonObject: {}
+    Frontend::CommonParam:
+      Action: AdminInit
+    Frontend::ImagePath: /otrs-web/skins/Agent/default/img/
+    Frontend::JavaScriptPath: /otrs-web/js/
+    Frontend::Module:
+      Admin:
+        Description: Admin-Area
+        Group:
+          - admin
+        NavBar:
+          - AccessKey: a
+            Block: ItemArea
+            Description: Admin-Area
+            Image: admin.png
+            Link: Action=Admin
+            Name: Admin
+            NavBar: Admin
+            Prio: 10000
+            Type: Menu
+        NavBarModule:
+          Module: Kernel::Output::HTML::NavBarModuleAdmin
+        NavBarName: Admin
+        Title: ''
+      AdminInit:
+        Description: Admin
+        Group:
+          - admin
+        Title: Init
+      AdminLog:
+        Description: Admin
+        Group:
+          - admin
+        NavBarModule:
+          Block: Block4
+          Module: Kernel::Output::HTML::NavBarModuleAdmin
+          Name: System Log
+          Prio: 600
+        NavBarName: Admin
+        Title: System Log
+      AdminPackageManager:
+        Description: Software Package Manager
+        Group:
+          - admin
+        NavBarModule:
+          Block: Block4
+          Module: Kernel::Output::HTML::NavBarModuleAdmin
+          Name: Package Manager
+          Prio: 1000
+        NavBarName: Admin
+        Title: Package Manager
+      AdminSysConfig:
+        Description: Admin
+        Group:
+          - admin
+        Loader:
+          CSS:
+            - Core.Agent.Admin.SysConfig.css
+          JavaScript:
+            - Core.Agent.Admin.SysConfig.js
+        NavBarModule:
+          Block: System
+          Description: Edit the system configuration settings.
+          Module: Kernel::Output::HTML::NavBarModuleAdmin
+          Name: SysConfig
+          Prio: 800
+        NavBarName: Admin
+        Title: SysConfig
+      Installer:
+        Loader:
+          CSS:
+            - Core.Installer.css
+          JavaScript:
+            - Core.Installer.js
+      Login:
+        Loader:
+          JavaScript:
+            - Core.Agent.Login.js
+    Frontend::NotifyModule:
+      200-UID-Check:
+        Module: Kernel::Output::HTML::NotificationUIDCheck
+    Frontend::WebPath: /otrs-web/
+    Home: test_config
+    HttpType: http
+    Loader::Agent::CommonCSS:
+      000-Framework:
+        - Core.Reset.css
+        - Core.Default.css
+        - Core.Header.css
+        - Core.OverviewControl.css
+        - Core.OverviewSmall.css
+        - Core.OverviewMedium.css
+        - Core.OverviewLarge.css
+        - Core.Footer.css
+        - Core.PageLayout.css
+        - Core.Form.css
+        - Core.Table.css
+        - Core.Widget.css
+        - Core.WidgetMenu.css
+        - Core.TicketDetail.css
+        - Core.Tooltip.css
+        - Core.Dialog.css
+        - Core.Print.css
+    Loader::Agent::CommonCSS::IE7:
+      000-Framework:
+        - Core.Header.IE7.css
+        - Core.OverviewControl.IE7.css
+        - Core.OverviewSmall.IE7.css
+        - Core.OverviewMedium.IE7.css
+        - Core.OverviewLarge.IE7.css
+        - Core.PageLayout.IE7.css
+        - Core.Form.IE7.css
+        - Core.Widget.IE7.css
+        - Core.TicketDetail.IE7.css
+    Loader::Agent::CommonCSS::IE8:
+      000-Framework:
+        - Core.OverviewSmall.IE8.css
+    Loader::Agent::CommonJS:
+      000-Framework:
+        - thirdparty/json/json2.js
+        - thirdparty/jquery/jquery.js
+        - thirdparty/jquery-ui/jquery-ui.js
+        - thirdparty/jquery-validate-1.9/jquery.validate.js
+        - thirdparty/stacktrace-0.3/stacktrace.js
+        - Core.JavaScriptEnhancements.js
+        - Core.Debug.js
+        - Core.Data.js
+        - Core.Config.js
+        - Core.Exception.js
+        - Core.JSON.js
+        - Core.AJAX.js
+        - Core.UI.js
+        - Core.UI.IE7Fixes.js
+        - Core.UI.Accordion.js
+        - Core.UI.Datepicker.js
+        - Core.UI.Resizable.js
+        - Core.UI.Table.js
+        - Core.UI.Accessibility.js
+        - Core.UI.RichTextEditor.js
+        - Core.Form.js
+        - Core.Form.ErrorTooltips.js
+        - Core.UI.Dialog.js
+        - Core.Form.Validate.js
+        - Core.UI.ActionRow.js
+        - Core.UI.Popup.js
+        - Core.App.js
+        - Core.Agent.js
+    Loader::Customer::CommonCSS:
+      000-Framework:
+        - Core.Reset.css
+        - Core.Default.css
+        - Core.Form.css
+        - Core.Login.css
+        - Core.Control.css
+        - Core.Table.css
+        - Core.TicketZoom.css
+        - Core.Print.css
+    Loader::Customer::CommonCSS::IE6:
+      000-Framework: []
+    Loader::Customer::CommonCSS::IE7:
+      000-Framework:
+        - Core.IE7.css
+    Loader::Customer::CommonCSS::IE8:
+      000-Framework: []
+    Loader::Customer::CommonJS:
+      000-Framework:
+        - thirdparty/jquery/jquery.js
+        - thirdparty/stacktrace-0.3/stacktrace.js
+        - Core.Debug.js
+        - Core.Exception.js
+        - Core.App.js
+        - Core.Customer.js
+        - Core.JavaScriptEnhancements.js
+        - Core.Config.js
+        - Core.UI.RichTextEditor.js
+    LogModule: Kernel::System::Log::SysLog
+    LogModule::LogFile: /tmp/otrs.log
+    LogModule::SysLog::Charset: iso-8859-15
+    LogModule::SysLog::Facility: user
+    LogModule::SysLog::LogSock: unix
+    LostPassword: 1
+    NotificationBodyLostPassword: |2
+      
+      Hi <OTRS_USERFIRSTNAME>,
+      
+      you or someone impersonating you has requested to change your OTRS
+      password.
+      
+      New Password: <OTRS_NEWPW>
+      
+      http://yourhost.example.com/otrs/index.pl
+      
+      Your OTRS Notification Master
+    NotificationSenderEmail: otrs@yourhost.example.com
+    NotificationSenderName: OTRS Notification Master
+    NotificationSubjectLostPassword: New OTRS Password!
+    Organization: ''
+    PGP: 0
+    PGP::Bin: /usr/bin/gpg
+    PGP::Options: --homedir /opt/otrs/.gnupg/ --batch --no-tty --yes
+    Package::RepositoryRoot:
+      - http://ftp.otrs.org/pub/otrs/misc/packages/repository.xml
+      - http://otrs.org/repository.xml
+    Package::Timeout: 15
+    PreferencesGroups:
+      Comment:
+        Active: 0
+        Block: Input
+        Column: Other Options
+        Data: '$Env{"UserComment"}'
+        Desc: Comment
+        Label: Comment
+        Module: Kernel::Output::HTML::PreferencesGeneric
+        PrefKey: UserComment
+        Prio: 6000
+      Language:
+        Active: 1
+        Column: Frontend
+        Desc: Select your frontend language.
+        Label: Language
+        Module: Kernel::Output::HTML::PreferencesLanguage
+        PrefKey: UserLanguage
+        Prio: 1000
+      Password:
+        Active: 1
+        Area: Agent
+        Column: Other Options
+        Label: Change Password
+        Module: Kernel::Output::HTML::PreferencesPassword
+        PasswordMin2Characters: 0
+        PasswordMin2Lower2UpperCharacters: 0
+        PasswordMinSize: 0
+        PasswordNeedDigit: 0
+        PasswordRegExp: ''
+        Prio: 1000
+      SpellDict:
+        Active: 1
+        Column: Other Options
+        Data:
+          deutsch: Deutsch
+          english: English
+        Desc: Select your default spelling dictionary.
+        Label: Spelling Dictionary
+        Module: Kernel::Output::HTML::PreferencesGeneric
+        PrefKey: UserSpellDict
+        Prio: 5000
+      Theme:
+        Active: 1
+        Column: Frontend
+        Desc: Select your frontend Theme.
+        Label: Theme
+        Module: Kernel::Output::HTML::PreferencesTheme
+        PrefKey: UserTheme
+        Prio: 2000
+    PreferencesTable: user_preferences
+    PreferencesTableKey: preferences_key
+    PreferencesTableUserID: user_id
+    PreferencesTableValue: preferences_value
+    PreferencesView:
+      - User Profile
+      - Email Settings
+      - Other Settings
+    Product: OTRS
+    ProductName: OTRS
+    PublicFrontend::CommonObject: {}
+    PublicFrontend::CommonParam: {}
+    SMIME: 0
+    SMIME::Bin: /usr/bin/openssl
+    ScriptAlias: otrs/
+    SecureMode: 1
+    SendmailBcc: ''
+    SendmailModule: Kernel::System::Email::Sendmail
+    SendmailModule::CMD: '/usr/sbin/sendmail -i -f '
+    SessionCheckRemoteIP: 1
+    SessionDeleteIfNotRemoteID: 1
+    SessionDeleteIfTimeToOld: 1
+    SessionDir: test_config/var/sessions
+    SessionMaxIdleTime: 21600
+    SessionMaxTime: 57600
+    SessionModule: Kernel::System::AuthSession::DB
+    SessionName: Session
+    SessionTable: sessions
+    SessionTableID: session_id
+    SessionTableValue: session_value
+    SessionUseCookie: 1
+    SessionUseCookieAfterBrowserClose: 0
+    ShowAlwaysLongTime: 0
+    ShowMotd: 0
+    SpellChecker: 1
+    SpellCheckerBin: /usr/bin/ispell
+    SpellCheckerDictDefault: english
+    SpellCheckerIgnore:
+      - www
+      - webmail
+      - https
+      - http
+      - html
+      - rfc
+    SwitchToUser: 0
+    System::Customer::Permission:
+      - ro
+      - rw
+    System::Permission:
+      - ro
+      - rw
+    SystemID: 10
+    TempDir: test_config/var/tmp
+    TemplateDir: test_config/Kernel/Output
+    Ticket::CounterLog: /tmp/counterlog.txt
+    Ticket::EventModulePost:
+      1000-GenericInterface:
+        Event: .*
+        Module: Kernel::GenericInterface::Event::Handler
+        Transaction: 1
+    Ticket::UnlockStateType: {}
+    Ticket::ViewableLocks: {}
+    Ticket::ViewableStateType: {}
+    TimeInputFormat: Option
+    TimeShowAlwaysLong: 0
+    TimeVacationDays:
+      1:
+        1: New Year's Eve!
+      12:
+        24: Christmas
+        25: Christmas Day
+        26: Boxing Day
+        31: Silvester
+      5:
+        1: 1 St. May
+    TimeVacationDaysOneTime: {}
+    TimeWorkingHours:
+      Fri:
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        - 19
+        - 20
+      Mon:
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        - 19
+        - 20
+      Sat: []
+      Sun: []
+      Thu:
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        - 19
+        - 20
+      Tue:
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        - 19
+        - 20
+      Wed:
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        - 19
+        - 20
+    Version: 3.1.x CVS
+    WebMaxFileUpload: 16777216
+    WebUploadCacheModule: Kernel::System::Web::UploadCache::DB
+    YesNoOptions:
+      0: No
+      1: Yes
+  Debug: 0
+- ConfigObject
+- *2
+- DBObject
+- !!perl/hash:Kernel::System::DB
+  Backend: !!perl/hash:Kernel::System::DB::postgresql
+    ConfigObject: *2
+    DB::Attribute: {}
+    DB::CaseInsensitive: 0
+    DB::Comment: '-- '
+    DB::Connect: SET standard_conforming_strings TO ON
+    DB::CurrentTimestamp: ''
+    DB::DirectBlob: 0
+    DB::Encode: 1
+    DB::LikeEscapeString: ''
+    DB::Limit: limit
+    DB::QuoteBack: ''
+    DB::QuoteSemicolon: ''
+    DB::QuoteSingle: "'"
+    DB::QuoteUnderscoreEnd: ''
+    DB::QuoteUnderscoreStart: \
+    DB::ShellCommit: ;
+    DB::ShellConnect: SET standard_conforming_strings TO ON
+    DB::Type: postgresql
+    DSN: DBI:Pg:dbname=otrs2;host=localhost;port=5432;
+    Debug: 0
+    EncodeObject: *1
+    LogObject: &3 !!perl/hash:Kernel::System::Log
+      Backend: !!perl/hash:Kernel::System::Log::SysLog
+        ConfigObject: *2
+        EncodeObject: *1
+        SysLogFacility: user
+      EncodeObject: *1
+      IPC: 1
+      IPCKey: 44442310
+      IPCSize: 32768
+      Key: 622609
+      LogPrefix: '?LogPrefix?-10'
+    MainObject: &4 !!perl/hash:Kernel::System::Main
+      ConfigObject: *2
+      Debug: 0
+      EncodeObject: *1
+      LogObject: *3
+    PW: 6EgaoMxp7Ygs
+    SlowLog: ~
+    TimeObject: &5 !!perl/hash:Kernel::System::Time
+      ConfigObject: *2
+      Debug: 0
+      LogObject: *3
+      TimeSecDiff: 0
+      TimeZone: 0
+    USER: otrs
+  ConfigObject: *2
+  DB::Type: postgresql
+  DSN: DBI:Pg:dbname=otrs2;host=localhost;port=5432;
+  Debug: 0
+  EncodeObject: *1
+  LogObject: *3
+  MainObject: *4
+  PW: 6EgaoMxp7Ygs
+  SlowLog: ~
+  TimeObject: *5
+  USER: otrs
+  dbh: !!perl/hash:DBI::db {}
+- TimeObject
+- !!perl/hash:Kernel::System::Time
+  ConfigObject: *2
+  Debug: 0
+  LogObject: *3
+  TimeSecDiff: 0
+  TimeZone: 0
+- LogObject
+- *3
+- MainObject
+- *4

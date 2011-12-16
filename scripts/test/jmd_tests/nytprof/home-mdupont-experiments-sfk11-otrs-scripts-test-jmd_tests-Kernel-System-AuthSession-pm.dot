@@ -1,0 +1,49 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_Kernel_System_AuthSession {
+	label="Kernel::System::AuthSession";
+	"Kernel::System::AuthSession::BEGIN@15";
+	"Kernel::System::AuthSession::new";
+	"Kernel::System::AuthSession::BEGIN@17";
+	"Kernel::System::AuthSession::BEGIN@14";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::Run";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@29";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::Require";
+}
+subgraph cluster_Kernel_System_AuthSession_DB {
+	label="Kernel::System::AuthSession::DB";
+	"Kernel::System::AuthSession::DB::new";
+}
+"Kernel::System::Web::InterfaceAgent::BEGIN@29" -> "Kernel::System::AuthSession::BEGIN@15";
+"Kernel::System::AuthSession::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Web::InterfaceAgent::BEGIN@29" -> "Kernel::System::AuthSession::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::AuthSession::new";
+"Kernel::System::AuthSession::BEGIN@15" -> "warnings::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@29" -> "Kernel::System::AuthSession::BEGIN@17";
+"Kernel::System::AuthSession::new" -> "Kernel::System::AuthSession::DB::new";
+"Kernel::System::AuthSession::BEGIN@17" -> "vars::import";
+"Kernel::System::AuthSession::new" -> "Kernel::System::Main::Require";
+"Kernel::System::AuthSession::BEGIN@14" -> "strict::import";
+}

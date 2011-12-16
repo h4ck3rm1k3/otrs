@@ -1,0 +1,74 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_DBI {
+	label="DBI";
+	"DBI::install_driver";
+	"DBI::BEGIN@160";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::unimport";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_FileHandle {
+	label="FileHandle";
+	"FileHandle::import";
+}
+subgraph cluster_Exporter_Heavy {
+	label="Exporter::Heavy";
+	"Exporter::Heavy::_push_tags";
+	"Exporter::Heavy::_rebuild_cache";
+	"Exporter::Heavy::BEGIN@186";
+	"Exporter::Heavy::CORE:subst";
+	"Exporter::Heavy::heavy_export_ok_tags";
+	"Exporter::Heavy::heavy_export_to_level";
+	"Exporter::Heavy::BEGIN@4";
+	"Exporter::Heavy::heavy_require_version";
+	"Exporter::Heavy::CORE:match";
+	"Exporter::Heavy::heavy_export";
+	"Exporter::Heavy::BEGIN@3";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+	"Exporter::as_heavy";
+	"Exporter::export";
+}
+subgraph cluster_Class_Struct {
+	label="Class::Struct";
+	"Class::Struct::import";
+}
+subgraph cluster_version_vxs {
+	label="version::vxs";
+	"version::vxs::_VERSION";
+}
+subgraph cluster_JSON {
+	label="JSON";
+	"JSON::import";
+}
+"Exporter::Heavy::heavy_export" -> "Exporter::Heavy::CORE:match";
+"Exporter::Heavy::heavy_export" -> "Exporter::Heavy::_rebuild_cache";
+"Exporter::Heavy::BEGIN@186" -> "warnings::unimport";
+"DBI::install_driver" -> "Exporter::Heavy::heavy_export_ok_tags";
+"DBI::BEGIN@160" -> "Exporter::Heavy::heavy_export_ok_tags";
+"Exporter::Heavy::BEGIN@4" -> "strict::unimport";
+"Exporter::Heavy::heavy_export_to_level" -> "Exporter::export";
+"Exporter::Heavy::heavy_require_version" -> "version::vxs::_VERSION";
+"Exporter::Heavy::heavy_export_ok_tags" -> "Exporter::Heavy::_push_tags";
+"Exporter::as_heavy" -> "Exporter::Heavy::BEGIN@4";
+"DBI::install_driver" -> "Exporter::Heavy::heavy_require_version";
+"Class::Struct::import" -> "Exporter::Heavy::heavy_export_to_level";
+"JSON::import" -> "Exporter::Heavy::heavy_export_to_level";
+"Exporter::Heavy::_rebuild_cache" -> "Exporter::Heavy::CORE:subst";
+"Exporter::Heavy::heavy_export" -> "Exporter::Heavy::CORE:subst";
+"Exporter::import" -> "Exporter::Heavy::heavy_export";
+"FileHandle::import" -> "Exporter::Heavy::heavy_export";
+"Exporter::Heavy::heavy_export_to_level" -> "Exporter::Heavy::heavy_export";
+"Exporter::as_heavy" -> "Exporter::Heavy::BEGIN@186";
+"Exporter::Heavy::BEGIN@3" -> "strict::import";
+"Exporter::as_heavy" -> "Exporter::Heavy::BEGIN@3";
+}

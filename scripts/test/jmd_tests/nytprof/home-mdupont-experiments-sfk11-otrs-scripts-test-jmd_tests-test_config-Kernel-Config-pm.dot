@@ -1,0 +1,74 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_Config {
+	label="Kernel::Config";
+	"Kernel::Config::Load";
+	"Kernel::Config::BEGIN@111";
+	"Kernel::Config::BEGIN@112";
+	"Kernel::Config::BEGIN@117";
+	"Kernel::Config::BEGIN@23";
+	"Kernel::Config::BEGIN@25";
+	"Kernel::Config::CORE:ftfile";
+	"Kernel::Config::BEGIN@114";
+}
+subgraph cluster_utf8 {
+	label="utf8";
+	"utf8::import";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::BEGIN@24";
+	"Kernel::Config::Defaults::BEGIN@42";
+	"Kernel::Config::Defaults::BEGIN@25";
+	"Kernel::Config::Defaults::BEGIN@38";
+	"Kernel::Config::Defaults::BEGIN@36";
+	"Kernel::Config::Defaults::new";
+	"Kernel::Config::Defaults::BEGIN@41";
+	"Kernel::Config::Defaults::BEGIN@1975";
+	"Kernel::Config::Defaults::BEGIN@35";
+	"Kernel::Config::Defaults::BEGIN@39";
+	"Kernel::Config::Defaults::BEGIN@31";
+	"Kernel::Config::Defaults::BEGIN@37";
+	"Kernel::Config::Defaults::BEGIN@29";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@21";
+}
+"Kernel::Config::Defaults::new" -> "Kernel::Config::Load";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@42";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@114";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@38";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@112";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@1975";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@111";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@31";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@24";
+"Kernel::Config::BEGIN@112" -> "warnings::import";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@35";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@39";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@25";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@36";
+"Kernel::Config::BEGIN@114" -> "vars::import";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@25";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@117";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@23";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@29";
+"Kernel::Config::BEGIN@23" -> "utf8::import";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@41";
+"Kernel::Config::BEGIN@111" -> "strict::import";
+"Kernel::Config::BEGIN@25" -> "Kernel::Config::CORE:ftfile";
+"Kernel::Config::BEGIN@117" -> "Kernel::Config::Defaults::BEGIN@37";
+}

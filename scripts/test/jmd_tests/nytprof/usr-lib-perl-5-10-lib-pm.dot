@@ -1,0 +1,62 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Config {
+	label="Config";
+	"Config::BEGIN@35";
+	"Config::TIEHASH";
+	"Config::BEGIN@9";
+	"Config::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_version {
+	label="version";
+	"version::(bool";
+	"version::(cmp";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::BEGIN@39";
+	"Kernel::Config::Defaults::BEGIN@38";
+	"Kernel::Config::Defaults::BEGIN@37";
+}
+subgraph cluster_main {
+	label="main";
+	"main::BEGIN@30";
+	"main::BEGIN@31";
+	"main::BEGIN@29";
+}
+subgraph cluster_lib {
+	label="lib";
+	"lib::BEGIN@6";
+	"lib::CORE:ftis";
+	"lib::_get_dirs";
+	"lib::CORE:match";
+	"lib::BEGIN@8";
+	"lib::_nativize";
+	"lib::CORE:ftdir";
+	"lib::import";
+}
+"lib::BEGIN@6" -> "Config::BEGIN@35";
+"main::BEGIN@29" -> "lib::BEGIN@6";
+"lib::BEGIN@6" -> "version::(bool";
+"lib::BEGIN@6" -> "Config::TIEHASH";
+"lib::BEGIN@6" -> "Config::import";
+"lib::import" -> "lib::_get_dirs";
+"lib::BEGIN@6" -> "Config::BEGIN@9";
+"lib::import" -> "lib::_nativize";
+"lib::BEGIN@6" -> "version::(cmp";
+"lib::import" -> "lib::CORE:ftis";
+"Kernel::Config::Defaults::BEGIN@39" -> "lib::import";
+"Kernel::Config::Defaults::BEGIN@38" -> "lib::import";
+"main::BEGIN@30" -> "lib::import";
+"Kernel::Config::Defaults::BEGIN@37" -> "lib::import";
+"main::BEGIN@29" -> "lib::import";
+"main::BEGIN@31" -> "lib::import";
+"lib::import" -> "lib::CORE:match";
+"main::BEGIN@29" -> "lib::BEGIN@8";
+"lib::BEGIN@8" -> "strict::import";
+"lib::import" -> "lib::CORE:ftdir";
+}

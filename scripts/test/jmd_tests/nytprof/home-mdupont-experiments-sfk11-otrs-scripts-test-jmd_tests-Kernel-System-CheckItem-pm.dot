@@ -1,0 +1,39 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_Kernel_System_CheckItem {
+	label="Kernel::System::CheckItem";
+	"Kernel::System::CheckItem::new";
+	"Kernel::System::CheckItem::BEGIN@14";
+	"Kernel::System::CheckItem::BEGIN@17";
+	"Kernel::System::CheckItem::BEGIN@15";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_Web_Request {
+	label="Kernel::System::Web::Request";
+	"Kernel::System::Web::Request::new";
+	"Kernel::System::Web::Request::BEGIN@17";
+}
+subgraph cluster_Kernel_System_User {
+	label="Kernel::System::User";
+	"Kernel::System::User::new";
+}
+"Kernel::System::Web::Request::BEGIN@17" -> "Kernel::System::CheckItem::BEGIN@17";
+"Kernel::System::CheckItem::BEGIN@15" -> "warnings::import";
+"Kernel::System::Web::Request::BEGIN@17" -> "Kernel::System::CheckItem::BEGIN@14";
+"Kernel::System::CheckItem::BEGIN@17" -> "vars::import";
+"Kernel::System::Web::Request::BEGIN@17" -> "Kernel::System::CheckItem::BEGIN@15";
+"Kernel::System::User::new" -> "Kernel::System::CheckItem::new";
+"Kernel::System::Web::Request::new" -> "Kernel::System::CheckItem::new";
+"Kernel::System::CheckItem::BEGIN@14" -> "strict::import";
+}

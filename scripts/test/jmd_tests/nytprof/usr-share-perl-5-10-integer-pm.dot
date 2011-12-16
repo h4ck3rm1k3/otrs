@@ -1,0 +1,17 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_integer {
+	label="integer";
+	"integer::import";
+}
+subgraph cluster_Digest_SHA {
+	label="Digest::SHA";
+	"Digest::SHA::BEGIN@8";
+}
+subgraph cluster_Time_Local {
+	label="Time::Local";
+	"Time::Local::BEGIN@7";
+}
+"Digest::SHA::BEGIN@8" -> "integer::import";
+"Time::Local::BEGIN@7" -> "integer::import";
+}

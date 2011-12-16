@@ -1,0 +1,196 @@
+# --
+# AdminDynamicField.dtl - provides HTML form for DynamicFields
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# --
+# $Id: AdminDynamicField.dtl,v 1.15 2011/11/02 13:33:29 mb Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+<!-- dtl:block:Main -->
+<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
+    <h1>$Text{"Dynamic Fields Management"} - $QData{"Action"}</h1>
+
+    <div class="Clear"></div>
+
+    <div class="SidebarColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Actions"}</h2>
+            </div>
+            <div class="Content">
+                <ul class="ActionList">
+<!-- dtl:block:ActionAddDynamicField -->
+                    <li>
+                        <h3>$Text{"$Data{"ObjectType"}"}</h3>
+                        $Data{"AddDynamicFieldStrg"}
+                        <div class="FieldExplanation">
+                            <p>$Text{"Add new field for object"}: $Text{"$Data{"ObjectType"}"}</p>
+                        </div>
+                    </li>
+<!--dtl:js_on_document_complete-->
+<script type="text/javascript">//<![CDATA[
+$('#$Data{"SelectName"}').bind('change', function() {
+    if ($(this).val() !== '') {
+        Core.Agent.Admin.DynamicField.Redirect($(this).val(), '$Data{"ObjectType"}');
+
+        // reset select value to none
+        $(this).val('');
+    }
+});
+//]]></script>
+<!--dtl:js_on_document_complete-->
+<!-- dtl:block:ActionAddDynamicField -->
+                </ul>
+            </div>
+        </div>
+
+<!-- dtl:block:ConfigSet -->
+<!--dtl:js_on_document_complete-->
+<script type="text/javascript">//<![CDATA[
+    Core.Config.Set('DynamicFields', $Data{"FieldDialogsConfig"} );
+//]]></script>
+<!--dtl:js_on_document_complete-->
+<!-- dtl:block:ConfigSet -->
+
+<!-- dtl:block:Hint -->
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Hint"}</h2>
+            </div>
+            <div class="Content">
+                <div class="FieldExplanation">
+                    <p>
+                        $Text{"To add a new field select the field type form the ticket or article list depending on the scope of the new field."}
+                    </p>
+                </div>
+            </div>
+        </div>
+<!-- dtl:block:Hint -->
+    </div>
+    <div class="ContentColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Dynamic Fields List"}</h2>
+
+<!-- dtl:block:ContextSettings -->
+                <ul class="ContextFunctions">
+                    <li class="ContextSettings">
+                        <a href="#" id="ShowContextSettingsDialog" title="$Text{"Settings"}"><span>$Text{"Settings"}</span></a>
+                    </li>
+                </ul>
+
+                <div id="ContextSettingsDialogContainer" class="Hidden">
+                    <form action="$Env{"CGIHandle"}" method="post" id="ContextSettingsDialog">
+                        <input type="hidden" name="Action" value="AgentPreferences"/>
+                        <input type="hidden" name="Subaction" value="Update"/>
+                        <input type="hidden" name="Group" value="$QData{"Group"}"/>
+                        <input type="hidden" name="RedirectURL" value="$QData{"RequestedURL"}"/>
+                        <fieldset class="TableLike">
+                            <label for="$QData{"PreferencesKey"}">$Text{"Dynamic fields per page"}:</label>
+                            <div class="Field">
+                                $Data{"PageShownString"}
+                            </div>
+                            <div class="Clear"></div>
+                        </fieldset>
+                    </form>
+                </div>
+
+<!-- dtl:js_on_document_complete -->
+<script type="text/javascript">//<![CDATA[
+$('#ShowContextSettingsDialog').bind('click', function (Event) {
+    Core.UI.Dialog.ShowContentDialog($('#ContextSettingsDialogContainer'), '$JSText{"Settings"}', '20%', 'Center', true,
+        [
+            {
+                Label: '$JSText{"Submit"}',
+                Type: 'Submit',
+                Class: 'Primary'}
+        ]);
+    Event.preventDefault();
+    Event.stopPropagation();
+    return false;
+});
+//]]></script>
+<!-- dtl:js_on_document_complete -->
+<!-- dtl:block:ContextSettings -->
+
+            </div>
+            <div class="DynamicFieldsPagination">
+                <span class="Pagination">
+<!-- dtl:block:OverviewNavBarPageNavBar -->
+                    $Data{"ResultLong"}
+                    $Data{"SiteNavBarLong"}
+<!-- dtl:block:OverviewNavBarPageNavBar -->
+                </span>
+            </div>
+            <div class="Clear"></div>
+
+            <div class="DynamicFieldsContent">
+                <table class="DataTable" id="DynamicFieldsTable" summary="List of all registered Dynamic Fields">
+                    <thead>
+                        <tr>
+                            <th>$Text{"Name"}</th>
+                            <th>$Text{"Label"}</th>
+                            <th>$Text{"Order"}</th>
+                            <th>$Text{"Type"}</th>
+                            <th>$Text{"Object"}</th>
+                            <th>$Text{"Validity"}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+<!-- dtl:block:NoDataFound -->
+                        <tr>
+                            <td colspan="5">
+                                $Text{"No data found."}
+                            </td>
+                        </tr>
+<!-- dtl:block:NoDataFound -->
+<!-- dtl:block:DynamicFieldsRow -->
+                        <tr id="DynamicFieldID_$QData{"ID"}" class="MasterAction">
+                            <td>
+                                <a href="$Env{"Baselink"}Action=$LQData{"ConfigDialog"};Subaction=Change;ObjectType=$LQData{"ObjectType"};FieldType=$LQData{"FieldType"};ID=$LQData{"ID"}" title="$QData{"Name"}" class="MasterActionLink">$Data{"Name"}</a>
+                            </td>
+                            <td>
+                                <div title="$Text{"$Data{"Label"}"}">$Data{"Label"}</div>
+                            </td>
+                            <td>
+                                <div title="$Text{"$Data{"Label"}"}">$Data{"FieldOrder"}</div>
+                            </td>
+                            <td>
+                                <div title="$Text{"$Data{"FieldTypeName"}"}">$Data{"FieldTypeName"}</div>
+                            </td>
+                            <td>
+                                <div title="$Text{"$Data{"ObjectTypeName"}"}">$Data{"ObjectTypeName"}</div>
+                            </td>
+                            <td>
+                                <div title="$Text{"$Data{"Validity"}"}">$Data{"Valid"}</div>
+                            </td>
+                        </tr>
+<!-- dtl:block:DynamicFieldsRow -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+<!-- dtl:block:MaxFieldOrder -->
+        <input id="MaxFieldOrder" type="hidden" name="MaxFieldOrder" value="$QData{"MaxFieldOrder"}"/>
+<!-- dtl:block:MaxFieldOrder -->
+
+        <div class="Clear"></div>
+    </div>
+</div>
+<!-- dtl:block:Main -->
+
+<!--dtl:js_on_document_complete-->
+<script type="text/javascript">//<![CDATA[
+$('.MasterAction').bind('click', function (Event) {
+    var $MasterActionLink = $(this).find('.MasterActionLink');
+    // only act if the link was not clicked directly
+    if (Event.target !== $MasterActionLink.get(0)) {
+        window.location = $MasterActionLink.attr('href');
+        return false;
+    }
+});
+//]]></script>
+<!--dtl:js_on_document_complete-->

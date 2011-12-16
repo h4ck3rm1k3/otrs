@@ -1,0 +1,42 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_File_Spec_Unix {
+	label="File::Spec::Unix";
+	"File::Spec::Unix::canonpath";
+	"File::Spec::Unix::CORE:match";
+	"File::Spec::Unix::catfile";
+	"File::Spec::Unix::BEGIN@149";
+	"File::Spec::Unix::file_name_is_absolute";
+	"File::Spec::Unix::BEGIN@4";
+	"File::Spec::Unix::BEGIN@3";
+	"File::Spec::Unix::CORE:subst";
+	"File::Spec::Unix::catdir";
+}
+subgraph cluster_FindBin {
+	label="FindBin";
+	"FindBin::init";
+	"FindBin::BEGIN@100";
+}
+"FindBin::BEGIN@100" -> "File::Spec::Unix::BEGIN@149";
+"File::Spec::Unix::BEGIN@149" -> "strict::unimport";
+"File::Spec::Unix::catfile" -> "File::Spec::Unix::canonpath";
+"File::Spec::Unix::catdir" -> "File::Spec::Unix::canonpath";
+"FindBin::BEGIN@100" -> "File::Spec::Unix::BEGIN@3";
+"File::Spec::Unix::BEGIN@4" -> "vars::import";
+"FindBin::init" -> "File::Spec::Unix::file_name_is_absolute";
+"File::Spec::Unix::catfile" -> "File::Spec::Unix::catdir";
+"File::Spec::Unix::file_name_is_absolute" -> "File::Spec::Unix::CORE:match";
+"FindBin::init" -> "File::Spec::Unix::catfile";
+"File::Spec::Unix::BEGIN@3" -> "strict::import";
+"FindBin::BEGIN@100" -> "File::Spec::Unix::BEGIN@4";
+"File::Spec::Unix::canonpath" -> "File::Spec::Unix::CORE:subst";
+}

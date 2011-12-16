@@ -1,0 +1,134 @@
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"ChallengeToken\"
+
+b87201b58fa0d890541defa776cb1333
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"Action\"
+
+AgentTicketPhone
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"Subaction\"
+
+StoreNew
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"FormID\"
+
+1320483274.3111159.46004047
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"ExpandCustomerName\"
+
+0
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"OwnerAll\"
+
+
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"ResponsibleAll\"
+
+
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"PreSelectedCustomerUser\"
+
+
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"SelectedCustomerUser\"
+
+mdupont@localhost
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"TicketID\"
+
+
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"LinkTicketID\"
+
+
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"CustomerKey\"
+
+
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"CustomerTicketText\"
+
+
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"CustomerSelected\"
+
+1
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"CustomerKey_1\"
+
+mdupont@localhost
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"CustomerTicketText_1\"
+
+\"mike dupont\" <jamesmikedupont@gmail.com>
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"CustomerTicketCounterFromCustomer\"
+
+1
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"FromCustomer\"
+
+
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"Dest\"
+
+3||Junk
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"NewUserID\"
+
+
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"Subject\"
+
+test
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"Body\"
+
+test
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"FileUpload\"; filename=\"\"
+Content-Type: application/octet-stream
+
+
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"AttachmentUpload\"
+
+0
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"CustomerID\"
+
+1
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"NextStateID\"
+
+4
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"Month\"
+
+11
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"Day\"
+
+6
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"Year\"
+
+2011
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"Hour\"
+
+9
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"Minute\"
+
+54
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"PriorityID\"
+
+3
+------WebKitFormBoundarySHJOklNMX27fyAb9
+Content-Disposition: form-data; name=\"TimeUnits\"
+
+
+------WebKitFormBoundarySHJOklNMX27fyAb9--

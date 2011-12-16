@@ -1,0 +1,93 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::unimport";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_Tie_Hash {
+	label="Tie::Hash";
+	"Tie::Hash::BEGIN@5";
+	"Tie::Hash::BEGIN@6";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_Sys_Syslog {
+	label="Sys::Syslog";
+	"Sys::Syslog::syslog";
+	"Sys::Syslog::BEGIN@9";
+}
+subgraph cluster_POSIX_SigRt {
+	label="POSIX::SigRt";
+	"POSIX::SigRt::BEGIN@66";
+	"POSIX::SigRt::BEGIN@62";
+	"POSIX::SigRt::BEGIN@64";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_AutoLoader {
+	label="AutoLoader";
+	"AutoLoader::import";
+	"AutoLoader::AUTOLOAD";
+}
+subgraph cluster_POSIX_SigAction {
+	label="POSIX::SigAction";
+	"POSIX::SigAction::BEGIN@58";
+}
+subgraph cluster_POSIX {
+	label="POSIX";
+	"POSIX::load_imports";
+	"POSIX::setlocale";
+	"POSIX::AUTOLOAD";
+	"POSIX::import";
+	"POSIX::BEGIN@9";
+	"POSIX::BEGIN@3";
+	"POSIX::BEGIN@39";
+	"POSIX::BEGIN@2";
+	"POSIX::BEGIN@40";
+	"POSIX::BEGIN@13";
+	"POSIX::BEGIN@11";
+	"POSIX::strftime";
+	"POSIX::CORE:match";
+}
+"Sys::Syslog::BEGIN@9" -> "POSIX::SigRt::BEGIN@66";
+"POSIX::AUTOLOAD" -> "POSIX::CORE:match";
+"POSIX::import" -> "POSIX::CORE:match";
+"Sys::Syslog::BEGIN@9" -> "POSIX::SigAction::BEGIN@58";
+"POSIX::BEGIN@40" -> "warnings::unimport";
+"POSIX::import" -> "Exporter::import";
+"POSIX::BEGIN@13" -> "Exporter::import";
+"POSIX::BEGIN@39" -> "strict::unimport";
+"POSIX::SigRt::BEGIN@64" -> "Tie::Hash::BEGIN@5";
+"POSIX::SigAction::BEGIN@58" -> "AutoLoader::import";
+"POSIX::SigRt::BEGIN@62" -> "AutoLoader::import";
+"POSIX::BEGIN@9" -> "AutoLoader::import";
+"Sys::Syslog::syslog" -> "POSIX::setlocale";
+"POSIX::BEGIN@3" -> "warnings::import";
+"POSIX::import" -> "AutoLoader::AUTOLOAD";
+"POSIX::SigRt::BEGIN@64" -> "Tie::Hash::BEGIN@6";
+"POSIX::import" -> "POSIX::load_imports";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@3";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@2";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@11";
+"POSIX::SigRt::BEGIN@66" -> "vars::import";
+"Sys::Syslog::BEGIN@9" -> "POSIX::SigRt::BEGIN@62";
+"Sys::Syslog::BEGIN@9" -> "POSIX::import";
+"POSIX::import" -> "POSIX::AUTOLOAD";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@9";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@13";
+"Sys::Syslog::syslog" -> "POSIX::strftime";
+"Sys::Syslog::BEGIN@9" -> "POSIX::SigRt::BEGIN@64";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@39";
+"Sys::Syslog::BEGIN@9" -> "POSIX::BEGIN@40";
+"POSIX::BEGIN@2" -> "strict::import";
+}

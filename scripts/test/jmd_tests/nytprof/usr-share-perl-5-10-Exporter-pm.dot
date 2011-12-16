@@ -1,0 +1,291 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Storable {
+	label="Storable";
+	"Storable::BEGIN@44";
+	"Storable::BEGIN@23";
+}
+subgraph cluster_JSON_XS {
+	label="JSON::XS";
+	"JSON::XS::BEGIN@121";
+}
+subgraph cluster_Crypt_PasswdMD5 {
+	label="Crypt::PasswdMD5";
+	"Crypt::PasswdMD5::BEGIN@65";
+}
+subgraph cluster_Encode {
+	label="Encode";
+	"Encode::BEGIN@48";
+}
+subgraph cluster_Encode_Byte {
+	label="Encode::Byte";
+	"Encode::Byte::BEGIN@4";
+}
+subgraph cluster_Kernel_System_Log_SysLog {
+	label="Kernel::System::Log::SysLog";
+	"Kernel::System::Log::SysLog::BEGIN@17";
+}
+subgraph cluster_Mail_Address {
+	label="Mail::Address";
+	"Mail::Address::BEGIN@11";
+}
+subgraph cluster_DBI {
+	label="DBI";
+	"DBI::install_driver";
+	"DBI::BEGIN@160";
+}
+subgraph cluster_IO_File {
+	label="IO::File";
+	"IO::File::BEGIN@11";
+	"IO::File::BEGIN@8";
+	"IO::File::BEGIN@9";
+}
+subgraph cluster_Tie_Hash {
+	label="Tie::Hash";
+	"Tie::Hash::BEGIN@5";
+}
+subgraph cluster_DBD_Pg_db {
+	label="DBD::Pg::db";
+	"DBD::Pg::db::BEGIN@250";
+}
+subgraph cluster_File_stat {
+	label="File::stat";
+	"File::stat::BEGIN@3";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::BEGIN@17";
+}
+subgraph cluster_IO_Handle {
+	label="IO::Handle";
+	"IO::Handle::BEGIN@6";
+	"IO::Handle::BEGIN@7";
+}
+subgraph cluster_Sys_Syslog {
+	label="Sys::Syslog";
+	"Sys::Syslog::BEGIN@5";
+	"Sys::Syslog::BEGIN@8";
+	"Sys::Syslog::BEGIN@7";
+	"Sys::Syslog::BEGIN@10";
+}
+subgraph cluster_FileHandle {
+	label="FileHandle";
+	"FileHandle::import";
+}
+subgraph cluster_Kernel_System_Encode {
+	label="Kernel::System::Encode";
+	"Kernel::System::Encode::BEGIN@17";
+}
+subgraph cluster_Unicode_Normalize {
+	label="Unicode::Normalize";
+	"Unicode::Normalize::BEGIN@12";
+}
+subgraph cluster_Socket {
+	label="Socket";
+	"Socket::BEGIN@6";
+}
+subgraph cluster_Exporter_Heavy {
+	label="Exporter::Heavy";
+	"Exporter::Heavy::BEGIN@4";
+	"Exporter::Heavy::BEGIN@186";
+	"Exporter::Heavy::heavy_export";
+	"Exporter::Heavy::heavy_export_to_level";
+	"Exporter::Heavy::BEGIN@3";
+}
+subgraph cluster_Kernel_System_Auth_DB {
+	label="Kernel::System::Auth::DB";
+	"Kernel::System::Auth::DB::BEGIN@17";
+	"Kernel::System::Auth::DB::BEGIN@18";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+	"Exporter::as_heavy";
+	"Exporter::export_to_level";
+	"Exporter::CORE:subst";
+	"Exporter::export";
+	"Exporter::export_ok_tags";
+	"Exporter::require_version";
+	"Exporter::CORE:match";
+}
+subgraph cluster_Kernel_System_Time {
+	label="Kernel::System::Time";
+	"Kernel::System::Time::BEGIN@17";
+}
+subgraph cluster_SelectSaver {
+	label="SelectSaver";
+	"SelectSaver::BEGIN@7";
+	"SelectSaver::BEGIN@6";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::BEGIN@35";
+	"Kernel::Config::Defaults::BEGIN@42";
+	"Kernel::Config::Defaults::BEGIN@36";
+	"Kernel::Config::Defaults::BEGIN@41";
+}
+subgraph cluster_Class_Struct {
+	label="Class::Struct";
+	"Class::Struct::BEGIN@11";
+	"Class::Struct::import";
+}
+subgraph cluster_IO_Seekable {
+	label="IO::Seekable";
+	"IO::Seekable::BEGIN@6";
+	"IO::Seekable::BEGIN@12";
+}
+subgraph cluster_CGI {
+	label="CGI";
+	"CGI::BEGIN@3";
+	"CGI::BEGIN@27";
+}
+subgraph cluster_IO {
+	label="IO";
+	"IO::BEGIN@6";
+}
+subgraph cluster_Digest_SHA {
+	label="Digest::SHA";
+	"Digest::SHA::BEGIN@7";
+}
+subgraph cluster_Time_Local {
+	label="Time::Local";
+	"Time::Local::BEGIN@4";
+}
+subgraph cluster_CGI_Carp {
+	label="CGI::Carp";
+	"CGI::Carp::BEGIN@311";
+	"CGI::Carp::import";
+}
+subgraph cluster_Data_Dumper {
+	label="Data::Dumper";
+	"Data::Dumper::BEGIN@20";
+}
+subgraph cluster_main {
+	label="main";
+	"main::BEGIN@28";
+}
+subgraph cluster_CGI_Cookie {
+	label="CGI::Cookie";
+	"CGI::Cookie::BEGIN@18";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::BEGIN@18";
+	"Kernel::System::Main::BEGIN@20";
+	"Kernel::System::Main::BEGIN@19";
+	"Kernel::System::Main::BEGIN@17";
+}
+subgraph cluster_FindBin {
+	label="FindBin";
+	"FindBin::BEGIN@95";
+	"FindBin::BEGIN@98";
+	"FindBin::BEGIN@99";
+}
+subgraph cluster_POSIX {
+	label="POSIX";
+	"POSIX::BEGIN@13";
+	"POSIX::import";
+}
+subgraph cluster_Kernel_System_AuthSession_DB {
+	label="Kernel::System::AuthSession::DB";
+	"Kernel::System::AuthSession::DB::BEGIN@17";
+	"Kernel::System::AuthSession::DB::BEGIN@16";
+}
+subgraph cluster_Kernel_System_User {
+	label="Kernel::System::User";
+	"Kernel::System::User::BEGIN@17";
+	"Kernel::System::User::BEGIN@18";
+}
+subgraph cluster_IPC_SysV {
+	label="IPC::SysV";
+	"IPC::SysV::BEGIN@21";
+}
+subgraph cluster_JSON {
+	label="JSON";
+	"JSON::import";
+}
+subgraph cluster_Cwd {
+	label="Cwd";
+	"Cwd::BEGIN@171";
+}
+"Class::Struct::import" -> "Exporter::export_to_level";
+"JSON::import" -> "Exporter::export_to_level";
+"Exporter::export_to_level" -> "Exporter::as_heavy";
+"Exporter::export" -> "Exporter::as_heavy";
+"Exporter::export_ok_tags" -> "Exporter::as_heavy";
+"Exporter::require_version" -> "Exporter::as_heavy";
+"DBI::install_driver" -> "Exporter::require_version";
+"Exporter::import" -> "Exporter::CORE:match";
+"Mail::Address::BEGIN@11" -> "Exporter::import";
+"Kernel::System::DB::BEGIN@17" -> "Exporter::import";
+"IO::Handle::BEGIN@7" -> "Exporter::import";
+"Kernel::Config::Defaults::BEGIN@42" -> "Exporter::import";
+"CGI::BEGIN@27" -> "Exporter::import";
+"Kernel::Config::Defaults::BEGIN@36" -> "Exporter::import";
+"IO::Seekable::BEGIN@12" -> "Exporter::import";
+"IO::File::BEGIN@8" -> "Exporter::import";
+"IO::Seekable::BEGIN@6" -> "Exporter::import";
+"SelectSaver::BEGIN@6" -> "Exporter::import";
+"Storable::BEGIN@44" -> "Exporter::import";
+"Crypt::PasswdMD5::BEGIN@65" -> "Exporter::import";
+"Data::Dumper::BEGIN@20" -> "Exporter::import";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Exporter::import";
+"Sys::Syslog::BEGIN@8" -> "Exporter::import";
+"SelectSaver::BEGIN@7" -> "Exporter::import";
+"POSIX::import" -> "Exporter::import";
+"Encode::BEGIN@48" -> "Exporter::import";
+"Storable::BEGIN@23" -> "Exporter::import";
+"Kernel::System::Main::BEGIN@19" -> "Exporter::import";
+"DBD::Pg::db::BEGIN@250" -> "Exporter::import";
+"Sys::Syslog::BEGIN@5" -> "Exporter::import";
+"IO::File::BEGIN@11" -> "Exporter::import";
+"Class::Struct::BEGIN@11" -> "Exporter::import";
+"main::BEGIN@28" -> "Exporter::import";
+"IPC::SysV::BEGIN@21" -> "Exporter::import";
+"POSIX::BEGIN@13" -> "Exporter::import";
+"Digest::SHA::BEGIN@7" -> "Exporter::import";
+"CGI::Carp::import" -> "Exporter::import";
+"IO::File::BEGIN@9" -> "Exporter::import";
+"FindBin::BEGIN@95" -> "Exporter::import";
+"Kernel::System::Time::BEGIN@17" -> "Exporter::import";
+"FindBin::BEGIN@98" -> "Exporter::import";
+"Kernel::System::AuthSession::DB::BEGIN@17" -> "Exporter::import";
+"Encode::Byte::BEGIN@4" -> "Exporter::import";
+"Socket::BEGIN@6" -> "Exporter::import";
+"Sys::Syslog::BEGIN@7" -> "Exporter::import";
+"Kernel::System::Auth::DB::BEGIN@17" -> "Exporter::import";
+"CGI::Cookie::BEGIN@18" -> "Exporter::import";
+"Tie::Hash::BEGIN@5" -> "Exporter::import";
+"Kernel::System::Main::BEGIN@18" -> "Exporter::import";
+"IO::Handle::BEGIN@6" -> "Exporter::import";
+"CGI::BEGIN@3" -> "Exporter::import";
+"CGI::Carp::BEGIN@311" -> "Exporter::import";
+"Kernel::System::Main::BEGIN@20" -> "Exporter::import";
+"IO::BEGIN@6" -> "Exporter::import";
+"Kernel::System::Encode::BEGIN@17" -> "Exporter::import";
+"JSON::XS::BEGIN@121" -> "Exporter::import";
+"Kernel::System::User::BEGIN@18" -> "Exporter::import";
+"Kernel::System::AuthSession::DB::BEGIN@16" -> "Exporter::import";
+"Cwd::BEGIN@171" -> "Exporter::import";
+"Time::Local::BEGIN@4" -> "Exporter::import";
+"Sys::Syslog::BEGIN@10" -> "Exporter::import";
+"File::stat::BEGIN@3" -> "Exporter::import";
+"FindBin::BEGIN@99" -> "Exporter::import";
+"Kernel::Config::Defaults::BEGIN@41" -> "Exporter::import";
+"Kernel::System::User::BEGIN@17" -> "Exporter::import";
+"Unicode::Normalize::BEGIN@12" -> "Exporter::import";
+"Kernel::Config::Defaults::BEGIN@35" -> "Exporter::import";
+"Kernel::System::Auth::DB::BEGIN@18" -> "Exporter::import";
+"Kernel::System::Main::BEGIN@17" -> "Exporter::import";
+"Exporter::import" -> "Exporter::export";
+"FileHandle::import" -> "Exporter::export";
+"Exporter::Heavy::heavy_export_to_level" -> "Exporter::export";
+"Exporter::import" -> "Exporter::CORE:subst";
+"Exporter::as_heavy" -> "Exporter::CORE:subst";
+"Exporter::as_heavy" -> "Exporter::Heavy::BEGIN@4";
+"DBI::install_driver" -> "Exporter::export_ok_tags";
+"DBI::BEGIN@160" -> "Exporter::export_ok_tags";
+"Exporter::import" -> "Exporter::Heavy::heavy_export";
+"Exporter::as_heavy" -> "Exporter::Heavy::BEGIN@186";
+"Exporter::as_heavy" -> "Exporter::Heavy::BEGIN@3";
+}

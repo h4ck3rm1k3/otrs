@@ -1,0 +1,33 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Sys_Syslog {
+	label="Sys::Syslog";
+	"Sys::Syslog::connect_unix";
+	"Sys::Syslog::BEGIN@10";
+}
+subgraph cluster_Socket {
+	label="Socket";
+	"Socket::BEGIN@193";
+	"Socket::BEGIN@10";
+	"Socket::BEGIN@6";
+	"Socket::pack_sockaddr_un";
+	"Socket::sockaddr_un";
+	"Socket::BEGIN@7";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_warnings_register {
+	label="warnings::register";
+	"warnings::register::import";
+}
+"Sys::Syslog::BEGIN@10" -> "Socket::BEGIN@10";
+"Sys::Syslog::BEGIN@10" -> "Socket::BEGIN@7";
+"Socket::BEGIN@6" -> "Exporter::import";
+"Sys::Syslog::connect_unix" -> "Socket::sockaddr_un";
+"Socket::sockaddr_un" -> "Socket::pack_sockaddr_un";
+"Sys::Syslog::BEGIN@10" -> "Socket::BEGIN@6";
+"Sys::Syslog::BEGIN@10" -> "Socket::BEGIN@193";
+"Socket::BEGIN@7" -> "warnings::register::import";
+}

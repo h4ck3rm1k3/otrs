@@ -1,0 +1,95 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_JSON {
+	label="Kernel::System::JSON";
+	"Kernel::System::JSON::BEGIN@17";
+}
+subgraph cluster_JSON_Boolean {
+	label="JSON::Boolean";
+	"JSON::Boolean::_overrride_overload";
+}
+subgraph cluster_base {
+	label="base";
+	"base::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_JSON_XS_Boolean {
+	label="JSON::XS::Boolean";
+	"JSON::XS::Boolean::BEGIN@3";
+}
+subgraph cluster_JSON_Backend_XS_Supportable {
+	label="JSON::Backend::XS::Supportable";
+	"JSON::Backend::XS::Supportable::BEGIN@99";
+}
+subgraph cluster_Exporter_Heavy {
+	label="Exporter::Heavy";
+	"Exporter::Heavy::heavy_export_to_level";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::export_to_level";
+}
+subgraph cluster_JSON_PP_Boolean {
+	label="JSON::PP::Boolean";
+	"JSON::PP::Boolean::BEGIN@3";
+}
+subgraph cluster_JSON_Backend_PP {
+	label="JSON::Backend::PP";
+	"JSON::Backend::PP::BEGIN@380";
+}
+subgraph cluster_JSON_Backend_XS {
+	label="JSON::Backend::XS";
+	"JSON::Backend::XS::BEGIN@29";
+	"JSON::Backend::XS::BEGIN@18";
+	"JSON::Backend::XS::BEGIN@42";
+	"JSON::Backend::XS::BEGIN@11";
+	"JSON::Backend::XS::init";
+	"JSON::Backend::XS::BEGIN@9";
+}
+subgraph cluster_JSON {
+	label="JSON";
+	"JSON::CORE:close";
+	"JSON::BEGIN@9";
+	"JSON::BEGIN@6";
+	"JSON::CORE:readline";
+	"JSON::BEGIN@4";
+	"JSON::BEGIN@5";
+	"JSON::import";
+	"JSON::_set_module";
+	"JSON::_load_xs";
+	"JSON::BEGIN@315";
+	"JSON::BEGIN@2";
+}
+"JSON::_load_xs" -> "JSON::Backend::XS::BEGIN@42";
+"JSON::import" -> "Exporter::export_to_level";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::BEGIN@6";
+"JSON::_load_xs" -> "JSON::CORE:readline";
+"JSON::_load_xs" -> "JSON::_set_module";
+"JSON::_load_xs" -> "JSON::BEGIN@2";
+"JSON::_load_xs" -> "JSON::CORE:close";
+"JSON::Backend::PP::BEGIN@380" -> "strict::unimport";
+"JSON::BEGIN@315" -> "strict::unimport";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::BEGIN@4";
+"JSON::_load_xs" -> "JSON::Backend::XS::BEGIN@9";
+"JSON::BEGIN@6" -> "base::import";
+"JSON::_load_xs" -> "JSON::Backend::XS::Supportable::BEGIN@99";
+"JSON::_load_xs" -> "JSON::Backend::XS::BEGIN@18";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::BEGIN@5";
+"JSON::_load_xs" -> "JSON::Boolean::_overrride_overload";
+"JSON::import" -> "Exporter::Heavy::heavy_export_to_level";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::Backend::PP::BEGIN@380";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::import";
+"JSON::_load_xs" -> "JSON::Backend::XS::BEGIN@11";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::_load_xs";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::BEGIN@315";
+"JSON::_load_xs" -> "JSON::Backend::XS::BEGIN@29";
+"JSON::Boolean::_overrride_overload" -> "JSON::XS::Boolean::BEGIN@3";
+"JSON::Boolean::_overrride_overload" -> "JSON::PP::Boolean::BEGIN@3";
+"Kernel::System::JSON::BEGIN@17" -> "JSON::BEGIN@9";
+"JSON::_load_xs" -> "JSON::Backend::XS::init";
+"JSON::BEGIN@4" -> "strict::import";
+}

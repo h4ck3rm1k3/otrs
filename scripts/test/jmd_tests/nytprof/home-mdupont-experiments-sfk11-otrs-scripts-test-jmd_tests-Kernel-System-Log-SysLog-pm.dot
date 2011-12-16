@@ -1,0 +1,110 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_Log_SysLog {
+	label="Kernel::System::Log::SysLog";
+	"Kernel::System::Log::SysLog::BEGIN@17";
+	"Kernel::System::Log::SysLog::BEGIN@19";
+	"Kernel::System::Log::SysLog::BEGIN@14";
+	"Kernel::System::Log::SysLog::BEGIN@15";
+	"Kernel::System::Log::SysLog::Log";
+	"Kernel::System::Log::SysLog::new";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_XSLoader {
+	label="XSLoader";
+	"XSLoader::load";
+}
+subgraph cluster_Kernel_System_Log {
+	label="Kernel::System::Log";
+	"Kernel::System::Log::new";
+	"Kernel::System::Log::Log";
+}
+subgraph cluster_Sys_Syslog {
+	label="Sys::Syslog";
+	"Sys::Syslog::LOG_UPTO";
+	"Sys::Syslog::BEGIN@7";
+	"Sys::Syslog::setlogsock";
+	"Sys::Syslog::BEGIN@88";
+	"Sys::Syslog::closelog";
+	"Sys::Syslog::BEGIN@3";
+	"Sys::Syslog::BEGIN@156";
+	"Sys::Syslog::BEGIN@543";
+	"Sys::Syslog::can_load";
+	"Sys::Syslog::LOG_DEBUG";
+	"Sys::Syslog::BEGIN@4";
+	"Sys::Syslog::syslog";
+	"Sys::Syslog::BEGIN@8";
+	"Sys::Syslog::BEGIN@78";
+	"Sys::Syslog::BEGIN@6";
+	"Sys::Syslog::CORE:match";
+	"Sys::Syslog::BEGIN@2";
+	"Sys::Syslog::BEGIN@10";
+	"Sys::Syslog::BEGIN@9";
+	"Sys::Syslog::BEGIN@5";
+	"Sys::Syslog::BEGIN@13";
+	"Sys::Syslog::BEGIN@514";
+	"Sys::Syslog::openlog";
+	"Sys::Syslog::BEGIN@150";
+}
+subgraph cluster_Kernel_System_Encode {
+	label="Kernel::System::Encode";
+	"Kernel::System::Encode::Convert";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::LOG_UPTO";
+"Kernel::System::Log::SysLog::Log" -> "Sys::Syslog::setlogsock";
+"Kernel::System::Log::new" -> "Kernel::System::Log::SysLog::BEGIN@19";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::LOG_DEBUG";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@4";
+"Kernel::System::Log::SysLog::Log" -> "Sys::Syslog::syslog";
+"Kernel::System::Log::new" -> "Kernel::System::Log::SysLog::BEGIN@17";
+"Kernel::System::Log::SysLog::Log" -> "Kernel::System::Encode::Convert";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@8";
+"Kernel::System::Log::SysLog::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Log::SysLog::Log" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@5";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Exporter::import";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@7";
+"Kernel::System::Log::Log" -> "Kernel::System::Log::SysLog::Log";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@78";
+"Kernel::System::Log::new" -> "Kernel::System::Log::SysLog::BEGIN@15";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@2";
+"Kernel::System::Log::SysLog::BEGIN@15" -> "warnings::import";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@10";
+"Kernel::System::Log::new" -> "Kernel::System::Log::SysLog::BEGIN@14";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@150";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::can_load";
+"Kernel::System::Log::SysLog::BEGIN@19" -> "vars::import";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::CORE:match";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@13";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@514";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@88";
+"Kernel::System::Log::new" -> "Kernel::System::Log::SysLog::new";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@3";
+"Kernel::System::Log::SysLog::Log" -> "Sys::Syslog::closelog";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@543";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@156";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "XSLoader::load";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@6";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "Sys::Syslog::BEGIN@9";
+"Kernel::System::Log::SysLog::BEGIN@14" -> "strict::import";
+"Kernel::System::Log::SysLog::Log" -> "Sys::Syslog::openlog";
+}

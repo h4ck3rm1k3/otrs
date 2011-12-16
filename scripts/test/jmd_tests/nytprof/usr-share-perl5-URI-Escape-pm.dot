@@ -1,0 +1,31 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_URI_Escape {
+	label="URI::Escape";
+	"URI::Escape::BEGIN@2";
+	"URI::Escape::BEGIN@143";
+	"URI::Escape::BEGIN@142";
+	"URI::Escape::CORE:qr";
+	"URI::Escape::BEGIN@151";
+}
+subgraph cluster_Kernel_Output_HTML_Layout {
+	label="Kernel::Output::HTML::Layout";
+	"Kernel::Output::HTML::Layout::BEGIN@22";
+}
+"Kernel::Output::HTML::Layout::BEGIN@22" -> "URI::Escape::CORE:qr";
+"Kernel::Output::HTML::Layout::BEGIN@22" -> "URI::Escape::BEGIN@143";
+"Kernel::Output::HTML::Layout::BEGIN@22" -> "URI::Escape::BEGIN@142";
+"Kernel::Output::HTML::Layout::BEGIN@22" -> "URI::Escape::BEGIN@151";
+"URI::Escape::BEGIN@143" -> "vars::import";
+"URI::Escape::BEGIN@142" -> "vars::import";
+"Kernel::Output::HTML::Layout::BEGIN@22" -> "URI::Escape::BEGIN@2";
+"URI::Escape::BEGIN@2" -> "strict::import";
+}

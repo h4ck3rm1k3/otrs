@@ -1,0 +1,289 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_HTMLUtils {
+	label="Kernel::System::HTMLUtils";
+	"Kernel::System::HTMLUtils::BEGIN@17";
+}
+subgraph cluster_Kernel_System_JSON {
+	label="Kernel::System::JSON";
+	"Kernel::System::JSON::BEGIN@19";
+}
+subgraph cluster_Storable {
+	label="Storable";
+	"Storable::BEGIN@24";
+}
+subgraph cluster_Kernel_System_Auth {
+	label="Kernel::System::Auth";
+	"Kernel::System::Auth::BEGIN@19";
+}
+subgraph cluster_Kernel_System_Log_SysLog {
+	label="Kernel::System::Log::SysLog";
+	"Kernel::System::Log::SysLog::BEGIN@19";
+}
+subgraph cluster_Mail_Address {
+	label="Mail::Address";
+	"Mail::Address::BEGIN@6";
+}
+subgraph cluster_base {
+	label="base";
+	"base::BEGIN@4";
+}
+subgraph cluster_Kernel_System_Cache {
+	label="Kernel::System::Cache";
+	"Kernel::System::Cache::BEGIN@17";
+}
+subgraph cluster_Kernel_System_CheckItem {
+	label="Kernel::System::CheckItem";
+	"Kernel::System::CheckItem::BEGIN@17";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::BEGIN@3";
+	"vars::BEGIN@8";
+	"vars::import";
+	"vars::CORE:match";
+	"vars::BEGIN@7";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_File_stat {
+	label="File::stat";
+	"File::stat::BEGIN@22";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::BEGIN@21";
+}
+subgraph cluster_URI_Escape {
+	label="URI::Escape";
+	"URI::Escape::BEGIN@143";
+	"URI::Escape::BEGIN@142";
+}
+subgraph cluster_Kernel_System_Cache_FileStorable {
+	label="Kernel::System::Cache::FileStorable";
+	"Kernel::System::Cache::FileStorable::BEGIN@20";
+}
+subgraph cluster_Kernel_System_Log {
+	label="Kernel::System::Log";
+	"Kernel::System::Log::BEGIN@19";
+}
+subgraph cluster_Sys_Syslog {
+	label="Sys::Syslog";
+	"Sys::Syslog::BEGIN@78";
+	"Sys::Syslog::BEGIN@88";
+}
+subgraph cluster_Kernel_System_Encode {
+	label="Kernel::System::Encode";
+	"Kernel::System::Encode::BEGIN@19";
+}
+subgraph cluster_Kernel_System_Web_Request {
+	label="Kernel::System::Web::Request";
+	"Kernel::System::Web::Request::BEGIN@19";
+}
+subgraph cluster_Kernel_Config {
+	label="Kernel::Config";
+	"Kernel::Config::BEGIN@114";
+}
+subgraph cluster_Kernel_System_Auth_DB {
+	label="Kernel::System::Auth::DB";
+	"Kernel::System::Auth::DB::BEGIN@22";
+}
+subgraph cluster_version {
+	label="version";
+	"version::BEGIN@7";
+}
+subgraph cluster_POSIX_SigRt {
+	label="POSIX::SigRt";
+	"POSIX::SigRt::BEGIN@66";
+}
+subgraph cluster_constant {
+	label="constant";
+	"constant::BEGIN@6";
+}
+subgraph cluster_Kernel_System_Time {
+	label="Kernel::System::Time";
+	"Kernel::System::Time::BEGIN@19";
+}
+subgraph cluster_Kernel_System_Group {
+	label="Kernel::System::Group";
+	"Kernel::System::Group::BEGIN@20";
+}
+subgraph cluster_MIME_Base64 {
+	label="MIME::Base64";
+	"MIME::Base64::BEGIN@4";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::BEGIN@31";
+}
+subgraph cluster_Kernel_Output_HTML_Layout {
+	label="Kernel::Output::HTML::Layout";
+	"Kernel::Output::HTML::Layout::BEGIN@24";
+}
+subgraph cluster_CGI_Util {
+	label="CGI::Util";
+	"CGI::Util::BEGIN@4";
+}
+subgraph cluster_File_Spec_Unix {
+	label="File::Spec::Unix";
+	"File::Spec::Unix::BEGIN@4";
+}
+subgraph cluster_List_Util {
+	label="List::Util";
+	"List::Util::BEGIN@12";
+}
+subgraph cluster_Kernel_System_Valid {
+	label="Kernel::System::Valid";
+	"Kernel::System::Valid::BEGIN@19";
+}
+subgraph cluster_Kernel_System_AuthSession {
+	label="Kernel::System::AuthSession";
+	"Kernel::System::AuthSession::BEGIN@17";
+}
+subgraph cluster_Digest_SHA {
+	label="Digest::SHA";
+	"Digest::SHA::BEGIN@6";
+}
+subgraph cluster_Time_Local {
+	label="Time::Local";
+	"Time::Local::BEGIN@9";
+}
+subgraph cluster_Kernel_System_User_Preferences_DB {
+	label="Kernel::System::User::Preferences::DB";
+	"Kernel::System::User::Preferences::DB::BEGIN@17";
+}
+subgraph cluster_DBD_Pg {
+	label="DBD::Pg";
+	"DBD::Pg::BEGIN@25";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@17";
+}
+subgraph cluster_Digest_base {
+	label="Digest::base";
+	"Digest::base::BEGIN@4";
+}
+subgraph cluster_main {
+	label="main";
+	"main::BEGIN@33";
+}
+subgraph cluster_Kernel_Language {
+	label="Kernel::Language";
+	"Kernel::Language::BEGIN@19";
+}
+subgraph cluster_Kernel_System_DB_postgresql {
+	label="Kernel::System::DB::postgresql";
+	"Kernel::System::DB::postgresql::BEGIN@17";
+}
+subgraph cluster_Scalar_Util {
+	label="Scalar::Util";
+	"Scalar::Util::BEGIN@10";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::BEGIN@24";
+}
+subgraph cluster_version_vxs {
+	label="version::vxs";
+	"version::vxs::BEGIN@7";
+}
+subgraph cluster_File_Spec {
+	label="File::Spec";
+	"File::Spec::BEGIN@4";
+}
+subgraph cluster_Digest_MD5 {
+	label="Digest::MD5";
+	"Digest::MD5::BEGIN@4";
+}
+subgraph cluster_Kernel_Language_en {
+	label="Kernel::Language::en";
+	"Kernel::Language::en::BEGIN@17";
+}
+subgraph cluster_Kernel_System_CacheInternal {
+	label="Kernel::System::CacheInternal";
+	"Kernel::System::CacheInternal::BEGIN@18";
+}
+subgraph cluster_Kernel_System_AuthSession_DB {
+	label="Kernel::System::AuthSession::DB";
+	"Kernel::System::AuthSession::DB::BEGIN@19";
+}
+subgraph cluster_Kernel_System_User {
+	label="Kernel::System::User";
+	"Kernel::System::User::BEGIN@24";
+}
+subgraph cluster_warnings_register {
+	label="warnings::register";
+	"warnings::register::import";
+}
+subgraph cluster_IPC_SysV {
+	label="IPC::SysV";
+	"IPC::SysV::BEGIN@20";
+}
+subgraph cluster_Cwd {
+	label="Cwd";
+	"Cwd::BEGIN@172";
+}
+"Cwd::BEGIN@172" -> "vars::BEGIN@8";
+"Kernel::System::User::BEGIN@24" -> "vars::import";
+"POSIX::SigRt::BEGIN@66" -> "vars::import";
+"Digest::base::BEGIN@4" -> "vars::import";
+"Kernel::System::Group::BEGIN@20" -> "vars::import";
+"Kernel::System::Auth::BEGIN@19" -> "vars::import";
+"Kernel::System::Cache::FileStorable::BEGIN@20" -> "vars::import";
+"Kernel::System::AuthSession::DB::BEGIN@19" -> "vars::import";
+"Kernel::System::Log::SysLog::BEGIN@19" -> "vars::import";
+"Kernel::System::Auth::DB::BEGIN@22" -> "vars::import";
+"Mail::Address::BEGIN@6" -> "vars::import";
+"Kernel::System::DB::BEGIN@21" -> "vars::import";
+"Kernel::Config::BEGIN@114" -> "vars::import";
+"Kernel::Language::en::BEGIN@17" -> "vars::import";
+"Kernel::Output::HTML::Layout::BEGIN@24" -> "vars::import";
+"Storable::BEGIN@24" -> "vars::import";
+"Kernel::System::User::Preferences::DB::BEGIN@17" -> "vars::import";
+"MIME::Base64::BEGIN@4" -> "vars::import";
+"DBD::Pg::BEGIN@25" -> "vars::import";
+"base::BEGIN@4" -> "vars::import";
+"URI::Escape::BEGIN@143" -> "vars::import";
+"URI::Escape::BEGIN@142" -> "vars::import";
+"Kernel::System::Main::BEGIN@24" -> "vars::import";
+"List::Util::BEGIN@12" -> "vars::import";
+"IPC::SysV::BEGIN@20" -> "vars::import";
+"Time::Local::BEGIN@9" -> "vars::import";
+"constant::BEGIN@6" -> "vars::import";
+"Kernel::System::Time::BEGIN@19" -> "vars::import";
+"version::BEGIN@7" -> "vars::import";
+"Kernel::System::JSON::BEGIN@19" -> "vars::import";
+"Digest::SHA::BEGIN@6" -> "vars::import";
+"Kernel::System::HTMLUtils::BEGIN@17" -> "vars::import";
+"Sys::Syslog::BEGIN@88" -> "vars::import";
+"Cwd::BEGIN@172" -> "vars::import";
+"CGI::Util::BEGIN@4" -> "vars::import";
+"Kernel::System::Cache::BEGIN@17" -> "vars::import";
+"Kernel::System::CacheInternal::BEGIN@18" -> "vars::import";
+"Kernel::Config::Defaults::BEGIN@31" -> "vars::import";
+"Kernel::System::CheckItem::BEGIN@17" -> "vars::import";
+"Scalar::Util::BEGIN@10" -> "vars::import";
+"Digest::MD5::BEGIN@4" -> "vars::import";
+"Kernel::System::Encode::BEGIN@19" -> "vars::import";
+"File::stat::BEGIN@22" -> "vars::import";
+"Sys::Syslog::BEGIN@78" -> "vars::import";
+"main::BEGIN@33" -> "vars::import";
+"version::vxs::BEGIN@7" -> "vars::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@17" -> "vars::import";
+"Kernel::System::Web::Request::BEGIN@19" -> "vars::import";
+"Kernel::System::Log::BEGIN@19" -> "vars::import";
+"File::Spec::BEGIN@4" -> "vars::import";
+"Kernel::Language::BEGIN@19" -> "vars::import";
+"File::Spec::Unix::BEGIN@4" -> "vars::import";
+"Kernel::System::Valid::BEGIN@19" -> "vars::import";
+"Kernel::System::AuthSession::BEGIN@17" -> "vars::import";
+"Kernel::System::DB::postgresql::BEGIN@17" -> "vars::import";
+"vars::import" -> "vars::CORE:match";
+"Cwd::BEGIN@172" -> "vars::BEGIN@3";
+"vars::BEGIN@8" -> "strict::import";
+"Cwd::BEGIN@172" -> "vars::BEGIN@7";
+"vars::BEGIN@7" -> "warnings::register::import";
+}

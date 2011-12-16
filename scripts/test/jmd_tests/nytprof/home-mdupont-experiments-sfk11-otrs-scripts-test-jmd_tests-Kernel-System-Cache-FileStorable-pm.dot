@@ -1,0 +1,66 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Storable {
+	label="Storable";
+	"Storable::BEGIN@2";
+	"Storable::BEGIN@24";
+	"Storable::BEGIN@22";
+	"Storable::BEGIN@44";
+	"Storable::BEGIN@23";
+}
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::bootstrap";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_Kernel_System_Cache {
+	label="Kernel::System::Cache";
+	"Kernel::System::Cache::new";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_Cache_FileStorable {
+	label="Kernel::System::Cache::FileStorable";
+	"Kernel::System::Cache::FileStorable::BEGIN@15";
+	"Kernel::System::Cache::FileStorable::BEGIN@18";
+	"Kernel::System::Cache::FileStorable::CORE:ftis";
+	"Kernel::System::Cache::FileStorable::new";
+	"Kernel::System::Cache::FileStorable::BEGIN@20";
+	"Kernel::System::Cache::FileStorable::BEGIN@14";
+	"Kernel::System::Cache::FileStorable::CORE:umask";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::Require";
+}
+"Kernel::System::Main::Require" -> "Kernel::System::Cache::FileStorable::BEGIN@15";
+"Kernel::System::Main::Require" -> "Kernel::System::Cache::FileStorable::BEGIN@20";
+"Kernel::System::Cache::FileStorable::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Cache::FileStorable::BEGIN@18" -> "Storable::BEGIN@24";
+"Kernel::System::Cache::FileStorable::BEGIN@18" -> "Storable::BEGIN@23";
+"Kernel::System::Cache::FileStorable::new" -> "Kernel::System::Cache::FileStorable::CORE:ftis";
+"Kernel::System::Cache::FileStorable::BEGIN@18" -> "Storable::BEGIN@22";
+"Kernel::System::Cache::FileStorable::BEGIN@18" -> "DynaLoader::bootstrap";
+"Kernel::System::Cache::FileStorable::BEGIN@15" -> "warnings::import";
+"Kernel::System::Main::Require" -> "Kernel::System::Cache::FileStorable::BEGIN@14";
+"Kernel::System::Cache::FileStorable::BEGIN@18" -> "Storable::BEGIN@2";
+"Kernel::System::Cache::new" -> "Kernel::System::Cache::FileStorable::new";
+"Kernel::System::Cache::FileStorable::BEGIN@18" -> "Storable::BEGIN@44";
+"Kernel::System::Cache::FileStorable::BEGIN@20" -> "vars::import";
+"Kernel::System::Main::Require" -> "Kernel::System::Cache::FileStorable::BEGIN@18";
+"Kernel::System::Main::Require" -> "Kernel::System::Cache::FileStorable::CORE:umask";
+"Kernel::System::Cache::FileStorable::BEGIN@14" -> "strict::import";
+}

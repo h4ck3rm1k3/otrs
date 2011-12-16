@@ -1,0 +1,26 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::BEGIN@17";
+}
+subgraph cluster_Scalar_Util {
+	label="Scalar::Util";
+	"Scalar::Util::BEGIN@9";
+	"Scalar::Util::BEGIN@10";
+	"Scalar::Util::weaken";
+}
+"Kernel::System::DB::BEGIN@17" -> "Scalar::Util::weaken";
+"Kernel::System::DB::BEGIN@17" -> "Scalar::Util::BEGIN@10";
+"Scalar::Util::BEGIN@10" -> "vars::import";
+"Kernel::System::DB::BEGIN@17" -> "Scalar::Util::BEGIN@9";
+"Scalar::Util::BEGIN@9" -> "strict::import";
+}

@@ -1,0 +1,48 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_Group {
+	label="Kernel::System::Group";
+	"Kernel::System::Group::new";
+	"Kernel::System::Group::BEGIN@18";
+	"Kernel::System::Group::BEGIN@17";
+	"Kernel::System::Group::BEGIN@14";
+	"Kernel::System::Group::BEGIN@20";
+	"Kernel::System::Group::BEGIN@15";
+}
+subgraph cluster_Kernel_System_Valid {
+	label="Kernel::System::Valid";
+	"Kernel::System::Valid::new";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::Run";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@31";
+}
+subgraph cluster_Kernel_System_CacheInternal {
+	label="Kernel::System::CacheInternal";
+	"Kernel::System::CacheInternal::new";
+}
+"Kernel::System::Group::new" -> "Kernel::System::CacheInternal::new";
+"Kernel::System::Group::new" -> "Kernel::System::Valid::new";
+"Kernel::System::Group::BEGIN@15" -> "warnings::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@31" -> "Kernel::System::Group::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@31" -> "Kernel::System::Group::BEGIN@20";
+"Kernel::System::Group::BEGIN@20" -> "vars::import";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Group::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@31" -> "Kernel::System::Group::BEGIN@18";
+"Kernel::System::Web::InterfaceAgent::BEGIN@31" -> "Kernel::System::Group::BEGIN@14";
+"Kernel::System::Group::BEGIN@14" -> "strict::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@31" -> "Kernel::System::Group::BEGIN@15";
+}

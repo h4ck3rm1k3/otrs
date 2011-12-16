@@ -1,0 +1,3 @@
+
+all :
+	perl -I ../../../ -I test_config t/01_reload.t

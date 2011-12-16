@@ -1,0 +1,49 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_File_Glob {
+	label="File::Glob";
+	"File::Glob::CORE:subst";
+	"File::Glob::GLOB_ALPHASORT";
+	"File::Glob::GLOB_CSH";
+	"File::Glob::BEGIN@7";
+	"File::Glob::GLOB_TILDE";
+	"File::Glob::constant";
+	"File::Glob::doglob";
+	"File::Glob::GLOB_BRACE";
+	"File::Glob::GLOB_QUOTE";
+	"File::Glob::GLOB_NOMAGIC";
+	"File::Glob::AUTOLOAD";
+	"File::Glob::BEGIN@3";
+	"File::Glob::csh_glob";
+	"File::Glob::CORE:match";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::BEGIN@1975";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::DirectoryRead";
+}
+"File::Glob::GLOB_CSH" -> "File::Glob::GLOB_TILDE";
+"Kernel::Config::Defaults::BEGIN@1975" -> "File::Glob::CORE:match";
+"File::Glob::csh_glob" -> "File::Glob::CORE:match";
+"Kernel::Config::Defaults::BEGIN@1975" -> "File::Glob::GLOB_CSH";
+"File::Glob::csh_glob" -> "File::Glob::doglob";
+"File::Glob::GLOB_CSH" -> "File::Glob::GLOB_BRACE";
+"Kernel::Config::Defaults::BEGIN@1975" -> "File::Glob::BEGIN@7";
+"File::Glob::GLOB_CSH" -> "File::Glob::GLOB_QUOTE";
+"File::Glob::GLOB_CSH" -> "File::Glob::GLOB_NOMAGIC";
+"File::Glob::GLOB_CSH" -> "File::Glob::AUTOLOAD";
+"File::Glob::AUTOLOAD" -> "File::Glob::constant";
+"Kernel::Config::Defaults::BEGIN@1975" -> "File::Glob::BEGIN@3";
+"Kernel::System::Main::DirectoryRead" -> "File::Glob::csh_glob";
+"File::Glob::AUTOLOAD" -> "File::Glob::CORE:subst";
+"File::Glob::csh_glob" -> "File::Glob::CORE:subst";
+"File::Glob::GLOB_CSH" -> "File::Glob::GLOB_ALPHASORT";
+"File::Glob::BEGIN@3" -> "strict::import";
+}

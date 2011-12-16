@@ -1,0 +1,61 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_DBI {
+	label="DBI";
+	"DBI::install_driver";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_version {
+	label="version";
+	"version::BEGIN@7";
+	"version::BEGIN@4";
+	"version::import";
+	"version::BEGIN@153";
+	"version::(bool";
+	"version::BEGIN@127";
+	"version::(cmp";
+	"version::CORE:regcomp";
+	"version::__ANON__[version.pm:185]";
+	"version::BEGIN@142";
+	"version::CORE:qr";
+	"version::BEGIN@5";
+}
+subgraph cluster_DBD_Pg {
+	label="DBD::Pg";
+	"DBD::Pg::BEGIN@20";
+}
+subgraph cluster_version_vxs {
+	label="version::vxs";
+	"version::vxs::qv";
+}
+subgraph cluster_lib {
+	label="lib";
+	"lib::BEGIN@6";
+}
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@127";
+"version::__ANON__[version.pm:185]" -> "version::vxs::qv";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@142";
+"DBI::install_driver" -> "version::__ANON__[version.pm:185]";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@5";
+"version::BEGIN@127" -> "strict::unimport";
+"version::BEGIN@142" -> "strict::unimport";
+"version::BEGIN@153" -> "strict::unimport";
+"lib::BEGIN@6" -> "version::(bool";
+"DBD::Pg::BEGIN@20" -> "version::CORE:regcomp";
+"DBD::Pg::BEGIN@20" -> "version::CORE:qr";
+"version::BEGIN@7" -> "vars::import";
+"lib::BEGIN@6" -> "version::(cmp";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@7";
+"DBD::Pg::BEGIN@20" -> "version::import";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@4";
+"DBD::Pg::BEGIN@20" -> "version::BEGIN@153";
+"version::BEGIN@5" -> "strict::import";
+}

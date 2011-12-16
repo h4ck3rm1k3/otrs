@@ -1,0 +1,41 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Exporter_Heavy {
+	label="Exporter::Heavy";
+	"Exporter::Heavy::heavy_require_version";
+}
+subgraph cluster_version {
+	label="version";
+	"version::BEGIN@1";
+	"version::__ANON__[version.pm:185]";
+}
+subgraph cluster_DBD_Pg {
+	label="DBD::Pg";
+	"DBD::Pg::driver";
+}
+subgraph cluster_version_vxs {
+	label="version::vxs";
+	"version::vxs::qv";
+	"version::vxs::stringify";
+	"version::vxs::BEGIN@7";
+	"version::vxs::_VERSION";
+	"version::vxs::BEGIN@4";
+	"version::vxs::BEGIN@5";
+}
+"version::__ANON__[version.pm:185]" -> "version::vxs::qv";
+"version::BEGIN@1" -> "version::vxs::BEGIN@4";
+"Exporter::Heavy::heavy_require_version" -> "version::vxs::_VERSION";
+"DBD::Pg::driver" -> "version::vxs::stringify";
+"version::vxs::BEGIN@7" -> "vars::import";
+"version::BEGIN@1" -> "version::vxs::BEGIN@5";
+"version::BEGIN@1" -> "version::vxs::BEGIN@7";
+"version::vxs::BEGIN@5" -> "strict::import";
+}

@@ -1,0 +1,240 @@
+# --
+# AdminGenericInterfaceTransportHTTPSOAP.dtl - provides HTML form for AdminLog
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# --
+# $Id: AdminGenericInterfaceTransportHTTPSOAP.dtl,v 1.14 2011/07/20 15:19:46 cr Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst AdminGenericInterfaceTransportHTTPSOAP">
+    <h1>$Text{"GenericInterface Transport HTTP::SOAP for Web Service %s", "$Data{"WebserviceName"}"}</h1>
+    <div class="GenericInterfaceWebserviceConfigPath">
+        <h3>
+<!-- dtl:block:WebservicePathElement -->
+            $Config{"GenericInterface::Webservice::Path::Separator"}
+            <a href="$Env{"Baselink"}$Data{"Link"};Nav=$LQData{"Nav"}">
+                $QData{"Name"}
+            </a>
+<!-- dtl:block:WebservicePathElement -->
+<!-- dtl:block:WebservicePathElementNoLink -->
+            $Config{"GenericInterface::Webservice::Path::Separator"}
+            $QData{"Name"}
+<!-- dtl:block:WebservicePathElementNoLink -->
+
+        </h3>
+    </div>
+
+    <div class="SidebarColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Actions"}</h2>
+            </div>
+            <div class="Content">
+                <ul class="ActionList">
+                    <li>
+                        <a href="$Env{"Baselink"}Action=AdminGenericInterfaceWebservice;Subaction=Change;WebserviceID=$LQData{"WebserviceID"}" class="CallForAction"><span>$Text{"Go back to web service"}</span></a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="ContentColumn">
+
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"Network transport"}</h2>
+            </div>
+            <div class="Content">
+                <h3>$Text{"Properties"}</h3>
+                <form action="$Env{"CGIHandle"}" method="post" class="Validate PreventMultipleSubmits">
+                    <input type="hidden" name="Action" value="$Env{"Action"}"/>
+                    <input type="hidden" name="Subaction" value="$QData{"Action"}Action"/>
+                    <input type="hidden" name="WebserviceID" value="$QData{"WebserviceID"}" id="WebserviceID"/>
+                    <input type="hidden" name="CommunicationType" value="$QData{"CommunicationType"}" id="CommunicationType"/>
+                    <div class="LayoutGrid ColumnsWithSpacing">
+                        <fieldset class="TableLike">
+
+                            <label>$Text{"Type"}:</label>
+                            <div class="Field">$QData{"Type"}</div>
+                            <div class="Clear"></div>
+
+<!-- dtl:block:Endpoint -->
+                            <label class="Mandatory" for="Endpoint">
+                                <span class="Marker">*</span> $Text{"Endpoint"}:
+                            </label>
+                            <div class="Field">
+                                <input id="Endpoint" class="W50pc Validate_Required $QData{"EndpointServerError"}" type="text" maxlength="250" value="$QData{"Endpoint"}" name="Endpoint"/>
+                                <div id="EndpointError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
+                                <div id="EndpointServerError" class="TooltipErrorMessage"><p>$Text{"$Data{"EndpointServerErrorMessage"}"}</p></div>
+                                <p class="FieldExplanation">
+                                    $Text{"URI to indicate a specific location for accessing a service."}
+                                    <br/>
+                                    $Text{"e.g. http://local.otrs.com:8000/Webservice/Example"}
+                                </p>
+                            </div>
+                            <div class="Clear"></div>
+<!-- dtl:block:Endpoint -->
+
+                            <label class="Mandatory" for="NameSpace"><span class="Marker">*</span>$Text{"Namespace"}:</label>
+                            <div class="Field">
+                                <input id="NameSpace" class="W50pc $QData{"NameSpaceServerError"} Validate_Required" type="text" maxlength="250" value="$QData{"NameSpace"}" name="NameSpace"/>
+                                <div id="NameSpaceError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
+                                <div id="NameSpaceServerError" class="TooltipErrorMessage"><p>$Text{"$Data{"NameSpaceServerErrorMessage"}"}</p></div>
+                                <p class="FieldExplanation">
+                                    $Text{"URI to give SOAP methods a context, reducing ambiguities."}
+                                    <br/>
+                                    $Text{"e.g urn:otrs-com:soap:functions or http://www.otrs.com/GenericInterface/actions"}
+                                </p>
+                            </div>
+                            <div class="Clear"></div>
+
+<!-- dtl:block:TransportProvider -->
+                            <label class="Mandatory" for="MaxLength"><span class="Marker">*</span>$Text{"Maximum message length"}:</label>
+                            <div class="Field">
+                                <input id="MaxLength" class="W25pc Validate_Required Validate_Number $QData{"MaxLengthServerError"}" type="text" maxlength="10" value="$QData{"MaxLength"}" name="MaxLength"/>
+                                <div id="MaxLengthError" class="TooltipErrorMessage"><p>$Text{"This field should be an integer number."}</p></div>
+                                <div id="MaxLengthServerError" class="TooltipErrorMessage"><p>$Text{"$Data{"MaxLengthServerErrorMessage"}"}</p></div>
+                                <p class="FieldExplanation">
+                                    $Text{"Here you can specify the maximum size (in bytes) of SOAP messages that OTRS will process."}
+                                </p>
+                            </div>
+                            <div class="Clear"></div>
+<!-- dtl:block:TransportProvider -->
+
+<!-- dtl:block:TransportRequester -->
+                            <label for="Encoding">$Text{"Encoding"}:</label>
+                            <div class="Field">
+                                <input id="Encoding" class="W50pc" type="text" maxlength="250" value="$QData{"Encoding"}" name="Encoding"/>
+                                <p class="FieldExplanation">
+                                    $Text{"The character encoding for the SOAP message contents."}
+                                    <br/>
+                                    $Text{"e.g utf-8, latin1, iso-8859-1, cp1250, Etc."}
+                                </p>
+                            </div>
+                            <div class="Clear"></div>
+
+                            <label for="SOAPAction">$Text{"SOAPAction"}:</label>
+                            <div class="Field">
+                                $Data{"SOAPActionStrg"}
+                                <p class="FieldExplanation">
+                                    $Text{"Set to "Yes" to send a filled SOAPAction header."}
+                                    <br/>
+                                    $Text{"Set to "No" to send an empty SOAPAction header."}
+                                </p>
+                            </div>
+<!-- dtl:js_on_document_complete -->
+<script type="text/javascript">//<![CDATA[
+$('#SOAPAction').bind('change', function(){
+    if ( $(this).val() === 'Yes') {
+        $('.SOAPActionField').removeClass('Hidden');
+    }
+    else {
+        $('.SOAPActionField').addClass('Hidden');
+    }
+});
+//]]></script>
+<!-- dtl:js_on_document_complete -->
+                            <div class="Clear"></div>
+
+                            <div class="SOAPActionField $QData{"SOAPActionHidden"}">
+                                <fieldset class="TableLike">
+
+                                    <label for="SOAPActionSeparator">$Text{"SOAPAction separator"}:</label>
+                                    <div class="Field ">
+                                        $Data{"SOAPActionSeparatorStrg"}
+                                        <p class="FieldExplanation">
+                                            $Text{"Character to use as separator between name space and SOAP method."}
+                                            <br/>
+                                            $Text{"Usually .Net web services uses a "/" as separator."}
+                                        </p>
+                                    </div>
+                                    <div class="Clear"></div>
+
+                                </fieldset>
+                            </div>
+
+                            <label  for="Authentication">$Text{"Authentication"}:</label>
+                            <div class="Field">
+                                $Data{"AuthenticationStrg"}
+                                <p class="FieldExplanation">
+                                    $Text{"The authentication mechanism to access the remote system."}
+                                    <br/>
+                                    $Text{"A "-" value means no authentication."}
+                                </p>
+                            </div>
+<!-- dtl:js_on_document_complete -->
+<script type="text/javascript">//<![CDATA[
+$('#Authentication').bind('change', function(){
+    if ( $(this).val() === 'BasicAuth') {
+        $('.AuthField').removeClass('Hidden');
+        $('.AuthField').find('#UserName').each(function(){
+            $(this).addClass('Validate_Required');
+        });
+    }
+    else {
+        $('.AuthField').addClass('Hidden');
+        $('.AuthField').find('#User').each(function(){
+            $(this).removeClass('Validate_Required');
+        });
+    }
+});
+//]]></script>
+<!-- dtl:js_on_document_complete -->
+                            <div class="Clear"></div>
+
+                            <div class="AuthField $QData{"BasicAuthHidden"}">
+                                <fieldset class="TableLike">
+
+
+                                    <label class="Mandatory" for="User"><span class="Marker">*</span> $Text{"User"}:</label>
+                                    <div class="Field">
+                                        <input id="User" class="W50pc $QData{"UserValidateRequired"} $QData{"UserServerError"}" type="text" maxlength="250" value="$QData{"User"}" name="User"/>
+                                        <div id="UserError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
+                                        <div id="UserServerError" class="TooltipErrorMessage"><p>$Text{"This field is required."}</p></div>
+                                        <p class="FieldExplanation">
+                                            $Text{"The user name to be used to access the remote system."}
+                                        </p>
+                                    </div>
+                                    <div class="Clear"></div>
+
+                                    <label for="Password">$Text{"Password"}:</label>
+                                    <div class="Field">
+                                        <input id="Password" class="W50pc " type="password" maxlength="250" value="$QData{"Password"}" name="Password"/>
+                                        <p class="FieldExplanation">
+                                            $Text{"The password for the privileged user."}
+                                        </p>
+                                    </div>
+                                    <div class="Clear"></div>
+                                </fieldset>
+                            </div>
+<!-- dtl:block:TransportRequester -->
+
+                            <div class="Field SpacingTop">
+                                <button type="submit" class="Primary" value="$Text{"Save and continue"}">$Text{"Save"}</button>
+<!-- dtl:block:SaveAndFinishButton -->
+                                <button type="submit" id="SaveAndFinishButton" value="$Text{"Save and finish"}">$Text{"Save and finish"}</button>
+                                <input type="hidden" name="ReturnToWebservice" id="ReturnToWebservice" value="" />
+<!-- dtl:js_on_document_complete -->
+<script type="text/javascript">//<![CDATA[
+$('#SaveAndFinishButton').bind('click', function(){
+    $('#ReturnToWebservice').val(1);
+});
+//]]></script>
+<!-- dtl:js_on_document_complete -->
+<!-- dtl:block:SaveAndFinishButton -->
+                                or
+                                <a href="$Env{"Baselink"}Action=AdminGenericInterfaceWebservice;Subaction=Change;WebserviceID=$QData{"WebserviceID"}">$Text{"Cancel"}</a>
+                            </div>
+                            <div class="Clear"></div>
+                        </fieldset>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+    </div>
+    <div class="Clear"></div>
+</div>

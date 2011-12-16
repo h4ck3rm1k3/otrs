@@ -1,0 +1,119 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_Kernel_System_CheckItem {
+	label="Kernel::System::CheckItem";
+	"Kernel::System::CheckItem::new";
+	"Kernel::System::CheckItem::BEGIN@14";
+	"Kernel::System::CheckItem::BEGIN@17";
+	"Kernel::System::CheckItem::BEGIN@15";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_Encode {
+	label="Kernel::System::Encode";
+	"Kernel::System::Encode::EncodeInput";
+}
+subgraph cluster_Kernel_System_Web_Request {
+	label="Kernel::System::Web::Request";
+	"Kernel::System::Web::Request::BEGIN@14";
+	"Kernel::System::Web::Request::BEGIN@95";
+	"Kernel::System::Web::Request::BEGIN@17";
+	"Kernel::System::Web::Request::new";
+	"Kernel::System::Web::Request::BEGIN@15";
+	"Kernel::System::Web::Request::GetCookie";
+	"Kernel::System::Web::Request::BEGIN@19";
+	"Kernel::System::Web::Request::BEGIN@92";
+	"Kernel::System::Web::Request::GetParam";
+	"Kernel::System::Web::Request::Error";
+}
+subgraph cluster_Fh {
+	label="Fh";
+	"Fh::BEGIN@3739";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_CGI {
+	label="CGI";
+	"CGI::initialize_globals";
+	"CGI::BEGIN@32";
+	"CGI::param";
+	"CGI::import";
+	"CGI::CORE:match";
+	"CGI::BEGIN@27";
+	"CGI::AUTOLOAD";
+	"CGI::BEGIN@3";
+	"CGI::new";
+	"CGI::cgi_error";
+	"CGI::cookie";
+}
+subgraph cluster_CGI_Carp {
+	label="CGI::Carp";
+	"CGI::Carp::BEGIN@311";
+	"CGI::Carp::BEGIN@313";
+	"CGI::Carp::BEGIN@318";
+	"CGI::Carp::import";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::Run";
+	"Kernel::System::Web::InterfaceAgent::new";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@26";
+}
+subgraph cluster_CGITempFile {
+	label="CGITempFile";
+	"CGITempFile::find_tempdir";
+}
+subgraph cluster_MultipartBuffer {
+	label="MultipartBuffer";
+	"MultipartBuffer::BEGIN@3812";
+}
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Web::Request::new";
+"Kernel::System::Web::Request::BEGIN@92" -> "CGITempFile::find_tempdir";
+"Kernel::System::Web::Request::BEGIN@92" -> "CGI::BEGIN@27";
+"Kernel::System::Web::Request::GetParam" -> "Kernel::System::Encode::EncodeInput";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@95";
+"Kernel::System::Web::Request::BEGIN@92" -> "CGI::BEGIN@32";
+"Kernel::System::Web::Request::BEGIN@92" -> "CGI::import";
+"Kernel::System::Web::Request::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Web::Request::BEGIN@92" -> "MultipartBuffer::BEGIN@3812";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@92";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Web::Request::GetParam";
+"Kernel::System::Web::Request::BEGIN@95" -> "CGI::Carp::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@14";
+"Kernel::System::Web::Request::BEGIN@92" -> "CGI::BEGIN@3";
+"Kernel::System::Web::Request::BEGIN@95" -> "CGI::Carp::BEGIN@311";
+"Kernel::System::Web::Request::BEGIN@17" -> "Kernel::System::CheckItem::BEGIN@17";
+"Kernel::System::Web::Request::GetParam" -> "CGI::param";
+"Kernel::System::Web::Request::GetCookie" -> "CGI::AUTOLOAD";
+"Kernel::System::Web::Request::BEGIN@15" -> "warnings::import";
+"Kernel::System::Web::Request::Error" -> "CGI::cgi_error";
+"Kernel::System::Web::Request::BEGIN@92" -> "Fh::BEGIN@3739";
+"Kernel::System::Web::Request::BEGIN@17" -> "Kernel::System::CheckItem::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@15";
+"Kernel::System::Web::Request::new" -> "CGI::new";
+"Kernel::System::Web::Request::GetCookie" -> "CGI::cookie";
+"Kernel::System::Web::Request::BEGIN@19" -> "vars::import";
+"Kernel::System::Web::Request::BEGIN@92" -> "CGI::CORE:match";
+"Kernel::System::Web::Request::BEGIN@95" -> "CGI::Carp::BEGIN@313";
+"Kernel::System::Web::Request::BEGIN@17" -> "Kernel::System::CheckItem::BEGIN@15";
+"Kernel::System::Web::Request::BEGIN@92" -> "CGI::initialize_globals";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Web::Request::GetCookie";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@17";
+"Kernel::System::Web::Request::new" -> "Kernel::System::CheckItem::new";
+"Kernel::System::Web::Request::BEGIN@95" -> "CGI::Carp::BEGIN@318";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@19";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Web::Request::Error";
+"Kernel::System::Web::Request::BEGIN@14" -> "strict::import";
+}

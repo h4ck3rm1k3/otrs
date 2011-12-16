@@ -1,0 +1,11 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_Output_HTML_Layout {
+	label="Kernel::Output::HTML::Layout";
+	"Kernel::Output::HTML::Layout::Login";
+	"Kernel::Output::HTML::Layout::LoaderCreateAgentCSSCalls";
+	"Kernel::Output::HTML::Layout::LoaderCreateAgentJSCalls";
+}
+"Kernel::Output::HTML::Layout::Login" -> "Kernel::Output::HTML::Layout::LoaderCreateAgentJSCalls";
+"Kernel::Output::HTML::Layout::Login" -> "Kernel::Output::HTML::Layout::LoaderCreateAgentCSSCalls";
+}

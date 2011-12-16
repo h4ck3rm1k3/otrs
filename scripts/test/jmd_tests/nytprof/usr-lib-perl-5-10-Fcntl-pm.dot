@@ -1,0 +1,32 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_XSLoader {
+	label="XSLoader";
+	"XSLoader::load";
+}
+subgraph cluster_Digest_SHA {
+	label="Digest::SHA";
+	"Digest::SHA::BEGIN@7";
+}
+subgraph cluster_Fcntl {
+	label="Fcntl";
+	"Fcntl::BEGIN@184";
+	"Fcntl::BEGIN@159";
+	"Fcntl::BEGIN@9";
+	"Fcntl::BEGIN@3";
+	"Fcntl::BEGIN@7";
+}
+"Digest::SHA::BEGIN@7" -> "Fcntl::BEGIN@3";
+"Fcntl::BEGIN@184" -> "strict::unimport";
+"Digest::SHA::BEGIN@7" -> "Fcntl::BEGIN@159";
+"Digest::SHA::BEGIN@7" -> "Fcntl::BEGIN@7";
+"Fcntl::BEGIN@159" -> "XSLoader::load";
+"Digest::SHA::BEGIN@7" -> "Fcntl::BEGIN@184";
+"Digest::SHA::BEGIN@7" -> "Fcntl::BEGIN@9";
+"Fcntl::BEGIN@3" -> "strict::import";
+}

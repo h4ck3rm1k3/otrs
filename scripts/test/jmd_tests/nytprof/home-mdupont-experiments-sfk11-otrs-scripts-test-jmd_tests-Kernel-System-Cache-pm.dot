@@ -1,0 +1,49 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_Kernel_System_Cache {
+	label="Kernel::System::Cache";
+	"Kernel::System::Cache::BEGIN@15";
+	"Kernel::System::Cache::BEGIN@17";
+	"Kernel::System::Cache::new";
+	"Kernel::System::Cache::BEGIN@14";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_Cache_FileStorable {
+	label="Kernel::System::Cache::FileStorable";
+	"Kernel::System::Cache::FileStorable::new";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::Require";
+}
+subgraph cluster_Kernel_System_CacheInternal {
+	label="Kernel::System::CacheInternal";
+	"Kernel::System::CacheInternal::BEGIN@16";
+	"Kernel::System::CacheInternal::new";
+}
+"Kernel::System::Cache::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::CacheInternal::new" -> "Kernel::System::Cache::new";
+"Kernel::System::Cache::BEGIN@15" -> "warnings::import";
+"Kernel::System::Cache::new" -> "Kernel::System::Cache::FileStorable::new";
+"Kernel::System::Cache::BEGIN@17" -> "vars::import";
+"Kernel::System::CacheInternal::BEGIN@16" -> "Kernel::System::Cache::BEGIN@15";
+"Kernel::System::CacheInternal::BEGIN@16" -> "Kernel::System::Cache::BEGIN@14";
+"Kernel::System::CacheInternal::BEGIN@16" -> "Kernel::System::Cache::BEGIN@17";
+"Kernel::System::Cache::new" -> "Kernel::System::Main::Require";
+"Kernel::System::Cache::BEGIN@14" -> "strict::import";
+}

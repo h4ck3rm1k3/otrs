@@ -1,0 +1,74 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_Encode {
+	label="Kernel::System::Encode";
+	"Kernel::System::Encode::EncodeInternalUsed";
+}
+subgraph cluster_Kernel_System_Time {
+	label="Kernel::System::Time";
+	"Kernel::System::Time::new";
+	"Kernel::System::Time::SystemTime";
+	"Kernel::System::Time::SystemTime2Date";
+}
+subgraph cluster_Kernel_Output_HTML_Layout {
+	label="Kernel::Output::HTML::Layout";
+	"Kernel::Output::HTML::Layout::BEGIN@17";
+	"Kernel::Output::HTML::Layout::new";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_Kernel_Language {
+	label="Kernel::Language";
+	"Kernel::Language::GetRecommendedCharset";
+	"Kernel::Language::new";
+	"Kernel::Language::BEGIN@14";
+	"Kernel::Language::BEGIN@19";
+	"Kernel::Language::BEGIN@15";
+	"Kernel::Language::Time";
+	"Kernel::Language::CORE:subst";
+	"Kernel::Language::BEGIN@17";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::Require";
+	"Kernel::System::Main::DirectoryRead";
+}
+subgraph cluster_Kernel_Language_en {
+	label="Kernel::Language::en";
+	"Kernel::Language::en::Data";
+}
+"Kernel::Language::new" -> "Kernel::System::Time::new";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Language::Time";
+"Kernel::Language::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::Language::Time" -> "Kernel::System::Time::SystemTime2Date";
+"Kernel::Language::Time" -> "Kernel::System::Time::SystemTime";
+"Kernel::Output::HTML::Layout::BEGIN@17" -> "Kernel::Language::BEGIN@15";
+"Kernel::Language::Time" -> "Kernel::Language::CORE:subst";
+"Kernel::Output::HTML::Layout::BEGIN@17" -> "Kernel::Language::BEGIN@17";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Language::new";
+"Kernel::Language::BEGIN@15" -> "warnings::import";
+"Kernel::Language::new" -> "Kernel::Language::GetRecommendedCharset";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::Language::GetRecommendedCharset";
+"Kernel::Language::GetRecommendedCharset" -> "Kernel::System::Encode::EncodeInternalUsed";
+"Kernel::Output::HTML::Layout::BEGIN@17" -> "Kernel::Language::BEGIN@19";
+"Kernel::Language::new" -> "Kernel::System::Main::DirectoryRead";
+"Kernel::Language::new" -> "Kernel::Language::en::Data";
+"Kernel::Language::BEGIN@19" -> "vars::import";
+"Kernel::Language::new" -> "Kernel::System::Main::Require";
+"Kernel::Output::HTML::Layout::BEGIN@17" -> "Kernel::Language::BEGIN@14";
+"Kernel::Language::BEGIN@14" -> "strict::import";
+}

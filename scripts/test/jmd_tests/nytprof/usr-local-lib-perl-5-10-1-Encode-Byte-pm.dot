@@ -1,0 +1,35 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Encode {
+	label="Encode";
+	"Encode::getEncoding";
+}
+subgraph cluster_Encode_Byte {
+	label="Encode::Byte";
+	"Encode::Byte::BEGIN@7";
+	"Encode::Byte::BEGIN@4";
+	"Encode::Byte::BEGIN@3";
+	"Encode::Byte::CORE:match";
+	"Encode::Byte::BEGIN@2";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+"Encode::getEncoding" -> "Encode::Byte::BEGIN@2";
+"Encode::Byte::BEGIN@4" -> "Exporter::import";
+"Encode::getEncoding" -> "Encode::Byte::BEGIN@3";
+"Encode::Byte::BEGIN@3" -> "warnings::import";
+"Encode::getEncoding" -> "Encode::Byte::CORE:match";
+"Encode::getEncoding" -> "Encode::Byte::BEGIN@7";
+"Encode::getEncoding" -> "Encode::Byte::BEGIN@4";
+"Encode::Byte::BEGIN@2" -> "strict::import";
+}

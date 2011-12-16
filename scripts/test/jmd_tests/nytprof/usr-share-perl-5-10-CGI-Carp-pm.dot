@@ -1,0 +1,26 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_Web_Request {
+	label="Kernel::System::Web::Request";
+	"Kernel::System::Web::Request::BEGIN@95";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_CGI_Carp {
+	label="CGI::Carp";
+	"CGI::Carp::BEGIN@311";
+	"CGI::Carp::BEGIN@313";
+	"CGI::Carp::BEGIN@318";
+	"CGI::Carp::CORE:match";
+	"CGI::Carp::import";
+}
+"CGI::Carp::import" -> "CGI::Carp::CORE:match";
+"CGI::Carp::import" -> "Exporter::import";
+"CGI::Carp::BEGIN@311" -> "Exporter::import";
+"Kernel::System::Web::Request::BEGIN@95" -> "CGI::Carp::import";
+"Kernel::System::Web::Request::BEGIN@95" -> "CGI::Carp::BEGIN@311";
+"Kernel::System::Web::Request::BEGIN@95" -> "CGI::Carp::BEGIN@313";
+"Kernel::System::Web::Request::BEGIN@95" -> "CGI::Carp::BEGIN@318";
+}

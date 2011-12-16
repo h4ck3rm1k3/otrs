@@ -1,0 +1,275 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_JSON_XS {
+	label="JSON::XS";
+	"JSON::XS::DESTROY";
+}
+subgraph cluster_Kernel_System_Auth {
+	label="Kernel::System::Auth";
+	"Kernel::System::Auth::BEGIN@14";
+	"Kernel::System::Auth::new";
+	"Kernel::System::Auth::BEGIN@15";
+	"Kernel::System::Auth::BEGIN@19";
+	"Kernel::System::Auth::BEGIN@17";
+	"Kernel::System::Auth::GetOption";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::BEGIN@15";
+	"Kernel::System::DB::BEGIN@14";
+	"Kernel::System::DB::BEGIN@17";
+	"Kernel::System::DB::new";
+	"Kernel::System::DB::BEGIN@19";
+	"Kernel::System::DB::BEGIN@21";
+}
+subgraph cluster_Kernel_System_Log {
+	label="Kernel::System::Log";
+	"Kernel::System::Log::BEGIN@14";
+	"Kernel::System::Log::BEGIN@17";
+	"Kernel::System::Log::BEGIN@19";
+	"Kernel::System::Log::new";
+	"Kernel::System::Log::Log";
+	"Kernel::System::Log::BEGIN@15";
+}
+subgraph cluster_Kernel_System_Encode {
+	label="Kernel::System::Encode";
+	"Kernel::System::Encode::new";
+}
+subgraph cluster_Kernel_System_Web_Request {
+	label="Kernel::System::Web::Request";
+	"Kernel::System::Web::Request::BEGIN@14";
+	"Kernel::System::Web::Request::BEGIN@95";
+	"Kernel::System::Web::Request::BEGIN@17";
+	"Kernel::System::Web::Request::new";
+	"Kernel::System::Web::Request::BEGIN@15";
+	"Kernel::System::Web::Request::GetCookie";
+	"Kernel::System::Web::Request::BEGIN@19";
+	"Kernel::System::Web::Request::BEGIN@92";
+	"Kernel::System::Web::Request::GetParam";
+	"Kernel::System::Web::Request::Error";
+}
+subgraph cluster_Kernel_Config {
+	label="Kernel::Config";
+	"Kernel::Config::BEGIN@117";
+	"Kernel::Config::BEGIN@112";
+	"Kernel::Config::BEGIN@23";
+	"Kernel::Config::BEGIN@25";
+	"Kernel::Config::BEGIN@111";
+	"Kernel::Config::BEGIN@114";
+}
+subgraph cluster_Kernel_System_Group {
+	label="Kernel::System::Group";
+	"Kernel::System::Group::new";
+	"Kernel::System::Group::BEGIN@18";
+	"Kernel::System::Group::BEGIN@17";
+	"Kernel::System::Group::BEGIN@14";
+	"Kernel::System::Group::BEGIN@20";
+	"Kernel::System::Group::BEGIN@15";
+}
+subgraph cluster_Kernel_System_Time {
+	label="Kernel::System::Time";
+	"Kernel::System::Time::BEGIN@17";
+	"Kernel::System::Time::new";
+	"Kernel::System::Time::BEGIN@15";
+	"Kernel::System::Time::BEGIN@19";
+	"Kernel::System::Time::BEGIN@14";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+	"Kernel::Config::Defaults::new";
+}
+subgraph cluster_Kernel_Output_HTML_Layout {
+	label="Kernel::Output::HTML::Layout";
+	"Kernel::Output::HTML::Layout::BEGIN@24";
+	"Kernel::Output::HTML::Layout::BEGIN@17";
+	"Kernel::Output::HTML::Layout::BEGIN@18";
+	"Kernel::Output::HTML::Layout::Print";
+	"Kernel::Output::HTML::Layout::BEGIN@19";
+	"Kernel::Output::HTML::Layout::BEGIN@21";
+	"Kernel::Output::HTML::Layout::Login";
+	"Kernel::Output::HTML::Layout::BEGIN@15";
+	"Kernel::Output::HTML::Layout::new";
+	"Kernel::Output::HTML::Layout::BEGIN@22";
+	"Kernel::Output::HTML::Layout::BEGIN@14";
+}
+subgraph cluster_Kernel_System_AuthSession {
+	label="Kernel::System::AuthSession";
+	"Kernel::System::AuthSession::BEGIN@15";
+	"Kernel::System::AuthSession::new";
+	"Kernel::System::AuthSession::BEGIN@17";
+	"Kernel::System::AuthSession::BEGIN@14";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::DESTROY";
+	"Kernel::System::Web::InterfaceAgent::CORE:regcomp";
+	"Kernel::System::Web::InterfaceAgent::Run";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@24";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@29";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@14";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@26";
+	"Kernel::System::Web::InterfaceAgent::new";
+	"Kernel::System::Web::InterfaceAgent::CORE:subst";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@30";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@31";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@21";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@15";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@25";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@17";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@23";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@22";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@27";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@32";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@28";
+}
+subgraph cluster_main {
+	label="main";
+	"main::BEGIN@40";
+	"main::NULL";
+	"main::RUNTIME";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::BEGIN@22";
+	"Kernel::System::Main::BEGIN@14";
+	"Kernel::System::Main::BEGIN@19";
+	"Kernel::System::Main::BEGIN@18";
+	"Kernel::System::Main::BEGIN@24";
+	"Kernel::System::Main::BEGIN@15";
+	"Kernel::System::Main::BEGIN@20";
+	"Kernel::System::Main::new";
+	"Kernel::System::Main::BEGIN@17";
+}
+subgraph cluster_Kernel_System_User {
+	label="Kernel::System::User";
+	"Kernel::System::User::new";
+	"Kernel::System::User::BEGIN@24";
+	"Kernel::System::User::BEGIN@15";
+	"Kernel::System::User::BEGIN@17";
+	"Kernel::System::User::BEGIN@14";
+	"Kernel::System::User::BEGIN@22";
+	"Kernel::System::User::BEGIN@20";
+	"Kernel::System::User::BEGIN@21";
+	"Kernel::System::User::BEGIN@18";
+}
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Time::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@29" -> "Kernel::System::AuthSession::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::User::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@22" -> "Kernel::System::Log::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Web::Request::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@27" -> "Kernel::System::DB::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@19";
+"Kernel::System::Web::InterfaceAgent::BEGIN@28" -> "Kernel::System::Auth::BEGIN@19";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::Config::Defaults::new";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@26";
+"Kernel::System::Web::InterfaceAgent::BEGIN@22" -> "Kernel::System::Log::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@22";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@20";
+"Kernel::System::Web::InterfaceAgent::BEGIN@22" -> "Kernel::System::Log::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Main::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@27" -> "Kernel::System::DB::BEGIN@21";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@114";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@95";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::Output::HTML::Layout::Print";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@25";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@19";
+"Kernel::System::Web::InterfaceAgent::BEGIN@29" -> "Kernel::System::AuthSession::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@25" -> "Kernel::System::Time::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@112";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@92";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Log::new";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Web::Request::GetParam";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@24";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@32";
+"Kernel::System::Web::InterfaceAgent::BEGIN@25" -> "Kernel::System::Time::BEGIN@19";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@25" -> "Kernel::System::Time::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@111";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@27" -> "Kernel::System::DB::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::Run" -> "JSON::XS::DESTROY";
+"Kernel::System::Web::InterfaceAgent::BEGIN@28" -> "Kernel::System::Auth::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@20";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@22";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@30";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@21";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Auth::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@18";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::DB::new";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@23";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::AuthSession::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@15" -> "warnings::import";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@22";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@27";
+"Kernel::System::Web::InterfaceAgent::BEGIN@31" -> "Kernel::System::Group::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@25";
+"Kernel::System::Web::InterfaceAgent::BEGIN@29" -> "Kernel::System::AuthSession::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@21";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Web::InterfaceAgent::CORE:regcomp";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@24";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@29";
+"Kernel::System::Web::InterfaceAgent::BEGIN@31" -> "Kernel::System::Group::BEGIN@20";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@22";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::Output::HTML::Layout::Login";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::Output::HTML::Layout::new";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@31";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@24";
+"Kernel::System::Web::InterfaceAgent::BEGIN@17" -> "vars::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@28" -> "Kernel::System::Auth::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::BEGIN@27" -> "Kernel::System::DB::BEGIN@19";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@117";
+"Kernel::System::Web::InterfaceAgent::BEGIN@32" -> "Kernel::Output::HTML::Layout::BEGIN@21";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@21" -> "Kernel::Config::BEGIN@23";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Encode::new";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@28";
+"main::NULL" -> "Kernel::System::Web::InterfaceAgent::DESTROY";
+"Kernel::System::Web::InterfaceAgent::BEGIN@25" -> "Kernel::System::Time::BEGIN@17";
+"main::RUNTIME" -> "Kernel::System::Web::InterfaceAgent::Run";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@24";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Auth::GetOption";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Web::Request::GetCookie";
+"Kernel::System::Web::InterfaceAgent::BEGIN@28" -> "Kernel::System::Auth::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@18";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@15";
+"main::RUNTIME" -> "Kernel::System::Web::InterfaceAgent::new";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Web::InterfaceAgent::CORE:subst";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@18";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@17";
+"main::BEGIN@40" -> "Kernel::System::Web::InterfaceAgent::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::DESTROY" -> "Kernel::System::Log::Log";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Log::Log";
+"Kernel::System::Web::InterfaceAgent::BEGIN@26" -> "Kernel::System::Web::Request::BEGIN@19";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@17";
+"Kernel::System::Web::InterfaceAgent::BEGIN@27" -> "Kernel::System::DB::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Group::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@31" -> "Kernel::System::Group::BEGIN@18";
+"Kernel::System::Web::InterfaceAgent::BEGIN@22" -> "Kernel::System::Log::BEGIN@19";
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::Web::Request::Error";
+"Kernel::System::Web::InterfaceAgent::BEGIN@31" -> "Kernel::System::Group::BEGIN@14";
+"Kernel::System::Web::InterfaceAgent::BEGIN@14" -> "strict::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@31" -> "Kernel::System::Group::BEGIN@15";
+"Kernel::System::Web::InterfaceAgent::BEGIN@23" -> "Kernel::System::Main::BEGIN@17";
+}

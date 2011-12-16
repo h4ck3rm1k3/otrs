@@ -1,0 +1,12 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Symbol {
+	label="Symbol";
+	"Symbol::BEGIN@3";
+}
+subgraph cluster_IO_File {
+	label="IO::File";
+	"IO::File::BEGIN@9";
+}
+"IO::File::BEGIN@9" -> "Symbol::BEGIN@3";
+}

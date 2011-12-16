@@ -1,0 +1,70 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Storable {
+	label="Storable";
+	"Storable::BEGIN@24";
+	"Storable::BEGIN@22";
+	"Storable::BEGIN@44";
+	"Storable::BEGIN@23";
+	"Storable::bootstrap";
+}
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::bootstrap";
+}
+subgraph cluster_IO_File {
+	label="IO::File";
+	"IO::File::BEGIN@11";
+	"IO::File::CORE:match";
+	"IO::File::BEGIN@6";
+	"IO::File::BEGIN@10";
+	"IO::File::BEGIN@8";
+	"IO::File::BEGIN@12";
+	"IO::File::BEGIN@5";
+	"IO::File::BEGIN@9";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_Kernel_System_Cache_FileStorable {
+	label="Kernel::System::Cache::FileStorable";
+	"Kernel::System::Cache::FileStorable::BEGIN@18";
+}
+subgraph cluster_FileHandle {
+	label="FileHandle";
+	"FileHandle::import";
+	"FileHandle::BEGIN@46";
+	"FileHandle::BEGIN@3";
+	"FileHandle::BEGIN@4";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_AutoLoader {
+	label="AutoLoader";
+	"AutoLoader::import";
+}
+"Storable::BEGIN@23" -> "IO::File::BEGIN@8";
+"Kernel::System::Cache::FileStorable::BEGIN@18" -> "Storable::BEGIN@24";
+"Kernel::System::Cache::FileStorable::BEGIN@18" -> "Storable::BEGIN@23";
+"Storable::BEGIN@44" -> "Exporter::import";
+"Storable::BEGIN@23" -> "Exporter::import";
+"Storable::BEGIN@23" -> "FileHandle::BEGIN@46";
+"Kernel::System::Cache::FileStorable::BEGIN@18" -> "Storable::BEGIN@22";
+"Storable::BEGIN@23" -> "IO::File::BEGIN@5";
+"Storable::BEGIN@23" -> "IO::File::BEGIN@9";
+"Storable::BEGIN@22" -> "AutoLoader::import";
+"Storable::BEGIN@23" -> "FileHandle::BEGIN@4";
+"Storable::BEGIN@23" -> "IO::File::BEGIN@12";
+"DynaLoader::bootstrap" -> "Storable::bootstrap";
+"Storable::BEGIN@23" -> "FileHandle::BEGIN@3";
+"Kernel::System::Cache::FileStorable::BEGIN@18" -> "Storable::BEGIN@44";
+"Storable::BEGIN@24" -> "vars::import";
+"Storable::BEGIN@23" -> "IO::File::BEGIN@10";
+"Storable::BEGIN@23" -> "IO::File::BEGIN@11";
+"Storable::BEGIN@23" -> "IO::File::BEGIN@6";
+"Storable::BEGIN@23" -> "FileHandle::import";
+"Storable::BEGIN@23" -> "IO::File::CORE:match";
+}

@@ -1,0 +1,42 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_JSON_XS_Boolean {
+	label="JSON::XS::Boolean";
+	"JSON::XS::Boolean::BEGIN@1477";
+	"JSON::XS::Boolean::BEGIN@3";
+}
+subgraph cluster_Fh {
+	label="Fh";
+	"Fh::BEGIN@3739";
+}
+subgraph cluster_JSON_PP_Boolean {
+	label="JSON::PP::Boolean";
+	"JSON::PP::Boolean::BEGIN@3";
+}
+subgraph cluster_overload {
+	label="overload";
+	"overload::OVERLOAD";
+	"overload::BEGIN@139";
+	"overload::import";
+}
+subgraph cluster_CGI_Cookie {
+	label="CGI::Cookie";
+	"CGI::Cookie::BEGIN@20";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::BEGIN@18";
+}
+subgraph cluster_warnings_register {
+	label="warnings::register";
+	"warnings::register::import";
+}
+"overload::import" -> "overload::OVERLOAD";
+"Fh::BEGIN@3739" -> "overload::import";
+"CGI::Cookie::BEGIN@20" -> "overload::import";
+"JSON::XS::Boolean::BEGIN@3" -> "overload::import";
+"JSON::XS::Boolean::BEGIN@1477" -> "overload::import";
+"JSON::PP::Boolean::BEGIN@3" -> "overload::import";
+"Kernel::System::Main::BEGIN@18" -> "overload::BEGIN@139";
+"overload::BEGIN@139" -> "warnings::register::import";
+}

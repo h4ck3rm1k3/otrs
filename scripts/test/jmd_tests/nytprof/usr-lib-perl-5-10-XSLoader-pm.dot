@@ -1,0 +1,83 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Encode {
+	label="Encode";
+	"Encode::define_encoding";
+	"Encode::getEncoding";
+}
+subgraph cluster_Kernel_System_Log_SysLog {
+	label="Kernel::System::Log::SysLog";
+	"Kernel::System::Log::SysLog::BEGIN@17";
+}
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::BEGIN@94";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::BEGIN@17";
+}
+subgraph cluster_XSLoader {
+	label="XSLoader";
+	"XSLoader::load";
+}
+subgraph cluster_IO_Handle {
+	label="IO::Handle";
+	"IO::Handle::BEGIN@9";
+}
+subgraph cluster_Sys_Syslog {
+	label="Sys::Syslog";
+	"Sys::Syslog::BEGIN@10";
+	"Sys::Syslog::BEGIN@9";
+}
+subgraph cluster_Kernel_System_Encode {
+	label="Kernel::System::Encode";
+	"Kernel::System::Encode::BEGIN@17";
+}
+subgraph cluster_version {
+	label="version";
+	"version::BEGIN@1";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::BEGIN@1975";
+	"Kernel::Config::Defaults::BEGIN@42";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::BEGIN@18";
+}
+subgraph cluster_FindBin {
+	label="FindBin";
+	"FindBin::BEGIN@98";
+}
+subgraph cluster_Fcntl {
+	label="Fcntl";
+	"Fcntl::BEGIN@159";
+}
+subgraph cluster_Kernel_System_AuthSession_DB {
+	label="Kernel::System::AuthSession::DB";
+	"Kernel::System::AuthSession::DB::BEGIN@17";
+}
+subgraph cluster_JSON {
+	label="JSON";
+	"JSON::BEGIN@2";
+}
+"XSLoader::load" -> "DynaLoader::BEGIN@94";
+"XSLoader::load" -> "Encode::define_encoding";
+"Kernel::System::Log::SysLog::BEGIN@17" -> "XSLoader::load";
+"Kernel::System::AuthSession::DB::BEGIN@17" -> "XSLoader::load";
+"FindBin::BEGIN@98" -> "XSLoader::load";
+"Kernel::System::DB::BEGIN@17" -> "XSLoader::load";
+"Kernel::Config::Defaults::BEGIN@42" -> "XSLoader::load";
+"Fcntl::BEGIN@159" -> "XSLoader::load";
+"Sys::Syslog::BEGIN@10" -> "XSLoader::load";
+"Sys::Syslog::BEGIN@9" -> "XSLoader::load";
+"Kernel::System::Main::BEGIN@18" -> "XSLoader::load";
+"version::BEGIN@1" -> "XSLoader::load";
+"Kernel::Config::Defaults::BEGIN@1975" -> "XSLoader::load";
+"Encode::getEncoding" -> "XSLoader::load";
+"Kernel::System::Encode::BEGIN@17" -> "XSLoader::load";
+"JSON::BEGIN@2" -> "XSLoader::load";
+"IO::Handle::BEGIN@9" -> "XSLoader::load";
+}

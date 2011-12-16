@@ -1,0 +1,101 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Crypt_PasswdMD5 {
+	label="Crypt::PasswdMD5";
+	"Crypt::PasswdMD5::BEGIN@65";
+}
+subgraph cluster_DynaLoader {
+	label="DynaLoader";
+	"DynaLoader::bootstrap";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_Kernel_System_CheckItem {
+	label="Kernel::System::CheckItem";
+	"Kernel::System::CheckItem::new";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_Kernel_System_Valid {
+	label="Kernel::System::Valid";
+	"Kernel::System::Valid::new";
+}
+subgraph cluster_Digest_SHA {
+	label="Digest::SHA";
+	"Digest::SHA::BEGIN@5";
+	"Digest::SHA::BEGIN@8";
+	"Digest::SHA::BEGIN@6";
+	"Digest::SHA::BEGIN@7";
+}
+subgraph cluster_Kernel_System_User_Preferences_DB {
+	label="Kernel::System::User::Preferences::DB";
+	"Kernel::System::User::Preferences::DB::new";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::Run";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@30";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::Require";
+}
+subgraph cluster_Kernel_System_CacheInternal {
+	label="Kernel::System::CacheInternal";
+	"Kernel::System::CacheInternal::new";
+}
+subgraph cluster_Kernel_System_User {
+	label="Kernel::System::User";
+	"Kernel::System::User::new";
+	"Kernel::System::User::BEGIN@24";
+	"Kernel::System::User::BEGIN@15";
+	"Kernel::System::User::BEGIN@17";
+	"Kernel::System::User::BEGIN@14";
+	"Kernel::System::User::BEGIN@22";
+	"Kernel::System::User::BEGIN@20";
+	"Kernel::System::User::BEGIN@21";
+	"Kernel::System::User::BEGIN@18";
+}
+"Kernel::System::Web::InterfaceAgent::Run" -> "Kernel::System::User::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@22";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@20";
+"Kernel::System::User::BEGIN@17" -> "Crypt::PasswdMD5::BEGIN@65";
+"Kernel::System::User::new" -> "Kernel::System::CacheInternal::new";
+"Kernel::System::User::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::User::BEGIN@18" -> "Digest::SHA::BEGIN@8";
+"Kernel::System::User::BEGIN@18" -> "Exporter::import";
+"Kernel::System::User::BEGIN@17" -> "Exporter::import";
+"Kernel::System::User::new" -> "Kernel::System::Valid::new";
+"Kernel::System::User::BEGIN@18" -> "DynaLoader::bootstrap";
+"Kernel::System::User::BEGIN@15" -> "warnings::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@21";
+"Kernel::System::User::new" -> "Kernel::System::User::Preferences::DB::new";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@24";
+"Kernel::System::User::BEGIN@24" -> "vars::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@14";
+"Kernel::System::User::BEGIN@18" -> "Digest::SHA::BEGIN@7";
+"Kernel::System::User::BEGIN@18" -> "Digest::SHA::BEGIN@6";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@15";
+"Kernel::System::User::BEGIN@18" -> "Digest::SHA::BEGIN@5";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@18";
+"Kernel::System::User::new" -> "Kernel::System::CheckItem::new";
+"Kernel::System::User::new" -> "Kernel::System::Main::Require";
+"Kernel::System::Web::InterfaceAgent::BEGIN@30" -> "Kernel::System::User::BEGIN@17";
+"Kernel::System::User::BEGIN@14" -> "strict::import";
+}

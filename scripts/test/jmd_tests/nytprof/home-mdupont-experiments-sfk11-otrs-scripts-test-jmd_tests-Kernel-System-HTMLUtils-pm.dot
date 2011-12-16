@@ -1,0 +1,34 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_HTMLUtils {
+	label="Kernel::System::HTMLUtils";
+	"Kernel::System::HTMLUtils::BEGIN@14";
+	"Kernel::System::HTMLUtils::new";
+	"Kernel::System::HTMLUtils::BEGIN@17";
+	"Kernel::System::HTMLUtils::BEGIN@15";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_Output_HTML_Layout {
+	label="Kernel::Output::HTML::Layout";
+	"Kernel::Output::HTML::Layout::BEGIN@18";
+	"Kernel::Output::HTML::Layout::new";
+}
+"Kernel::Output::HTML::Layout::BEGIN@18" -> "Kernel::System::HTMLUtils::BEGIN@17";
+"Kernel::Output::HTML::Layout::BEGIN@18" -> "Kernel::System::HTMLUtils::BEGIN@15";
+"Kernel::System::HTMLUtils::BEGIN@15" -> "warnings::import";
+"Kernel::Output::HTML::Layout::new" -> "Kernel::System::HTMLUtils::new";
+"Kernel::System::HTMLUtils::BEGIN@17" -> "vars::import";
+"Kernel::Output::HTML::Layout::BEGIN@18" -> "Kernel::System::HTMLUtils::BEGIN@14";
+"Kernel::System::HTMLUtils::BEGIN@14" -> "strict::import";
+}

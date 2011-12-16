@@ -1,0 +1,157 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Encode {
+	label="Encode";
+	"Encode::BEGIN@13";
+	"Encode::CORE:match";
+	"Encode::define_encoding";
+	"Encode::predefine_encodings";
+	"Encode::BEGIN@242";
+	"Encode::BEGIN@8";
+	"Encode::_utf8_off";
+	"Encode::BEGIN@48";
+	"Encode::BEGIN@6";
+	"Encode::CORE:subst";
+	"Encode::BEGIN@9";
+	"Encode::from_to";
+	"Encode::find_encoding";
+	"Encode::BEGIN@5";
+	"Encode::resolve_alias";
+	"Encode::getEncoding";
+}
+subgraph cluster_Encode_Byte {
+	label="Encode::Byte";
+	"Encode::Byte::BEGIN@7";
+	"Encode::Byte::BEGIN@4";
+	"Encode::Byte::BEGIN@3";
+	"Encode::Byte::CORE:match";
+	"Encode::Byte::BEGIN@2";
+}
+subgraph cluster_Encode_XS {
+	label="Encode::XS";
+	"Encode::XS::encode";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::unimport";
+	"warnings::import";
+}
+subgraph cluster_base {
+	label="base";
+	"base::BEGIN@3";
+	"base::BEGIN@4";
+	"base::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Encode_Encoding {
+	label="Encode::Encoding";
+	"Encode::Encoding::BEGIN@4";
+	"Encode::Encoding::name";
+	"Encode::Encoding::BEGIN@5";
+	"Encode::Encoding::CORE:match";
+	"Encode::Encoding::renewed";
+}
+subgraph cluster_XSLoader {
+	label="XSLoader";
+	"XSLoader::load";
+}
+subgraph cluster_bytes {
+	label="bytes";
+	"bytes::import";
+}
+subgraph cluster_Kernel_System_Encode {
+	label="Kernel::System::Encode";
+	"Kernel::System::Encode::Convert";
+	"Kernel::System::Encode::BEGIN@17";
+}
+subgraph cluster_constant {
+	label="constant";
+	"constant::import";
+	"constant::BEGIN@4";
+	"constant::BEGIN@3";
+	"constant::BEGIN@38";
+	"constant::BEGIN@101";
+	"constant::BEGIN@2";
+	"constant::BEGIN@6";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_Encode_utf8 {
+	label="Encode::utf8";
+	"Encode::utf8::decode_xs";
+	"Encode::utf8::BEGIN@325";
+}
+subgraph cluster_Encode_Alias {
+	label="Encode::Alias";
+	"Encode::Alias::BEGIN@6";
+	"Encode::Alias::BEGIN@3";
+	"Encode::Alias::CORE:match";
+	"Encode::Alias::BEGIN@8";
+	"Encode::Alias::BEGIN@4";
+	"Encode::Alias::find_alias";
+	"Encode::Alias::define_alias";
+	"Encode::Alias::init_aliases";
+	"Encode::Alias::BEGIN@2";
+}
+"Encode::BEGIN@13" -> "base::BEGIN@3";
+"Encode::from_to" -> "Encode::utf8::decode_xs";
+"Encode::from_to" -> "Encode::find_encoding";
+"Encode::Alias::find_alias" -> "Encode::find_encoding";
+"Encode::resolve_alias" -> "Encode::find_encoding";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@5";
+"Encode::BEGIN@8" -> "constant::BEGIN@2";
+"Encode::BEGIN@48" -> "Encode::Alias::BEGIN@2";
+"Encode::BEGIN@8" -> "constant::BEGIN@4";
+"Encode::BEGIN@48" -> "Encode::Alias::BEGIN@8";
+"Encode::utf8::BEGIN@325" -> "bytes::import";
+"Encode::getEncoding" -> "Encode::Byte::BEGIN@2";
+"Encode::BEGIN@242" -> "warnings::unimport";
+"Encode::BEGIN@48" -> "Exporter::import";
+"Encode::BEGIN@48" -> "Encode::Alias::BEGIN@3";
+"Encode::BEGIN@13" -> "base::BEGIN@4";
+"Encode::utf8::decode_xs" -> "Encode::Encoding::renewed";
+"Encode::BEGIN@8" -> "constant::BEGIN@6";
+"Encode::BEGIN@8" -> "constant::import";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@242";
+"Kernel::System::Encode::Convert" -> "Encode::_utf8_off";
+"Encode::BEGIN@13" -> "base::import";
+"Encode::getEncoding" -> "Encode::Byte::BEGIN@3";
+"Kernel::System::Encode::Convert" -> "Encode::from_to";
+"Encode::define_encoding" -> "Encode::Alias::define_alias";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::utf8::BEGIN@325";
+"Encode::BEGIN@6" -> "warnings::import";
+"Encode::BEGIN@8" -> "constant::BEGIN@38";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@9";
+"Encode::getEncoding" -> "Encode::Byte::CORE:match";
+"Kernel::System::Encode::Convert" -> "Encode::resolve_alias";
+"Encode::find_encoding" -> "Encode::getEncoding";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::CORE:match";
+"Encode::predefine_encodings" -> "Encode::Encoding::BEGIN@4";
+"Encode::BEGIN@48" -> "Encode::Alias::BEGIN@6";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@13";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::predefine_encodings";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@48";
+"Encode::getEncoding" -> "Encode::Byte::BEGIN@7";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@6";
+"Encode::getEncoding" -> "Encode::CORE:subst";
+"Encode::predefine_encodings" -> "Encode::Encoding::CORE:match";
+"Encode::getEncoding" -> "Encode::Alias::find_alias";
+"XSLoader::load" -> "Encode::define_encoding";
+"Encode::getEncoding" -> "Encode::Byte::BEGIN@4";
+"Encode::resolve_alias" -> "Encode::Encoding::name";
+"Encode::BEGIN@8" -> "constant::BEGIN@3";
+"Kernel::System::Encode::BEGIN@17" -> "Encode::BEGIN@8";
+"Encode::BEGIN@48" -> "Encode::Alias::CORE:match";
+"Encode::predefine_encodings" -> "Encode::Encoding::BEGIN@5";
+"Encode::BEGIN@48" -> "Encode::Alias::init_aliases";
+"Encode::getEncoding" -> "XSLoader::load";
+"Encode::BEGIN@48" -> "Encode::Alias::BEGIN@4";
+"Encode::BEGIN@5" -> "strict::import";
+"Encode::BEGIN@8" -> "constant::BEGIN@101";
+"Encode::from_to" -> "Encode::XS::encode";
+}

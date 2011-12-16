@@ -1,0 +1,235 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_JSON {
+	label="Kernel::System::JSON";
+	"Kernel::System::JSON::BEGIN@15";
+}
+subgraph cluster_Kernel_System_HTMLUtils {
+	label="Kernel::System::HTMLUtils";
+	"Kernel::System::HTMLUtils::BEGIN@15";
+}
+subgraph cluster_Kernel_System_Auth {
+	label="Kernel::System::Auth";
+	"Kernel::System::Auth::BEGIN@15";
+}
+subgraph cluster_Encode {
+	label="Encode";
+	"Encode::BEGIN@6";
+	"Encode::BEGIN@242";
+}
+subgraph cluster_Encode_Byte {
+	label="Encode::Byte";
+	"Encode::Byte::BEGIN@3";
+}
+subgraph cluster_Kernel_System_Log_SysLog {
+	label="Kernel::System::Log::SysLog";
+	"Kernel::System::Log::SysLog::BEGIN@15";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::unimport";
+	"warnings::CORE:regcomp";
+	"warnings::CORE:match";
+	"warnings::import";
+}
+subgraph cluster_Kernel_System_Cache {
+	label="Kernel::System::Cache";
+	"Kernel::System::Cache::BEGIN@15";
+}
+subgraph cluster_Kernel_System_CheckItem {
+	label="Kernel::System::CheckItem";
+	"Kernel::System::CheckItem::BEGIN@15";
+}
+subgraph cluster_DBI__firesafe {
+	label="DBI::_firesafe";
+	"DBI::_firesafe::BEGIN@14";
+}
+subgraph cluster_Encode_Encoding {
+	label="Encode::Encoding";
+	"Encode::Encoding::BEGIN@5";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::BEGIN@15";
+}
+subgraph cluster_File_stat {
+	label="File::stat";
+	"File::stat::BEGIN@5";
+}
+subgraph cluster_Kernel_System_Cache_FileStorable {
+	label="Kernel::System::Cache::FileStorable";
+	"Kernel::System::Cache::FileStorable::BEGIN@15";
+}
+subgraph cluster_Kernel_System_Log {
+	label="Kernel::System::Log";
+	"Kernel::System::Log::BEGIN@15";
+}
+subgraph cluster_Sys_Syslog {
+	label="Sys::Syslog";
+	"Sys::Syslog::BEGIN@3";
+}
+subgraph cluster_Kernel_System_Encode {
+	label="Kernel::System::Encode";
+	"Kernel::System::Encode::BEGIN@15";
+}
+subgraph cluster_Unicode_Normalize {
+	label="Unicode::Normalize";
+	"Unicode::Normalize::BEGIN@11";
+	"Unicode::Normalize::BEGIN@14";
+}
+subgraph cluster_Kernel_System_Web_Request {
+	label="Kernel::System::Web::Request";
+	"Kernel::System::Web::Request::BEGIN@15";
+}
+subgraph cluster_Exporter_Heavy {
+	label="Exporter::Heavy";
+	"Exporter::Heavy::BEGIN@186";
+}
+subgraph cluster_Kernel_System_Auth_DB {
+	label="Kernel::System::Auth::DB";
+	"Kernel::System::Auth::DB::BEGIN@15";
+}
+subgraph cluster_Kernel_Config {
+	label="Kernel::Config";
+	"Kernel::Config::BEGIN@112";
+}
+subgraph cluster_Kernel_System_Group {
+	label="Kernel::System::Group";
+	"Kernel::System::Group::BEGIN@15";
+}
+subgraph cluster_Kernel_System_Time {
+	label="Kernel::System::Time";
+	"Kernel::System::Time::BEGIN@15";
+}
+subgraph cluster_File_Basename {
+	label="File::Basename";
+	"File::Basename::BEGIN@52";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::BEGIN@25";
+}
+subgraph cluster_Kernel_Output_HTML_Layout {
+	label="Kernel::Output::HTML::Layout";
+	"Kernel::Output::HTML::Layout::BEGIN@15";
+}
+subgraph cluster_IO {
+	label="IO";
+	"IO::BEGIN@8";
+}
+subgraph cluster_Kernel_System_Valid {
+	label="Kernel::System::Valid";
+	"Kernel::System::Valid::BEGIN@15";
+}
+subgraph cluster_Kernel_System_AuthSession {
+	label="Kernel::System::AuthSession";
+	"Kernel::System::AuthSession::BEGIN@15";
+}
+subgraph cluster_Kernel_System_User_Preferences_DB {
+	label="Kernel::System::User::Preferences::DB";
+	"Kernel::System::User::Preferences::DB::BEGIN@15";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@15";
+}
+subgraph cluster_re {
+	label="re";
+	"re::BEGIN@5";
+}
+subgraph cluster_main {
+	label="main";
+	"main::BEGIN@25";
+}
+subgraph cluster_Kernel_Language {
+	label="Kernel::Language";
+	"Kernel::Language::BEGIN@15";
+}
+subgraph cluster_Kernel_System_DB_postgresql {
+	label="Kernel::System::DB::postgresql";
+	"Kernel::System::DB::postgresql::BEGIN@15";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::BEGIN@15";
+}
+subgraph cluster_Encode_Config {
+	label="Encode::Config";
+	"Encode::Config::BEGIN@8";
+}
+subgraph cluster_POSIX {
+	label="POSIX";
+	"POSIX::BEGIN@40";
+	"POSIX::BEGIN@3";
+}
+subgraph cluster_Kernel_Language_en {
+	label="Kernel::Language::en";
+	"Kernel::Language::en::BEGIN@15";
+}
+subgraph cluster_Kernel_System_CacheInternal {
+	label="Kernel::System::CacheInternal";
+	"Kernel::System::CacheInternal::BEGIN@15";
+}
+subgraph cluster_Kernel_System_AuthSession_DB {
+	label="Kernel::System::AuthSession::DB";
+	"Kernel::System::AuthSession::DB::BEGIN@15";
+}
+subgraph cluster_Kernel_System_User {
+	label="Kernel::System::User";
+	"Kernel::System::User::BEGIN@15";
+}
+subgraph cluster_Encode_Alias {
+	label="Encode::Alias";
+	"Encode::Alias::BEGIN@3";
+	"Encode::Alias::BEGIN@4";
+}
+"Unicode::Normalize::BEGIN@14" -> "warnings::unimport";
+"Exporter::Heavy::BEGIN@186" -> "warnings::unimport";
+"Encode::Alias::BEGIN@4" -> "warnings::unimport";
+"Encode::BEGIN@242" -> "warnings::unimport";
+"POSIX::BEGIN@40" -> "warnings::unimport";
+"main::BEGIN@25" -> "warnings::CORE:match";
+"Kernel::System::Cache::FileStorable::BEGIN@15" -> "warnings::import";
+"Kernel::System::AuthSession::BEGIN@15" -> "warnings::import";
+"Kernel::System::Web::Request::BEGIN@15" -> "warnings::import";
+"POSIX::BEGIN@3" -> "warnings::import";
+"Kernel::System::DB::postgresql::BEGIN@15" -> "warnings::import";
+"Unicode::Normalize::BEGIN@11" -> "warnings::import";
+"re::BEGIN@5" -> "warnings::import";
+"Kernel::Output::HTML::Layout::BEGIN@15" -> "warnings::import";
+"Kernel::System::Encode::BEGIN@15" -> "warnings::import";
+"Kernel::System::Valid::BEGIN@15" -> "warnings::import";
+"Kernel::System::Log::BEGIN@15" -> "warnings::import";
+"Kernel::System::Auth::BEGIN@15" -> "warnings::import";
+"Kernel::Config::Defaults::BEGIN@25" -> "warnings::import";
+"Kernel::System::CheckItem::BEGIN@15" -> "warnings::import";
+"Kernel::Config::BEGIN@112" -> "warnings::import";
+"Encode::BEGIN@6" -> "warnings::import";
+"Encode::Alias::BEGIN@3" -> "warnings::import";
+"Kernel::System::Cache::BEGIN@15" -> "warnings::import";
+"Kernel::Language::en::BEGIN@15" -> "warnings::import";
+"DBI::_firesafe::BEGIN@14" -> "warnings::import";
+"File::stat::BEGIN@5" -> "warnings::import";
+"Kernel::System::Auth::DB::BEGIN@15" -> "warnings::import";
+"IO::BEGIN@8" -> "warnings::import";
+"Kernel::Language::BEGIN@15" -> "warnings::import";
+"Encode::Config::BEGIN@8" -> "warnings::import";
+"Kernel::System::User::BEGIN@15" -> "warnings::import";
+"main::BEGIN@25" -> "warnings::import";
+"Kernel::System::Time::BEGIN@15" -> "warnings::import";
+"Kernel::System::AuthSession::DB::BEGIN@15" -> "warnings::import";
+"Kernel::System::CacheInternal::BEGIN@15" -> "warnings::import";
+"Encode::Byte::BEGIN@3" -> "warnings::import";
+"Sys::Syslog::BEGIN@3" -> "warnings::import";
+"Kernel::System::Main::BEGIN@15" -> "warnings::import";
+"Encode::Encoding::BEGIN@5" -> "warnings::import";
+"Kernel::System::HTMLUtils::BEGIN@15" -> "warnings::import";
+"Kernel::System::JSON::BEGIN@15" -> "warnings::import";
+"Kernel::System::Web::InterfaceAgent::BEGIN@15" -> "warnings::import";
+"File::Basename::BEGIN@52" -> "warnings::import";
+"Kernel::System::Log::SysLog::BEGIN@15" -> "warnings::import";
+"Kernel::System::DB::BEGIN@15" -> "warnings::import";
+"Kernel::System::Group::BEGIN@15" -> "warnings::import";
+"Kernel::System::User::Preferences::DB::BEGIN@15" -> "warnings::import";
+"main::BEGIN@25" -> "warnings::CORE:regcomp";
+}

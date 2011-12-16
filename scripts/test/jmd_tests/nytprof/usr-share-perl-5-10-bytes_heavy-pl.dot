@@ -1,0 +1,32 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::Do";
+}
+subgraph cluster_bytes {
+	label="bytes";
+	"bytes::BEGIN@4";
+	"bytes::BEGIN@27";
+	"bytes::import";
+	"bytes::length";
+	"bytes::BEGIN@9";
+	"bytes::AUTOLOAD";
+	"bytes::BEGIN@34";
+	"bytes::BEGIN@17";
+	"bytes::BEGIN@22";
+}
+"bytes::BEGIN@27" -> "bytes::import";
+"bytes::BEGIN@4" -> "bytes::import";
+"bytes::BEGIN@9" -> "bytes::import";
+"bytes::BEGIN@34" -> "bytes::import";
+"bytes::BEGIN@17" -> "bytes::import";
+"bytes::BEGIN@22" -> "bytes::import";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@17";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@27";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@9";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@4";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@34";
+"Kernel::System::DB::Do" -> "bytes::length";
+"bytes::AUTOLOAD" -> "bytes::BEGIN@22";
+}

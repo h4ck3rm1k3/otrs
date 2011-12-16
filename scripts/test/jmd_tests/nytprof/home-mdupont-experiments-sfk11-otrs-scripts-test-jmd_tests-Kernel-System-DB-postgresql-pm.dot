@@ -1,0 +1,39 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::new";
+}
+subgraph cluster_Kernel_System_DB_postgresql {
+	label="Kernel::System::DB::postgresql";
+	"Kernel::System::DB::postgresql::LoadPreferences";
+	"Kernel::System::DB::postgresql::BEGIN@14";
+	"Kernel::System::DB::postgresql::new";
+	"Kernel::System::DB::postgresql::BEGIN@17";
+	"Kernel::System::DB::postgresql::BEGIN@15";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::Require";
+}
+"Kernel::System::Main::Require" -> "Kernel::System::DB::postgresql::BEGIN@15";
+"Kernel::System::Main::Require" -> "Kernel::System::DB::postgresql::BEGIN@14";
+"Kernel::System::DB::postgresql::BEGIN@15" -> "warnings::import";
+"Kernel::System::DB::new" -> "Kernel::System::DB::postgresql::new";
+"Kernel::System::DB::postgresql::BEGIN@17" -> "vars::import";
+"Kernel::System::DB::new" -> "Kernel::System::DB::postgresql::LoadPreferences";
+"Kernel::System::DB::postgresql::BEGIN@14" -> "strict::import";
+"Kernel::System::Main::Require" -> "Kernel::System::DB::postgresql::BEGIN@17";
+}

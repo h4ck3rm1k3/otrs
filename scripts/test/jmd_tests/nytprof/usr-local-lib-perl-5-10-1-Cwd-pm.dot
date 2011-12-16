@@ -1,0 +1,53 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_vars {
+	label="vars";
+	"vars::BEGIN@3";
+	"vars::BEGIN@8";
+	"vars::import";
+	"vars::BEGIN@7";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+	"strict::unimport";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_FindBin {
+	label="FindBin";
+	"FindBin::BEGIN@98";
+	"FindBin::cwd2";
+	"FindBin::init";
+}
+subgraph cluster_Cwd {
+	label="Cwd";
+	"Cwd::BEGIN@811";
+	"Cwd::BEGIN@172";
+	"Cwd::BEGIN@170";
+	"Cwd::abs_path";
+	"Cwd::CORE:fteexec";
+	"Cwd::BEGIN@171";
+	"Cwd::BEGIN@209";
+	"Cwd::getcwd";
+	"Cwd::CORE:regcomp";
+}
+"Cwd::BEGIN@171" -> "Exporter::import";
+"Cwd::BEGIN@811" -> "strict::unimport";
+"FindBin::BEGIN@98" -> "Cwd::BEGIN@171";
+"Cwd::BEGIN@172" -> "vars::BEGIN@8";
+"FindBin::init" -> "Cwd::abs_path";
+"FindBin::BEGIN@98" -> "Cwd::BEGIN@170";
+"Cwd::BEGIN@172" -> "vars::import";
+"FindBin::cwd2" -> "Cwd::getcwd";
+"FindBin::BEGIN@98" -> "Cwd::BEGIN@209";
+"FindBin::BEGIN@98" -> "Cwd::CORE:fteexec";
+"FindBin::BEGIN@98" -> "Cwd::CORE:regcomp";
+"Cwd::BEGIN@172" -> "vars::BEGIN@3";
+"FindBin::BEGIN@98" -> "Cwd::BEGIN@172";
+"FindBin::BEGIN@98" -> "Cwd::BEGIN@811";
+"Cwd::BEGIN@170" -> "strict::import";
+"Cwd::BEGIN@172" -> "vars::BEGIN@7";
+}

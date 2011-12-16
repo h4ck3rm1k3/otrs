@@ -1,0 +1,37 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_Language {
+	label="Kernel::Language";
+	"Kernel::Language::new";
+}
+subgraph cluster_Kernel_System_Main {
+	label="Kernel::System::Main";
+	"Kernel::System::Main::Require";
+}
+subgraph cluster_Kernel_Language_en {
+	label="Kernel::Language::en";
+	"Kernel::Language::en::BEGIN@17";
+	"Kernel::Language::en::BEGIN@15";
+	"Kernel::Language::en::BEGIN@14";
+	"Kernel::Language::en::Data";
+}
+"Kernel::System::Main::Require" -> "Kernel::Language::en::BEGIN@17";
+"Kernel::System::Main::Require" -> "Kernel::Language::en::BEGIN@15";
+"Kernel::System::Main::Require" -> "Kernel::Language::en::BEGIN@14";
+"Kernel::Language::en::BEGIN@15" -> "warnings::import";
+"Kernel::Language::new" -> "Kernel::Language::en::Data";
+"Kernel::Language::en::BEGIN@17" -> "vars::import";
+"Kernel::Language::en::BEGIN@14" -> "strict::import";
+}

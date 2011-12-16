@@ -1,0 +1,94 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_Config {
+	label="Config";
+	"Config::FETCH";
+}
+subgraph cluster_warnings {
+	label="warnings";
+	"warnings::import";
+}
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_Kernel_System_DB {
+	label="Kernel::System::DB";
+	"Kernel::System::DB::new";
+	"Kernel::System::DB::Do";
+}
+subgraph cluster_Exporter {
+	label="Exporter";
+	"Exporter::import";
+}
+subgraph cluster_Kernel_System_Time {
+	label="Kernel::System::Time";
+	"Kernel::System::Time::BEGIN@17";
+	"Kernel::System::Time::new";
+	"Kernel::System::Time::SystemTime2TimeStamp";
+	"Kernel::System::Time::BEGIN@15";
+	"Kernel::System::Time::BEGIN@14";
+	"Kernel::System::Time::SystemTime";
+	"Kernel::System::Time::SystemTime2Date";
+	"Kernel::System::Time::CurrentTimestamp";
+	"Kernel::System::Time::BEGIN@19";
+}
+subgraph cluster_Kernel_Config_Defaults {
+	label="Kernel::Config::Defaults";
+	"Kernel::Config::Defaults::Get";
+}
+subgraph cluster_Time_Local {
+	label="Time::Local";
+	"Time::Local::BEGIN@5";
+	"Time::Local::BEGIN@28";
+	"Time::Local::BEGIN@30";
+	"Time::Local::_daygm";
+	"Time::Local::BEGIN@29";
+	"Time::Local::BEGIN@6";
+	"Time::Local::BEGIN@7";
+	"Time::Local::BEGIN@4";
+	"Time::Local::BEGIN@9";
+}
+subgraph cluster_Kernel_System_Web_InterfaceAgent {
+	label="Kernel::System::Web::InterfaceAgent";
+	"Kernel::System::Web::InterfaceAgent::BEGIN@25";
+	"Kernel::System::Web::InterfaceAgent::new";
+}
+subgraph cluster_Kernel_Language {
+	label="Kernel::Language";
+	"Kernel::Language::new";
+	"Kernel::Language::Time";
+}
+"Kernel::Language::new" -> "Kernel::System::Time::new";
+"Kernel::System::DB::new" -> "Kernel::System::Time::new";
+"Kernel::System::Web::InterfaceAgent::new" -> "Kernel::System::Time::new";
+"Kernel::System::Time::BEGIN@17" -> "Time::Local::_daygm";
+"Kernel::System::Time::BEGIN@17" -> "Time::Local::BEGIN@7";
+"Kernel::System::Time::BEGIN@17" -> "Time::Local::BEGIN@30";
+"Kernel::System::Time::new" -> "Kernel::Config::Defaults::Get";
+"Kernel::System::Time::SystemTime2TimeStamp" -> "Kernel::System::Time::SystemTime2Date";
+"Kernel::Language::Time" -> "Kernel::System::Time::SystemTime2Date";
+"Kernel::System::Time::CurrentTimestamp" -> "Kernel::System::Time::SystemTime";
+"Kernel::Language::Time" -> "Kernel::System::Time::SystemTime";
+"Kernel::System::Web::InterfaceAgent::BEGIN@25" -> "Kernel::System::Time::BEGIN@14";
+"Kernel::System::Time::BEGIN@17" -> "Exporter::import";
+"Kernel::System::Time::BEGIN@17" -> "Time::Local::BEGIN@6";
+"Kernel::System::Web::InterfaceAgent::BEGIN@25" -> "Kernel::System::Time::BEGIN@19";
+"Kernel::System::Web::InterfaceAgent::BEGIN@25" -> "Kernel::System::Time::BEGIN@15";
+"Kernel::System::Time::CurrentTimestamp" -> "Kernel::System::Time::SystemTime2TimeStamp";
+"Kernel::System::Time::BEGIN@17" -> "Time::Local::BEGIN@4";
+"Kernel::System::Time::BEGIN@15" -> "warnings::import";
+"Kernel::System::Time::BEGIN@17" -> "Time::Local::BEGIN@5";
+"Kernel::System::Time::BEGIN@17" -> "Time::Local::BEGIN@28";
+"Kernel::System::Time::BEGIN@19" -> "vars::import";
+"Kernel::System::Time::BEGIN@17" -> "Time::Local::BEGIN@9";
+"Kernel::System::Web::InterfaceAgent::BEGIN@25" -> "Kernel::System::Time::BEGIN@17";
+"Kernel::System::Time::BEGIN@17" -> "Time::Local::BEGIN@29";
+"Kernel::System::Time::BEGIN@17" -> "Config::FETCH";
+"Kernel::System::DB::Do" -> "Kernel::System::Time::CurrentTimestamp";
+"Kernel::System::Time::BEGIN@14" -> "strict::import";
+}

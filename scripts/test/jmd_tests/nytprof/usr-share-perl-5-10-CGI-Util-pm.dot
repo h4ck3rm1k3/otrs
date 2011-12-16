@@ -1,0 +1,31 @@
+digraph {
+graph [overlap=false]
+subgraph cluster_vars {
+	label="vars";
+	"vars::import";
+}
+subgraph cluster_strict {
+	label="strict";
+	"strict::import";
+}
+subgraph cluster_CGI_Util {
+	label="CGI::Util";
+	"CGI::Util::BEGIN@4";
+	"CGI::Util::_rearrange_params";
+	"CGI::Util::BEGIN@3";
+	"CGI::Util::rearrange";
+}
+subgraph cluster_CGI {
+	label="CGI";
+	"CGI::BEGIN@27";
+	"CGI::delete";
+	"CGI::cookie";
+}
+"CGI::BEGIN@27" -> "CGI::Util::BEGIN@4";
+"CGI::Util::rearrange" -> "CGI::Util::_rearrange_params";
+"CGI::Util::BEGIN@4" -> "vars::import";
+"CGI::BEGIN@27" -> "CGI::Util::BEGIN@3";
+"CGI::cookie" -> "CGI::Util::rearrange";
+"CGI::delete" -> "CGI::Util::rearrange";
+"CGI::Util::BEGIN@3" -> "strict::import";
+}
