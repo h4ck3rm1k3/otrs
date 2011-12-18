@@ -19,12 +19,19 @@
 # --
 
 package Kernel::Config;
-
+use Carp qw(confess);
 use utf8;
 
+
+my $homedir ='scripts/test/jmd_tests/test_config';
+
 BEGIN {
-    if (-f 'test_config/Kernel/database.pm') {
-      require 'test_config/Kernel/database.pm';
+    # this is an ugly hack
+    $homedir ='scripts/test/jmd_tests/test_config';
+    my $database_config = $homedir . '/Kernel/database.pm';
+
+    if (-f $database_config) {
+      require $database_config;
       if ($dbtype eq 'pgsql') {
           $dbport ||= '5432';
           our $dsn = "DBI:Pg:dbname";
@@ -33,6 +40,10 @@ BEGIN {
           $dbport ||= '3306';
           our $dsn = "DBI:mysql:database";
       }
+    }
+    else
+    {
+	confess "no config file found:". $database_config;
     }
 }
 
@@ -62,7 +73,8 @@ sub Load {
     # DatabasePw
     # (The password of database user. You also can use bin/otrs.CryptPassword.pl
     # for crypted passwords.)
-    $Self->{DatabasePw} = $dbpass;
+    $Self->{DatabasePw} = $dbpass || confess "no database password set";
+#    warn "Database password set :" .$Self->{DatabasePw};
     # DatabaseDSN
     # (The database DSN for MySQL ==> more: "man DBD::mysql")
     $Self->{DatabaseDSN} =  "$dsn=$Self->{Database};host=$Self->{DatabaseHost};port=$dbport;";
@@ -78,7 +90,7 @@ sub Load {
     # ---------------------------------------------------- #
     # fs root directory
     # ---------------------------------------------------- #
-    $Self->{Home} = 'test_config';
+    $Self->{Home} = $homedir ;
 
     # ---------------------------------------------------- #
     # insert your own config settings "here"               #

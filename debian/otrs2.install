@@ -1,4 +1,4 @@
-Kernel/GenericInterface* Kernel/Scheduler* Kernel/Config* Kernel/Language* Kernel/Modules Kernel/Output Kernel/System usr/share/otrs/Kernel/
+lib/Kernel/GenericInterface* lib/Kernel/Scheduler* lib/Kernel/Config* lib/Kernel/Language* lib/Kernel/Modules lib/Kernel/Output lib/Kernel/System usr/share/otrs/Kernel/
 bin scripts .fetchmailrc.dist       usr/share/otrs/
 var/*                               var/lib/otrs/
 debian/maintenance.html.dist       usr/share/otrs/

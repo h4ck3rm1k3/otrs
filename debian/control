@@ -19,7 +19,7 @@ Depends: ${misc:Depends}, ${perl:Depends}, libapache2-reload-perl | httpd-cgi,
  libsoap-lite-perl, libnet-imap-simple-perl, libnet-imap-simple-ssl-perl,
  libnet-smtp-ssl-perl, libdbd-pg-perl | libdbd-mysql-perl, libgd-text-perl,
  libgd-graph-perl, libdbi-perl, libjs-yui, libdigest-sha-perl, libjs-jquery-ui,
- libjs-jquery, libjavascript-minifier-perl, libcss-minifier-perl,
+ libjs-jquery, libjavascript-minifier-xs-perl, libcss-minifier-xs-perl,
  ttf-dejavu-extra, ttf-dejavu-core, libjson-perl, libapache-dbi-perl
 Recommends: postgresql | mysql-server,
  procmail | maildrop, aspell | ispell

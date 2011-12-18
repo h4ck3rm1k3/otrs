@@ -1,6 +1,0 @@
-package Kernel::Output::HTML::Layout;
-sub LoaderCreateAgentCSSCalls
-{
-
-}
-1;

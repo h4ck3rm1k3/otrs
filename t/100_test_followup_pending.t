@@ -8,7 +8,7 @@ sub EventHandlerTransaction
 
 package Main;
 
-use Test::More tests => 2;
+use Test::More tests => 1;
 use_ok ("Kernel::System::PostMaster::FollowUp");
 use Kernel::Config;
 use Kernel::System::Encode;
@@ -184,9 +184,10 @@ $obj->Run(
         'In-Reply-To' => "",
         'References' => "",
 	'Content-Type' => "charset=utf8",
-	Body =>""
+	Body =>"",
+	Debug => 1
     },
     Tn               => 1,
     AutoResponseType => 1,
-
+    Debug => 1
 );

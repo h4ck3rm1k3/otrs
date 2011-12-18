@@ -64,7 +64,7 @@ use Kernel::System::Log;
 use Kernel::System::DB;
     my $DBObject = Kernel::System::DB->new(
         ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
+
         LogObject    => $LogObject,
         MainObject   => $MainObject,
     );

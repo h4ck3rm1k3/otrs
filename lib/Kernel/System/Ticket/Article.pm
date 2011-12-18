@@ -2407,6 +2407,7 @@ sub SendAgentNotification {
         CustomerUserObject => $Self->{CustomerUserObject},
         QueueObject        => $Self->{QueueObject},
         UserObject         => $Self->{UserObject},
+	TimeObject         => $Self->{TimeObject},
         TicketObject       => $Self,
     );
 
@@ -2826,6 +2827,7 @@ sub SendAutoResponse {
         CustomerUserObject => $Self->{CustomerUserObject},
         QueueObject        => $Self->{QueueObject},
         UserObject         => $Self->{UserObject},
+	TimeObject         => $Self->{TimeObject},
         TicketObject       => $Self,
     );
     my %AutoResponse = $TemplateGeneratorObject->AutoResponse(

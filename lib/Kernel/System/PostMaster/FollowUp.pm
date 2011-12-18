@@ -16,6 +16,8 @@ use warnings;
 
 use Kernel::System::User;
 
+use Kernel::System::DateProcessing qw(ValidateAndTransformPendingTime);
+
 use vars qw($VERSION);
 $VERSION = qw($Revision: 1.70 $) [1];
 
@@ -37,6 +39,7 @@ sub new {
 
     return $Self;
 }
+
 
 sub Run {
     my ( $Self, %Param ) = @_;
@@ -134,8 +137,11 @@ sub Run {
 
     # set pending time
     if ( $GetParam{'X-OTRS-FollowUp-State-PendingTime'} ) {
+
+	my  $X_OTRS_FollowUp_State_PendingTime= ValidateAndTransformPendingTime($GetParam{'X-OTRS-FollowUp-State-PendingTime'});
+	
         my $Updated = $Self->{TicketObject}->TicketPendingTimeSet(
-            String   => $GetParam{'X-OTRS-FollowUp-State-PendingTime'},
+            String   => $X_OTRS_FollowUp_State_PendingTime,
             TicketID => $Param{TicketID},
             UserID   => $Param{InmailUserID},
         );
@@ -287,7 +293,7 @@ sub Run {
     }
 
     # set ticket free time
-    for my $Count ( 1 .. 6 ) {
+    for my $Count ( 1 .. 6 ) { #TODO : transform this to a grep over the keys and matching them to a pattern
         my $Key = 'X-OTRS-FollowUp-TicketTime' . $Count;
         if ( $GetParam{$Key} ) {
             my $SystemTime = $Self->{TimeObject}->TimeStamp2SystemTime(

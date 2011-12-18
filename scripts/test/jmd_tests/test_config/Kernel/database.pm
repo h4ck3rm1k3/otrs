@@ -15,4 +15,6 @@ our $dbname='otrs2';
 our $dbserver='';
 our $dbport='';
 our $dbtype='pgsql';
+#warn "Database loaded" ;
+
 1;

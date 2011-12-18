@@ -13,7 +13,7 @@ package Kernel::System::Log;
 
 use strict;
 use warnings;
-
+use Try::Tiny;
 use Kernel::System::Encode;
 
 use vars qw($VERSION);
@@ -158,10 +158,33 @@ sub Log {
             # print line if upper caller module exists
             if ($Line1) {
                 my $VersionString;
-                eval { $VersionString = 'v' . $Package1->VERSION };
-                if ( !$VersionString || $VersionString eq 'v' ) {
-                    $VersionString = 'unknown version';
-                }
+		if ($Package1->can("VERSION"))
+		{
+		    try { 
+			if ($Package1->VERSION)
+			{
+			    $VersionString = 'v' . $Package1->VERSION ;
+			}
+			else
+			{
+			    $VersionString = 'unknown version';
+			}
+		    } 
+		    catch 		
+		    {
+			$VersionString = 'unknown version';
+		    };
+
+		    if ( !$VersionString || $VersionString eq 'v' ) 
+		    {
+			$VersionString = 'unknown version';
+		    }
+		}
+		else
+		{
+		    $VersionString = 'unknown version';
+		}
+
                 $Error .= "   Module: $Subroutine2 ($VersionString) Line: $Line1\n";
             }
 
