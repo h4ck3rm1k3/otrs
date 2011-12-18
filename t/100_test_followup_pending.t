@@ -7,7 +7,7 @@ sub EventHandlerTransaction
 
 
 package Main;
-
+use YAML;
 use Test::More tests => 1;
 use_ok ("Kernel::System::PostMaster::FollowUp");
 use Kernel::Config;
@@ -151,9 +151,9 @@ my $obj = Kernel::System::PostMaster::FollowUp->new(
     ParserObject => $parser,
 
 ##
-
    );
-$obj->Run(
+
+my $ret = $obj->Run(
     TicketID         => 1,
     InmailUserID     => 1,
     TimeObject=>$TimeObject,
@@ -191,3 +191,46 @@ $obj->Run(
     AutoResponseType => 1,
     Debug => 1
 );
+
+ok ($ret==1);
+
+eval {
+my $ret = $obj->Run(
+    TicketID         => 1,
+    InmailUserID     => 1,
+    TimeObject=>$TimeObject,
+    GetParam         => {
+	TicketID => 1,
+	UserID   => 1,
+	ArticleType => "email-external", #1
+	'X-OTRS-FollowUp-ArticleType' => 'email-external',
+	'X-OTRS-FollowUp-SenderType' => "agent",
+	'X-OTRS-FollowUp-State-PendingTime' => "+6 errors",
+#'X-OTRS-FollowUp-State'
+#'X-OTRS-FollowUp-Priority'
+#'X-OTRS-FollowUp-Queue'
+#'X-OTRS-FollowUp-Lock'
+#'X-OTRS-FollowUp-Type'
+#'X-OTRS-FollowUp-Service'
+#'X-OTRS-FollowUp-SLA'
+#'X-OTRS-FollowUp-TicketKey1'
+#'X-OTRS-FollowUp-TicketValue1'
+	TimeObject=>$TimeObject,
+	From => "",
+	ReplyTo => "",
+        To => "",
+        Cc => "",
+        Subject => "",
+	'Message-ID' => "",
+        'In-Reply-To' => "",
+        'References' => "",
+	'Content-Type' => "charset=utf8",
+	Body =>"",
+	Debug => 1
+    },
+    Tn               => 1,
+    AutoResponseType => 1,
+    Debug => 1
+);
+};
+ok ($@ =~ /Date Parsing Failed/);

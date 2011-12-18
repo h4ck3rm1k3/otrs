@@ -138,7 +138,7 @@ sub Run {
     # set pending time
     if ( $GetParam{'X-OTRS-FollowUp-State-PendingTime'} ) {
 
-	my  $X_OTRS_FollowUp_State_PendingTime= ValidateAndTransformPendingTime($GetParam{'X-OTRS-FollowUp-State-PendingTime'});
+	my  $X_OTRS_FollowUp_State_PendingTime= $Self->ValidateAndTransformPendingTime($GetParam{'X-OTRS-FollowUp-State-PendingTime'});
 	
         my $Updated = $Self->{TicketObject}->TicketPendingTimeSet(
             String   => $X_OTRS_FollowUp_State_PendingTime,

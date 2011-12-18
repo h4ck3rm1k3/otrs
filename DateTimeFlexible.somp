@@ -6,13 +6,14 @@
     <Vendor>OTRS AG</Vendor>
     <URL>http://otrs.org/</URL>
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007</License>
-    <ChangeLog Version="1.1.2" Date="2011-12-16 14:46:00">Added flexible date parsing.</ChangeLog>
+    <ChangeLog Version="1.1.2" Date="2011-12-16 14:46:00">Added flexible date parsing to the Followup mail handling.</ChangeLog>
     <Description Lang="en">Flexible Pending date.</Description>
-    <IntroInstall Type="post" Lang="en" Title="Thank you!">Thank you for choosing the Flexible Pending Date.</IntroInstall>
+    <IntroInstall Type="post" Lang="en" Title="Thank you!">Thank you for choosing the Flexible Pending Date module.</IntroInstall>
     <BuildDate>?</BuildDate>
     <BuildHost>?</BuildHost>
     <Filelist>
         <File Permission="644" Location="Kernel/System/DateProcessing.pm"></File>
         <File Permission="644" Location="Kernel/System/PostMaster/FollowUp.pm"></File>
+        <File Permission="644" Location="Kernel/System/Ticket/Article.pm"></File>
     </Filelist>
 </otrs_package>
