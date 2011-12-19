@@ -25,6 +25,10 @@ $ConfigObject->Set(
     Value => 0,
 );
 
+# fixes die
+$ConfigObject->Set(Key => 'CustomerPreferences', Value => {});
+
+
 my $CustomerUserObject = Kernel::System::CustomerUser->new(
     %{$Self},
     ConfigObject => $ConfigObject,
