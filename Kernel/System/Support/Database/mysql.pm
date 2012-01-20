@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database/mysql.pm - all required system information
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: mysql.pm,v 1.31 2011/05/27 14:33:33 mb Exp $
+# $Id: mysql.pm,v 1.32 2012/01/20 21:14:01 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::XML;
 use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.31 $) [1];
+$VERSION = qw($Revision: 1.32 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -451,7 +451,7 @@ sub _DatabaseSizeCheck {
     my ( $Self, %Param ) = @_;
     my $Data = {};
 
-    # max_allowed_packet check
+    # calculate and display database size
     my $Check   = 'Failed';
     my $Message = 'Could not determine database size.';
     my $DBName;
