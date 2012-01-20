@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Support/Database/postgresql.pm - all required system information
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: postgresql.pm,v 1.20 2011/05/26 13:30:42 mb Exp $
+# $Id: postgresql.pm,v 1.21 2012/01/20 21:14:59 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,7 +18,7 @@ use Kernel::System::XML;
 use Kernel::System::Time;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.20 $) [1];
+$VERSION = qw($Revision: 1.21 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -232,6 +232,33 @@ sub _UTF8ClientCheck {
             Check       => $Check,
         };
     }
+    return $Data;
+}
+
+sub _DatabaseSizeCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $Data = {};
+
+    # display database size
+    my $Check   = 'Failed';
+    my $Message = 'Could not determine database size.';
+    $Self->{DBObject}->Prepare(
+        SQL   => "SELECT pg_size_pretty(pg_database_size(current_database()))",
+        LIMIT => 1,
+    );
+    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            $Check   = 'OK';
+            $Message = "Database size is $Row[0]";
+        }
+    }
+    $Data = {
+        Name        => 'Database Size',
+        Description => 'Size of the current database.',
+        Comment     => $Message,
+        Check       => $Check,
+    };
     return $Data;
 }
 

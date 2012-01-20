@@ -2,7 +2,7 @@
 # CHANGES - change log of the Support module for OTRS
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: CHANGES-Support,v 1.17 2012/01/20 20:35:26 mb Exp $
+# $Id: CHANGES-Support,v 1.18 2012/01/20 21:16:06 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -10,7 +10,8 @@
 # --
 
 1.3.3 2012-??-??
- - 2012-01-20 Fixed bug#8113 - Not posible to start support module with no tickets on the system.
+ - 2012-01-20 Added display of total database size on PostgreSQL.
+ - 2012-01-20 Fixed bug#8113 - Not possible to start support module with no tickets on the system.
 
 1.3.2 2011-11-25
  - 2011-11-17 Fixed bug#7152 - Description should match current offered solutions.
