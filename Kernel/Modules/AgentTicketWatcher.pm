@@ -2,7 +2,7 @@
 # Kernel/Modules/AgentTicketWatcher.pm - a ticketwatcher module
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketWatcher.pm,v 1.18 2012/01/24 00:08:45 cr Exp $
+# $Id: AgentTicketWatcher.pm,v 1.15.2.1 2012/01/20 10:26:39 jh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -13,10 +13,9 @@ package Kernel::Modules::AgentTicketWatcher;
 
 use strict;
 use warnings;
-use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.18 $) [1];
+$VERSION = qw($Revision: 1.15.2.1 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -65,32 +64,10 @@ sub Run {
         return $Self->{Layout}->NoPermission();
     }
 
-    # get ACL restrictions
-    $Self->{TicketObject}->TicketAcl(
-        Data          => '-',
-        TicketID      => $Self->{TicketID},
-        ReturnType    => 'Action',
-        ReturnSubType => '-',
-        UserID        => $Self->{UserID},
-    );
-    my %AclAction = $Self->{TicketObject}->TicketAclActionData();
-
-    # check if ACL resctictions if exist
-    if ( IsHashRefWithData( \%AclAction ) ) {
-
-        # show error screen if ACL prohibits this action
-        if ( defined $AclAction{ $Self->{Action} } && $AclAction{ $Self->{Action} } eq '0' ) {
-            return $Self->{LayoutObject}->NoPermission( WithHeader => 'yes' );
-        }
-    }
-
     # ------------------------------------------------------------ #
     # subscribe a ticket
     # ------------------------------------------------------------ #
     if ( $Self->{Subaction} eq 'Subscribe' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
 
         # set subscribe
         my $Subscribe = $Self->{TicketObject}->TicketWatchSubscribe(
@@ -111,10 +88,6 @@ sub Run {
     # unsubscribe a ticket
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Unsubscribe' ) {
-
-        # challenge token check for write action
-        $Self->{LayoutObject}->ChallengeTokenCheck();
-
         my $Unsubscribe = $Self->{TicketObject}->TicketWatchUnsubscribe(
             TicketID    => $Self->{TicketID},
             WatchUserID => $Self->{UserID},
