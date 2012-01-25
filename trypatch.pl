@@ -1,3 +1,8 @@
+use strict;
+use warnings;
+
+my $debug=0;
+
 sub extract_version_number
 {
     my $version=shift;
@@ -49,11 +54,71 @@ sub extract_ids
     return $oldid,$newid;
 }
 
+sub do_system
+{
+    my $cmd =shift;
+    system $cmd or die "failed to exec $cmd with error $@";
+}
+
+sub apply_patch
+{
+    my $hash=shift;
+    my $outdir=shift;
+    my $branch=shift;
+
+  # see also http://gitready.com/intermediate/2009/03/04/pick-out-individual-commits.html
+
+    open PATCH,"git format-patch -1 --stdout $hash |" or die "$@";
+    my $patch="";
+    while (<PATCH>)
+    {
+	$patch .=$_;	
+    }
+    close PATCH;
+    warn "patch is $patch";
+
+    # now we can filter the patch   
+    open APPLY, "|git apply --verbose --directory=${outdir} - --include=$branch";
+    print APPLY $patch;
+    close APPLY;
+
+    die "check results";
+}
+
+sub extract_revisions_from_log
+{
+    my $fromdate=shift;
+    my $todate  =shift;
+    my $master  =shift;
+    my $branch  =shift;
+    my $outdir  =shift;
+
+    my $cmd = "git log --pretty=format:\"%H\"  --since=\"$fromdate\" --until=\"$todate\" $master";
+
+    open CMD,"$cmd|" or die "cannot run $cmd $@";
+
+    while(<CMD>)
+    {
+	chomp;
+	my $hash =$_;
+
+#	print "Going to apply hash $hash to $branch\n";
+
+	#$outdir
+	apply_patch($hash,$outdir,$branch);
+
+    }
+    close CMD; 
+
+}
 
 sub process_merge
 {
     my $master=shift;
     my $branch=shift;
+    my $outdir=shift;
+
+    ##
     my ($oldid,$newid) = extract_ids($branch);
     my ($master_oldid,$master_newid) = extract_ids($master);
 
@@ -75,12 +140,10 @@ sub process_merge
 	}
 	else
 	{
-	    my $oldv= extract_version_date $oldid;
-	    my $newv= extract_version_date $master_newid;
-	    
-	    warn " diff rev-list -n1 -D \"$oldv\"  $master";
-
-	    #-r $newv 
+	    my $fromdate= extract_version_date $oldid;
+	    my $todate= extract_version_date $master_newid;
+	    warn "check the diff from $oldid to $master_newid" if $debug;
+	    extract_revisions_from_log $fromdate,$todate,$master, $branch,$outdir;
 
 #	    warn " diff -kk -u -r $oldv -r $newv  $master";
 	    
@@ -102,10 +165,11 @@ sub check
     {
 #	warn "Found $source_location";
 	
-	my $src="../${packdir}/${source_location}";
+	my $srcdir="../git/${packdir}";
+	my $src="${srcdir}/${source_location}";
 	if ( -f $src)
 	{
-	    process_merge($source_location,$src); #merge this 
+	    process_merge($source_location,$src,$srcdir); #merge this 
 	}
 	else
 	{
@@ -133,7 +197,7 @@ while (<>)
 	check $packdir, $packname, $perm , $source_location;
     }
 
-    #../Astaro-EscalationNotify/Astaro-EscalationNotify.sopm:        <File Location="Kernel/Output/HTML/NotificationAgentTicketEscalation.pm" Permission="644" Encode="Base64"/>
+    #example ../git/Astaro-EscalationNotify/Astaro-EscalationNotify.sopm:        <File Location="Kernel/Output/HTML/NotificationAgentTicketEscalation.pm" Permission="644" Encode="Base64"/>
     elsif (/\.\.\/([-\w]+)\/([-\w]+).sopm:\s+\<File Location=\"([\w\-\.\/]+)\" Permission="(\d+)"\s*(?:Encode="Base64")?/)
     {
 	my $packdir=$1;
