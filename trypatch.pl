@@ -1,5 +1,6 @@
 use strict;
 use warnings;
+use TextPatch;
 
 my $debug=0;
 
@@ -60,6 +61,9 @@ sub do_system
     system $cmd or die "failed to exec $cmd with error $@";
 }
 
+#use Text::Patch;
+
+
 sub apply_patch
 {
     my $hash=shift;
@@ -67,22 +71,60 @@ sub apply_patch
     my $branch=shift;
 
   # see also http://gitready.com/intermediate/2009/03/04/pick-out-individual-commits.html
-
-    open PATCH,"git format-patch -1 --stdout $hash |" or die "$@";
+#    system "git format-patch -1 -o $outdir $hash" ; ## produce a patch file for review   
+    open PATCH,  "git format-patch -1 --stdout $hash|" ; ## produce a patch file for review
     my $patch="";
+    my $found =0;
     while (<PATCH>)
-    {
-	$patch .=$_;	
+    {	
+
+#diff --git a/Kernel/Modules/CustomerTicketAttachment.pm b/Kernel/Modules/CustomerTicketAttachment.pm
+	if (/diff \-\-git a\/([\w\-\.\/]+)/)
+	{
+	    my $filename =$1;
+	    if ("${outdir}/${filename}" eq $branch)
+	    {
+		$found=1;
+		warn "FOUND: ${outdir}/${filename} ne $branch";
+	    }
+	    else
+	    {
+		$found=0;
+	#	warn "SKIP:${outdir}/${filename} ne $branch";
+	    }
+	}
+	
+	if ($found==1)
+	{
+	    $patch .=$_;	
+	}
+
     }
     close PATCH;
-    warn "patch is $patch";
 
+    open OUT, ">testpatch.txt";
+#    warn "patch is now  ${patch} ";
+    print OUT ${patch};
+    close OUT;
+
+
+    open DATA,  "$branch" ; ## produce a patch file for review
+    my $source="";
+    while (<DATA>)    {	
+	$source .=$_;	
+    }
+    close DATA;
+
+    warn "going to process $branch and patch of length :"  . length($patch);
+    my $output = patch( $source, $patch, STYLE => "Unified" );
+    
+    warn $output;
     # now we can filter the patch   
-    open APPLY, "|git apply --verbose --directory=${outdir} - --include=$branch";
-    print APPLY $patch;
-    close APPLY;
+#    open APPLY, "|git apply --verbose --directory=${outdir} - --include=$branch";
+#    print APPLY $patch;
+#    close APPLY;
 
-    die "check results";
+    die "check results for $outdir and $branch ";
 }
 
 sub extract_revisions_from_log
@@ -93,17 +135,20 @@ sub extract_revisions_from_log
     my $branch  =shift;
     my $outdir  =shift;
 
-    my $cmd = "git log --pretty=format:\"%H\"  --since=\"$fromdate\" --until=\"$todate\" $master";
 
+    my $cmd = "git log --pretty=format:\"%H\"  --since=\"$fromdate\" --until=\"$todate\" $master";
+    warn "going to check $cmd";
     open CMD,"$cmd|" or die "cannot run $cmd $@";
 
+    my $count=0;    
     while(<CMD>)
     {
 	chomp;
 	my $hash =$_;
+	$count++; # add one!
+	next if $count ==0; # skip the first commit 	
 
-#	print "Going to apply hash $hash to $branch\n";
-
+	print "Going to apply hash $hash to $branch\n";
 	#$outdir
 	apply_patch($hash,$outdir,$branch);
 
@@ -128,8 +173,8 @@ sub process_merge
     }
     if (!$master_newid)
     {
-	warn "mising newid in $master";
-	next;
+#	warn "missing newid in $master";
+	return ;
     }
    
     if ($newid)
@@ -141,6 +186,8 @@ sub process_merge
 	else
 	{
 	    my $fromdate= extract_version_date $oldid;
+
+
 	    my $todate= extract_version_date $master_newid;
 	    warn "check the diff from $oldid to $master_newid" if $debug;
 	    extract_revisions_from_log $fromdate,$todate,$master, $branch,$outdir;
