@@ -182,9 +182,9 @@ shell> bin/opm.pl -a install -p /path/to/$Name-$Version.opm
             <para>Default: '\s*Address:\s+(\d+\.\d+\.\d+\.\d+)\s*'</para>
         </sect1>
         <sect1>
-            <title>FreeTextHost</title>
-            <para>Free text field index to store the name of the affected host.</para>
-            <para>Default: '1'</para>
+            <title>DFSystemMonitoringHost</title>
+            <para>DynamicField name to store the name of the affected host.</para>
+            <para>Default: 'SystemMonitoring-Host'</para>
         </sect1>
         <sect1>
             <title>ServiceRegExp</title>
@@ -198,9 +198,9 @@ shell> bin/opm.pl -a install -p /path/to/$Name-$Version.opm
             <para>Default: 'Host'</para>
         </sect1>
         <sect1>
-            <title>FreeTexyService</title>
-            <para> Free text field index to store service.</para>
-            <para>Default: '2'</para>
+            <title>DFSystemMonitoringService</title>
+            <para> DynamicField index to store service.</para>
+            <para>Default: 'SystemMonitoring-Service'</para>
         </sect1>
         <sect1>
             <title>SenderType</title>

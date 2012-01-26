@@ -11,6 +11,7 @@
 
 2.3.1 2012-01-25
  - Initial release for OTRS 3.1.
+ - Usage of Dynamic Fields.
 
 2.2.2 2011-08-25
  - 2011-06-11 Fixed bug#5491 - URL not created very well if blanks in Service and/or Host.

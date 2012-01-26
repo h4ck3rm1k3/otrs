@@ -17,11 +17,11 @@
                 <Item Key="CloseActionState">closed successful</Item>
                 <Item Key="ClosePendingTime">172800</Item>
                 <Item Key="DefaultService">Host</Item>
-                <Item Key="FreeTextHost">1</Item>
-                <Item Key="FreeTextService">2</Item>
                 <Item Key="SenderType">system</Item>
                 <Item Key="ArticleType">note-report</Item>
-                <Item Key="FreeTextState">1</Item>
+                <Item Key="DynamicFieldNameSystemMonitoringHost">DFSystemMonitoringHost</Item>
+                <Item Key="DynamicFieldNameSystemMonitoringService">DFSystemMonitoringService</Item>
+                <Item Key="DynamicFieldNameSystemMonitoringState">DFSystemMonitoringState</Item>
             </Hash>
         </Setting>
     </ConfigItem>
@@ -41,11 +41,12 @@
                 <Item Key="CloseActionState">closed successful</Item>
                 <Item Key="ClosePendingTime">172800</Item>
                 <Item Key="DefaultService">Host</Item>
-                <Item Key="FreeTextHost">1</Item>
-                <Item Key="FreeTextService">2</Item>
                 <Item Key="SenderType">system</Item>
                 <Item Key="ArticleType">note-report</Item>
-                <Item Key="FreeTextState">1</Item>
+                <Item Key="DynamicFieldNameSystemMonitoringHost">DFSystemMonitoringHost</Item>
+                <Item Key="DynamicFieldNameSystemMonitoringService">DFSystemMonitoringService</Item>
+                <Item Key="DynamicFieldNameSystemMonitoringState">DFSystemMonitoringState</Item>
+
             </Hash>
         </Setting>
     </ConfigItem>
@@ -71,20 +72,20 @@
             </Option>
         </Setting>
     </ConfigItem>
-    <ConfigItem Name="Nagios::Acknowledge::FreeField::Host" Required="1" Valid="1">
-        <Description Translatable="1">Name of TicketFreeField for Host.</Description>
+    <ConfigItem Name="Nagios::Acknowledge::DynamicField::Host" Required="1" Valid="1">
+        <Description Translatable="1">Name of DynamicField for Host.</Description>
         <Group>SystemMonitoring</Group>
         <SubGroup>Nagios::Acknowledge</SubGroup>
         <Setting>
-            <String Regex="">TicketFreeText1</String>
+            <String Regex="">DFSystemMonitoringHost</String>
         </Setting>
     </ConfigItem>
-    <ConfigItem Name="Nagios::Acknowledge::FreeField::Service" Required="1" Valid="1">
-        <Description Translatable="1">Name of TicketFreeField for Service.</Description>
+    <ConfigItem Name="Nagios::Acknowledge::DynamicField::Service" Required="1" Valid="1">
+        <Description Translatable="1">Name of DynamicField for Service.</Description>
         <Group>SystemMonitoring</Group>
         <SubGroup>Nagios::Acknowledge</SubGroup>
         <Setting>
-            <String Regex="">TicketFreeText2</String>
+            <String Regex="">DFSystemMonitoringService</String>
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Nagios::Acknowledge::Type" Required="0" Valid="1">

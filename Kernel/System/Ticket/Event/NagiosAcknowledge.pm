@@ -34,9 +34,9 @@ sub new {
         $Self->{$_} = $Param{$_} || die "Got no $_!";
     }
 
-    # get correct FreeFields
-    $Self->{Fhost}    = $Self->{ConfigObject}->Get('Nagios::Acknowledge::FreeField::Host');
-    $Self->{Fservice} = $Self->{ConfigObject}->Get('Nagios::Acknowledge::FreeField::Service');
+    # get correct DynamicFields
+    $Self->{Fhost}    = $Self->{ConfigObject}->Get('Nagios::Acknowledge::DynamicField::Host');
+    $Self->{Fservice} = $Self->{ConfigObject}->Get('Nagios::Acknowledge::DynamicField::Service');
 
     return $Self;
 }

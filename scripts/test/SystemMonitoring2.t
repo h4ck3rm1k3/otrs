@@ -35,7 +35,7 @@ use YAML;
 
 bless $Self, "Kernel::System::UnitTest";
 
-warn Dump($Self);
+#warn Dump($Self);
 
 
 my $Config= $Self->{ConfigObject};
@@ -69,14 +69,16 @@ my %Ticket       = $TicketObject->TicketGet(
     TicketID => $Return[1],
 );
 
+#warn "Ticket:" . Dump(\%Ticket);
+
 $Self->Is(
-    $Ticket{TicketFreeText1},
+    $Ticket{"SystemMonitoring-Host"},
     'delphin',
     "Host check",
 );
 
 $Self->Is(
-    $Ticket{TicketFreeText2},
+    $Ticket{"SystemMonitoring-Service"},
     'Host',
     "Service check",
 );
@@ -91,32 +93,51 @@ $FileArray = $Self->{MainObject}->FileRead(
     Result => 'ARRAY',    # optional - SCALAR|ARRAY
 );
 
-$PostMasterObject = Kernel::System::PostMaster->new(
-    %{$Self},
-    Email => $FileArray,
+#    Email => $FileArray,
+
+## 
+use Kernel::System::PostMaster::Filter::SystemMonitoring;
+use Kernel::System::Time;
+
+
+$Self->{Debug} =1;
+
+my $TicketObject2 = Kernel::System::Ticket->new( %{$Self} );
+my $TimeObject = Kernel::System::Time->new( %{$Self} );
+
+my $sm = Kernel::System::PostMaster::Filter::SystemMonitoring->new(%{$Self}, TicketObject => $TicketObject2,
+   TimeObject =>   $TimeObject						     
 );
+#warn "System Monitoring:" . Dump($sm);
 
-@Return = $PostMasterObject->Run();
-$Self->Is(
-    $Return[0] || 0,
-    2,
-    "Run() - NewTicket",
+my %MailParam = (
+   JobConfig => {
+   	     FromAddressRegExp => "nagios\@example.com"
+   },	     
+   GetParam => {
+   	    From=> "nagios\@example.com", # FromAddressRegExp
+	    Subject => "Subject: ** PROBLEM alert 1 - delphin host is DOWN **",
+	    Body    => q[
+***** Nagios  *****
+
+Notification Type: PROBLEM
+Host: delphin
+State: DOWN for 0d 0h 0m 0s
+Address: 127.1.1.1
+Info:
+
+CRITICAL - Time to live exceeded (127.1.1.1)
+
+Date/Time: Sun Mar 18 00:18:30 CET 2007
+
+ACK by: 
+Comment:
+ 		]
+    }
 );
+my $ret = $sm->Run(%MailParam);
+warn "Run returned:" . Dump($ret);
 
-if ($Return[1])
-{
-	die "No TicketID in return " . Dump(\@Return);
-}
-
-if (!$Ticket{TicketID})	
-{
-	die "No Ticket ID in Ticket Object" . Dump(\%Ticket);
-}
-
-$Self->True(
-    $Return[1] == $Ticket{TicketID},
-    "Run() - NewTicket/TicketID",
-);
 
 $TicketObject = Kernel::System::Ticket->new( %{$Self} );
 %Ticket       = $TicketObject->TicketGet(

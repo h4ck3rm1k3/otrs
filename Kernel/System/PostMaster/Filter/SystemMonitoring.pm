@@ -13,10 +13,14 @@ package Kernel::System::PostMaster::Filter::SystemMonitoring;
 
 use strict;
 use warnings;
-
+use YAML;
 use Kernel::System::LinkObject;
 
 use vars qw($VERSION);
+
+# have the string constant in one place
+use constant FollowUpDynamicFieldSystemMonitorState => "X-OTRS-FollowUp-DynamicField-SystemMonitor-State";
+
 $VERSION = qw($Revision: 1.11 $) [1];
 
 sub new {
@@ -50,32 +54,28 @@ sub new {
             $Self->{GeneralCatalogObject} = Kernel::System::GeneralCatalog->new( %{$Self} );
         }
 
-        # require the config item module
-        if ( $Self->{MainObject}->Require('Kernel::System::ITSMConfigItem') ) {
+        # require the config item module        if ( $Self->{MainObject}->Require('Kernel::System::ITSMConfigItem') ) {
 
             # create config item object
             $Self->{ConfigItemObject} = Kernel::System::ITSMConfigItem->new( %{$Self} );
         }
-    }
+
 
     # Default Settings
-    $Self->{Config} = {
-        StateRegExp       => '\s*State:\s+(\S+)',
-        FromAddressRegExp => 'sysmon@example.com',
-        NewTicketRegExp   => 'CRITICAL|DOWN',
-        CloseTicketRegExp => 'OK|UP',
-        CloseActionState  => 'closed successful',
-        ClosePendingTime  => 60 * 60 * 24 * 2,                          # 2 days
-        HostRegExp        => '\s*Address:\s+(\d+\.\d+\.\d+\.\d+)\s*',
-        FreeTextHost      => '1',
-        FreeTextService   => '2',
-        FreeTextState     => '1',
-        ServiceRegExp     => '\s*Service:\s+(.*)\s*',
-        DefaultService    => 'Host',
-        SenderType        => 'system',
-        ArticleType       => 'note-report',
+    $Self->{Config} =  {
+	StateRegExp       => '\s*State:\s+(\S+)',
+	FromAddressRegExp => 'sysmon@example.com',
+	NewTicketRegExp   => 'CRITICAL|DOWN',
+	CloseTicketRegExp => 'OK|UP',
+	CloseActionState  => 'closed successful',
+	ClosePendingTime  => 60 * 60 * 24 * 2,                          # 2 days
+	HostRegExp        => '\s*Address:\s+(\d+\.\d+\.\d+\.\d+)\s*',
+	ServiceRegExp     => '\s*Service:\s+(.*)\s*',
+	DefaultService    => 'Host',
+	SenderType        => 'system',
+	ArticleType       => 'note-report',
     };
-
+    
     return $Self;
 }
 
@@ -96,7 +96,7 @@ sub Run {
 
     # check if sender is of interest
     return 1 if !$Param{GetParam}->{From};
-    return 1 if $Param{GetParam}->{From} !~ /$Self->{Config}->{FromAddressRegExp}/i;
+    return 2 if $Param{GetParam}->{From} !~ /$Self->{Config}->{FromAddressRegExp}/i;
 
     # Try to get State, Host and Service from email subject
     my @SubjectLines = split /\n/, $Param{GetParam}->{Subject};
@@ -126,14 +126,16 @@ sub Run {
 
     LINE:
     for my $Line (@BodyLines) {
-
+#	warn "Looking at $Line";
         # Try to get State, Host and Service from email body
         ELEMENT:
         for my $Element (qw(State Host Service)) {
 
             next ELEMENT if $AlreadyMatched{$Element};
 
-            if ( $Line =~ /$Self->{Config}->{ $Element . 'RegExp' }/ ) {
+	    my $regex = $Self->{Config}->{ $Element . 'RegExp' };
+#	    warn "Check $Line against Regex :$regex";
+            if ( $Line =~ /$regex/ ) {
 
                 # get the found element value
                 $Self->{$Element} = $1;
@@ -153,7 +155,8 @@ sub Run {
                 . 'SystemMonitoring: Could not find host address '
                 . 'and/or state in mail => Ignoring',
         );
-        return 1;
+
+        return 3;
     }
 
     # Check for Service
@@ -173,9 +176,7 @@ sub Run {
         StateType => 'Open',
     );
     for my $Type (qw(Host Service)) {
-        $Query{ 'TicketFreeKey' . $Self->{Config}->{ 'FreeText' . $Type } } = $Type;
-        $Query{ 'TicketFreeText' . $Self->{Config}->{ 'FreeText' . $Type } }
-            = $Self->{$Type};
+        $Query{ 'SystemMonitoring-' . $Type }   = $Self->{$Type};
     }
 
     # search tickets
@@ -203,18 +204,14 @@ sub Run {
         $Param{GetParam}->{'X-OTRS-FollowUp-SenderType'}  = $Self->{Config}->{SenderType};
         $Param{GetParam}->{'X-OTRS-FollowUp-ArticleType'} = $Self->{Config}->{ArticleType};
 
-        # Set Article Free Field for State
-        my $ArticleFreeTextNumber = $Self->{Config}->{'FreeTextState'};
-        $Param{GetParam}->{ 'X-OTRS-FollowUp-ArticleKey' . $ArticleFreeTextNumber }
-            = 'State';
-        $Param{GetParam}->{ 'X-OTRS-FollowUp-ArticleValue' . $ArticleFreeTextNumber }
-            = $Self->{State};
+        # Set Article Dynamic Field for State
+        $Param{GetParam}->{FollowUpDynamicFieldSystemMonitorState}      = $Self->{State};
 
         if ( $Self->{State} =~ /$Self->{Config}->{CloseTicketRegExp}/ ) {
 
             # Close Ticket Condition -> Take Close Action
             if ( $Self->{Config}->{CloseActionState} ne 'OLD' ) {
-                $Param{GetParam}->{'X-OTRS-FollowUp-State'} = $Self->{Config}->{CloseActionState};
+                $Param{GetParam}->{FollowUpDynamicFieldSystemMonitorState} = $Self->{Config}->{CloseActionState};
 
                 my $TimeStamp = $Self->{TimeObject}->SystemTime2TimeStamp(
                     SystemTime => $Self->{TimeObject}->SystemTime()
@@ -257,19 +254,9 @@ sub Run {
     elsif ( $Self->{State} =~ /$Self->{Config}->{NewTicketRegExp}/ ) {
 
         # Create Ticket Condition -> Create new Ticket and record Host and Service
-        for (qw(Host Service)) {
-
-            # get the freetext number from config
-            my $TicketFreeTextNumber = $Self->{Config}->{ 'FreeText' . $_ };
-
-            $Param{GetParam}->{ 'X-OTRS-TicketKey' . $TicketFreeTextNumber }   = $_;
-            $Param{GetParam}->{ 'X-OTRS-TicketValue' . $TicketFreeTextNumber } = $Self->{$_};
+        for (qw(Host Service State)) {
+            	$Param{GetParam}->{ 'X-OTRS-DynamicField-SystemMonitoring-' . $_ }   = $Self->{$_};
         }
-
-        # Set Article Free Field for State
-        my $ArticleFreeTextNumber = $Self->{Config}->{'FreeTextState'};
-        $Param{GetParam}->{ 'X-OTRS-ArticleKey' . $ArticleFreeTextNumber }   = 'State';
-        $Param{GetParam}->{ 'X-OTRS-ArticleValue' . $ArticleFreeTextNumber } = $Self->{State};
 
         # set sender type and article type
         $Param{GetParam}->{'X-OTRS-SenderType'}  = $Self->{Config}->{SenderType};
@@ -304,7 +291,7 @@ sub Run {
         );
     }
 
-    return 1;
+    return 4;
 }
 
 sub _SetIncidentState {
@@ -335,7 +322,7 @@ sub _SetIncidentState {
         # log error
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "Could not find any CI with the name '$Param{Name}'. ",
+            Message  => "Could not find any ConfigItem with the name '$Param{Name}'. ",
         );
         return;
     }
@@ -346,8 +333,8 @@ sub _SetIncidentState {
         # log error
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "Can not set incident state for CI with the name '$Param{Name}'. "
-                . "More than one CI with this name was found!",
+            Message  => "Can not set incident state for ConfigItem with the name '$Param{Name}'. "
+                . "More than one ConfigItem with this name was found!",
         );
         return;
     }
@@ -428,7 +415,7 @@ sub _LinkTicketWithCI {
         # log error
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "Could not find any CI with the name '$Param{Name}'. ",
+            Message  => "Could not find any ConfigItem with the name '$Param{Name}'. ",
         );
         return;
     }
@@ -439,8 +426,8 @@ sub _LinkTicketWithCI {
         # log error
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "Can not set incident state for CI with the name '$Param{Name}'. "
-                . "More than one CI with this name was found!",
+            Message  => "Can not set incident state for ConfigItem with the name '$Param{Name}'. "
+                . "More than one ConfigItem with this name was found!",
         );
         return;
     }

@@ -53,13 +53,16 @@
 #        CustomerID => '123',
 #        CustomerID => ['123', 'ABC'],
 
-       # 1..16 free text fields
-#        TicketFreeKey1  => 'Product',
-#        TicketFreeText1 => 'adasd',
+       # the dynamic fields for host 
+#        DFSystemMonitoringHost  => 'Product',
+#        DFSystemMonitoringHost => 'adasd',
 
+       # the dynamic fields for service
        # or with multi options as array ref or string possible
-#        TicketFreeKey2  => ['Product', 'Product2'],
-#        TicketFreeText2 => ['Browser', 'Sound', 'Mouse'],
+#        DFSystemMonitoringService  => ['Product', 'Product2'],
+#        DFSystemMonitoringService  => ['Browser', 'Sound', 'Mouse'],
+
+	 
    },
 
 # Declaration of tresholds
