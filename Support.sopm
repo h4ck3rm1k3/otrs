@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
-    <CVS>$Id: Support.sopm,v 1.29 2011/11/24 10:57:29 mg Exp $</CVS>
+    <CVS>$Id: Support.sopm,v 1.30 2012/01/26 15:36:29 mh Exp $</CVS>
     <Name>Support</Name>
     <Version>0.0.0</Version>
     <Framework>3.1.x</Framework>
@@ -14,6 +14,9 @@
     <IntroInstallPost Title="Hinweis - Einführung" Lang="de">Das Support-Assessment-Modul bietet Systemüberprüfungen an, mit denen Einrichtungsfehler erkannt werden können. Nach der Installation kann es über den Administrationsbereich im Abschnitt System-Administration aufgerufen werden.</IntroInstallPost>
     <IntroInstallPost Title="Notice - Introduction" Lang="es">El módulo de evaluación de soporte proporciona comprobaciones del sistema y puede ayudar a encontrar errores de configuración. Después de la instalación se puede acceder desde la Interfaz de Administración, en el panel de administración del sistema.</IntroInstallPost>
     <Filelist>
+        <File Permission="644" Location="Kernel/Config/Files/Support.xml"/>
+        <File Permission="644" Location="Kernel/Language/de_Support.pm"/>
+        <File Permission="644" Location="Kernel/Modules/AdminSupport.pm"/>
         <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupport.dtl"/>
         <File Permission="644" Location="Kernel/Output/HTML/Standard/AdminSupportLicenseText.dtl"/>
         <File Permission="644" Location="Kernel/System/Support.pm"/>
@@ -31,8 +34,6 @@
         <File Permission="644" Location="Kernel/cpan-lib/Archive/Tar/File.pm"/>
         <File Permission="644" Location="Kernel/cpan-lib/Archive/Tar.pm"/>
         <File Permission="644" Location="Kernel/cpan-lib/Linux/Distribution.pm"/>
-        <File Permission="644" Location="Kernel/Modules/AdminSupport.pm"/>
-        <File Permission="644" Location="Kernel/Config/Files/Support.xml"/>
         <File Permission="644" Location="var/httpd/htdocs/skins/Agent/default/css/Support.Default.css"/>
     </Filelist>
     <DatabaseInstall>

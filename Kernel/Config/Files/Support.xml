@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otrs_config version="1.0" init="Application">
-    <CVS>$Id: Support.xml,v 1.14 2012/01/20 21:14:59 mb Exp $</CVS>
+    <CVS>$Id: Support.xml,v 1.15 2012/01/26 15:36:29 mh Exp $</CVS>
     <ConfigItem Name="Frontend::Module###AdminSupport" Required="1" Valid="1">
-        <Description Lang="en">Frontend module registration for the AdminSystemStatus object in the admin area.</Description>Description>
-        <Description Lang="de">Frontendmodul-Registration des AdminSystemStatus-Objekts im Admin-Bereich.</Description>Description>
+        <Description Translatable="1">Frontend module registration for the AdminSystemStatus object in the admin area.</Description>
         <Group>Support</Group>
         <SubGroup>Frontend::Admin::ModuleRegistration</SubGroup>
         <Setting>
@@ -25,8 +24,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Support::SenderEmail" Required="0" Valid="0">
-        <Description Lang="en">The used sender mail address.</Description>
-        <Description Lang="de">Die verwendete Absenderadresse.</Description>
+        <Description Translatable="1">The used sender mail address.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -34,8 +32,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Support::Database::DB2" Required="0" Valid="1">
-        <Description Lang="en">Definition of the database checks for the DB2 database.</Description>
-        <Description Lang="de">Definition der Datenbank-Checks für die DB2 Datenbank.</Description>
+        <Description Translatable="1">Definition of the database checks for the DB2 database.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -46,8 +43,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Support::Database::MSSQL" Required="0" Valid="1">
-        <Description Lang="en">Definition of the database checks for the MSSQL database.</Description>
-        <Description Lang="de">Definition der Datenbank-Checks für die MSSQL Datenbank.</Description>
+        <Description Translatable="1">Definition of the database checks for the MSSQL database.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -61,8 +57,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Support::Database::MySQL" Required="0" Valid="1">
-        <Description Lang="en">Definition of the database checks for the MySQL database.</Description>
-        <Description Lang="de">Definition der Datenbank-Checks für die MySQL Datenbank.</Description>
+        <Description Translatable="1">Definition of the database checks for the MySQL database.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -81,8 +76,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Support::Database::Oracle" Required="0" Valid="1">
-        <Description Lang="en">Definition of the database checks for the Oracle database.</Description>
-        <Description Lang="de">Definition der Datenbank-Checks für die Oracle Datenbank.</Description>
+        <Description Translatable="1">Definition of the database checks for the Oracle database.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -97,8 +91,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Support::Database::PostgreSQL" Required="0" Valid="1">
-        <Description Lang="en">Definition of the database checks for the PostgreSQL database.</Description>
-        <Description Lang="de">Definition der Datenbank-Checks für die PostgreSQL Datenbank.</Description>
+        <Description Translatable="1">Definition of the database checks for the PostgreSQL database.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -114,8 +107,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Support::OS" Required="0" Valid="1">
-        <Description Lang="en">Definition of the Operating System checks.</Description>
-        <Description Lang="de">Definition der Betriebssystem-Checks.</Description>
+        <Description Translatable="1">Definition of the Operating System checks.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -131,8 +123,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Support::OTRS" Required="0" Valid="1">
-        <Description Lang="en">Definition of the OTRS checks.</Description>
-        <Description Lang="de">Definition der OTRS-Checks.</Description>
+        <Description Translatable="1">Definition of the OTRS checks.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -155,8 +146,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Support::Webserver::Apache" Required="0" Valid="1">
-        <Description Lang="en">Definition of the webserver checks for the Apache webserver.</Description>
-        <Description Lang="de">Definition der Webserver-Checks für den Apache Webserver.</Description>
+        <Description Translatable="1">Definition of the webserver checks for the Apache webserver.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -169,8 +159,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Support::Webserver::IIS" Required="0" Valid="1">
-        <Description Lang="en">Definition of the webserver checks for the IIS webserver.</Description>
-        <Description Lang="de">Definition der Webserver-Checks für den IIS Webserver.</Description>
+        <Description Translatable="1">Definition of the webserver checks for the IIS webserver.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>
@@ -180,8 +169,7 @@
         </Setting>
     </ConfigItem>
     <ConfigItem Name="Support::Cron" Required="0" Valid="0">
-        <Description Lang="en">Definition of the Cron checks.</Description>
-        <Description Lang="de">Definition der Cron-Checks.</Description>
+        <Description Translatable="1">Definition of the Cron checks.</Description>
         <Group>Support</Group>
         <SubGroup>Core::Support</SubGroup>
         <Setting>

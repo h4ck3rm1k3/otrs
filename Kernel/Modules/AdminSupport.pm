@@ -1,8 +1,8 @@
 # --
 # Kernel/Modules/AdminSupport.pm - show support information
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: AdminSupport.pm,v 1.37 2011/11/24 15:08:09 mb Exp $
+# $Id: AdminSupport.pm,v 1.38 2012/01/26 15:36:29 mh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -17,7 +17,7 @@ use warnings;
 use Kernel::System::Support;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.37 $) [1];
+$VERSION = qw($Revision: 1.38 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -81,27 +81,24 @@ sub Run {
 
         $Self->{LayoutObject}->Block(
             Name => 'Confidential',
-            Data => {},
         );
 
         if ( $User{UserLanguage} && $User{UserLanguage} =~ /de/ ) {
             $Self->{LayoutObject}->Block(
                 Name => 'ConfidentialContentDE',
-                Data => {},
             );
         }
         else {
             $Self->{LayoutObject}->Block(
                 Name => 'ConfidentialContentEN',
-                Data => {},
             );
         }
 
         $Output .= $Self->{LayoutObject}->Output(
             TemplateFile => 'AdminSupport',
-            Data         => {},
         );
         $Output .= $Self->{LayoutObject}->Footer();
+
         return $Output;
     }
 
@@ -126,9 +123,9 @@ sub Run {
 
         $Output .= $Self->{LayoutObject}->Output(
             TemplateFile => 'AdminSupport',
-            Data         => {},
         );
         $Output .= $Self->{LayoutObject}->Footer();
+
         return $Output;
     }
 
@@ -166,7 +163,7 @@ sub Run {
             if ($SendMessage) {
                 $Output .= $Self->{LayoutObject}->Notify(
                     Priority => 'warning',
-                    Info     => "Sent package to OTRS Group.",
+                    Info     => 'Sent package to OTRS Group.',
                 );
             }
             else {
@@ -183,14 +180,15 @@ sub Run {
 
             $Output .= $Self->{LayoutObject}->Output(
                 TemplateFile => 'AdminSupport',
-                Data         => {},
             );
             $Output .= $Self->{LayoutObject}->Footer();
+
             return $Output;
         }
 
         # if the button download becomes the submit
         else {
+
             my ( $Content, $Filename ) = $Self->{SupportObject}->Download(
                 %CustomerInfo,
             );
@@ -247,6 +245,7 @@ sub Run {
             Data         => \%Param,
         );
         $Output .= $Self->{LayoutObject}->Footer();
+
         return $Output;
     }
 
@@ -353,10 +352,12 @@ sub Run {
                 Value => "* $Mode",
             },
         );
+
         my $Output = $Self->{LayoutObject}->Output(
             TemplateFile => 'AdminSupport',
             Data         => \%BenchTest,
         );
+
         return $Output;
     }
 
@@ -411,6 +412,7 @@ sub Run {
                         },
                     );
                     my %TableValues = split( /[=;]/, $RowHash->{TableInfo} );
+
                     for my $Item ( sort keys %TableValues ) {
                         $Self->{LayoutObject}->Block(
                             Name => 'OverviewModuleTableRow',
@@ -423,11 +425,12 @@ sub Run {
                 }
             }
         }
+
         $Output .= $Self->{LayoutObject}->Output(
             TemplateFile => 'AdminSupport',
-            Data         => {},
         );
         $Output .= $Self->{LayoutObject}->Footer();
+
         return $Output;
     }
 }
