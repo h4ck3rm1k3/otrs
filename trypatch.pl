@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use TextPatch;
-
+my $ROOTDIR="../../private/";
 my $debug=0;
 
 sub extract_version_number
@@ -63,8 +63,49 @@ sub do_system
 
 #use Text::Patch;
 
+sub display_diff
+{
+    my $from=shift;
+    my $to=shift;
+    
+    my $ret = system "kompare $from $to";
 
-sub apply_patch
+    warn "Return was $ret";
+    sleep(1);
+    
+}
+
+sub apply_patch_via_full
+{
+    my $hash=shift;
+    my $outdir=shift;
+    my $branch=shift;
+    my $master=shift;
+
+    my $outtempfile="$outdir/$branch.$hash";
+    my $targetfile="$outdir/$branch";
+
+    if (! -f $outtempfile)
+    {
+	warn "going to display $hash for $master";
+	open PATCH,  "git show $hash:$master|" ; ## produce a patch file for review    
+	open OUT,  ">$outtempfile" ; ## produce a patch file for review    
+	# transfer the version to a branch dir for comparison
+	while(<PATCH>)
+	{
+#	warn $_;
+	    print OUT $_;
+	}
+	close OUT;
+	close PATCH;
+    }
+
+    # now apply the patch
+    display_diff ($targetfile, $outtempfile); #apply the patch   
+}
+
+
+sub apply_patch_via_diff
 {
     my $hash=shift;
     my $outdir=shift;
@@ -126,7 +167,7 @@ sub apply_patch
     }
     close PATCH;
 
-    open OUT, ">${branch}.testpatch.diff";
+    open OUT, ">${branch}.${hash}.diff";
 #    warn "patch is now  ${patch} ";
     print OUT $patch;
     close OUT;
@@ -145,14 +186,15 @@ sub apply_patch
     warn "going to process $branch and patch of length :"  . length($patch);
     my $output = patch( $source, $patch, STYLE => "Unified" );
 
-
-    open OUT, ">${branch}.testout.txt";
-    warn "${branch}.testout.txt";
+    open OUT, ">${branch}.${hash}.out";
+    warn "${branch}.${hash}.out";
     print OUT $output;
     close OUT;
 
     # apply 
-    system "kompare -b ${branch} ${branch}.testpatch.diff";
+    my $compare = "kompare -b ${branch} ${branch}.${hash}.diff";
+    warn $compare;
+    system $compare;
 
     # now we can filter the patch   
 #    open APPLY, "|git apply --verbose --directory=${outdir} - --include=$branch";
@@ -160,6 +202,11 @@ sub apply_patch
 #    close APPLY;
 
 #    die "check results for $outdir and $branch ";
+}
+
+sub apply_patch
+{
+    apply_patch_via_full (@_);
 }
 
 sub extract_revisions_from_log
@@ -185,7 +232,7 @@ sub extract_revisions_from_log
 
 	print "Going to apply hash $hash to $branch\n";
 	#$outdir
-	apply_patch($hash,$outdir,$branch);
+	apply_patch($hash,$outdir,$branch,$master);
 
     }
     close CMD; 
@@ -247,7 +294,7 @@ sub check
     {
 #	warn "Found $source_location";
 	
-	my $srcdir="../git/${packdir}";
+	my $srcdir="${ROOTDIR}/${packdir}";
 	my $src="${srcdir}/${source_location}";
 	if ( -f $src)
 	{
@@ -268,7 +315,7 @@ while (<>)
 {
     next if /\<!--/;
 
-    if (/\.\.\/([-\w]+)\/([-\w]+).sopm:\s+\<File Permission="(\d+)" Location=\"([\w\-\.\/]+)\"/)
+    if (/\.\.\/\.\.\/private\/([-\w]+)\/([-\w]+).sopm:\s+\<File Permission="(\d+)" Location=\"([\w\-\.\/]+)\"/)
     {
 	my $packdir=$1;
 	my $packname=$2;
@@ -280,7 +327,7 @@ while (<>)
     }
 
     #example ../git/Astaro-EscalationNotify/Astaro-EscalationNotify.sopm:        <File Location="Kernel/Output/HTML/NotificationAgentTicketEscalation.pm" Permission="644" Encode="Base64"/>
-    elsif (/\.\.\/([-\w]+)\/([-\w]+).sopm:\s+\<File Location=\"([\w\-\.\/]+)\" Permission="(\d+)"\s*(?:Encode="Base64")?/)
+    elsif (/\.\.\/\.\.\/private\/([-\w]+)\/([-\w]+).sopm:\s+\<File Location=\"([\w\-\.\/]+)\" Permission="(\d+)"\s*(?:Encode="Base64")?/)
     {
 	my $packdir=$1;
 	my $packname=$2;
