@@ -224,8 +224,8 @@ sub _patch {
 	      TRACE("checking >>NULL!<<");
 	  }
           TRACE(" against >>$expect<<");
-          warn "Hunk #$hunknum failed at line $num.\n" # actual line number
-              unless $orig eq $expect;
+#          warn "Hunk #$hunknum failed at line $num.\n" # actual line number
+#              unless $orig eq $expect;
       }
       next if $1 eq '-';  # removals
       push @pdata, $_;    # add/replace line
@@ -264,94 +264,6 @@ use Data::Dumper;
 }
 sub TRACE {
 use Data::Dumper;
-print STDERR Dumper(@_);
+#print STDERR Dumper(@_);
 }
 
-
-=pod
-
-=head1 NAME
-
-Text::Patch - Patches text with given patch
-
-=head1 SYNOPSIS
-
-    use Text::Patch;
-
-    $output = patch( $source, $diff, STYLE => "Unified" );
-
-    use Text::Diff;
-
-    $src  = ...
-    $dst  = ...
-
-    $diff = diff( \$src, \$dst, { STYLE => 'Unified' } );
-
-    $out  = patch( $src, $diff, { STYLE => 'Unified' } );
-
-    print "Patch successful" if $out eq $dst;
-
-=head1 DESCRIPTION
-
-Text::Patch combines source text with given diff (difference) data.
-Diff data is produced by Text::Diff module or by the standard diff
-utility (man diff, see -u option).
-
-=over 4
-
-=item patch( $source, $diff, options... )
-
-First argument is source (original) text. Second is the diff data.
-Third argument can be either hash reference with options or all the
-rest arguments will be considered patch options:
-
-    $output = patch( $source, $diff, STYLE => "Unified", ... );
-
-    $output = patch( $source, $diff, { STYLE => "Unified", ... } );
-
-Options are:
-
-  STYLE => 'Unified'
-
-STYLE can be "Unified", "Context" or "OldStyle".
-
-The 'Unified' diff format looks like this:
-
-  @@ -1,7 +1,6 @@
-  -The Way that can be told of is not the eternal Way;
-  -The name that can be named is not the eternal name.
-   The Nameless is the origin of Heaven and Earth;
-  -The Named is the mother of all things.
-  +The named is the mother of all things.
-  +
-   Therefore let there always be non-being,
-     so we may see their subtlety,
-   And let there always be being,
-  @@ -9,3 +8,6 @@
-   The two are the same,
-   But after they are produced,
-     they have different names.
-  +They both may be called deep and profound.
-  +Deeper and more profound,
-  +The door of all subtleties!
-
-
-=back
-
-=head1 TODO
-
-  Interfaces with files, arrays, etc.
-
-=head1 AUTHOR
-
-  Vladi Belperchinov-Shabanski "Cade"
-
-  <cade@biscom.net> <cade@datamax.bg> <cade@cpan.org>
-
-  http://cade.datamax.bg
-
-=head1 VERSION
-
-  $Id: Patch.pm,v 1.6 2007/04/07 19:57:41 cade Exp $
-
-=cut

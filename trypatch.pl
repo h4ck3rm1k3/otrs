@@ -75,6 +75,8 @@ sub apply_patch
     open PATCH,  "git format-patch -1 --stdout $hash|" ; ## produce a patch file for review
     my $patch="";
     my $found =0;
+    my $hunk  =0;
+
     while (<PATCH>)
     {	
 
@@ -82,6 +84,7 @@ sub apply_patch
 	if (/diff \-\-git a\/([\w\-\.\/]+)/)
 	{
 	    my $filename =$1;
+	    $hunk=0;
 	    if ("${outdir}/${filename}" eq $branch)
 	    {
 		$found=1;
@@ -93,38 +96,70 @@ sub apply_patch
 	#	warn "SKIP:${outdir}/${filename} ne $branch";
 	    }
 	}
-	
-	if ($found==1)
+
+
+	if (/\@\@/)
 	{
-	    $patch .=$_;	
+	    $hunk++;
+#	    warn "hunk is now $hunk";
 	}
 
+	if ($found==1)
+	{
+	    if ($hunk ==0) 
+	    {
+		$patch .=$_;	
+	    }
+	    elsif ($hunk > 2)  # skip hunks 1 and 2 
+	    {
+		
+		$patch .=$_;	
+	    }
+	    else
+	    {
+		if (/Id:/)
+		{
+		    warn "Skipping $_";
+		}
+	    }
+	}
     }
     close PATCH;
 
-    open OUT, ">testpatch.txt";
+    open OUT, ">${branch}.testpatch.diff";
 #    warn "patch is now  ${patch} ";
-    print OUT ${patch};
+    print OUT $patch;
     close OUT;
-
 
     open DATA,  "$branch" ; ## produce a patch file for review
     my $source="";
     while (<DATA>)    {	
+	if (/Id:/)
+	{
+	    warn "Checking $_";
+	}	
 	$source .=$_;	
     }
     close DATA;
 
     warn "going to process $branch and patch of length :"  . length($patch);
     my $output = patch( $source, $patch, STYLE => "Unified" );
-    
-    warn $output;
+
+
+    open OUT, ">${branch}.testout.txt";
+    warn "${branch}.testout.txt";
+    print OUT $output;
+    close OUT;
+
+    # apply 
+    system "kompare -b ${branch} ${branch}.testpatch.diff";
+
     # now we can filter the patch   
 #    open APPLY, "|git apply --verbose --directory=${outdir} - --include=$branch";
 #    print APPLY $patch;
 #    close APPLY;
 
-    die "check results for $outdir and $branch ";
+#    die "check results for $outdir and $branch ";
 }
 
 sub extract_revisions_from_log
@@ -146,7 +181,7 @@ sub extract_revisions_from_log
 	chomp;
 	my $hash =$_;
 	$count++; # add one!
-	next if $count ==0; # skip the first commit 	
+	next if $count ==1; # skip the first commit 	
 
 	print "Going to apply hash $hash to $branch\n";
 	#$outdir
