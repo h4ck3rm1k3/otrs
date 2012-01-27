@@ -36,7 +36,7 @@ use Kernel::System::LinkObject;
 use Kernel::System::EventHandler;
 use Kernel::System::DynamicField;
 use Kernel::System::DynamicField::Backend;
-
+use Carp qw(confess);
 use Kernel::System::VariableCheck qw(:all);
 
 use vars qw(@ISA $VERSION);
@@ -119,12 +119,14 @@ sub new {
     @ISA = ( 'Kernel::System::Ticket::Article', 'Kernel::System::TicketSearch' );
 
     # get needed objects
-    for my $Needed (qw(ConfigObject LogObject TimeObject DBObject MainObject EncodeObject)) {
+    for my $Needed (qw(ConfigObject LogObject TimeObject DBObject MainObject EncodeObject )) {
+	#do we need DynamicFieldBackendObject?
+
         if ( $Param{$Needed} ) {
             $Self->{$Needed} = $Param{$Needed};
         }
         else {
-            die "Got no $Needed!";
+            confess "Got no $Needed!";
         }
     }
 
@@ -1115,7 +1117,12 @@ sub TicketGet {
             next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
             next DYNAMICFIELD if !IsHashRefWithData( $DynamicFieldConfig->{Config} );
 
+
+            confess "Object is NULL: Self->{DynamicFieldBackendObject}" unless $Self->{DynamicFieldBackendObject};
             # get the current value for each dynamic field
+	    confess "$DynamicFieldConfig is :$DynamicFieldConfig" unless $DynamicFieldConfig;
+
+	    confess "Ticket : $Ticket{TicketID}" unless $Ticket{TicketID};
             my $Value = $Self->{DynamicFieldBackendObject}->ValueGet(
                 DynamicFieldConfig => $DynamicFieldConfig,
                 ObjectID           => $Ticket{TicketID},
@@ -7274,6 +7281,11 @@ sub StateList {
 sub StateSet {
     my $Self = shift;
     return $Self->TicketStateSet(@_);
+}
+
+sub EventHandlerTransaction
+{
+
 }
 
 1;

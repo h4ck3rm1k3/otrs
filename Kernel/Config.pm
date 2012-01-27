@@ -19,20 +19,19 @@
 # --
 
 package Kernel::Config;
+use strict;
+use warnings;
 
-BEGIN {
-    if (-f '/etc/otrs/database.pm') {
-      require '/etc/otrs/database.pm';
-      if ($dbtype eq 'pgsql') {
-          $dbport ||= '5432';
-          our $dsn = "DBI:Pg:dbname";
-      }
-      else {
-          $dbport ||= '3306';
-          our $dsn = "DBI:mysql:database";
-      }
-    }
-}
+my $myotrsroot= '/home/mdupont/projects/otrs/git/public/otrs';
+
+our $dbuser='otrs';
+our $dbpass='5ypUVX4jqK1g';
+our $basepath='';
+our $dbname='otrs2';
+our $dbserver='';
+our $dbport='5432';
+our $dbtype='pgsql';
+our $dsn = "DBI:Pg:dbname";
 
 sub Load {
     my $Self = shift;
@@ -73,7 +72,7 @@ sub Load {
     # ---------------------------------------------------- #
     # fs root directory
     # ---------------------------------------------------- #
-    $Self->{Home} = '/usr/share/otrs';
+    $Self->{Home} = $myotrsroot; #'/usr/share/otrs';
 
     # ---------------------------------------------------- #
     # insert your own config settings "here"               #
@@ -90,6 +89,34 @@ sub Load {
     # data inserted by installer                           #
     # ---------------------------------------------------- #
     # $DIBI$
+    $Self->{PostmasterUserID} = "1";
+    
+    $Self->{"PostmasterX-Header"} = [ "Some header "];
+    $Self->{"CustomerPreferences"} = {};
+#    $Self->{"Ticket::ViewableStateType"} = ["TicketViewableStateType"];
+$Self->{'Ticket::ViewableStateType'} =  [
+  'new',
+  'open',
+  'pending reminder',
+  'pending auto'
+];
+
+    $Self->{"Ticket::UnlockStateType"} = "TicketUnlockStateType";
+    $Self->{"Ticket::ViewableLocks"} = 1;
+    $Self->{"ArticleDir"}=$myotrsroot . "/var/article";
+    $Self->{"Ticket::EventModulePost"} = {TestModule => {
+	test =>1,
+	Module => "TestPostEventModule"
+					  }};
+
+#    use Kernel::System::DynamicField::Backend;
+#    $Self->{'DynamicFields::Backend'} = {
+#	"FieldType" => {
+#	    "Module" => "TestFieldTypeModule"
+#	}
+#    };
+
+
 
     # ---------------------------------------------------- #
     # ---------------------------------------------------- #

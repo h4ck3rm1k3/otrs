@@ -13,7 +13,7 @@ package Kernel::System::TicketSearch;
 
 use strict;
 use warnings;
-
+use Carp qw(confess);
 use vars qw(@ISA $VERSION);
 $VERSION = qw($Revision: 1.11 $) [1];
 
@@ -630,13 +630,19 @@ sub TicketSearch {
             Type   => 'Viewable',
             Result => 'ID',
         );
-        $SQLExt .= " AND st.ticket_state_id IN ( ${\(join ', ', sort @ViewableStateIDs)} ) ";
+
+	if (@ViewableStateIDs)
+	  {
+	    #confess "ViewableStateIDs empty " unless @ViewableStateIDs;
+	    $SQLExt .= " AND st.ticket_state_id IN ( ${\(join ', ', sort @ViewableStateIDs)} ) ";
+	  }
     }
     elsif ( $Param{StateType} && $Param{StateType} eq 'Closed' ) {
         my @ViewableStateIDs = $Self->{StateObject}->StateGetStatesByType(
             Type   => 'Viewable',
             Result => 'ID',
         );
+	confess "ViewableStateIDs empty " unless @ViewableStateIDs;
         $SQLExt .= " AND st.ticket_state_id NOT IN ( ${\(join ', ', sort @ViewableStateIDs)} ) ";
     }
 
@@ -647,6 +653,7 @@ sub TicketSearch {
             Result    => 'ID',
         );
         return if !$StateIDs[0];
+	confess "StateIDs empty " unless @StateIDs;
         $SQLExt .= " AND st.ticket_state_id IN ( ${\(join ', ', sort {$a <=> $b} @StateIDs)} ) ";
     }
 
@@ -660,6 +667,7 @@ sub TicketSearch {
             Result    => 'ID',
         );
         return if !$StateIDs[0];
+	confess "StateIDs empty " unless @StateIDs;
         $SQLExt .= " AND st.ticket_state_id IN ( ${\(join ', ', sort {$a <=> $b} @StateIDs)} ) ";
     }
 
@@ -820,6 +828,8 @@ sub TicketSearch {
             User => $Param{CustomerUserID},
         );
         if (@CustomerIDs) {
+
+
             $SQLExt .= 'LOWER(st.customer_id) IN (';
             my $Exists = 0;
             for (@CustomerIDs) {
@@ -841,7 +851,8 @@ sub TicketSearch {
 
     # add group ids to sql string
     if (@GroupIDs) {
-        $SQLExt .= " AND sq.group_id IN (${\(join ', ' , sort {$a <=> $b} @GroupIDs)}) ";
+      confess "GroupIDs empty " unless @GroupIDs;
+      $SQLExt .= " AND sq.group_id IN (${\(join ', ' , sort {$a <=> $b} @GroupIDs)}) ";
     }
 
     # current priority lookup
@@ -1518,6 +1529,9 @@ sub TicketSearch {
         my @StateID = ( $Self->HistoryTypeLookup( Type => 'NewTicket' ) );
         push( @StateID, $Self->HistoryTypeLookup( Type => 'StateUpdate' ) );
         if (@StateID) {
+
+	  confess "Liste empty " unless @List;
+
             $SQLExt .= " AND th.history_type_id IN  (${\(join ', ', sort @StateID)}) AND "
                 . " th.state_id IN (${\(join ', ', sort @List)}) AND "
                 . "th.create_time <= '"
@@ -1547,6 +1561,11 @@ sub TicketSearch {
         my @StateID = ( $Self->HistoryTypeLookup( Type => 'NewTicket' ) );
         push( @StateID, $Self->HistoryTypeLookup( Type => 'StateUpdate' ) );
         if (@StateID) {
+
+
+	  confess "StateID empty " unless @StateID;
+	  confess "List empty " unless @List;
+
             $SQLExt .= " AND th.history_type_id IN  (${\(join ', ', sort @StateID)}) AND "
                 . " th.state_id IN (${\(join ', ', sort @List)}) AND "
                 . " th.create_time >= '"
@@ -1863,8 +1882,12 @@ sub _InConditionGet {
     for my $Value (@SortedIDs) {
         return if !defined $Self->{DBObject}->Quote( $Value, 'Integer' );
     }
+    confess "No Values passed " unless @SortedIDs;
 
-    return " AND $Param{TableColumn} IN (" . ( join ',', @SortedIDs ) . ")";
+    my $in = ( join ',', @SortedIDs );
+    confess "No Values passed " unless $in =~ /,/;
+
+    return " AND $Param{TableColumn} IN (" . $in . ")";
 }
 
 1;

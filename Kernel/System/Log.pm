@@ -158,7 +158,7 @@ sub Log {
             # print line if upper caller module exists
             if ($Line1) {
                 my $VersionString;
-                eval { $VersionString = 'v' . $Package1->VERSION };
+                eval { $VersionString = 'v' . ($Package1->VERSION || "UNKNOWN VERSION") };
                 if ( !$VersionString || $VersionString eq 'v' ) {
                     $VersionString = 'unknown version';
                 }

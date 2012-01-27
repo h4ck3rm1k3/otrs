@@ -31,10 +31,14 @@ sub new {
 
     # get all objects
     for (
-        qw(DBObject ConfigObject TicketObject LogObject ParserObject TimeObject QueueObject StateObject PriorityObject)
+        qw(
+DBObject ConfigObject TicketObject LogObject ParserObject TimeObject QueueObject StateObject PriorityObject
+
+)
         )
     {
-        $Self->{$_} = $Param{$_} || die 'Got no $_';
+	#DynamicFieldBackendObject removed
+        $Self->{$_} = $Param{$_} || die "Got no $_";
     }
 
     $Self->{CustomerUserObject} = Kernel::System::CustomerUser->new(%Param);
@@ -46,7 +50,8 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(InmailUserID GetParam)) {
+    for (qw(InmailUserID GetParam )) {
+#	DynamicFieldBackendObject
         if ( !$Param{$_} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
             return;

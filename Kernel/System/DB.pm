@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use DBI;
-
+use Carp qw(cluck);
 use Kernel::System::Time;
 use Kernel::System::VariableCheck qw(:all);
 
@@ -616,6 +616,7 @@ sub Prepare {
     }
 
     if ( !$Self->{Cursor}->execute(@Array) ) {
+	cluck "DB error ";
         $Self->{LogObject}->Log(
             Caller   => 1,
             Priority => 'Error',

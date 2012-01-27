@@ -18,6 +18,8 @@ use Scalar::Util qw(weaken);
 use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
+use YAML;
+
 $VERSION = qw($Revision: 1.67 $) [1];
 
 =head1 NAME
@@ -100,6 +102,9 @@ sub new {
 
     # check Configuration format
     if ( !IsHashRefWithData($DynamicFieldsConfig) ) {
+
+	warn "DynamicFieldsConfig is :TODO";  #Dump($DynamicFieldsConfig);
+
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Dynamic field configuration is not valid!",
@@ -108,7 +113,11 @@ sub new {
     }
 
     # create all registered backend modules
+#    warn "DynamicFieldsConfig:" .  Dump($DynamicFieldsConfig);
+
     for my $FieldType ( sort keys %{$DynamicFieldsConfig} ) {
+
+#	warn "Check FieldType :$FieldType";
 
         # check if the registration for each field type is valid
         if ( !$DynamicFieldsConfig->{$FieldType}->{Module} ) {
@@ -126,7 +135,7 @@ sub new {
         if ( !$Self->{MainObject}->Require($BackendModule) ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message  => "Can't load dynamic field backend module for field type $FieldType!",
+                Message  => "Can't load dynamic field backend module with name \"$BackendModule\" for field type $FieldType!",
             );
             return;
         }
@@ -151,6 +160,7 @@ sub new {
         }
 
         # remember the backend object
+#        warn "created backend object DynamicField${FieldType}Object for FT:${FieldType}";
         $Self->{ 'DynamicField' . $FieldType . 'Object' } = $BackendObject;
     }
 
@@ -609,12 +619,26 @@ sub ValueGet {
     }
 
     # set the dynamic field specific backend
-    my $DynamicFieldBackend = 'DynamicField' . $Param{DynamicFieldConfig}->{FieldType} . 'Object';
+    
+    my $type = $Param{DynamicFieldConfig}->{FieldType};
+
+    my $DynamicFieldBackend = 'DynamicField' . $type . 'Object';
+
+#     DynamicField FieldType      Object
+#     DynamicField TicketHandler  Object
+#     DynamicField ArticleHandler Object
+
+
 
     if ( !$Self->{$DynamicFieldBackend} ) {
+
+#	warn "Check DynamicFieldBackend :" .$DynamicFieldBackend;
+#	warn "Check DynamicFieldConfig:" . Dump(	    $Param{DynamicFieldConfig}	    );
+#	warn "Check Self :" . Dump(	    keys %{$Self}	    );
+
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => "Backend $Param{DynamicFieldConfig}->{FieldType} is invalid!"
+            Message  => "Backend $Param{DynamicFieldConfig}->{FieldType} : name : $DynamicFieldBackend is invalid!"
         );
         return;
     }

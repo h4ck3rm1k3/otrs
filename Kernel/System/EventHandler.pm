@@ -13,7 +13,7 @@ package Kernel::System::EventHandler;
 
 use strict;
 use warnings;
-
+use Carp qw[confess];
 use vars qw($VERSION);
 $VERSION = qw($Revision: 1.9 $) [1];
 
@@ -209,6 +209,9 @@ sub EventHandler {
             next MODULE if $Param{Transaction} && !$Modules->{$Module}->{Transaction};
 
             # load event module
+
+	    confess "The $Module has no Module defined" unless $Modules->{$Module}->{Module};
+
             next MODULE if !$Self->{MainObject}->Require( $Modules->{$Module}->{Module} );
 
             # get all default objects if given

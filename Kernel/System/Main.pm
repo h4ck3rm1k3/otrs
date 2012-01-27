@@ -18,7 +18,7 @@ use Digest::MD5 qw(md5_hex);
 use Data::Dumper;
 use File::stat;
 use Unicode::Normalize;
-
+use Carp qw(confess);
 use Kernel::System::Encode;
 
 use vars qw($VERSION);
@@ -97,9 +97,10 @@ sub Require {
     my ( $Self, $Module ) = @_;
 
     if ( !$Module ) {
+	confess "No module passed";
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Need module!',
+            Message  => 'Need module!' ,
         );
         return;
     }
