@@ -1,8 +1,8 @@
 # --
 # SystemMonitoring.pm - code to excecute during package installation
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: SystemMonitoring.pm,v 1.17 2011/12/09 15:41:34 ub Exp $
+# $Id: SystemMonitoring.pm,v 1.1 2012/01/27 12:39:37 md Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,9 +20,9 @@ use Kernel::System::Type;
 
 use Kernel::System::Valid;
 use Kernel::System::DynamicField;
-use YAML;
+
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.17 $) [1];
+$VERSION = qw($Revision: 1.1 $) [1];
 
 =head1 NAME
 
@@ -105,7 +105,11 @@ sub new {
         qw(ConfigObject EncodeObject LogObject MainObject TimeObject DBObject XMLObject)
         )
     {
-        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
+        $Self->{$Object} = $Param{$Object} ||
+            $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Missing parameter for $Object!"
+            );
     }
 
     # create needed sysconfig object
@@ -137,7 +141,6 @@ sub new {
     $Self->{TypeObject}         = Kernel::System::Type->new( %{$Self} );
     $Self->{ValidObject}        = Kernel::System::Valid->new( %{$Self} );
     $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new( %{$Self} );
-
 
     return $Self;
 }
@@ -274,7 +277,7 @@ sub _CreateDynamicFields {
         $NextOrderNumber = $DynamicfieldOrderList[-1] + 1;
     }
 
-    # get the definition for all dynamic fields for 
+    # get the definition for all dynamic fields for
     my @DynamicFields = $Self->_GetDynamicFieldsDefinition();
 
     # create dynamic fields
@@ -284,15 +287,14 @@ sub _CreateDynamicFields {
         # create a new field
         my $OldDynamicField = $Self->{DynamicFieldObject}->DynamicFieldGet(
             Name => $DynamicField->{Name},
-            );
+        );
 
-
-        if ($OldDynamicField->{Label} eq $DynamicField->{Label})
+        if ( $OldDynamicField->{Label} eq $DynamicField->{Label} )
         {
             $Self->{LogObject}->Log(
                 Priority => 'info',
                 Message  => "Field already exists Label:$DynamicField->{Label}, skipping."
-                );
+            );
         }
         else
         {
@@ -305,8 +307,9 @@ sub _CreateDynamicFields {
                 Config     => $DynamicField->{Config},
                 ValidID    => $ValidID,
                 UserID     => 1,
-                );
+            );
             next DYNAMICFIELD if !$FieldID;
+
             # increase the order number
             $NextOrderNumber++;
         }
@@ -326,10 +329,10 @@ returns the definition for System Monitoring related dynamic fields
 sub _GetDynamicFieldsDefinition {
     my ( $Self, %Param ) = @_;
 
-    my $field_name_host       = 'TicketFreeText' . ($Self->{Config}->{ 'FreeTextHost'    } || 1);
-    my $field_name_service    = 'TicketFreeText' . ($Self->{Config}->{ 'FreeTextService' } || 2);
+    my $field_name_host    = 'TicketFreeText' . ( $Self->{Config}->{'FreeTextHost'}    || 1 );
+    my $field_name_service = 'TicketFreeText' . ( $Self->{Config}->{'FreeTextService'} || 2 );
 
-    # define all dynamic fields for System Montitoring, these need to be changed as well if the config changes
+# define all dynamic fields for System Montitoring, these need to be changed as well if the config changes
     my @DynamicFields = (
         {
             Name       => $field_name_host,
@@ -370,6 +373,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/gpl-2.0.txt>.
 
 =head1 VERSION
 
-$Revision: 1.17 $ $Date: 2011/12/09 15:41:34 $
+$Revision: 1.1 $ $Date: 2012/01/27 12:39:37 $
 
 =cut
