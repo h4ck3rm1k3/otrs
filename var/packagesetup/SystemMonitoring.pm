@@ -282,34 +282,34 @@ sub _CreateDynamicFields {
     for my $DynamicField (@DynamicFields) {
 
         # create a new field
-	my $OldDynamicField = $Self->{DynamicFieldObject}->DynamicFieldGet(
-	    Name => $DynamicField->{Name},
-	    );
+        my $OldDynamicField = $Self->{DynamicFieldObject}->DynamicFieldGet(
+            Name => $DynamicField->{Name},
+            );
 
 
-	if ($OldDynamicField->{Label} eq $DynamicField->{Label})
-	{
-	    $Self->{LogObject}->Log(
-		Priority => 'info',
-		Message  => "Field already exists Label:$DynamicField->{Label}, skipping."
-		);
-	}
-	else
-	{
-	    my $FieldID = $Self->{DynamicFieldObject}->DynamicFieldAdd(
-		Name       => $DynamicField->{Name},
-		Label      => $DynamicField->{Label},
-		FieldOrder => $NextOrderNumber,
-		FieldType  => $DynamicField->{FieldType},
-		ObjectType => $DynamicField->{ObjectType},
-		Config     => $DynamicField->{Config},
-		ValidID    => $ValidID,
-		UserID     => 1,
-		);
-	    next DYNAMICFIELD if !$FieldID;
-	    # increase the order number
-	    $NextOrderNumber++;
-	}
+        if ($OldDynamicField->{Label} eq $DynamicField->{Label})
+        {
+            $Self->{LogObject}->Log(
+                Priority => 'info',
+                Message  => "Field already exists Label:$DynamicField->{Label}, skipping."
+                );
+        }
+        else
+        {
+            my $FieldID = $Self->{DynamicFieldObject}->DynamicFieldAdd(
+                Name       => $DynamicField->{Name},
+                Label      => $DynamicField->{Label},
+                FieldOrder => $NextOrderNumber,
+                FieldType  => $DynamicField->{FieldType},
+                ObjectType => $DynamicField->{ObjectType},
+                Config     => $DynamicField->{Config},
+                ValidID    => $ValidID,
+                UserID     => 1,
+                );
+            next DYNAMICFIELD if !$FieldID;
+            # increase the order number
+            $NextOrderNumber++;
+        }
     }
 
     return 1;

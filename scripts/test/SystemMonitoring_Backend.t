@@ -1,3 +1,14 @@
+# --
+# SystemMonitoring_Backend.t - code to test the basic Dynamic Field Backend
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# --
+# $Id: SystemMonitoring.pm,v 1.17 2011/12/09 15:41:34 ub Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
 use strict;
 use warnings;
 
