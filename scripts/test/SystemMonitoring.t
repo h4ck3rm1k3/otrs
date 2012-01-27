@@ -14,9 +14,6 @@ use YAML;
 use Kernel::System::Ticket;
 use Kernel::System::PostMaster;
 
-
-# create the self object
-my $Self={};
 #require "/home/mdupont/experiments/sfk11/otrs/head/otrs-moose/test/TestBase.t"; #test frame
 use Kernel::System::User;
 use Kernel::System::DB;
@@ -27,30 +24,63 @@ use Kernel::Config;
 use Kernel::System::UnitTest;
 use YAML;
 
-    $Self->{"DBObject"} =Kernel::System::DB->new( );;
-    $Self->{"LogObject"} =Kernel::System::Log->new( );;
-    $Self->{"MainObject"} =Kernel::System::Main->new( );;
-    $Self->{"EncodeObject"} =Kernel::System::Encode->new( );;
-    $Self->{"ConfigObject"} =Kernel::Config->new( );
+my $ConfigObject = Kernel::Config->new();
+#warn "Config Object :" . Dump ($ConfigObject);
 
-bless $Self, "Kernel::System::UnitTest";
+my $EncodeObject = Kernel::System::Encode->new(
+    ConfigObject => $ConfigObject,
+    );
 
-warn Dump($Self);
+my $LogObject = Kernel::System::Log->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
+    );
+
+my $MainObject = Kernel::System::Main->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
+    LogObject    => $LogObject,
+    );
+    
+my $TimeObject = Kernel::System::Time->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    );
+
+my $DBObject = Kernel::System::DB->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
+    LogObject    => $LogObject,
+    MainObject   => $MainObject,
+    );
+
+my $Self = Kernel::System::UnitTest->new(
+    EncodeObject => $EncodeObject,
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    MainObject   => $MainObject,
+    DBObject     => $DBObject,
+    TimeObject   => $TimeObject,
+    );
 
 
-my $Config= $Self->{ConfigObject};
 
 
-die unless $Config;
-my $home  = $Config->Get('Home');
+       
+my $home  = $ConfigObject->Get('Home');
 my $FileArray = $Self->{MainObject}->FileRead(
     Location => $home . '/scripts/test/sample/SystemMonitoring1.box',
     Result => 'ARRAY',    # optional - SCALAR|ARRAY
 );
 
+
+my $BackendObject = Kernel::System::DynamicField::Backend->new( %{$Self} );
+$ConfigObject->{"DynamicFields::Backend"} = $BackendObject;
+$Self->{"DynamicFieldBackendObject"} = $BackendObject;
 my $PostMasterObject = Kernel::System::PostMaster->new(
     %{$Self},
     Email => $FileArray,
+    DynamicFieldBackendObject => $BackendObject
 );
 
 my @Return = $PostMasterObject->Run();
