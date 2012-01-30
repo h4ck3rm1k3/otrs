@@ -20,6 +20,7 @@ use Kernel::System::Type;
 
 use Kernel::System::Valid;
 use Kernel::System::DynamicField;
+use Kernel::System::PostMaster::Filter::SystemMonitoring;
 
 use vars qw(@ISA $VERSION);
 $VERSION = qw($Revision: 1.1 $) [1];
@@ -329,14 +330,34 @@ returns the definition for System Monitoring related dynamic fields
 sub _GetDynamicFieldsDefinition {
     my ( $Self, %Param ) = @_;
 
-    my $field_name_host    = 'TicketFreeText' . ( $Self->{Config}->{'FreeTextHost'}    || 1 );
-    my $field_name_service = 'TicketFreeText' . ( $Self->{Config}->{'FreeTextService'} || 2 );
+    my $ConfigFreeTextHost = $Self->{Config}->{'FreeTextHost'} ;
+    if (!$ConfigFreeTextHost)
+    {
+	$ConfigFreeTextHost=1;
+	$Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Missing CI Config FreeTextHost, using value 1!"
+            );
+    }
+
+    my $ConfigFreeTextService = $Self->{Config}->{'FreeTextService'}  ;
+    if (!$ConfigFreeTextService)
+    {
+	$ConfigFreeTextService=2;
+	$Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Missing CI Config FreeTextService, using value 2!"
+            );
+    }
+    
+    my $FieldNameHost    = Kernel::System::PostMaster::Filter::SystemMonitoring::DynamicFieldTextPrefix . $ConfigFreeTextHost;
+    my $FieldNameService = Kernel::System::PostMaster::Filter::SystemMonitoring::DynamicFieldTextPrefix . $ConfigFreeTextService;
 
 # define all dynamic fields for System Montitoring, these need to be changed as well if the config changes
     my @DynamicFields = (
         {
-            Name       => $field_name_host,
-            Label      => 'System Monitoring HostName',
+            Name       => $FieldNameHost,
+            Label      => 'SystemMonitoring HostName',
             FieldType  => 'Text',
             ObjectType => 'Ticket',
             Config     => {
@@ -344,8 +365,8 @@ sub _GetDynamicFieldsDefinition {
             },
         },
         {
-            Name       => $field_name_service,
-            Label      => 'System Monitoring ServicName',
+            Name       => $FieldNameService,
+            Label      => 'SystemMonitoring ServiceName',
             FieldType  => 'Text',
             ObjectType => 'Ticket',
             Config     => {
