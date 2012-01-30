@@ -2,7 +2,7 @@
 # SystemMonitoring.pm - code to excecute during package installation
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: SystemMonitoring.pm,v 1.1 2012/01/27 12:39:37 md Exp $
+# $Id: SystemMonitoring.pm,v 1.2 2012/01/30 16:10:42 md Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,10 +20,12 @@ use Kernel::System::Type;
 
 use Kernel::System::Valid;
 use Kernel::System::DynamicField;
-use Kernel::System::PostMaster::Filter::SystemMonitoring;
+
+#see Kernel::System::PostMaster::Filter::SystemMonitoring and make sure it is in sync
+use constant DynamicFieldTextPrefix => 'TicketFreeText';
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.1 $) [1];
+$VERSION = qw($Revision: 1.2 $) [1];
 
 =head1 NAME
 
@@ -330,28 +332,28 @@ returns the definition for System Monitoring related dynamic fields
 sub _GetDynamicFieldsDefinition {
     my ( $Self, %Param ) = @_;
 
-    my $ConfigFreeTextHost = $Self->{Config}->{'FreeTextHost'} ;
-    if (!$ConfigFreeTextHost)
+    my $ConfigFreeTextHost = $Self->{Config}->{'FreeTextHost'};
+    if ( !$ConfigFreeTextHost )
     {
-	$ConfigFreeTextHost=1;
-	$Self->{LogObject}->Log(
+        $ConfigFreeTextHost = 1;
+        $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Missing CI Config FreeTextHost, using value 1!"
-            );
+        );
     }
 
-    my $ConfigFreeTextService = $Self->{Config}->{'FreeTextService'}  ;
-    if (!$ConfigFreeTextService)
+    my $ConfigFreeTextService = $Self->{Config}->{'FreeTextService'};
+    if ( !$ConfigFreeTextService )
     {
-	$ConfigFreeTextService=2;
-	$Self->{LogObject}->Log(
+        $ConfigFreeTextService = 2;
+        $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Missing CI Config FreeTextService, using value 2!"
-            );
+        );
     }
-    
-    my $FieldNameHost    = Kernel::System::PostMaster::Filter::SystemMonitoring::DynamicFieldTextPrefix . $ConfigFreeTextHost;
-    my $FieldNameService = Kernel::System::PostMaster::Filter::SystemMonitoring::DynamicFieldTextPrefix . $ConfigFreeTextService;
+
+    my $FieldNameHost    = DynamicFieldTextPrefix . $ConfigFreeTextHost;
+    my $FieldNameService = DynamicFieldTextPrefix . $ConfigFreeTextService;
 
 # define all dynamic fields for System Montitoring, these need to be changed as well if the config changes
     my @DynamicFields = (
@@ -394,6 +396,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/gpl-2.0.txt>.
 
 =head1 VERSION
 
-$Revision: 1.1 $ $Date: 2012/01/27 12:39:37 $
+$Revision: 1.2 $ $Date: 2012/01/30 16:10:42 $
 
 =cut
