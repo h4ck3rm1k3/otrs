@@ -1,0 +1,72 @@
+MIME-Version: 1.0
+Received: by 10.112.60.193 with HTTP; Fri, 27 Jan 2012 04:48:32 -0800 (PST)
+Date: Fri, 27 Jan 2012 13:48:32 +0100
+Delivered-To: jmdotrs@gmail.com
+Message-ID: <CA+zGS1HX_un9qyQP4jXJovGKjM+-wA=PGQo6qdT_WOs_r5uW7A@mail.gmail.com>
+Subject: ** PROBLEM alert 1 - delphin2 host is DOWN **
+From: James Michael DuPont <mike.dupont@otrs.com>
+To: vo1018@vo.otrs.com
+Content-Type: multipart/alternative; boundary=90e6ba10ac9b137e5d04b781ea09
+
+--90e6ba10ac9b137e5d04b781ea09
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+***** Nagios  *****
+
+Notification Type: PROBLEM
+Host: delphin2
+State: DOWN for 0d 0h 0m 0s
+Address: 127.1.1.1
+Info:
+
+CRITICAL - Time to live exceeded (127.1.1.1)
+
+Date/Time: Sun Mar 18 00:18:30 CET 2007
+
+ACK by:
+Comment:
+
+
+
+--=20
+James Michael DuPont
+Custom Engineering/Research & Development
+
+OTRS AG
+Norsk-Data-Stra=DFe 1
+D-61352 Bad Homburg
+
+T: +49 (0) 9421 56818 0
+F: +49 (0) 9421 56818 18
+I: http://www.otrs.com/
+
+Gesch=E4ftssitz: Bad Homburg, Amtsgericht Bad Homburg, HRB 10751, USt-Nr.:
+DE256610065
+Aufsichtsratsvorsitzender: Burchard Steinbild, Vorstand: Andr=E9 Mindermann
+(Vorsitzender), Christopher Kuhn
+
+--90e6ba10ac9b137e5d04b781ea09
+Content-Type: text/html; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+<div style>***** Nagios =A0*****</div><div style><br></div><div style>Notif=
+ication Type: PROBLEM</div><div style>Host: delphin2</div><div style>State:=
+ DOWN for 0d 0h 0m 0s</div><div style>Address: 127.1.1.1</div><div style>In=
+fo:</div>
+<div style><br></div><div style>CRITICAL - Time to live exceeded (127.1.1.1=
+)</div><div style><br></div><div style>Date/Time: Sun Mar 18 00:18:30 CET 2=
+007</div><div style><br></div><div style>ACK by:=A0</div><div style>Comment=
+:</div>
+<div style>=A0</div><br clear=3D"all"><div><br></div>-- <br><div>James Mich=
+ael DuPont</div><div>Custom Engineering/Research &amp; Development=A0</div>=
+<div>=A0</div><div>OTRS AG</div><div>Norsk-Data-Stra=DFe 1</div><div>D-6135=
+2 Bad Homburg</div>
+<div><br></div><div>T: +49 (0) 9421 56818 0</div><div>F: +49 (0) 9421 56818=
+ 18</div><div>I: <a href=3D"http://www.otrs.com/" target=3D"_blank">http://=
+www.otrs.com/</a></div><div><br></div><div>Gesch=E4ftssitz: Bad Homburg, Am=
+tsgericht Bad Homburg, HRB 10751, USt-Nr.: DE256610065</div>
+<div>Aufsichtsratsvorsitzender: Burchard Steinbild, Vorstand: Andr=E9 Minde=
+rmann (Vorsitzender), Christopher Kuhn</div><br>
+
+--90e6ba10ac9b137e5d04b781ea09--

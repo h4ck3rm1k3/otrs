@@ -179,10 +179,10 @@ warn "Run returned:" . Dump($ret);
 #example ticket id: 138 tn: 2012012910000331 
 
 ## Now we want to exercize the subroutines 
-$sm->_TicketDrop(%MailParam);
-$sm->_TicketCreate(%MailParam);
+$sm->_TicketDrop(\%MailParam);
+$sm->_TicketCreate(\%MailParam);
 $sm->_TicketSearch();
-$sm->_TicketUpdate(12,%MailParam);  ## calls lookup
+$sm->_TicketUpdate(12,\%MailParam);  ## calls lookup
 
 $sm->_IncidentStateIncident();
 $sm->_IncidentStateOperational();

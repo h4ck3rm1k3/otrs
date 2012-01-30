@@ -8,7 +8,29 @@ use Kernel::System::XML;
 warn "Begin";
 use var::packagesetup::SystemMonitoring;
 
-my $ConfigObject = Kernel::Config->new();
+#Nagios::Acknowledge::FreeField::Host: TicketFreeText1
+#Nagios::Acknowledge::FreeField::Service: TicketFreeText2
+
+# PostMaster::PreFilterModule:
+#   1-SystemMonitoring:
+#     ArticleType: note-report
+#     CloseActionState: closed successful
+#     ClosePendingTime: 172800
+#     CloseTicketRegExp: OK|UP
+#     DefaultService: Host
+#     FreeTextHost: 1
+#     FreeTextService: 2
+#     FreeTextState: 1
+#     FromAddressRegExp: nagios@example.com
+#     HostRegExp: \s*Host:\s+(.*)\s*
+#     Module: Kernel::System::PostMaster::Filter::SystemMonitoring
+#     NewTicketRegExp: CRITICAL|DOWN
+#     SenderType: system
+#     ServiceRegExp: \s*Service:\s+(.*)\s*
+#     StateRegExp: \s*State:\s+(\S+)
+
+
+my $ConfigObject = Kernel::Config->new(); # TODO : created inside the object and outside
 my $EncodeObject = Kernel::System::Encode->new(
     ConfigObject => $ConfigObject,
     );

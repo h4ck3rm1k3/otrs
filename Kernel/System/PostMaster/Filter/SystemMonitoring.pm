@@ -20,10 +20,11 @@ use vars qw($VERSION);
 $VERSION = qw($Revision: 1.12 $) [1];
 
 #the base name for dynamic fields
-use constant DynamicFieldTextPrefix => 'TicketFreeText';
 
-#use constant DynamicFieldKeyPrefix  => 'TicketFreeKey';
-#use constant DynamicFieldTimePrefix => 'TicketFreeTime';
+
+use constant DynamicFieldTicketTextPrefix => 'TicketFreeText';
+use constant DynamicFieldArticleTextPrefix => 'ArticleFreeText';
+
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -72,6 +73,111 @@ sub new {
 
     return $Self;
 }
+
+sub GetDynamicFieldsDefinition
+{
+    my $class=shift;
+    my $Self =shift; 
+    my %Param=@_;
+    my $Config = $Param{Config};
+
+#Here is what the config looks like : 
+# ArticleType: note-report
+# CloseActionState: closed successful
+# ClosePendingTime: 172800
+# CloseTicketRegExp: OK|UP
+# DefaultService: Host
+# FreeTextHost: 1
+# FreeTextService: 2
+# FreeTextState: 1
+# FromAddressRegExp: nagios@example.com
+# HostRegExp: \s*Host:\s+(.*)\s*
+# Module: Kernel::System::PostMaster::Filter::SystemMonitoring
+# NewTicketRegExp: CRITICAL|DOWN
+# SenderType: system
+# ServiceRegExp: \s*Service:\s+(.*)\s*
+# StateRegExp: \s*State:\s+(\S+)
+
+    my @DynamicFields;
+
+    my $ConfigFreeTextHost = $Config->{FreeTextHost};
+
+    if ( !$ConfigFreeTextHost )
+    {
+        $ConfigFreeTextHost = 1;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Missing CI Config FreeTextHost, using value 1!"
+        );
+    }
+    my $FieldNameHost    = DynamicFieldTicketTextPrefix . $ConfigFreeTextHost;
+
+    # define all dynamic fields for System Monitoring, these need to be changed as well if the config changes
+    push @DynamicFields, 
+    (
+     {
+	 Name       => $FieldNameHost,
+	 Label      => 'SystemMonitoring HostName',
+	 FieldType  => 'Text',
+	 ObjectType => 'Ticket',
+	 Config     => {
+	     TranslatableValues => 1,
+	 },
+     }
+    );
+
+    # the service --------------------------------------------
+ 
+    my $ConfigFreeTextService = $Config->{FreeTextService} ;
+    if ( !$ConfigFreeTextService )
+    {
+        $ConfigFreeTextService = 2;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Missing CI Config FreeTextService, using value 2!"
+        );
+    }
+    my $FieldNameService = DynamicFieldTicketTextPrefix . $ConfigFreeTextService;
+    push @{$Param{NewFields}}, (
+	{
+	    Name       => $FieldNameService,
+	    Label      => 'SystemMonitoring ServiceName',
+	    FieldType  => 'Text',
+	    ObjectType => 'Ticket',
+	    Config     => {
+		TranslatableValues => 1,
+	    },
+	},
+    );
+
+
+    # the state------------------------------------------------
+
+    my $ConfigFreeTextState = $Config->{FreeTextState};
+    if ( !$ConfigFreeTextState )
+    {
+        $ConfigFreeTextState = 1;
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Missing CI Config FreeTextState, using value 1!"
+        );
+    }
+    my $FieldNameState = DynamicFieldArticleTextPrefix . $ConfigFreeTextState;
+    push @{$Param{NewFields}}, (
+	{
+	    Name       => $FieldNameState,
+	    Label      => 'SystemMonitoring StateName',
+	    FieldType  => 'Text',
+	    ObjectType => 'Article',
+	    Config     => {
+		TranslatableValues => 1,
+	    },
+	},
+    );
+    
+    return 1;
+}
+
 
 sub _IncidentStateIncident
 {
@@ -199,7 +305,7 @@ sub _TicketSearch
 
     for my $Type (qw(Host Service)) {
         my $FreeTextField = $Self->{Config}->{ 'FreeText' . $Type };
-        my $KeyName       = DynamicFieldTextPrefix . $FreeTextField;
+        my $KeyName       = DynamicFieldTicketTextPrefix . $FreeTextField;
         my $KeyValue      = $Self->{$Type};
 
         #DEBUG: "Checking $KeyName for value $KeyValue";
