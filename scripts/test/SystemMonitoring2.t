@@ -1,4 +1,4 @@
-# --
+# -- -*- perl -*- 
 # SystemMonitoring.t - SystemMonitoring tests
 # Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
 # --
@@ -10,29 +10,20 @@
 # --
 use strict;
 use warnings;
-use YAML;
 use Kernel::System::Ticket;
 use Kernel::System::PostMaster;
-
-
-# create the self object
-
-#require "/home/mdupont/experiments/sfk11/otrs/head/otrs-moose/test/TestBase.t"; #test frame
-use Kernel::System::User;
-use Kernel::System::DB;
-use Kernel::System::Log;
-use Kernel::System::Encode;
-use Kernel::System::Main;
 use Kernel::Config;
-use Kernel::System::UnitTest;
-use YAML;
+
+use Kernel::System::DB;
+use Kernel::System::DynamicField;
 use Kernel::System::Encode;
 use Kernel::System::Log;
 use Kernel::System::Main;
-use Kernel::System::DB;
 use Kernel::System::Time;
 use Kernel::System::UnitTest;
-use Kernel::System::DynamicField;
+use Kernel::System::User;
+
+use YAML;
 
 my $ConfigObject = Kernel::Config->new();
 #warn "Config Object :" . Dump ($ConfigObject);
@@ -85,7 +76,7 @@ my $BackendObject = Kernel::System::DynamicField::Backend->new( %{$Self} );
 
 my $Config= $Self->{ConfigObject};
 
-die "No config object" unless $Config;
+
 my $home  = $Config->Get('Home');
 my $FileArray = $Self->{MainObject}->FileRead(
     Location => $home . '/scripts/test/sample/SystemMonitoring1.box',
@@ -98,11 +89,14 @@ my $PostMasterObject = Kernel::System::PostMaster->new(
 );
 
 my @Return = $PostMasterObject->Run();
+warn "PostMasterObject::Run returned:". Dump(\@Return);
+
 $Self->Is(
     $Return[0] || 0,
     1,
-    "Run() - NewTicket",
+    "PostMasterObject::Run() ",
 );
+
 $Self->True(
     $Return[1] || 0,
     "Run() - NewTicket/TicketID",
@@ -113,7 +107,7 @@ my %Ticket       = $TicketObject->TicketGet(
     TicketID => $Return[1],
 );
 
-#warn "Ticket:" . Dump(\%Ticket);
+warn "Ticket:" . Dump(\%Ticket);
 
 $Self->Is(
     $Ticket{"SystemMonitoring-Host"},
@@ -181,6 +175,24 @@ Comment:
 );
 my $ret = $sm->Run(%MailParam);
 warn "Run returned:" . Dump($ret);
+
+#example ticket id: 138 tn: 2012012910000331 
+
+## Now we want to exercize the subroutines 
+$sm->_TicketDrop(%MailParam);
+$sm->_TicketCreate(%MailParam);
+$sm->_TicketSearch();
+$sm->_TicketUpdate(12,%MailParam);  ## calls lookup
+
+$sm->_IncidentStateIncident();
+$sm->_IncidentStateOperational();
+$sm->_IncidentStateNew();
+$sm->_MailParse(
+	%MailParam	
+	);
+$sm->_LogMessage("This is a test");
+$sm->_SetIncidentState (Name => "Some Name", IncidentState =>"Some State");
+$sm->_LinkTicketWithCI (Name => "Some Name", TicketID => 1234);
 
 
 $TicketObject = Kernel::System::Ticket->new( %{$Self} );

@@ -8,9 +8,15 @@
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
-
+use strict;
+use warnings;
 use Kernel::System::Ticket;
 use Kernel::System::PostMaster;
+
+
+# create the self object
+
+#require "/home/mdupont/experiments/sfk11/otrs/head/otrs-moose/test/TestBase.t"; #test frame
 use Kernel::System::User;
 use Kernel::System::DB;
 use Kernel::System::Log;
@@ -66,90 +72,13 @@ my $Self = Kernel::System::UnitTest->new(
     TimeObject   => $TimeObject,
     );
 
-my $BackendObject = Kernel::System::DynamicField::Backend->new( %{$Self} );
-
-my $FileArray = $Self->{MainObject}->FileRead(
-    Location => $Self->{ConfigObject}->Get('Home') . '/scripts/test/sample/SystemMonitoring1.box',
-    Result => 'ARRAY',    # optional - SCALAR|ARRAY
-);
-
-my $PostMasterObject = Kernel::System::PostMaster->new(
-    %{$Self},
-    Email => $FileArray,
-);
-
-my @Return = $PostMasterObject->Run();
-$Self->Is(
-    $Return[0] || 0,
-    1,
-    "Run() - NewTicket",
-);
-$Self->True(
-    $Return[1] || 0,
-    "Run() - NewTicket/TicketID",
-);
+my $Config= $Self->{ConfigObject};
 
 my $TicketObject = Kernel::System::Ticket->new( %{$Self} );
 my %Ticket       = $TicketObject->TicketGet(
-    TicketID => $Return[1],
+    TicketID => "138",
 );
 
-$Self->Is(
-    $Ticket{TicketFreeText1},
-    'delphin',
-    "Host check",
-);
-
-$Self->Is(
-    $Ticket{TicketFreeText2},
-    'Host',
-    "Service check",
-);
-$Self->Is(
-    $Ticket{State},
-    'new',
-    "Run() - Ticket State",
-);
-
-$FileArray = $Self->{MainObject}->FileRead(
-    Location => $Self->{ConfigObject}->Get('Home') . '/scripts/test/sample/SystemMonitoring2.box',
-    Result => 'ARRAY',    # optional - SCALAR|ARRAY
-);
-
-$PostMasterObject = Kernel::System::PostMaster->new(
-    %{$Self},
-    Email => $FileArray,
-);
-
-@Return = $PostMasterObject->Run();
-$Self->Is(
-    $Return[0] || 0,
-    2,
-    "Run() - NewTicket",
-);
-$Self->True(
-    $Return[1] == $Ticket{TicketID},
-    "Run() - NewTicket/TicketID",
-);
-
-$TicketObject = Kernel::System::Ticket->new( %{$Self} );
-%Ticket       = $TicketObject->TicketGet(
-    TicketID => $Return[1],
-);
-$Self->Is(
-    $Ticket{State},
-    'closed successful',
-    "Run() - Ticket State",
-);
-
-# delete ticket
-my $Delete = $TicketObject->TicketDelete(
-    TicketID => $Return[1],
-    UserID   => 1,
-);
-$Self->True(
-    $Delete || 0,
-    "TicketDelete()",
-);
+warn "Ticket:" . Dump(\%Ticket);
 
 1;
