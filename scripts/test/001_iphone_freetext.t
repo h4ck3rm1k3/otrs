@@ -144,8 +144,7 @@ $phone->{Config}->{ArticleTypes}  = {
 };
  
 
- $phone-> _GetNoteTypes();
-
+# $phone-> _GetNoteTypes();
 # $phone->ScreenConfig();
 # $phone->Badges();
 # $phone->EscalationView();
@@ -154,9 +153,9 @@ $phone->{Config}->{ArticleTypes}  = {
 # $phone->WatchedView();
 # $phone->ResponsibleView();
 # $phone->QueueView();
- $phone->TicketList(TicketID => 199);
- $phone->TicketGet();
- $phone->ArticleGet();
+# $phone->TicketList(TicketID => 199);
+# $phone->TicketGet();
+# $phone->ArticleGet();
 # $phone->ServicesGet();
 # $phone->SLAsGet();
 # $phone->UsersGet();

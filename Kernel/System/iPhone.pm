@@ -2395,23 +2395,27 @@ sub TicketGet {
 
 =cut
 
+use YAML;
+
 sub ArticleGet {
     my ( $Self, %Param ) = @_;
 
     # permission check
     my %Article = $Self->{TicketObject}->ArticleGet(%Param);
+#    warn Dump(%Article);
+    my $Article = \%Article;
     my $Access;
     if ( $Self->{'API3X'} ) {
         $Access = $Self->{TicketObject}->TicketPermission(
             Type     => 'ro',
-            TicketID => $Article{TicketID},
+            TicketID => $Article->{TicketID},
             UserID   => $Param{UserID}
         );
     }
     else {
         $Access = $Self->{TicketObject}->Permission(
             Type     => 'ro',
-            TicketID => $Article{TicketID},
+            TicketID => $Article->{TicketID},
             UserID   => $Param{UserID}
         );
     }
@@ -2423,7 +2427,7 @@ sub ArticleGet {
         return;
     }
 
-    if (%Article) {
+    if ($Article) {
         if ( $Self->{'API3X'} ) {
 
             # check if article is seen
@@ -2432,7 +2436,7 @@ sub ArticleGet {
                 UserID    => $Param{UserID},
             );
             if ( $ArticleFlag{seen} || $ArticleFlag{Seen} ) {
-                $Article{Seen} = 1;
+                $Article->{Seen} = 1;
             }
 
             # mark shown article as seen
@@ -2446,7 +2450,7 @@ sub ArticleGet {
 
         # check if ticket need to be marked as seen
         my $ArticleAllSeen = 1;
-        my @Index = $Self->{TicketObject}->ArticleIndex( TicketID => $Article{TicketID} );
+        my @Index = $Self->{TicketObject}->ArticleIndex( TicketID => $Article->{TicketID} );
         for my $ArticleID (@Index) {
             if ( $Self->{'API3X'} ) {
                 my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
@@ -2465,7 +2469,7 @@ sub ArticleGet {
         # mark ticket as seen if all article are shown
         if ( $ArticleAllSeen && $Self->{'API3X'} ) {
             $Self->{TicketObject}->TicketFlagSet(
-                TicketID => $Article{TicketID},
+                TicketID => $Article->{TicketID},
                 Key      => 'Seen',
                 Value    => 1,
                 UserID   => $Param{UserID},
@@ -2475,21 +2479,21 @@ sub ArticleGet {
         # add accounted time
         my $AccountedTime = $Self->{TicketObject}->ArticleAccountedTimeGet(%Param);
         if ( defined $AccountedTime ) {
-            $Article{AccountedTime} = $AccountedTime;
+            $Article->{AccountedTime} = $AccountedTime;
         }
 
-	_StripHash(\%Article);
+	_StripHash($Article);
 
-        for my $Key ( keys %Article ) {
-            if ( !defined $Article{$Key} || $Article{$Key} eq '' ) {
-                delete $Article{$Key};
+        for my $Key ( keys %$Article ) {
+            if ( !defined $Article->{$Key} || $Article->{$Key} eq '' ) {
+                delete $Article->{$Key};
             }
             if ( $Key =~ /^Escala/ ) {
-                delete $Article{$Key};
+                delete $Article->{$Key};
             }
         }
 
-        return %Article;
+        return %{$Article};
     }
     $Self->{LogObject}->Log(
         Priority => 'error',
@@ -3022,8 +3026,17 @@ sub _GetTypes {
     return \%Type;
 }
 
+sub _CheckParam {
+    my $h=shift;
+    for ( @_ )    {
+        $h->{$_} || die "Got no $_! object";
+    }
+}
+
 sub _GetTos {
     my ( $Self, %Param ) = @_;
+
+    _CheckParam(\%Param, qw[Action QueueID UserID]);
 
     # check own selection
     my %NewTos = ();
@@ -3104,8 +3117,10 @@ sub _GetNoteTypes {
 
 
 sub _GetScreenElements {
-    my $Self  =shift || die "no self";
-    my %Param  =@_ || die "no param";
+    my $Self   =shift || die "no self";
+    my %Param  =@_;
+
+    _CheckParam(\%Param, qw[Action QueueID]);
 
     my @ScreenElements;
 
@@ -3568,9 +3583,10 @@ sub _GetScreenElements {
         push @ScreenElements, $PriorityElements;
     }
 
-    $Self->_GetScreenElementsTicketFreeTextFields(%Param);   
+    
+    push (@ScreenElements,$Self->_GetScreenElementsFreeTextFields(16,"TicketFreeText","TicketFreeKey",%Param));
     $Self->_GetScreenElementsTicketFreeTimeFields(%Param);   
-    $Self->_GetScreenElementsArticleFreeTextFields(%Param);   
+    push (@ScreenElements,$Self->_GetScreenElementsFreeTextFields(3,"ArticleFreeText","ArticleFreeKey",%Param));
 
     # time units
     if ( $Self->{Config}->{TimeUnits} ) {
@@ -3611,19 +3627,12 @@ sub _TicketPhoneNew {
 
     # transform pending time, time stamp based on user time zone
     if ( defined $Param{PendingDate} ) {
-        $Param{PendingDate} = $Self->_TransfromDateSelection(
+        $Param{PendingDate} = $Self->_TransformDateSelection(
             TimeStamp => $Param{PendingDate},
         );
     }
 
-    # transform free time, time stamp based on user time zone
-    for my $Count ( 1 .. 6 ) {
-        my $Prefix = 'TicketFreeTime' . $Count;
-        next if !defined $Param{$Prefix};
-        $Param{$Prefix} = $Self->_TransfromDateSelection(
-            TimeStamp => $Param{$Prefix},
-        );
-    }
+    $Self->_TicketTransformFreeTime(\%Param);
 
     my $CustomerUser = $Param{CustomerUserLogin};
     my $CustomerID = $Param{CustomerID} || '';
@@ -3656,7 +3665,7 @@ sub _TicketPhoneNew {
         }
     }
 
-    $Self->_GetFreeTextConfigOptions(%Param);
+    return unless $Self->_CheckRequiredFreeTextField(%Param);
 
     #get customer info
     my %CustomerUserData = $Self->{CustomerUserObject}->CustomerUserDataGet(
@@ -3750,8 +3759,8 @@ sub _TicketPhoneNew {
         return;
     }
 
-    $Self->_GetTicketFreeText($TicketID,%Param);
-    $Self->_SetTicketFreeTime1;
+    $Self->_SetTicketFreeText(%Param);
+    $Self->_SetTicketFreeTime(\%Param);
 
     my $MimeType = 'text/plain';
 
@@ -3789,7 +3798,7 @@ sub _TicketPhoneNew {
 
     if ($ArticleID) {
 
-	$Self->_SetArticleFreeText1($TicketID,%Param);
+	$Self->_SetArticleFreeText(%Param, ArticleID=>$ArticleID);
 
         # set owner (if new user id is given)
         if ( $Param{OwnerID} ) {
@@ -4018,19 +4027,12 @@ sub _TicketCommonActions {
 
     # transform pending time, time stamp based on user time zone
     if ( defined $Param{PendingDate} ) {
-        $Param{PendingDate} = $Self->_TransfromDateSelection(
+        $Param{PendingDate} = $Self->_TransformDateSelection(
             TimeStamp => $Param{PendingDate},
         );
     }
 
-    # transform free time, time stamp based on user time zone
-    for my $Count ( 1 .. 6 ) {
-        my $Prefix = 'TicketFreeTime' . $Count;
-        next if !defined $Param{$Prefix};
-        $Param{$Prefix} = $Self->_TransfromDateSelection(
-            TimeStamp => $Param{$Prefix},
-        );
-    }
+    $Self->_TicketTransformFreeTime(\%Param);
 
     # rewrap body if no rich text is used
     if ( $Param{Body} ) {
@@ -4081,7 +4083,7 @@ sub _TicketCommonActions {
         }
     }
 
-    $Self->_CheckRequiredFreeTextField(%Param);
+    return unless $Self->_CheckRequiredFreeTextField(%Param);
 
     #check if Title
     if ( !$Param{Title} ) {
@@ -4250,8 +4252,9 @@ sub _TicketCommonActions {
         }
 
 	$Self->_SetTicketFreeText(%Param);
-        $Self->_SetTicketFreeTime2(%Param);
-	$Self->_SetArticleFreeText2(%Param);
+        $Self->_SetTicketFreeTime(\%Param);
+
+	$Self->_SetArticleFreeText(%Param, ArticleID=>$ArticleID);
 
         # set priority
         if ( $Self->{Config}->{Priority} && $Param{PriorityID} ) {
@@ -4450,20 +4453,12 @@ sub _TicketCompose {
 
     # transform pending time, time stamp based on user time zone
     if ( defined $Param{PendingDate} ) {
-        $Param{PendingDate} = $Self->_TransfromDateSelection(
+        $Param{PendingDate} = $Self->_TransformDateSelection(
             TimeStamp => $Param{PendingDate},
         );
     }
 
-    # transform free time, time stamp based on user time zone
-    for my $Count ( 1 .. 6 ) {
-        my $Prefix = 'TicketFreeTime' . $Count;
-        next if !defined $Param{$Prefix};
-        $Param{$Prefix} = $Self->_TransfromDateSelection(
-            TimeStamp => $Param{$Prefix},
-        );
-    }
-
+    $Self->_TicketTransformFreeTime(\%Param);
     # send email
 
     my %StateData = $Self->{TicketObject}->{StateObject}->StateGet( ID => $Param{StateID}, );
@@ -4490,20 +4485,8 @@ sub _TicketCompose {
         }
     }
 
-    # check required FreeTextField (if configured)
-    for ( 1 .. 16 ) {
-        if (
-            $Self->{Config}->{TicketFreeText}->{$_} == 2
-            && $Param{"TicketFreeText$_"} eq ''
-            )
-        {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "TicketFreeTextField$_ invalid",
-            );
-            return;
-        }
-    }
+
+    return unless $Self->_CheckRequiredFreeTextField(%Param);
 
     # check some values
     for my $Line (qw(From To Cc Bcc)) {
@@ -4578,72 +4561,9 @@ sub _TicketCompose {
         );
     }
 
-    # set ticket free text
-    for my $Count ( 1 .. 16 ) {
-        my $Key  = 'TicketFreeKey' . $Count;
-        my $Text = 'TicketFreeText' . $Count;
-        if ( defined $Param{$Key} ) {
-            $Self->{TicketObject}->TicketFreeTextSet(
-                Key      => $Param{$Key},
-                Value    => $Param{$Text},
-                Counter  => $Count,
-                TicketID => $Param{TicketID},
-                UserID   => $Param{UserID},
-            );
-        }
-    }
+    $Self->_SetTicketFreeText(%Param);
+    $Self->_SetTicketFreeTime(\%Param);
 
-    # set ticket free time
-    for ( 1 .. 6 ) {
-
-        if ( $Param{ 'TicketFreeTime' . $_ } ) {
-            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
-                = $Self->{TimeObject}->SystemTime2Date(
-                SystemTime =>
-                    $Self->{TimeObject}->SystemTime( $Param{ 'TicketFreeTime' . $_ } ),
-                );
-
-            $Param{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
-            $Param{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
-            $Param{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
-            $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
-            $Param{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
-
-            # set time stamp to NULL if field is not used/checked
-            if ( !$Param{ 'TicketFreeTime' . $_ . 'Used' } ) {
-                $Param{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
-            }
-
-            # set free time
-            $Self->{TicketObject}->TicketFreeTimeSet(
-                %Param,
-                Prefix   => 'TicketFreeTime',
-                TicketID => $Param{TicketID},
-                Counter  => $_,
-                UserID   => $Param{UserID},
-            );
-        }
-    }
-
-    # set article free text
-    for my $Count ( 1 .. 3 ) {
-        my $Key  = 'ArticleFreeKey' . $Count;
-        my $Text = 'ArticleFreeText' . $Count;
-        if ( defined $Param{$Key} ) {
-            $Self->{TicketObject}->ArticleFreeTextSet(
-                TicketID  => $Self->{TicketID},
-                ArticleID => $ArticleID,
-                Key       => $Param{$Key},
-                Value     => $Param{$Text},
-                Counter   => $Count,
-                UserID    => $Self->{UserID},
-            );
-        }
-    }
 
     # set state
     if ( $Self->{Config}->{State} && $Param{StateID} ) {
@@ -4662,6 +4582,9 @@ sub _TicketCompose {
             );
         }
     }
+
+
+    $Self->_SetArticleFreeText(%Param, ArticleID=>$ArticleID);
 
     # should I set an unlock?
     if ( $StateData{TypeName} =~ /^close/i ) {
@@ -4706,6 +4629,7 @@ sub _TicketCompose {
     );
     return $ArticleID;
 }
+
 
 sub _TicketMove {
     my ( $Self, %Param ) = @_;
@@ -4812,34 +4736,14 @@ sub _TicketMove {
 
     # transform pending time, time stamp based on user time zone
     if ( defined $Param{PendingDate} ) {
-        $Param{PendingDate} = $Self->_TransfromDateSelection(
+        $Param{PendingDate} = $Self->_TransformDateSelection(
             TimeStamp => $Param{PendingDate},
         );
     }
 
-    # transform free time, time stamp based on user time zone
-    for my $Count ( 1 .. 6 ) {
-        my $Prefix = 'TicketFreeTime' . $Count;
-        next if !defined $Param{$Prefix};
-        $Param{$Prefix} = $Self->_TransfromDateSelection(
-            TimeStamp => $Param{$Prefix},
-        );
-    }
-
-    # check required FreeTextField (if configured)
-    for ( 1 .. 16 ) {
-        if (
-            $Self->{Config}->{'TicketFreeText'}->{$_} == 2
-            && $Param{"TicketFreeText$_"} eq ''
-            )
-        {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "TicketFreeTextField$_ invalid",
-            );
-            return;
-        }
-    }
+    $Self->_TicketTransformFreeTime(\%Param);
+    
+    return unless $Self->_CheckRequiredFreeTextField(%Param);
 
     # DestQueueID lookup
     if ( !$Param{QueueID} ) {
@@ -5034,56 +4938,8 @@ sub _TicketMove {
         }
     }
 
-    # set ticket free text
-    for my $Count ( 1 .. 16 ) {
-        my $Key  = 'TicketFreeKey' . $Count;
-        my $Text = 'TicketFreeText' . $Count;
-        if ( defined $Param{$Key} ) {
-            $Self->{TicketObject}->TicketFreeTextSet(
-                Key      => $Param{$Key},
-                Value    => $Param{$Text},
-                Counter  => $Count,
-                TicketID => $Param{TicketID},
-                UserID   => $Param{UserID},
-            );
-        }
-    }
-
-    # set ticket free time
-    for ( 1 .. 6 ) {
-
-        if ( $Param{ 'TicketFreeTime' . $_ } ) {
-            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
-                = $Self->{TimeObject}->SystemTime2Date(
-                SystemTime =>
-                    $Self->{TimeObject}->SystemTime( $Param{ 'TicketFreeTime' . $_ } ),
-                );
-
-            $Param{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
-            $Param{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
-            $Param{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
-            $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
-            $Param{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
-
-            # set time stamp to NULL if field is not used/checked
-            if ( !$Param{ 'TicketFreeTime' . $_ . 'Used' } ) {
-                $Param{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
-            }
-
-            # set free time
-            $Self->{TicketObject}->TicketFreeTimeSet(
-                %Param,
-                Prefix   => 'TicketFreeTime',
-                TicketID => $Param{TicketID},
-                Counter  => $_,
-                UserID   => $Param{UserID},
-            );
-        }
-    }
+    $Self->_SetTicketFreeText(%Param);
+    $Self->_SetTicketFreeTime(\%Param);
 
     # time accounting
     if ( $Param{TimeUnits} ) {
@@ -5120,7 +4976,7 @@ sub _GetComposeDefaults {
 
     my %ComposeData;
 
-    # get last customer article or selected article ...
+    # get last customer article or selected article 
     my %Data;
     if ( $Param{ArticleID} ) {
         %Data = $Self->{TicketObject}->ArticleGet( ArticleID => $Param{ArticleID} );
@@ -5168,7 +5024,7 @@ sub _GetComposeDefaults {
         );
     }
 
-    # prepare body, subject, ReplyTo ...
+    # prepare body, subject, ReplyTo 
     # rewrap body if exists
     if ( $Data{Body} ) {
         $Data{Body} =~ s/\t/ /g;
@@ -5217,7 +5073,7 @@ sub _GetComposeDefaults {
     else {
         $Data{To} = $Data{From};
 
-        # try to remove some wrong text to from line (by way of ...)
+        # try to remove some wrong text to from line (by way of regex)
         # added by some strange mail programs on bounce
         $Data{To} =~ s/(.+?\<.+?\@.+?\>)\s+\(by\s+way\s+of\s+.+?\)/$1/ig;
     }
@@ -5360,7 +5216,7 @@ sub _GetComposeDefaults {
     return %ComposeData;
 }
 
-sub _TransfromDateSelection {
+sub _TransformDateSelection {
     my ( $Self, %Param ) = @_;
 
     # time zone translation if needed
@@ -5375,32 +5231,32 @@ sub _TransfromDateSelection {
     return $Param{TimeStamp};
 }
 
-
-
+#################################
 # helper functions
-sub _GetArticleDefaultSelections{
-    my $Self  =shift || die "no self";
-    my %Param  =@_ || die "no param";
 
-        # get default selections
-        my %ArticleFreeDefault;
-        for my $Count ( 1 .. 3 ) {
-            my $Key  = 'ArticleFreeKey' . $Count;
-            my $Text = 'ArticleFreeText' . $Count;
-            $ArticleFreeDefault{$Key} = $Param{$Key}
-                || $Self->{ConfigObject}->Get( $Key . '::DefaultSelection' );
-            $ArticleFreeDefault{$Text} = $Param{$Text}
-                || $Self->{ConfigObject}->Get( $Text . '::DefaultSelection' );
-        }
+sub _GetArticleDefaultSelections{ #FreeFieldBad
+    my $Self  =shift || die "no self";
+    my %Param  =@_;
+    
+    # get default selections
+    my %ArticleFreeDefault;
+    for my $Count ( 1 .. 3 ) {#FreeFieldBad
+	my $Key  = 'ArticleFreeKey' . $Count;
+	my $Text = 'ArticleFreeText' . $Count;
+	$ArticleFreeDefault{$Key} = $Param{$Key}
+	|| $Self->{ConfigObject}->Get( $Key . '::DefaultSelection' );
+	$ArticleFreeDefault{$Text} = $Param{$Text}
+	|| $Self->{ConfigObject}->Get( $Text . '::DefaultSelection' );
+    }
 }
 
 sub _GetArticleFreeTextConfigOptions{
     my $Self  =shift || die "no self";
-    my %Param  =@_ || die "no param";
+    my %Param  =@_ ;
     
     # get article free text config options
     my %ArticleFreeText;
-    for my $Count ( 1 .. 3 ) {
+    for my $Count ( 1 .. 3 ) {#FreeFieldBad
 	my $Key  = 'ArticleFreeKey' . $Count;
 	my $Text = 'ArticleFreeText' . $Count;
 	$ArticleFreeText{$Key} = $Self->{TicketObject}->ArticleFreeTextGet(
@@ -5418,249 +5274,34 @@ sub _GetArticleFreeTextConfigOptions{
     }
 }
 
-
-sub _GetScreenElementsArticleFreeTextFields {
+sub _SetArticleFreeText{
     my $Self  =shift || die "no self";
-    my %Param  =@_ || die "no param";
-    my @ScreenElements;
-    # article freetext fields
-    for my $Index ( 1 .. 3 ) {
-        if ( $Self->{Config}->{ArticleFreeText}->{$Index} ) {
-
-            my $FreeTextElement;
-
-            my $Name;
-            $Name = 'ArticleFreeText' . $Index;
-
-            my $Title;
-            $Title = $Self->{ConfigObject}->Get( 'ArticleFreeKey' . $Index . '::DefaultSelection' );
-
-            my $ViewType;
-            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
-                $ViewType = 'Picker';
-            }
-            else {
-                $ViewType = 'Input';
-            }
-
-            my @ArticleFreeKeys;
-            @ArticleFreeKeys = $Self->{ConfigObject}->Get( 'ArticleFreeKey' . $Index );
-
-            my @Options;
-            @Options = $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index );
-
-            my $Mandatory;
-            if ( $Self->{Config}->{ArticleFreeText}->{$Index} == 2 ) {
-                $Mandatory = 1;
-            }
-            else {
-                $Mandatory = 0;
-            }
-
-            my $Default;
-            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
-                $Default = $Self->{ConfigObject}->Get(
-                    'ArticleFreeText' . $Index
-                        . '::DefaultSelection'
-                );
-            }
-            else {
-                $Default = '';
-            }
-
-            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
-                $FreeTextElement = {
-                    Name        => $Name,
-                    Title       => $Title,
-                    FreeTextKey => @ArticleFreeKeys,
-                    Datatype    => 'Text',
-                    Viewtype    => $ViewType,
-                    Options     => @Options,
-                    Mandatory   => $Mandatory,
-                    Default     => $Default || '',
-                };
-            }
-            else {
-                $FreeTextElement = {
-                    Name        => $Name,
-                    Title       => $Title,
-                    FreeTextKey => @ArticleFreeKeys,
-                    Datatype    => 'Text',
-                    Viewtype    => $ViewType,
-                    Min         => 1,
-                    Max         => 200,
-                    Mandatory   => $Mandatory,
-                    Default     => $Default || '',
-                };
-            }
-
-            push @ScreenElements, $FreeTextElement;
-        }
-    }
-    return @ScreenElements;
-}
-
-sub _GetScreenElementsTicketFreeTimeFields {
-    my $Self  =shift || die "no self";
-    my %Param  =@_ || die "no param";
-    
-    my @ScreenElements;
-# ticket freetime fields
-    for my $Index ( 1 .. 6 ) {
-        if ( $Self->{Config}->{TicketFreeTime}->{$Index} ) {
-
-            my $Name;
-            $Name = 'TicketFreeTime' . $Index;
-
-            my $Title;
-            $Title = $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Index );
-
-            my $Mandatory;
-            if ( $Self->{ConfigObject}->Get( 'TicketFreeTimeOptional' . $Index ) ) {
-                $Mandatory = 0;
-            }
-            else {
-                $Mandatory = 1;
-            }
-
-            my $DefaultTimeFormated;
-            my $TimeDiff = 0;
-            if ( $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Index ) ) {
-                $TimeDiff = $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Index );
-            }
-            my $DefaultTime = $Self->{TimeObject}->SystemTime() - $TimeDiff;
-
-            $DefaultTimeFormated = $Self->{TimeObject}->SystemTime2TimeStamp(
-                SystemTime => $DefaultTime,
+    my %Param  =@_ ;
+    # set article free text
+    for my $Count ( 1 .. 3 ) {#FreeFieldBad
+	my $Key  = 'ArticleFreeKey' . $Count;
+	my $Text = 'ArticleFreeText' . $Count;
+	next if !defined $Param{$Key};
+	$Self->{TicketObject}->ArticleFreeTextSet(
+	    TicketID  => $Param{TicketID},
+	    ArticleID => $Param{ArticleID},
+	    Key       => $Param{$Key},
+	    Value     => $Param{$Text},
+	    Counter   => $Count,
+	    UserID    => $Param{UserID},
             );
-
-            my $FreeTimeElement = {
-                Name      => $Name,
-                Title     => $Title,
-                Datatype  => 'DateTime',
-                Viewtype  => 'Picker',
-                Mandatory => $Mandatory,
-                Default   => $DefaultTimeFormated || '',
-            };
-            push @ScreenElements, $FreeTimeElement;
-        }
-    }
-    return @ScreenElements;
-}
-
-sub _GetScreenElementsTicketFreeTextFields{
-    my $Self  =shift || die "no self";
-    my %Param  =@_ || die "no param";
-
-    my @ScreenElements;
-    
-# ticket freetext fields
-    for my $Index ( 1 .. 16 ) {
-        if ( $Self->{Config}->{TicketFreeText}->{$Index} ) {
-	    
-            my $FreeTextElement;
-	    
-            my $Name;
-            $Name = 'TicketFreeText' . $Index;
-
-            my $Title;
-            $Title = $Self->{ConfigObject}->Get( 'TicketFreeKey' . $Index . '::DefaultSelection' );
-
-            my $ViewType;
-            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
-                $ViewType = 'Picker';
-            }
-            else {
-                $ViewType = 'Input';
-            }
-
-            my @TicketFreeKeys;
-            @TicketFreeKeys = $Self->{ConfigObject}->Get( 'TicketFreeKey' . $Index );
-
-            my @Options;
-            @Options = $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index );
-
-            my $Mandatory;
-            if ( $Self->{Config}->{TicketFreeText}->{$Index} == 2 ) {
-                $Mandatory = 1;
-            }
-            else {
-                $Mandatory = 0;
-            }
-
-            my $Default;
-            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
-                $Default = $Self->{ConfigObject}->Get(
-                    'TicketFreeText' . $Index
-                        . '::DefaultSelection'
-                );
-            }
-            else {
-                $Default = '';
-            }
-
-            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
-                $FreeTextElement = {
-                    Name        => $Name,
-                    Title       => $Title,
-                    FreeTextKey => @TicketFreeKeys,
-                    Datatype    => 'Text',
-                    Viewtype    => $ViewType,
-                    Options     => @Options,
-                    Mandatory   => $Mandatory,
-                    Default     => $Default || '',
-                };
-            }
-            else {
-                $FreeTextElement = {
-                    Name        => $Name,
-                    Title       => $Title,
-                    FreeTextKey => @TicketFreeKeys,
-                    Datatype    => 'Text',
-                    Viewtype    => $ViewType,
-                    Min         => 1,
-                    Max         => 200,
-                    Mandatory   => $Mandatory,
-                    Default     => $Default || '',
-                };
-            }
-
-            push @ScreenElements, $FreeTextElement;
-        }
-    }
-    return @ScreenElements;
-}
-
-sub _GetFreeTextConfigOptions {
-    my $Self  =shift || die "no self";
-    my %Param  =@_ || die "no param";
-    
-# get free text config options
-    my %TicketFreeText = ();
-    for ( 1 .. 16 ) {
-	
-        # check required FreeTextField (if configured)
-        if (
-            $Self->{Config}{'TicketFreeText'}->{$_} == 2
-            && $Param{"TicketFreeText$_"} eq ''
-            )
-        {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "TicketFreeTextField$_ invalid",
-            );
-            return;
-        }
     }
 }
+
+## 16 free text fields 
 
 sub _GetFreeTextConfigOptions2{
     my $Self  =shift || die "no self";
-    my %Param  =@_ || die "no param";
+    my %Param  =@_ ;
     
     # get free text config options
     my %TicketFreeText;
-    for my $Count ( 1 .. 16 ) {
+    for my $Count ( 1 .. 16 ) {#FreeFieldBad
 	my $Key  = 'TicketFreeKey' . $Count;
 	my $Text = 'TicketFreeText' . $Count;
 	$TicketFreeText{$Key} = $Self->{TicketObject}->TicketFreeTextGet(
@@ -5679,183 +5320,209 @@ sub _GetFreeTextConfigOptions2{
 }
 
 
-sub _GetTicketFreeText{
+sub _SetTicketFreeText{
     my $Self  =shift || die "no self";
-    my $TicketID=shift;
-    my %Param  =@_ || die "no param";
-    
+    my %Param  =@_ ;
     # set ticket free text
-    for ( 1 .. 16 ) {
-        if ( defined( $Param{"TicketFreeKey$_"} ) ) {
-            $Self->{TicketObject}->TicketFreeTextSet(
-                TicketID => $TicketID,
-                Key      => $Param{"TicketFreeKey$_"},
-                Value    => $Param{"TicketFreeText$_"},
-                Counter  => $_,
-                UserID   => $Param{UserID},
+    for my $Count ( 1 .. 16 ) {#FreeFieldBad
+	my $Key  = 'TicketFreeKey' . $Count;
+	my $Text = 'TicketFreeText' . $Count;
+	next if !defined $Param{$Key}; # skip if 
+	$Self->{TicketObject}->TicketFreeTextSet(
+	    TicketID => $Param{TicketID},
+	    Key      => $Param{$Key},
+	    Value    => $Param{$Text},
+	    Counter  => $Count,
+	    UserID   => $Param{UserID},
             );
-        }
     }
 }
 
-sub _SetTicketFreeTime1 {
+sub _CheckRequiredFreeTextField {
     my $Self  =shift || die "no self";
-    my $TicketID =shift || die "no TicketID";
-    my %Param  =@_ || die "no param";
-
-    # set ticket free time
-    for ( 1 .. 6 ) {
-	
-        if ( $Param{ 'TicketFreeTime' . $_ } ) {
-            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
-                = $Self->{TimeObject}->SystemTime2Date(
-                SystemTime => $Self->{TimeObject}->SystemTime( $Param{ 'TicketFreeTime' . $_ } ),
-                );
-
-            $Param{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
-            $Param{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
-            $Param{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
-            $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
-            $Param{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
-
-            # set time stamp to NULL if field is not used/checked
-            if ( !$Param{ 'TicketFreeTime' . $_ . 'Used' } ) {
-                $Param{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
-            }
-
-            # set free time
-            $Self->{TicketObject}->TicketFreeTimeSet(
-                %Param,
-                Prefix   => 'TicketFreeTime',
-                TicketID => $TicketID,
-                Counter  => $_,
-                UserID   => $Param{UserID},
-            );
-        }
-    }
-}
-
-sub _SetArticleFreeText1{
-    my $Self  =shift || die "no self";
-    my $TicketID =shift || die "no TicketID";
-    my $ArticleID=shift || die "no ArticleID";
-    my %Param  =@_ || die "no param";
-
-    # set article free text
-    for ( 1 .. 3 ) {
-	if ( defined( $Param{"ArticleFreeKey$_"} ) ) {
-	    $Self->{TicketObject}->ArticleFreeTextSet(
-		TicketID  => $TicketID,
-		ArticleID => $ArticleID,
-		Key       => $Param{"ArticleFreeKey$_"},
-                    Value     => $Param{"ArticleFreeText$_"},
-                    Counter   => $_,
-                    UserID    => $Param{UserID},
-                );
-            }
-        }
-}
-
-sub _CheckRequiredFreeTextField{
-    my $Self  =shift || die "no self";
-    my %Param  =@_ || die "no param";
-
+    my %Param  =@_ ;
     # check required FreeTextField (if configured)
-    for my $Count ( 1 .. 16 ) {
+    for my $Count ( 1 .. 16 ) {#FreeFieldBad
         next if $Self->{Config}->{TicketFreeText}->{$Count} ne 2;
         next if $Param{"TicketFreeText$Count"} ne '';
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "TicketFreeTextField$Count invalid",
         );
-        return;
+        return 0;
+    }
+    return 1;
+}
+
+# 6 time slots 
+
+sub _GetScreenElementsTicketFreeTimeFields {
+    my $Self  =shift || die "no self";
+    my %Param  =@_ ;
+    
+    my @ScreenElements;
+# ticket freetime fields
+    for my $Index ( 1 .. 6 ) {#FreeFieldBad
+        if ( $Self->{Config}->{TicketFreeTime}->{$Index} ) {
+            my $Name;
+            $Name = 'TicketFreeTime' . $Index;
+            my $Title;
+            $Title = $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Index );
+            my $Mandatory;
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeTimeOptional' . $Index ) ) {
+                $Mandatory = 0;
+            }
+            else {
+                $Mandatory = 1;
+            }
+            my $DefaultTimeFormated;
+            my $TimeDiff = 0;
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Index ) ) {
+                $TimeDiff = $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Index );
+            }
+            my $DefaultTime = $Self->{TimeObject}->SystemTime() - $TimeDiff;
+            $DefaultTimeFormated = $Self->{TimeObject}->SystemTime2TimeStamp(
+                SystemTime => $DefaultTime,
+            );
+            my $FreeTimeElement = {
+                Name      => $Name,
+                Title     => $Title,
+                Datatype  => 'DateTime',
+                Viewtype  => 'Picker',
+                Mandatory => $Mandatory,
+                Default   => $DefaultTimeFormated || '',
+            };
+            push @ScreenElements, $FreeTimeElement;
+        }
+    }
+    return @ScreenElements;
+}
+
+sub  _SetTicketFreeTime
+{
+    my $Self  =shift || die "no self";
+    my $Param  =shift ; #rw
+    # set ticket free time
+    for ( 1 .. 6 ) {#FreeFieldBad
+        if ( $Param->{ 'TicketFreeTime' . $_ } ) {
+            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
+                = $Self->{TimeObject}->SystemTime2Date(
+                SystemTime =>
+		$Self->{TimeObject}->SystemTime( $Param->{ 'TicketFreeTime' . $_ } ),
+                );
+            $Param->{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
+            $Param->{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
+            $Param->{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
+            $Param->{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
+            $Param->{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
+            # set time stamp to NULL if field is not used/checked
+            if ( !$Param->{ 'TicketFreeTime' . $_ . 'Used' } ) {
+                $Param->{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
+                $Param->{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
+                $Param->{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
+                $Param->{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
+                $Param->{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
+            }
+            # set free time
+            $Self->{TicketObject}->TicketFreeTimeSet(
+                %{$Param},
+                Prefix   => 'TicketFreeTime',
+                TicketID => $Param->{TicketID},
+                Counter  => $_,
+                UserID   => $Param->{UserID},
+            );
+        }
     }
 }
 
-sub _SetTicketFreeText{
+# transform free time, time stamp based on user time zone
+sub _TicketTransformFreeTime
+{
     my $Self  =shift || die "no self";
-    my %Param  =@_ || die "no param";
-
-    # set ticket free text
-    for my $Count ( 1 .. 16 ) {
-	my $Key  = 'TicketFreeKey' . $Count;
-	my $Text = 'TicketFreeText' . $Count;
-	next if !defined $Param{$Key};
-            $Self->{TicketObject}->TicketFreeTextSet(
-                TicketID => $Param{TicketID},
-                Key      => $Param{$Key},
-                Value    => $Param{$Text},
-                Counter  => $Count,
-                UserID   => $Param{UserID},
-            );
-        }
+    my $Param  =shift ;
+    # transform free time, time stamp based on user time zone
+    for my $Count ( 1 .. 6 ) {#FreeFieldBad
+        my $Prefix = 'TicketFreeTime' . $Count;
+        next if !defined $Param->{$Prefix};
+        $Param->{$Prefix} = $Self->_TransformDateSelection(
+            TimeStamp => $Param->{$Prefix},
+        );
+    }
 }
 
-sub _SetArticleFreeText2{
-    my $Self  =shift || die "no self";
-    my $TicketID =shift || die "no TicketID";
-    my $ArticleID=shift || die "no ArticleID";
-    my %Param  =@_ || die "no param";
 
-    # set article free text
-    for my $Count ( 1 .. 3 ) {
-	my $Key  = 'ArticleFreeKey' . $Count;
-	my $Text = 'ArticleFreeText' . $Count;
-	next if !defined $Param{$Key};
-            $Self->{TicketObject}->ArticleFreeTextSet(
-                TicketID  => $Param{TicketID},
-                ArticleID => $ArticleID,
-                Key       => $Param{$Key},
-                Value     => $Param{$Text},
-                Counter   => $Count,
-                UserID    => $Param{UserID},
-            );
-        }
-}
+sub _GetScreenElementsFreeTextFields{
 
-sub _SetTicketFreeTime2 {
     my $Self  =shift || die "no self";
-    my %Param  =@_ || die "no param";
+    my $max   = shift ; # 16 or 3
+    my $TypeNameText = shift; #"ArticleFreeText"|;
+    my $TypeNameKey  = shift; #"ArticleFreeKey"|;
+    my %Param  =@_ ;
+    my @ScreenElements;
     
-# set ticket free time
-    for ( 1 .. 6 ) {
-	
-	if ( $Param{ 'TicketFreeTime' . $_ } ) {
-	    my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
-                    = $Self->{TimeObject}->SystemTime2Date(
-                    SystemTime =>
-                        $Self->{TimeObject}->SystemTime( $Param{ 'TicketFreeTime' . $_ } ),
-                    );
-
-                $Param{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
-                $Param{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
-                $Param{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
-                $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
-                $Param{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
-
-                # set time stamp to NULL if field is not used/checked
-                if ( !$Param{ 'TicketFreeTime' . $_ . 'Used' } ) {
-                    $Param{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
-                    $Param{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
-                    $Param{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
-                    $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
-                    $Param{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
-                }
-
-                # set free time
-                $Self->{TicketObject}->TicketFreeTimeSet(
-                    %Param,
-                    Prefix   => 'TicketFreeTime',
-                    TicketID => $Param{TicketID},
-                    Counter  => $_,
-                    UserID   => $Param{UserID},
+#  freetext fields
+    for my $Index ( 1 .. $max ) {#FreeFieldBad
+        if ( $Self->{Config}->{$TypeNameText}->{$Index} ) {
+	    my $FreeTextElement;	    
+            my $Name = $TypeNameText . $Index;
+            my $Title= $Self->{ConfigObject}->Get( $TypeNameKey . $Index . '::DefaultSelection' );
+            my $ViewType;
+            if ( $Self->{ConfigObject}->Get( $TypeNameText . $Index ) ) {
+                $ViewType = 'Picker';
+            }
+            else {
+                $ViewType = 'Input';
+            }
+            my @TypeNameKeys;
+            @TypeNameKeys = $Self->{ConfigObject}->Get( $TypeNameKey . $Index );
+            my @Options;
+            @Options = $Self->{ConfigObject}->Get( $TypeNameText . $Index );
+            my $Mandatory;
+            if ( $Self->{Config}->{$TypeNameText}->{$Index} == 2 ) {
+                $Mandatory = 1;
+            }
+            else {
+                $Mandatory = 0;
+            }
+            my $Default;
+            if ( $Self->{ConfigObject}->Get( $TypeNameText . $Index ) ) {
+                $Default = $Self->{ConfigObject}->Get(
+                    $TypeNameText . $Index
+                        . '::DefaultSelection'
                 );
             }
+            else {
+                $Default = '';
+            }
+            if ( $Self->{ConfigObject}->Get( $TypeNameText . $Index ) ) {
+                $FreeTextElement = {
+                    Name        => $Name,
+                    Title       => $Title,
+                    FreeTextKey => @TypeNameKeys,
+                    Datatype    => 'Text',
+                    Viewtype    => $ViewType,
+                    Options     => @Options,
+                    Mandatory   => $Mandatory,
+                    Default     => $Default || '',
+                };
+            }
+            else {
+                $FreeTextElement = {
+                    Name        => $Name,
+                    Title       => $Title,
+                    FreeTextKey => @TypeNameKeys,
+                    Datatype    => 'Text',
+                    Viewtype    => $ViewType,
+                    Min         => 1,
+                    Max         => 200,
+                    Mandatory   => $Mandatory,
+                    Default     => $Default || '',
+                };
+            }
+            push @ScreenElements, $FreeTextElement;
         }
+    }
+    return @ScreenElements;
 }
 
 
@@ -5878,3 +5545,5 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 $Id: iPhone.pm,v 1.65 2011/06/15 13:27:37 martin Exp $
 
 =cut
+
+
