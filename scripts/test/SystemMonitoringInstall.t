@@ -76,4 +76,4 @@ warn "CodeInstall";
 my $Result = $CodeObject->CodeInstall();
 
 warn "CodeUpgrade";
-my $Result2 =  $CodeObject->CodeUpgradeFromLowerThan_3_0_93 ();
+my $Result2 =  $CodeObject->CodeUpgradeFromLowerThan_2_3_1 ();

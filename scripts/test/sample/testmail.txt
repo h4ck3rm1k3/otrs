@@ -1,0 +1,18 @@
+From:michael.dupont@otrs.com
+Subject: ** PROBLEM alert 3 - elphin200 host is DOWN **    
+***** Nagios  *****
+
+Notification Type: PROBLEM
+Host: elphin200
+State: DOWN for 0d 0h 0m 0s
+Address: 127.1.3.1
+Info:
+
+CRITICAL - Time to live exceeded (127.1.3.1)
+
+Date/Time: Sun Mar 18 00:18:30 CET 2008
+
+ACK by:
+Comment:
+Cc: 
+

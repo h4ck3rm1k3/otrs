@@ -70,4 +70,27 @@ my $Self = Kernel::System::UnitTest->new(
 
 
 
-1;
+my %Query = (
+          'StateType' => 'Open',
+          'Result' => 'ARRAY',
+          'DynamicField_TicketFreeText12' => {
+                                  'Equals' => 'Router7'
+                                },
+          'UserID' => 1,
+          'Limit' => 1,
+	  'DynamicField_FieldNameTicketFreeText9'  => {
+                                 'Equals' => 'HTTP5'
+                               },
+
+          'DynamicField_TicketFreeText9' => {
+                                 'Equals' => 'HTTP5'
+                               }
+        );
+
+
+my $TicketObject = Kernel::System::Ticket->new( %{$Self} );
+
+my @TicketIDs = $TicketObject->TicketSearch(%Query);	
+use YAML;
+warn Dump(@TicketIDs);
+
