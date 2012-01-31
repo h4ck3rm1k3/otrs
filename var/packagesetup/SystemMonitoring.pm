@@ -2,7 +2,7 @@
 # SystemMonitoring.pm - code to excecute during package installation
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: SystemMonitoring.pm,v 1.2 2012/01/30 16:10:42 md Exp $
+# $Id: SystemMonitoring.pm,v 1.4 2012/01/31 11:15:27 md Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,11 +20,10 @@ use Kernel::System::Type;
 use Kernel::System::Valid;
 use Kernel::System::DynamicField;
 
-
 use vars qw(@ISA $VERSION);
 use YAML;
 
-$VERSION = qw($Revision: 1.2 $) [1];
+$VERSION = qw($Revision: 1.4 $) [1];
 
 =head1 NAME
 
@@ -126,7 +125,6 @@ sub new {
         'ZZZAuto.pm',
     );
 
-
     # reload the ZZZ files (mod_perl workaround)
     for my $ZZZFile (@ZZZFiles) {
 
@@ -139,9 +137,9 @@ sub new {
             last PREFIX;
         }
     }
-    
+
     # create needed objects? again?
-    $Self->{ConfigObject}       = Kernel::Config->new();
+    $Self->{ConfigObject} = Kernel::Config->new();
 
     $Self->{TypeObject}         = Kernel::System::Type->new( %{$Self} );
     $Self->{ValidObject}        = Kernel::System::Valid->new( %{$Self} );
@@ -194,15 +192,15 @@ sub CodeUpgrade {
     return 1;
 }
 
-=item CodeUpgradeFromLowerThan_3_0_93()
+=item CodeUpgradeFromLowerThan_2_3_1()
 
-This function is only executed if the installed module version is smaller than 3.0.93.
+This function is only executed if the installed module version is smaller than 2.3.2.
 
-my $Result = $CodeObject->CodeUpgradeFromLowerThan_3_0_93();
+my $Result = $CodeObject->CodeUpgradeFromLowerThan_2_3_1();
 
 =cut
 
-sub CodeUpgradeFromLowerThan_3_0_93 {
+sub CodeUpgradeFromLowerThan_2_3_1 {
     my ( $Self, %Param ) = @_;
 
     # get the definition for all dynamic fields for SystemMonitoring
@@ -218,14 +216,13 @@ sub CodeUpgradeFromLowerThan_3_0_93 {
             Name => $DynamicFieldNew->{Name},
         );
 
-	if (not exists($DynamicFieldOld->{ID}))
-	{
-	    $Self->{LogObject}->Log(
-		Priority => 'error',
-		Message  => "The old Field does not exist $DynamicFieldNew->{Name}, skipping."
-		);
-	    next;
-	}
+        if ( not exists( $DynamicFieldOld->{ID} ) ) {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "The old Field does not exist $DynamicFieldNew->{Name}, skipping."
+            );
+            next;
+        }
 
         # update the dynamic field
         my $Success = $Self->{DynamicFieldObject}->DynamicFieldUpdate(
@@ -297,51 +294,48 @@ sub _CreateDynamicFields {
     my @DynamicFields = $Self->_GetDynamicFieldsDefinition();
 
     # create dynamic fields
-  DYNAMICFIELD:
-    
+    DYNAMICFIELD:
+
     for my $DynamicField (@DynamicFields) {
-	
-	# create a new field
-	my $OldDynamicField = $Self->{DynamicFieldObject}->DynamicFieldGet(
-	    Name => $DynamicField->{Name},
-	    );
-	
-	if (defined($OldDynamicField))
-	{
-	    if (exists($OldDynamicField->{Label}))
-	    {
-		if (
-		    ( $OldDynamicField->{Label} eq $DynamicField->{Label} )
-		    )
-		{
-		    $Self->{LogObject}->Log(
-			Priority => 'info',
-			Message  => "Field already exists Label:$DynamicField->{Label}, skipping."
-			);
-		    next; # skip the record, it has been created already
-		}
-		
-	    }
-	}
 
+        # create a new field
+        my $OldDynamicField = $Self->{DynamicFieldObject}->DynamicFieldGet(
+            Name => $DynamicField->{Name},
+        );
 
-        # 
-	    
-	    my $FieldID = $Self->{DynamicFieldObject}->DynamicFieldAdd(
-		Name       => $DynamicField->{Name},
-		Label      => $DynamicField->{Label},
-		FieldOrder => $NextOrderNumber,
-		FieldType  => $DynamicField->{FieldType},
-		ObjectType => $DynamicField->{ObjectType},
-		Config     => $DynamicField->{Config},
-		ValidID    => $ValidID,
-		UserID     => 1,
-		);
-	    next DYNAMICFIELD if !$FieldID;
-	    
-            # increase the order number
-	    $NextOrderNumber++;
-	
+        if ( defined($OldDynamicField) ) {
+            if ( exists( $OldDynamicField->{Label} ) ) {
+                if (
+                    ( $OldDynamicField->{Label} eq $DynamicField->{Label} )
+                    )
+                {
+                    $Self->{LogObject}->Log(
+                        Priority => 'info',
+                        Message  => "Field already exists Label:$DynamicField->{Label}, skipping."
+                    );
+                    next;    # skip the record, it has been created already
+                }
+
+            }
+        }
+
+        #
+
+        my $FieldID = $Self->{DynamicFieldObject}->DynamicFieldAdd(
+            Name       => $DynamicField->{Name},
+            Label      => $DynamicField->{Label},
+            FieldOrder => $NextOrderNumber,
+            FieldType  => $DynamicField->{FieldType},
+            ObjectType => $DynamicField->{ObjectType},
+            Config     => $DynamicField->{Config},
+            ValidID    => $ValidID,
+            UserID     => 1,
+        );
+        next DYNAMICFIELD if !$FieldID;
+
+        # increase the order number
+        $NextOrderNumber++;
+
     }
 
     return 1;
@@ -358,50 +352,48 @@ returns the definition for System Monitoring related dynamic fields
 sub _GetDynamicFieldsDefinition {
     my ( $Self, %Param ) = @_;
 
-    my @AllNewFields = ();	# the fields that are filled out
+    my @AllNewFields = ();    # the fields that are filled out
 
     # run all PreFilterModules (modify email params)
-    foreach my $Key ('PostMaster::PreFilterModule', 'PostMaster::PostFilterModule')
+    foreach my $Key ('PostMaster::PreFilterModule')
     {
-	if ( ref $Self->{ConfigObject}->Get($Key) eq 'HASH' ) {
-	    my %Jobs = %{ $Self->{ConfigObject}->Get($Key) };
-	    for my $Job ( sort keys %Jobs ) {
-		return if !$Self->{MainObject}->Require( $Jobs{$Job}->{Module} );
+        if ( ref $Self->{ConfigObject}->Get($Key) eq 'HASH' ) {
+            my %Jobs = %{ $Self->{ConfigObject}->Get($Key) };
+            for my $Job ( sort keys %Jobs ) {
+                return if !$Self->{MainObject}->Require( $Jobs{$Job}->{Module} );
 
-		next unless $Jobs{$Job}->{Module}->can("GetDynamicFieldsDefinition");
+                next unless $Jobs{$Job}->{Module}->can("GetDynamicFieldsDefinition");
 
-		my @NewFields;
+                my @NewFields;
 
-		eval{
+                eval {
 
-		    my $Run = $Jobs{$Job}->{Module}->GetDynamicFieldsDefinition(
-			$Self,
-			Param  => \%Param,
-			Config => $Jobs{$Job}, # the job config
-			NewFields => \@NewFields
-			);
-		    if ( !$Run ) {
-			$Self->{LogObject}->Log(
-			    Priority => 'error',
-			    Message =>
-			    "Execute GetDynamicFieldsDefinition() of $Key $Jobs{$Job}->{Module} not successful!",
-			    );
-		    }
-		};
-		if ($@)
-		{
-		    $Self->{LogObject}->Log(
-			Priority => 'error',
-			Message =>
-			"Execute GetDynamicFieldsDefinition() of $Key $Jobs{$Job}->{Module} not successful with error $@!",
-			);
-		}
-		else
-		{
-		    push @AllNewFields,@NewFields;
-		}
-	    }
-	}    
+                    my $Run = $Jobs{$Job}->{Module}->GetDynamicFieldsDefinition(
+                        $Self,
+                        Param     => \%Param,
+                        Config    => $Jobs{$Job},    # the job config
+                        NewFields => \@NewFields
+                    );
+                    if ( !$Run ) {
+                        $Self->{LogObject}->Log(
+                            Priority => 'error',
+                            Message =>
+                                "Execute GetDynamicFieldsDefinition() of $Key $Jobs{$Job}->{Module} not successful!",
+                        );
+                    }
+                };
+                if ($@) {                            # error in eval
+                    $Self->{LogObject}->Log(
+                        Priority => 'error',
+                        Message =>
+                            "Execute GetDynamicFieldsDefinition() of $Key $Jobs{$Job}->{Module} not successful with error $@!",
+                    );
+                }
+                else {
+                    push @AllNewFields, (@NewFields);
+                }
+            }
+        }
     }
     return @AllNewFields;
 }
@@ -422,6 +414,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/gpl-2.0.txt>.
 
 =head1 VERSION
 
-$Revision: 1.2 $ $Date: 2012/01/30 16:10:42 $
+$Revision: 1.4 $ $Date: 2012/01/31 11:15:27 $
 
 =cut
