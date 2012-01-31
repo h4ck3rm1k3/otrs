@@ -25,168 +25,168 @@ $VERSION = qw($Revision: 1.65 $) [1];
 
 =head1 NAME
 
-Kernel::System::iPhone - iPhone lib
+    Kernel::System::iPhone - iPhone lib
 
-=head1 SYNOPSIS
+    =head1 SYNOPSIS
 
-All iPhone functions.
+    All iPhone functions.
 
-=head1 PUBLIC INTERFACE
+    =head1 PUBLIC INTERFACE
 
-=over 4
+    =over 4
 
-=cut
+    =cut
 
 =item new()
 
-create an object
+    create an object
 
     use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::User;
-    use Kernel::System::Group;
-    use Kernel::System::Queue;
-    use Kernel::System::Service;
-    use Kernel::System::Type;
-    use Kernel::System::State;
-    use Kernel::System::Lock;
-    use Kernel::System::SLA;
-    use Kernel::System::CustomerUser;
-    use Kernel::System::Ticket;
-    use Kernel::System::LinkObject;
-    use Kernel::System::iPhone;
+use Kernel::System::Encode;
+use Kernel::System::Log;
+use Kernel::System::Time;
+use Kernel::System::Main;
+use Kernel::System::DB;
+use Kernel::System::User;
+use Kernel::System::Group;
+use Kernel::System::Queue;
+use Kernel::System::Service;
+use Kernel::System::Type;
+use Kernel::System::State;
+use Kernel::System::Lock;
+use Kernel::System::SLA;
+use Kernel::System::CustomerUser;
+use Kernel::System::Ticket;
+use Kernel::System::LinkObject;
+use Kernel::System::iPhone;
 
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
+my $ConfigObject = Kernel::Config->new();
+my $EncodeObject = Kernel::System::Encode->new(
+    ConfigObject => $ConfigObject,
     );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
+my $LogObject = Kernel::System::Log->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
     );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
+my $TimeObject = Kernel::System::Time->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
     );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
+my $MainObject = Kernel::System::Main->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
+    LogObject    => $LogObject,
     );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
+my $DBObject = Kernel::System::DB->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
+    LogObject    => $LogObject,
+    MainObject   => $MainObject,
     );
-    my $UserObject = Kernel::System::User->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-        TimeObject   => $TimeObject,
-        DBObject     => $DBObject,
-        EncodeObject => $EncodeObject,
+my $UserObject = Kernel::System::User->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    MainObject   => $MainObject,
+    TimeObject   => $TimeObject,
+    DBObject     => $DBObject,
+    EncodeObject => $EncodeObject,
     );
-    my $GroupObject = Kernel::System::Group->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $GroupObject = Kernel::System::Group->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $QueueObject = Kernel::System::Queue->new(
-        ConfigObject        => $ConfigObject,
-        LogObject           => $LogObject,
-        DBObject            => $DBObject,
-        MainObject          => $MainObject,
-        EncodeObject        => $EncodeObject,
-        GroupObject         => $GroupObject, # if given
-        CustomerGroupObject => $CustomerGroupObject, # if given
+my $QueueObject = Kernel::System::Queue->new(
+    ConfigObject        => $ConfigObject,
+    LogObject           => $LogObject,
+    DBObject            => $DBObject,
+    MainObject          => $MainObject,
+    EncodeObject        => $EncodeObject,
+    GroupObject         => $GroupObject, # if given
+    CustomerGroupObject => $CustomerGroupObject, # if given
     );
-    my $ServiceObject = Kernel::System::Service->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
+my $ServiceObject = Kernel::System::Service->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
     );
-    my $TypeObject = Kernel::System::Type->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $TypeObject = Kernel::System::Type->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $StateObject = Kernel::System::State->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $StateObject = Kernel::System::State->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $LockObject = Kernel::System::Lock->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $LockObject = Kernel::System::Lock->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $SLAObject = Kernel::System::SLA->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
+my $SLAObject = Kernel::System::SLA->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
     );
-    my $CustomerUserObject = Kernel::System::CustomerUser->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $CustomerUserObject = Kernel::System::CustomerUser->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $TicketObject = Kernel::System::Ticket->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-        GroupObject        => $GroupObject,        # if given
-        CustomerUserObject => $CustomerUserObject, # if given
-        QueueObject        => $QueueObject,        # if given
+my $TicketObject = Kernel::System::Ticket->new(
+    ConfigObject       => $ConfigObject,
+    LogObject          => $LogObject,
+    DBObject           => $DBObject,
+    MainObject         => $MainObject,
+    TimeObject         => $TimeObject,
+    EncodeObject       => $EncodeObject,
+    GroupObject        => $GroupObject,        # if given
+    CustomerUserObject => $CustomerUserObject, # if given
+    QueueObject        => $QueueObject,        # if given
     );
-    my $LinkObject = Kernel::System::LinkObject->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        TimeObject   => $TimeObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $LinkObject = Kernel::System::LinkObject->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    TimeObject   => $TimeObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $iPhoneObject = Kernel::System::iPhone->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-        GroupObject        => $GroupObject,
-        CustomerUserObject => $CustomerUserObject,
-        QueueObject        => $QueueObject,
-        UserObject         => $UserObject,
-        QueueObject        => $QueueObject,
-        ServiceObject      => $ServiceObject,
-        TypeObject         => $TypeObject,
-        StateObject        => $StateObject,
-        LockObject         => $LockObject,
-        SLAObject          => $SLAObject,
-        TicketObject       => $TicketObject,
-        Linkbject          => $LinkObject,
+my $iPhoneObject = Kernel::System::iPhone->new(
+    ConfigObject       => $ConfigObject,
+    LogObject          => $LogObject,
+    DBObject           => $DBObject,
+    MainObject         => $MainObject,
+    TimeObject         => $TimeObject,
+    EncodeObject       => $EncodeObject,
+    GroupObject        => $GroupObject,
+    CustomerUserObject => $CustomerUserObject,
+    QueueObject        => $QueueObject,
+    UserObject         => $UserObject,
+    QueueObject        => $QueueObject,
+    ServiceObject      => $ServiceObject,
+    TypeObject         => $TypeObject,
+    StateObject        => $StateObject,
+    LockObject         => $LockObject,
+    SLAObject          => $SLAObject,
+    TicketObject       => $TicketObject,
+    Linkbject          => $LinkObject,
     );
 
 =cut
@@ -228,281 +228,303 @@ sub new {
     return $Self;
 }
 
+=item _StripHash()
+    Strip out unneeded fields from the hash 
+=cut
+
+sub _StripHash
+{
+    my $Hash=shift;
+    # strip out all data
+    my @Delete
+	= qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
+             IncomingTime RealTillTimeNotUsed ServiceID SLAID
+            StateType ArchiveFlag UnlockTimeout Changed
+        );
+
+    #ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1  ArticleFreeText2 ArticleFreeText3
+    
+    for my $Key (@Delete) {
+	delete $Hash->{$Key};
+    }
+
+}
+
 =item ScreenConfig()
-Get fields defintion for each screen (Phone, Note, Close, Compose or Move)
+    Get fields defintion for each screen (Phone, Note, Close, Compose or Move)
 
-Phone   (New phone ticket)
-Note    (Add a note to a Ticket)
-Close   (Close a tcket)
-Compose (Reply or response a ticket)
-Move    (Change ticket queue)
+    Phone   (New phone ticket)
+    Note    (Add a note to a Ticket)
+    Close   (Close a tcket)
+    Compose (Reply or response a ticket)
+    Move    (Change ticket queue)
 
-Note, Close, Compose and Move, requires TicketID argument
+    Note, Close, Compose and Move, requires TicketID argument
 
-The fields that are returned depend on the Screen Argument and on the Settings in sysconfig for the iPhone
-as well as on general settings.
-
-    my @Result = $iPhoneObject->ScreenConfig(
-        Screen => "Phone",
-        UserID => 1,
-    );
+    The fields that are returned depend on the Screen Argument and on the Settings in sysconfig for the iPhone
+    as well as on general settings.
 
     my @Result = $iPhoneObject->ScreenConfig(
-        Screen   => "Note",
-        TicketID => 224,
-        UserID   => 1,
+    Screen => "Phone",
+    UserID => 1,
     );
 
-    # a result could be
+my @Result = $iPhoneObject->ScreenConfig(
+    Screen   => "Note",
+    TicketID => 224,
+    UserID   => 1,
+    );
 
-    @Result = (
-        Actions => {
-            Parameters => {
-                Action => "Phone",
-            },
-            Method => "ScreenActions",
-            Object => "CustomObject",
-            Title => "New Phone Ticket"
-       },
-        Elements => (
-            {
-                Name       => "TypeID",
-                Title      => "Type",
-                Datatype   => "Text",
-                Viewtype   => "Picker",
-                Options    => {
-                    1=> "default",
-                    2=> "RfC",
-                    3=> "Incident",
-                    4=> "Incident::ServiceRequest",
-                    5=> "Incident::Disaster"
-                    6=> "Problem",
-                    7=> "Problem::KnownError",
-                    8=> "Problem::PendingRfC",
-                },
-                Default   =>"",
-                Mandatory => 1,
-            },
-            {
-                Name           => "CustomerUserLogin",
-                Title          => "From customer",
-                Datatype       => "Text",
-                Viewtype       =>"AutoCompletion",
-                DynamicOptions => {
-                    Object     => "CustomObject",
-                    Method     =>"CustomerSearch",
-                    Parameters =>
-                        {
-                            Search => "CustomerUserLogin",
-                        },
-                },
-                Default        => "",
-                Mandatory      => 1,
-            },
-            {
-                Name      => "QueueID",
-                Title     => "To queue",
-                Datatype  => "Text",
-                Viewtype  => "Picker",
-                Options   =>{
-                      => "-",
-                    1 => "Postmaster",
-                    2 => "Raw",
-                    3 => "Junk",
-                    4 => "Misc",
-                },
-                Default   => "",
-                Mandatory => 1,
-            },
-            {
-                Name           => "ServiceID",
-                Title          => "Service",
-                Datatype       => "Text",
-                Viewtype       =>"Picker",
-                DynamicOptions => {
-                    Object     => "CustomObject"
-                    Method     => "ServicesGet",
-                    Parameters => {
-                        CustomerUserID => "CustomerUserLogin",
-                        QueueID        => "QueueID",
-                        TicketID       => "TicketID",
-                    },
-                },
-                Mandatory      => 0,
-                Default        => "",
-            },
-            {
-                Name           => "SLAID",
-                Title          => "SLA",
-                Datatype       => "Text",
-                Viewtype       => "Picker",
-                DynamicOptions => {
-                    Object     => "CustomObject",
-                    Method     => "SLAsGet",
-                    Parameters => {
-                        CustomerUserID => "CustomerUserLogin",
-                        QueueID        => "QueueID",
-                        ServiceID      => "ServiceID",
-                        TicketID       => "TicketID".
-                    },
-                },
-                Default        => "",
-                Mandatory      => 0,
-            },
-            {
-                Name           => "OwnerID",
-                Title          => "Owner",
-                Datatype       => "Text",
-                Viewtype       =>"Picker",
-                DynamicOptions => {
-                    Parameters => {
-                        QueueID  => "QueueID",
-                        AllUsers => 1,
-                    },
-                    Method     => "UsersGet",
-                    Object     => "CustomObject",
-                },
+# a result could be
+
+@Result = (
+    Actions => {
+    Parameters => {
+    Action => "Phone",
+},
+    Method => "ScreenActions",
+    Object => "CustomObject",
+    Title => "New Phone Ticket"
+},
+    Elements => (
+{
+    Name       => "TypeID",
+    Title      => "Type",
+    Datatype   => "Text",
+    Viewtype   => "Picker",
+    Options    => {
+	1=> "default",
+	2=> "RfC",
+	3=> "Incident",
+	4=> "Incident::ServiceRequest",
+	5=> "Incident::Disaster"
+	    6=> "Problem",
+	    7=> "Problem::KnownError",
+	    8=> "Problem::PendingRfC",
+    },
+	    Default   =>"",
+	    Mandatory => 1,
+},
+{
+    Name           => "CustomerUserLogin",
+    Title          => "From customer",
+    Datatype       => "Text",
+    Viewtype       =>"AutoCompletion",
+    DynamicOptions => {
+	Object     => "CustomObject",
+	Method     =>"CustomerSearch",
+	Parameters =>
+	{
+	    Search => "CustomerUserLogin",
+	},
+    },
+    Default        => "",
+    Mandatory      => 1,
+},
+{
+    Name      => "QueueID",
+    Title     => "To queue",
+    Datatype  => "Text",
+    Viewtype  => "Picker",
+    Options   =>{
+	=> "-",
+	1 => "Postmaster",
+	2 => "Raw",
+	3 => "Junk",
+	4 => "Misc",
+    },
+    Default   => "",
+    Mandatory => 1,
+},
+{
+    Name           => "ServiceID",
+    Title          => "Service",
+    Datatype       => "Text",
+    Viewtype       =>"Picker",
+    DynamicOptions => {
+	Object     => "CustomObject"
+	    Method     => "ServicesGet",
+	    Parameters => {
+		CustomerUserID => "CustomerUserLogin",
+		QueueID        => "QueueID",
+		TicketID       => "TicketID",
+	},
+    },
+    Mandatory      => 0,
+    Default        => "",
+},
+{
+    Name           => "SLAID",
+    Title          => "SLA",
+    Datatype       => "Text",
+    Viewtype       => "Picker",
+    DynamicOptions => {
+	Object     => "CustomObject",
+	Method     => "SLAsGet",
+	Parameters => {
+	    CustomerUserID => "CustomerUserLogin",
+	    QueueID        => "QueueID",
+	    ServiceID      => "ServiceID",
+	    TicketID       => "TicketID".
+	},
+    },
                 Default        => "",
                 Mandatory      => 0,
-            },
-            {
-                Name           => "ResponsibleID",
-                Title          => "Responsible",
-                Datatype       => "Text",
-                Viewtype       => "Picker",
-                DynamicOptions => {
-                    Object     => "CustomObject",
-                    Method     => "UsersGet",
-                    Parameters => {
-                        QueueID  => "QueueID",
-                        AllUsers => 1
-                    },
-                },
+},
+{
+    Name           => "OwnerID",
+    Title          => "Owner",
+    Datatype       => "Text",
+    Viewtype       =>"Picker",
+    DynamicOptions => {
+	Parameters => {
+	    QueueID  => "QueueID",
+	    AllUsers => 1,
+	},
+	Method     => "UsersGet",
+	Object     => "CustomObject",
+    },
+    Default        => "",
+    Mandatory      => 0,
+},
+{
+    Name           => "ResponsibleID",
+    Title          => "Responsible",
+    Datatype       => "Text",
+    Viewtype       => "Picker",
+    DynamicOptions => {
+	Object     => "CustomObject",
+	Method     => "UsersGet",
+	Parameters => {
+	    QueueID  => "QueueID",
+	    AllUsers => 1
+	},
+    },
                 Default        => "",
                 Mandatory      => 0,
-            },
-            {
-                Name      => "Subject",
-                Title     => "Subject",
-                Datatype  => "Text",
-                Viewtype  => "Input",
-                Max       => 250,
-                Min       => 1,
-                Default   => "",
-                Mandatory => 1,
-            },
-            {
-                Name      => "Body",
-                Title     => "Text",
-                Datatype  => "Text",
-                Viewtype  => "TextArea",
-                Max       => 20000,
-                Min       => 1,
-                Default   => "",
-                Mandatory => 1,
-            },
-            {
-                Name      => "CustomerID",
-                Title     => "CustomerID",
-                Datatype  => "Text",
-                Viewtype  => "Input",
-                Max       => 150,
-                Min       => 1,
-                Default   => "",
-                Mandatory => 0,
-            },
-            {
-                Name           => "StateID",
-                Title          => "Next Ticket State",
-                Datatype       => "Text",
-                Viewtype       => "Picker",
-                DynamicOptions => {
-                    Method     => "NextStatesGet",
-                    Object     => "CustomObject",
-                    Parameters => {
-                        QueueID => "QueueID",
-                    },
-                },
-                Default        => "4",
-                DefaultOption  => "open",
-                Mandatory      => 1,
-            },
-            {
-                Name      => "PendingDate",
-                Title     => "Pending Date (for pending* states)"
-                Datatype  => "DateTime",
-                Viewtype  => "Picker",
-                Default   => "",
-                Mandatory => 0,
-            },
-            {
-                Name           => "PriorityID",
-                Title          => "Priority"
-                Datatype       => "Text",
-                Viewtype       => "Picker",
-                DynamicOptions => {
-                    Object     => "CustomObject"
-                    Method     => "PrioritiesGet",
-                    Parameters => "",
-                },
+},
+{
+    Name      => "Subject",
+    Title     => "Subject",
+    Datatype  => "Text",
+    Viewtype  => "Input",
+    Max       => 250,
+    Min       => 1,
+    Default   => "",
+    Mandatory => 1,
+},
+{
+    Name      => "Body",
+    Title     => "Text",
+    Datatype  => "Text",
+    Viewtype  => "TextArea",
+    Max       => 20000,
+    Min       => 1,
+    Default   => "",
+    Mandatory => 1,
+},
+{
+    Name      => "CustomerID",
+    Title     => "CustomerID",
+    Datatype  => "Text",
+    Viewtype  => "Input",
+    Max       => 150,
+    Min       => 1,
+    Default   => "",
+    Mandatory => 0,
+},
+{
+    Name           => "StateID",
+    Title          => "Next Ticket State",
+    Datatype       => "Text",
+    Viewtype       => "Picker",
+    DynamicOptions => {
+	Method     => "NextStatesGet",
+	Object     => "CustomObject",
+	Parameters => {
+	    QueueID => "QueueID",
+	},
+    },
+    Default        => "4",
+    DefaultOption  => "open",
+    Mandatory      => 1,
+},
+{
+    Name      => "PendingDate",
+    Title     => "Pending Date (for pending* states)"
+	Datatype  => "DateTime",
+	Viewtype  => "Picker",
+	Default   => "",
+	Mandatory => 0,
+},
+{
+    Name           => "PriorityID",
+    Title          => "Priority"
+	Datatype       => "Text",
+	Viewtype       => "Picker",
+	DynamicOptions => {
+	    Object     => "CustomObject"
+		Method     => "PrioritiesGet",
+		Parameters => "",
+    },
                 DefaultOption  => "3 normal",
                 Default        => "3",
                 Mandatory      => 1,
-            },
-            {
-                Name        => "TicketFreeText1",
-                FreeTextKey => {
-                    Device  => "Device",
-                    Product => "Product"
-                },
-                Title       => "Product",
-                Datatype    => "Text",
-                Viewtype    => "Picker",
-                Options     => {
-                             => "-",
-                    Phone    => "Phone",
-                    Notebook => "Notebook",
-                    PC       => "PC",
-                },
-                Default     => "Notebook",
-                Mandatory   => 0,
-            },
-            {
-                Name      => "TicketFreeTime1",
-                Title     => "Termin1",
-                Datatype  => "DateTime",
-                Viewtype  => "Picker",
-                Default   => "2010-07-13 15:18:24",
-                Mandatory => 0,
-            },
-            {
-                Name        => "ArticleFreeText1",
-                FreeTextKey => {
-                    Work => "Work",
-                },
-                Title       => '',
-                Datatype    => "Text",
-                Viewtype    => "Picker",
-                Options     => {
-                               => "-",
-                    Bugfix     => "Bugfix",
-                    Consulting => "Consulting",
-                    Research   => "Research",
-                },
-                Default     => '',
-                Mandatory   => 0,
-            },
-            {
-                Name => "TimeUnits",
-                Title => "Time units (work units)",
-                Datatype => "Numeric",
-                Viewtype => "Input",
-                Max => 10,
-                Min => 1,
-                Default => "",
-                Mandatory => 0,
-            },
-        ),
+},
+{
+    Name        => "TicketFreeText1",
+    FreeTextKey => {
+	Device  => "Device",
+	Product => "Product"
+    },
+	    Title       => "Product",
+	    Datatype    => "Text",
+	    Viewtype    => "Picker",
+	    Options     => {
+		=> "-",
+		Phone    => "Phone",
+		Notebook => "Notebook",
+		PC       => "PC",
+	},
+    Default     => "Notebook",
+    Mandatory   => 0,
+},
+{
+    Name      => "TicketFreeTime1",
+    Title     => "Termin1",
+    Datatype  => "DateTime",
+    Viewtype  => "Picker",
+    Default   => "2010-07-13 15:18:24",
+    Mandatory => 0,
+},
+{
+    Name        => "ArticleFreeText1",
+    FreeTextKey => {
+	Work => "Work",
+    },
+    Title       => '',
+    Datatype    => "Text",
+    Viewtype    => "Picker",
+    Options     => {
+	=> "-",
+	Bugfix     => "Bugfix",
+	Consulting => "Consulting",
+	Research   => "Research",
+    },
+    Default     => '',
+    Mandatory   => 0,
+},
+{
+    Name => "TimeUnits",
+    Title => "Time units (work units)",
+    Datatype => "Numeric",
+    Viewtype => "Input",
+    Max => 10,
+    Min => 1,
+    Default => "",
+    Mandatory => 0,
+},
+    ),
     );
 
 =cut
@@ -530,7 +552,7 @@ sub ScreenConfig {
                     Action => 'Phone',
                 },
             },
-        );
+	    );
         return \%Config;
     }
 
@@ -554,7 +576,7 @@ sub ScreenConfig {
                     Title    => 'a title',
                 },
             },
-        );
+	    );
         return \%Config;
     }
 
@@ -578,7 +600,7 @@ sub ScreenConfig {
                     TicketID => $Param{TicketID},
                 },
             },
-        );
+	    );
         return \%Config;
     }
 
@@ -603,7 +625,7 @@ sub ScreenConfig {
                     ReplyArticleID => $Param{ArticleID},
                 },
             },
-        );
+	    );
         if ( !$Config{Elements} ) {
             return -1;
         }
@@ -629,7 +651,7 @@ sub ScreenConfig {
                     TicketID => $Param{TicketID},
                 },
             },
-        );
+	    );
         return \%Config;
     }
 
@@ -638,29 +660,29 @@ sub ScreenConfig {
 
 =item Badges()
 
-Get Badges ticket counts for Watched, Locked and Reposible for tickets
+    Get Badges ticket counts for Watched, Locked and Reposible for tickets
 
     my @Result = $iPhoneObject->Badges(
-        UserID          => 1,
+    UserID          => 1,
     );
 
-    # a result could be
+# a result could be
 
-    @Result = (
-        Locked => {
-            All => 1,
-            New => 1,
-        },
+@Result = (
+    Locked => {
+    All => 1,
+    New => 1,
+},
 
-        Watched => {       # Optional if feature is enabled
-            All => 2,
-            New => 0,
-        },
+    Watched => {       # Optional if feature is enabled
+    All => 2,
+    New => 0,
+},
 
-        Responsible => {   # Optional if feature is enabled
-            All => 1,
-            New => 1,
-        },
+    Responsible => {   # Optional if feature is enabled
+    All => 1,
+    New => 1,
+},
     );
 
 =cut
@@ -678,7 +700,7 @@ sub Badges {
             OwnerIDs   => [ $Param{UserID} ],
             UserID     => 1,
             Permission => 'ro',
-        );
+	    );
         my $CountNew = $Self->{TicketObject}->TicketSearch(
             Result     => 'COUNT',
             Locks      => ['lock'],
@@ -689,13 +711,13 @@ sub Badges {
             TicketFlagUserID => $Param{UserID},
             UserID           => 1,
             Permission       => 'ro',
-        );
+	    );
         $CountNew = $Count - $CountNew;
         push @Data, {
             Locked => {
                 All => $Count,
                 New => $CountNew,
-                }
+	    }
         };
     }
 
@@ -707,7 +729,7 @@ sub Badges {
             ResponsibleIDs => [ $Param{UserID} ],
             UserID         => 1,
             Permission     => 'ro',
-        );
+	    );
         my $CountNew = $Self->{TicketObject}->TicketSearch(
             Result         => 'COUNT',
             StateType      => 'Open',
@@ -718,14 +740,14 @@ sub Badges {
             TicketFlagUserID => $Param{UserID},
             UserID           => 1,
             Permission       => 'ro',
-        );
+	    );
         $CountNew = $Count - $CountNew;
 
         push @Data, {
             Responsible => {
                 All => $Count,
                 New => $CountNew,
-                }
+	    }
         };
     }
 
@@ -762,7 +784,7 @@ sub Badges {
                 WatchUserIDs => [ $Param{UserID} ],
                 UserID       => 1,
                 Permission   => 'ro',
-            );
+		);
             my $CountNew = $Self->{TicketObject}->TicketSearch(
                 Result       => 'COUNT',
                 WatchUserIDs => [ $Param{UserID} ],
@@ -772,14 +794,14 @@ sub Badges {
                 TicketFlagUserID => $Param{UserID},
                 UserID           => 1,
                 Permission       => 'ro',
-            );
+		);
             $CountNew = $Count - $CountNew;
 
             push @Data, {
                 Watched => {
                     All => $Count,
                     New => $CountNew,
-                    }
+		}
             };
         }
     }
@@ -789,107 +811,107 @@ sub Badges {
 
 =item EscalationView()
 
-Get the number of tickets on estalation status by state type or last customer article information from
-each ticket in escalation status within a filter, if the "Filter" argument is specified.
+    Get the number of tickets on estalation status by state type or last customer article information from
+    each ticket in escalation status within a filter, if the "Filter" argument is specified.
 
     my @Result = $iPhoneObject->EscalationView(
-        UserID  => 1,
+    UserID  => 1,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    # a result could be
+# a result could be
 
-    @Result = (
-        {
-            StateType                      => "Today",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "Tomorrow",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "NextWeek",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0
-        },
+@Result = (
+{
+    StateType                      => "Today",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "Tomorrow",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "NextWeek",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0
+},
     );
 
-    my @Result = $iPhoneObject->EscalationView(
-        UserID  => 1,
-        Filter  => "Today",
+my @Result = $iPhoneObject->EscalationView(
+    UserID  => 1,
+    Filter  => "Today",
 
-        #Limit (optional) set to 100 by default, if not specified
-        Limit   => 50,
+    #Limit (optional) set to 100 by default, if not specified
+    Limit   => 50,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            Age                              => 1596,
-            ArticleID                        => 923,
-            ArticleType                      => "phone",
-            Body                             => "Testing for escalation",
-            Charset                          => "utf-8",
-            ContentCharset                   => "utf-8",
-            ContentType                      => "text/plain;",
-            charset                          => "utf-8",
-            Created                          => "2010-06-23 11:46:15",
-            CreatedBy                        => 1,
-            FirstResponseTime                => -1296,
-            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
-            FirstResponseTimeDestinationTime => 1277311874,
-            FirstResponseTimeEscalation      => 1,
-            FirstResponseTimeWorkingTime     => -1260,
-            From                             => "customer@otrs.org",
-            IncomingTime                     => 1277311575,
-            Lock                             => "unlock",
-            MimeType                         => "text/plain",
-            Owner                            => "Agent1",
-            Priority                         => "3 normal",
-            PriorityColor                    => "#cdcdcd",
-            Queue                            => "Junk",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Escalation Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Escalation Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
+@Result = (
+{
+    Age                              => 1596,
+    ArticleID                        => 923,
+    ArticleType                      => "phone",
+    Body                             => "Testing for escalation",
+    Charset                          => "utf-8",
+    ContentCharset                   => "utf-8",
+    ContentType                      => "text/plain;",
+    charset                          => "utf-8",
+    Created                          => "2010-06-23 11:46:15",
+    CreatedBy                        => 1,
+    FirstResponseTime                => -1296,
+    FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+    FirstResponseTimeDestinationTime => 1277311874,
+    FirstResponseTimeEscalation      => 1,
+    FirstResponseTimeWorkingTime     => -1260,
+    From                             => "customer@otrs.org",
+    IncomingTime                     => 1277311575,
+    Lock                             => "unlock",
+    MimeType                         => "text/plain",
+    Owner                            => "Agent1",
+    Priority                         => "3 normal",
+    PriorityColor                    => "#cdcdcd",
+    Queue                            => "Junk",
+    Responsible                      => "Agent1",
+    SenderType                       => "customer",
+    SolutionTime                     => -1296,
+    SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+    SolutionTimeDestinationTime      => 1277311874,
+    SolutionTimeEscalation           => 1,
+    SolutionTimeWorkingTime          => -1260,
+    State                            => "open",
+    Subject                          => "Escalation Test",
+    TicketFreeKey13                  => "CriticalityID",
+    TicketFreeKey14                  => "ImpactID",
+    TicketID                         => 176,
+    TicketNumber                     => 2010062310000015,
+    Title                            => "Escalation Test",
+    To                               => "Junk",
+    Type                             => "Incident",
+    UntilTime                        => 0,
+    UpdateTime                       => -1295,
+    UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+    UpdateTimeDestinationTime        => 1277311875,
+    UpdateTimeEscalation             => 1,
+    UpdateTimeWorkingTime            => -1260,
+    Seen                             => 1, # only on otrs 3.x framework
 
-        },
+},
     );
 
 =cut
@@ -899,17 +921,17 @@ sub EscalationView {
 
     my ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $Self->{TimeObject}->SystemTime2Date(
         SystemTime => $Self->{TimeObject}->SystemTime() + 60 * 60 * 24 * 7,
-    );
+	);
     my $TimeStampNextWeek = "$Year-$Month-$Day 23:59:59";
 
     ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $Self->{TimeObject}->SystemTime2Date(
         SystemTime => $Self->{TimeObject}->SystemTime() + 60 * 60 * 24,
-    );
+	);
     my $TimeStampTomorrow = "$Year-$Month-$Day 23:59:59";
 
     ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $Self->{TimeObject}->SystemTime2Date(
         SystemTime => $Self->{TimeObject}->SystemTime(),
-    );
+	);
     my $TimeStampToday = "$Year-$Month-$Day 23:59:59";
 
     # define filter
@@ -947,7 +969,7 @@ sub EscalationView {
                 Permission                    => 'ro',
             },
         },
-    );
+	);
 
     # do shown tickets lookup
     my $Limit = $Param{Limit} || 100;
@@ -956,7 +978,7 @@ sub EscalationView {
             %{ $Filters{ $Param{Filter} }->{Search} },
             Limit  => $Limit,
             Result => 'ARRAY',
-        );
+	    );
         my @List;
         for my $TicketID (@ViewableTickets) {
             next if !$TicketID;
@@ -973,7 +995,7 @@ sub EscalationView {
         my $Count = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result => 'COUNT',
-        );
+	    );
         my $CountNew = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result     => 'COUNT',
@@ -981,7 +1003,7 @@ sub EscalationView {
                 Seen => 1,
             },
             TicketFlagUserID => $Param{UserID},
-        );
+	    );
         $CountNew = $Count - $CountNew;
 
         push @States, {
@@ -996,102 +1018,102 @@ sub EscalationView {
 
 =item StatusView()
 
-Get the number of tickets by status (open or closed) or last customer article information from each
-ticket in each status within an specified filter, if the "Filter" argument is specified.
+    Get the number of tickets by status (open or closed) or last customer article information from each
+    ticket in each status within an specified filter, if the "Filter" argument is specified.
 
     my @Result = $iPhoneObject->StatusView(
-        UserID  => 1,
+    UserID  => 1,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            StateType                      => "Open",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "Closed",
-            NumberOfTickets                => 1,
-            NumberOfTicketsWithNewMessages => 0,
-        },
+@Result = (
+{
+    StateType                      => "Open",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "Closed",
+    NumberOfTickets                => 1,
+    NumberOfTicketsWithNewMessages => 0,
+},
     );
 
-    my @Result = $iPhoneObject->StatusView(
-        UserID  => 1,
-        Filter  => "Open",
+my @Result = $iPhoneObject->StatusView(
+    UserID  => 1,
+    Filter  => "Open",
 
-        #Limit (optional) set to 100 by default, if not spcified
-        Limit   => 50,
+    #Limit (optional) set to 100 by default, if not spcified
+    Limit   => 50,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-             Age                              => 1596,
-            ArticleID                        => 923,
-            ArticleType                      => "phone",
-            Body                             => "This is an open ticket",
-            Charset                          => "utf-8",
-            ContentCharset                   => "utf-8",
-            ContentType                      => "text/plain;",
-            charset                          => "utf-8",
-            Created                          => "2010-06-23 11:46:15",
-            CreatedBy                        => 1,
-            FirstResponseTime                => -1296,
-            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
-            FirstResponseTimeDestinationTime => 1277311874,
-            FirstResponseTimeEscalation      => 1,
-            FirstResponseTimeWorkingTime     => -1260,
-            From                             => "customer@otrs.org",
-            IncomingTime                     => 1277311575,
-            Lock                             => "unlock",
-            MimeType                         => "text/plain",
-            Owner                            => "Agent1",
-            Priority                         => "3 normal",
-            PriorityColor                    => "#cdcdcd",
-            Queue                            => "Junk",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
+@Result = (
+{
+    Age                              => 1596,
+    ArticleID                        => 923,
+    ArticleType                      => "phone",
+    Body                             => "This is an open ticket",
+    Charset                          => "utf-8",
+    ContentCharset                   => "utf-8",
+    ContentType                      => "text/plain;",
+    charset                          => "utf-8",
+    Created                          => "2010-06-23 11:46:15",
+    CreatedBy                        => 1,
+    FirstResponseTime                => -1296,
+    FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+    FirstResponseTimeDestinationTime => 1277311874,
+    FirstResponseTimeEscalation      => 1,
+    FirstResponseTimeWorkingTime     => -1260,
+    From                             => "customer@otrs.org",
+    IncomingTime                     => 1277311575,
+    Lock                             => "unlock",
+    MimeType                         => "text/plain",
+    Owner                            => "Agent1",
+    Priority                         => "3 normal",
+    PriorityColor                    => "#cdcdcd",
+    Queue                            => "Junk",
+    Responsible                      => "Agent1",
+    SenderType                       => "customer",
+    SolutionTime                     => -1296,
+    SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+    SolutionTimeDestinationTime      => 1277311874,
+    SolutionTimeEscalation           => 1,
+    SolutionTimeWorkingTime          => -1260,
+    State                            => "open",
+    Subject                          => "Open Ticket Test",
+    TicketFreeKey13                  => "CriticalityID",
+    TicketFreeKey14                  => "ImpactID",
+    TicketID                         => 176,
+    TicketNumber                     => 2010062310000015,
+    Title                            => "Open Ticket Test",
+    To                               => "Junk",
+    Type                             => "Incident",
+    UntilTime                        => 0,
+    UpdateTime                       => -1295,
+    UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+    UpdateTimeDestinationTime        => 1277311875,
+    UpdateTimeEscalation             => 1,
+    UpdateTimeWorkingTime            => -1260,
+    Seen                             => 1, # only on otrs 3.x framework
 
-        },
+},
     );
 
 =cut
@@ -1123,7 +1145,7 @@ sub StatusView {
                 Permission => 'ro',
             },
         },
-    );
+	);
 
     # do shown tickets lookup
     my $Limit = $Param{Limit} || 100;
@@ -1132,7 +1154,7 @@ sub StatusView {
             %{ $Filters{ $Param{Filter} }->{Search} },
             Limit  => $Limit,
             Result => 'ARRAY',
-        );
+	    );
         my @List;
         for my $TicketID (@ViewableTickets) {
             next if !$TicketID;
@@ -1149,7 +1171,7 @@ sub StatusView {
         my $Count = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result => 'COUNT',
-        );
+	    );
         my $CountNew = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result     => 'COUNT',
@@ -1157,7 +1179,7 @@ sub StatusView {
                 Seen => 1,
             },
             TicketFlagUserID => $Param{UserID},
-        );
+	    );
         $CountNew = $Count - $CountNew;
 
         push @States, {
@@ -1172,41 +1194,41 @@ sub StatusView {
 
 =item LockedView()
 
-Get the number of locked tickets by status type (all, new, reminder, reminder reached ) or last
-customer article information from each locked ticket in each status within an specified filter, if
-the "Filter" argument is specified.
+    Get the number of locked tickets by status type (all, new, reminder, reminder reached ) or last
+    customer article information from each locked ticket in each status within an specified filter, if
+    the "Filter" argument is specified.
 
     my @Result = $iPhoneObject->LockedView(
-        UserID  => 1,
+    UserID  => 1,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            StateType                      => "All",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "New,
+@Result = (
+{
+    StateType                      => "All",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "New,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
         {
             StateType                      => "Reminder,
-            NumberOfTickets                => 0,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "ReminderReached,
+    NumberOfTickets                => 0,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "ReminderReached,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
@@ -1253,31 +1275,31 @@ the "Filter" argument is specified.
             Owner                            => "Agent1",
             Priority                         => "3 normal",
             PriorityColor                    => "#cdcdcd",
-            Queue                            => "Junk",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
-        },
+		Queue                            => "Junk",
+		Responsible                      => "Agent1",
+		SenderType                       => "customer",
+		SolutionTime                     => -1296,
+		SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+		SolutionTimeDestinationTime      => 1277311874,
+		SolutionTimeEscalation           => 1,
+		SolutionTimeWorkingTime          => -1260,
+		State                            => "open",
+		Subject                          => "Open Ticket Test",
+		TicketFreeKey13                  => "CriticalityID",
+		TicketFreeKey14                  => "ImpactID",
+		TicketID                         => 176,
+		TicketNumber                     => 2010062310000015,
+		Title                            => "Open Ticket Test",
+		To                               => "Junk",
+		Type                             => "Incident",
+		UntilTime                        => 0,
+		UpdateTime                       => -1295,
+		UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+		UpdateTimeDestinationTime        => 1277311875,
+		UpdateTimeEscalation             => 1,
+		UpdateTimeWorkingTime            => -1260,
+		Seen                             => 1, # only on otrs 3.x framework
+},
     );
 
 =cut
@@ -1342,7 +1364,7 @@ sub LockedView {
                 Permission                    => 'ro',
             },
         },
-    );
+	);
 
     # do shown tickets lookup
     my $Limit = $Param{Limit} || 100;
@@ -1351,7 +1373,7 @@ sub LockedView {
             %{ $Filters{ $Param{Filter} }->{Search} },
             Limit  => $Limit,
             Result => 'ARRAY',
-        );
+	    );
         my @List;
         for my $TicketID (@ViewableTickets) {
             next if !$TicketID;
@@ -1364,8 +1386,8 @@ sub LockedView {
             $Self->{LogObject}->Log(
                 Priority => 'error',
                 Message  => "There are no locked tickets under $Param{Filter} filter "
-                    . "category",
-            );
+		. "category",
+		);
         }
 
         return @List;
@@ -1377,7 +1399,7 @@ sub LockedView {
         my $Count = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result => 'COUNT',
-        );
+	    );
         my $CountNew = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result     => 'COUNT',
@@ -1385,7 +1407,7 @@ sub LockedView {
                 Seen => 1,
             },
             TicketFlagUserID => $Param{UserID},
-        );
+	    );
         $CountNew = $Count - $CountNew;
 
         push @States, {
@@ -1400,41 +1422,41 @@ sub LockedView {
 
 =item WatchedView()
 
-Get the number of watched tickets by status type (all, new, reminder, reminder reached ) or last
-custmer article information from each watched ticket in each status within an specified filter, if
-the "Filter" argument is specified.
+    Get the number of watched tickets by status type (all, new, reminder, reminder reached ) or last
+    custmer article information from each watched ticket in each status within an specified filter, if
+    the "Filter" argument is specified.
 
     my @Result = $iPhoneObject->WatchedView(
-        UserID  => 1,
+    UserID  => 1,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            StateType                      => "All",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "New,
+@Result = (
+{
+    StateType                      => "All",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "New,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
         {
             StateType                      => "Reminder,
-            NumberOfTickets                => 0,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "ReminderReached,
+    NumberOfTickets                => 0,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "ReminderReached,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
@@ -1481,31 +1503,31 @@ the "Filter" argument is specified.
             Owner                            => "Agent1",
             Priority                         => "3 normal",
             PriorityColor                    => "#cdcdcd",
-            Queue                            => "Junk",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
-        },
+		Queue                            => "Junk",
+		Responsible                      => "Agent1",
+		SenderType                       => "customer",
+		SolutionTime                     => -1296,
+		SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+		SolutionTimeDestinationTime      => 1277311874,
+		SolutionTimeEscalation           => 1,
+		SolutionTimeWorkingTime          => -1260,
+		State                            => "open",
+		Subject                          => "Open Ticket Test",
+		TicketFreeKey13                  => "CriticalityID",
+		TicketFreeKey14                  => "ImpactID",
+		TicketID                         => 176,
+		TicketNumber                     => 2010062310000015,
+		Title                            => "Open Ticket Test",
+		To                               => "Junk",
+		Type                             => "Incident",
+		UntilTime                        => 0,
+		UpdateTime                       => -1295,
+		UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+		UpdateTimeDestinationTime        => 1277311875,
+		UpdateTimeEscalation             => 1,
+		UpdateTimeWorkingTime            => -1260,
+		Seen                             => 1, # only on otrs 3.x framework
+},
     );
 
 =cut
@@ -1567,7 +1589,7 @@ sub WatchedView {
                 Permission                    => 'ro',
             },
         },
-    );
+	);
 
     if ( $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
 
@@ -1578,7 +1600,7 @@ sub WatchedView {
                 %{ $Filters{ $Param{Filter} }->{Search} },
                 Limit  => $Limit,
                 Result => 'ARRAY',
-            );
+		);
             my @List;
             for my $TicketID (@ViewableTickets) {
                 next if !$TicketID;
@@ -1590,8 +1612,8 @@ sub WatchedView {
                 $Self->{LogObject}->Log(
                     Priority => 'error',
                     Message  => "There are no watched tickets under $Param{Filter} filter "
-                        . "category",
-                );
+		    . "category",
+		    );
             }
             return @List;
         }
@@ -1602,7 +1624,7 @@ sub WatchedView {
             my $Count = $Self->{TicketObject}->TicketSearch(
                 %{ $Filters{$Filter}->{Search} },
                 Result => 'COUNT',
-            );
+		);
             my $CountNew = $Self->{TicketObject}->TicketSearch(
                 %{ $Filters{$Filter}->{Search} },
                 Result     => 'COUNT',
@@ -1610,7 +1632,7 @@ sub WatchedView {
                     Seen => 1,
                 },
                 TicketFlagUserID => $Param{UserID},
-            );
+		);
             $CountNew = $Count - $CountNew;
 
             push @States, {
@@ -1625,17 +1647,17 @@ sub WatchedView {
     $Self->{LogObject}->Log(
         Priority => 'error',
         Message  => 'Ticket watcher feature is not enable in system configuration '
-            . 'Please contact admin',
-    );
+	. 'Please contact admin',
+	);
     return -1;
 }
 
 =item ResponsibleView()
 
-Get the number of locked or unlocked tickets where the user is responsible for by status type
+    Get the number of locked or unlocked tickets where the user is responsible for by status type
 (all, new, reminder, reminder reached ) or last customer article information from each ticket where
-the user is responsible for  in each status within an specified filter, if the "Filter" argument is
-specified.
+    the user is responsible for  in each status within an specified filter, if the "Filter" argument is
+    specified.
 
     my @Result = $iPhoneObject->ResponsibleView(
         UserID  => 1,
@@ -1643,31 +1665,31 @@ specified.
         # OrderBy and SortBy (optional)
         OrderBy => 'Down',  # Down|Up
         SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+	# Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+	# EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+	# TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            StateType                      => "All",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "New,
+@Result = (
+    {
+	StateType                      => "All",
+	NumberOfTickets                => 2,
+	NumberOfTicketsWithNewMessages => 0,
+    },
+    {
+	StateType                      => "New,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
         {
             StateType                      => "Reminder,
-            NumberOfTickets                => 0,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "ReminderReached,
+	NumberOfTickets                => 0,
+	NumberOfTicketsWithNewMessages => 0,
+    },
+    {
+	StateType                      => "ReminderReached,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
@@ -1714,31 +1736,31 @@ specified.
             Owner                            => "Agent1",
             Priority                         => "3 normal",
             PriorityColor                    => "#cdcdcd",
-            Queue                            => "Junk",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
-        },
+		Queue                            => "Junk",
+		Responsible                      => "Agent1",
+		SenderType                       => "customer",
+		SolutionTime                     => -1296,
+		SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+		SolutionTimeDestinationTime      => 1277311874,
+		SolutionTimeEscalation           => 1,
+		SolutionTimeWorkingTime          => -1260,
+		State                            => "open",
+		Subject                          => "Open Ticket Test",
+		TicketFreeKey13                  => "CriticalityID",
+		TicketFreeKey14                  => "ImpactID",
+		TicketID                         => 176,
+		TicketNumber                     => 2010062310000015,
+		Title                            => "Open Ticket Test",
+		To                               => "Junk",
+		Type                             => "Incident",
+		UntilTime                        => 0,
+		UpdateTime                       => -1295,
+		UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+		UpdateTimeDestinationTime        => 1277311875,
+		UpdateTimeEscalation             => 1,
+		UpdateTimeWorkingTime            => -1260,
+		Seen                             => 1, # only on otrs 3.x framework
+    },
     );
 
 =cut
@@ -1801,7 +1823,7 @@ sub ResponsibleView {
                 Permission                    => 'ro',
             },
         },
-    );
+	);
 
     if ( $Self->{ConfigObject}->Get('Ticket::Responsible') ) {
 
@@ -1812,7 +1834,7 @@ sub ResponsibleView {
                 %{ $Filters{ $Param{Filter} }->{Search} },
                 Limit  => $Limit,
                 Result => 'ARRAY',
-            );
+		);
             my @List;
             for my $TicketID (@ViewableTickets) {
                 next if !$TicketID;
@@ -1824,8 +1846,8 @@ sub ResponsibleView {
                 $Self->{LogObject}->Log(
                     Priority => 'error',
                     Message  => "There are no responsible for tickets under $Param{Filter} filter "
-                        . "category",
-                );
+		    . "category",
+		    );
             }
             return @List;
         }
@@ -1836,7 +1858,7 @@ sub ResponsibleView {
             my $Count = $Self->{TicketObject}->TicketSearch(
                 %{ $Filters{$Filter}->{Search} },
                 Result => 'COUNT',
-            );
+		);
             my $CountNew = $Self->{TicketObject}->TicketSearch(
                 %{ $Filters{$Filter}->{Search} },
                 Result     => 'COUNT',
@@ -1844,7 +1866,7 @@ sub ResponsibleView {
                     Seen => 1,
                 },
                 TicketFlagUserID => $Param{UserID},
-            );
+		);
             $CountNew = $Count - $CountNew;
 
             push @States, {
@@ -1859,113 +1881,113 @@ sub ResponsibleView {
     $Self->{LogObject}->Log(
         Priority => 'error',
         Message  => 'Ticket responsible feature is not enable in system configuration '
-            . 'Please contact admin',
-    );
+	. 'Please contact admin',
+	);
     return -1;
 }
 
 =item QueueView()
 
-Get the number of viewable tickets per queue as well as basic queue information, or last customer
-article information from each ticket within an specified queue, if the "Queue" argument is
-specified.
+    Get the number of viewable tickets per queue as well as basic queue information, or last customer
+    article information from each ticket within an specified queue, if the "Queue" argument is
+    specified.
 
     my @Result = $iPhoneObject->QueueView(
-        UserID  => 1,
+    UserID  => 1,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            QueueName                      => "Junk",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-            QueueID                        => 3,
-            Comment                        => "All junk tickets."
-        },
-        {
-            QueueName                      => "Misc",
-            NumberOfTickets                => 1,
-            NumberOfTicketsWithNewMessages => 0,
-            QueueID                        => 4,
-            Comment                        => "All misc tickets."
-        },
+@Result = (
+{
+    QueueName                      => "Junk",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+    QueueID                        => 3,
+    Comment                        => "All junk tickets."
+},
+{
+    QueueName                      => "Misc",
+    NumberOfTickets                => 1,
+    NumberOfTicketsWithNewMessages => 0,
+    QueueID                        => 4,
+    Comment                        => "All misc tickets."
+},
     );
 
-    my @Result = $iPhoneObject->QueueView(
-        UserID   => 1,
-        QueueID  => 4,
+my @Result = $iPhoneObject->QueueView(
+    UserID   => 1,
+    QueueID  => 4,
 
-        #Limit (optional) set to 100 by default, if not spcified
-        Limit    => 50,
+    #Limit (optional) set to 100 by default, if not spcified
+    Limit    => 50,
 
-        # OrderBy and SortBy (optional)
-        OrderBy  => 'Down',  # Down|Up
-        SortBy   => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy  => 'Down',  # Down|Up
+    SortBy   => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            Age                              => 1596,
-            ArticleID                        => 923,
-            ArticleType                      => "phone",
-            Body                             => "This is an open ticket",
-            Charset                          => "utf-8",
-            ContentCharset                   => "utf-8",
-            ContentType                      => "text/plain;",
-            charset                          => "utf-8",
-            Created                          => "2010-06-23 11:46:15",
-            CreatedBy                        => 1,
-            FirstResponseTime                => -1296,
-            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
-            FirstResponseTimeDestinationTime => 1277311874,
-            FirstResponseTimeEscalation      => 1,
-            FirstResponseTimeWorkingTime     => -1260,
-            From                             => "customer@otrs.org",
-            IncomingTime                     => 1277311575,
-            Lock                             => "lock",
-            MimeType                         => "text/plain",
-            Owner                            => "Agent1",
-            Priority                         => "3 normal",
-            PriorityColor                    => "#cdcdcd",
-            Queue                            => "Misc",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
-        },
+@Result = (
+{
+    Age                              => 1596,
+    ArticleID                        => 923,
+    ArticleType                      => "phone",
+    Body                             => "This is an open ticket",
+    Charset                          => "utf-8",
+    ContentCharset                   => "utf-8",
+    ContentType                      => "text/plain;",
+    charset                          => "utf-8",
+    Created                          => "2010-06-23 11:46:15",
+    CreatedBy                        => 1,
+    FirstResponseTime                => -1296,
+    FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+    FirstResponseTimeDestinationTime => 1277311874,
+    FirstResponseTimeEscalation      => 1,
+    FirstResponseTimeWorkingTime     => -1260,
+    From                             => "customer@otrs.org",
+    IncomingTime                     => 1277311575,
+    Lock                             => "lock",
+    MimeType                         => "text/plain",
+    Owner                            => "Agent1",
+    Priority                         => "3 normal",
+    PriorityColor                    => "#cdcdcd",
+    Queue                            => "Misc",
+    Responsible                      => "Agent1",
+    SenderType                       => "customer",
+    SolutionTime                     => -1296,
+    SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+    SolutionTimeDestinationTime      => 1277311874,
+    SolutionTimeEscalation           => 1,
+    SolutionTimeWorkingTime          => -1260,
+    State                            => "open",
+    Subject                          => "Open Ticket Test",
+    TicketFreeKey13                  => "CriticalityID",
+    TicketFreeKey14                  => "ImpactID",
+    TicketID                         => 176,
+    TicketNumber                     => 2010062310000015,
+    Title                            => "Open Ticket Test",
+    To                               => "Junk",
+    Type                             => "Incident",
+    UntilTime                        => 0,
+    UpdateTime                       => -1295,
+    UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+    UpdateTimeDestinationTime        => 1277311875,
+    UpdateTimeEscalation             => 1,
+    UpdateTimeWorkingTime            => -1260,
+    Seen                             => 1, # only on otrs 3.x framework
+},
     );
 
 =cut
@@ -1978,7 +2000,7 @@ sub QueueView {
     my @ViewableStateIDs = $Self->{StateObject}->StateGetStatesByType(
         Type   => 'Viewable',
         Result => 'ID',
-    );
+	);
 
     # do shown tickets lookup
     my $Limit = $Param{Limit} || 100;
@@ -1994,7 +2016,7 @@ sub QueueView {
             UserID     => $Param{UserID},
             Limit      => $Limit,
             Result     => 'ARRAY',
-        );
+	    );
         my @List;
         for my $TicketID (@ViewableTickets) {
             next if !$TicketID;
@@ -2012,7 +2034,7 @@ sub QueueView {
     for my $QueueID ( sort keys %AllQueues ) {
         my %Queue = $Self->{QueueObject}->QueueGet(
             ID => $QueueID,
-        );
+	    );
 
         my $Count = $Self->{TicketObject}->TicketSearch(
             StateIDs => \@ViewableStateIDs,
@@ -2023,7 +2045,7 @@ sub QueueView {
             UserID     => $Param{UserID},
             Result     => 'COUNT',
             Limit      => 1000,
-        );
+	    );
         next if !$Count;
 
         my $CountNew = $Self->{TicketObject}->TicketSearch(
@@ -2039,7 +2061,7 @@ sub QueueView {
             UserID           => $Param{UserID},
             Result           => 'COUNT',
             Limit            => 1000,
-        );
+	    );
         $CountNew = $Count - $CountNew;
 
         push @Queues, {
@@ -2057,64 +2079,64 @@ sub QueueView {
 
 =item TicketList()
 
-Get the last customer article information of a ticket
+    Get the last customer article information of a ticket
 
     my @Result = $iPhoneObject->TicketList(
-        UserID   => 1,
-        TicketID  => 176,
+    UserID   => 1,
+    TicketID  => 176,
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            Age                              => 1596,
-            ArticleID                        => 923,
-            ArticleType                      => "phone",
-            Body                             => "This is an open ticket",
-            Charset                          => "utf-8",
-            ContentCharset                   => "utf-8",
-            ContentType                      => "text/plain;",
-            charset                          => "utf-8",
-            Created                          => "2010-06-23 11:46:15",
-            CreatedBy                        => 1,
-            FirstResponseTime                => -1296,
-            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
-            FirstResponseTimeDestinationTime => 1277311874,
-            FirstResponseTimeEscalation      => 1,
-            FirstResponseTimeWorkingTime     => -1260,
-            From                             => "customer@otrs.org",
-            IncomingTime                     => 1277311575,
-            Lock                             => "lock",
-            MimeType                         => "text/plain",
-            Owner                            => "Agent1",
-            Priority                         => "3 normal",
-            PriorityColor                    => "#cdcdcd",
-            Queue                            => "Misc",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
-        },
+@Result = (
+{
+    Age                              => 1596,
+    ArticleID                        => 923,
+    ArticleType                      => "phone",
+    Body                             => "This is an open ticket",
+    Charset                          => "utf-8",
+    ContentCharset                   => "utf-8",
+    ContentType                      => "text/plain;",
+    charset                          => "utf-8",
+    Created                          => "2010-06-23 11:46:15",
+    CreatedBy                        => 1,
+    FirstResponseTime                => -1296,
+    FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+    FirstResponseTimeDestinationTime => 1277311874,
+    FirstResponseTimeEscalation      => 1,
+    FirstResponseTimeWorkingTime     => -1260,
+    From                             => "customer@otrs.org",
+    IncomingTime                     => 1277311575,
+    Lock                             => "lock",
+    MimeType                         => "text/plain",
+    Owner                            => "Agent1",
+    Priority                         => "3 normal",
+    PriorityColor                    => "#cdcdcd",
+    Queue                            => "Misc",
+    Responsible                      => "Agent1",
+    SenderType                       => "customer",
+    SolutionTime                     => -1296,
+    SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+    SolutionTimeDestinationTime      => 1277311874,
+    SolutionTimeEscalation           => 1,
+    SolutionTimeWorkingTime          => -1260,
+    State                            => "open",
+    Subject                          => "Open Ticket Test",
+    TicketFreeKey13                  => "CriticalityID",
+    TicketFreeKey14                  => "ImpactID",
+    TicketID                         => 176,
+    TicketNumber                     => 2010062310000015,
+    Title                            => "Open Ticket Test",
+    To                               => "Junk",
+    Type                             => "Incident",
+    UntilTime                        => 0,
+    UpdateTime                       => -1295,
+    UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+    UpdateTimeDestinationTime        => 1277311875,
+    UpdateTimeEscalation             => 1,
+    UpdateTimeWorkingTime            => -1260,
+    Seen                             => 1, # only on otrs 3.x framework
+},
     );
 
 =cut
@@ -2128,11 +2150,11 @@ sub TicketList {
         3 => '#cdcdcd',
         4 => '#ffaaaa',
         5 => '#ff505e',
-    );
+	);
 
     my %Article = $Self->{TicketObject}->ArticleLastCustomerArticle(
         TicketID => $Param{TicketID},
-    );
+	);
     if (%Article) {
         $Article{PriorityColor} = $Color{ $Article{PriorityID} };
 
@@ -2140,23 +2162,13 @@ sub TicketList {
             my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
                 TicketID => $Param{TicketID},
                 UserID   => $Param{UserID},
-            );
+		);
             if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
                 $Article{Seen} = 1;
             }
         }
 
-        # strip out all data
-        my @Delete
-            = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
-            ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
-            ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
-            StateType ArchiveFlag UnlockTimeout Changed
-        );
-
-        for my $Key (@Delete) {
-            delete $Article{$Key};
-        }
+	_StripHash(\%Article);
 
         for my $Key ( keys %Article ) {
             if ( !defined $Article{$Key} || $Article{$Key} eq '' ) {
@@ -2176,47 +2188,47 @@ sub TicketList {
 }
 
 =item TicketGet()
-Get information of a ticket
+    Get information of a ticket
 
     my @Result = $iPhoneObject->TicketGet(
-        TicketID  => 224,
-        UserID    => 1,
+    TicketID  => 224,
+    UserID    => 1,
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        AccountedTime   => "5404",
-        Age             => "681946",
-        CustomerID      => "sw",
-        CustomerUserID  => "David",
-        Created         => "2010-07-06 14:05:54",
-        GroupID         => 1,
-        TicketID        => 224,
-        LockID          => 2,
-        Lock            => "lock"
-        OwnerID         => 1134,
-        Owner           => "Aayla",
-        PriorityColor   => "#cdcdcd",
-        PriorityID      => 1,
-        Priority        => "1 very low",
-        Queue           => "Raw",
-        QueueID         => 2,
-        ResponsibleID   => 1134,
-        Responsible     => "Aayla",
-        Seen            => 1, # only on otrs 3.x framework
-        StateID         =>  4,
-        State           => "open",
-        TicketNumber    => "2010070610000215",
-        Title           => "iPhone Test",
-        TicketFreeKey1  => "Product",
-        TicketFreeText1 => "PC",
-        TicketFreeKey13 => "CriticalityID",
-        TicketFreeKey14 => "ImpactID",
-        TicketFreeTime1 => "2010-07-10 09:58:00",
-        TypeID          => 1,
-        Type            => "default",
-        UntilTime       => "0",
+@Result = (
+    AccountedTime   => "5404",
+    Age             => "681946",
+    CustomerID      => "sw",
+    CustomerUserID  => "David",
+    Created         => "2010-07-06 14:05:54",
+    GroupID         => 1,
+    TicketID        => 224,
+    LockID          => 2,
+    Lock            => "lock"
+    OwnerID         => 1134,
+    Owner           => "Aayla",
+    PriorityColor   => "#cdcdcd",
+    PriorityID      => 1,
+    Priority        => "1 very low",
+    Queue           => "Raw",
+    QueueID         => 2,
+    ResponsibleID   => 1134,
+    Responsible     => "Aayla",
+    Seen            => 1, # only on otrs 3.x framework
+    StateID         =>  4,
+    State           => "open",
+    TicketNumber    => "2010070610000215",
+    Title           => "iPhone Test",
+    TicketFreeKey1  => "Product",
+    TicketFreeText1 => "PC",
+    TicketFreeKey13 => "CriticalityID",
+    TicketFreeKey14 => "ImpactID",
+    TicketFreeTime1 => "2010-07-10 09:58:00",
+    TypeID          => 1,
+    Type            => "default",
+    UntilTime       => "0",
     );
 
 =cut
@@ -2231,20 +2243,20 @@ sub TicketGet {
             Type     => 'ro',
             TicketID => $Param{TicketID},
             UserID   => $Param{UserID}
-        );
+	    );
     }
     else {
         $Access = $Self->{TicketObject}->Permission(
             Type     => 'ro',
             TicketID => $Param{TicketID},
             UserID   => $Param{UserID}
-        );
+	    );
     }
     if ( !$Access ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "You need ro permissions!",
-        );
+	    );
         return;
     }
 
@@ -2254,7 +2266,7 @@ sub TicketGet {
         3 => '#cdcdcd',
         4 => '#ffaaaa',
         5 => '#ff505e',
-    );
+	);
 
     my %Ticket = $Self->{TicketObject}->TicketGet(%Param);
 
@@ -2264,7 +2276,7 @@ sub TicketGet {
         my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
             TicketID => $Param{TicketID},
             UserID   => $Param{UserID},
-        );
+	    );
         if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
             $Ticket{Seen} = 1;
         }
@@ -2279,7 +2291,7 @@ sub TicketGet {
                 my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
                     ArticleID => $ArticleID,
                     UserID    => $Param{UserID},
-                );
+		    );
 
                 # last if article was not shown
                 if ( !$ArticleFlag{Seen} && !$ArticleFlag{seen} ) {
@@ -2296,7 +2308,7 @@ sub TicketGet {
                 Key      => 'Seen',
                 Value    => 1,
                 UserID   => $Param{UserID},
-            );
+		);
         }
     }
 
@@ -2307,34 +2319,18 @@ sub TicketGet {
     }
 
     # strip out all data
-    my @Delete
-        = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
-        ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
-        ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
-        StateType ArchiveFlag UnlockTimeout Changed
-    );
+    _StripHash(\%Ticket);
 
-    for my $Key (@Delete) {
-        delete $Ticket{$Key};
-    }
-    for my $Key ( keys %Ticket ) {
-        if ( !defined $Ticket{$Key} || $Ticket{$Key} eq '' ) {
-            delete $Ticket{$Key};
-        }
-        if ( $Key =~ /^Escala/ ) {
-            delete $Ticket{$Key};
-        }
-    }
     return %Ticket;
 }
 
 =item ArticleGet()
 
-Get information from an article
+    Get information from an article
 
     my %Result = $iPhoneObject->ArticleGet()
-        ArticleID  => 1054,
-        UserID     => 1,
+    ArticleID  => 1054,
+    UserID     => 1,
     );
 
     #a result could be
@@ -2482,17 +2478,7 @@ sub ArticleGet {
             $Article{AccountedTime} = $AccountedTime;
         }
 
-        # strip out all data
-        my @Delete
-            = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
-            ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
-            ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
-            StateType ArchiveFlag UnlockTimeout Changed
-        );
-
-        for my $Key (@Delete) {
-            delete $Article{$Key};
-        }
+	_StripHash(\%Article);
 
         for my $Key ( keys %Article ) {
             if ( !defined $Article{$Key} || $Article{$Key} eq '' ) {
@@ -3115,8 +3101,11 @@ sub _GetNoteTypes {
     return \%NoteTypes;
 }
 
+
+
 sub _GetScreenElements {
-    my ( $Self, %Param ) = @_;
+    my $Self  =shift || die "no self";
+    my %Param  =@_ || die "no param";
 
     my @ScreenElements;
 
@@ -3579,196 +3568,9 @@ sub _GetScreenElements {
         push @ScreenElements, $PriorityElements;
     }
 
-    # ticket freetext fields
-    for my $Index ( 1 .. 16 ) {
-        if ( $Self->{Config}->{TicketFreeText}->{$Index} ) {
-
-            my $FreeTextElement;
-
-            my $Name;
-            $Name = 'TicketFreeText' . $Index;
-
-            my $Title;
-            $Title = $Self->{ConfigObject}->Get( 'TicketFreeKey' . $Index . '::DefaultSelection' );
-
-            my $ViewType;
-            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
-                $ViewType = 'Picker';
-            }
-            else {
-                $ViewType = 'Input';
-            }
-
-            my @TicketFreeKeys;
-            @TicketFreeKeys = $Self->{ConfigObject}->Get( 'TicketFreeKey' . $Index );
-
-            my @Options;
-            @Options = $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index );
-
-            my $Mandatory;
-            if ( $Self->{Config}->{TicketFreeText}->{$Index} == 2 ) {
-                $Mandatory = 1;
-            }
-            else {
-                $Mandatory = 0;
-            }
-
-            my $Default;
-            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
-                $Default = $Self->{ConfigObject}->Get(
-                    'TicketFreeText' . $Index
-                        . '::DefaultSelection'
-                );
-            }
-            else {
-                $Default = '';
-            }
-
-            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
-                $FreeTextElement = {
-                    Name        => $Name,
-                    Title       => $Title,
-                    FreeTextKey => @TicketFreeKeys,
-                    Datatype    => 'Text',
-                    Viewtype    => $ViewType,
-                    Options     => @Options,
-                    Mandatory   => $Mandatory,
-                    Default     => $Default || '',
-                };
-            }
-            else {
-                $FreeTextElement = {
-                    Name        => $Name,
-                    Title       => $Title,
-                    FreeTextKey => @TicketFreeKeys,
-                    Datatype    => 'Text',
-                    Viewtype    => $ViewType,
-                    Min         => 1,
-                    Max         => 200,
-                    Mandatory   => $Mandatory,
-                    Default     => $Default || '',
-                };
-            }
-
-            push @ScreenElements, $FreeTextElement;
-        }
-    }
-
-    # ticket freetime fields
-    for my $Index ( 1 .. 6 ) {
-        if ( $Self->{Config}->{TicketFreeTime}->{$Index} ) {
-
-            my $Name;
-            $Name = 'TicketFreeTime' . $Index;
-
-            my $Title;
-            $Title = $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Index );
-
-            my $Mandatory;
-            if ( $Self->{ConfigObject}->Get( 'TicketFreeTimeOptional' . $Index ) ) {
-                $Mandatory = 0;
-            }
-            else {
-                $Mandatory = 1;
-            }
-
-            my $DefaultTimeFormated;
-            my $TimeDiff = 0;
-            if ( $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Index ) ) {
-                $TimeDiff = $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Index );
-            }
-            my $DefaultTime = $Self->{TimeObject}->SystemTime() - $TimeDiff;
-
-            $DefaultTimeFormated = $Self->{TimeObject}->SystemTime2TimeStamp(
-                SystemTime => $DefaultTime,
-            );
-
-            my $FreeTimeElement = {
-                Name      => $Name,
-                Title     => $Title,
-                Datatype  => 'DateTime',
-                Viewtype  => 'Picker',
-                Mandatory => $Mandatory,
-                Default   => $DefaultTimeFormated || '',
-            };
-            push @ScreenElements, $FreeTimeElement;
-        }
-    }
-
-    # article freetext fields
-    for my $Index ( 1 .. 3 ) {
-        if ( $Self->{Config}->{ArticleFreeText}->{$Index} ) {
-
-            my $FreeTextElement;
-
-            my $Name;
-            $Name = 'ArticleFreeText' . $Index;
-
-            my $Title;
-            $Title = $Self->{ConfigObject}->Get( 'ArticleFreeKey' . $Index . '::DefaultSelection' );
-
-            my $ViewType;
-            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
-                $ViewType = 'Picker';
-            }
-            else {
-                $ViewType = 'Input';
-            }
-
-            my @ArticleFreeKeys;
-            @ArticleFreeKeys = $Self->{ConfigObject}->Get( 'ArticleFreeKey' . $Index );
-
-            my @Options;
-            @Options = $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index );
-
-            my $Mandatory;
-            if ( $Self->{Config}->{ArticleFreeText}->{$Index} == 2 ) {
-                $Mandatory = 1;
-            }
-            else {
-                $Mandatory = 0;
-            }
-
-            my $Default;
-            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
-                $Default = $Self->{ConfigObject}->Get(
-                    'ArticleFreeText' . $Index
-                        . '::DefaultSelection'
-                );
-            }
-            else {
-                $Default = '';
-            }
-
-            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
-                $FreeTextElement = {
-                    Name        => $Name,
-                    Title       => $Title,
-                    FreeTextKey => @ArticleFreeKeys,
-                    Datatype    => 'Text',
-                    Viewtype    => $ViewType,
-                    Options     => @Options,
-                    Mandatory   => $Mandatory,
-                    Default     => $Default || '',
-                };
-            }
-            else {
-                $FreeTextElement = {
-                    Name        => $Name,
-                    Title       => $Title,
-                    FreeTextKey => @ArticleFreeKeys,
-                    Datatype    => 'Text',
-                    Viewtype    => $ViewType,
-                    Min         => 1,
-                    Max         => 200,
-                    Mandatory   => $Mandatory,
-                    Default     => $Default || '',
-                };
-            }
-
-            push @ScreenElements, $FreeTextElement;
-        }
-    }
+    $Self->_GetScreenElementsTicketFreeTextFields(%Param);   
+    $Self->_GetScreenElementsTicketFreeTimeFields(%Param);   
+    $Self->_GetScreenElementsArticleFreeTextFields(%Param);   
 
     # time units
     if ( $Self->{Config}->{TimeUnits} ) {
@@ -3854,23 +3656,7 @@ sub _TicketPhoneNew {
         }
     }
 
-    # get free text config options
-    my %TicketFreeText = ();
-    for ( 1 .. 16 ) {
-
-        # check required FreeTextField (if configured)
-        if (
-            $Self->{Config}{'TicketFreeText'}->{$_} == 2
-            && $Param{"TicketFreeText$_"} eq ''
-            )
-        {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "TicketFreeTextField$_ invalid",
-            );
-            return;
-        }
-    }
+    $Self->_GetFreeTextConfigOptions(%Param);
 
     #get customer info
     my %CustomerUserData = $Self->{CustomerUserObject}->CustomerUserDataGet(
@@ -3964,53 +3750,8 @@ sub _TicketPhoneNew {
         return;
     }
 
-    # set ticket free text
-    for ( 1 .. 16 ) {
-        if ( defined( $Param{"TicketFreeKey$_"} ) ) {
-            $Self->{TicketObject}->TicketFreeTextSet(
-                TicketID => $TicketID,
-                Key      => $Param{"TicketFreeKey$_"},
-                Value    => $Param{"TicketFreeText$_"},
-                Counter  => $_,
-                UserID   => $Param{UserID},
-            );
-        }
-    }
-
-    # set ticket free time
-    for ( 1 .. 6 ) {
-
-        if ( $Param{ 'TicketFreeTime' . $_ } ) {
-            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
-                = $Self->{TimeObject}->SystemTime2Date(
-                SystemTime => $Self->{TimeObject}->SystemTime( $Param{ 'TicketFreeTime' . $_ } ),
-                );
-
-            $Param{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
-            $Param{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
-            $Param{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
-            $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
-            $Param{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
-
-            # set time stamp to NULL if field is not used/checked
-            if ( !$Param{ 'TicketFreeTime' . $_ . 'Used' } ) {
-                $Param{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
-                $Param{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
-            }
-
-            # set free time
-            $Self->{TicketObject}->TicketFreeTimeSet(
-                %Param,
-                Prefix   => 'TicketFreeTime',
-                TicketID => $TicketID,
-                Counter  => $_,
-                UserID   => $Param{UserID},
-            );
-        }
-    }
+    $Self->_GetTicketFreeText($TicketID,%Param);
+    $Self->_SetTicketFreeTime1;
 
     my $MimeType = 'text/plain';
 
@@ -4048,19 +3789,7 @@ sub _TicketPhoneNew {
 
     if ($ArticleID) {
 
-        # set article free text
-        for ( 1 .. 3 ) {
-            if ( defined( $Param{"ArticleFreeKey$_"} ) ) {
-                $Self->{TicketObject}->ArticleFreeTextSet(
-                    TicketID  => $TicketID,
-                    ArticleID => $ArticleID,
-                    Key       => $Param{"ArticleFreeKey$_"},
-                    Value     => $Param{"ArticleFreeText$_"},
-                    Counter   => $_,
-                    UserID    => $Param{UserID},
-                );
-            }
-        }
+	$Self->_SetArticleFreeText1($TicketID,%Param);
 
         # set owner (if new user id is given)
         if ( $Param{OwnerID} ) {
@@ -4352,16 +4081,7 @@ sub _TicketCommonActions {
         }
     }
 
-    # check required FreeTextField (if configured)
-    for my $Count ( 1 .. 16 ) {
-        next if $Self->{Config}->{TicketFreeText}->{$Count} ne 2;
-        next if $Param{"TicketFreeText$Count"} ne '';
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "TicketFreeTextField$Count invalid",
-        );
-        return;
-    }
+    $Self->_CheckRequiredFreeTextField(%Param);
 
     #check if Title
     if ( !$Param{Title} ) {
@@ -4529,70 +4249,9 @@ sub _TicketCommonActions {
             );
         }
 
-        # set ticket free text
-        for my $Count ( 1 .. 16 ) {
-            my $Key  = 'TicketFreeKey' . $Count;
-            my $Text = 'TicketFreeText' . $Count;
-            next if !defined $Param{$Key};
-            $Self->{TicketObject}->TicketFreeTextSet(
-                TicketID => $Param{TicketID},
-                Key      => $Param{$Key},
-                Value    => $Param{$Text},
-                Counter  => $Count,
-                UserID   => $Param{UserID},
-            );
-        }
-
-        # set ticket free time
-        for ( 1 .. 6 ) {
-
-            if ( $Param{ 'TicketFreeTime' . $_ } ) {
-                my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
-                    = $Self->{TimeObject}->SystemTime2Date(
-                    SystemTime =>
-                        $Self->{TimeObject}->SystemTime( $Param{ 'TicketFreeTime' . $_ } ),
-                    );
-
-                $Param{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
-                $Param{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
-                $Param{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
-                $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
-                $Param{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
-
-                # set time stamp to NULL if field is not used/checked
-                if ( !$Param{ 'TicketFreeTime' . $_ . 'Used' } ) {
-                    $Param{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
-                    $Param{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
-                    $Param{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
-                    $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
-                    $Param{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
-                }
-
-                # set free time
-                $Self->{TicketObject}->TicketFreeTimeSet(
-                    %Param,
-                    Prefix   => 'TicketFreeTime',
-                    TicketID => $Param{TicketID},
-                    Counter  => $_,
-                    UserID   => $Param{UserID},
-                );
-            }
-        }
-
-        # set article free text
-        for my $Count ( 1 .. 3 ) {
-            my $Key  = 'ArticleFreeKey' . $Count;
-            my $Text = 'ArticleFreeText' . $Count;
-            next if !defined $Param{$Key};
-            $Self->{TicketObject}->ArticleFreeTextSet(
-                TicketID  => $Param{TicketID},
-                ArticleID => $ArticleID,
-                Key       => $Param{$Key},
-                Value     => $Param{$Text},
-                Counter   => $Count,
-                UserID    => $Param{UserID},
-            );
-        }
+	$Self->_SetTicketFreeText(%Param);
+        $Self->_SetTicketFreeTime2(%Param);
+	$Self->_SetArticleFreeText2(%Param);
 
         # set priority
         if ( $Self->{Config}->{Priority} && $Param{PriorityID} ) {
@@ -4675,56 +4334,12 @@ sub _TicketCommonActions {
             $Param{Subject} = $Self->{Config}->{Subject},;
         }
 
-        # get free text config options
-        my %TicketFreeText;
-        for my $Count ( 1 .. 16 ) {
-            my $Key  = 'TicketFreeKey' . $Count;
-            my $Text = 'TicketFreeText' . $Count;
-            $TicketFreeText{$Key} = $Self->{TicketObject}->TicketFreeTextGet(
-                TicketID => $Param{TicketID},
-                Type     => $Key,
-                Action   => $Param{Action},
-                UserID   => $Param{UserID},
-            );
-            $TicketFreeText{$Text} = $Self->{TicketObject}->TicketFreeTextGet(
-                TicketID => $Param{TicketID},
-                Type     => $Text,
-                Action   => $Param{Action},
-                UserID   => $Param{UserID},
-            );
-        }
-
+	##----
+	$Self->_GetFreeTextConfigOptions2(%Param);
         # ticket free time
 
-        # get default selections
-        my %ArticleFreeDefault;
-        for my $Count ( 1 .. 3 ) {
-            my $Key  = 'ArticleFreeKey' . $Count;
-            my $Text = 'ArticleFreeText' . $Count;
-            $ArticleFreeDefault{$Key} = $Param{$Key}
-                || $Self->{ConfigObject}->Get( $Key . '::DefaultSelection' );
-            $ArticleFreeDefault{$Text} = $Param{$Text}
-                || $Self->{ConfigObject}->Get( $Text . '::DefaultSelection' );
-        }
-
-        # get article free text config options
-        my %ArticleFreeText;
-        for my $Count ( 1 .. 3 ) {
-            my $Key  = 'ArticleFreeKey' . $Count;
-            my $Text = 'ArticleFreeText' . $Count;
-            $ArticleFreeText{$Key} = $Self->{TicketObject}->ArticleFreeTextGet(
-                TicketID => $Param{TicketID},
-                Type     => $Key,
-                Action   => $Param{Action},
-                UserID   => $Param{UserID},
-            );
-            $ArticleFreeText{$Text} = $Self->{TicketObject}->ArticleFreeTextGet(
-                TicketID => $Param{TicketID},
-                Type     => $Text,
-                Action   => $Param{Action},
-                UserID   => $Param{UserID},
-            );
-        }
+	$Self->_GetArticleDefaultSelections(%Param);
+	$Self->_GetArticleFreeTextConfigOptions(%Param);
         my $result = $Self->_TicketCommonActions(
             %Param,
             Defaults => 1,
@@ -5759,6 +5374,490 @@ sub _TransfromDateSelection {
     }
     return $Param{TimeStamp};
 }
+
+
+
+# helper functions
+sub _GetArticleDefaultSelections{
+    my $Self  =shift || die "no self";
+    my %Param  =@_ || die "no param";
+
+        # get default selections
+        my %ArticleFreeDefault;
+        for my $Count ( 1 .. 3 ) {
+            my $Key  = 'ArticleFreeKey' . $Count;
+            my $Text = 'ArticleFreeText' . $Count;
+            $ArticleFreeDefault{$Key} = $Param{$Key}
+                || $Self->{ConfigObject}->Get( $Key . '::DefaultSelection' );
+            $ArticleFreeDefault{$Text} = $Param{$Text}
+                || $Self->{ConfigObject}->Get( $Text . '::DefaultSelection' );
+        }
+}
+
+sub _GetArticleFreeTextConfigOptions{
+    my $Self  =shift || die "no self";
+    my %Param  =@_ || die "no param";
+    
+    # get article free text config options
+    my %ArticleFreeText;
+    for my $Count ( 1 .. 3 ) {
+	my $Key  = 'ArticleFreeKey' . $Count;
+	my $Text = 'ArticleFreeText' . $Count;
+	$ArticleFreeText{$Key} = $Self->{TicketObject}->ArticleFreeTextGet(
+	    TicketID => $Param{TicketID},
+	    Type     => $Key,
+	    Action   => $Param{Action},
+	    UserID   => $Param{UserID},
+            );
+	$ArticleFreeText{$Text} = $Self->{TicketObject}->ArticleFreeTextGet(
+	    TicketID => $Param{TicketID},
+	    Type     => $Text,
+	    Action   => $Param{Action},
+	    UserID   => $Param{UserID},
+            );
+    }
+}
+
+
+sub _GetScreenElementsArticleFreeTextFields {
+    my $Self  =shift || die "no self";
+    my %Param  =@_ || die "no param";
+    my @ScreenElements;
+    # article freetext fields
+    for my $Index ( 1 .. 3 ) {
+        if ( $Self->{Config}->{ArticleFreeText}->{$Index} ) {
+
+            my $FreeTextElement;
+
+            my $Name;
+            $Name = 'ArticleFreeText' . $Index;
+
+            my $Title;
+            $Title = $Self->{ConfigObject}->Get( 'ArticleFreeKey' . $Index . '::DefaultSelection' );
+
+            my $ViewType;
+            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
+                $ViewType = 'Picker';
+            }
+            else {
+                $ViewType = 'Input';
+            }
+
+            my @ArticleFreeKeys;
+            @ArticleFreeKeys = $Self->{ConfigObject}->Get( 'ArticleFreeKey' . $Index );
+
+            my @Options;
+            @Options = $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index );
+
+            my $Mandatory;
+            if ( $Self->{Config}->{ArticleFreeText}->{$Index} == 2 ) {
+                $Mandatory = 1;
+            }
+            else {
+                $Mandatory = 0;
+            }
+
+            my $Default;
+            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
+                $Default = $Self->{ConfigObject}->Get(
+                    'ArticleFreeText' . $Index
+                        . '::DefaultSelection'
+                );
+            }
+            else {
+                $Default = '';
+            }
+
+            if ( $Self->{ConfigObject}->Get( 'ArticleFreeText' . $Index ) ) {
+                $FreeTextElement = {
+                    Name        => $Name,
+                    Title       => $Title,
+                    FreeTextKey => @ArticleFreeKeys,
+                    Datatype    => 'Text',
+                    Viewtype    => $ViewType,
+                    Options     => @Options,
+                    Mandatory   => $Mandatory,
+                    Default     => $Default || '',
+                };
+            }
+            else {
+                $FreeTextElement = {
+                    Name        => $Name,
+                    Title       => $Title,
+                    FreeTextKey => @ArticleFreeKeys,
+                    Datatype    => 'Text',
+                    Viewtype    => $ViewType,
+                    Min         => 1,
+                    Max         => 200,
+                    Mandatory   => $Mandatory,
+                    Default     => $Default || '',
+                };
+            }
+
+            push @ScreenElements, $FreeTextElement;
+        }
+    }
+    return @ScreenElements;
+}
+
+sub _GetScreenElementsTicketFreeTimeFields {
+    my $Self  =shift || die "no self";
+    my %Param  =@_ || die "no param";
+    
+    my @ScreenElements;
+# ticket freetime fields
+    for my $Index ( 1 .. 6 ) {
+        if ( $Self->{Config}->{TicketFreeTime}->{$Index} ) {
+
+            my $Name;
+            $Name = 'TicketFreeTime' . $Index;
+
+            my $Title;
+            $Title = $Self->{ConfigObject}->Get( 'TicketFreeTimeKey' . $Index );
+
+            my $Mandatory;
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeTimeOptional' . $Index ) ) {
+                $Mandatory = 0;
+            }
+            else {
+                $Mandatory = 1;
+            }
+
+            my $DefaultTimeFormated;
+            my $TimeDiff = 0;
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Index ) ) {
+                $TimeDiff = $Self->{ConfigObject}->Get( 'TicketFreeTimeDiff' . $Index );
+            }
+            my $DefaultTime = $Self->{TimeObject}->SystemTime() - $TimeDiff;
+
+            $DefaultTimeFormated = $Self->{TimeObject}->SystemTime2TimeStamp(
+                SystemTime => $DefaultTime,
+            );
+
+            my $FreeTimeElement = {
+                Name      => $Name,
+                Title     => $Title,
+                Datatype  => 'DateTime',
+                Viewtype  => 'Picker',
+                Mandatory => $Mandatory,
+                Default   => $DefaultTimeFormated || '',
+            };
+            push @ScreenElements, $FreeTimeElement;
+        }
+    }
+    return @ScreenElements;
+}
+
+sub _GetScreenElementsTicketFreeTextFields{
+    my $Self  =shift || die "no self";
+    my %Param  =@_ || die "no param";
+
+    my @ScreenElements;
+    
+# ticket freetext fields
+    for my $Index ( 1 .. 16 ) {
+        if ( $Self->{Config}->{TicketFreeText}->{$Index} ) {
+	    
+            my $FreeTextElement;
+	    
+            my $Name;
+            $Name = 'TicketFreeText' . $Index;
+
+            my $Title;
+            $Title = $Self->{ConfigObject}->Get( 'TicketFreeKey' . $Index . '::DefaultSelection' );
+
+            my $ViewType;
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
+                $ViewType = 'Picker';
+            }
+            else {
+                $ViewType = 'Input';
+            }
+
+            my @TicketFreeKeys;
+            @TicketFreeKeys = $Self->{ConfigObject}->Get( 'TicketFreeKey' . $Index );
+
+            my @Options;
+            @Options = $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index );
+
+            my $Mandatory;
+            if ( $Self->{Config}->{TicketFreeText}->{$Index} == 2 ) {
+                $Mandatory = 1;
+            }
+            else {
+                $Mandatory = 0;
+            }
+
+            my $Default;
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
+                $Default = $Self->{ConfigObject}->Get(
+                    'TicketFreeText' . $Index
+                        . '::DefaultSelection'
+                );
+            }
+            else {
+                $Default = '';
+            }
+
+            if ( $Self->{ConfigObject}->Get( 'TicketFreeText' . $Index ) ) {
+                $FreeTextElement = {
+                    Name        => $Name,
+                    Title       => $Title,
+                    FreeTextKey => @TicketFreeKeys,
+                    Datatype    => 'Text',
+                    Viewtype    => $ViewType,
+                    Options     => @Options,
+                    Mandatory   => $Mandatory,
+                    Default     => $Default || '',
+                };
+            }
+            else {
+                $FreeTextElement = {
+                    Name        => $Name,
+                    Title       => $Title,
+                    FreeTextKey => @TicketFreeKeys,
+                    Datatype    => 'Text',
+                    Viewtype    => $ViewType,
+                    Min         => 1,
+                    Max         => 200,
+                    Mandatory   => $Mandatory,
+                    Default     => $Default || '',
+                };
+            }
+
+            push @ScreenElements, $FreeTextElement;
+        }
+    }
+    return @ScreenElements;
+}
+
+sub _GetFreeTextConfigOptions {
+    my $Self  =shift || die "no self";
+    my %Param  =@_ || die "no param";
+    
+# get free text config options
+    my %TicketFreeText = ();
+    for ( 1 .. 16 ) {
+	
+        # check required FreeTextField (if configured)
+        if (
+            $Self->{Config}{'TicketFreeText'}->{$_} == 2
+            && $Param{"TicketFreeText$_"} eq ''
+            )
+        {
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "TicketFreeTextField$_ invalid",
+            );
+            return;
+        }
+    }
+}
+
+sub _GetFreeTextConfigOptions2{
+    my $Self  =shift || die "no self";
+    my %Param  =@_ || die "no param";
+    
+    # get free text config options
+    my %TicketFreeText;
+    for my $Count ( 1 .. 16 ) {
+	my $Key  = 'TicketFreeKey' . $Count;
+	my $Text = 'TicketFreeText' . $Count;
+	$TicketFreeText{$Key} = $Self->{TicketObject}->TicketFreeTextGet(
+	    TicketID => $Param{TicketID},
+	    Type     => $Key,
+	    Action   => $Param{Action},
+	    UserID   => $Param{UserID},
+            );
+	$TicketFreeText{$Text} = $Self->{TicketObject}->TicketFreeTextGet(
+	    TicketID => $Param{TicketID},
+	    Type     => $Text,
+	    Action   => $Param{Action},
+	    UserID   => $Param{UserID},
+            );
+    }
+}
+
+
+sub _GetTicketFreeText{
+    my $Self  =shift || die "no self";
+    my $TicketID=shift;
+    my %Param  =@_ || die "no param";
+    
+    # set ticket free text
+    for ( 1 .. 16 ) {
+        if ( defined( $Param{"TicketFreeKey$_"} ) ) {
+            $Self->{TicketObject}->TicketFreeTextSet(
+                TicketID => $TicketID,
+                Key      => $Param{"TicketFreeKey$_"},
+                Value    => $Param{"TicketFreeText$_"},
+                Counter  => $_,
+                UserID   => $Param{UserID},
+            );
+        }
+    }
+}
+
+sub _SetTicketFreeTime1 {
+    my $Self  =shift || die "no self";
+    my $TicketID =shift || die "no TicketID";
+    my %Param  =@_ || die "no param";
+
+    # set ticket free time
+    for ( 1 .. 6 ) {
+	
+        if ( $Param{ 'TicketFreeTime' . $_ } ) {
+            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
+                = $Self->{TimeObject}->SystemTime2Date(
+                SystemTime => $Self->{TimeObject}->SystemTime( $Param{ 'TicketFreeTime' . $_ } ),
+                );
+
+            $Param{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
+            $Param{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
+            $Param{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
+            $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
+            $Param{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
+
+            # set time stamp to NULL if field is not used/checked
+            if ( !$Param{ 'TicketFreeTime' . $_ . 'Used' } ) {
+                $Param{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
+                $Param{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
+            }
+
+            # set free time
+            $Self->{TicketObject}->TicketFreeTimeSet(
+                %Param,
+                Prefix   => 'TicketFreeTime',
+                TicketID => $TicketID,
+                Counter  => $_,
+                UserID   => $Param{UserID},
+            );
+        }
+    }
+}
+
+sub _SetArticleFreeText1{
+    my $Self  =shift || die "no self";
+    my $TicketID =shift || die "no TicketID";
+    my $ArticleID=shift || die "no ArticleID";
+    my %Param  =@_ || die "no param";
+
+    # set article free text
+    for ( 1 .. 3 ) {
+	if ( defined( $Param{"ArticleFreeKey$_"} ) ) {
+	    $Self->{TicketObject}->ArticleFreeTextSet(
+		TicketID  => $TicketID,
+		ArticleID => $ArticleID,
+		Key       => $Param{"ArticleFreeKey$_"},
+                    Value     => $Param{"ArticleFreeText$_"},
+                    Counter   => $_,
+                    UserID    => $Param{UserID},
+                );
+            }
+        }
+}
+
+sub _CheckRequiredFreeTextField{
+    my $Self  =shift || die "no self";
+    my %Param  =@_ || die "no param";
+
+    # check required FreeTextField (if configured)
+    for my $Count ( 1 .. 16 ) {
+        next if $Self->{Config}->{TicketFreeText}->{$Count} ne 2;
+        next if $Param{"TicketFreeText$Count"} ne '';
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "TicketFreeTextField$Count invalid",
+        );
+        return;
+    }
+}
+
+sub _SetTicketFreeText{
+    my $Self  =shift || die "no self";
+    my %Param  =@_ || die "no param";
+
+    # set ticket free text
+    for my $Count ( 1 .. 16 ) {
+	my $Key  = 'TicketFreeKey' . $Count;
+	my $Text = 'TicketFreeText' . $Count;
+	next if !defined $Param{$Key};
+            $Self->{TicketObject}->TicketFreeTextSet(
+                TicketID => $Param{TicketID},
+                Key      => $Param{$Key},
+                Value    => $Param{$Text},
+                Counter  => $Count,
+                UserID   => $Param{UserID},
+            );
+        }
+}
+
+sub _SetArticleFreeText2{
+    my $Self  =shift || die "no self";
+    my $TicketID =shift || die "no TicketID";
+    my $ArticleID=shift || die "no ArticleID";
+    my %Param  =@_ || die "no param";
+
+    # set article free text
+    for my $Count ( 1 .. 3 ) {
+	my $Key  = 'ArticleFreeKey' . $Count;
+	my $Text = 'ArticleFreeText' . $Count;
+	next if !defined $Param{$Key};
+            $Self->{TicketObject}->ArticleFreeTextSet(
+                TicketID  => $Param{TicketID},
+                ArticleID => $ArticleID,
+                Key       => $Param{$Key},
+                Value     => $Param{$Text},
+                Counter   => $Count,
+                UserID    => $Param{UserID},
+            );
+        }
+}
+
+sub _SetTicketFreeTime2 {
+    my $Self  =shift || die "no self";
+    my %Param  =@_ || die "no param";
+    
+# set ticket free time
+    for ( 1 .. 6 ) {
+	
+	if ( $Param{ 'TicketFreeTime' . $_ } ) {
+	    my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
+                    = $Self->{TimeObject}->SystemTime2Date(
+                    SystemTime =>
+                        $Self->{TimeObject}->SystemTime( $Param{ 'TicketFreeTime' . $_ } ),
+                    );
+
+                $Param{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
+                $Param{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
+                $Param{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
+                $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
+                $Param{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
+
+                # set time stamp to NULL if field is not used/checked
+                if ( !$Param{ 'TicketFreeTime' . $_ . 'Used' } ) {
+                    $Param{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
+                    $Param{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
+                    $Param{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
+                    $Param{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
+                    $Param{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
+                }
+
+                # set free time
+                $Self->{TicketObject}->TicketFreeTimeSet(
+                    %Param,
+                    Prefix   => 'TicketFreeTime',
+                    TicketID => $Param{TicketID},
+                    Counter  => $_,
+                    UserID   => $Param{UserID},
+                );
+            }
+        }
+}
+
 
 1;
 
