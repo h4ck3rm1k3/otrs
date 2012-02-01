@@ -2,7 +2,7 @@
 # Kernel/System/iPhone.pm - all iPhone handle functions
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.67 2012/02/01 18:29:36 md Exp $
+# $Id: iPhone.pm,v 1.68 2012/02/01 18:51:07 md Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.67 $) [1];
+$VERSION = qw($Revision: 1.68 $) [1];
 
 =head1 NAME
 
@@ -4651,7 +4651,7 @@ sub _TicketCommonActions {
                 || $Self->{ConfigObject}->Get( $Text . '::DefaultSelection' );
         }
 
-        $Self->_GetArticleFreeTextValues( \%Param );
+        $Self->_GetArticleFreeTextValues( \%Param );    # with the ticket id
 
         my $result = $Self->_TicketCommonActions(
             %Param,
@@ -5728,7 +5728,7 @@ sub _GetArticleFreeTextValues {
     my $Self  = shift || die "no self";
     my $Param = shift || die "no param hashref";
 
-    for my $Needed (qw(ArticleID UserID )) {
+    for my $Needed (qw(UserID TicketID)) {
         if ( !defined $Param->{$Needed} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Needed!" );
             return;
@@ -5747,13 +5747,12 @@ sub _GetArticleFreeTextValues {
     }
 
     my %Article = $Self->{TicketObject}->ArticleGet(
-        ArticleID     => $Param->{ArticleID},
+        TicketID      => $Param->{TicketID},,
         UserID        => $Param->{UserID},
         DynamicFields => 1,
     );
 
-    foreach my $Key ( keys %ArticleFreeText )
-    {
+    foreach my $Key ( keys %ArticleFreeText ) {
         my $Value = $Article{$Key} || '';
         $Param->{$Key} = $Key;
     }
@@ -5789,8 +5788,7 @@ sub _GetTicketFreeTextValues {
         DynamicFields => 1,
     );
 
-    foreach my $Key ( keys %FreeText )
-    {
+    foreach my $Key ( keys %FreeText ) {
         my $Value = $Article{$Key} || '';
         $Param->{$Key} = $Key;
     }
@@ -5946,6 +5944,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.67 2012/02/01 18:29:36 md Exp $
+$Id: iPhone.pm,v 1.68 2012/02/01 18:51:07 md Exp $
 
 =cut
