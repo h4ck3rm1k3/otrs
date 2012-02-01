@@ -1,8 +1,8 @@
 # --
 # Kernel/System/iPhone.pm - all iPhone handle functions
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: iPhone.pm,v 1.65 2011/06/15 13:27:37 martin Exp $
+# $Id: iPhone.pm,v 1.66 2012/02/01 12:32:56 md Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -21,7 +21,7 @@ use Kernel::System::SystemAddress;
 use Kernel::System::Package;
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.65 $) [1];
+$VERSION = qw($Revision: 1.66 $) [1];
 
 =head1 NAME
 
@@ -3855,7 +3855,7 @@ sub _TicketPhoneNew {
     }
 
     # get free text config options
-    my %TicketFreeText = ();
+    #my %TicketFreeText = (); not used
     for ( 1 .. 16 ) {
 
         # check required FreeTextField (if configured)
@@ -3967,12 +3967,21 @@ sub _TicketPhoneNew {
     # set ticket free text
     for ( 1 .. 16 ) {
         if ( defined( $Param{"TicketFreeKey$_"} ) ) {
-            $Self->{TicketObject}->TicketFreeTextSet(
-                TicketID => $TicketID,
-                Key      => $Param{"TicketFreeKey$_"},
-                Value    => $Param{"TicketFreeText$_"},
-                Counter  => $_,
-                UserID   => $Param{UserID},
+
+            # TODO : will this ever be set?
+            # $Self->{TicketObject}->TicketFreeTextSet(
+            #     TicketID => $TicketID,
+            #     Key      => $Param{"TicketFreeKey$_"},
+            #     Value    =>  $Param{"TicketFreeText$_"},
+            #     Counter  => $_,
+            #     UserID   => $Param{UserID},
+            # );
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Free Text not set "
+                    . $Param{"TicketFreeKey$_"}
+                    . " with value "
+                    . $Param{"TicketFreeText$_"},
             );
         }
     }
@@ -4051,13 +4060,22 @@ sub _TicketPhoneNew {
         # set article free text
         for ( 1 .. 3 ) {
             if ( defined( $Param{"ArticleFreeKey$_"} ) ) {
-                $Self->{TicketObject}->ArticleFreeTextSet(
-                    TicketID  => $TicketID,
-                    ArticleID => $ArticleID,
-                    Key       => $Param{"ArticleFreeKey$_"},
-                    Value     => $Param{"ArticleFreeText$_"},
-                    Counter   => $_,
-                    UserID    => $Param{UserID},
+
+                # TODO : will this ever be set?
+                # $Self->{TicketObject}->ArticleFreeTextSet(
+                #     TicketID  => $TicketID,
+                #     ArticleID => $ArticleID,
+                #     Key       => $Param{"ArticleFreeKey$_"},
+                #     Value     => $Param{"ArticleFreeText$_"},
+                #     Counter   => $_,
+                #     UserID    => $Param{UserID},
+                # );
+                $Self->{LogObject}->Log(
+                    Priority => 'error',
+                    Message  => "Free Text not set "
+                        . $Param{"ArticleFreeKey$_"}
+                        . " with value "
+                        . $Param{"ArticleFreeText$_"},
                 );
             }
         }
@@ -4534,12 +4552,17 @@ sub _TicketCommonActions {
             my $Key  = 'TicketFreeKey' . $Count;
             my $Text = 'TicketFreeText' . $Count;
             next if !defined $Param{$Key};
-            $Self->{TicketObject}->TicketFreeTextSet(
-                TicketID => $Param{TicketID},
-                Key      => $Param{$Key},
-                Value    => $Param{$Text},
-                Counter  => $Count,
-                UserID   => $Param{UserID},
+
+            # $Self->{TicketObject}->TicketFreeTextSet(
+            #     TicketID => $Param{TicketID},
+            #     Key      => $Param{$Key},
+            #     Value    => $Param{$Text},
+            #     Counter  => $Count,
+            #     UserID   => $Param{UserID},
+            # );
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Free Text not set " . $Param{$Key} . " with value " . $Param{$Text},
             );
         }
 
@@ -4584,13 +4607,19 @@ sub _TicketCommonActions {
             my $Key  = 'ArticleFreeKey' . $Count;
             my $Text = 'ArticleFreeText' . $Count;
             next if !defined $Param{$Key};
-            $Self->{TicketObject}->ArticleFreeTextSet(
-                TicketID  => $Param{TicketID},
-                ArticleID => $ArticleID,
-                Key       => $Param{$Key},
-                Value     => $Param{$Text},
-                Counter   => $Count,
-                UserID    => $Param{UserID},
+
+            #TODO SKIP
+            # $Self->{TicketObject}->ArticleFreeTextSet(
+            #     TicketID  => $Param{TicketID},
+            #     ArticleID => $ArticleID,
+            #     Key       => $Param{$Key},
+            #     Value     => $Param{$Text},
+            #     Counter   => $Count,
+            #     UserID    => $Param{UserID},
+            # );
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Free Text not set " . $Param{$Key} . " with value " . $Param{$Text},
             );
         }
 
@@ -4675,24 +4704,25 @@ sub _TicketCommonActions {
             $Param{Subject} = $Self->{Config}->{Subject},;
         }
 
+        # this block is not used?
         # get free text config options
-        my %TicketFreeText;
-        for my $Count ( 1 .. 16 ) {
-            my $Key  = 'TicketFreeKey' . $Count;
-            my $Text = 'TicketFreeText' . $Count;
-            $TicketFreeText{$Key} = $Self->{TicketObject}->TicketFreeTextGet(
-                TicketID => $Param{TicketID},
-                Type     => $Key,
-                Action   => $Param{Action},
-                UserID   => $Param{UserID},
-            );
-            $TicketFreeText{$Text} = $Self->{TicketObject}->TicketFreeTextGet(
-                TicketID => $Param{TicketID},
-                Type     => $Text,
-                Action   => $Param{Action},
-                UserID   => $Param{UserID},
-            );
-        }
+        # my %TicketFreeText;
+        # for my $Count ( 1 .. 16 ) {
+        #     my $Key  = 'TicketFreeKey' . $Count;
+        #     my $Text = 'TicketFreeText' . $Count;
+        #     $TicketFreeText{$Key} = $Self->{TicketObject}->TicketFreeTextGet(
+        #         TicketID => $Param{TicketID},
+        #         Type     => $Key,
+        #         Action   => $Param{Action},
+        #         UserID   => $Param{UserID},
+        #     );
+        #     $TicketFreeText{$Text} = $Self->{TicketObject}->TicketFreeTextGet(
+        #         TicketID => $Param{TicketID},
+        #         Type     => $Text,
+        #         Action   => $Param{Action},
+        #         UserID   => $Param{UserID},
+        #     );
+        # }
 
         # ticket free time
 
@@ -4708,23 +4738,24 @@ sub _TicketCommonActions {
         }
 
         # get article free text config options
-        my %ArticleFreeText;
-        for my $Count ( 1 .. 3 ) {
-            my $Key  = 'ArticleFreeKey' . $Count;
-            my $Text = 'ArticleFreeText' . $Count;
-            $ArticleFreeText{$Key} = $Self->{TicketObject}->ArticleFreeTextGet(
-                TicketID => $Param{TicketID},
-                Type     => $Key,
-                Action   => $Param{Action},
-                UserID   => $Param{UserID},
-            );
-            $ArticleFreeText{$Text} = $Self->{TicketObject}->ArticleFreeTextGet(
-                TicketID => $Param{TicketID},
-                Type     => $Text,
-                Action   => $Param{Action},
-                UserID   => $Param{UserID},
-            );
-        }
+        #
+        # my %ArticleFreeText; this variable is never used
+        # for my $Count ( 1 .. 3 ) {
+        #     my $Key  = 'ArticleFreeKey' . $Count;
+        #     my $Text = 'ArticleFreeText' . $Count;
+        #     $ArticleFreeText{$Key} = $Self->{TicketObject}->ArticleFreeTextGet(
+        #         TicketID => $Param{TicketID},
+        #         Type     => $Key,
+        #         Action   => $Param{Action},
+        #         UserID   => $Param{UserID},
+        #     );
+        #     $ArticleFreeText{$Text} = $Self->{TicketObject}->ArticleFreeTextGet(
+        #         TicketID => $Param{TicketID},
+        #         Type     => $Text,
+        #         Action   => $Param{Action},
+        #         UserID   => $Param{UserID},
+        #     );
+        # }
         my $result = $Self->_TicketCommonActions(
             %Param,
             Defaults => 1,
@@ -4968,12 +4999,19 @@ sub _TicketCompose {
         my $Key  = 'TicketFreeKey' . $Count;
         my $Text = 'TicketFreeText' . $Count;
         if ( defined $Param{$Key} ) {
-            $Self->{TicketObject}->TicketFreeTextSet(
-                Key      => $Param{$Key},
-                Value    => $Param{$Text},
-                Counter  => $Count,
-                TicketID => $Param{TicketID},
-                UserID   => $Param{UserID},
+
+            # $Self->{TicketObject}->TicketFreeTextSet(
+            #     Key      => $Param{$Key},
+            #     Value    => $Param{$Text},
+            #     Counter  => $Count,
+            #     TicketID => $Param{TicketID},
+            #     UserID   => $Param{UserID},
+            # );
+
+            #TODO SKIP
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Free Text not set " . $Param{$Key} . " with value " . $Param{$Text},
             );
         }
     }
@@ -5019,13 +5057,19 @@ sub _TicketCompose {
         my $Key  = 'ArticleFreeKey' . $Count;
         my $Text = 'ArticleFreeText' . $Count;
         if ( defined $Param{$Key} ) {
-            $Self->{TicketObject}->ArticleFreeTextSet(
-                TicketID  => $Self->{TicketID},
-                ArticleID => $ArticleID,
-                Key       => $Param{$Key},
-                Value     => $Param{$Text},
-                Counter   => $Count,
-                UserID    => $Self->{UserID},
+
+            # $Self->{TicketObject}->ArticleFreeTextSet(
+            #     TicketID  => $Self->{TicketID},
+            #     ArticleID => $ArticleID,
+            #     Key       => $Param{$Key},
+            #     Value     => $Param{$Text},
+            #     Counter   => $Count,
+            #     UserID    => $Self->{UserID},
+            # );
+            #TODO SKIP
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Free Text not set " . $Param{$Key} . " with value " . $Param{$Text},
             );
         }
     }
@@ -5424,13 +5468,19 @@ sub _TicketMove {
         my $Key  = 'TicketFreeKey' . $Count;
         my $Text = 'TicketFreeText' . $Count;
         if ( defined $Param{$Key} ) {
-            $Self->{TicketObject}->TicketFreeTextSet(
-                Key      => $Param{$Key},
-                Value    => $Param{$Text},
-                Counter  => $Count,
-                TicketID => $Param{TicketID},
-                UserID   => $Param{UserID},
+
+            # $Self->{TicketObject}->TicketFreeTextSet(
+            #     Key      => $Param{$Key},
+            #     Value    => $Param{$Text},
+            #     Counter  => $Count,
+            #     TicketID => $Param{TicketID},
+            #     UserID   => $Param{UserID},
+            # );
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Free Text not set " . $Param{$Key} . " with value " . $Param{$Text},
             );
+
         }
     }
 
@@ -5776,6 +5826,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Id: iPhone.pm,v 1.65 2011/06/15 13:27:37 martin Exp $
+$Id: iPhone.pm,v 1.66 2012/02/01 12:32:56 md Exp $
 
 =cut
