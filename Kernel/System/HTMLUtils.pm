@@ -2,7 +2,7 @@
 # Kernel/System/HTMLUtils.pm - creating and modifying html strings
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: HTMLUtils.pm,v 1.32 2012/01/17 14:47:35 mg Exp $
+# $Id: HTMLUtils.pm,v 1.27.2.1 2012/02/02 21:23:25 des Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,10 +14,8 @@ package Kernel::System::HTMLUtils;
 use strict;
 use warnings;
 
-use MIME::Base64;
-
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.32 $) [1];
+$VERSION = qw($Revision: 1.27.2.1 $) [1];
 
 =head1 NAME
 
@@ -117,7 +115,7 @@ sub ToAscii {
         my $Ascii = $Self->ToAscii(
             String => $2,
         );
-        # force line breaking
+        # force line braking
         if ( length $Ascii > 78 ) {
             $Ascii =~ s/(.{4,78})(?:\s|\z)/$1\n/gm;
         }
@@ -134,7 +132,7 @@ sub ToAscii {
         my $Ascii = $Self->ToAscii(
             String => $1,
         );
-        # force line breaking
+        # force line braking
         if ( length $Ascii > 78 ) {
             $Ascii =~ s/(.{4,78})(?:\s|\z)/$1\n/gm;
         }
@@ -533,7 +531,7 @@ sub ToAscii {
     # remove empty lines
     $Param{String} =~ s/^\s*\n\s*\n/\n/mg;
 
-    # force line breaking
+    # force line braking
     if ( length $Param{String} > 78 ) {
         $Param{String} =~ s/(.{4,78})(?:\s|\z)/$1\n/gm;
     }
@@ -959,7 +957,7 @@ sub Safety {
     # remove style/javascript parts
     if ( $Param{NoJavaScript} ) {
         $Safety{Replace} ||= ${$String} =~ s{
-            <style.+?javascript(.+?|)>(.*)</style>
+            <style[^>]+?javascript(.+?|)>(.*)</style>
         }
         {}sgxim;
     }
@@ -1039,58 +1037,6 @@ sub Safety {
     return %Safety;
 }
 
-=item EmbeddedImagesExtract()
-
-extracts embedded images with data-URLs from an HTML document.
-
-    $HTMLUtilsObject->EmbeddedImagesExtract(
-        DocumentRef    => \$Body,
-        AttachmentsRef => \@Attachments,
-    );
-
-Returns nothing. If embedded images were found, these will be appended
-to the attachments list, and the image data URL will be replaced with a
-cid: URL in the document.
-
-=cut
-
-sub EmbeddedImagesExtract {
-    my ( $Self, %Param ) = @_;
-
-    if ( ref $Param{DocumentRef} ne 'SCALAR' || !defined ${ $Param{DocumentRef} } ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need DocumentRef!" );
-        return;
-    }
-    if ( ref $Param{AttachmentsRef} ne 'ARRAY' ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need DocumentRef!" );
-        return;
-    }
-
-    my $FQDN = $Self->{ConfigObject}->Get('FQDN');
-    ${ $Param{DocumentRef} } =~ s{(src=")(data:image/)(png|gif|jpg|bmp)(;base64,)(.+?)(")}{
-
-        my $Base64String = $5;
-
-        my $FileName     = 'pasted-' . time() . '-' . int(rand(1000000)) . '.' . $3;
-        my $ContentType  = "image/$3; name=\"$FileName\"";
-        my $ContentID    = 'pasted.' . time() . '.' . int(rand(1000000)) . '@' . $FQDN;
-
-        my $AttachmentData = {
-            Content     => decode_base64($Base64String),
-            ContentType => $ContentType,
-            ContentID   => $ContentID,
-            Filename    => $FileName,
-        };
-        push @{$Param{AttachmentsRef}}, $AttachmentData;
-
-        # compose new image tag
-        $1 . "cid:$ContentID" . $6
-
-    }egxi;
-
-    return 1;
-}
-
 1;
 
 =back
@@ -1105,6 +1051,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.32 $ $Date: 2012/01/17 14:47:35 $
+$Revision: 1.27.2.1 $ $Date: 2012/02/02 21:23:25 $
 
 =cut
