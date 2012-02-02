@@ -1,0 +1,6 @@
+
+PERL5LIB=
+~/projects/otrs/git/public/otrs
+
+test :
+	perl ./003_json_screen_config_new_phone.t

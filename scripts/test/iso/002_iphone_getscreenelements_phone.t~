@@ -1,0 +1,5 @@
+
+
+require "basetest.t";
+
+$phone-> _GetScreenElements(    Screen=> "Phone"  );

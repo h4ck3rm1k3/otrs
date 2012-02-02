@@ -4338,7 +4338,7 @@ sub _TicketCommonActions {
         }
 
 	##----
-	$Self->_GetFreeTextConfigOptions2(%Param);
+	$Self->_GetFreeTextConfigOptions(%Param);
         # ticket free time
 
 	$Self->_GetArticleDefaultSelections(%Param);
@@ -5295,7 +5295,7 @@ sub _SetArticleFreeText{
 
 ## 16 free text fields 
 
-sub _GetFreeTextConfigOptions2{
+sub _GetFreeTextConfigOptions {
     my $Self  =shift || die "no self";
     my %Param  =@_ ;
     
@@ -5317,6 +5317,7 @@ sub _GetFreeTextConfigOptions2{
 	    UserID   => $Param{UserID},
             );
     }
+    return %TicketFreeText;
 }
 
 
@@ -5473,8 +5474,10 @@ sub _GetScreenElementsFreeTextFields{
             else {
                 $ViewType = 'Input';
             }
+
             my @TypeNameKeys;
-            @TypeNameKeys = $Self->{ConfigObject}->Get( $TypeNameKey . $Index );
+	    @TypeNameKeys = $Self->{ConfigObject}->Get( $TypeNameKey . $Index );
+	    
             my @Options;
             @Options = $Self->{ConfigObject}->Get( $TypeNameText . $Index );
             my $Mandatory;
@@ -5524,7 +5527,6 @@ sub _GetScreenElementsFreeTextFields{
     }
     return @ScreenElements;
 }
-
 
 1;
 

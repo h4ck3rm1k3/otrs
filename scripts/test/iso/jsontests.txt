@@ -1,0 +1,43 @@
+Hi Mike here there are some request to tests, they are based on OTRS 3.0
+
+for Dynamic Fields we need to use DynamicField_NameX in order to do not confuse with other fields, lets say the field is named QueueID, then it must be named DynamicField_QueueID, o another example is DynamicField_TicketFreeText1.
+
+I'm setting up a VO 3.0 where you can test, or if you want to test it locally please install an otrs 3.0 and the iPhoneHandle package. I will send you the VO information when is ready. 
+
+To use the following request you need to change:
+http://localhost/otrs30/json.pl?
+User=cr&Password=123
+
+By using this request is like you are using an iPhone to communicate with OTRS
+
+Request:
+IPhone ask OTRS the screen configuration for New Phone Ticket
+
+http://localhost/otrs30/json.pl?User=cr&Password=123&Object=CustomObject&Method=ScreenConfig&Data={"Screen":"Phone", "Language":"en"}
+
+Response:
+OTRS answers the fields configured (Fixed and FreeFields) it includes all the fields parameters so the iPhone can render them
+
+{"Result":"successful","Data":[{"Elements":[{"AutoFillElements":[{"ElementName":"CustomerID","Parameters":[{"CustomerUserID":"CustomerUserLogin"}],"Method":"CustomerIDGet","Object":"CustomObject"}],"Datatype":"Text","Default":"","Viewtype":"AutoCompletion","DynamicOptions":{"Parameters":[{"Search":"CustomerUserLogin"}],"Method":"CustomerSearch","Object":"CustomObject"},"Mandatory":1,"Name":"CustomerUserLogin","Title":"From customer"},{"Options":{"":"-","1":"Postmaster","4":"Misc","3":"Junk","2":"Raw","5":"Test"},"Datatype":"Text","Default":"","Viewtype":"Picker","Mandatory":1,"Name":"QueueID","Title":"To queue"},{"Datatype":"Text","Default":"","Viewtype":"Picker","DynamicOptions":{"Parameters":[{"CustomerUserID":"CustomerUserLogin","QueueID":"QueueID","TicketID":"TicketID"}],"Method":"ServicesGet","Object":"CustomObject"},"Mandatory":0,"Name":"ServiceID","Title":"Service"},{"Datatype":"Text","Default":"","Viewtype":"Picker","DynamicOptions":{"Parameters":[{"CustomerUserID":"CustomerUserLogin","QueueID":"QueueID","ServiceID":"ServiceID","TicketID":"TicketID"}],"Method":"SLAsGet","Object":"CustomObject"},"Mandatory":0,"Name":"SLAID","Title":"SLA"},{"Datatype":"Text","Default":"","Viewtype":"Picker","DynamicOptions":{"Parameters":[{"QueueID":"QueueID","AllUsers":1}],"Method":"UsersGet","Object":"CustomObject"},"Mandatory":0,"Name":"OwnerID","Title":"Owner"},{"Max":250,"Datatype":"Text","Default":"","Viewtype":"Input","Mandatory":1,"Min":1,"Name":"Subject","Title":"Subject"},{"Max":20000,"Datatype":"Text","Default":"","Viewtype":"TextArea","Mandatory":1,"Min":1,"Name":"Body","Title":"Text"},{"Max":150,"Datatype":"Text","Default":"","Viewtype":"Input","Mandatory":0,"Min":1,"Name":"CustomerID","Title":"CustomerID"},{"DefaultOption":"open","Datatype":"Text","Default":"4","Viewtype":"Picker","DynamicOptions":{"Parameters":[{"QueueID":"QueueID"}],"Method":"NextStatesGet","Object":"CustomObject"},"Mandatory":1,"Name":"StateID","Title":"Next Ticket State"},{"Datatype":"DateTime","Default":"","Viewtype":"Picker","Mandatory":0,"Name":"PendingDate","Title":"Pending Date (for pending* states)"},{"DefaultOption":"3 normal","Datatype":"Text","Default":"3","Viewtype":"Picker","DynamicOptions":{"Parameters":"","Method":"PrioritiesGet","Object":"CustomObject"},"Mandatory":1,"Name":"PriorityID","Title":"Priority"},{"Max":10,"Datatype":"Numeric","Default":"","Viewtype":"Input","Mandatory":0,"Min":1,"Name":"TimeUnits","Title":"Time units  (work units)"}],"Actions":{"Parameters":{"Action":"Phone"},"Method":"ScreenActions","Object":"CustomObject"},"Title":"New Phone Ticket"}]}
+
+
+With Free fields looks like
+
+{"Result":"successful","Data":[{"Elements":[{"AutoFillElements":[{"ElementName":"CustomerID","Parameters":[{"CustomerUserID":"CustomerUserLogin"}],"Method":"CustomerIDGet","Object":"CustomObject"}],"Datatype":"Text","Default":"","Viewtype":"AutoCompletion","DynamicOptions":{"Parameters":[{"Search":"CustomerUserLogin"}],"Method":"CustomerSearch","Object":"CustomObject"},"Mandatory":1,"Name":"CustomerUserLogin","Title":"From customer"},{"Options":{"":"-","1":"Postmaster","4":"Misc","3":"Junk","2":"Raw","5":"Test"},"Datatype":"Text","Default":"","Viewtype":"Picker","Mandatory":1,"Name":"QueueID","Title":"To queue"},{"Datatype":"Text","Default":"","Viewtype":"Picker","DynamicOptions":{"Parameters":[{"CustomerUserID":"CustomerUserLogin","QueueID":"QueueID","TicketID":"TicketID"}],"Method":"ServicesGet","Object":"CustomObject"},"Mandatory":0,"Name":"ServiceID","Title":"Service"},{"Datatype":"Text","Default":"","Viewtype":"Picker","DynamicOptions":{"Parameters":[{"CustomerUserID":"CustomerUserLogin","QueueID":"QueueID","ServiceID":"ServiceID","TicketID":"TicketID"}],"Method":"SLAsGet","Object":"CustomObject"},"Mandatory":0,"Name":"SLAID","Title":"SLA"},{"Datatype":"Text","Default":"","Viewtype":"Picker","DynamicOptions":{"Parameters":[{"QueueID":"QueueID","AllUsers":1}],"Method":"UsersGet","Object":"CustomObject"},"Mandatory":0,"Name":"OwnerID","Title":"Owner"},{"Max":250,"Datatype":"Text","Default":"","Viewtype":"Input","Mandatory":1,"Min":1,"Name":"Subject","Title":"Subject"},{"Max":20000,"Datatype":"Text","Default":"","Viewtype":"TextArea","Mandatory":1,"Min":1,"Name":"Body","Title":"Text"},{"Max":150,"Datatype":"Text","Default":"","Viewtype":"Input","Mandatory":0,"Min":1,"Name":"CustomerID","Title":"CustomerID"},{"DefaultOption":"open","Datatype":"Text","Default":"4","Viewtype":"Picker","DynamicOptions":{"Parameters":[{"QueueID":"QueueID"}],"Method":"NextStatesGet","Object":"CustomObject"},"Mandatory":1,"Name":"StateID","Title":"Next Ticket State"},{"Datatype":"DateTime","Default":"","Viewtype":"Picker","Mandatory":0,"Name":"PendingDate","Title":"Pending Date (for pending* states)"},{"DefaultOption":"3 normal","Datatype":"Text","Default":"3","Viewtype":"Picker","DynamicOptions":{"Parameters":"","Method":"PrioritiesGet","Object":"CustomObject"},"Mandatory":1,"Name":"PriorityID","Title":"Priority"},{"Options":{"":"-","Phone":"Phone","Notebook":"Notebook","PC":"PC"},"Datatype":"Text","Default":"","Viewtype":"Picker","Mandatory":0,"FreeTextKey":{"Product":"Product"},"Name":"TicketFreeText1","Title":"Product"},{"Max":10,"Datatype":"Numeric","Default":"","Viewtype":"Input","Mandatory":0,"Min":1,"Name":"TimeUnits","Title":"Time units  (work units)"}],"Actions":{"Parameters":{"Action":"Phone"},"Method":"ScreenActions","Object":"CustomObject"},"Title":"New Phone Ticket"}]}
+
+---
+
+Request:
+iPhone sends the information to create a new ticket
+
+http://localhost/otrs30/json.pl?User=cr&Password=123&Object=CustomObject&Method=ScreenActions&Data={"Action":"Phone","StateID":"4","CustomerID":"otrs","PriorityID":"3","SLAID":"1","CustomerUserLogin":"fer","TimeUnits":"","Subject":"Test for Mike","ServiceID":"1","Body":"Body","OwnerID":"3","QueueID":"3","PendingDate":""}
+
+With Free fields looks like:
+
+http://localhost/otrs30/json.pl?User=cr&Password=123&Object=CustomObject&Method=ScreenActions&Data={"Action":"Phone","StateID":"4","CustomerID":"otrs","PriorityID":"3","SLAID":"","CustomerUserLogin":"fer","TimeUnits":"","Subject":"Test","ServiceID":"","Body":"Body","OwnerID":"","QueueID":"3","TicketFreeText1":"Notebook","PendingDate":""}
+
+
+Response:
+OTRS create a ticket and sends the TicketID
+
+{"Result":"successful","Data":["199"]}
