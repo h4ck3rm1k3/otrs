@@ -3,7 +3,7 @@
 # Copyright (C) 2006 Stelios Maistros <smaistros aegean.gr>
 # Copyright (C) 2006 George Thomas <gthomas aegean.gr>
 # --
-# $Id: el.pm,v 1.90 2012/01/13 06:46:47 mg Exp $
+# $Id: el.pm,v 1.92 2012/02/02 16:11:46 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -16,13 +16,13 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.90 $) [1];
+$VERSION = qw($Revision: 1.92 $) [1];
 
 sub Data {
     my $Self = shift;
 
     # $$START$$
-    # Last translation file sync: 2012-01-13 07:44:09
+    # Last translation file sync: 2012-02-02 17:08:19
 
     # possible charsets
     $Self->{Charset} = ['utf-8', ];
@@ -685,19 +685,22 @@ sub Data {
         'Unwatch' => '',
         'Lock it to work on it' => '',
         'Unlock to give it back to the queue' => '',
-        'Shows the ticket history!' => 'Δείχνει την ιστορία του Δελτίου!',
-        'Print this ticket!' => 'Εκτύπωση Δελτίου!',
-        'Change the ticket priority!' => 'Αλλαγή της προτεραιότητας του δελτίου!',
+        'Show the ticket history' => '',
+        'Print this ticket' => '',
+        'Print this article' => '',
+        'Split this article' => '',
+        'Forward article via mail' => '',
+        'Change the ticket priority' => '',
         'Change the ticket free fields!' => 'Αλλάξτε τα ελέυθερα του δελτίου!',
-        'Link this ticket to an other objects!' => 'Σύνδεση δελτίου με ενα άλλο αντικείμενο!',
-        'Change the ticket owner!' => 'Αλλαγή του ιδιοκτήτη δελτίου!',
-        'Change the ticket customer!' => 'Αλλαγή του παραλήπτη δελτίου!',
-        'Add a note to this ticket!' => 'Προσθήκη σημείωσης στ δελτίο!',
-        'Merge this ticket!' => 'Ένωση του δελτίου!',
-        'Set this ticket to pending!' => 'Αλλαγή του δελτίου σε κατάσταση εκρεμότητας!',
-        'Close this ticket!' => 'Κλείσιμο δελτίου!',
+        'Link this ticket to other objects' => '',
+        'Change the owner for this ticket' => '',
+        'Change the  customer for this ticket' => '',
+        'Add a note to this ticket' => '',
+        'Merge into a different ticket' => '',
+        'Set this ticket to pending' => '',
+        'Close this ticket' => '',
         'Look into a ticket!' => 'Προβολη του δελτίου!',
-        'Delete this ticket!' => 'Διαγραφή Δελτίου!',
+        'Delete this ticket' => '',
         'Mark as Spam!' => 'Χαρακτηρισμός ως ανεπυθήμητο!',
         'My Queues' => 'Οι Ουρές μου',
         'Shown Tickets' => 'Δελτια που παρουσιάζονται',
@@ -2478,7 +2481,6 @@ sub Data {
         'Activates the ticket archive system to have a faster system by moving some tickets out of the daily scope. To search for these tickets, the archive flag has to be enabled in the ticket search.' =>
             '',
         'Activates time accounting.' => '',
-        'Add a note to this ticket' => '',
         'Adds a suffix with the actual year and month to the OTRS log file. A logfile for every month will be created.' =>
             '',
         'Adds customers email addresses to recipients in the ticket compose screen of the agent interface.' =>
@@ -2582,15 +2584,13 @@ sub Data {
         'Change queue!' => '',
         'Change the customer for this ticket' => '',
         'Change the free fields for this ticket' => '',
-        'Change the owner for this ticket' => '',
+        'Change the priority for this ticket' => '',
         'Change the responsible person for this ticket' => '',
-        'Change the ticket priority' => '',
         'Changes the owner of tickets to everyone (useful for ASP). Normally only agent with rw permissions in the queue of the ticket will be shown.' =>
             '',
         'Checkbox' => '',
         'Checks the SystemID in ticket number detection for follow-ups (use "No" if SystemID has been changed after using the system).' =>
             '',
-        'Close this ticket' => '',
         'Closed tickets of customer' => '',
         'Comment for new history entries in the customer interface.' => '',
         'Companies' => '',
@@ -2738,8 +2738,6 @@ sub Data {
         'Defines scheduler PID update time in seconds (floating point number).' =>
             '',
         'Defines scheduler sleep time in seconds after processing all available tasks (floating point number).' =>
-            '',
-        'Defines the =hHeight for the rich text editor component. Enter number (pixels) or percent value (relative).' =>
             '',
         'Defines the IP regular expression for accessing the local repository. You need to enable this to have access to your local repository and the package::RepositoryList is required on the remote host.' =>
             '',
@@ -2945,6 +2943,8 @@ sub Data {
         'Defines the fully qualified domain name of the system. This setting is used as a variable, OTRS_CONFIG_FQDN which is found in all forms of messaging used by the application, to build links to the tickets within your system.' =>
             '',
         'Defines the groups every customer user will be in (if CustomerGroupSupport is enabled and you don\'t want to manage every user for these groups).' =>
+            '',
+        'Defines the height for the rich text editor component. Enter number (pixels) or percent value (relative).' =>
             '',
         'Defines the height of the legend.' => '',
         'Defines the history comment for the close ticket screen action, which gets used for ticket history in the agent interface.' =>
@@ -3184,7 +3184,6 @@ sub Data {
         'Defines wich article type should be expanded when entering the overview. If nothing defined, latest article will be expanded.' =>
             '',
         'Delay time between autocomplete queries in milliseconds.' => '',
-        'Delete this ticket' => '',
         'Deletes a session if the session id is used with an invalid remote IP address.' =>
             '',
         'Deletes requested sessions if they have timed out.' => '',
@@ -3470,7 +3469,7 @@ sub Data {
             '',
         'If enabled, the first level of the main menu opens on mouse hover (instead of click only).' =>
             '',
-        'If set, this address is used as envelope from header in outgoing notifications. If no address is specified, the envelope from header is empty.' =>
+        'If set, this address is used as envelope sender header in outgoing notifications. If no address is specified, the envelope sender header is empty.' =>
             '',
         'If this regex matches, no message will be send by the autoresponder.' =>
             '',
@@ -3503,7 +3502,6 @@ sub Data {
         'Link queues to auto responses.' => '',
         'Link responses to queues.' => '',
         'Link roles to groups.' => '',
-        'Link this ticket to other objects' => '',
         'Links 2 tickets with a "Normal" type link.' => '',
         'Links 2 tickets with a "ParentChild" type link.' => '',
         'List of CSS files to always be loaded for the agent interface.' =>
@@ -3554,7 +3552,6 @@ sub Data {
             '',
         'Maximum size (in characters) of the customer information table in the ticket zoom view.' =>
             '',
-        'Merge into a different ticket' => '',
         'Module for To-selection in new ticket screen in the customer interface.' =>
             '',
         'Module to check customer permissions.' => '',
@@ -3666,7 +3663,6 @@ sub Data {
         'Picture-Upload' => '',
         'PostMaster Filters' => '',
         'PostMaster Mail Accounts' => '',
-        'Print this ticket' => '',
         'Protection against CSRF (Cross Site Request Forgery) exploits (for more info see http://en.wikipedia.org/wiki/Cross-site_request_forgery).' =>
             '',
         'Queue view' => '',
@@ -3744,7 +3740,6 @@ sub Data {
             '',
         'Set the maximum height (in pixels) of inline HTML articles in AgentTicketZoom.' =>
             '',
-        'Set this ticket to pending' => '',
         'Set this to yes if you trust in all your public and private pgp keys, even if they are not certified with a trusted signature.' =>
             '',
         'Sets if ticket owner must be selected by the agent.' => '',
@@ -4027,7 +4022,6 @@ sub Data {
             '',
         'Shows the message of the day on login screen of the agent interface.' =>
             '',
-        'Shows the ticket history' => '',
         'Shows the ticket history (reverse ordered) in the agent interface.' =>
             '',
         'Shows the ticket priority options in the close ticket screen of the agent interface.' =>
@@ -4222,6 +4216,7 @@ sub Data {
         'Add a new Signature.' => 'Προσθήκη Νέας Υπογραφής',
         'Add a new State.' => 'Προσθήκη Νέας Κατάστασης',
         'Add a new System Address.' => 'Προσθήκης νέας διεύθυνσης συστήματος',
+        'Add a note to this ticket!' => 'Προσθήκη σημείωσης στ δελτίο!',
         'Add note to ticket' => 'Προσθήκη σημείωσης στο δελτίο',
         'Added User "%s"' => 'Εγινε Πρόσθήκη χρήστη "%s"',
         'Admin-Area' => 'Περιοχή-Διαχειριστή',
@@ -4257,11 +4252,15 @@ sub Data {
         'Change owner of ticket' => 'Αλλαγή Ιδιοκτήτη Δελτίου',
         'Change priority of ticket' => 'Αλλαγή Προτεραιότητας Δελτίου',
         'Change responsible of ticket' => 'Αλλαγή υπεύθυνου δελτίου',
+        'Change the ticket customer!' => 'Αλλαγή του παραλήπτη δελτίου!',
+        'Change the ticket owner!' => 'Αλλαγή του ιδιοκτήτη δελτίου!',
+        'Change the ticket priority!' => 'Αλλαγή της προτεραιότητας του δελτίου!',
         'Change user <-> group settings' => 'Αλλαγή χρηστών <-> Ρυθμίσεις Ομάδων',
         'ChangeLog' => 'Καταγραφικό Αλλαγών',
         'Clear From' => 'Εκκαθάριση Απο',
         'Clear To' => 'Εκκαθαρίση σε',
         'Click here to report a bug!' => 'Κάνετε click εδώ για να αναφέρετε πρόβλημα στο σύστημα!',
+        'Close this ticket!' => 'Κλείσιμο δελτίου!',
         'Close ticket' => 'Κλείσιμο δελτίου',
         'Close type' => 'Τύπος κλεισίματος',
         'Close!' => 'Κλείσιμο! ',
@@ -4304,6 +4303,7 @@ department, ...).' =>
         'Default Charset' => 'Προεπιλεγμενο Σετ Χαρακτήρων',
         'Default Language' => 'Προεπιλογή γλώσσας',
         'Delete old database' => 'Διαγραφή παλαιας βάσης',
+        'Delete this ticket!' => 'Διαγραφή Δελτίου!',
         'Detail' => 'Λεπτομέρεια',
         'Diff' => 'Διαφορές',
         'Discard all changes and return to the compose screen' => 'Αγνοήστε τις αλλαγές και επιστρέψτε στην οθόνη εισαγωγής',
@@ -4358,6 +4358,7 @@ anyway.' =>
         'Keyword' => 'Λέξη Κλειδί',
         'Keywords' => 'Λέξεις Κλειδιά',
         'Last update' => 'Τελευταία Ενημέρωση',
+        'Link this ticket to an other objects!' => 'Σύνδεση δελτίου με ενα άλλο αντικείμενο!',
         'Load' => 'Φόρτωμα',
         'Load Settings' => 'Φόρτωμα Ρυθμίσεων',
         'Lock it to work on it!' => 'Κλειδώστε το ώστε να το επεξεργαστείτε!',
@@ -4368,6 +4369,7 @@ anyway.' =>
         'Mail Management' => 'Διαχείριση μηνυμάτων',
         'Mailbox' => 'Γραμματοκιβωτιο',
         'Match' => 'Ακριβώς ώς',
+        'Merge this ticket!' => 'Ένωση του δελτίου!',
         'Message for new Owner' => 'Μήνυμα για τον νεό ιδιοκτήτη',
         'Message sent to' => 'Το μήνυμα εστάλει προς',
         'Misc' => 'Διάφορα',
@@ -4432,6 +4434,7 @@ anyway.' =>
         'Permissions to change the ticket owner in this group/queue.' => 'Δικαιώματα για αλλαγή ιδιοκτήτη δελτίων σε αυτή την ομάδα / ουρά.',
         'PhoneView' => 'Ουρές Τηλεφώνου',
         'Please contact your admin' => 'Παρακαλώ επικοινωνήστε με τον διαχειριστή σας',
+        'Print this ticket!' => 'Εκτύπωση Δελτίου!',
         'Queue <-> Auto Responses Management' => 'Ουρές <-> Διαχείριση Αυτόματων Απαντήσεων',
         'Queue ID' => 'Ουρά ID',
         'Queue Management' => 'Διαχείριση Ουρών',
@@ -4471,7 +4474,9 @@ anyway.' =>
         'Send no notifications' => 'Μη Αποστολή Ενημερώσεων',
         'Sessions' => 'Συνδέσεις',
         'Set customer user and customer id of a ticket' => 'Ορίσμος του χρηστη πελατη και του id του πελατη σε ενα δελτίο',
+        'Set this ticket to pending!' => 'Αλλαγή του δελτίου σε κατάσταση εκρεμότητας!',
         'Show' => 'Προβολή',
+        'Shows the ticket history!' => 'Δείχνει την ιστορία του Δελτίου!',
         'Site' => 'Site',
         'Solution' => 'Επίλυση',
         'Sort by' => 'Ταξινόμηση Κατα',

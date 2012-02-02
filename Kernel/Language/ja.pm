@@ -4,7 +4,7 @@
 # Copyright (C) 2010-2011 Kaz Kamimura <kamypus at yahoo.co.jp>
 # Copyright (C) 2011/12/08 Kaoru Hayama TIS Inc.
 # --
-# $Id: ja.pm,v 1.26 2012/01/13 06:46:48 mg Exp $
+# $Id: ja.pm,v 1.28 2012/02/02 16:11:48 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -16,13 +16,13 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.26 $) [1];
+$VERSION = qw($Revision: 1.28 $) [1];
 
 sub Data {
     my $Self = shift;
 
     # $$START$$
-    # Last translation file sync: 2012-01-13 07:44:36
+    # Last translation file sync: 2012-02-02 17:08:32
 
     # possible charsets
     $Self->{Charset} = ['utf-8', ];
@@ -684,19 +684,22 @@ sub Data {
         'Unwatch' => '監視解除',
         'Lock it to work on it' => '',
         'Unlock to give it back to the queue' => '',
-        'Shows the ticket history!' => 'チケットの履歴を閲覧する',
-        'Print this ticket!' => 'このチケットを印刷する',
-        'Change the ticket priority!' => 'チケット優先度を変更する',
+        'Show the ticket history' => '',
+        'Print this ticket' => '',
+        'Print this article' => '',
+        'Split this article' => '',
+        'Forward article via mail' => '',
+        'Change the ticket priority' => '',
         'Change the ticket free fields!' => 'チケットの自由入力領域を変更する',
-        'Link this ticket to an other objects!' => 'このチケットを他の対象と結合する',
-        'Change the ticket owner!' => 'チケットの所有者を変更する',
-        'Change the ticket customer!' => 'チケットの顧客を変更する',
-        'Add a note to this ticket!' => 'このチケットに注釈を追加する',
-        'Merge this ticket!' => 'このチケットを結合する',
-        'Set this ticket to pending!' => 'このチケットを保留する',
-        'Close this ticket!' => 'このチケットを完了する',
+        'Link this ticket to other objects' => '',
+        'Change the owner for this ticket' => '',
+        'Change the  customer for this ticket' => '',
+        'Add a note to this ticket' => '',
+        'Merge into a different ticket' => '',
+        'Set this ticket to pending' => '',
+        'Close this ticket' => '',
         'Look into a ticket!' => 'チケットを閲覧する',
-        'Delete this ticket!' => 'このチケットを削除する',
+        'Delete this ticket' => '',
         'Mark as Spam!' => '迷惑メールにする',
         'My Queues' => '担当キュー',
         'Shown Tickets' => 'チケットを表示',
@@ -2470,7 +2473,6 @@ sub Data {
         'Activates the ticket archive system to have a faster system by moving some tickets out of the daily scope. To search for these tickets, the archive flag has to be enabled in the ticket search.' =>
             'チケット・アーカイブ・システムを有効にすることで、チケットの一部をデイリーの範囲から外し、システムのスピードを速くします。これらのチケットを検索する際には、チケット検索においてアーカイブ・フラッグを有効にする必要があります。',
         'Activates time accounting.' => 'タイム・アカウンティングを有効にします。',
-        'Add a note to this ticket' => '',
         'Adds a suffix with the actual year and month to the OTRS log file. A logfile for every month will be created.' =>
             'OTRSログ・ファイルに対して、実際の年と月による接尾辞を追加します。毎月のログファイルが作成されます。',
         'Adds customers email addresses to recipients in the ticket compose screen of the agent interface.' =>
@@ -2574,15 +2576,13 @@ sub Data {
         'Change queue!' => '',
         'Change the customer for this ticket' => '',
         'Change the free fields for this ticket' => '',
-        'Change the owner for this ticket' => '',
+        'Change the priority for this ticket' => '',
         'Change the responsible person for this ticket' => '',
-        'Change the ticket priority' => '',
         'Changes the owner of tickets to everyone (useful for ASP). Normally only agent with rw permissions in the queue of the ticket will be shown.' =>
             '全員に対して、チケット所有者の変更を行います（ASPにおいて便利です）。通常は、チケットのキューにおいてrw許可を持つ担当者のみが、表示されます。',
         'Checkbox' => '',
         'Checks the SystemID in ticket number detection for follow-ups (use "No" if SystemID has been changed after using the system).' =>
             'チケット番号ディテクションの中のシステムIDを、フォロー・アップのために確認します（もし、システムIDがシステム利用後に変更されていた場合は“No”を使用してください）。',
-        'Close this ticket' => '',
         'Closed tickets of customer' => '',
         'Comment for new history entries in the customer interface.' => '顧客インタフェースの新規履歴エントリーのためのコメントです。',
         'Companies' => '企業',
@@ -2731,8 +2731,6 @@ sub Data {
             '',
         'Defines scheduler sleep time in seconds after processing all available tasks (floating point number).' =>
             '',
-        'Defines the =hHeight for the rich text editor component. Enter number (pixels) or percent value (relative).' =>
-            'リッチテキスト・エディター・コンポーネントのための=hHeighｔを定義します。数字（ピクセル）またはパーセント値（相対的）を入力します。',
         'Defines the IP regular expression for accessing the local repository. You need to enable this to have access to your local repository and the package::RepositoryList is required on the remote host.' =>
             'ローカル・レポジトリにアクセスするための、IPの正規表現を定義します。ローカル・レポジトリにアクセスするために、これを有効にする必要があり、またpackage::RepositoryListはリモート・ホストにおいて必要とされます。',
         'Defines the URL CSS path.' => 'URL・CSパスを定義します。',
@@ -2938,6 +2936,8 @@ sub Data {
             'フルに認定されたシステムのドメイン名を定義します。この設定は変数OTRS_CONFIG_FQDNとして使用され、アプリケーションによって使用されるメッセージングの全てのフォームに存在し、ご利用のシステム内のチケットへのリンクを作成することとなります。',
         'Defines the groups every customer user will be in (if CustomerGroupSupport is enabled and you don\'t want to manage every user for these groups).' =>
             '全顧客が所属するグループを定義します（CustomerGroupSupportが有効であり、全ユーザをこれらのグループで管理したくない場合）。',
+        'Defines the height for the rich text editor component. Enter number (pixels) or percent value (relative).' =>
+            '',
         'Defines the height of the legend.' => '凡例の高さを定義します。',
         'Defines the history comment for the close ticket screen action, which gets used for ticket history in the agent interface.' =>
             '担当者インタフェースでチケット履歴のために使用される、クローズ・チケット画面アクションの履歴コメントを定義します。',
@@ -3176,7 +3176,6 @@ sub Data {
         'Defines wich article type should be expanded when entering the overview. If nothing defined, latest article will be expanded.' =>
             '',
         'Delay time between autocomplete queries in milliseconds.' => 'オートコンプリート・クエリの間のディレイ・タイムをミリ秒単位で指定します。',
-        'Delete this ticket' => '',
         'Deletes a session if the session id is used with an invalid remote IP address.' =>
             'もしセッションIDが、無効なリモートIPアドレスと共に使用されている場合、セッションを削除します。',
         'Deletes requested sessions if they have timed out.' => 'リクエストされたセッションがタイムアウトしている場合に削除します。',
@@ -3464,8 +3463,8 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
             '',
         'If enabled, the first level of the main menu opens on mouse hover (instead of click only).' =>
             '有効にした場合、メイン・メニューの1つめのレベルのものが、マウスを乗せるだけで開きます（1回クリックの代わりに）。',
-        'If set, this address is used as envelope from header in outgoing notifications. If no address is specified, the envelope from header is empty.' =>
-            '設定されると、送信される通知においてヘッダーからエンベロープとして使用されます。もし、アドレスが特定されていない場合、ヘッダーからのエンベロープは空になります。',
+        'If set, this address is used as envelope sender header in outgoing notifications. If no address is specified, the envelope sender header is empty.' =>
+            '',
         'If this regex matches, no message will be send by the autoresponder.' =>
             'ここで指定した文言（正規表現）にマッチした場合、オート・レスポンダーによりメッセージは送られません。',
         'If you want to use a mirror database for agent ticket fulltext search or to generate stats, specify the DSN to this database.' =>
@@ -3497,7 +3496,6 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
         'Link queues to auto responses.' => 'キューを自動応答へ連結',
         'Link responses to queues.' => '応答をキューへ連結',
         'Link roles to groups.' => '役割をグループへ連結',
-        'Link this ticket to other objects' => '',
         'Links 2 tickets with a "Normal" type link.' => '“ノーマル”タイプのリンクを持つチケットへのリンクです。.',
         'Links 2 tickets with a "ParentChild" type link.' => '“親子”タイプのリンクを持つチケットへのリンクです。',
         'List of CSS files to always be loaded for the agent interface.' =>
@@ -3548,7 +3546,6 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
             'キュー・ビューにおける、顧客情報テーブル（電話およびEメール）の最大サイズ（文字）です。',
         'Maximum size (in characters) of the customer information table in the ticket zoom view.' =>
             'チケット･ズーム・ビューにおける、顧客情報テーブル（電話およびEメール）の最大サイズ（文字）です。',
-        'Merge into a different ticket' => '',
         'Module for To-selection in new ticket screen in the customer interface.' =>
             '顧客インタフェースで、新規チケット画面におけるTo-selectionのモジュールです。',
         'Module to check customer permissions.' => '顧客の許可をチェックするためのモジュールです。',
@@ -3661,7 +3658,6 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
         'Picture-Upload' => '',
         'PostMaster Filters' => 'ポストマスター・フィルタ',
         'PostMaster Mail Accounts' => 'メールアカウント',
-        'Print this ticket' => '',
         'Protection against CSRF (Cross Site Request Forgery) exploits (for more info see http://en.wikipedia.org/wiki/Cross-site_request_forgery).' =>
             'CSRF (Cross Site Request Forgery)攻撃に対するプロテクションです（さらに詳細はhttp://en.wikipedia.org/wiki/Cross-site_request_forgeryを参照ください）。',
         'Queue view' => 'キュー一覧',
@@ -3739,7 +3735,6 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
             'AgentTicketZoomで、インラインHTML項目のデフォルトの高さ（pixel）を設定します。',
         'Set the maximum height (in pixels) of inline HTML articles in AgentTicketZoom.' =>
             'AgentTicketZoomで、インラインHTML項目の最大高さ（pixel）を設定します。',
-        'Set this ticket to pending' => '',
         'Set this to yes if you trust in all your public and private pgp keys, even if they are not certified with a trusted signature.' =>
             'ご利用の全公開/秘密PGP鍵について、信頼される署名によって認証されていなくても信頼する場合、これをyesに設定してください。',
         'Sets if ticket owner must be selected by the agent.' => 'チケットの所有者が担当者によって必ず選択される必要があるかどうかを設定します。',
@@ -4022,7 +4017,6 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
             '担当者ダッシュボードに、その日のメッセージ（MOTD）を表示します。“Group”は、プラグインへのアクセスを制限するために使用されます（Group: admin;group1;group2;)。“Default”は、プラグインがデフォルトで有効になっているか、またはそれをユーザが手動で有効にする必要があるか、を示しています。',
         'Shows the message of the day on login screen of the agent interface.' =>
             '担当者インタフェースのログイン画面において、その日のメッセージを表示します。',
-        'Shows the ticket history' => '',
         'Shows the ticket history (reverse ordered) in the agent interface.' =>
             '担当者インタフェースで、チケット履歴（逆の順番）を表示します。',
         'Shows the ticket priority options in the close ticket screen of the agent interface.' =>
@@ -4235,6 +4229,7 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
         'Add a new salutation' => '新規挨拶を追加',
         'Add a new state transition for ITSM::ChangeManagement::Change::State' =>
             'ITSMの状態遷移を追加::変更管理::変更::状態',
+        'Add a note to this ticket!' => 'このチケットに注釈を追加する',
         'Add category' => 'カテゴリーを追加',
         'Add language' => '言語を追加',
         'Add new attachment' => '新規添付ファイル追加',
@@ -4385,6 +4380,9 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
         'Change owner of ticket' => 'チケットの所有者を変更',
         'Change priority of ticket' => 'チケットの優先度を変更',
         'Change responsible of ticket' => 'チケットの応答者を変更',
+        'Change the ticket customer!' => 'チケットの顧客を変更する',
+        'Change the ticket owner!' => 'チケットの所有者を変更する',
+        'Change the ticket priority!' => 'チケット優先度を変更する',
         'Change user <-> group settings' => 'ユーザー <-> グループ設定を変更',
         'ChangeLog' => 'ChangeLog',
         'Charset' => '文字セット',
@@ -4398,6 +4396,7 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
         'Clear To' => 'リセット: ',
         'Click here to report a bug!' => 'バグ報告を送信！',
         'Close Times' => '完了時間',
+        'Close this ticket!' => 'このチケットを完了する',
         'Close ticket' => '完了チケット',
         'Close type' => '完了タイプ',
         'Close!' => '完了！',
@@ -4484,6 +4483,8 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
             '担当者インタフェースにおける追加ITSMフィールド画面で、チケット・ロックが必要とされるかどうかを定義します（もしチケットが未だロックされていない場合、チケットはロックされ、現在の担当者が自動的にその所有者として設定されます）。',
         'Defines if a ticket lock is required in the decision screen of the agent interface (if the ticket isn\'t locked yet, the ticket gets locked and the current agent will be set automatically as its owner).' =>
             '担当者インタフェースのクローズ・チケット画面で、チケット・ロックが必要とされるかどうかを定義します（チケットがまだロックされていない場合、チケットはロックされ現在の担当者が自動的に所有者に設定されます）。',
+        'Defines the =hHeight for the rich text editor component. Enter number (pixels) or percent value (relative).' =>
+            'リッチテキスト・エディター・コンポーネントのための=hHeighｔを定義します。数字（ピクセル）またはパーセント値（相対的）を入力します。',
         'Defines the default body of a note in the additional ITSM field screen of the agent interface.' =>
             '担当者インタフェースにおける追加ITSMフィールド画面で、注釈のデフォルトの本文を定義します。',
         'Defines the default body of a note in the decision screen of the agent interface.' =>
@@ -4798,6 +4799,7 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
             'Apacheウェブサーバのチェック項目の定義',
         'Definition of the webserver checks for the IIS webserver.' => 'IISウェブサーバのチェック項目の定義',
         'Delete old database' => '古いデータベースの削除',
+        'Delete this ticket!' => 'このチケットを削除する',
         'Deployment State' => '開発状態',
         'Detail' => '詳細',
         'Determines if the statatistics module may generate ticket lists.' =>
@@ -4905,6 +4907,8 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
             'もし注釈が担当者によって追加された場合、担当者インタフェースにおける決定画面で、チケットの状態を設定します。',
         'If configured, all emails sent by the application will contain an X-Header with this organization or company name.' =>
             '設定した場合、アプリケーションによって送信される全Eメールに、組織または会社名に関するXヘッダーが含まれます。',
+        'If set, this address is used as envelope from header in outgoing notifications. If no address is specified, the envelope from header is empty.' =>
+            '設定されると、送信される通知においてヘッダーからエンベロープとして使用されます。もし、アドレスが特定されていない場合、ヘッダーからのエンベロープは空になります。',
         'If you need the sum of every column select yes.' => '全ての列の合計が必要な場合',
         'If you need the sum of every row select yes' => '全ての行の合計が必要な場合',
         'If you use RegExp, you also can use the matched value in () as [***] in \'Set\'.' =>
@@ -4956,6 +4960,7 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
         'Link Table' => '連結一覧表',
         'Link an already opened incident ticket with the affected CI. This is only possible when a subsequent system monitoring email arrives.' =>
             '影響を受けるCIで既にオープンしているインシデントチケットにリンクします。その後のシステム監視のメールが届いたときにのみ可能です。',
+        'Link this ticket to an other objects!' => 'このチケットを他の対象と結合する',
         'Link to Parent' => '親への連結',
         'LinkType' => '連結タイプ',
         'Linked as' => '連結されている: ',
@@ -4978,6 +4983,7 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
         'Max. shown Tickets a page' => '1ページに表示するチケットの最大数',
         'Maximum number of one element' => '最大番号の１つの要素',
         'Media' => 'メディア',
+        'Merge this ticket!' => 'このチケットを結合する',
         'Message for new Owner' => 'メッセージの新規所有者',
         'Message sent to' => 'メッセージを送信: ',
         'Minimum Time Between Incidents (minutes)' => 'インシデント間の最短時間(分)',
@@ -5115,6 +5121,7 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
         'Please contact your admin' => '管理者に連絡してください。',
         'Please enter subject.' => '表題を入力してください。',
         'Please fill out this form to recieve login credentials.' => 'ログイン情報を受信するには必要事項を記入してください。',
+        'Print this ticket!' => 'このチケットを印刷する',
         'Prio' => 'Prio',
         'Priority allocation' => '優先度の割り当て',
         'Problem: (public)' => '問題: (公開)',
@@ -5212,6 +5219,7 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
         'Set customer user and customer id of a ticket' => '顧客ユーザーとチケットの顧客IDを設定',
         'Set the incident state of a CI automatically when a system monitoring email arrives.' =>
             'システム監視のメールが届いたときに自動的にCIのインシデントステータスを設定します。',
+        'Set this ticket to pending!' => 'このチケットを保留する',
         'Sets the default charset for the web interface to use (should represent the charset used to create the database or, in some cases, the database management system being used). "utf-8" is a good choice for environments expecting many charsets. You can specify another charset here (i.e. "iso-8859-1"). Please be sure that you will not be receiving foreign emails, or text, otherwise this could lead to problems.' =>
             'ウェブ・インタフェースにおいて使用されるデフォルトの文字セットを設定します（データベースを作成するために使用される文字セット、またある場合においてはデータベース管理システムで使用される文字セットを表すものにしてください）。“utf-8”は、多くの文字セットが含まれそうな環境において良い選択です。ここで、別の文字セットを設定することも可能です（例："iso-8859-1）。また、外国のEメールまたはテキストを受け取らないことを確認してください。問題につならがる可能性があります。',
         'Sets the number of lines that are displayed in the preview of messages (e.g. for tickets in the QueueView).' =>
@@ -5237,6 +5245,7 @@ SystemAddressに関して"<Realname> <<Email>>"は受信者の名前およびE�
             '担当者インタフェースにおける追加ITSMフィールド画面で、当該注釈について通知されるべき担当者を決定するため、可能性ある全ての担当者（キュー/チケットに対する注釈許可を持っている担当者）の全リストを表示させます。',
         'Shows a list of all the possible agents (all agents with note permissions on the queue/ticket) to determine who should be informed about this note, in the decision screen of the agent interface.' =>
             '担当者インタフェースにおける決定画面で、当該注釈に関する通知を受けるべき担当者を決定するため、可能性ある全ての担当者（キュー/チケットに注釈の許可を保持する全ての担当者）のリストを表示させます。',
+        'Shows the ticket history!' => 'チケットの履歴を閲覧する',
         'Shows the ticket priority options in the additional ITSM field screen of the agent interface.' =>
             '担当者インタフェースにおける追加ITSMフィールド画面で、チケット優先度オプションを表示します。',
         'Shows the ticket priority options in the decision screen of the agent interface.' =>

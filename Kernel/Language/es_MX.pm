@@ -2,7 +2,7 @@
 # Kernel/Language/es_MX.pm - provides Spanish language translation for Mexico
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: es_MX.pm,v 1.55 2012/01/13 06:46:49 mg Exp $
+# $Id: es_MX.pm,v 1.57 2012/02/02 16:11:48 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,13 +15,13 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.55 $) [1];
+$VERSION = qw($Revision: 1.57 $) [1];
 
 sub Data {
     my $Self = shift;
 
     # $$START$$
-    # Last translation file sync: 2012-01-13 07:44:18
+    # Last translation file sync: 2012-02-02 17:08:21
 
     # possible charsets
     $Self->{Charset} = ['utf-8', ];
@@ -683,19 +683,22 @@ sub Data {
         'Unwatch' => 'Dejar de monitorear',
         'Lock it to work on it' => '',
         'Unlock to give it back to the queue' => 'Desbloquearlo para devolverlo a la fila',
-        'Shows the ticket history!' => 'Mostrar la historia del ticket',
-        'Print this ticket!' => 'Imprimir este ticket',
-        'Change the ticket priority!' => 'Cambiar la prioridad del ticket',
+        'Show the ticket history' => '',
+        'Print this ticket' => '',
+        'Print this article' => '',
+        'Split this article' => '',
+        'Forward article via mail' => '',
+        'Change the ticket priority' => '',
         'Change the ticket free fields!' => 'Cambiar los campos libres del ticket',
-        'Link this ticket to an other objects!' => 'Enlazar este ticket a otros objetos',
-        'Change the ticket owner!' => 'Cambiar el propietario del ticket',
-        'Change the ticket customer!' => 'Cambiar el cliente del ticket',
-        'Add a note to this ticket!' => 'Añadir una nota a este ticket',
-        'Merge this ticket!' => 'Fusionar este ticket',
-        'Set this ticket to pending!' => 'Poner este ticket como pendiente',
-        'Close this ticket!' => 'Cerrar este ticket',
+        'Link this ticket to other objects' => '',
+        'Change the owner for this ticket' => '',
+        'Change the  customer for this ticket' => '',
+        'Add a note to this ticket' => '',
+        'Merge into a different ticket' => '',
+        'Set this ticket to pending' => '',
+        'Close this ticket' => '',
         'Look into a ticket!' => 'Revisar un ticket',
-        'Delete this ticket!' => 'Eliminar este ticket',
+        'Delete this ticket' => '',
         'Mark as Spam!' => 'Marcar como correo no deseado',
         'My Queues' => 'Mis Filas',
         'Shown Tickets' => 'Tickets Mostrados',
@@ -2469,7 +2472,6 @@ sub Data {
         'Activates the ticket archive system to have a faster system by moving some tickets out of the daily scope. To search for these tickets, the archive flag has to be enabled in the ticket search.' =>
             'Activa el sistema de archivo de tickets para tener un sistema más rápido, al mover algunos tickets fuera del ámbito diario. Para buscar estos tickets, la bandera de archivo tiene que estar habilitada en la ventana de búsqueda.',
         'Activates time accounting.' => 'Activa la contatibilidad de tiempo.',
-        'Add a note to this ticket' => '',
         'Adds a suffix with the actual year and month to the OTRS log file. A logfile for every month will be created.' =>
             'Añade un sufijo con el año y mes actuales al archivo log de OTRS. Se generará un archivo log distinto para cada mes.',
         'Adds customers email addresses to recipients in the ticket compose screen of the agent interface.' =>
@@ -2573,15 +2575,13 @@ sub Data {
         'Change queue!' => 'Cambiar fila',
         'Change the customer for this ticket' => '',
         'Change the free fields for this ticket' => '',
-        'Change the owner for this ticket' => '',
+        'Change the priority for this ticket' => '',
         'Change the responsible person for this ticket' => '',
-        'Change the ticket priority' => '',
         'Changes the owner of tickets to everyone (useful for ASP). Normally only agent with rw permissions in the queue of the ticket will be shown.' =>
             'Cambia el propietario de los tickets a todos (útil para ASP). Normalmente sólo se mostrarán los agentes con permiso rw en la fila del ticket.',
         'Checkbox' => '',
         'Checks the SystemID in ticket number detection for follow-ups (use "No" if SystemID has been changed after using the system).' =>
             'Verifica el ID del sistema en la detección de números de tickets para los seguimientos (use "No" si el ID del sistema se cambió después de empezar a utilizar OTRS).',
-        'Close this ticket' => '',
         'Closed tickets of customer' => '',
         'Comment for new history entries in the customer interface.' => 'Comentario para entradas nuevas en la historia, en la interfaz del cliente.',
         'Companies' => 'Compañías',
@@ -2730,8 +2730,6 @@ sub Data {
             '',
         'Defines scheduler sleep time in seconds after processing all available tasks (floating point number).' =>
             '',
-        'Defines the =hHeight for the rich text editor component. Enter number (pixels) or percent value (relative).' =>
-            'Define la altura del editor de texto enriquecido. Proporcione un número (pixeles) o un porcentaje (relativo).',
         'Defines the IP regular expression for accessing the local repository. You need to enable this to have access to your local repository and the package::RepositoryList is required on the remote host.' =>
             'Define la expresión regular IP para acceder al repositorio local. Es necesario que esto se habilite para tener acceso al repositorio local y el paquete::ListaRepositorio se requiere en el host remoto.',
         'Defines the URL CSS path.' => 'Define la URL de la ruta CSS.',
@@ -2937,6 +2935,8 @@ sub Data {
             'Define el nombre del dominio totalmente calificado del sistema. Esta configuración es usada como la variable OTRS_CONFIG_FQDN, misma que se encuentra en todos los tipos de mensajes usados en la aplicación, para construir vínculos a los tickets del sistema.',
         'Defines the groups every customer user will be in (if CustomerGroupSupport is enabled and you don\'t want to manage every user for these groups).' =>
             'Define los grupos en los que estarán todos los clientes (si CustomerGroupSupport está habilitado y se desea evitar el gestionar cada usuario para estos grupos).',
+        'Defines the height for the rich text editor component. Enter number (pixels) or percent value (relative).' =>
+            '',
         'Defines the height of the legend.' => 'Define la longitur de la leyenda.',
         'Defines the history comment for the close ticket screen action, which gets used for ticket history in the agent interface.' =>
             'Define el comentario histórico para la acción de la ventana de cerrar un ticket. Dicho comentario es usado para la historia del ticket, en la interfaz del agente.',
@@ -3175,7 +3175,6 @@ sub Data {
         'Defines wich article type should be expanded when entering the overview. If nothing defined, latest article will be expanded.' =>
             '',
         'Delay time between autocomplete queries in milliseconds.' => '',
-        'Delete this ticket' => '',
         'Deletes a session if the session id is used with an invalid remote IP address.' =>
             'Elimina la sesión si el identificador de la misma está siendo usado con una dirección IP remota inválida.',
         'Deletes requested sessions if they have timed out.' => 'Elimina las sesiones solicitadas, si ya expiraron.',
@@ -3461,8 +3460,8 @@ sub Data {
             '',
         'If enabled, the first level of the main menu opens on mouse hover (instead of click only).' =>
             'Si se habilita, el primer nivel del menú principal se abre al posicionar el cursor sobre él (en lugar de hacer click).',
-        'If set, this address is used as envelope from header in outgoing notifications. If no address is specified, the envelope from header is empty.' =>
-            'Si se define, esta dirección se usa como sobre para el encabezado de las notificaciones salientes.',
+        'If set, this address is used as envelope sender header in outgoing notifications. If no address is specified, the envelope sender header is empty.' =>
+            '',
         'If this regex matches, no message will be send by the autoresponder.' =>
             'Si esta expresión regular coincide, ningún mensaje se mandará por el contestador automático.',
         'If you want to use a mirror database for agent ticket fulltext search or to generate stats, specify the DSN to this database.' =>
@@ -3494,7 +3493,6 @@ sub Data {
         'Link queues to auto responses.' => 'Vincular filas con auto-respuestas.',
         'Link responses to queues.' => 'Vincular respuestas con filas.',
         'Link roles to groups.' => 'Vincular roles con grupos.',
-        'Link this ticket to other objects' => '',
         'Links 2 tickets with a "Normal" type link.' => 'Vincular 2 tickets con un vículo de tipo "Normal".',
         'Links 2 tickets with a "ParentChild" type link.' => 'Vincular 2 tickets con un vículo de tipo "PadreHijo".',
         'List of CSS files to always be loaded for the agent interface.' =>
@@ -3545,7 +3543,6 @@ sub Data {
             'Número máximo (en caracteres) de la tabla de información del cliente en la vista de filas.',
         'Maximum size (in characters) of the customer information table in the ticket zoom view.' =>
             'Número máximo (en caracteres) de la tabla de información del cliente en la vista detallada del ticket.',
-        'Merge into a different ticket' => '',
         'Module for To-selection in new ticket screen in the customer interface.' =>
             'Módulo para la selección del destinatario en la ventana de ticket nuevo, en la interfaz del cliente.',
         'Module to check customer permissions.' => 'Módulo para verificar los permisos del cliente.',
@@ -3657,7 +3654,6 @@ sub Data {
         'Picture-Upload' => '',
         'PostMaster Filters' => 'Filtros del Administrador de Correos',
         'PostMaster Mail Accounts' => 'Cuentas del Administrador de Correos',
-        'Print this ticket' => '',
         'Protection against CSRF (Cross Site Request Forgery) exploits (for more info see http://en.wikipedia.org/wiki/Cross-site_request_forgery).' =>
             'Protección contra CSRF (Solicitud de Falsificación de Sitios Cruzada). Consulte http://en.wikipedia.org/wiki/Cross-site_request_forgery para mayor información.',
         'Queue view' => 'Vista de Filas',
@@ -3735,7 +3731,6 @@ sub Data {
             'Define la altura por defecto (en pixeles) de artículos HTML en línea en la vista detallada del ticket de la interfaz del agente.',
         'Set the maximum height (in pixels) of inline HTML articles in AgentTicketZoom.' =>
             'Define la altura máxima (en pixeles) de artículos HTML en línea en la vista detallada del ticket de la interfaz del agente.',
-        'Set this ticket to pending' => '',
         'Set this to yes if you trust in all your public and private pgp keys, even if they are not certified with a trusted signature.' =>
             '',
         'Sets if ticket owner must be selected by the agent.' => 'Define si el propietario del ticket tiene que ser seleccionado por el agente.',
@@ -4018,7 +4013,6 @@ sub Data {
             'Muestra el mensaje del día en el panel principal del agente. "Group" se usa para restringir el acceso al plugin (por ejemplo: Group: admin;grupo1;grupo2;). "Default" indica si el plugin está habilitado por defecto o si el usuario tiene que activarlo manualmente.',
         'Shows the message of the day on login screen of the agent interface.' =>
             'Muestra el mensaje del día en la ventana de inicio de sesión de la interfaz del agente.',
-        'Shows the ticket history' => '',
         'Shows the ticket history (reverse ordered) in the agent interface.' =>
             'Muestra la historia del ticket (ordenada inversamente) en la interfaz del agente.',
         'Shows the ticket priority options in the close ticket screen of the agent interface.' =>
@@ -4225,6 +4219,7 @@ sub Data {
         'Add a new State.' => 'Añadir un nuevo Estado',
         'Add a new System Address.' => 'Añadir una Dirección de Sistema',
         'Add a new Type.' => 'Añadir un nuevo Tipo',
+        'Add a note to this ticket!' => 'Añadir una nota a este ticket',
         'Add note to ticket' => 'Añadir nota al ticket',
         'Added User "%s"' => 'Usuario "%s añadido"',
         'Adds the one time vacation days for the calendar number 1. Please use single digit pattern for numbers from 1 to 9 (instead of 01 - 09).' =>
@@ -4341,6 +4336,9 @@ sub Data {
         'Change owner of ticket' => 'Cambiar el propietario del ticket',
         'Change priority of ticket' => 'Cambiar la prioridad del ticket',
         'Change responsible of ticket' => 'Cambiar responsable del ticket',
+        'Change the ticket customer!' => 'Cambiar el cliente del ticket',
+        'Change the ticket owner!' => 'Cambiar el propietario del ticket',
+        'Change the ticket priority!' => 'Cambiar la prioridad del ticket',
         'Change the ticket responsible!' => 'Cambiar el responsable del ticket',
         'Change users <-> roles settings' => 'Modificar Configuración de Usuarios <-> Roles',
         'ChangeLog' => 'Log de Cambios',
@@ -4350,6 +4348,7 @@ sub Data {
         'Clear To' => 'Vaciar Para',
         'Click here to report a bug!' => 'Haga click aquí para informar de un error',
         'Close Times' => 'Tiempos de Cierre',
+        'Close this ticket!' => 'Cerrar este ticket',
         'Close ticket' => 'Cerrar el ticket',
         'Close type' => 'Tipo de cierre',
         'Close!' => 'Cerrar',
@@ -4406,6 +4405,8 @@ sub Data {
         'Default' => 'Por Defecto',
         'Default Charset' => 'Juego de caracteres por defecto',
         'Default Language' => 'Lenguaje por defecto',
+        'Defines the =hHeight for the rich text editor component. Enter number (pixels) or percent value (relative).' =>
+            'Define la altura del editor de texto enriquecido. Proporcione un número (pixeles) o un porcentaje (relativo).',
         'Defines the default selection of the free key field number 1 for articles (if more than one option is provided).' =>
             'Define el valor seleccionado por defecto en el campo de llave libre número 1 para artículos (si es que hay más de una opción).',
         'Defines the default selection of the free key field number 1 for tickets (if more than one option is provided).' =>
@@ -4681,6 +4682,7 @@ sub Data {
             'Define si el campo libre de tiempo número 6 es opcional o no.',
         'Delay time between autocomplete queries.' => 'Tiempo de retrazo entre consultas de autocompletado.',
         'Delete old database' => 'Eliminar BD antigua',
+        'Delete this ticket!' => 'Eliminar este ticket',
         'Detail' => 'Detalle',
         'Determines if the statatistics module may generate ticket lists.' =>
             'Determina si el módulo de estadísticas debe generar listas de tickets.',
@@ -4758,6 +4760,8 @@ sub Data {
             'Si se configura, todos los correos electrónicos enviados por la aplicación contendrán una Cabecera-X con el nombre de compañía que se especique aquí.',
         'If nothing is selected, then there are no permissions in this group (tickets will not be available for the user).' =>
             'Si no se selecciona algo, no habrá permisos en este grupo (los tickets no estarán disponibles para el cliente).',
+        'If set, this address is used as envelope from header in outgoing notifications. If no address is specified, the envelope from header is empty.' =>
+            'Si se define, esta dirección se usa como sobre para el encabezado de las notificaciones salientes.',
         'If you need the sum of every column select yes.' => 'Si necesita las suma de cada columna seleccione Sí',
         'If you need the sum of every row select yes' => 'Si necesita la suma de cada fila seleccione Sí',
         'If you use RegExp, you also can use the matched value in () as [***] in \'Set\'.' =>
@@ -4781,6 +4785,7 @@ sub Data {
         'Keywords' => 'Palabras clave',
         'Last update' => 'Ultima Actualización',
         'Lastname{CustomerUser}' => 'Apellido',
+        'Link this ticket to an other objects!' => 'Enlazar este ticket a otros objetos',
         'Link this ticket to other objects!' => '¡Vincular este ticket con otros objetos!',
         'Link to Parent' => 'Enlazar con el padre',
         'Linked as' => 'Vinculado como',
@@ -4796,6 +4801,7 @@ sub Data {
         'Match' => 'Coincidir',
         'Max. displayed tickets' => 'Número máximo de tickets mostrados.',
         'Max. shown Tickets a page' => 'Número máximo de tickets mostrados por página',
+        'Merge this ticket!' => 'Fusionar este ticket',
         'Message for new Owner' => 'Mensaje para el nuevo propietario',
         'Message sent to' => 'Mensaje enviado a',
         'Misc' => 'Misceláneo',
@@ -4904,6 +4910,7 @@ sub Data {
         'Please fill out this form to recieve login credentials.' => 'Por favor, llene este formulario para recibir las credenciales de inicio de sesión.',
         'PostMaster Filter' => 'Filtro del Administrador del Correo',
         'PostMaster Mail Account' => 'Cuenta del Administrador del Correo',
+        'Print this ticket!' => 'Imprimir este ticket',
         'Prio' => 'Prio',
         'Problem' => 'Problema',
         'Queue <-> Auto Responses Management' => 'Administración de Fila <-> Respuestas Automáticas',
@@ -4961,11 +4968,13 @@ sub Data {
         'Sent password token to: %s' => 'Información de contraseña enviada a: %s',
         'Sessions' => 'Sesiones',
         'Set customer user and customer id of a ticket' => 'Asignar agente y cliente de un ticket',
+        'Set this ticket to pending!' => 'Poner este ticket como pendiente',
         'Sets the default charset for the web interface to use (should represent the charset used to create the database or, in some cases, the database management system being used). "utf-8" is a good choice for environments expecting many charsets. You can specify another charset here (i.e. "iso-8859-1"). Please be sure that you will not be receiving foreign emails, or text, otherwise this could lead to problems.' =>
             'Define el juego de caracteres por defecto para la interfaz web (debería ser el mismo juego de caracteres que se usó al crear la base de datos o, en algunos casos, el que utilice el manejador de base de datos del sistema). "utf-8" es una buena elección para ambientes que esperan varios juegos de caracteres, sin embargo, es posible especificar uno diferente (por ejemplo: "iso-8859-1"). Por favor, asegúrese de que no recibirá correos o texto extranjeros, ya que esto podría causar problemas.',
         'Sets the number of lines that are displayed in the preview of messages (e.g. for tickets in the QueueView).' =>
             'Define el número de líneas mostradas en la vista previa de los mensajes (por ejemplo: para los tickets en la vista de filas).',
         'Show' => 'Mostrar',
+        'Shows the ticket history!' => 'Mostrar la historia del ticket',
         'Site' => 'Sitio',
         'Solution' => 'Solución',
         'Sort by' => 'Ordenado por',
