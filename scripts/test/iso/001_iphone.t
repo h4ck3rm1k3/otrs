@@ -1,3 +1,17 @@
+package Test;
+#  scripts/test/iso/001_iphone.t - all iPhone tests
+# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# --
+# $Id: iPhone.pm,v 1.68 2012/02/01 18:51:07 md Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+use vars qw(@ISA $VERSION);
+$VERSION = qw($Revision: 1.68 $) [1];
+
 use strict;
 use warnings;
 use Kernel::System::Ticket;
@@ -83,6 +97,13 @@ my $group = Kernel::System::Group->new(
     EncodeObject => $EncodeObject, 
    );
 
+my $LanguageObject = Kernel::Language->new(
+            MainObject   => $MainObject,
+        ConfigObject => $ConfigObject,
+        EncodeObject => $EncodeObject,
+        LogObject    => $LogObject,
+        UserLanguage => 'de',
+    );
 
 my %Self=(
    
@@ -92,6 +113,7 @@ my %Self=(
     TimeObject   => $TimeObject,
     MainObject   => $MainObject,  
     EncodeObject => $EncodeObject, 
+    LanguageObject => $LanguageObject,
     %{$TicketObject}
    );
 
@@ -130,35 +152,72 @@ my $phone = Kernel::System::iPhone->new(
 
 );
 
-$phone->ScreenConfig();
-$phone->Badges();
-$phone->EscalationView();
-$phone->StatusView();
-$phone->LockedView();
-$phone->WatchedView();
-$phone->ResponsibleView();
-$phone->QueueView();
-$phone->TicketList();
-$phone->TicketGet();
-$phone->ArticleGet();
-$phone->ServicesGet();
-$phone->SLAsGet();
-$phone->UsersGet();
-$phone->NextStatesGet();
-$phone->PrioritiesGet();
-$phone->CustomerSearch();
-$phone->ScreenActions();
-$phone->VersionGet();
-$phone->CustomerIDGet();
-$phone->ArticleIndex();
-$phone->InitConfigGet();
-$phone->_GetTypes();
-$phone-> _GetTos();
-$phone-> _GetNoteTypes();%
-$phone-> _GetScreenElements();
-$phone-> _TicketPhoneNew();
-$phone-> _TicketCommonActions();
-$phone-> _TicketCompose();
-$phone-> _TicketMove();
-$phone-> _GetComposeDefaults();
-$phone-> _TransfromDateSelection();
+my %param= (
+   UserID=> 1,
+   TicketID =>1,
+   QueueID => 1,
+   ResponseID => 1,
+   Screen => "Phone",
+   Subject => "Subject",
+   TimeStamp => "2001-01-01 10:10:01",
+   TicketFreeText1 => "freetext1",
+);
+
+##
+$phone->{ConfigObject}->Set(Key=>'Ticket::Frontend::Quote', Value=>">");
+
+$phone-> _GetScreenElements(%param);
+
+$phone->ScreenConfig(%param);
+$phone->Badges(%param);
+$phone->EscalationView(%param);
+$phone->StatusView(%param);
+$phone->LockedView(%param);
+#$phone->WatchedView(%param); TODO Ticket watcher feature is not enable in system configuration Please contact admin
+$phone->ResponsibleView(%param);
+$phone->QueueView(%param);
+$phone->TicketList(%param);
+$phone->TicketGet(%param);
+$phone->ArticleGet(%param);
+$phone->ServicesGet(%param);
+$phone->SLAsGet(%param);
+$phone->UsersGet(%param);
+$phone->NextStatesGet(%param);
+$phone->PrioritiesGet(%param);
+$phone->CustomerSearch(%param);
+$phone->ScreenActions(%param);
+#$phone->VersionGet(%param); this is not needed in the test env
+$phone->CustomerIDGet(%param);
+$phone->ArticleIndex(%param);
+$phone->InitConfigGet(%param);
+$phone->_GetTypes(%param);
+$phone-> _GetTos(%param);
+$phone-> _GetNoteTypes(%param);
+$phone-> _TicketPhoneNew(%param);
+$phone-> _TicketCommonActions(%param);
+$phone-> _TicketCompose(%param);
+$phone-> _TicketMove(%param);
+$phone-> _GetComposeDefaults(%param);
+$phone-> _TransformDateSelection(%param);
+
+##
+
+$phone->_ArticleFreeTextSet (%param);
+$phone->_CheckRequiredFreeTextField (%param);
+$phone->_GetArticleDefaultSelections(%param);
+$phone->_GetArticleFreeTextConfigOptions(%param);
+$phone->_GetArticleFreeTextValues (\%param);
+$phone->_GetFreeTextConfigOptions (%param);
+$phone->_GetScreenElementsFreeTextFields(1, "test","test", %param);
+$phone->_GetScreenElementsTicketFreeTimeFields(%param);
+$phone->_GetTicketFreeTextValues (\%param);
+$phone->_SetArticleFreeText(\%param);
+$phone->_SetTicketFreeText(\%param);
+$phone->_SetTicketFreeTime(\%param);
+$phone->_TicketFreeTextSet (%param);
+$phone->_TicketFreeTimeSet(\%param);
+$phone->_TicketTransformFreeTime(\%param);
+
+
+1
+
