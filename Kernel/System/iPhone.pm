@@ -5867,11 +5867,59 @@ sub _GetTicketFreeTextValues {
 ###
 }
 
-# todo load all the the dynamic fields listed in the param
-sub _TicketDynamicFieldsLoad
+sub _DynamicFieldCreateScreenElement
 {
     my $Self = shift || die "no self";
-    my %GetParam ;
+    my %Param = %{@_};
+}
+
+sub _DynamicFieldCreateScreenElement
+{
+    my $Self = shift || die "no self";
+    my %Param = %{@_};
+
+# ChangeTime: 2012-02-03 09:27:31
+#  Config:
+#    DefaultValue: 0
+#  CreateTime: 2012-02-03 09:21:33
+#  FieldOrder: 28
+#  FieldType: Checkbox
+#  ID: 46
+#  Label: test2
+#  Name: test2
+#  ObjectType: Ticket
+#  ValidID: 1
+    my $Index = $Param{"Name"};
+    my $Title = $Param{"Label"};
+    my $Default = $Self->{ConfigObject}->Get( 'DynamicField-' . $Index . '::DefaultSelection' );
+    my $ViewType = $Self->{ConfigObject}->Get( 'DynamicField-' . $Index . '::ViewType' ) || "Input";
+    my @ArticleFreeKeys = $Self->{ConfigObject}->Get( 'DynamicField-' . $Index . '::FreeTextKey' );
+    my $DataType = $Self->{ConfigObject}->Get( 'DynamicField-' . $Index . '::Datatype' )  || "Text";
+    my $Min = $Self->{ConfigObject}->Get( 'DynamicField-' . $Index . '::Min' )  || "1";
+    my $Max = $Self->{ConfigObject}->Get( 'DynamicField-' . $Index . '::Max' )  || "200";
+    my @Options = $Self->{ConfigObject}->Get('DynamicField-' . $Index . '::Options'  );
+    my $Mandatory = $Self->{ConfigObject}->Get('DynamicField-' . $Index . '::Mandatory'  );
+    
+    $FreeTextElement = {
+	Name        => $Name,
+	Title       => $Title,
+	FreeTextKey => @ArticleFreeKeys,
+	Datatype    => $DataType,
+	Viewtype    => $ViewType,
+	Options     => @Options,
+	Min         => $Min,
+	Max         => $Max,
+	Mandatory   => $Mandatory,
+	Default     => $Default || '',
+    };
+    
+    return $FreeTextElement;
+}
+
+
+sub _TicketDynamicFieldsLoadScreenElements
+{
+    my $Self = shift || die "no self";
     my %Param;
     my $TicketID=0;
     # dynamic fields
@@ -5885,6 +5933,74 @@ sub _TicketDynamicFieldsLoad
     for my $DynamicField ( sort keys %{$DynamicFieldList} ) {
 
 	next unless ( $DynamicField =~ /^DynamicField\-(.+)/);
+	my $Key = $1;
+
+	my $DynamicFieldGet
+	    = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
+	    ID => $DynamicField,
+	    );
+	
+	#
+	next  if !IsHashRefWithData($DynamicFieldGet->{Config});
+#	next  unless $DynamicFieldGet->{Config}->{ID};
+
+	warn "DynamicFieldGet " . Dump ($DynamicFieldGet);
+	if ($DynamicFieldGet) {
+	    my $Success = $Self->{TicketObject}->{DynamicFieldBackendObject}->ValueGet(
+		DynamicFieldConfig => $DynamicFieldGet,
+		ObjectID           => $TicketID,
+		Value              => $GetParam{$Key},
+		UserID             => $Param{UserID},
+		);
+	    warn Dump($Success);
+
+
+
+
+	}
+	
+	warn Dump($DynamicFieldGet);
+    }
+}
+
+
+sub _TicketDynamicFieldsLoad
+{
+    my $Self = shift || die "no self";
+    my %Param=shift;
+    my $TicketID=$Param{TicketID};
+
+    # dynamic fields
+    my $DynamicFieldList =
+        $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldList(
+        Valid      => 0,
+        ResultType => 'HASH',
+        ObjectType => 'Ticket'
+        );
+
+    my %DynamicFieldHash = reverse %{$DynamicFieldList};
+
+#%Param
+    for my $KeyName ( sort keys %{$Param} ){ 
+
+	if ( $KeyName =~ /^DynamicField\-(.+)/) {
+	    my $FieldName=$1;
+	    warn "Looking at $FieldName";
+	    if ($DynamicFieldHash{$FieldName})
+	    {
+		warn "Looking at $FieldName";
+	    }
+	    else
+	    {
+		warn "Error Missing $FieldName";
+	    }
+	}
+
+    for my $DynamicField ( sort keys %{$DynamicFieldList} ) {
+
+	warn "Checking $DynamicField";
+	next unless ( $DynamicField =~ /^DynamicField\-(.+)/);
+
 	my $Key = $1;
 
 	my $DynamicFieldGet
