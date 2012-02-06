@@ -3076,6 +3076,7 @@ DEPRECATED. This function will be removed in a future version of OTRS, don't use
 
 Set ticket free text.
 
+
     my $Success = $TicketObject->TicketFreeTimeSet(
         Counter               => 1,
         Prefix                => 'TicketFreeTime',

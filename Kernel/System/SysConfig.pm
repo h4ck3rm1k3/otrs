@@ -86,7 +86,7 @@ create an object
         DBObject       => $DBObject,
         MainObject     => $MainObject,
         TimeObject     => $TimeObject,
-        LanguageObject => $LanugageObject,
+        LanguageObject => $LanguageObject,
     );
 
 =cut

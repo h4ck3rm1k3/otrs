@@ -13,7 +13,7 @@ package Kernel::System::PostMaster::NewTicket;
 
 use strict;
 use warnings;
-
+use YAML;
 use Kernel::System::AutoResponse;
 use Kernel::System::CustomerUser;
 
@@ -199,8 +199,14 @@ sub Run {
         print "TicketID: $TicketID\n";
         print "Priority: $Priority\n";
         print "State: $State\n";
-        print "CustomerID: $GetParam{'X-OTRS-CustomerNo'}\n";
-        print "CustomerUser: $GetParam{'X-OTRS-CustomerUser'}\n";
+	if ($GetParam{'X-OTRS-CustomerNo'})
+	{
+	    print "CustomerID: $GetParam{'X-OTRS-CustomerNo'}\n";
+	}
+	if ($GetParam{'X-OTRS-CustomerUser'})
+	{
+	    print "CustomerUser: $GetParam{'X-OTRS-CustomerUser'}\n";
+	}
         for (qw(Type Service SLA Lock)) {
 
             if ( $GetParam{ 'X-OTRS-' . $_ } ) {
@@ -362,6 +368,7 @@ sub Run {
 
     # debug
     if ( $Self->{Debug} > 0 ) {
+#	warn "GetParam:". Dump(\%GetParam);
         print "From: $GetParam{From}\n";
         print "ReplyTo: $GetParam{ReplyTo}\n" if ( $GetParam{ReplyTo} );
         print "To: $GetParam{To}\n";

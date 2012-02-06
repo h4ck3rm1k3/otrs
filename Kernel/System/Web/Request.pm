@@ -159,6 +159,17 @@ sub GetParam {
     return $Value;
 }
 
+sub SetParam {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{$Value};
+
+    $Self->{Query}->param( $Param{Param}, $Value );
+
+
+    return $Value;
+}
+
 =item GetParamNames()
 
 to get names of all parameters passed to the script.
