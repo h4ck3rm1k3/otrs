@@ -11,62 +11,6 @@
 
 use Kernel::System::Ticket;
 use Kernel::System::PostMaster;
-use Kernel::System::User;
-use Kernel::System::DB;
-use Kernel::System::Log;
-use Kernel::System::Encode;
-use Kernel::System::Main;
-use Kernel::Config;
-use Kernel::System::UnitTest;
-use YAML;
-use Kernel::System::Encode;
-use Kernel::System::Log;
-use Kernel::System::Main;
-use Kernel::System::DB;
-use Kernel::System::Time;
-use Kernel::System::UnitTest;
-use Kernel::System::DynamicField;
-
-my $ConfigObject = Kernel::Config->new();
-#warn "Config Object :" . Dump ($ConfigObject);
-
-my $EncodeObject = Kernel::System::Encode->new(
-    ConfigObject => $ConfigObject,
-    );
-
-my $LogObject = Kernel::System::Log->new(
-    ConfigObject => $ConfigObject,
-    EncodeObject => $EncodeObject,
-    );
-
-my $MainObject = Kernel::System::Main->new(
-    ConfigObject => $ConfigObject,
-    EncodeObject => $EncodeObject,
-    LogObject    => $LogObject,
-    );
-    
-my $TimeObject = Kernel::System::Time->new(
-    ConfigObject => $ConfigObject,
-    LogObject    => $LogObject,
-    );
-
-my $DBObject = Kernel::System::DB->new(
-    ConfigObject => $ConfigObject,
-    EncodeObject => $EncodeObject,
-    LogObject    => $LogObject,
-    MainObject   => $MainObject,
-    );
-
-my $Self = Kernel::System::UnitTest->new(
-    EncodeObject => $EncodeObject,
-    ConfigObject => $ConfigObject,
-    LogObject    => $LogObject,
-    MainObject   => $MainObject,
-    DBObject     => $DBObject,
-    TimeObject   => $TimeObject,
-    );
-
-my $BackendObject = Kernel::System::DynamicField::Backend->new( %{$Self} );
 
 my $FileArray = $Self->{MainObject}->FileRead(
     Location => $Self->{ConfigObject}->Get('Home') . '/scripts/test/sample/SystemMonitoring1.box',
