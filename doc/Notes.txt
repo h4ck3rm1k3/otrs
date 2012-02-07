@@ -1,0 +1,25 @@
+Kernel::System::PostMaster::Run(../otrs//Kernel/System/PostMaster.pm:228):
+228:	    if ( $GetParam->{'X-OTRS-Ignore'} && $GetParam->{'X-OTRS-Ignore'} =~ /(yes|true)/i ) {
+  DB<12> x $GetParam
+0  HASH(0xb04aee0)
+   'Attachment' => ARRAY(0xb0671a4)
+        empty array
+   'Body' => "\cJ***** Nagios  *****\cJ\cJNotification Type: PROBLEM\cJHost: delphin\cJState: DOWN for 0d 0h 0m 0s\cJAddress: 127.1.1.1\cJInfo:\cJ\cJCRITICAL - Time to live exceeded (127.1.1.1)\cJ\cJDate/Time: Sun Mar 18 00:18:30 CET 2007\cJ\cJACK by: \cJComment:\cJ \cI\cI"
+   'Charset' => 'utf-8'
+   'Content-Type' => 'text/plain'
+   'Some header ' => ''
+   'X-OTRS-ArticleType' => 'email-external'
+   'X-OTRS-FollowUp-ArticleType' => 'email-external'
+   'X-OTRS-FollowUp-SenderType' => 'customer'
+   'X-OTRS-SenderType' => 'customer'
+
+
+
+Kernel::System::PostMaster::Run(../otrs//Kernel/System/PostMaster.pm:358):
+358:	        $TicketID = $Self->{NewTicket}->Run(
+359:	            InmailUserID     => $Self->{PostmasterUserID},
+360:	            GetParam         => $GetParam,
+361:	            QueueID          => $Param{QueueID},
+362:	            AutoResponseType => 'auto reply',
+363:	        );
+

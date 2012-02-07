@@ -1,0 +1,38 @@
+
+otrs//Kernel/System/PostMaster/Filter/SystemMonitoring.pm:
+ 157:	                $Self->{$Element} = $1;
+   break if (1)
+ 351:	    return 1 if !$Param{GetParam}->{From};
+   break if (1)
+ 354:	    $Self->_MailParse(%Param);
+   break if (1)
+ 357:	    if ( !$Self->{State} || !$Self->{Host} ) {
+   break if (1)
+ 372:	    my $TicketID = $Self->_TicketSearch();
+   break if (1)
+ 376:		$Self->_TicketUpdate($TicketID,%Param);
+   break if (1)
+
+
+scripts/test/SystemMonitoring_newmail.t:
+ 120:	my @Return = $PostMasterObject->Run();
+   break if (1)
+
+
+
+../otrs//Kernel/System/PostMaster.pm:
+ 325:	            my $Run = $Self->{FollowUp}->Run(
+   break if (1)
+
+
+../otrs//Kernel/System/PostMaster/FollowUp.pm:
+ 240:	        if ( $GetParam{$Key} ) {
+   break if (1)
+ 255:	            if ( $Self->{Debug} > 0 ) {
+   break if (1)
+ 262:	    my %DynamicFieldListReversed = reverse %{$DynamicFieldList};
+   break if (1)
+ 276:	                my $DynamicFieldGet = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
+   break if (1)
+ 325:	    my $ArticleID = $Self->{TicketObject}->ArticleCreate(
+   break if (1)

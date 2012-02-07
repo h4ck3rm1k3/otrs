@@ -1,0 +1,19 @@
+   'X-OTRS-FollowUp-ArticleKey1' => 'State'
+   'X-OTRS-FollowUp-ArticleType' => 'note-report'
+   'X-OTRS-FollowUp-ArticleValue1' => 'DOWN'
+   'X-OTRS-FollowUp-Lock' => ''
+   'X-OTRS-FollowUp-Priority' => ''
+   'X-OTRS-FollowUp-Queue' => ''
+   'X-OTRS-FollowUp-SLA' => ''
+   'X-OTRS-FollowUp-SenderType' => 'system'
+   'X-OTRS-FollowUp-Service' => ''
+   'X-OTRS-FollowUp-State' => ''
+   'X-OTRS-FollowUp-State-PendingTime' => ''
+   'X-OTRS-FollowUp-Type' => ''
+
+Kernel::System::PostMaster::FollowUp::Run(../otrs//Kernel/System/PostMaster/FollowUp.pm:265):
+265:	    my %Values =
+266:	        (
+267:	        'X-OTRS-FollowUp-TicketKey'   => 'TicketFreeKey',
+268:	        'X-OTRS-FollowUp-TicketValue' => 'TicketFreeText',
+269:	        );
