@@ -1,0 +1,23 @@
+Return-Path: <michael.dupont@otrs.com>
+To: otrs@example.com
+Subject:  "** CRITICAL Service Alert: HOSTALIAS/SERVICEDESC is CRITICAL **"
+Date: Sun, 18 Mar 2017 00:15:46 +0100 (CET)
+From: nagios@example.com
+Mime-Version: 1.0
+
+***** Icinga *****
+
+Notification Type: CRITICAL
+
+Service: HTTP
+Host: Router
+Address: 192.168.1.1
+State: CRITICAL
+
+Date/Time: Sun, 18 Mar 2017 00:15:46 +0100 (CET)
+
+Additional Info:
+
+this is a test outtage
+
+
