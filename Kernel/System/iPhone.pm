@@ -5481,6 +5481,7 @@ sub _GetScreenElementsFreeTextFields{
             my @Options;
             @Options = $Self->{ConfigObject}->Get( $TypeNameText . $Index );
             my $Mandatory;
+	    
             if ( $Self->{Config}->{$TypeNameText}->{$Index} == 2 ) {
                 $Mandatory = 1;
             }
