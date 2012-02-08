@@ -4,6 +4,11 @@ package Kernel::Config::Files::ZZZAAuto;
 use utf8;
 sub Load {
     my ($File, $Self) = @_;
+$Self->{'Ticket::ResponsibleForQueue'} =  {};
+$Self->{'Ticket::EventModulePost'}->{'ResponsibleForQueue'} =  {
+  'Event' => 'TicketQueueUpdate',
+  'Module' => 'Kernel::System::Ticket::Event::ResponsibleForQueue'
+};
 $Self->{'Ticket::Frontend::CustomerTicketSearch'}->{'SearchCSVDynamicField'} =  {};
 $Self->{'Ticket::Frontend::CustomerTicketSearch'}->{'SearchOverviewDynamicField'} =  {};
 $Self->{'Ticket::Frontend::CustomerTicketSearch'}->{'DynamicField'} =  {};
