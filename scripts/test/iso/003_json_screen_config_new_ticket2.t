@@ -40,6 +40,10 @@ use Kernel::System::Ticket;
 use Kernel::System::LinkObject;
 use Kernel::System::JSON;
 use Kernel::System::iPhone;
+use Kernel::Language;
+
+
+
 use JSON::PP;
 use Kernel::System::Web::Request;
 use Kernel::System::DynamicField::Backend;
@@ -308,6 +312,33 @@ sub test{
 
     # common objects
     $Self->{ConfigObject} = Kernel::Config->new();
+
+    #$Self->{ConfigObject} -
+    $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketPhone', Value=>{
+	'ArticleTypeDefault' => 'note-internal',
+	'SenderType' => 'customer',
+	'HistoryType' => 'AddNote',
+	'HistoryComment' => 'This is a test',
+	Permission=>"note",
+	RequiredLock=>1,
+	Note=>1,
+	Title=>1,
+	TicketType=>1,
+	TimeUnits=>1,
+	Service=>1,
+	Owner => 1,
+	Responsible =>1,
+	Priority=>1,
+	PriorityDefault=>"3 normal",
+	State =>1,
+	Body=> "default body",
+	Subject => "Close"
+	    
+	    
+			       });
+
+    #$Self->{'Ticket::Frontend::AgentTicketOwner'}->{';
+
     $Self->{EncodeObject} = Kernel::System::Encode->new( %{$Self} );
     $Self->{LogObject}    = Kernel::System::Log->new(
         LogPrefix => 'OTRS-RPC',
@@ -331,18 +362,9 @@ sub test{
     $Self->{ParamObject}        = Kernel::System::Web::Request->new( %{$Self} );
     $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new( %{$Self} );
     $Self->{DynamicFieldBackendObject} = Kernel::System::DynamicField::Backend->new( %{$Self} );
-#        ConfigObject        => $ConfigObject,
-#        EncodeObject        => $EncodeObject,
-#        LogObject           => $LogObject,
-#        MainObject          => $MainObject,
-#        DBObject            => $DBObject,
-
-
-    $Self->{iPhoneObject}       = Kernel::System::iPhone->new( %{$Self},
-
-	);
-
- 
+    $Self->{LanguageObject} =  Kernel::Language->new(%{$Self});
+    $Self->{iPhoneObject}       = Kernel::System::iPhone->new( %{$Self},	);
+  
     my $User   = $Self->{ParamObject}->SetParam( Param => 'User', Value=>"cr" );
     my $Pw     = $Self->{ParamObject}->SetParam( Param => 'Password', Value =>"123" );
     my $Object = $Self->{ParamObject}->SetParam( Param => 'Object' , Value => "CustomObject");
