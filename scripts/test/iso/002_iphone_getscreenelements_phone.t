@@ -1,6 +1,11 @@
 
+use basetest;
+use Data::Dumper;
 
-my $phone = require "basetest.t";
+my $phone = basetest::NewPhone();
+my %param = basetest::NewParam("_CheckRequiredFreeTextField");
+
+#my $phone = require "basetest.t";
 
 warn Dumper($phone-> _GetScreenElements(    
 	 Screen=> "Phone" , 

@@ -33,10 +33,7 @@ my %param= (
 ##
 $phone->{ConfigObject}->Set(Key=>'Ticket::Frontend::Quote', Value=>">");
 
-
-##
-
+$phone->ScreenConfig(%param);
 
 
-1
-
+1;

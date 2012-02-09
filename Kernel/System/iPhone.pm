@@ -3745,6 +3745,7 @@ sub _TicketPhoneNew {
         return;
     }
 
+    $Param{TicketID} =$TicketID;
     # set all the FreeFields Migrated from DynamicFields
     $Self->_SetTicketFreeText(%Param);
     $Self->_SetTicketFreeTime(\%Param);
@@ -3757,6 +3758,26 @@ sub _TicketPhoneNew {
         $NoAgentNotify = 1;
     }
     my $QueueName = $Self->{QueueObject}->QueueLookup( QueueID => $Param{QueueID} );
+
+    
+    if (! exists $Self->{Config}->{ArticleTypeDefault}){
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'Error: no ArticleTypeDefault was configured for iPhone::Frontend::AgentTicketPhone ! Please contact the admin',
+        );
+        return;	
+    }
+    
+    if (! exists $Self->{Config}->{SenderType}){
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => 'Error: no default SenderType was configured for iPhone::Frontend::AgentTicketPhone ! Please contact the admin',
+	    );
+        return;	
+    }
+    #$Self->{Config}->{SenderType},
+
+
     my $ArticleID = $Self->{TicketObject}->ArticleCreate(
         NoAgentNotify => $NoAgentNotify,
         TicketID      => $TicketID,
@@ -5151,12 +5172,22 @@ sub _GetComposeDefaults {
         UserID     => $Param{UserID},
     );
 
+    if (!$Data{Body})  {
+	$Self->{LogObject}->Log(
+	    Priority => 'error',
+	    Message  => "No Body found in template generator return value",
+                );
+	return;
+    }
+
     my $Salutation = $Data{Salutation};
     my $OrigFrom   = $Data{OrigFrom};
     my $Wrote      = $Self->{LanguageObject}->Get('wrote');
+
+
     my $Body       = $Data{Body};
     my $Signature  = $Data{Signature};
-
+    
     my $ResponseFormat =
         "$Salutation \n $OrigFrom $Wrote: \n $Body \n $Signature \n";
 
@@ -5450,7 +5481,7 @@ sub _SetTicketFreeText {
         $Self->_TicketFreeTextSet(
             Ticket   => $Self->{TicketObject},
             TicketID => $Param{TicketID},
-            Key      => $Param{$Key},
+            Key      => $Key,
             Value    => $Param{$Text},
             Counter  => $Count,
             UserID   => $Param{UserID},
@@ -5595,6 +5626,8 @@ sub _CheckRequiredFreeTextField {
     my %Param  =@_ ;
     # check required FreeTextField (if configured)
     for my $Count ( 1 .. 16 ) {#FreeFieldBad
+        next if ! exists($Self->{Config}->{TicketFreeText});
+        next if ! exists($Self->{Config}->{TicketFreeText}->{$Count});
         next if $Self->{Config}->{TicketFreeText}->{$Count} ne 2;
         next if $Param{"TicketFreeText$Count"} ne '';
         $Self->{LogObject}->Log(

@@ -1,8 +1,10 @@
 # -*- perl -*-
 use strict;
 use warnings;
-
-my $phone = require "basetest.t";
+use basetest;
+my $phone = basetest::NewPhone();
+#my %param = basetest::NewParam("_CheckRequiredFreeTextField");
+#my $phone = require "basetest.t";
 
 my %Param = (	 
    	  Screen=> "Phone" , 

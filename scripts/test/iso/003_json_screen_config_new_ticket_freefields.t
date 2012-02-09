@@ -8,7 +8,7 @@ sub SetParam {
     return $Value;
 }
 
-package Core; # -*- perl -*-
+package Core; # -*- perl -*-2
 use strict;
 use warnings;
 
@@ -40,6 +40,10 @@ use Kernel::System::Ticket;
 use Kernel::System::LinkObject;
 use Kernel::System::JSON;
 use Kernel::System::iPhone;
+use Kernel::Language;
+
+
+
 use JSON::PP;
 use Kernel::System::Web::Request;
 use Kernel::System::DynamicField::Backend;
@@ -308,11 +312,38 @@ sub test{
 
     # common objects
     $Self->{ConfigObject} = Kernel::Config->new();
+
+    #$Self->{ConfigObject} -
+    $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketPhone', Value=>{
+	'ArticleTypeDefault' => 'note-internal',
+	'SenderType' => 'customer',
+	'HistoryType' => 'AddNote',
+	'HistoryComment' => 'This is a test',
+	Permission=>"note",
+	RequiredLock=>1,
+	Note=>1,
+	Title=>1,
+	TicketType=>1,
+	TimeUnits=>1,
+	Service=>1,
+	Owner => 1,
+	Responsible =>1,
+	Priority=>1,
+	PriorityDefault=>"3 normal",
+	State =>1,
+	Body=> "default body",
+	Subject => "Close"
+	    
+	    
+			       });
+
+    #$Self->{'Ticket::Frontend::AgentTicketOwner'}->{';
+
     $Self->{EncodeObject} = Kernel::System::Encode->new( %{$Self} );
     $Self->{LogObject}    = Kernel::System::Log->new(
         LogPrefix => 'OTRS-RPC',
         %{$Self},
-    );
+	);
     $Self->{MainObject}         = Kernel::System::Main->new( %{$Self} );
     $Self->{DBObject}           = Kernel::System::DB->new( %{$Self} );
     $Self->{TimeObject}         = Kernel::System::Time->new( %{$Self} );
@@ -331,18 +362,9 @@ sub test{
     $Self->{ParamObject}        = Kernel::System::Web::Request->new( %{$Self} );
     $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new( %{$Self} );
     $Self->{DynamicFieldBackendObject} = Kernel::System::DynamicField::Backend->new( %{$Self} );
-#        ConfigObject        => $ConfigObject,
-#        EncodeObject        => $EncodeObject,
-#        LogObject           => $LogObject,
-#        MainObject          => $MainObject,
-#        DBObject            => $DBObject,
-
-
-    $Self->{iPhoneObject}       = Kernel::System::iPhone->new( %{$Self},
-
-	);
-
- 
+    $Self->{LanguageObject} =  Kernel::Language->new(%{$Self});
+    $Self->{iPhoneObject}       = Kernel::System::iPhone->new( %{$Self},	);
+  
     my $User   = $Self->{ParamObject}->SetParam( Param => 'User', Value=>"cr" );
     my $Pw     = $Self->{ParamObject}->SetParam( Param => 'Password', Value =>"123" );
     my $Object = $Self->{ParamObject}->SetParam( Param => 'Object' , Value => "CustomObject");
@@ -354,46 +376,42 @@ sub test{
 
 
 
-my @parts;
-for my $f (1 .. 16)
-{
+    my @parts;
+    for my $f (1 .. 16){
 	push @parts, qq["TicketFreeText$f":"SomeText$f"];
 	push @parts, qq["TicketFreeKey$f":"SomeTextKey$f"];
-}
-
-for my $f (1 .. 3)
-{
+    }
+    
+    for my $f (1 .. 3)    {
 	push @parts, qq["ArticleFreeText$f":"SomeText$f"];
 	push @parts, qq["ArticleFreeKey$f":"SomeTextKey$f"];
-}
-
-for my $f (1 .. 6)
-{
+    }
+    
+    for my $f (1 .. 6){
 	push @parts, qq["TicketFreeTime$f":"2011-01-01 12:00:00"];
-}
-
+    }
+    
 #dynamic fields
-push @parts, qq["DynamicField-test3":"2011-01-01 12:00:00"];
-push @parts, qq["DynamicField-test":"This is a test"];
-push @parts, qq["DynamicField-test2":"0"];
-push @parts, qq["DynamicField-test1":"This is a test1"];
-
-
+    push @parts, qq["DynamicField-test3":"2011-01-01 12:00:00"];
+    push @parts, qq["DynamicField-test":"This is a test"];
+    push @parts, qq["DynamicField-test2":"0"];
+    push @parts, qq["DynamicField-test1":"This is a test1"];
+    
+    
 #    my $jsonin = q[{"Action":"Phone","StateID":"4","CustomerID":"otrs","PriorityID":"3","SLAID":"1","CustomerUserLogin":"fer","TimeUnits":"","Subject":"Test%20for%20Mike","ServiceID":"1","Body":"Body","OwnerID":"3","QueueID":"3","PendingDate":""}];
-my $jsonin = q[{"Action":"Phone","StateID":"4","CustomerID":"otrs","PriorityID":"3","SLAID":"1","CustomerUserLogin":"fer","TimeUnits":"","Subject":"Test","ServiceID":"","Body":"Body","OwnerID":"3","QueueID":"3",]   .  join (",", @parts)   .     q[,"PendingDate":""}];
-
+    my $jsonin = q[{"Action":"Phone","StateID":"4","CustomerID":"otrs","PriorityID":"3","SLAID":"1","CustomerUserLogin":"fer","TimeUnits":"","Subject":"Test","ServiceID":"","Body":"Body","OwnerID":"3","QueueID":"3",]   .  join (",", @parts)   .     q[,"PendingDate":""}];
+    
     my	$data = $jsonpp->decode( $jsonin ); # pretty-printing
     my	$pretty_printed = $jsonpp->pretty->encode( $data ); # pretty-printing
     
     my $Data   = $Self->{ParamObject}->SetParam( Param => 'Data', Value => $pretty_printed);
-
+    
     my $json = $Self->Dispatch();
-    #http://localhost:82/otrs/json.pl?
-
+#http://localhost:82/otrs/json.pl?
+    
 #Response:
     my $output_cr_30 ='{"Result":"successful","Data":["199"]}';
-        
-
+    
     
     if($json ne $output_cr_30)
     {	    
@@ -403,16 +421,16 @@ my $jsonin = q[{"Action":"Phone","StateID":"4","CustomerID":"otrs","PriorityID":
 	my	$pretty_printed = $jsonpp->pretty->encode( $data ); # pretty-printing
 #	print $pretty_printed;
 	open OUT, ">003_json_screen_config_new_phone_last_output.json" or die;
-	print OUT $pretty_printed;
+    print OUT $pretty_printed;
 	close OUT;
-
-	my	$data2 = $jsonpp->decode( $output_cr_30 ); # pretty-printing
+	
+    my	$data2 = $jsonpp->decode( $output_cr_30 ); # pretty-printing
 	open OUT, ">003_json_screen_config_new_phone_standard_output.json" or die;
 	print OUT  $jsonpp->pretty->encode( $data2 ); # pretty-printing;
 	close OUT;
-
+	
 	system ( "diff -u 003_json_screen_config_new_phone_last_output.json 003_json_screen_config_new_phone_standard_output.json > 003_json_screen_config_new_phone_json.diff");
-
+	
     }
 }
 

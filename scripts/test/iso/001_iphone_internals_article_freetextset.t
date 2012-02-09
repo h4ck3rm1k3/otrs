@@ -18,8 +18,8 @@ use warnings;
 
 use basetest;
 my $phone = basetest::NewPhone();
+my %param = basetest::NewParam("_ArticleFreeTextSet");
 
-# create a new ticket
 my $TicketID = $phone->{TicketObject}->TicketCreate(
     Title        => 'My ticket created by Agent A',
     Queue        => 'Raw',
@@ -32,13 +32,11 @@ my $TicketID = $phone->{TicketObject}->TicketCreate(
     UserID       => 1,
 );
 
-$phone-> _GetScreenElements(    Screen=> "Phone", UserID =>1  ); ##
-$phone-> _GetScreenElements(    Screen=> "Move" , UserID =>1  );
-$phone-> _GetScreenElements(    Screen=> "Compose", TicketID => $TicketID, UserID =>1);
+$param{TicketID} = $TicketID;
 
- $phone-> _TicketPhoneNew();
- $phone-> _TicketCommonActions();
+$phone->_ArticleFreeTextSet (%param);
 
-$phone-> _GetComposeDefaults(
-    TicketID => $TicketID
-    );
+my $Delete = $phone->{TicketObject}->TicketDelete(
+    UserID   => 1,
+    TicketID => $TicketID,
+);

@@ -50,6 +50,11 @@ use Kernel::System::LinkObject;
 use Kernel::System::JSON;
 use Kernel::System::iPhone;
 
+use Kernel::Language;
+use JSON::PP;
+use Kernel::System::Web::Request;
+use Kernel::System::DynamicField::Backend;
+
 use Kernel::System::Web::Request;
 
 use vars qw($VERSION);
@@ -97,7 +102,11 @@ sub Dispatch {
     $Self->{TicketObject}       = Kernel::System::Ticket->new( %{$Self} );
     $Self->{LinkObject}         = Kernel::System::LinkObject->new( %{$Self} );
     $Self->{JSONObject}         = Kernel::System::JSON->new( %{$Self} );
-    $Self->{ParamObject}        = Kernel::System::Web::Request->new( %{$Self} );
+    $Self->{ParamObject}        = Kernel::System::Web::Request->new( %{$Self} )
+    $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new( %{$Self} );
+    $Self->{DynamicFieldBackendObject} = Kernel::System::DynamicField::Backend->new( %{$Self} );
+    $Self->{LanguageObject} =  Kernel::Language->new(%{$Self});
+
     $Self->{iPhoneObject}       = Kernel::System::iPhone->new( %{$Self} );
 
     # get log filename

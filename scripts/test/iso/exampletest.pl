@@ -18,25 +18,3 @@ use warnings;
 
 use basetest;
 my $phone = basetest::NewPhone();
-
-my %param= (
-   UserID=> 1,
-   TicketID =>1,
-   QueueID => 1,
-   ResponseID => 1,
-   Screen => "Phone",
-   Subject => "Subject",
-   TimeStamp => "2001-01-01 10:10:01",
-   TicketFreeText1 => "freetext1",
-);
-
-##
-$phone->{ConfigObject}->Set(Key=>'Ticket::Frontend::Quote', Value=>">");
-
-
-##
-
-
-
-1
-

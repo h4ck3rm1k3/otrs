@@ -1,6 +1,9 @@
 
-
-my $phone = require "basetest.t";
+use basetest;
+my $phone = basetest::NewPhone();
+#my %param = basetest::NewParam("_CheckRequiredFreeTextField");
+use Data::Dumper;
+#my $phone = require "basetest.t";
 
 my %Param = (	 
    	  Screen=> "Phone" , 
