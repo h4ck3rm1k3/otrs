@@ -3964,9 +3964,17 @@ sub _TicketPhoneNew {
 
 sub _TicketCommonActions {
     my ( $Self, %Param ) = @_;
-
+    
+    if ( ! exists($Param{Action}) ) {
+	$Self->{LogObject}->Log(
+	    Priority => 'error',
+	    Message  => "Missing Action Parameter "
+            );
+    }
+   
     $Self->{Config}
         = $Self->{ConfigObject}->Get( 'iPhone::Frontend::AgentTicket' . $Param{Action} );
+
     $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicket'  . $Param{Action};
 
     my %StateData = ();
@@ -5027,12 +5035,30 @@ sub _GetComposeDefaults {
     my %Data;
     if ( $Param{ArticleID} ) {
         %Data = $Self->{TicketObject}->ArticleGet( ArticleID => $Param{ArticleID} );
+
+	if ( ! %Data) {
+	    $Self->{LogObject}->Log(
+		Priority => 'error',
+		Message  => 'No Article Found for ID '. $Param{ArticleID} .' given! Please contact the admin.',
+		);
+	    return;
+	}
     }
     else {
         %Data = $Self->{TicketObject}->ArticleLastCustomerArticle(
             TicketID => $Param{TicketID},
         );
+
+	if ( ! %Data) {
+	    $Self->{LogObject}->Log(
+		Priority => 'error',
+		Message  => 'No Last Article Found for TicketID '. $Param{TicketID} .' given! Please contact the admin.',
+		);
+	    return;
+	}
     }
+
+
 
     # check article type and replace To with From (in case)
     if ( $Data{SenderType} !~ /customer/ ) {
@@ -5256,6 +5282,7 @@ sub _GetComposeDefaults {
                     Priority => 'error',
                     Message  => "Error on field \"From\"  \n $ServerError",
                 );
+
                 return;
             }
         }

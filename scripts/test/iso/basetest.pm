@@ -149,15 +149,16 @@ sub NewParam
     warn "getting params for $name";
 
     my %Param= (
-	   UserID=> 1,
-   TicketID =>1,
-   QueueID => 1,
-   ResponseID => 1,
-   Screen => "Phone",
-   Subject => "Subject",
-   TimeStamp => "2001-01-01 10:10:01",
-   TicketFreeText1 => "freetext1",
+	UserID=> 1,
+	TicketID =>1,
+	QueueID => 1,
+	ResponseID => 1,
+	Screen => "Phone",
+	Subject => "Subject",
+	TimeStamp => "2001-01-01 10:10:01",
+	TicketFreeText1 => "freetext1",
 	ArticleID=>251,
+	StateID =>1
 	);
     
     for my $f (1 .. 16)
@@ -251,6 +252,7 @@ sub RunConfig
 #$phone->{ConfigObject}->{Debug}=999;
 #$Self->{Debug}=999;
 
+    $Self->{ConfigObject}->Set(Key => 'CheckEmailAddresses', Value => 0);
     $Self->{ConfigObject}->Set(Key => 'ArticleFreeKey1::DefaultSelection', Value=>"Test");
     $Self->{ConfigObject}->Set(Key => 'ArticleFreeText1',Value=>"Blah");
     $Self->{ConfigObject}->Set(Key => 'ArticleFreeKey1',Value=>["a","b"]);
@@ -294,5 +296,47 @@ sub CreateParams
 {
 
 }
+
+sub CreateCustomerUserObject
+{
+    my $phone=shift;
+    my $param=shift;
+
+    my %UserList = $phone->{CustomerUserObject}->CustomerSearch(
+	PostMasterSearch => "md\@otrs.com",
+	);
+    
+    my $UserID;
+    my $UserRand = "testuser123";
+    if (%UserList)
+    {
+	warn Dump(\%UserList);
+	my @ids = keys %UserList;
+	$UserID = shift @ids;
+    } elsif(!%UserList) {
+	
+	my $Key = "test";
+	$UserID = $phone->{CustomerUserObject}->CustomerUserAdd(
+	    Source         => 'CustomerUser',
+	    UserFirstname  => 'Firstname Test' . $Key,
+	    UserLastname   => 'Lastname Test' . $Key,
+	    UserCustomerID => $UserRand . '-Customer-Id',
+	    UserLogin      => $UserRand,
+	    UserEmail      => "md\@otrs.com",
+	    UserPassword   => 'some_pass',
+	    ValidID        => 1,
+	    UserID         => 1,
+	    );
+    }
+    
+    warn "UserID $UserID";
+    
+#$param{CustomerID}=$UserID;
+    $param->{CustomerUserLogin}=$UserRand . '-Email@example.com';
+    $param->{StateID}=1;
+    $param->{PriorityID}=1;
+    
+}
+
 
 1;

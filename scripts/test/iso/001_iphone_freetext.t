@@ -1,4 +1,4 @@
-package Test;
+package Test; #-*-perl-*-
 
 #  scripts/test/iso/001_iphone.t - all iPhone tests
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
@@ -19,6 +19,8 @@ use warnings;
 use basetest;
 my $phone = basetest::NewPhone();
 
+$phone->{Config} = $phone->{ConfigObject}->Get('iPhone::Frontend::AgentTicketCompose')|| die;
+
 # create a new ticket
 my $TicketID = $phone->{TicketObject}->TicketCreate(
     Title        => 'My ticket created by Agent A',
@@ -30,15 +32,49 @@ my $TicketID = $phone->{TicketObject}->TicketCreate(
     CustomerUser => 'customer@example.com',
     OwnerID      => 1,
     UserID       => 1,
+    From           => 'Some Agent <agentl@otrs.com>',
 );
 
-$phone-> _GetScreenElements(    Screen=> "Phone", UserID =>1  ); ##
-$phone-> _GetScreenElements(    Screen=> "Move" , UserID =>1  );
-$phone-> _GetScreenElements(    Screen=> "Compose", TicketID => $TicketID, UserID =>1);
+# create an article for
+my $ArticleID = $phone->{TicketObject}->ArticleCreate(
+    TicketID       => $TicketID,
+    ArticleType    => 'note-internal',
+    SenderType     => 'agent',
+    From           => 'Some Agent <agentl@otrs.com>',
+    To             => 'Some Customer <customer@otrs.com>',
+    Subject        => 'some short description',
+    Body           => 'the message text',
+    ContentType    => 'text/plain; charset=ISO-8859-15',
+    HistoryType    => 'OwnerUpdate',
+    HistoryComment => 'Some free text!',
+    UserID         => 1,
+    NoAgentNotify  => 1,
+);
+warn "Created article ID $ArticleID";
 
- $phone-> _TicketPhoneNew();
- $phone-> _TicketCommonActions();
+my %Param = basetest->NewParam("test");
+$Param{Action}= "Phone";
+$Param{Body}= "Body123";
+$Param{ArticleType}="note-internal";
+$Param{ArticleID}=$ArticleID;
+
+
+$phone-> _GetScreenElements(    Screen=> "Phone", UserID =>1,TicketID => $TicketID,%Param  ); ##
+$phone-> _GetScreenElements(    Screen=> "Move" , UserID =>1,TicketID => $TicketID,%Param  );
+#$phone-> _GetScreenElements(    Screen=> "Compose", TicketID => $TicketID, UserID =>1); #
+$phone-> _GetScreenElements(    Screen=> "Compose", TicketID => $TicketID, ArticleID=>$ArticleID, UserID =>1,%Param); #
+#$phone-> _GetScreenElements(    Screen=> "Compose", ArticleID=>$ArticleID, UserID =>1); #
+
+
+basetest::CreateCustomerUserObject($phone,\%Param);
+
+ $phone-> _TicketPhoneNew(%Param);
+ $phone-> _TicketCommonActions(%Param);
+
+$Param{From}     = 'Some Agent <agentl@otrs.com>';
 
 $phone-> _GetComposeDefaults(
-    TicketID => $TicketID
+#    ArticleID=>$ArticleID,
+    TicketID => $TicketID,
+    %Param
     );

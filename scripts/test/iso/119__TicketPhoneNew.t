@@ -20,39 +20,7 @@ use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("_TicketPhoneNew");
 
-my %UserList = $phone->{CustomerUserObject}->CustomerSearch(
-    PostMasterSearch => "md\@otrs.com",
-    );
-
-my $UserID;
-my $UserRand = "testuser123";
-if (%UserList)
-{
-    warn Dump(\%UserList);
-    my @ids = keys %UserList;
-    $UserID = shift @ids;
-} elsif(!%UserList) {
-    
-    my $Key = "test";
-    $UserID = $phone->{CustomerUserObject}->CustomerUserAdd(
-	Source         => 'CustomerUser',
-	UserFirstname  => 'Firstname Test' . $Key,
-	UserLastname   => 'Lastname Test' . $Key,
-	UserCustomerID => $UserRand . '-Customer-Id',
-	UserLogin      => $UserRand,
-	UserEmail      => "md\@otrs.com",
-	UserPassword   => 'some_pass',
-	ValidID        => 1,
-	UserID         => 1,
-	);
-}
-
-warn "UserID $UserID";
-
-#$param{CustomerID}=$UserID;
-$param{CustomerUserLogin}=$UserRand . '-Email@example.com';
-$param{StateID}=1;
-$param{PriorityID}=1;
+basetest::CreateCustomerUserObject($phone,\%param);
 
 my $ret=$phone->_TicketPhoneNew(%param);
 ;
