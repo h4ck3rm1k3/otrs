@@ -8,6 +8,8 @@ test : $(TESTOUT)
 	echo done
 #echo $(TESTOUT)
 
+clean :
+	rm $(TESTOUT)
 %.out : %.t
 	echo going to process $<
 	perl -I. -I $(SYSTEMROOT) -I scripts/test/iso $< > $@ 2>&1

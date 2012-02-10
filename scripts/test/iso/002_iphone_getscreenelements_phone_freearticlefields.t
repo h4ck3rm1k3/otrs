@@ -5,7 +5,7 @@ use basetest;
 my $phone = basetest::NewPhone();
 #my %param = basetest::NewParam("_CheckRequiredFreeTextField");
 #my $phone = require "basetest.t";
-
+use Data::Dumper;
 my %Param = (	 
    	  Screen=> "Phone" , 
 	  Action=> "Phone",

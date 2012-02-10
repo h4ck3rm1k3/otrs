@@ -213,6 +213,13 @@ sub NewPhone {
 
     $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketPhone', Value=>{
 	'ArticleTypeDefault' => 'note-internal',
+
+	ArticleTypes =>{
+	    'note-internal' =>1,
+            'note-external' =>1,
+            'note-report'   =>1
+	},
+
 	'SenderType' => 'customer',
 	'HistoryType' => 'AddNote',
 	'HistoryComment' => 'This is a test',
