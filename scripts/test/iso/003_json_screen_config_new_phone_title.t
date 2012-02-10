@@ -1,6 +1,4 @@
-use Core; #-*-perl-*-
-use strict;
-use warnings;
+use Core;
 
 sub test{
     my $Self = Core->new();
@@ -10,7 +8,7 @@ sub test{
     my $Pw     = $Self->{ParamObject}->SetParam( Param => 'Password', Value =>"123" );
     my $Object = $Self->{ParamObject}->SetParam( Param => 'Object' , Value => "CustomObject");
     my $Method = $Self->{ParamObject}->SetParam( Param => 'Method'  , Value => "ScreenConfig");
-    my $Data   = $Self->{ParamObject}->SetParam( Param => 'Data', Value => q[{"Screen":"Phone", "Language":"en"}]);
+    my $Data   = $Self->{ParamObject}->SetParam( Param => 'Data', Value => q[{"Screen":"Phone", "Language":"en" , "TicketID":"1"}]);
 
 #    $Self->CreateTestUsers;
     

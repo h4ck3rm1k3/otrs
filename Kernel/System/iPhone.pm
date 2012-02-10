@@ -19,6 +19,7 @@ use Kernel::System::CheckItem;
 use Kernel::System::Priority;
 use Kernel::System::SystemAddress;
 use Kernel::System::Package;
+use Carp qw(confess);
 
 use vars qw(@ISA $VERSION);
 $VERSION = qw($Revision: 1.68 $) [1];
@@ -511,6 +512,7 @@ sub new {
 sub ScreenConfig {
     my ( $Self, %Param ) = @_;
 
+
     $Self->{LanguageObject} = Kernel::Language->new( %{$Self}, UserLanguage => $Param{Language} );
 
     # ------------------------------------------------------------ #
@@ -522,9 +524,11 @@ sub ScreenConfig {
         # get screen configuration options for iphone from sysconfig
         $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketPhone');
         $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketPhone';
+	my $Elements = $Self->_GetScreenElements(%Param); # expects a ticket id 
+
         my %Config = (
             Title    => $Self->{LanguageObject}->Get('New Phone Ticket'),
-            Elements => $Self->_GetScreenElements(%Param),
+            Elements => $Elements,
             Actions  => {
                 Object     => 'CustomObject',
                 Method     => 'ScreenActions',
@@ -2128,6 +2132,14 @@ Get the last customer article information of a ticket
 sub TicketList {
     my ( $Self, %Param ) = @_;
 
+    if (!exists ($Param{TicketID})){
+	$Self->{LogObject}->Log(
+	    Priority => 'error',
+	    Message  => 'Missing TicketID',
+            );
+	return;
+    }
+
     my %Color = (
         1 => '#cdcdcd',
         2 => '#cdcdcd',
@@ -2136,36 +2148,39 @@ sub TicketList {
         5 => '#ff505e',
     );
 
-    my %Article = $Self->{TicketObject}->ArticleLastCustomerArticle(
-        TicketID => $Param{TicketID},
-    );
-    if (%Article) {
-        $Article{PriorityColor} = $Color{ $Article{PriorityID} };
+    my @Index = $Self->{TicketObject}->ArticleIndex( TicketID => $Param{TicketID}, SenderType => 'customer' );
+    if(@Index) {
+	my %Article = $Self->{TicketObject}->ArticleLastCustomerArticle(
+	    TicketID => $Param{TicketID},
+	    );
+	if (%Article) {
+	    $Article{PriorityColor} = $Color{ $Article{PriorityID} };
+	    
+	    if ( $Self->{'API3X'} ) {
+		my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
+		    TicketID => $Param{TicketID},
+		    UserID   => $Param{UserID},
+		    );
+		if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
+		    $Article{Seen} = 1;
+		}
+	    }
 
-        if ( $Self->{'API3X'} ) {
-            my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
-                TicketID => $Param{TicketID},
-                UserID   => $Param{UserID},
-            );
-            if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
-                $Article{Seen} = 1;
-            }
-        }
-
-	_StripHash(\%Article);
-
-        for my $Key ( keys %Article ) {
-            if ( !defined $Article{$Key} || $Article{$Key} eq '' ) {
-                delete $Article{$Key};
-            }
-            if ( $Key =~ /^Escala/ ) {
-                delete $Article{$Key};
-            }
-        }
-
-        return %Article;
+	    _StripHash(\%Article);
+	    
+	    for my $Key ( keys %Article ) {
+		if ( !defined $Article{$Key} || $Article{$Key} eq '' ) {
+		    delete $Article{$Key};
+		}
+		if ( $Key =~ /^Escala/ ) {
+		    delete $Article{$Key};
+		}
+	    }
+	    
+	    return %Article;
+	}
     }
-
+    
     # return only ticket information if ticket has no articles
     my %TicketData = $Self->TicketGet(
         TicketID => $Param{TicketID},
@@ -3107,6 +3122,7 @@ sub _GetNoteTypes {
 sub _GetScreenElements {
     my ( $Self, %Param ) = @_;
 
+
     # needs 
     if ( !exists $Self->{LanguageObject} ) {
 	$Self->{LogObject}->Log( Priority => 'error', Message => "missing needed LanguageObject" );
@@ -3116,14 +3132,20 @@ sub _GetScreenElements {
     my @ScreenElements;
 
     if ( $Self->{Config}->{Title} ) {
-        my %TicketData = $Self->{TicketObject}->TicketGet(
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
-	    );
-        my $TitleDefault;
-        if ( $TicketData{Title} ) {
-            $TitleDefault = $TicketData{Title} || '';
-        }
+
+	my $TitleDefault = '';
+	
+	if ($Param{TicketID}) # only if we pass a ticket iD
+	{
+	    my %TicketData = $Self->{TicketObject}->TicketGet(
+		TicketID => $Param{TicketID},
+		UserID   => $Param{UserID},
+		);
+	    
+	    if ( $TicketData{Title} ) {
+		$TitleDefault = $TicketData{Title} || '';
+	    }
+	}
 
         my $TitleElements = {
             Name      => 'Title',
@@ -5059,16 +5081,25 @@ sub _GetComposeDefaults {
 	}
     }
     else {
-        %Data = $Self->{TicketObject}->ArticleLastCustomerArticle(
-            TicketID => $Param{TicketID},
-        );
 
-	if ( ! %Data) {
-	    $Self->{LogObject}->Log(
-		Priority => 'error',
-		Message  => 'No Last Article Found for TicketID '. $Param{TicketID} .' given! Please contact the admin.',
+	my @Index = $Self->{TicketObject}->ArticleIndex( TicketID => $Param{TicketID}, SenderType => 'customer' );
+	if(@Index) {
+	    # it can be that there is not any article
+	    %Data = $Self->{TicketObject}->ArticleLastCustomerArticle(
+		TicketID => $Param{TicketID},
 		);
-	    return;
+
+	    if ( ! %Data) {
+		$Self->{LogObject}->Log(
+		    Priority => 'error',
+		    Message  => 'No Last Article Found for TicketID '. $Param{TicketID} .' given! Please contact the admin.',
+		    );
+		return;
+	    }
+	}
+	else
+	{
+	    # no  article found at all....
 	}
     }
 
