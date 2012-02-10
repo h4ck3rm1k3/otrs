@@ -5574,6 +5574,11 @@ sub _SetTicketFreeText {
 sub _TicketFreeTextSet {
     my ( $Self, %Param ) = @_;
 
+    if (! exists($Self->{DynamicFieldObject})){
+	$Self->{LogObject}->Log( Priority => 'error', Message => "missing needed DynamicFieldObject in Self");
+	return;
+    }
+
     # Parm Structure :
     #           Ticket   => $Self->{TicketObject},
     #           TicketID => $Param{TicketID},

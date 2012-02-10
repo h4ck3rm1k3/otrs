@@ -112,6 +112,7 @@ sub NewPhone {
     my  $ticket   = Kernel::System::Ticket->new(%Self);
     my  $link   =  Kernel::System::LinkObject->new(%Self);
 
+
     use Kernel::Language;
 
     my  $lang   =  Kernel::Language->new(%Self);
@@ -136,7 +137,11 @@ sub NewPhone {
 	DBObject     => $DBObject,
 	TimeObject   => $TimeObject,
 	LanguageObject=> $lang,
+
 	);
+
+    $phone->{DynamicFieldObject}=Kernel::System::DynamicField->new(%{$phone});
+
     RunConfig($phone);
     
     return $phone;
@@ -180,6 +185,34 @@ sub NewParam
     }
     
     return %Param;
+}
+
+sub NewParamJson
+{
+    my $name =shift;  
+    my %Param;
+       
+    for my $f (1 .. 16)
+    {
+	$Param{"TicketFreeText$f"}= "SomeText$f";
+	$Param{"TicketFreeKey$f"}= "SomeTextKey$f";
+    }    
+    for my $f (1 .. 3)
+    {
+	$Param{"ArticleFreeText$f"}= "SomeAText$f";
+	$Param{"ArticleFreeKet$f"}= "SomeATextKey$f";	
+    }    
+    for my $f (1 .. 6)
+    {
+	$Param{"TicketFreeTime$f"}  = "2011-01-01 12:0${f}:00";
+    }
+    
+    my @ret;
+    foreach my $k (keys %Param)
+    {
+	push @ret, "\"$k\":\"$Param{$k}\"";
+    }
+    return join ",",@ret;
 }
 
 sub RunConfig

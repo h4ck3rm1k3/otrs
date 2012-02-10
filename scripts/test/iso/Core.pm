@@ -43,7 +43,7 @@ use Kernel::System::iPhone;
 use JSON::PP;
 use Kernel::System::Web::Request;
 use Kernel::Language;
-
+use Kernel::System::DynamicField;
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -51,13 +51,25 @@ sub new {
     # allocate new hash for object
     my $Self = {%Param};
     bless( $Self, $Type );
+    my $phone = basetest::NewPhone();
+
+    $Self->{iPhoneObject}=$phone ;
+    $Self->{JSONObject}         = Kernel::System::JSON->new( %{$phone} );
+    $Self->{ParamObject}        = Kernel::System::Web::Request->new( %{$phone} );
+    $Self->{ConfigObject}       = $phone->{ConfigObject};
+    $Self->{LogObject}       = $phone->{LogObject};
+    $Self->{DBObject}       = $phone->{DBObject};
+    $Self->{UserObject}       = $phone->{UserObject};
+    $Self->{GroupObject}       = $phone->{GroupObject};
+    $Self->{MainObject}       = $phone->{MainObject};
+    $Self->{EncodeObject}       = $phone->{EncodeObject};
+    $Self->{TimeObject}       = $phone->{TimeObject};
 
     return $Self;
 }
 
 sub Dispatch {
     my ($Self) = @_;
-
 
     # get log filename
     $Self->{DebugLogFile} = $Self->{ConfigObject}->Get('iPhone::LogFile') || '';
