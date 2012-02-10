@@ -19,7 +19,7 @@ use YAML;
 use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("_GetArticleDynamicFieldValues");
-
+basetest::CreateTestArticle($phone,\%param);
 my $ret=$phone->_GetArticleDynamicFieldValues(\%param);
 ;
 warn Dump($ret);
