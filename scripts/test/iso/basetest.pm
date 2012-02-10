@@ -137,113 +137,11 @@ sub NewPhone {
 	TimeObject   => $TimeObject,
 	LanguageObject=> $lang,
 	);
-
-
-    $phone->{ConfigObject}->{ArticleTypes}  = {  
-	
-	'note-external' => '1',
-	'note-internal' => '1',
-	'note-report'    => '1',
-	'email-external' => 1,
-	'email-internal' => 1
-    };
-
-
-    $phone->{'ConfigObject'}->{'TicketFreeText'} =  {
-	'1' => '1',
-	'10' => '1',
-	'11' => '1',
-	'12' => '1',
-	'13' => '1',
-	'14' => '1',
-	'15' => '1',
-	'16' => '1',
-	'2' => '1',
-	'3' => '1',
-	'4' => '1',
-	'5' => '1',
-	'6' => '1',
-	'7' => '1',
-	'8' => '1', 
-	'9' => '0'
-    };
-
-    $phone->{'ConfigObject'}->{'TicketFreeText'} =  {
-	'1' => '1',
-	'10' => '1',
-	'11' => '1',
-	'12' => '1',
-	'13' => '1',
-	'14' => '1',
-	'15' => '1',
-	'16' => '1',
-	'2' => '1',
-	'3' => '1',
-	'4' => '1',
-	'5' => '1',
-	'6' => '1',
-	'7' => '1',
-	'8' => '1',
-	'9' => '1'
-    };
-
-    $phone->{'ConfigObject'}->{'ArticleFreeText'} =  {
-	'1' => '1',
-	'2' => '1',
-	'3' => '1'
-    };
-
-    $phone->{'ConfigObject'}->{'TicketFreeTime'} =  {
-	'1' => '1',
-	'2' => '1',
-	'3' => '1',
-	'4' => '1',
-	'5' => '1',
-	'6' => '1'
-    };
-
-#$phone->{ConfigObject}->{Debug}=999;
-#$phone->{Debug}=999;
-
-    $phone->{ConfigObject}->Set(Key => 'ArticleFreeKey1::DefaultSelection', Value=>"Test");
-    $phone->{ConfigObject}->Set(Key => 'ArticleFreeText1',Value=>"Blah");
-    $phone->{ConfigObject}->Set(Key => 'ArticleFreeKey1',Value=>["a","b"]);
-    $phone->{ConfigObject}->Set(Key => 'ArticleTypeDefault',Value=>"note-internal");
-
-
-    $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketPhone', Value=>{
-	'ArticleTypeDefault' => 'note-internal',
-
-	ArticleTypes =>{
-	    'note-internal' =>1,
-            'note-external' =>1,
-            'note-report'   =>1
-	},
-
-	'SenderType' => 'customer',
-	'HistoryType' => 'AddNote',
-	'HistoryComment' => 'This is a test',
-	Permission=>"note",
-	RequiredLock=>1,
-	Note=>1,
-	Title=>1,
-	TicketType=>1,
-	TimeUnits=>1,
-	Service=>1,
-	Owner => 1,
-	Responsible =>1,
-	Priority=>1,
-	PriorityDefault=>"3 normal",
-	State =>1,
-	Body=> "default body",
-	Subject => "Close"
-	    
-	    
-			       });
-
-
+    RunConfig($phone);
+    
     return $phone;
 }
+
 sub NewParam
 {
     my $name =shift;
@@ -282,4 +180,119 @@ sub NewParam
     
     return %Param;
 }
+
+sub RunConfig
+{
+    my $Self=shift;
+
+    $Self->{ConfigObject}->{ArticleTypes}  = {  
+	
+	'note-external' => '1',
+	'note-internal' => '1',
+	'note-report'    => '1',
+	'email-external' => 1,
+	'email-internal' => 1
+    };
+
+
+    $Self->{'ConfigObject'}->{'TicketFreeText'} =  {
+	'1' => '1',
+	'10' => '1',
+	'11' => '1',
+	'12' => '1',
+	'13' => '1',
+	'14' => '1',
+	'15' => '1',
+	'16' => '1',
+	'2' => '1',
+	'3' => '1',
+	'4' => '1',
+	'5' => '1',
+	'6' => '1',
+	'7' => '1',
+	'8' => '1', 
+	'9' => '0'
+    };
+
+    $Self->{'ConfigObject'}->{'TicketFreeText'} =  {
+	'1' => '1',
+	'10' => '1',
+	'11' => '1',
+	'12' => '1',
+	'13' => '1',
+	'14' => '1',
+	'15' => '1',
+	'16' => '1',
+	'2' => '1',
+	'3' => '1',
+	'4' => '1',
+	'5' => '1',
+	'6' => '1',
+	'7' => '1',
+	'8' => '1',
+	'9' => '1'
+    };
+
+    $Self->{'ConfigObject'}->{'ArticleFreeText'} =  {
+	'1' => '1',
+	'2' => '1',
+	'3' => '1'
+    };
+
+    $Self->{'ConfigObject'}->{'TicketFreeTime'} =  {
+	'1' => '1',
+	'2' => '1',
+	'3' => '1',
+	'4' => '1',
+	'5' => '1',
+	'6' => '1'
+    };
+
+#$phone->{ConfigObject}->{Debug}=999;
+#$Self->{Debug}=999;
+
+    $Self->{ConfigObject}->Set(Key => 'ArticleFreeKey1::DefaultSelection', Value=>"Test");
+    $Self->{ConfigObject}->Set(Key => 'ArticleFreeText1',Value=>"Blah");
+    $Self->{ConfigObject}->Set(Key => 'ArticleFreeKey1',Value=>["a","b"]);
+    $Self->{ConfigObject}->Set(Key => 'ArticleTypeDefault',Value=>"note-internal");
+
+    my $stdconf={
+	'ArticleTypeDefault' => 'note-internal',
+	ArticleTypes =>{
+	    'note-internal' =>1,
+            'note-external' =>1,
+            'note-report'   =>1
+	},
+	'SenderType' => 'customer',
+	'HistoryType' => 'AddNote',
+	'HistoryComment' => 'This is a test',
+	Permission=>"note",
+	RequiredLock=>1,
+	Note=>1,
+	Title=>1,
+	TicketType=>1,
+	TimeUnits=>1,
+	Service=>1,
+	Owner => 1,
+	Responsible =>1,
+	Priority=>1,
+	PriorityDefault=>"3 normal",
+	State =>1,
+	Body=> "default body",
+	Subject => "Close"	   	    
+    };
+
+    $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketPhone', Value=>$stdconf);
+    $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketNote', Value=>$stdconf);
+    $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketClose', Value=>$stdconf);
+    $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketCompose', Value=>$stdconf);
+    $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketMove', Value=>$stdconf);
+
+}
+
+sub CreateParams
+{
+
+}
+
 1;

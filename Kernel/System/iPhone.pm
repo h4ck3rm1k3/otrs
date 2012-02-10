@@ -521,6 +521,7 @@ sub ScreenConfig {
 
         # get screen configuration options for iphone from sysconfig
         $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketPhone');
+        $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketPhone';
         my %Config = (
             Title    => $Self->{LanguageObject}->Get('New Phone Ticket'),
             Elements => $Self->_GetScreenElements(%Param),
@@ -542,6 +543,7 @@ sub ScreenConfig {
 
         # get screen configuration options for iphone from sysconfig
         $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketNote');
+        $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketNote';
 
         my %Config = (
             Title    => $Self->{LanguageObject}->Get('Add Note'),
@@ -567,6 +569,7 @@ sub ScreenConfig {
 
         # get screen configuration options for iphone from sysconfig
         $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketClose');
+        $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketClose';
 
         my %Config = (
             Title    => $Self->{LanguageObject}->Get('Close'),
@@ -591,6 +594,7 @@ sub ScreenConfig {
 
         # get screen configuration options for iphone from sysconfig
         $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketCompose');
+        $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketCompose';
 
         my %Config = (
             Title    => $Self->{LanguageObject}->Get('Compose'),
@@ -618,6 +622,7 @@ sub ScreenConfig {
 
         # get screen configuration options for iphone from sysconfig
         $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketMove');
+        $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketMove';
 
         my %Config = (
             Title    => $Self->{LanguageObject}->Get('Move'),
@@ -3084,7 +3089,7 @@ sub _GetNoteTypes {
 
     if (! exists( $Self->{Config}->{ArticleTypes} ) )
     {
-	$Self->{LogObject}->Log( Priority => 'error', Message => "missing needed ArticleTypes in Config" );
+	$Self->{LogObject}->Log( Priority => 'error', Message => "missing needed ArticleTypes in Config :" .  $Self->{Config}{__name});
 	return;
     }
 
@@ -3114,7 +3119,7 @@ sub _GetScreenElements {
         my %TicketData = $Self->{TicketObject}->TicketGet(
             TicketID => $Param{TicketID},
             UserID   => $Param{UserID},
-        );
+	    );
         my $TitleDefault;
         if ( $TicketData{Title} ) {
             $TitleDefault = $TicketData{Title} || '';
@@ -3146,10 +3151,10 @@ sub _GetScreenElements {
                         %Param,
                         UserID => $Param{UserID},
                         )
-                    },
+		},
             },
-            Mandatory => 1,
-            Default   => '',
+			Mandatory => 1,
+			Default   => '',
         };
         push @ScreenElements, $TypeElements;
     }
@@ -3168,7 +3173,7 @@ sub _GetScreenElements {
                     {
                         Search => 'CustomerUserLogin',
                     },
-                ],
+		    ],
             },
             AutoFillElements => [
                 {
@@ -3179,9 +3184,9 @@ sub _GetScreenElements {
                         {
                             CustomerUserID => 'CustomerUserLogin',
                         },
-                    ],
+			],
                 },
-            ],
+		],
             Mandatory => 1,
             Default   => '',
         };
@@ -3207,10 +3212,10 @@ sub _GetScreenElements {
                         %Param,
                         UserID => $Param{UserID},
                         )
-                    },
+		},
             },
-            Mandatory => 1,
-            Default   => '',
+			Mandatory => 1,
+			Default   => '',
         };
         push @ScreenElements, $QueueElements;
     }
@@ -3231,7 +3236,7 @@ sub _GetScreenElements {
                         QueueID        => 'QueueID',
                         TicketID       => 'TicketID',
                     },
-                ],
+		    ],
             },
             Mandatory => 0,
             Default   => '',
@@ -3256,7 +3261,7 @@ sub _GetScreenElements {
                         ServiceID      => 'ServiceID',
                         TicketID       => 'TicketID',
                     },
-                ],
+		    ],
             },
             Mandatory => 0,
             Default   => '',
@@ -3287,7 +3292,7 @@ sub _GetScreenElements {
                         QueueID  => 'QueueID',
                         AllUsers => 1,
                     },
-                ],
+		    ],
             },
             Mandatory => 0,
             Default   => '',
@@ -3310,7 +3315,7 @@ sub _GetScreenElements {
                         QueueID  => 'QueueID',
                         AllUsers => 1,
                     },
-                ],
+		    ],
             },
             Mandatory => 0,
             Default   => '',
@@ -3323,7 +3328,7 @@ sub _GetScreenElements {
             %Param,
             UserID   => $Param{UserID},
             TicketID => $Param{TicketID},
-        );
+	    );
 
         if ( !%ComposeDefaults ) {
             return;
@@ -3465,7 +3470,7 @@ sub _GetScreenElements {
         if ($DefaultArticleType) {
             $DefaultArticleTypeID = $Self->{TicketObject}->ArticleTypeLookup(
                 ArticleType => $DefaultArticleType,
-            );
+		);
         }
         my $NoteElements = {
             Name     => 'ArticleTypeID',
@@ -3496,7 +3501,7 @@ sub _GetScreenElements {
             # can't use StateLookup for 2.4 framework compatibility
             my %State = $Self->{StateObject}->StateGet(
                 Name => $DefaultState,
-            );
+		);
 
             if (%State) {
                 $DefaultStateID = $State{ID};
@@ -3515,7 +3520,7 @@ sub _GetScreenElements {
                     {
                         QueueID => 'QueueID',
                     },
-                ],
+		    ],
             },
             Mandatory     => 1,
             Default       => $DefaultStateID || '',
@@ -3549,7 +3554,7 @@ sub _GetScreenElements {
         if ($DefaultPriority) {
             $DefaultPriorityID = $Self->{PriorityObject}->PriorityLookup(
                 Priority => $DefaultPriority,
-            );
+		);
         }
 
         my $PriorityElements = {
@@ -3603,6 +3608,7 @@ sub _TicketPhoneNew {
     my ( $Self, %Param ) = @_;
 
     $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketPhone');
+    $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketPhone';
 
     my %StateData = ();
     if ( exists($Param{StateID} )) {
@@ -3784,9 +3790,10 @@ sub _TicketPhoneNew {
 
     
     if (! exists $Self->{Config}->{ArticleTypeDefault}){
+	
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Error: no ArticleTypeDefault was configured for iPhone::Frontend::AgentTicketPhone ! Please contact the admin',
+            Message  => 'Error: no ArticleTypeDefault was configured for ' . $Self->{Config}{__name} . ' ! Please contact the admin',
         );
         return;	
     }
@@ -3794,7 +3801,7 @@ sub _TicketPhoneNew {
     if (! exists $Self->{Config}->{SenderType}){
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Error: no default SenderType was configured for iPhone::Frontend::AgentTicketPhone ! Please contact the admin',
+            Message  => 'Error: no default SenderType was configured for ' . $Self->{Config}{__name} . ' ! Please contact the admin',
 	    );
         return;	
     }
@@ -3960,6 +3967,7 @@ sub _TicketCommonActions {
 
     $Self->{Config}
         = $Self->{ConfigObject}->Get( 'iPhone::Frontend::AgentTicket' . $Param{Action} );
+    $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicket'  . $Param{Action};
 
     my %StateData = ();
 
@@ -4393,6 +4401,7 @@ sub _TicketCompose {
 
     $Self->{Config}
         = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketCompose');
+    $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketCompose' ;
 
     # check needed stuff
     if ( !$Param{TicketID} ) {
@@ -4683,6 +4692,7 @@ sub _TicketMove {
 
     $Self->{Config}
         = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketMove');
+    $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketMove' ;
 
     # check permissions
     my $Access;

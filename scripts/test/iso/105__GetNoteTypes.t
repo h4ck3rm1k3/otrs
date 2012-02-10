@@ -20,7 +20,8 @@ use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("_GetNoteTypes");
 
+$phone->{Config} = $phone->{ConfigObject}->Get('iPhone::Frontend::AgentTicketPhone');
 my $ret=$phone->_GetNoteTypes(%param);
-;
+
 warn Dump($ret);
 
