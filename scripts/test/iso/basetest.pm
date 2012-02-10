@@ -208,7 +208,31 @@ sub NewPhone {
     $phone->{ConfigObject}->Set(Key => 'ArticleFreeKey1::DefaultSelection', Value=>"Test");
     $phone->{ConfigObject}->Set(Key => 'ArticleFreeText1',Value=>"Blah");
     $phone->{ConfigObject}->Set(Key => 'ArticleFreeKey1',Value=>["a","b"]);
+    $phone->{ConfigObject}->Set(Key => 'ArticleTypeDefault',Value=>"note-internal");
 
+
+    $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketPhone', Value=>{
+	'ArticleTypeDefault' => 'note-internal',
+	'SenderType' => 'customer',
+	'HistoryType' => 'AddNote',
+	'HistoryComment' => 'This is a test',
+	Permission=>"note",
+	RequiredLock=>1,
+	Note=>1,
+	Title=>1,
+	TicketType=>1,
+	TimeUnits=>1,
+	Service=>1,
+	Owner => 1,
+	Responsible =>1,
+	Priority=>1,
+	PriorityDefault=>"3 normal",
+	State =>1,
+	Body=> "default body",
+	Subject => "Close"
+	    
+	    
+			       });
 
 
     return $phone;
@@ -234,7 +258,7 @@ sub NewParam
     for my $f (1 .. 16)
     {
 	$Param{"TicketFreeText$f"}= "SomeText$f";
-	$Param{"TicketFreeKet$f"}= "SomeTextKey$f";
+	$Param{"TicketFreeKey$f"}= "SomeTextKey$f";
     }
     
     for my $f (1 .. 3)

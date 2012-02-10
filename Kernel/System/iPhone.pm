@@ -3605,10 +3605,33 @@ sub _TicketPhoneNew {
     $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketPhone');
 
     my %StateData = ();
-    if ( $Param{StateID} ) {
+    if ( exists($Param{StateID} )) {
         %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
             ID => $Param{StateID},
         );
+	if (!%StateData) {
+	    $Self->{LogObject}->Log(
+		Priority => 'error',
+		Message  => 'Could not find state with ID ' . $Param{StateID},
+		);
+	    return;
+	}
+    }
+    else    {
+	$Self->{LogObject}->Log(
+	    Priority => 'error',
+	    Message  => 'Missing StateID',
+            );
+	return;
+    }
+
+
+    if (!exists ($Param{CustomerUserLogin})){
+	$Self->{LogObject}->Log(
+	    Priority => 'error',
+	    Message  => 'Missing CustomerUserLogin',
+            );
+	return;
     }
 
     # transform pending time, time stamp based on user time zone
@@ -3690,7 +3713,7 @@ sub _TicketPhoneNew {
     if ( !$Param{CustomerUserLogin} ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'From invalid: From is empty',
+            Message  => 'From invalid: From CustomerUserLogin is empty',
         );
         return;
     }
