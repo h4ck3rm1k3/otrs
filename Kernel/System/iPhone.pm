@@ -4575,6 +4575,20 @@ sub _TicketCompose {
 
     my $MimeType = 'text/plain';
 
+    for my $Param (qw(TicketID From   To  Cc  Bcc  Subject  UserID  Body  InReplyTo   References))    {
+	if ( !exists($Param{$Param}))
+	{
+	    $Self->{LogObject}->Log( Priority => 'error', Message => "missing value for $Param!" );
+	    return;
+	}
+    }
+
+    if (!$Self->{ConfigObject}->Get('DefaultCharset'))
+    {
+	$Self->{LogObject}->Log( Priority => 'error', Message => "missing DefaultCharset in global config!" );
+    }
+
+
     # send email
     my $ArticleID = $Self->{TicketObject}->ArticleSend(
         ArticleType    => 'email-external',
@@ -5417,7 +5431,7 @@ sub _GetArticleFreeTextValues {
     my $Self  = shift || die "no self";
     my $Param = shift || die "no param hashref";
 
-    for my $Needed (qw(UserID TicketID)) {
+    for my $Needed (qw(UserID TicketID ArticleID)) {
         if ( !defined $Param->{$Needed} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Needed!" );
             return;
@@ -5434,12 +5448,18 @@ sub _GetArticleFreeTextValues {
         $ArticleFreeText{$Key}++;
         $ArticleFreeText{$Text}++;
     }
-
-    my %Article = $Self->{TicketObject}->ArticleGet(
-        TicketID      => $Param->{TicketID},,
+    
+    my %Param2=         (
+	TicketID      => $Param->{TicketID},
+	ArticleID      => $Param->{ArticleID},
         UserID        => $Param->{UserID},
         DynamicFields => 1,
     );
+
+    my %Article = $Self->{TicketObject}->ArticleGet(
+	%Param2
+	);
+
 
     foreach my $Key ( keys %ArticleFreeText ) {
         my $Value = $Article{$Key} || '';
@@ -5447,6 +5467,7 @@ sub _GetArticleFreeTextValues {
     }
 
     # $Param contains the data that was collected in the hash
+    return $Param;
 }
 
 sub _GetTicketFreeTextValues {
@@ -5478,11 +5499,12 @@ sub _GetTicketFreeTextValues {
     );
 
     foreach my $Key ( keys %FreeText ) {
-        my $Value = $Article{$Key} || '';
-        $Param->{$Key} = $Key;
+	my $Value = $Article{$Key} || '';
+	$Param->{$Key} = $Key; # the keys are filled out anyway.... even if they have no data.
     }
 
     # $Param contains the data that was collected in the hash
+    # the 
 }
 
 sub _GetFreeTextConfigOptions {
@@ -5559,6 +5581,13 @@ sub _TicketFreeTextSet {
     #           Value    => $Param{$Text},
     #           Counter  => $Count,
     #           UserID   => $Param{UserID},
+    
+    if ( !exists $Param{Key} )
+    {
+	$Self->{LogObject}
+	->Log( Priority => 'error', Message => "No Text Passed for Param Key !" );
+	return;
+    }
     if ( !exists $Param{Value} )
     {
         $Self->{LogObject}
@@ -5898,6 +5927,67 @@ sub _TicketFreeTextGet{
 #	    Action   => $Param{Action},
 #	    UserID   => $Param{UserID},
 }
+
+sub _GetTicketDynamicFieldValues {
+    my $Self  = shift || die "no self";
+    my $Param = shift || die "no param hashref";
+
+    for my $Needed (qw(TicketID UserID )) {
+        if ( !defined $Param->{$Needed} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Needed!" );
+            return;
+        }
+    }
+
+    my %Ticket = $Self->{TicketObject}->TicketGet(
+        TicketID      => $Param->{TicketID},
+        UserID        => $Param->{UserID},
+        DynamicFields => 1,
+    );
+
+    foreach my $Key ( keys %Ticket ) {
+	if ($Key =~ /^DynamicField_/)
+	{
+	    my $Value = $Ticket{$Key} || '';
+	    $Param->{$Key} = $Key; # the keys are filled out anyway.... even if they have no data.
+	}
+    }
+}
+
+sub _GetArticleDynamicFieldValues {
+    my $Self  = shift || die "no self";
+    my $Param = shift || die "no param hashref";
+
+    for my $Needed (qw(UserID TicketID ArticleID)) {
+        if ( !defined $Param->{$Needed} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Needed!" );
+            return;
+        }
+    }
+    
+    my %Param2=         (
+	TicketID      => $Param->{TicketID},
+	ArticleID      => $Param->{ArticleID},
+        UserID        => $Param->{UserID},
+        DynamicFields => 1,
+    );
+
+    my %Article = $Self->{TicketObject}->ArticleGet(
+	%Param2
+	);
+
+    foreach my $Key ( keys %Article ) {
+	if ($Key =~ /^DynamicField_/)
+	{
+	    my $Value = $Article{$Key} || '';
+	    $Param->{$Key} = $Key; # the keys are filled out anyway.... even if they have no data.
+	}
+    }
+
+    # $Param contains the data that was collected in the hash
+    return $Param;
+}
+
 
 1;
 

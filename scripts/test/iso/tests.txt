@@ -42,3 +42,5 @@ $phone->_TicketMove(%param);
 $phone->_TicketPhoneNew(%param);
 $phone->_TicketTransformFreeTime(\%param);
 $phone->_TransformDateSelection(%param);
+$phone->_GetArticleDynamicFieldValues(\%param);
+$phone->_GetTicketDynamicFieldValues(\%param);

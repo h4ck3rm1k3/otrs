@@ -20,8 +20,6 @@ use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("_TicketPhoneNew");
 
-basetest::CreateCustomerUserObject($phone,\%param);
-
 my $ret=$phone->_TicketPhoneNew(%param);
 ;
 warn Dump($ret);
