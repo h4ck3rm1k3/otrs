@@ -19,8 +19,13 @@ use YAML;
 use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("_TicketFreeTextSet");
-
-my $ret=$phone->_TicketFreeTextSet (%param);
+my %param2 = (
+   TicketID =>$param{TicketID},
+   UserID =>$param{UserID},
+   Key => "TicketFreeText1",
+   Value => "TicketFreeTextvalue",
+   );
+my $ret=$phone->_TicketFreeTextSet (%param2);
 ;
 warn Dump($ret);
 

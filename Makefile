@@ -10,7 +10,8 @@ test : $(TESTOUT)
 
 clean :
 	rm $(TESTOUT)
-%.out : %.t
+
+%.out : %.t scripts/test/iso/basetest.pm
 	echo going to process $<
 	perl -I. -I $(SYSTEMROOT) -I scripts/test/iso $< > $@ 2>&1
 	tail	$@ 

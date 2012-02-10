@@ -378,4 +378,29 @@ sub CreateTestArticle
     $param->{TicketID}=$TicketID;
     
 }
+
+
+sub CreateTestTicket
+{
+    my $phone=shift;
+    my $param=shift;
+    $phone->{Config} = $phone->{ConfigObject}->Get('iPhone::Frontend::AgentTicketCompose')|| die;
+   
+# create a new ticket
+    my $TicketID = $phone->{TicketObject}->TicketCreate(
+	Title        => 'My ticket created by Agent A',
+	Queue        => 'Raw',
+	Lock         => 'unlock',
+	Priority     => '3 normal',
+	State        => 'open',
+	CustomerNo   => '123465',
+	CustomerUser => 'customer@example.com',
+	OwnerID      => 1,
+	UserID       => 1,
+	From           => 'Some Agent <agentl@otrs.com>',
+	);
+    warn "created test ticket $TicketID";
+    $param->{TicketID}=$TicketID;
+
+}
 1;

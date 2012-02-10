@@ -19,8 +19,7 @@ use YAML;
 use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("_SetTicketFreeText");
-
-my $ret=$phone->_SetTicketFreeText(\%param);
-;
+basetest::CreateTestTicket($phone,\%param);
+my $ret=$phone->_SetTicketFreeText(%param);
 warn Dump($ret);
 

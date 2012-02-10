@@ -19,8 +19,8 @@ use YAML;
 use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("_SetArticleFreeText");
-
-my $ret=$phone->_SetArticleFreeText(\%param);
+basetest::CreateTestArticle($phone,\%param);
+my $ret=$phone->_SetArticleFreeText(%param);
 ;
 warn Dump($ret);
 

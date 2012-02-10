@@ -20,7 +20,18 @@ use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("_TicketCompose");
 
-my $ret=$phone->_TicketCompose(%param);
-;
+
+my $ret=$phone->_TicketCompose(%param,
+   From => "md\@otrs.com",
+   To	=> "md2\@otrs.com",
+   Cc   => "test\@otrs.com",
+   Bcc   => "test\@otrs.com",
+   Subject => "Subject",
+   UserID => 1,
+   Body => "Some Body",
+   InReplyTo => "",
+   References => "",
+	);
+
 warn Dump($ret);
 

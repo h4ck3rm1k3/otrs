@@ -20,7 +20,25 @@ use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("_TicketCommonActions");
 
-my $ret=$phone->_TicketCommonActions(%param);
+for my $Action (qw(Phone Note Close Compose Move ))
+{
+	$param{Action}=$Action,
+	$param{Body}="Body for $Action",
+
+%param = (%param, (
+    ArticleType    => 'note-internal',
+    SenderType     => 'agent',
+    From           => 'Some Agent <agentl@otrs.com>',
+    To             => 'Some Customer <customer@otrs.com>',
+    Subject        => 'some short description',
+    ContentType    => 'text/plain; charset=ISO-8859-15',
+    HistoryType    => 'OwnerUpdate',
+    HistoryComment => 'Some free text!',
+)   );
+
+	my $ret=$phone->_TicketCommonActions(%param);
+	warn Dump($ret);	
+}	
 ;
-warn Dump($ret);
+
 
