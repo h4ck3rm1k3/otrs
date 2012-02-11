@@ -20,7 +20,8 @@ use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("_GetFreeTextConfigOptions");
 
-my $ret=$phone->_GetFreeTextConfigOptions (%param);
+#my $ret=$phone->_GetFreeTextConfigOptions (%param);
+my $ret=$phone->_GetTicketFreeTextValues(\%param);
 ;
 warn Dump($ret);
 

@@ -19,7 +19,9 @@ use YAML;
 use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("CustomerIDGet");
-
+    %param = (%param,
+	CustomerUserID => 1,
+);
 my $ret=$phone->CustomerIDGet(%param);
 ;
 warn Dump($ret);

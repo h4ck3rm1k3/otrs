@@ -26,168 +26,168 @@ $VERSION = qw($Revision: 1.68 $) [1];
 
 =head1 NAME
 
-Kernel::System::iPhone - iPhone lib
+    Kernel::System::iPhone - iPhone lib
 
-=head1 SYNOPSIS
+    =head1 SYNOPSIS
 
-All iPhone functions.
+    All iPhone functions.
 
-=head1 PUBLIC INTERFACE
+    =head1 PUBLIC INTERFACE
 
-=over 4
+    =over 4
 
-=cut
+    =cut
 
 =item new()
 
-create an object
+    create an object
 
     use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::User;
-    use Kernel::System::Group;
-    use Kernel::System::Queue;
-    use Kernel::System::Service;
-    use Kernel::System::Type;
-    use Kernel::System::State;
-    use Kernel::System::Lock;
-    use Kernel::System::SLA;
-    use Kernel::System::CustomerUser;
-    use Kernel::System::Ticket;
-    use Kernel::System::LinkObject;
-    use Kernel::System::iPhone;
+use Kernel::System::Encode;
+use Kernel::System::Log;
+use Kernel::System::Time;
+use Kernel::System::Main;
+use Kernel::System::DB;
+use Kernel::System::User;
+use Kernel::System::Group;
+use Kernel::System::Queue;
+use Kernel::System::Service;
+use Kernel::System::Type;
+use Kernel::System::State;
+use Kernel::System::Lock;
+use Kernel::System::SLA;
+use Kernel::System::CustomerUser;
+use Kernel::System::Ticket;
+use Kernel::System::LinkObject;
+use Kernel::System::iPhone;
 
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
+my $ConfigObject = Kernel::Config->new();
+my $EncodeObject = Kernel::System::Encode->new(
+    ConfigObject => $ConfigObject,
     );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
+my $LogObject = Kernel::System::Log->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
     );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
+my $TimeObject = Kernel::System::Time->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
     );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
+my $MainObject = Kernel::System::Main->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
+    LogObject    => $LogObject,
     );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
+my $DBObject = Kernel::System::DB->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
+    LogObject    => $LogObject,
+    MainObject   => $MainObject,
     );
-    my $UserObject = Kernel::System::User->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-        TimeObject   => $TimeObject,
-        DBObject     => $DBObject,
-        EncodeObject => $EncodeObject,
+my $UserObject = Kernel::System::User->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    MainObject   => $MainObject,
+    TimeObject   => $TimeObject,
+    DBObject     => $DBObject,
+    EncodeObject => $EncodeObject,
     );
-    my $GroupObject = Kernel::System::Group->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $GroupObject = Kernel::System::Group->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $QueueObject = Kernel::System::Queue->new(
-        ConfigObject        => $ConfigObject,
-        LogObject           => $LogObject,
-        DBObject            => $DBObject,
-        MainObject          => $MainObject,
-        EncodeObject        => $EncodeObject,
-        GroupObject         => $GroupObject, # if given
-        CustomerGroupObject => $CustomerGroupObject, # if given
+my $QueueObject = Kernel::System::Queue->new(
+    ConfigObject        => $ConfigObject,
+    LogObject           => $LogObject,
+    DBObject            => $DBObject,
+    MainObject          => $MainObject,
+    EncodeObject        => $EncodeObject,
+    GroupObject         => $GroupObject, # if given
+    CustomerGroupObject => $CustomerGroupObject, # if given
     );
-    my $ServiceObject = Kernel::System::Service->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
+my $ServiceObject = Kernel::System::Service->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
     );
-    my $TypeObject = Kernel::System::Type->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $TypeObject = Kernel::System::Type->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $StateObject = Kernel::System::State->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $StateObject = Kernel::System::State->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $LockObject = Kernel::System::Lock->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $LockObject = Kernel::System::Lock->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $SLAObject = Kernel::System::SLA->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
+my $SLAObject = Kernel::System::SLA->new(
+    ConfigObject => $ConfigObject,
+    EncodeObject => $EncodeObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
     );
-    my $CustomerUserObject = Kernel::System::CustomerUser->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $CustomerUserObject = Kernel::System::CustomerUser->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $TicketObject = Kernel::System::Ticket->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-        GroupObject        => $GroupObject,        # if given
-        CustomerUserObject => $CustomerUserObject, # if given
-        QueueObject        => $QueueObject,        # if given
+my $TicketObject = Kernel::System::Ticket->new(
+    ConfigObject       => $ConfigObject,
+    LogObject          => $LogObject,
+    DBObject           => $DBObject,
+    MainObject         => $MainObject,
+    TimeObject         => $TimeObject,
+    EncodeObject       => $EncodeObject,
+    GroupObject        => $GroupObject,        # if given
+    CustomerUserObject => $CustomerUserObject, # if given
+    QueueObject        => $QueueObject,        # if given
     );
-    my $LinkObject = Kernel::System::LinkObject->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        TimeObject   => $TimeObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
+my $LinkObject = Kernel::System::LinkObject->new(
+    ConfigObject => $ConfigObject,
+    LogObject    => $LogObject,
+    DBObject     => $DBObject,
+    TimeObject   => $TimeObject,
+    MainObject   => $MainObject,
+    EncodeObject => $EncodeObject,
     );
-    my $iPhoneObject = Kernel::System::iPhone->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-        GroupObject        => $GroupObject,
-        CustomerUserObject => $CustomerUserObject,
-        QueueObject        => $QueueObject,
-        UserObject         => $UserObject,
-        QueueObject        => $QueueObject,
-        ServiceObject      => $ServiceObject,
-        TypeObject         => $TypeObject,
-        StateObject        => $StateObject,
-        LockObject         => $LockObject,
-        SLAObject          => $SLAObject,
-        TicketObject       => $TicketObject,
-        Linkbject          => $LinkObject,
+my $iPhoneObject = Kernel::System::iPhone->new(
+    ConfigObject       => $ConfigObject,
+    LogObject          => $LogObject,
+    DBObject           => $DBObject,
+    MainObject         => $MainObject,
+    TimeObject         => $TimeObject,
+    EncodeObject       => $EncodeObject,
+    GroupObject        => $GroupObject,
+    CustomerUserObject => $CustomerUserObject,
+    QueueObject        => $QueueObject,
+    UserObject         => $UserObject,
+    QueueObject        => $QueueObject,
+    ServiceObject      => $ServiceObject,
+    TypeObject         => $TypeObject,
+    StateObject        => $StateObject,
+    LockObject         => $LockObject,
+    SLAObject          => $SLAObject,
+    TicketObject       => $TicketObject,
+    Linkbject          => $LinkObject,
     );
 
 =cut
@@ -214,19 +214,6 @@ sub new {
     $Self->{SystemAddress}   = Kernel::System::SystemAddress->new(%Param);
     $Self->{PackageObject}   = Kernel::System::Package->new(%Param);
 
-    $Self->{SystemVersion} = $Self->{ConfigObject}->Get('Version');
-
-    # check for any version staring with 2.4
-    if ( $Self->{SystemVersion} =~ m{ \A 2 \. 4 \. (?: \d+ | x \s+ CVS) \z }xms ) {
-        $Self->{'API3X'} = 0;
-    }
-    else {
-        $Self->{'API3X'} = 0;
-        if ( $Self->{SystemVersion} =~ m{ \A 3 \. \d+ \. (?: \d+ | x \s+ CVS ) \z }xms ) {
-            $Self->{'API3X'} = 1;
-        }
-    }
-
     return $Self;
 }
 
@@ -245,266 +232,266 @@ sub new {
     as well as on general settings.
 
     my @Result = $iPhoneObject->ScreenConfig(
-        Screen => "Phone",
-        UserID => 1,
+    Screen => "Phone",
+    UserID => 1,
     );
 
-    my @Result = $iPhoneObject->ScreenConfig(
-        Screen   => "Note",
-        TicketID => 224,
-        UserID   => 1,
+my @Result = $iPhoneObject->ScreenConfig(
+    Screen   => "Note",
+    TicketID => 224,
+    UserID   => 1,
     );
 
-    # a result could be
+# a result could be
 
-    @Result = (
-        Actions => {
-            Parameters => {
-                Action => "Phone",
-            },
-            Method => "ScreenActions",
-            Object => "CustomObject",
-            Title => "New Phone Ticket"
-       },
-        Elements => (
-            {
-                Name       => "TypeID",
-                Title      => "Type",
-                Datatype   => "Text",
-                Viewtype   => "Picker",
-                Options    => {
-                    1=> "default",
-                    2=> "RfC",
-                    3=> "Incident",
-                    4=> "Incident::ServiceRequest",
-                    5=> "Incident::Disaster"
-                    6=> "Problem",
-                    7=> "Problem::KnownError",
-                    8=> "Problem::PendingRfC",
-                },
-                Default   =>"",
-                Mandatory => 1,
-            },
-            {
-                Name           => "CustomerUserLogin",
-                Title          => "From customer",
-                Datatype       => "Text",
-                Viewtype       =>"AutoCompletion",
-                DynamicOptions => {
-                    Object     => "CustomObject",
-                    Method     =>"CustomerSearch",
-                    Parameters =>
-                        {
-                            Search => "CustomerUserLogin",
-                        },
-                },
-                Default        => "",
-                Mandatory      => 1,
-            },
-            {
-                Name      => "QueueID",
-                Title     => "To queue",
-                Datatype  => "Text",
-                Viewtype  => "Picker",
-                Options   =>{
-                      => "-",
-                    1 => "Postmaster",
-                    2 => "Raw",
-                    3 => "Junk",
-                    4 => "Misc",
-                },
-                Default   => "",
-                Mandatory => 1,
-            },
-            {
-                Name           => "ServiceID",
-                Title          => "Service",
-                Datatype       => "Text",
-                Viewtype       =>"Picker",
-                DynamicOptions => {
-                    Object     => "CustomObject"
-                    Method     => "ServicesGet",
-                    Parameters => {
-                        CustomerUserID => "CustomerUserLogin",
-                        QueueID        => "QueueID",
-                        TicketID       => "TicketID",
-                    },
-                },
-                Mandatory      => 0,
-                Default        => "",
-            },
-            {
-                Name           => "SLAID",
-                Title          => "SLA",
-                Datatype       => "Text",
-                Viewtype       => "Picker",
-                DynamicOptions => {
-                    Object     => "CustomObject",
-                    Method     => "SLAsGet",
-                    Parameters => {
-                        CustomerUserID => "CustomerUserLogin",
-                        QueueID        => "QueueID",
-                        ServiceID      => "ServiceID",
-                        TicketID       => "TicketID".
-                    },
-                },
-                Default        => "",
-                Mandatory      => 0,
-            },
-            {
-                Name           => "OwnerID",
-                Title          => "Owner",
-                Datatype       => "Text",
-                Viewtype       =>"Picker",
-                DynamicOptions => {
-                    Parameters => {
-                        QueueID  => "QueueID",
-                        AllUsers => 1,
-                    },
-                    Method     => "UsersGet",
-                    Object     => "CustomObject",
-                },
+@Result = (
+    Actions => {
+    Parameters => {
+    Action => "Phone",
+},
+    Method => "ScreenActions",
+    Object => "CustomObject",
+    Title => "New Phone Ticket"
+},
+    Elements => (
+{
+    Name       => "TypeID",
+    Title      => "Type",
+    Datatype   => "Text",
+    Viewtype   => "Picker",
+    Options    => {
+	1=> "default",
+	2=> "RfC",
+	3=> "Incident",
+	4=> "Incident::ServiceRequest",
+	5=> "Incident::Disaster"
+	    6=> "Problem",
+	    7=> "Problem::KnownError",
+	    8=> "Problem::PendingRfC",
+    },
+	    Default   =>"",
+	    Mandatory => 1,
+},
+{
+    Name           => "CustomerUserLogin",
+    Title          => "From customer",
+    Datatype       => "Text",
+    Viewtype       =>"AutoCompletion",
+    DynamicOptions => {
+	Object     => "CustomObject",
+	Method     =>"CustomerSearch",
+	Parameters =>
+	{
+	    Search => "CustomerUserLogin",
+	},
+    },
+    Default        => "",
+    Mandatory      => 1,
+},
+{
+    Name      => "QueueID",
+    Title     => "To queue",
+    Datatype  => "Text",
+    Viewtype  => "Picker",
+    Options   =>{
+	=> "-",
+	1 => "Postmaster",
+	2 => "Raw",
+	3 => "Junk",
+	4 => "Misc",
+    },
+    Default   => "",
+    Mandatory => 1,
+},
+{
+    Name           => "ServiceID",
+    Title          => "Service",
+    Datatype       => "Text",
+    Viewtype       =>"Picker",
+    DynamicOptions => {
+	Object     => "CustomObject"
+	    Method     => "ServicesGet",
+	    Parameters => {
+		CustomerUserID => "CustomerUserLogin",
+		QueueID        => "QueueID",
+		TicketID       => "TicketID",
+	},
+    },
+    Mandatory      => 0,
+    Default        => "",
+},
+{
+    Name           => "SLAID",
+    Title          => "SLA",
+    Datatype       => "Text",
+    Viewtype       => "Picker",
+    DynamicOptions => {
+	Object     => "CustomObject",
+	Method     => "SLAsGet",
+	Parameters => {
+	    CustomerUserID => "CustomerUserLogin",
+	    QueueID        => "QueueID",
+	    ServiceID      => "ServiceID",
+	    TicketID       => "TicketID".
+	},
+    },
                 Default        => "",
                 Mandatory      => 0,
-            },
-            {
-                Name           => "ResponsibleID",
-                Title          => "Responsible",
-                Datatype       => "Text",
-                Viewtype       => "Picker",
-                DynamicOptions => {
-                    Object     => "CustomObject",
-                    Method     => "UsersGet",
-                    Parameters => {
-                        QueueID  => "QueueID",
-                        AllUsers => 1
-                    },
-                },
+},
+{
+    Name           => "OwnerID",
+    Title          => "Owner",
+    Datatype       => "Text",
+    Viewtype       =>"Picker",
+    DynamicOptions => {
+	Parameters => {
+	    QueueID  => "QueueID",
+	    AllUsers => 1,
+	},
+	Method     => "UsersGet",
+	Object     => "CustomObject",
+    },
+    Default        => "",
+    Mandatory      => 0,
+},
+{
+    Name           => "ResponsibleID",
+    Title          => "Responsible",
+    Datatype       => "Text",
+    Viewtype       => "Picker",
+    DynamicOptions => {
+	Object     => "CustomObject",
+	Method     => "UsersGet",
+	Parameters => {
+	    QueueID  => "QueueID",
+	    AllUsers => 1
+	},
+    },
                 Default        => "",
                 Mandatory      => 0,
-            },
-            {
-                Name      => "Subject",
-                Title     => "Subject",
-                Datatype  => "Text",
-                Viewtype  => "Input",
-                Max       => 250,
-                Min       => 1,
-                Default   => "",
-                Mandatory => 1,
-            },
-            {
-                Name      => "Body",
-                Title     => "Text",
-                Datatype  => "Text",
-                Viewtype  => "TextArea",
-                Max       => 20000,
-                Min       => 1,
-                Default   => "",
-                Mandatory => 1,
-            },
-            {
-                Name      => "CustomerID",
-                Title     => "CustomerID",
-                Datatype  => "Text",
-                Viewtype  => "Input",
-                Max       => 150,
-                Min       => 1,
-                Default   => "",
-                Mandatory => 0,
-            },
-            {
-                Name           => "StateID",
-                Title          => "Next Ticket State",
-                Datatype       => "Text",
-                Viewtype       => "Picker",
-                DynamicOptions => {
-                    Method     => "NextStatesGet",
-                    Object     => "CustomObject",
-                    Parameters => {
-                        QueueID => "QueueID",
-                    },
-                },
-                Default        => "4",
-                DefaultOption  => "open",
-                Mandatory      => 1,
-            },
-            {
-                Name      => "PendingDate",
-                Title     => "Pending Date (for pending* states)"
-                Datatype  => "DateTime",
-                Viewtype  => "Picker",
-                Default   => "",
-                Mandatory => 0,
-            },
-            {
-                Name           => "PriorityID",
-                Title          => "Priority"
-                Datatype       => "Text",
-                Viewtype       => "Picker",
-                DynamicOptions => {
-                    Object     => "CustomObject"
-                    Method     => "PrioritiesGet",
-                    Parameters => "",
-                },
+},
+{
+    Name      => "Subject",
+    Title     => "Subject",
+    Datatype  => "Text",
+    Viewtype  => "Input",
+    Max       => 250,
+    Min       => 1,
+    Default   => "",
+    Mandatory => 1,
+},
+{
+    Name      => "Body",
+    Title     => "Text",
+    Datatype  => "Text",
+    Viewtype  => "TextArea",
+    Max       => 20000,
+    Min       => 1,
+    Default   => "",
+    Mandatory => 1,
+},
+{
+    Name      => "CustomerID",
+    Title     => "CustomerID",
+    Datatype  => "Text",
+    Viewtype  => "Input",
+    Max       => 150,
+    Min       => 1,
+    Default   => "",
+    Mandatory => 0,
+},
+{
+    Name           => "StateID",
+    Title          => "Next Ticket State",
+    Datatype       => "Text",
+    Viewtype       => "Picker",
+    DynamicOptions => {
+	Method     => "NextStatesGet",
+	Object     => "CustomObject",
+	Parameters => {
+	    QueueID => "QueueID",
+	},
+    },
+    Default        => "4",
+    DefaultOption  => "open",
+    Mandatory      => 1,
+},
+{
+    Name      => "PendingDate",
+    Title     => "Pending Date (for pending* states)"
+	Datatype  => "DateTime",
+	Viewtype  => "Picker",
+	Default   => "",
+	Mandatory => 0,
+},
+{
+    Name           => "PriorityID",
+    Title          => "Priority"
+	Datatype       => "Text",
+	Viewtype       => "Picker",
+	DynamicOptions => {
+	    Object     => "CustomObject"
+		Method     => "PrioritiesGet",
+		Parameters => "",
+    },
                 DefaultOption  => "3 normal",
                 Default        => "3",
                 Mandatory      => 1,
-            },
-            {
-                Name        => "TicketFreeText1",
-                FreeTextKey => {
-                    Device  => "Device",
-                    Product => "Product"
-                },
-                Title       => "Product",
-                Datatype    => "Text",
-                Viewtype    => "Picker",
-                Options     => {
-                             => "-",
-                    Phone    => "Phone",
-                    Notebook => "Notebook",
-                    PC       => "PC",
-                },
-                Default     => "Notebook",
-                Mandatory   => 0,
-            },
-            {
-                Name      => "TicketFreeTime1",
-                Title     => "Termin1",
-                Datatype  => "DateTime",
-                Viewtype  => "Picker",
-                Default   => "2010-07-13 15:18:24",
-                Mandatory => 0,
-            },
-            {
-                Name        => "ArticleFreeText1",
-                FreeTextKey => {
-                    Work => "Work",
-                },
-                Title       => '',
-                Datatype    => "Text",
-                Viewtype    => "Picker",
-                Options     => {
-                               => "-",
-                    Bugfix     => "Bugfix",
-                    Consulting => "Consulting",
-                    Research   => "Research",
-                },
-                Default     => '',
-                Mandatory   => 0,
-            },
-            {
-                Name => "TimeUnits",
-                Title => "Time units (work units)",
-                Datatype => "Numeric",
-                Viewtype => "Input",
-                Max => 10,
-                Min => 1,
-                Default => "",
-                Mandatory => 0,
-            },
-        ),
+},
+{
+    Name        => "TicketFreeText1",
+    FreeTextKey => {
+	Device  => "Device",
+	Product => "Product"
+    },
+	    Title       => "Product",
+	    Datatype    => "Text",
+	    Viewtype    => "Picker",
+	    Options     => {
+		=> "-",
+		Phone    => "Phone",
+		Notebook => "Notebook",
+		PC       => "PC",
+	},
+    Default     => "Notebook",
+    Mandatory   => 0,
+},
+{
+    Name      => "TicketFreeTime1",
+    Title     => "Termin1",
+    Datatype  => "DateTime",
+    Viewtype  => "Picker",
+    Default   => "2010-07-13 15:18:24",
+    Mandatory => 0,
+},
+{
+    Name        => "ArticleFreeText1",
+    FreeTextKey => {
+	Work => "Work",
+    },
+    Title       => '',
+    Datatype    => "Text",
+    Viewtype    => "Picker",
+    Options     => {
+	=> "-",
+	Bugfix     => "Bugfix",
+	Consulting => "Consulting",
+	Research   => "Research",
+    },
+    Default     => '',
+    Mandatory   => 0,
+},
+{
+    Name => "TimeUnits",
+    Title => "Time units (work units)",
+    Datatype => "Numeric",
+    Viewtype => "Input",
+    Max => 10,
+    Min => 1,
+    Default => "",
+    Mandatory => 0,
+},
+    ),
     );
 
 =cut
@@ -536,7 +523,7 @@ sub ScreenConfig {
                     Action => 'Phone',
                 },
             },
-        );
+	    );
         return \%Config;
     }
 
@@ -561,7 +548,7 @@ sub ScreenConfig {
                     Title    => 'a title',
                 },
             },
-        );
+	    );
         return \%Config;
     }
 
@@ -586,7 +573,7 @@ sub ScreenConfig {
                     TicketID => $Param{TicketID},
                 },
             },
-        );
+	    );
         return \%Config;
     }
 
@@ -612,7 +599,7 @@ sub ScreenConfig {
                     ReplyArticleID => $Param{ArticleID},
                 },
             },
-        );
+	    );
         if ( !$Config{Elements} ) {
             return -1;
         }
@@ -639,7 +626,7 @@ sub ScreenConfig {
                     TicketID => $Param{TicketID},
                 },
             },
-        );
+	    );
         return \%Config;
     }
 
@@ -648,29 +635,29 @@ sub ScreenConfig {
 
 =item Badges()
 
-Get Badges ticket counts for Watched, Locked and Reposible for tickets
+    Get Badges ticket counts for Watched, Locked and Reposible for tickets
 
     my @Result = $iPhoneObject->Badges(
-        UserID          => 1,
+    UserID          => 1,
     );
 
-    # a result could be
+# a result could be
 
-    @Result = (
-        Locked => {
-            All => 1,
-            New => 1,
-        },
+@Result = (
+    Locked => {
+    All => 1,
+    New => 1,
+},
 
-        Watched => {       # Optional if feature is enabled
-            All => 2,
-            New => 0,
-        },
+    Watched => {       # Optional if feature is enabled
+    All => 2,
+    New => 0,
+},
 
-        Responsible => {   # Optional if feature is enabled
-            All => 1,
-            New => 1,
-        },
+    Responsible => {   # Optional if feature is enabled
+    All => 1,
+    New => 1,
+},
     );
 
 =cut
@@ -688,7 +675,7 @@ sub Badges {
             OwnerIDs   => [ $Param{UserID} ],
             UserID     => 1,
             Permission => 'ro',
-        );
+	    );
         my $CountNew = $Self->{TicketObject}->TicketSearch(
             Result     => 'COUNT',
             Locks      => ['lock'],
@@ -699,13 +686,13 @@ sub Badges {
             TicketFlagUserID => $Param{UserID},
             UserID           => 1,
             Permission       => 'ro',
-        );
+	    );
         $CountNew = $Count - $CountNew;
         push @Data, {
             Locked => {
                 All => $Count,
                 New => $CountNew,
-                }
+	    }
         };
     }
 
@@ -717,7 +704,7 @@ sub Badges {
             ResponsibleIDs => [ $Param{UserID} ],
             UserID         => 1,
             Permission     => 'ro',
-        );
+	    );
         my $CountNew = $Self->{TicketObject}->TicketSearch(
             Result         => 'COUNT',
             StateType      => 'Open',
@@ -728,14 +715,14 @@ sub Badges {
             TicketFlagUserID => $Param{UserID},
             UserID           => 1,
             Permission       => 'ro',
-        );
+	    );
         $CountNew = $Count - $CountNew;
 
         push @Data, {
             Responsible => {
                 All => $Count,
                 New => $CountNew,
-                }
+	    }
         };
     }
 
@@ -772,7 +759,7 @@ sub Badges {
                 WatchUserIDs => [ $Param{UserID} ],
                 UserID       => 1,
                 Permission   => 'ro',
-            );
+		);
             my $CountNew = $Self->{TicketObject}->TicketSearch(
                 Result       => 'COUNT',
                 WatchUserIDs => [ $Param{UserID} ],
@@ -782,14 +769,14 @@ sub Badges {
                 TicketFlagUserID => $Param{UserID},
                 UserID           => 1,
                 Permission       => 'ro',
-            );
+		);
             $CountNew = $Count - $CountNew;
 
             push @Data, {
                 Watched => {
                     All => $Count,
                     New => $CountNew,
-                    }
+		}
             };
         }
     }
@@ -799,107 +786,107 @@ sub Badges {
 
 =item EscalationView()
 
-Get the number of tickets on estalation status by state type or last customer article information from
-each ticket in escalation status within a filter, if the "Filter" argument is specified.
+    Get the number of tickets on estalation status by state type or last customer article information from
+    each ticket in escalation status within a filter, if the "Filter" argument is specified.
 
     my @Result = $iPhoneObject->EscalationView(
-        UserID  => 1,
+    UserID  => 1,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    # a result could be
+# a result could be
 
-    @Result = (
-        {
-            StateType                      => "Today",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "Tomorrow",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "NextWeek",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0
-        },
+@Result = (
+{
+    StateType                      => "Today",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "Tomorrow",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "NextWeek",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0
+},
     );
 
-    my @Result = $iPhoneObject->EscalationView(
-        UserID  => 1,
-        Filter  => "Today",
+my @Result = $iPhoneObject->EscalationView(
+    UserID  => 1,
+    Filter  => "Today",
 
-        #Limit (optional) set to 100 by default, if not specified
-        Limit   => 50,
+    #Limit (optional) set to 100 by default, if not specified
+    Limit   => 50,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            Age                              => 1596,
-            ArticleID                        => 923,
-            ArticleType                      => "phone",
-            Body                             => "Testing for escalation",
-            Charset                          => "utf-8",
-            ContentCharset                   => "utf-8",
-            ContentType                      => "text/plain;",
-            charset                          => "utf-8",
-            Created                          => "2010-06-23 11:46:15",
-            CreatedBy                        => 1,
-            FirstResponseTime                => -1296,
-            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
-            FirstResponseTimeDestinationTime => 1277311874,
-            FirstResponseTimeEscalation      => 1,
-            FirstResponseTimeWorkingTime     => -1260,
-            From                             => "customer@otrs.org",
-            IncomingTime                     => 1277311575,
-            Lock                             => "unlock",
-            MimeType                         => "text/plain",
-            Owner                            => "Agent1",
-            Priority                         => "3 normal",
-            PriorityColor                    => "#cdcdcd",
-            Queue                            => "Junk",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Escalation Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Escalation Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
+@Result = (
+{
+    Age                              => 1596,
+    ArticleID                        => 923,
+    ArticleType                      => "phone",
+    Body                             => "Testing for escalation",
+    Charset                          => "utf-8",
+    ContentCharset                   => "utf-8",
+    ContentType                      => "text/plain;",
+    charset                          => "utf-8",
+    Created                          => "2010-06-23 11:46:15",
+    CreatedBy                        => 1,
+    FirstResponseTime                => -1296,
+    FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+    FirstResponseTimeDestinationTime => 1277311874,
+    FirstResponseTimeEscalation      => 1,
+    FirstResponseTimeWorkingTime     => -1260,
+    From                             => "customer@otrs.org",
+    IncomingTime                     => 1277311575,
+    Lock                             => "unlock",
+    MimeType                         => "text/plain",
+    Owner                            => "Agent1",
+    Priority                         => "3 normal",
+    PriorityColor                    => "#cdcdcd",
+    Queue                            => "Junk",
+    Responsible                      => "Agent1",
+    SenderType                       => "customer",
+    SolutionTime                     => -1296,
+    SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+    SolutionTimeDestinationTime      => 1277311874,
+    SolutionTimeEscalation           => 1,
+    SolutionTimeWorkingTime          => -1260,
+    State                            => "open",
+    Subject                          => "Escalation Test",
+    TicketFreeKey13                  => "CriticalityID",
+    TicketFreeKey14                  => "ImpactID",
+    TicketID                         => 176,
+    TicketNumber                     => 2010062310000015,
+    Title                            => "Escalation Test",
+    To                               => "Junk",
+    Type                             => "Incident",
+    UntilTime                        => 0,
+    UpdateTime                       => -1295,
+    UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+    UpdateTimeDestinationTime        => 1277311875,
+    UpdateTimeEscalation             => 1,
+    UpdateTimeWorkingTime            => -1260,
+    Seen                             => 1, # only on otrs 3.x framework
 
-        },
+},
     );
 
 =cut
@@ -909,17 +896,17 @@ sub EscalationView {
 
     my ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $Self->{TimeObject}->SystemTime2Date(
         SystemTime => $Self->{TimeObject}->SystemTime() + 60 * 60 * 24 * 7,
-    );
+	);
     my $TimeStampNextWeek = "$Year-$Month-$Day 23:59:59";
 
     ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $Self->{TimeObject}->SystemTime2Date(
         SystemTime => $Self->{TimeObject}->SystemTime() + 60 * 60 * 24,
-    );
+	);
     my $TimeStampTomorrow = "$Year-$Month-$Day 23:59:59";
 
     ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $Self->{TimeObject}->SystemTime2Date(
         SystemTime => $Self->{TimeObject}->SystemTime(),
-    );
+	);
     my $TimeStampToday = "$Year-$Month-$Day 23:59:59";
 
     # define filter
@@ -957,7 +944,7 @@ sub EscalationView {
                 Permission                    => 'ro',
             },
         },
-    );
+	);
 
     # do shown tickets lookup
     my $Limit = $Param{Limit} || 100;
@@ -966,7 +953,7 @@ sub EscalationView {
             %{ $Filters{ $Param{Filter} }->{Search} },
             Limit  => $Limit,
             Result => 'ARRAY',
-        );
+	    );
         my @List;
         for my $TicketID (@ViewableTickets) {
             next if !$TicketID;
@@ -983,7 +970,7 @@ sub EscalationView {
         my $Count = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result => 'COUNT',
-        );
+	    );
         my $CountNew = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result     => 'COUNT',
@@ -991,7 +978,7 @@ sub EscalationView {
                 Seen => 1,
             },
             TicketFlagUserID => $Param{UserID},
-        );
+	    );
         $CountNew = $Count - $CountNew;
 
         push @States, {
@@ -1006,102 +993,102 @@ sub EscalationView {
 
 =item StatusView()
 
-Get the number of tickets by status (open or closed) or last customer article information from each
-ticket in each status within an specified filter, if the "Filter" argument is specified.
+    Get the number of tickets by status (open or closed) or last customer article information from each
+    ticket in each status within an specified filter, if the "Filter" argument is specified.
 
     my @Result = $iPhoneObject->StatusView(
-        UserID  => 1,
+    UserID  => 1,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            StateType                      => "Open",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "Closed",
-            NumberOfTickets                => 1,
-            NumberOfTicketsWithNewMessages => 0,
-        },
+@Result = (
+{
+    StateType                      => "Open",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "Closed",
+    NumberOfTickets                => 1,
+    NumberOfTicketsWithNewMessages => 0,
+},
     );
 
-    my @Result = $iPhoneObject->StatusView(
-        UserID  => 1,
-        Filter  => "Open",
+my @Result = $iPhoneObject->StatusView(
+    UserID  => 1,
+    Filter  => "Open",
 
-        #Limit (optional) set to 100 by default, if not spcified
-        Limit   => 50,
+    #Limit (optional) set to 100 by default, if not spcified
+    Limit   => 50,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-             Age                              => 1596,
-            ArticleID                        => 923,
-            ArticleType                      => "phone",
-            Body                             => "This is an open ticket",
-            Charset                          => "utf-8",
-            ContentCharset                   => "utf-8",
-            ContentType                      => "text/plain;",
-            charset                          => "utf-8",
-            Created                          => "2010-06-23 11:46:15",
-            CreatedBy                        => 1,
-            FirstResponseTime                => -1296,
-            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
-            FirstResponseTimeDestinationTime => 1277311874,
-            FirstResponseTimeEscalation      => 1,
-            FirstResponseTimeWorkingTime     => -1260,
-            From                             => "customer@otrs.org",
-            IncomingTime                     => 1277311575,
-            Lock                             => "unlock",
-            MimeType                         => "text/plain",
-            Owner                            => "Agent1",
-            Priority                         => "3 normal",
-            PriorityColor                    => "#cdcdcd",
-            Queue                            => "Junk",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
+@Result = (
+{
+    Age                              => 1596,
+    ArticleID                        => 923,
+    ArticleType                      => "phone",
+    Body                             => "This is an open ticket",
+    Charset                          => "utf-8",
+    ContentCharset                   => "utf-8",
+    ContentType                      => "text/plain;",
+    charset                          => "utf-8",
+    Created                          => "2010-06-23 11:46:15",
+    CreatedBy                        => 1,
+    FirstResponseTime                => -1296,
+    FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+    FirstResponseTimeDestinationTime => 1277311874,
+    FirstResponseTimeEscalation      => 1,
+    FirstResponseTimeWorkingTime     => -1260,
+    From                             => "customer@otrs.org",
+    IncomingTime                     => 1277311575,
+    Lock                             => "unlock",
+    MimeType                         => "text/plain",
+    Owner                            => "Agent1",
+    Priority                         => "3 normal",
+    PriorityColor                    => "#cdcdcd",
+    Queue                            => "Junk",
+    Responsible                      => "Agent1",
+    SenderType                       => "customer",
+    SolutionTime                     => -1296,
+    SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+    SolutionTimeDestinationTime      => 1277311874,
+    SolutionTimeEscalation           => 1,
+    SolutionTimeWorkingTime          => -1260,
+    State                            => "open",
+    Subject                          => "Open Ticket Test",
+    TicketFreeKey13                  => "CriticalityID",
+    TicketFreeKey14                  => "ImpactID",
+    TicketID                         => 176,
+    TicketNumber                     => 2010062310000015,
+    Title                            => "Open Ticket Test",
+    To                               => "Junk",
+    Type                             => "Incident",
+    UntilTime                        => 0,
+    UpdateTime                       => -1295,
+    UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+    UpdateTimeDestinationTime        => 1277311875,
+    UpdateTimeEscalation             => 1,
+    UpdateTimeWorkingTime            => -1260,
+    Seen                             => 1, # only on otrs 3.x framework
 
-        },
+},
     );
 
 =cut
@@ -1133,7 +1120,7 @@ sub StatusView {
                 Permission => 'ro',
             },
         },
-    );
+	);
 
     # do shown tickets lookup
     my $Limit = $Param{Limit} || 100;
@@ -1142,7 +1129,7 @@ sub StatusView {
             %{ $Filters{ $Param{Filter} }->{Search} },
             Limit  => $Limit,
             Result => 'ARRAY',
-        );
+	    );
         my @List;
         for my $TicketID (@ViewableTickets) {
             next if !$TicketID;
@@ -1159,7 +1146,7 @@ sub StatusView {
         my $Count = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result => 'COUNT',
-        );
+	    );
         my $CountNew = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result     => 'COUNT',
@@ -1167,7 +1154,7 @@ sub StatusView {
                 Seen => 1,
             },
             TicketFlagUserID => $Param{UserID},
-        );
+	    );
         $CountNew = $Count - $CountNew;
 
         push @States, {
@@ -1182,41 +1169,41 @@ sub StatusView {
 
 =item LockedView()
 
-Get the number of locked tickets by status type (all, new, reminder, reminder reached ) or last
-customer article information from each locked ticket in each status within an specified filter, if
-the "Filter" argument is specified.
+    Get the number of locked tickets by status type (all, new, reminder, reminder reached ) or last
+    customer article information from each locked ticket in each status within an specified filter, if
+    the "Filter" argument is specified.
 
     my @Result = $iPhoneObject->LockedView(
-        UserID  => 1,
+    UserID  => 1,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            StateType                      => "All",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "New,
+@Result = (
+{
+    StateType                      => "All",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "New,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
         {
             StateType                      => "Reminder,
-            NumberOfTickets                => 0,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "ReminderReached,
+    NumberOfTickets                => 0,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "ReminderReached,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
@@ -1263,31 +1250,31 @@ the "Filter" argument is specified.
             Owner                            => "Agent1",
             Priority                         => "3 normal",
             PriorityColor                    => "#cdcdcd",
-            Queue                            => "Junk",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
-        },
+		Queue                            => "Junk",
+		Responsible                      => "Agent1",
+		SenderType                       => "customer",
+		SolutionTime                     => -1296,
+		SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+		SolutionTimeDestinationTime      => 1277311874,
+		SolutionTimeEscalation           => 1,
+		SolutionTimeWorkingTime          => -1260,
+		State                            => "open",
+		Subject                          => "Open Ticket Test",
+		TicketFreeKey13                  => "CriticalityID",
+		TicketFreeKey14                  => "ImpactID",
+		TicketID                         => 176,
+		TicketNumber                     => 2010062310000015,
+		Title                            => "Open Ticket Test",
+		To                               => "Junk",
+		Type                             => "Incident",
+		UntilTime                        => 0,
+		UpdateTime                       => -1295,
+		UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+		UpdateTimeDestinationTime        => 1277311875,
+		UpdateTimeEscalation             => 1,
+		UpdateTimeWorkingTime            => -1260,
+		Seen                             => 1, # only on otrs 3.x framework
+},
     );
 
 =cut
@@ -1352,7 +1339,7 @@ sub LockedView {
                 Permission                    => 'ro',
             },
         },
-    );
+	);
 
     # do shown tickets lookup
     my $Limit = $Param{Limit} || 100;
@@ -1361,7 +1348,7 @@ sub LockedView {
             %{ $Filters{ $Param{Filter} }->{Search} },
             Limit  => $Limit,
             Result => 'ARRAY',
-        );
+	    );
         my @List;
         for my $TicketID (@ViewableTickets) {
             next if !$TicketID;
@@ -1374,8 +1361,8 @@ sub LockedView {
             $Self->{LogObject}->Log(
                 Priority => 'error',
                 Message  => "There are no locked tickets under $Param{Filter} filter "
-                    . "category",
-            );
+		. "category",
+		);
         }
 
         return @List;
@@ -1387,7 +1374,7 @@ sub LockedView {
         my $Count = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result => 'COUNT',
-        );
+	    );
         my $CountNew = $Self->{TicketObject}->TicketSearch(
             %{ $Filters{$Filter}->{Search} },
             Result     => 'COUNT',
@@ -1395,7 +1382,7 @@ sub LockedView {
                 Seen => 1,
             },
             TicketFlagUserID => $Param{UserID},
-        );
+	    );
         $CountNew = $Count - $CountNew;
 
         push @States, {
@@ -1410,41 +1397,41 @@ sub LockedView {
 
 =item WatchedView()
 
-Get the number of watched tickets by status type (all, new, reminder, reminder reached ) or last
-custmer article information from each watched ticket in each status within an specified filter, if
-the "Filter" argument is specified.
+    Get the number of watched tickets by status type (all, new, reminder, reminder reached ) or last
+    custmer article information from each watched ticket in each status within an specified filter, if
+    the "Filter" argument is specified.
 
     my @Result = $iPhoneObject->WatchedView(
-        UserID  => 1,
+    UserID  => 1,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            StateType                      => "All",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "New,
+@Result = (
+{
+    StateType                      => "All",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "New,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
         {
             StateType                      => "Reminder,
-            NumberOfTickets                => 0,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "ReminderReached,
+    NumberOfTickets                => 0,
+    NumberOfTicketsWithNewMessages => 0,
+},
+{
+    StateType                      => "ReminderReached,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
@@ -1491,31 +1478,31 @@ the "Filter" argument is specified.
             Owner                            => "Agent1",
             Priority                         => "3 normal",
             PriorityColor                    => "#cdcdcd",
-            Queue                            => "Junk",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
-        },
+		Queue                            => "Junk",
+		Responsible                      => "Agent1",
+		SenderType                       => "customer",
+		SolutionTime                     => -1296,
+		SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+		SolutionTimeDestinationTime      => 1277311874,
+		SolutionTimeEscalation           => 1,
+		SolutionTimeWorkingTime          => -1260,
+		State                            => "open",
+		Subject                          => "Open Ticket Test",
+		TicketFreeKey13                  => "CriticalityID",
+		TicketFreeKey14                  => "ImpactID",
+		TicketID                         => 176,
+		TicketNumber                     => 2010062310000015,
+		Title                            => "Open Ticket Test",
+		To                               => "Junk",
+		Type                             => "Incident",
+		UntilTime                        => 0,
+		UpdateTime                       => -1295,
+		UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+		UpdateTimeDestinationTime        => 1277311875,
+		UpdateTimeEscalation             => 1,
+		UpdateTimeWorkingTime            => -1260,
+		Seen                             => 1, # only on otrs 3.x framework
+},
     );
 
 =cut
@@ -1577,7 +1564,7 @@ sub WatchedView {
                 Permission                    => 'ro',
             },
         },
-    );
+	);
 
     if ( $Self->{ConfigObject}->Get('Ticket::Watcher') ) {
 
@@ -1588,7 +1575,7 @@ sub WatchedView {
                 %{ $Filters{ $Param{Filter} }->{Search} },
                 Limit  => $Limit,
                 Result => 'ARRAY',
-            );
+		);
             my @List;
             for my $TicketID (@ViewableTickets) {
                 next if !$TicketID;
@@ -1600,8 +1587,8 @@ sub WatchedView {
                 $Self->{LogObject}->Log(
                     Priority => 'error',
                     Message  => "There are no watched tickets under $Param{Filter} filter "
-                        . "category",
-                );
+		    . "category",
+		    );
             }
             return @List;
         }
@@ -1612,7 +1599,7 @@ sub WatchedView {
             my $Count = $Self->{TicketObject}->TicketSearch(
                 %{ $Filters{$Filter}->{Search} },
                 Result => 'COUNT',
-            );
+		);
             my $CountNew = $Self->{TicketObject}->TicketSearch(
                 %{ $Filters{$Filter}->{Search} },
                 Result     => 'COUNT',
@@ -1620,7 +1607,7 @@ sub WatchedView {
                     Seen => 1,
                 },
                 TicketFlagUserID => $Param{UserID},
-            );
+		);
             $CountNew = $Count - $CountNew;
 
             push @States, {
@@ -1635,17 +1622,17 @@ sub WatchedView {
     $Self->{LogObject}->Log(
         Priority => 'error',
         Message  => 'Ticket watcher feature is not enable in system configuration '
-            . 'Please contact admin',
-    );
+	. 'Please contact admin',
+	);
     return -1;
 }
 
 =item ResponsibleView()
 
-Get the number of locked or unlocked tickets where the user is responsible for by status type
+    Get the number of locked or unlocked tickets where the user is responsible for by status type
 (all, new, reminder, reminder reached ) or last customer article information from each ticket where
-the user is responsible for  in each status within an specified filter, if the "Filter" argument is
-specified.
+    the user is responsible for  in each status within an specified filter, if the "Filter" argument is
+    specified.
 
     my @Result = $iPhoneObject->ResponsibleView(
         UserID  => 1,
@@ -1653,31 +1640,31 @@ specified.
         # OrderBy and SortBy (optional)
         OrderBy => 'Down',  # Down|Up
         SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+	# Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+	# EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+	# TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            StateType                      => "All",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "New,
+@Result = (
+    {
+	StateType                      => "All",
+	NumberOfTickets                => 2,
+	NumberOfTicketsWithNewMessages => 0,
+    },
+    {
+	StateType                      => "New,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
         {
             StateType                      => "Reminder,
-            NumberOfTickets                => 0,
-            NumberOfTicketsWithNewMessages => 0,
-        },
-        {
-            StateType                      => "ReminderReached,
+	NumberOfTickets                => 0,
+	NumberOfTicketsWithNewMessages => 0,
+    },
+    {
+	StateType                      => "ReminderReached,
             NumberOfTickets                => 1,
             NumberOfTicketsWithNewMessages => 0,
         },
@@ -1724,31 +1711,31 @@ specified.
             Owner                            => "Agent1",
             Priority                         => "3 normal",
             PriorityColor                    => "#cdcdcd",
-            Queue                            => "Junk",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
-        },
+		Queue                            => "Junk",
+		Responsible                      => "Agent1",
+		SenderType                       => "customer",
+		SolutionTime                     => -1296,
+		SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+		SolutionTimeDestinationTime      => 1277311874,
+		SolutionTimeEscalation           => 1,
+		SolutionTimeWorkingTime          => -1260,
+		State                            => "open",
+		Subject                          => "Open Ticket Test",
+		TicketFreeKey13                  => "CriticalityID",
+		TicketFreeKey14                  => "ImpactID",
+		TicketID                         => 176,
+		TicketNumber                     => 2010062310000015,
+		Title                            => "Open Ticket Test",
+		To                               => "Junk",
+		Type                             => "Incident",
+		UntilTime                        => 0,
+		UpdateTime                       => -1295,
+		UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+		UpdateTimeDestinationTime        => 1277311875,
+		UpdateTimeEscalation             => 1,
+		UpdateTimeWorkingTime            => -1260,
+		Seen                             => 1, # only on otrs 3.x framework
+    },
     );
 
 =cut
@@ -1811,7 +1798,7 @@ sub ResponsibleView {
                 Permission                    => 'ro',
             },
         },
-    );
+	);
 
     if ( $Self->{ConfigObject}->Get('Ticket::Responsible') ) {
 
@@ -1822,7 +1809,7 @@ sub ResponsibleView {
                 %{ $Filters{ $Param{Filter} }->{Search} },
                 Limit  => $Limit,
                 Result => 'ARRAY',
-            );
+		);
             my @List;
             for my $TicketID (@ViewableTickets) {
                 next if !$TicketID;
@@ -1834,8 +1821,8 @@ sub ResponsibleView {
                 $Self->{LogObject}->Log(
                     Priority => 'error',
                     Message  => "There are no responsible for tickets under $Param{Filter} filter "
-                        . "category",
-                );
+		    . "category",
+		    );
             }
             return @List;
         }
@@ -1846,7 +1833,7 @@ sub ResponsibleView {
             my $Count = $Self->{TicketObject}->TicketSearch(
                 %{ $Filters{$Filter}->{Search} },
                 Result => 'COUNT',
-            );
+		);
             my $CountNew = $Self->{TicketObject}->TicketSearch(
                 %{ $Filters{$Filter}->{Search} },
                 Result     => 'COUNT',
@@ -1854,7 +1841,7 @@ sub ResponsibleView {
                     Seen => 1,
                 },
                 TicketFlagUserID => $Param{UserID},
-            );
+		);
             $CountNew = $Count - $CountNew;
 
             push @States, {
@@ -1869,113 +1856,113 @@ sub ResponsibleView {
     $Self->{LogObject}->Log(
         Priority => 'error',
         Message  => 'Ticket responsible feature is not enable in system configuration '
-            . 'Please contact admin',
-    );
+	. 'Please contact admin',
+	);
     return -1;
 }
 
 =item QueueView()
 
-Get the number of viewable tickets per queue as well as basic queue information, or last customer
-article information from each ticket within an specified queue, if the "Queue" argument is
-specified.
+    Get the number of viewable tickets per queue as well as basic queue information, or last customer
+    article information from each ticket within an specified queue, if the "Queue" argument is
+    specified.
 
     my @Result = $iPhoneObject->QueueView(
-        UserID  => 1,
+    UserID  => 1,
 
-        # OrderBy and SortBy (optional)
-        OrderBy => 'Down',  # Down|Up
-        SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy => 'Down',  # Down|Up
+    SortBy  => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            QueueName                      => "Junk",
-            NumberOfTickets                => 2,
-            NumberOfTicketsWithNewMessages => 0,
-            QueueID                        => 3,
-            Comment                        => "All junk tickets."
-        },
-        {
-            QueueName                      => "Misc",
-            NumberOfTickets                => 1,
-            NumberOfTicketsWithNewMessages => 0,
-            QueueID                        => 4,
-            Comment                        => "All misc tickets."
-        },
+@Result = (
+{
+    QueueName                      => "Junk",
+    NumberOfTickets                => 2,
+    NumberOfTicketsWithNewMessages => 0,
+    QueueID                        => 3,
+    Comment                        => "All junk tickets."
+},
+{
+    QueueName                      => "Misc",
+    NumberOfTickets                => 1,
+    NumberOfTicketsWithNewMessages => 0,
+    QueueID                        => 4,
+    Comment                        => "All misc tickets."
+},
     );
 
-    my @Result = $iPhoneObject->QueueView(
-        UserID   => 1,
-        QueueID  => 4,
+my @Result = $iPhoneObject->QueueView(
+    UserID   => 1,
+    QueueID  => 4,
 
-        #Limit (optional) set to 100 by default, if not spcified
-        Limit    => 50,
+    #Limit (optional) set to 100 by default, if not spcified
+    Limit    => 50,
 
-        # OrderBy and SortBy (optional)
-        OrderBy  => 'Down',  # Down|Up
-        SortBy   => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
-                            # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
-                            # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
-                            # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
+    # OrderBy and SortBy (optional)
+    OrderBy  => 'Down',  # Down|Up
+    SortBy   => 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age
+    # Type|Lock|Title|Service|SLA|PendingTime|EscalationTime
+    # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
+    # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            Age                              => 1596,
-            ArticleID                        => 923,
-            ArticleType                      => "phone",
-            Body                             => "This is an open ticket",
-            Charset                          => "utf-8",
-            ContentCharset                   => "utf-8",
-            ContentType                      => "text/plain;",
-            charset                          => "utf-8",
-            Created                          => "2010-06-23 11:46:15",
-            CreatedBy                        => 1,
-            FirstResponseTime                => -1296,
-            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
-            FirstResponseTimeDestinationTime => 1277311874,
-            FirstResponseTimeEscalation      => 1,
-            FirstResponseTimeWorkingTime     => -1260,
-            From                             => "customer@otrs.org",
-            IncomingTime                     => 1277311575,
-            Lock                             => "lock",
-            MimeType                         => "text/plain",
-            Owner                            => "Agent1",
-            Priority                         => "3 normal",
-            PriorityColor                    => "#cdcdcd",
-            Queue                            => "Misc",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
-        },
+@Result = (
+{
+    Age                              => 1596,
+    ArticleID                        => 923,
+    ArticleType                      => "phone",
+    Body                             => "This is an open ticket",
+    Charset                          => "utf-8",
+    ContentCharset                   => "utf-8",
+    ContentType                      => "text/plain;",
+    charset                          => "utf-8",
+    Created                          => "2010-06-23 11:46:15",
+    CreatedBy                        => 1,
+    FirstResponseTime                => -1296,
+    FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+    FirstResponseTimeDestinationTime => 1277311874,
+    FirstResponseTimeEscalation      => 1,
+    FirstResponseTimeWorkingTime     => -1260,
+    From                             => "customer@otrs.org",
+    IncomingTime                     => 1277311575,
+    Lock                             => "lock",
+    MimeType                         => "text/plain",
+    Owner                            => "Agent1",
+    Priority                         => "3 normal",
+    PriorityColor                    => "#cdcdcd",
+    Queue                            => "Misc",
+    Responsible                      => "Agent1",
+    SenderType                       => "customer",
+    SolutionTime                     => -1296,
+    SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+    SolutionTimeDestinationTime      => 1277311874,
+    SolutionTimeEscalation           => 1,
+    SolutionTimeWorkingTime          => -1260,
+    State                            => "open",
+    Subject                          => "Open Ticket Test",
+    TicketFreeKey13                  => "CriticalityID",
+    TicketFreeKey14                  => "ImpactID",
+    TicketID                         => 176,
+    TicketNumber                     => 2010062310000015,
+    Title                            => "Open Ticket Test",
+    To                               => "Junk",
+    Type                             => "Incident",
+    UntilTime                        => 0,
+    UpdateTime                       => -1295,
+    UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+    UpdateTimeDestinationTime        => 1277311875,
+    UpdateTimeEscalation             => 1,
+    UpdateTimeWorkingTime            => -1260,
+    Seen                             => 1, # only on otrs 3.x framework
+},
     );
 
 =cut
@@ -1988,7 +1975,7 @@ sub QueueView {
     my @ViewableStateIDs = $Self->{StateObject}->StateGetStatesByType(
         Type   => 'Viewable',
         Result => 'ID',
-    );
+	);
 
     # do shown tickets lookup
     my $Limit = $Param{Limit} || 100;
@@ -2004,7 +1991,7 @@ sub QueueView {
             UserID     => $Param{UserID},
             Limit      => $Limit,
             Result     => 'ARRAY',
-        );
+	    );
         my @List;
         for my $TicketID (@ViewableTickets) {
             next if !$TicketID;
@@ -2022,7 +2009,7 @@ sub QueueView {
     for my $QueueID ( sort keys %AllQueues ) {
         my %Queue = $Self->{QueueObject}->QueueGet(
             ID => $QueueID,
-        );
+	    );
 
         my $Count = $Self->{TicketObject}->TicketSearch(
             StateIDs => \@ViewableStateIDs,
@@ -2033,7 +2020,7 @@ sub QueueView {
             UserID     => $Param{UserID},
             Result     => 'COUNT',
             Limit      => 1000,
-        );
+	    );
         next if !$Count;
 
         my $CountNew = $Self->{TicketObject}->TicketSearch(
@@ -2049,7 +2036,7 @@ sub QueueView {
             UserID           => $Param{UserID},
             Result           => 'COUNT',
             Limit            => 1000,
-        );
+	    );
         $CountNew = $Count - $CountNew;
 
         push @Queues, {
@@ -2067,64 +2054,64 @@ sub QueueView {
 
 =item TicketList()
 
-Get the last customer article information of a ticket
+    Get the last customer article information of a ticket
 
     my @Result = $iPhoneObject->TicketList(
-        UserID   => 1,
-        TicketID  => 176,
+    UserID   => 1,
+    TicketID  => 176,
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        {
-            Age                              => 1596,
-            ArticleID                        => 923,
-            ArticleType                      => "phone",
-            Body                             => "This is an open ticket",
-            Charset                          => "utf-8",
-            ContentCharset                   => "utf-8",
-            ContentType                      => "text/plain;",
-            charset                          => "utf-8",
-            Created                          => "2010-06-23 11:46:15",
-            CreatedBy                        => 1,
-            FirstResponseTime                => -1296,
-            FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
-            FirstResponseTimeDestinationTime => 1277311874,
-            FirstResponseTimeEscalation      => 1,
-            FirstResponseTimeWorkingTime     => -1260,
-            From                             => "customer@otrs.org",
-            IncomingTime                     => 1277311575,
-            Lock                             => "lock",
-            MimeType                         => "text/plain",
-            Owner                            => "Agent1",
-            Priority                         => "3 normal",
-            PriorityColor                    => "#cdcdcd",
-            Queue                            => "Misc",
-            Responsible                      => "Agent1",
-            SenderType                       => "customer",
-            SolutionTime                     => -1296,
-            SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
-            SolutionTimeDestinationTime      => 1277311874,
-            SolutionTimeEscalation           => 1,
-            SolutionTimeWorkingTime          => -1260,
-            State                            => "open",
-            Subject                          => "Open Ticket Test",
-            TicketFreeKey13                  => "CriticalityID",
-            TicketFreeKey14                  => "ImpactID",
-            TicketID                         => 176,
-            TicketNumber                     => 2010062310000015,
-            Title                            => "Open Ticket Test",
-            To                               => "Junk",
-            Type                             => "Incident",
-            UntilTime                        => 0,
-            UpdateTime                       => -1295,
-            UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
-            UpdateTimeDestinationTime        => 1277311875,
-            UpdateTimeEscalation             => 1,
-            UpdateTimeWorkingTime            => -1260,
-            Seen                             => 1, # only on otrs 3.x framework
-        },
+@Result = (
+{
+    Age                              => 1596,
+    ArticleID                        => 923,
+    ArticleType                      => "phone",
+    Body                             => "This is an open ticket",
+    Charset                          => "utf-8",
+    ContentCharset                   => "utf-8",
+    ContentType                      => "text/plain;",
+    charset                          => "utf-8",
+    Created                          => "2010-06-23 11:46:15",
+    CreatedBy                        => 1,
+    FirstResponseTime                => -1296,
+    FirstResponseTimeDestinationDate => "2010-06-23 11:51:14",
+    FirstResponseTimeDestinationTime => 1277311874,
+    FirstResponseTimeEscalation      => 1,
+    FirstResponseTimeWorkingTime     => -1260,
+    From                             => "customer@otrs.org",
+    IncomingTime                     => 1277311575,
+    Lock                             => "lock",
+    MimeType                         => "text/plain",
+    Owner                            => "Agent1",
+    Priority                         => "3 normal",
+    PriorityColor                    => "#cdcdcd",
+    Queue                            => "Misc",
+    Responsible                      => "Agent1",
+    SenderType                       => "customer",
+    SolutionTime                     => -1296,
+    SolutionTimeDestinationDate      => "2010-06-23 11:51:14",
+    SolutionTimeDestinationTime      => 1277311874,
+    SolutionTimeEscalation           => 1,
+    SolutionTimeWorkingTime          => -1260,
+    State                            => "open",
+    Subject                          => "Open Ticket Test",
+    TicketFreeKey13                  => "CriticalityID",
+    TicketFreeKey14                  => "ImpactID",
+    TicketID                         => 176,
+    TicketNumber                     => 2010062310000015,
+    Title                            => "Open Ticket Test",
+    To                               => "Junk",
+    Type                             => "Incident",
+    UntilTime                        => 0,
+    UpdateTime                       => -1295,
+    UpdateTimeDestinationDate        => "2010-06-23 11:51:15",
+    UpdateTimeDestinationTime        => 1277311875,
+    UpdateTimeEscalation             => 1,
+    UpdateTimeWorkingTime            => -1260,
+    Seen                             => 1, # only on otrs 3.x framework
+},
     );
 
 =cut
@@ -2146,7 +2133,7 @@ sub TicketList {
         3 => '#cdcdcd',
         4 => '#ffaaaa',
         5 => '#ff505e',
-    );
+	);
 
     my @Index = $Self->{TicketObject}->ArticleIndex( TicketID => $Param{TicketID}, SenderType => 'customer' );
     if(@Index) {
@@ -2156,14 +2143,12 @@ sub TicketList {
 	if (%Article) {
 	    $Article{PriorityColor} = $Color{ $Article{PriorityID} };
 	    
-	    if ( $Self->{'API3X'} ) {
-		my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
-		    TicketID => $Param{TicketID},
-		    UserID   => $Param{UserID},
-		    );
-		if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
-		    $Article{Seen} = 1;
-		}
+	    my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
+		TicketID => $Param{TicketID},
+		UserID   => $Param{UserID},
+		);
+	    if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
+		$Article{Seen} = 1;
 	    }
 
 	    _StripHash(\%Article);
@@ -2185,52 +2170,52 @@ sub TicketList {
     my %TicketData = $Self->TicketGet(
         TicketID => $Param{TicketID},
         UserID   => $Param{UserID}
-    );
+	);
     return %TicketData;
 }
 
 =item TicketGet()
-Get information of a ticket
+    Get information of a ticket
 
     my @Result = $iPhoneObject->TicketGet(
-        TicketID  => 224,
-        UserID    => 1,
+    TicketID  => 224,
+    UserID    => 1,
     );
 
-    #a result could be
+#a result could be
 
-    @Result = (
-        AccountedTime   => "5404",
-        Age             => "681946",
-        CustomerID      => "sw",
-        CustomerUserID  => "David",
-        Created         => "2010-07-06 14:05:54",
-        GroupID         => 1,
-        TicketID        => 224,
-        LockID          => 2,
-        Lock            => "lock"
-        OwnerID         => 1134,
-        Owner           => "Aayla",
-        PriorityColor   => "#cdcdcd",
-        PriorityID      => 1,
-        Priority        => "1 very low",
-        Queue           => "Raw",
-        QueueID         => 2,
-        ResponsibleID   => 1134,
-        Responsible     => "Aayla",
-        Seen            => 1, # only on otrs 3.x framework
-        StateID         =>  4,
-        State           => "open",
-        TicketNumber    => "2010070610000215",
-        Title           => "iPhone Test",
-        TicketFreeKey1  => "Product",
-        TicketFreeText1 => "PC",
-        TicketFreeKey13 => "CriticalityID",
-        TicketFreeKey14 => "ImpactID",
-        TicketFreeTime1 => "2010-07-10 09:58:00",
-        TypeID          => 1,
-        Type            => "default",
-        UntilTime       => "0",
+@Result = (
+    AccountedTime   => "5404",
+    Age             => "681946",
+    CustomerID      => "sw",
+    CustomerUserID  => "David",
+    Created         => "2010-07-06 14:05:54",
+    GroupID         => 1,
+    TicketID        => 224,
+    LockID          => 2,
+    Lock            => "lock"
+    OwnerID         => 1134,
+    Owner           => "Aayla",
+    PriorityColor   => "#cdcdcd",
+    PriorityID      => 1,
+    Priority        => "1 very low",
+    Queue           => "Raw",
+    QueueID         => 2,
+    ResponsibleID   => 1134,
+    Responsible     => "Aayla",
+    Seen            => 1, # only on otrs 3.x framework
+    StateID         =>  4,
+    State           => "open",
+    TicketNumber    => "2010070610000215",
+    Title           => "iPhone Test",
+    TicketFreeKey1  => "Product",
+    TicketFreeText1 => "PC",
+    TicketFreeKey13 => "CriticalityID",
+    TicketFreeKey14 => "ImpactID",
+    TicketFreeTime1 => "2010-07-10 09:58:00",
+    TypeID          => 1,
+    Type            => "default",
+    UntilTime       => "0",
     );
 
 =cut
@@ -2240,25 +2225,16 @@ sub TicketGet {
 
     # permission check
     my $Access;
-    if ( $Self->{'API3X'} ) {
-        $Access = $Self->{TicketObject}->TicketPermission(
-            Type     => 'ro',
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID}
+    $Access = $Self->{TicketObject}->TicketPermission(
+	Type     => 'ro',
+	TicketID => $Param{TicketID},
+	UserID   => $Param{UserID}
         );
-    }
-    else {
-        $Access = $Self->{TicketObject}->Permission(
-            Type     => 'ro',
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID}
-        );
-    }
     if ( !$Access ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "You need ro permissions!",
-        );
+	    );
         return;
     }
 
@@ -2268,52 +2244,20 @@ sub TicketGet {
         3 => '#cdcdcd',
         4 => '#ffaaaa',
         5 => '#ff505e',
-    );
+	);
 
     my %Ticket = $Self->{TicketObject}->TicketGet(%Param);
-
+    
     $Ticket{PriorityColor} = $Color{ $Ticket{PriorityID} };
-
-    if ( $Self->{'API3X'} ) {
-        my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
+        
+    my %TicketFlag = $Self->{TicketObject}->TicketFlagGet(
+	TicketID => $Param{TicketID},
+	UserID   => $Param{UserID},
         );
-        if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
-            $Ticket{Seen} = 1;
-        }
+    if ( $TicketFlag{seen} || $TicketFlag{Seen} ) {
+	$Ticket{Seen} = 1;
     }
-    else {
-
-        # check if ticket need to be marked as seen
-        my $ArticleAllSeen = 1;
-        my @Index = $Self->{TicketObject}->ArticleIndex( TicketID => $Ticket{TicketID} );
-        for my $ArticleID (@Index) {
-            if ( $Self->{'API3X'} ) {
-                my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
-                    ArticleID => $ArticleID,
-                    UserID    => $Param{UserID},
-                );
-
-                # last if article was not shown
-                if ( !$ArticleFlag{Seen} && !$ArticleFlag{seen} ) {
-                    $ArticleAllSeen = 0;
-                    last;
-                }
-            }
-        }
-
-        # mark ticket as seen if all article are shown
-        if ( $ArticleAllSeen && $Self->{'API3X'} ) {
-            $Self->{TicketObject}->TicketFlagSet(
-                TicketID => $Ticket{TicketID},
-                Key      => 'Seen',
-                Value    => 1,
-                UserID   => $Param{UserID},
-            );
-        }
-    }
-
+    
     # add accounted time
     my $AccountedTime = $Self->{TicketObject}->TicketAccountedTimeGet(%Param);
     if ( defined $AccountedTime ) {
@@ -2328,11 +2272,11 @@ sub TicketGet {
 
 =item ArticleGet()
 
-Get information from an article
+    Get information from an article
 
     my %Result = $iPhoneObject->ArticleGet()
-        ArticleID  => 1054,
-        UserID     => 1,
+    ArticleID  => 1054,
+    UserID     => 1,
     );
 
     #a result could be
@@ -2403,20 +2347,11 @@ sub ArticleGet {
     # permission check
     my %Article = $Self->{TicketObject}->ArticleGet(%Param);
     my $Access;
-    if ( $Self->{'API3X'} ) {
-        $Access = $Self->{TicketObject}->TicketPermission(
-            Type     => 'ro',
-            TicketID => $Article{TicketID},
-            UserID   => $Param{UserID}
+    $Access = $Self->{TicketObject}->TicketPermission(
+	Type     => 'ro',
+	TicketID => $Article{TicketID},
+	UserID   => $Param{UserID}
         );
-    }
-    else {
-        $Access = $Self->{TicketObject}->Permission(
-            Type     => 'ro',
-            TicketID => $Article{TicketID},
-            UserID   => $Param{UserID}
-        );
-    }
     if ( !$Access ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
@@ -2426,47 +2361,44 @@ sub ArticleGet {
     }
 
     if (%Article) {
-        if ( $Self->{'API3X'} ) {
 
-            # check if article is seen
-            my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
-                ArticleID => $Param{ArticleID},
-                UserID    => $Param{UserID},
+	# check if article is seen
+	my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
+	    ArticleID => $Param{ArticleID},
+	    UserID    => $Param{UserID},
             );
-            if ( $ArticleFlag{seen} || $ArticleFlag{Seen} ) {
-                $Article{Seen} = 1;
-            }
-
-            # mark shown article as seen
-            $Self->{TicketObject}->ArticleFlagSet(
-                ArticleID => $Param{ArticleID},
-                Key       => 'Seen',
-                Value     => 1,
-                UserID    => $Param{UserID},
+	if ( $ArticleFlag{seen} || $ArticleFlag{Seen} ) {
+	    $Article{Seen} = 1;
+	}
+	
+	# mark shown article as seen
+	$Self->{TicketObject}->ArticleFlagSet(
+	    ArticleID => $Param{ArticleID},
+	    Key       => 'Seen',
+	    Value     => 1,
+	    UserID    => $Param{UserID},
             );
-        }
+	
 
         # check if ticket need to be marked as seen
         my $ArticleAllSeen = 1;
         my @Index = $Self->{TicketObject}->ArticleIndex( TicketID => $Article{TicketID} );
         for my $ArticleID (@Index) {
-            if ( $Self->{'API3X'} ) {
-                my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
-                    ArticleID => $ArticleID,
-                    UserID    => $Param{UserID},
+	    my %ArticleFlag = $Self->{TicketObject}->ArticleFlagGet(
+		ArticleID => $ArticleID,
+		UserID    => $Param{UserID},
                 );
-
-                # last if article was not shown
-                if ( !$ArticleFlag{Seen} && !$ArticleFlag{seen} ) {
-                    $ArticleAllSeen = 0;
-                    last;
-                }
-            }
+	    
+	    # last if article was not shown
+	    if ( !$ArticleFlag{Seen} && !$ArticleFlag{seen} ) {
+		$ArticleAllSeen = 0;
+		last;
+	    }
         }
 
         # mark ticket as seen if all article are shown
-        if ( $ArticleAllSeen && $Self->{'API3X'} ) {
-            $Self->{TicketObject}->TicketFlagSet(
+        if ( $ArticleAllSeen  ) {
+            $Self->{TicketObject}->TicketFlagSet( #V3TODO
                 TicketID => $Article{TicketID},
                 Key      => 'Seen',
                 Value    => 1,
@@ -2480,17 +2412,7 @@ sub ArticleGet {
             $Article{AccountedTime} = $AccountedTime;
         }
 
-        # strip out all data
-        my @Delete
-            = qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
-            ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1
-            ArticleFreeText2 ArticleFreeText3 IncomingTime RealTillTimeNotUsed ServiceID SLAID
-            StateType ArchiveFlag UnlockTimeout Changed
-        );
-
-        for my $Key (@Delete) {
-            delete $Article{$Key};
-        }
+	_StripHash(\%Article);
 
         for my $Key ( keys %Article ) {
             if ( !defined $Article{$Key} || $Article{$Key} eq '' ) {
@@ -2889,7 +2811,6 @@ sub VersionGet {
                 Version   => $Package->{Version}->{Content},
                 Vendor    => $Package->{Vendor}->{Content},
                 URL       => $Package->{URL}->{Content},
-                Framework => $Self->{SystemVersion},
             );
             return \%iPhonePackage;
             last PACKAGE;
@@ -3803,7 +3724,7 @@ sub _TicketPhoneNew {
     $Param{TicketID} =$TicketID;
     # set all the FreeFields Migrated from DynamicFields
     $Self->_SetTicketFreeText(%Param);
-    $Self->_SetTicketFreeTime(\%Param);
+    $Self->_SetTicketFreeTime(%Param);
 
     my $MimeType = 'text/plain';
 
@@ -3870,7 +3791,7 @@ sub _TicketPhoneNew {
 
         # set owner (if new user id is given)
         if ( $Param{OwnerID} ) {
-            if ( $Self->{'API3X'} ) {
+
                 $Self->{TicketObject}->TicketOwnerSet(
                     TicketID  => $TicketID,
                     NewUserID => $Param{OwnerID},
@@ -3883,59 +3804,29 @@ sub _TicketPhoneNew {
                     Lock     => 'lock',
                     UserID   => $Param{UserID},
                 );
-            }
-            else {
-                $Self->{TicketObject}->OwnerSet(
-                    TicketID  => $TicketID,
-                    NewUserID => $Param{OwnerID},
-                    UserID    => $Param{UserID},
-                );
 
-                # set lock
-                $Self->{TicketObject}->LockSet(
-                    TicketID => $TicketID,
-                    Lock     => 'lock',
-                    UserID   => $Param{UserID},
-                );
-            }
         }
 
         # else set owner to current agent but do not lock it
         else {
-            if ( $Self->{'API3X'} ) {
-                $Self->{TicketObject}->TicketOwnerSet(
-                    TicketID           => $TicketID,
-                    NewUserID          => $Param{UserID},
-                    SendNoNotification => 1,
-                    UserID             => $Param{UserID},
+
+	    $Self->{TicketObject}->TicketOwnerSet(
+		TicketID           => $TicketID,
+		NewUserID          => $Param{UserID},
+		SendNoNotification => 1,
+		UserID             => $Param{UserID},
                 );
-            }
-            else {
-                $Self->{TicketObject}->OwnerSet(
-                    TicketID           => $TicketID,
-                    NewUserID          => $Param{UserID},
-                    SendNoNotification => 1,
-                    UserID             => $Param{UserID},
-                );
-            }
         }
 
         # set responsible (if new user id is given)
         if ( $Param{ResponsibleID} ) {
-            if ( $Self->{'API3X'} ) {
-                $Self->{TicketObject}->TicketResponsibleSet(
-                    TicketID  => $TicketID,
-                    NewUserID => $Param{ResponsibleID},
-                    UserID    => $Param{UserID},
+
+	    $Self->{TicketObject}->TicketResponsibleSet(
+		TicketID  => $TicketID,
+		NewUserID => $Param{ResponsibleID},
+		UserID    => $Param{UserID},
                 );
-            }
-            else {
-                $Self->{TicketObject}->ResponsibleSet(
-                    TicketID  => $TicketID,
-                    NewUserID => $Param{ResponsibleID},
-                    UserID    => $Param{UserID},
-                );
-            }
+
         }
 
         # time accounting
@@ -3951,20 +3842,13 @@ sub _TicketPhoneNew {
         # should i set an unlock?
         my %StateData = $Self->{StateObject}->StateGet( ID => $Param{StateID} );
         if ( $StateData{TypeName} =~ /^close/i ) {
-            if ( $Self->{'API3X'} ) {
-                $Self->{TicketObject}->TicketLockSet(
-                    TicketID => $TicketID,
-                    Lock     => 'unlock',
-                    UserID   => $Param{UserID},
+
+	    $Self->{TicketObject}->TicketLockSet(
+		TicketID => $TicketID,
+		Lock     => 'unlock',
+		UserID   => $Param{UserID},
                 );
-            }
-            else {
-                $Self->{TicketObject}->LockSet(
-                    TicketID => $TicketID,
-                    Lock     => 'unlock',
-                    UserID   => $Param{UserID},
-                );
-            }
+
         }
 
         # set pending time
@@ -4022,20 +3906,12 @@ sub _TicketCommonActions {
 
     # check permissions
     my $Access;
-    if ( $Self->{'API3X'} ) {
-        $Access = $Self->{TicketObject}->TicketPermission(
-            Type     => $Self->{Config}->{Permission},
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
+
+    $Access = $Self->{TicketObject}->TicketPermission(
+	Type     => $Self->{Config}->{Permission},
+	TicketID => $Param{TicketID},
+	UserID   => $Param{UserID},
         );
-    }
-    else {
-        $Access = $Self->{TicketObject}->Permission(
-            Type     => $Self->{Config}->{Permission},
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
-        );
-    }
 
     # error screen, don't show ticket
     if ( !$Access ) {
@@ -4051,52 +3927,26 @@ sub _TicketCommonActions {
     # get lock state
     if ( $Self->{Config}->{RequiredLock} ) {
         my $Locked;
-        if ( $Self->{'API3X'} ) {
+
             $Locked = $Self->{TicketObject}->TicketLockGet( TicketID => $Param{TicketID} );
-        }
-        else {
-            my %TicketData = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
-            if ( $TicketData{Lock} eq 'lock' ) {
-                $Locked = 1;
-            }
-        }
+
         if ( !$Locked ) {
-            if ( $Self->{'API3X'} ) {
-                $Self->{TicketObject}->TicketLockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'lock',
-                    UserID   => $Param{UserID},
+	    $Self->{TicketObject}->TicketLockSet(
+		TicketID => $Param{TicketID},
+		Lock     => 'lock',
+		UserID   => $Param{UserID},
                 );
-                my $Success = $Self->{TicketObject}->TicketOwnerSet(
-                    TicketID  => $Param{TicketID},
-                    UserID    => $Param{UserID},
-                    NewUserID => $Param{UserID},
+	    my $Success = $Self->{TicketObject}->TicketOwnerSet(
+		TicketID  => $Param{TicketID},
+		UserID    => $Param{UserID},
+		NewUserID => $Param{UserID},
                 );
-		if (!$Success) {
-		    $Self->{LogObject}->Log(
-			Priority => 'error',
-			Message  => "Setting ticket owner failed",
-			);
-		}
-            }
-            else {
-                $Self->{TicketObject}->LockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'lock',
-                    UserID   => $Param{UserID},
-                );
-                my $Success = $Self->{TicketObject}->OwnerSet(
-                    TicketID  => $Param{TicketID},
-                    UserID    => $Param{UserID},
-                    NewUserID => $Param{UserID},
-                );
-		if (!$Success) {
-		    $Self->{LogObject}->Log(
-			Priority => 'error',
-			Message  => "Setting ticket owner failed",
-			);
-		}
-            }
+	    if (!$Success) {
+		$Self->{LogObject}->Log(
+		    Priority => 'error',
+		    Message  => "Setting ticket owner failed",
+		    );
+	    }
         }
         else {
             my $AccessOk = $Self->{TicketObject}->OwnerCheck(
@@ -4231,33 +4081,19 @@ sub _TicketCommonActions {
         my $BodyText = $Param{Body} || '';
         if ( $Param{OwnerID} ) {
             my $Success;
-            if ( $Self->{'API3X'} ) {
-                $Self->{TicketObject}->TicketLockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'lock',
-                    UserID   => $Param{UserID},
+	    
+	    $Self->{TicketObject}->TicketLockSet(
+		TicketID => $Param{TicketID},
+		Lock     => 'lock',
+		UserID   => $Param{UserID},
                 );
-                $Success = $Self->{TicketObject}->TicketOwnerSet(
-                    TicketID  => $Param{TicketID},
-                    UserID    => $Param{UserID},
-                    NewUserID => $Param{OwnerID},
-                    Comment   => $BodyText,
+	    $Success = $Self->{TicketObject}->TicketOwnerSet(
+		TicketID  => $Param{TicketID},
+		UserID    => $Param{UserID},
+		NewUserID => $Param{OwnerID},
+		Comment   => $BodyText,
                 );
-            }
-            else {
-                $Self->{TicketObject}->LockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'lock',
-                    UserID   => $Param{UserID},
-                );
-                $Success = $Self->{TicketObject}->OwnerSet(
-                    TicketID  => $Param{TicketID},
-                    UserID    => $Param{UserID},
-                    NewUserID => $Param{OwnerID},
-                    Comment   => $BodyText,
-                );
-            }
-
+	    
             # remember to not notify owner twice
             if ( $Success && $Success eq 1 ) {
                 push @NotifyDone, $Param{OwnerID};
@@ -4270,22 +4106,13 @@ sub _TicketCommonActions {
         if ( $Param{ResponsibleID} ) {
             my $BodyText = $Param{Body} || '';
             my $Success;
-            if ( $Self->{'API3X'} ) {
-                $Success = $Self->{TicketObject}->TicketResponsibleSet(
-                    TicketID  => $Param{TicketID},
-                    UserID    => $Param{UserID},
-                    NewUserID => $Param{ResponsibleID},
-                    Comment   => $BodyText,
+	    
+	    $Success = $Self->{TicketObject}->TicketResponsibleSet(
+		TicketID  => $Param{TicketID},
+		UserID    => $Param{UserID},
+		NewUserID => $Param{ResponsibleID},
+		Comment   => $BodyText,
                 );
-            }
-            else {
-                $Success = $Self->{TicketObject}->ResponsibleSet(
-                    TicketID  => $Param{TicketID},
-                    UserID    => $Param{UserID},
-                    NewUserID => $Param{ResponsibleID},
-                    Comment   => $BodyText,
-                );
-            }
 
             # remember to not notify responsible twice
             if ( $Success && $Success eq 1 ) {
@@ -4298,30 +4125,24 @@ sub _TicketCommonActions {
     my $ArticleID = '';
     if ( $Self->{Config}->{Note} || $Param{Defaults} ) {
         my $MimeType = 'text/plain';
-
         my %User = $Self->{UserObject}->GetUserData(
             UserID => $Param{UserID},
         );
-
         my $From = "$User{UserFirstname} $User{UserLastname} <$User{UserEmail}>";
-
         $ArticleID = $Self->{TicketObject}->ArticleCreate(
             TicketID   => $Param{TicketID},
             SenderType => 'agent',
             From       => $From,
             MimeType   => $MimeType,
-
             # iphone must send info in current charset
             Charset        => $Self->{ConfigObject}->Get('DefaultCharset'),
             UserID         => $Param{UserID},
             HistoryType    => $Self->{Config}->{HistoryType},
             HistoryComment => $Self->{Config}->{HistoryComment},
-
             #                ForceNotificationToUserID       => \@NotifyUserIDs,
             ExcludeMuteNotificationToUserID => \@NotifyDone,
             %Param,
         );
-
         if ( !$ArticleID ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
@@ -4329,7 +4150,6 @@ sub _TicketCommonActions {
             );
             return;
         }
-
         # time accounting
         if ( $Param{TimeUnits} ) {
             $Self->{TicketObject}->TicketAccountTime(
@@ -4339,46 +4159,28 @@ sub _TicketCommonActions {
                 UserID    => $Param{UserID},
             );
         }
-
 	$Self->_SetTicketFreeText(%Param);
-        $Self->_SetTicketFreeTime(\%Param);
-
+        $Self->_SetTicketFreeTime(%Param);
         $Self->_SetArticleFreeText( %Param, ArticleID => $ArticleID );
-
         # set priority
         if ( $Self->{Config}->{Priority} && $Param{PriorityID} ) {
-            if ( $Self->{'API3X'} ) {
-                $Self->{TicketObject}->TicketPrioritySet(
-                    TicketID   => $Param{TicketID},
-                    PriorityID => $Param{PriorityID},
-                    UserID     => $Param{UserID},
+
+	    $Self->{TicketObject}->TicketPrioritySet(
+		TicketID   => $Param{TicketID},
+		PriorityID => $Param{PriorityID},
+		UserID     => $Param{UserID},
                 );
-            }
-            else {
-                $Self->{TicketObject}->PrioritySet(
-                    TicketID   => $Param{TicketID},
-                    PriorityID => $Param{PriorityID},
-                    UserID     => $Param{UserID},
-                );
-            }
+
         }
 
         # set state
         if ( $Self->{Config}->{State} && $Param{StateID} ) {
-            if ( $Self->{'API3X'} ) {
-                $Self->{TicketObject}->TicketStateSet(
-                    TicketID => $Param{TicketID},
-                    StateID  => $Param{StateID},
-                    UserID   => $Param{UserID},
+	    
+	    $Self->{TicketObject}->TicketStateSet(
+		TicketID => $Param{TicketID},
+		StateID  => $Param{StateID},
+		UserID   => $Param{UserID},
                 );
-            }
-            else {
-                $Self->{TicketObject}->StateSet(
-                    TicketID => $Param{TicketID},
-                    StateID  => $Param{StateID},
-                    UserID   => $Param{UserID},
-                );
-            }
 
             # unlock the ticket after close
             my %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
@@ -4387,20 +4189,11 @@ sub _TicketCommonActions {
 
             # set unlock on close state
             if ( $StateData{TypeName} =~ /^close/i ) {
-                if ( $Self->{'API3X'} ) {
-                    $Self->{TicketObject}->TicketLockSet(
-                        TicketID => $Param{TicketID},
-                        Lock     => 'unlock',
-                        UserID   => $Param{UserID},
+		$Self->{TicketObject}->TicketLockSet(
+		    TicketID => $Param{TicketID},
+		    Lock     => 'unlock',
+		    UserID   => $Param{UserID},
                     );
-                }
-                else {
-                    $Self->{TicketObject}->LockSet(
-                        TicketID => $Param{TicketID},
-                        Lock     => 'unlock',
-                        UserID   => $Param{UserID},
-                    );
-                }
             }
 
             # set pending time on pendig state
@@ -4414,34 +4207,12 @@ sub _TicketCommonActions {
                 );
             }
         }
-    }
-
+    } ## note or defaults
     else {
-
-        # fillup configured default vars
-        if ( !defined $Param{Body} && $Self->{Config}->{Body} ) {
-            $Param{Body} = $Self->{Config}->{Body};
-        }
-        if ( !defined $Param{Subject} && $Self->{Config}->{Subject} ) {
-            $Param{Subject} = $Self->{Config}->{Subject},;
-        }
-
-	##----
-	$Self->_GetTicketFreeTextValues( \%Param );
-	$Self->_GetFreeTextConfigOptions(%Param);
-        # ticket free time
-
-	$Self->_GetArticleDefaultSelections(%Param);
-	$Self->_GetArticleFreeTextConfigOptions(%Param);
-
-	##
-
-        my $result = $Self->_TicketCommonActions(
-            %Param,
-            Defaults => 1,
-        );
-        return $result;
+	return $Self->_TicketCommonActionsDefaults(%Param);
     }
+
+
     return $ArticleID;
 }
 
@@ -4463,20 +4234,12 @@ sub _TicketCompose {
 
     # check permissions
     my $Access;
-    if ( $Self->{'API3X'} ) {
-        $Access = $Self->{TicketObject}->TicketPermission(
-            Type     => $Self->{Config}->{Permission},
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
+    
+    $Access = $Self->{TicketObject}->TicketPermission(
+	Type     => $Self->{Config}->{Permission},
+	TicketID => $Param{TicketID},
+	UserID   => $Param{UserID},
         );
-    }
-    else {
-        $Access = $Self->{TicketObject}->Permission(
-            Type     => $Self->{Config}->{Permission},
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID},
-        );
-    }
 
     # error screen, don't show ticket
     if ( !$Access ) {
@@ -4498,43 +4261,21 @@ sub _TicketCompose {
     # get lock state
     if ( $Self->{Config}->{RequiredLock} ) {
         my $Locked;
-        if ( $Self->{'API3X'} ) {
-            $Locked = $Self->{TicketObject}->TicketLockGet( TicketID => $Param{TicketID} );
-        }
-        else {
-            my %TicketData = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
-            if ( $TicketData{Lock} eq 'lock' ) {
-                $Locked = 1;
-            }
-        }
+
+	$Locked = $Self->{TicketObject}->TicketLockGet( TicketID => $Param{TicketID} );
         if ( !$Locked ) {
             my $Success;
-            if ( $Self->{'API3X'} ) {
-                $Self->{TicketObject}->TicketLockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'lock',
-                    UserID   => $Param{UserID},
+	    $Self->{TicketObject}->TicketLockSet(
+		TicketID => $Param{TicketID},
+		Lock     => 'lock',
+		UserID   => $Param{UserID},
                 );
-
-                $Success = $Self->{TicketObject}->TicketOwnerSet(
-                    TicketID  => $Param{TicketID},
-                    UserID    => $Param{UserID},
-                    NewUserID => $Param{UserID},
+	    
+	    $Success = $Self->{TicketObject}->TicketOwnerSet(
+		TicketID  => $Param{TicketID},
+		UserID    => $Param{UserID},
+		NewUserID => $Param{UserID},
                 );
-            }
-            else {
-                $Self->{TicketObject}->LockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'lock',
-                    UserID   => $Param{UserID},
-                );
-
-                $Success = $Self->{TicketObject}->OwnerSet(
-                    TicketID  => $Param{TicketID},
-                    UserID    => $Param{UserID},
-                    NewUserID => $Param{UserID},
-                );
-            }
         }
         else {
             my $AccessOk = $Self->{TicketObject}->OwnerCheck(
@@ -4678,25 +4419,16 @@ sub _TicketCompose {
 
     # set ticket free text
     $Self->_SetTicketFreeText(%Param);
-    $Self->_SetTicketFreeTime(\%Param);
+    $Self->_SetTicketFreeTime(%Param);
 
 
     # set state
     if ( $Self->{Config}->{State} && $Param{StateID} ) {
-        if ( $Self->{'API3X'} ) {
-            $Self->{TicketObject}->TicketStateSet(
-                TicketID => $Param{TicketID},
-                StateID  => $Param{StateID},
-                UserID   => $Param{UserID},
+	$Self->{TicketObject}->TicketStateSet(
+	    TicketID => $Param{TicketID},
+	    StateID  => $Param{StateID},
+	    UserID   => $Param{UserID},
             );
-        }
-        else {
-            $Self->{TicketObject}->StateSet(
-                TicketID => $Param{TicketID},
-                StateID  => $Param{StateID},
-                UserID   => $Param{UserID},
-            );
-        }
     }
 
 
@@ -4704,20 +4436,12 @@ sub _TicketCompose {
 
     # should I set an unlock?
     if ( $StateData{TypeName} =~ /^close/i ) {
-        if ( $Self->{'API3X'} ) {
-            $Self->{TicketObject}->TicketLockSet(
-                TicketID => $Param{TicketID},
-                Lock     => 'unlock',
-                UserID   => $Param{UserID},
+
+	$Self->{TicketObject}->TicketLockSet(
+	    TicketID => $Param{TicketID},
+	    Lock     => 'unlock',
+	    UserID   => $Param{UserID},
             );
-        }
-        else {
-            $Self->{TicketObject}->LockSet(
-                TicketID => $Param{TicketID},
-                Lock     => 'unlock',
-                UserID   => $Param{UserID},
-            );
-        }
     }
 
     # set pending time
@@ -4755,93 +4479,62 @@ sub _TicketMove {
             $Self->{LogObject}->Log(
                 Priority => 'error',
                 Message  => "No $_ is given! Please contact the admin.",
-            );
+		);
             return;
         }
     }
 
     $Self->{Config}
-        = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketMove');
+    = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketMove');
     $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketMove' ;
 
     # check permissions
     my $Access;
-    if ( $Self->{'API3X'} ) {
-        $Access = $Self->{TicketObject}->TicketPermission(
-            Type     => 'move',
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID}
+    $Access = $Self->{TicketObject}->TicketPermission(
+	Type     => 'move',
+	TicketID => $Param{TicketID},
+	UserID   => $Param{UserID}
         );
-    }
-    else {
-        $Access = $Self->{TicketObject}->Permission(
-            Type     => 'move',
-            TicketID => $Param{TicketID},
-            UserID   => $Param{UserID}
-        );
-    }
 
     # error screen, don't show ticket
     if ( !$Access ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "You need $Self->{Config}->{Permission} permissions!",
-        );
+	    );
         return;
     }
 
     # get lock state
     if ( $Self->{Config}->{RequiredLock} ) {
         my $Locked;
-        if ( $Self->{'API3X'} ) {
-            $Locked = $Self->{TicketObject}->TicketLockGet( TicketID => $Param{TicketID} );
-        }
-        else {
-            my %TicketData = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
-            if ( $TicketData{Lock} eq 'lock' ) {
-                $Locked = 1;
-            }
-        }
+	$Locked = $Self->{TicketObject}->TicketLockGet( TicketID => $Param{TicketID} );
         if ( !$Locked ) {
             my $Success;
-            if ( $Self->{'API3X'} ) {
-                $Self->{TicketObject}->TicketLockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'lock',
-                    UserID   => $Param{UserID},
+	    
+	    $Self->{TicketObject}->TicketLockSet(
+		TicketID => $Param{TicketID},
+		Lock     => 'lock',
+		UserID   => $Param{UserID},
                 );
-
-                $Success = $Self->{TicketObject}->TicketOwnerSet(
-                    TicketID  => $Param{TicketID},
-                    UserID    => $Param{UserID},
-                    NewUserID => $Param{UserID},
+	    
+	    $Success = $Self->{TicketObject}->TicketOwnerSet(
+		TicketID  => $Param{TicketID},
+		UserID    => $Param{UserID},
+		NewUserID => $Param{UserID},
                 );
-            }
-            else {
-                $Self->{TicketObject}->LockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'lock',
-                    UserID   => $Param{UserID},
-                );
-
-                $Success = $Self->{TicketObject}->OwnerSet(
-                    TicketID  => $Param{TicketID},
-                    UserID    => $Param{UserID},
-                    NewUserID => $Param{UserID},
-                );
-            }
         }
         else {
             my $AccessOk = $Self->{TicketObject}->OwnerCheck(
                 TicketID => $Param{TicketID},
                 OwnerID  => $Param{UserID},
-            );
+		);
             if ( !$AccessOk ) {
                 $Self->{LogObject}->Log(
                     Priority => 'error',
                     Message  => "Sorry, you need to be the owner to do this action! "
-                        . "Please change the owner first.",
-                );
+		    . "Please change the owner first.",
+		    );
                 return;
             }
         }
@@ -4860,7 +4553,7 @@ sub _TicketMove {
     if ( defined $Param{PendingDate} ) {
         $Param{PendingDate} = $Self->_TransformDateSelection(
             TimeStamp => $Param{PendingDate},
-        );
+	    );
     }
 
     $Self->_TicketTransformFreeTime(\%Param);
@@ -4872,7 +4565,7 @@ sub _TicketMove {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "No QueueID is given! Please contact the admin.",
-        );
+	    );
         return;
     }
 
@@ -4883,208 +4576,145 @@ sub _TicketMove {
     # move ticket (send notification of no new owner is selected)
     my $BodyAsText = $Param{Body} || 0;
     my $Move;
-    if ( $Self->{'API3X'} ) {
-        $Move = $Self->{TicketObject}->TicketQueueSet(
-            QueueID            => $Param{QueueID},
-            UserID             => $Param{UserID},
-            TicketID           => $Param{TicketID},
-            SendNoNotification => $Param{NewUserID},
-            Comment            => $BodyAsText,
+
+    $Move = $Self->{TicketObject}->TicketQueueSet(
+	QueueID            => $Param{QueueID},
+	UserID             => $Param{UserID},
+	TicketID           => $Param{TicketID},
+	SendNoNotification => $Param{NewUserID},
+	Comment            => $BodyAsText,
         );
-    }
-    else {
-        $Move = $Self->{TicketObject}->MoveTicket(
-            QueueID            => $Param{QueueID},
-            UserID             => $Param{UserID},
-            TicketID           => $Param{TicketID},
-            SendNoNotification => $Param{NewUserID},
-            Comment            => $BodyAsText,
-        );
-    }
     if ( !$Move ) {
         $Self->{LogObject}->Log(
             Priority => 'error',
             Message  => "Error: ticket not moved! Please contact the admin.",
-        );
+	    );
         return;
     }
 
     # set priority
     if ( $Self->{Config}->{Priority} && $Param{PriorityID} ) {
-        if ( $Self->{'API3X'} ) {
-            $Self->{TicketObject}->TicketPrioritySet(
-                TicketID   => $Param{TicketID},
-                PriorityID => $Param{PriorityID},
-                UserID     => $Param{UserID},
+
+	$Self->{TicketObject}->TicketPrioritySet(
+	    TicketID   => $Param{TicketID},
+	    PriorityID => $Param{PriorityID},
+	    UserID     => $Param{UserID},
             );
-        }
-        else {
-            $Self->{TicketObject}->PrioritySet(
-                TicketID   => $Param{TicketID},
-                PriorityID => $Param{PriorityID},
-                UserID     => $Param{UserID},
-            );
-        }
     }
 
     # set state
     if ( $Self->{Config}->{State} && $Param{StateID} ) {
 
-        if ( $Self->{'API3X'} ) {
-            $Self->{TicketObject}->TicketStateSet(
-                TicketID => $Param{TicketID},
-                StateID  => $Param{StateID},
-                UserID   => $Param{UserID},
-            );
-        }
-        else {
-            $Self->{TicketObject}->StateSet(
-                TicketID => $Param{TicketID},
-                StateID  => $Param{StateID},
-                UserID   => $Param{UserID},
-            );
-        }
 
-        # unlock the ticket after close
-        my %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
-            ID => $Param{StateID},
-        );
-
-        # set unlock on close state
-        if ( $StateData{TypeName} =~ /^close/i ) {
-            if ( $Self->{'API3X'} ) {
-                $Self->{TicketObject}->TicketLockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'unlock',
-                    UserID   => $Param{UserID},
-                );
-            }
-            else {
-                $Self->{TicketObject}->LockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'unlock',
-                    UserID   => $Param{UserID},
-                );
-            }
-        }
+	$Self->{TicketObject}->TicketStateSet(
+	    TicketID => $Param{TicketID},
+	    StateID  => $Param{StateID},
+	    UserID   => $Param{UserID},
+            );
     }
 
-    # check if new user is given and send notification
+    # unlock the ticket after close
+    my %StateData = $Self->{TicketObject}->{StateObject}->StateGet(
+	ID => $Param{StateID},
+        );
+
+    # set unlock on close state
+    if ( $StateData{TypeName} =~ /^close/i ) {
+	$Self->{TicketObject}->TicketLockSet(
+	    TicketID => $Param{TicketID},
+	    Lock     => 'unlock',
+	    UserID   => $Param{UserID},
+	    );
+    }
+
+
+# check if new user is given and send notification
     if ( $Param{NewUserID} ) {
-        if ( $Self->{'API3X'} ) {
-
-            # lock
-            $Self->{TicketObject}->TicketLockSet(
-                TicketID => $Param{TicketID},
-                Lock     => 'lock',
-                UserID   => $Param{UserID},
-            );
-
-            # set owner
-            $Self->{TicketObject}->TicketOwnerSet(
-                TicketID  => $Param{TicketID},
-                UserID    => $Param{UserID},
-                NewUserID => $Param{NewUserID},
-                Comment   => $BodyAsText,
-            );
-        }
-        else {
-
-            # lock
-            $Self->{TicketObject}->LockSet(
-                TicketID => $Param{TicketID},
-                Lock     => 'lock',
-                UserID   => $Param{UserID},
-            );
-
-            # set owner
-            $Self->{TicketObject}->OwnerSet(
-                TicketID  => $Param{TicketID},
-                UserID    => $Param{UserID},
-                NewUserID => $Param{NewUserID},
-                Comment   => $BodyAsText,
-            );
-        }
+	# lock
+	$Self->{TicketObject}->TicketLockSet(
+	    TicketID => $Param{TicketID},
+	    Lock     => 'lock',
+	    UserID   => $Param{UserID},
+	    );
+	
+	# set owner
+	$Self->{TicketObject}->TicketOwnerSet(
+	    TicketID  => $Param{TicketID},
+	    UserID    => $Param{UserID},
+	    NewUserID => $Param{NewUserID},
+	    Comment   => $BodyAsText,
+	    );
     }
 
-    # force unlock if no new owner is set and ticket was unlocked
+# force unlock if no new owner is set and ticket was unlocked
     else {
-        if ( $Self->{TicketUnlock} ) {
-            if ( $Self->{'API3X'} ) {
-                $Self->{TicketObject}->TicketLockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'unlock',
-                    UserID   => $Param{UserID},
-                );
-            }
-            else {
-                $Self->{TicketObject}->LockSet(
-                    TicketID => $Param{TicketID},
-                    Lock     => 'unlock',
-                    UserID   => $Param{UserID},
-                );
-            }
-        }
-    }
-
-    # add note (send no notification)
+	if ( $Self->{TicketUnlock} ) {
+	    $Self->{TicketObject}->TicketLockSet(
+		TicketID => $Param{TicketID},
+		Lock     => 'unlock',
+		UserID   => $Param{UserID},
+		);
+	    
+	}
+    }	
+# add note (send no notification)
     my $ArticleID;
-
+    
     if ( $Param{Body} ) {
+	
+	my $MimeType = 'text/plain';
+	
+	my %UserData = $Self->{UserObject}->GetUserData( UserID => $Param{UserID} );
+	
+	$ArticleID = $Self->{TicketObject}->ArticleCreate(
+	    TicketID    => $Param{TicketID},
+	    ArticleType => 'note-internal',
+	    SenderType  => 'agent',
+	    From     => "$UserData{UserFirstname} $UserData{UserLastname} <$UserData{UserEmail}>",
+	    Subject  => $Param{Subject},
+	    Body     => $Param{Body},
+	    MimeType => $MimeType,
+	    Charset  => $Self->{ConfigObject}->Get('DefaultCharset'),
+	    UserID   => $Param{UserID},
+	    HistoryType    => 'AddNote',
+	    HistoryComment => '%%Move',
+	    NoAgentNotify  => 1,
+	    );
 
-        my $MimeType = 'text/plain';
-
-        my %UserData = $Self->{UserObject}->GetUserData( UserID => $Param{UserID} );
-
-        $ArticleID = $Self->{TicketObject}->ArticleCreate(
-            TicketID    => $Param{TicketID},
-            ArticleType => 'note-internal',
-            SenderType  => 'agent',
-            From     => "$UserData{UserFirstname} $UserData{UserLastname} <$UserData{UserEmail}>",
-            Subject  => $Param{Subject},
-            Body     => $Param{Body},
-            MimeType => $MimeType,
-            Charset  => $Self->{ConfigObject}->Get('DefaultCharset'),
-            UserID   => $Param{UserID},
-            HistoryType    => 'AddNote',
-            HistoryComment => '%%Move',
-            NoAgentNotify  => 1,
-        );
-
-        if ( !$ArticleID ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Error: Can't create an article for the moved ticket",
-            );
-            return;
-        }
+	if ( !$ArticleID ) {
+	    $Self->{LogObject}->Log(
+		Priority => 'error',
+		Message  => "Error: Can't create an article for the moved ticket",
+		);
+	    return;
+	}
     }
 
     # set ticket free text
     $Self->_SetTicketFreeText(%Param);
-    $Self->_SetTicketFreeTime(\%Param);
+    $Self->_SetTicketFreeTime(%Param);
 
     # time accounting
     if ( $Param{TimeUnits} ) {
-        $Self->{TicketObject}->TicketAccountTime(
-            TicketID  => $Param{TicketID},
-            ArticleID => $ArticleID,
-            TimeUnit  => $Param{TimeUnits},
-            UserID    => $Param{UserID},
-        );
+	$Self->{TicketObject}->TicketAccountTime(
+	    TicketID  => $Param{TicketID},
+	    ArticleID => $ArticleID,
+	    TimeUnit  => $Param{TimeUnits},
+	    UserID    => $Param{UserID},
+	    );
     }
 
     if ($ArticleID) {
-        return $ArticleID;
+	return $ArticleID;
     }
     else {
-        if ($Move) {
-            return $Param{QueueID};
-        }
+	if ($Move) {
+	    return $Param{QueueID};
+	}
     }
     return -1;
-
 }
+
 
 sub _GetComposeDefaults {
     my ( $Self, %Param ) = @_;
@@ -5405,9 +5035,11 @@ sub _StripHash
 	= qw(ReplyTo MessageID InReplyTo References AgeTimeUnix CreateTimeUnix SenderTypeID
              IncomingTime RealTillTimeNotUsed ServiceID SLAID
             StateType ArchiveFlag UnlockTimeout Changed
+
+ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1  ArticleFreeText2 ArticleFreeText3
         );
 
-    #ArticleFreeKey1 ArticleFreeKey2 ArticleFreeKey3 ArticleFreeText1  ArticleFreeText2 ArticleFreeText3
+    #
     
     for my $Key (@Delete) {
 	delete $Hash->{$Key};
@@ -5432,29 +5064,6 @@ sub _GetArticleDefaultSelections{ #FreeFieldBad
     }
 }
 
-sub _GetArticleFreeTextConfigOptions{
-    my $Self  =shift || die "no self";
-    my %Param  =@_ ;
-    
-    # get article free text config options
-    my %ArticleFreeText;
-    for my $Count ( 1 .. 3 ) {#FreeFieldBad
-	my $Key  = 'ArticleFreeKey' . $Count;
-	my $Text = 'ArticleFreeText' . $Count;
-	$ArticleFreeText{$Key} = $Self->_ArticleFreeTextGet(
-	    TicketID => $Param{TicketID},
-	    Type     => $Key,
-	    Action   => $Param{Action},
-	    UserID   => $Param{UserID},
-            );
-	$ArticleFreeText{$Text} = $Self->_ArticleFreeTextGet(
-	    TicketID => $Param{TicketID},
-	    Type     => $Text,
-	    Action   => $Param{Action},
-	    UserID   => $Param{UserID},
-            );
-    }
-}
 
 sub _SetArticleFreeText {
     my $Self = shift || die "no self";
@@ -5487,6 +5096,13 @@ sub _SetArticleFreeText {
         );
     }
 }
+
+=item _GetArticleFreeTextValues()
+
+    extract all the article free text values from the dynamic fields and delivers them
+    replaces ArticleFreeTextGet and GetArticleFreeTextConfigOptions
+    remember to also call _GetArticleDynamicFieldValues
+=cut
 
 sub _GetArticleFreeTextValues {
     my $Self  = shift || die "no self";
@@ -5530,6 +5146,15 @@ sub _GetArticleFreeTextValues {
     return $Param;
 }
 
+=item _GetTicketFreeTextValues()
+
+    extract all the ticket free text values from the dynamic fields and delivers them
+    replaces _GetFreeTextConfigOptions and TicketFreeTextGet
+
+    should also call _GetTicketDynamicFieldValues to get the new dynamic fields
+
+=cut
+
 sub _GetTicketFreeTextValues {
     my $Self  = shift || die "no self";
     my $Param = shift || die "no param hashref";
@@ -5543,14 +5168,24 @@ sub _GetTicketFreeTextValues {
 
     # get article free text config options
     my %FreeText;
-    for my $Count ( 1 .. 16 ) {    #FreeFieldBad
+
+    # not, we collect the free time fields as well here
+    for my $Index ( 1 .. 6 ) {
+        if ( $Self->{Config}->{TicketFreeTime}->{$Index} ) {
+	    my $Name         = 'TicketFreeTime' . $Index;
+	    $FreeText{$Name}++;
+	}
+    }
+
+    for my $Count ( 1 .. 16 ) {   
+        if ( $Self->{Config}->{TicketFreeText}->{$Count} ) {
         my $Key  = 'TicketFreeKey' . $Count;
         my $Text = 'TicketFreeText' . $Count;
 
         # build a list of values to get
         $FreeText{$Key}++;
         $FreeText{$Text}++;
-    }
+	}}
 
     my %Article = $Self->{TicketObject}->TicketGet(
         TicketID      => $Param->{TicketID},
@@ -5564,32 +5199,7 @@ sub _GetTicketFreeTextValues {
     }
 
     # $Param contains the data that was collected in the hash
-    # the 
-}
-
-sub _GetFreeTextConfigOptions {
-    my $Self  =shift || die "no self";
-    my %Param  =@_ ;
     
-    # get free text config options
-    my %TicketFreeText;
-    for my $Count ( 1 .. 16 ) {#FreeFieldBad
-	my $Key  = 'TicketFreeKey' . $Count;
-	my $Text = 'TicketFreeText' . $Count;
-	$TicketFreeText{$Key} = $Self->_TicketFreeTextGet(
-	    TicketID => $Param{TicketID},
-	    Type     => $Key,
-	    Action   => $Param{Action},
-	    UserID   => $Param{UserID},
-            );
-	$TicketFreeText{$Text} = $Self->_TicketFreeTextGet(
-	    TicketID => $Param{TicketID},
-	    Type     => $Text,
-	    Action   => $Param{Action},
-	    UserID   => $Param{UserID},
-            );
-    }
-    return %TicketFreeText;
 }
 
 # v1 function
@@ -5619,7 +5229,7 @@ sub _SetTicketFreeText {
         }
 
 
-        $Self->_TicketFreeTextSet(
+        $Self->_TicketDynamicFieldSet(
             Ticket   => $Self->{TicketObject},
             TicketID => $Param{TicketID},
             Key      => $Key,
@@ -5630,22 +5240,14 @@ sub _SetTicketFreeText {
     }
 }
 
-sub _TicketFreeTextSet {
+sub _TicketDynamicFieldSet {
     my ( $Self, %Param ) = @_;
 
     if (! exists($Self->{DynamicFieldObject})){
 	$Self->{LogObject}->Log( Priority => 'error', Message => "missing needed DynamicFieldObject in Self");
 	return;
     }
-
-    # Parm Structure :
-    #           Ticket   => $Self->{TicketObject},
-    #           TicketID => $Param{TicketID},
-    #           Key      => $Param{$Key},
-    #           Value    => $Param{$Text},
-    #           Counter  => $Count,
-    #           UserID   => $Param{UserID},
-    
+   
     if ( !exists $Param{Key} )
     {
 	$Self->{LogObject}
@@ -5713,13 +5315,6 @@ sub _TicketFreeTextSet {
 sub _ArticleFreeTextSet {
     my ( $Self, %Param ) = @_;
 
-    # Parm Structure :
-    #           Ticket   => $Self->{TicketObject},
-    #           ArticleID => $Param{TicketID},
-    #           Key      => $Param{$Key},
-    #           Value    => $Param{$Text},
-    #           Counter  => $Count,
-    #           UserID   => $Param{UserID},
     if ( !exists $Param{Value} )
     {
         $Self->{LogObject}->Log( Priority => 'error', Message => "No Text Passed for Value !" );
@@ -5837,56 +5432,26 @@ sub _GetScreenElementsTicketFreeTimeFields {
 
 sub  _SetTicketFreeTime
 {
-    my $Self  =shift || die "no self";
-    my $Param  =shift ; #rw
+    my ($Self, %Param) = @_;
     # set ticket free time
     for ( 1 .. 6 ) {#FreeFieldBad
-        if ( $Param->{ 'TicketFreeTime' . $_ } ) {
-	    my @Date   = $Self->{TimeObject}->SystemTime2Date(
-                SystemTime =>
-		$Self->{TimeObject}->SystemTime( $Param->{ 'TicketFreeTime' . $_ } ),
-                );
-	    shift @Date;  #remove seconds
-            my ( $Min, $Hour, $Day, $Month, $Year )=@Date;
-	    # second is not used
-
-            $Param->{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
-            $Param->{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
-            $Param->{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
-            $Param->{ 'TicketFreeTime' . $_ . 'Hour' }   = $Hour;
-            $Param->{ 'TicketFreeTime' . $_ . 'Minute' } = $Min;
-            # set time stamp to NULL if field is not used/checked
-            if ( !$Param->{ 'TicketFreeTime' . $_ . 'Used' } ) {
-                $Param->{ 'TicketFreeTime' . $_ . 'Year' }   = 0;
-                $Param->{ 'TicketFreeTime' . $_ . 'Month' }  = 0;
-                $Param->{ 'TicketFreeTime' . $_ . 'Day' }    = 0;
-                $Param->{ 'TicketFreeTime' . $_ . 'Hour' }   = 0;
-                $Param->{ 'TicketFreeTime' . $_ . 'Minute' } = 0;
-            }
-            # set free time
-            $Self->_TicketFreeTimeSet(
-                %{$Param},
-                Prefix   => 'TicketFreeTime',
-                TicketID => $Param->{TicketID},
-                Counter  => $_,
-                UserID   => $Param->{UserID},
-            );
+	my $Key='TicketFreeTime' . $_ ;
+        if ( $Param{ 'TicketFreeTime' . $_ } ) {
+	    
+	    $Self->_TicketDynamicFieldSet(
+		Ticket   => $Self->{TicketObject},
+		TicketID => $Param{TicketID},
+		Key      => $Key,
+		Value    => $Param{$Key},
+		UserID   => $Param{UserID},
+		);	    
         }
     }
 }
 
-sub _TicketFreeTimeSet
-{
-    #%{$Param},
-     #           Prefix   => 'TicketFreeTime',
-      #          TicketID => $Param->{TicketID},
-      #          Counter  => $_,
-      #          UserID   => $Param->{UserID},
-      #      );
-}
 
 # transform free time, time stamp based on user time zone
-sub _TicketTransformFreeTime
+sub _TicketTransformFreeTime # called all over
 {
     my $Self  =shift || die "no self";
     my $Param  =shift ;
@@ -5900,8 +5465,7 @@ sub _TicketTransformFreeTime
     }
 }
 
-
-sub _GetScreenElementsFreeTextFields{
+sub _GetScreenElementsFreeTextFields{ # called by GetScreenElements
 
     my $Self  =shift || die "no self";
     my $max   = shift ; # 16 or 3
@@ -5978,23 +5542,7 @@ sub _GetScreenElementsFreeTextFields{
     return @ScreenElements;
 }
 
-
-
-sub _ArticleFreeTextGet {
-#	    TicketID => $Param{TicketID},
-#	    Type     => $Key,
-#	    Action   => $Param{Action},
-#	    UserID   => $Param{UserID},
-}
-
-sub _TicketFreeTextGet{
-#	    TicketID => $Param{TicketID},
-#	    Type     => $Key,
-#	    Action   => $Param{Action},
-#	    UserID   => $Param{UserID},
-}
-
-sub _GetTicketDynamicFieldValues {
+sub _GetTicketDynamicFieldValues { 
     my $Self  = shift || die "no self";
     my $Param = shift || die "no param hashref";
 
@@ -6014,13 +5562,30 @@ sub _GetTicketDynamicFieldValues {
     foreach my $Key ( keys %Ticket ) {
 	if ($Key =~ /^DynamicField_/)
 	{
-	    my $Value = $Ticket{$Key} || '';
-	    $Param->{$Key} = $Value; # the keys are filled out anyway.... even if they have no data.
+	    if ( $Self->{Config}->{DynamicFields}->{$Key} ) {
+		my $Value = $Ticket{$Key} || '';
+		
+		$Param->{$Key} = $Value; # the keys are filled out anyway.... even if they have no data.
+	    }
+	    else
+	    {
+		if ($Key !~ /^DynamicField_TicketFree/)
+		{
+		    warn "Name is $Self->{Config}{__name}";
+		    my $name = $Self->{Config}{__name} || "Unknown";
+		    my $full= ${name}. "::DynamicFields::" . ${Key};
+		    $Self->{LogObject}->Log(
+			Priority => 'error',
+			Message  => " Field $Key not defined for view ${name} please check your config $full ",
+			);
+		}
+
+	    }
 	}
     }
 }
 
-sub _GetArticleDynamicFieldValues {
+sub _GetArticleDynamicFieldValues { #TODO not used yet
     my $Self  = shift || die "no self";
     my $Param = shift || die "no param hashref";
 
@@ -6045,8 +5610,21 @@ sub _GetArticleDynamicFieldValues {
     foreach my $Key ( keys %Article ) {
 	if ($Key =~ /^DynamicField_/)
 	{
-	    my $Value = $Article{$Key} || '';
-	    $Param->{$Key} = $Value; # the keys are filled out anyway.... even if they have no data.
+	    if ($Key !~ /^DynamicField_TicketFree/){
+		if ( $Self->{Config}->{ArticleDynamicFields}->{$Key} ) {
+		    
+		    my $Value = $Article{$Key} || '';
+		    $Param->{$Key} = $Value; # the keys are filled out anyway.... even if they have no data.
+		}
+		else
+		{
+		    $Self->{LogObject}->Log(
+			Priority => 'error',
+			Message  => " Field $Key not defined for view $Self->{Config}{__name} please check your config $Self->{Config}{__name} :: ArticleDynamicFields :: ${Key} ",
+			);
+		    
+		}
+	    }
 	}
     }
 
@@ -6054,6 +5632,35 @@ sub _GetArticleDynamicFieldValues {
     return $Param;
 }
 
+sub _TicketCommonActionsDefaults
+{
+    my ($Self, %Param) = @_;
+    # fillup configured default vars
+    if ( !defined $Param{Body} && $Self->{Config}->{Body} ) {
+	$Param{Body} = $Self->{Config}->{Body};
+    }
+    if ( !defined $Param{Subject} && $Self->{Config}->{Subject} ) {
+	$Param{Subject} = $Self->{Config}->{Subject},;
+    }
+    
+    ##----
+    $Self->_GetTicketDynamicFieldValues(\%Param);
+    $Self->_GetTicketFreeTextValues(\%Param);
+    # ticket free time
+    
+    $Self->_GetArticleDefaultSelections(%Param); 
+    $Self->_GetArticleFreeTextValues(\%Param); # will fill out the param hash
+
+    # load the article free text fields
+    $Self->_GetArticleDynamicFieldValues(\%Param);
+     
+    
+    my $result = $Self->_TicketCommonActions(
+	%Param,
+	Defaults => 1,
+        );
+    return $result;    
+}
 
 1;
 

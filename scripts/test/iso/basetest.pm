@@ -143,6 +143,13 @@ sub NewPhone {
     $phone->{DynamicFieldObject}=Kernel::System::DynamicField->new(%{$phone});
 
     RunConfig($phone);
+
+    my $ConfigName = 'iPhone::Frontend::AgentTicketCompose';
+    # default for getting field
+    $phone->{Config} = $Self->{ConfigObject}->Get($ConfigName)|| die "No config";
+    $phone->{Config}{__name} = 'iPhone::Frontend::AgentTicketCompose';
+    warn "Name is $phone->{Config}{__name}";
+    $phone->{Config} or die "No config";
     
     return $phone;
 }
@@ -286,6 +293,7 @@ sub RunConfig
 	'9' => '0'
     };
 
+
     $Self->{'ConfigObject'}->{'TicketFreeText'} =  {
 	'1' => '1',
 	'10' => '1',
@@ -345,6 +353,9 @@ sub RunConfig
     $Self->{ConfigObject}->Set(Key=>'Ticket::Service' ,Value=>'1');
     $Self->{ConfigObject}->Set(Key=>'Ticket::Type' ,Value=>'1');
     $Self->{ConfigObject}->Set(Key=>'Ticket::Watcher' ,Value=>'1');
+
+#    $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketCompose'
+
 #    $Self->{ConfigObject}->Set(Key=>'Ticket::WatcherGroup' ,Value=>["Somegroup","group2"]);
 
 
@@ -391,7 +402,23 @@ sub RunConfig
 		PriorityDefault=>"3 normal",
 		State =>1,
 		Body=> "default body",
-		Subject => "Close"	   	    
+		Subject => "Close"	   	 ,
+
+		'DynamicFields' =>  {
+		    'DynamicField_test'  => '1',
+		    'DynamicField_test1'  => '1',
+		    'DynamicField_test2'  => '1',
+		    'DynamicField_test3'  => '1',
+		    
+	    },
+		'ArticleDynamicFields' =>  {
+		    'DynamicField_test'  => '1',
+		    'DynamicField_test1'  => '1',
+		    'DynamicField_test2'  => '1',
+		    'DynamicField_test3'  => '1',
+		    
+	    }
+
     };
 
     $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketPhone', Value=>$stdconf);
@@ -399,6 +426,8 @@ sub RunConfig
     $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketClose', Value=>$stdconf);
     $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketCompose', Value=>$stdconf);
     $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketMove', Value=>$stdconf);
+
+
 
 }
 
@@ -449,7 +478,7 @@ sub CreateTestArticle
     my $phone=shift;
     my $param=shift;
 
-    $phone->{Config} = $phone->{ConfigObject}->Get('iPhone::Frontend::AgentTicketCompose')|| die;
+
     
 # create a new ticket
     my $TicketID = $phone->{TicketObject}->TicketCreate(
@@ -490,7 +519,6 @@ sub CreateTestTicket
 {
     my $phone=shift;
     my $param=shift;
-    $phone->{Config} = $phone->{ConfigObject}->Get('iPhone::Frontend::AgentTicketCompose')|| die;
     
 # create a new ticket
     my $TicketID = $phone->{TicketObject}->TicketCreate(

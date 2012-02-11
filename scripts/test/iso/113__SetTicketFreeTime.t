@@ -20,7 +20,7 @@ use basetest;
 my $phone = basetest::NewPhone();
 my %param = basetest::NewParam("_SetTicketFreeTime");
 
-my $ret=$phone->_SetTicketFreeTime(\%param);
+my $ret=$phone->_SetTicketFreeTime(%param);
 ;
 warn Dump($ret);
 
