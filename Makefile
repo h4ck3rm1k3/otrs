@@ -13,7 +13,8 @@ clean :
 
 %.out : %.t scripts/test/iso/basetest.pm scripts/test/iso/Core.pm
 	echo going to process $<
-	perl -MDevel::Cover -I. -I $(SYSTEMROOT) -I scripts/test/iso $< > $@ 2>&1
+#	perl -MDevel::Cover -I. -I $(SYSTEMROOT) -I scripts/test/iso $< > $@ 2>&1
+	perl -I. -I $(SYSTEMROOT) -I scripts/test/iso $< > $@ 2>&1
 	tail	$@ 
 
 build : test

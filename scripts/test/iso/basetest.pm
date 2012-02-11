@@ -345,7 +345,7 @@ sub RunConfig
     $Self->{ConfigObject}->Set(Key=>'Ticket::Service' ,Value=>'1');
     $Self->{ConfigObject}->Set(Key=>'Ticket::Type' ,Value=>'1');
     $Self->{ConfigObject}->Set(Key=>'Ticket::Watcher' ,Value=>'1');
-    $Self->{ConfigObject}->Set(Key=>'Ticket::WatcherGroup' ,Value=>'1');
+#    $Self->{ConfigObject}->Set(Key=>'Ticket::WatcherGroup' ,Value=>["Somegroup","group2"]);
 
 
 

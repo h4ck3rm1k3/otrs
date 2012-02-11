@@ -4627,7 +4627,7 @@ sub _TicketCompose {
 	if ( !exists($Param{$Param}))
 	{
 	    $Self->{LogObject}->Log( Priority => 'error', Message => "missing value for $Param!" );
-	    return;
+#	    return;
 	}
     }
 
