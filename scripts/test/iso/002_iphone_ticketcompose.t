@@ -50,7 +50,7 @@ my %Param = (
 	 );
 
 
-my $ticketid=	_TicketCompose(%Param);
+my $ticketid=	$phone->_TicketCompose(%Param);
 
 my %TicketData = $phone->TicketGet(
     TicketID => $Param{TicketID},
