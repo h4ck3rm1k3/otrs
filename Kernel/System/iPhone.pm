@@ -2018,7 +2018,7 @@ sub QueueView {
     my %AllQueues = $Self->{QueueObject}->QueueList( Valid => 0 );
 
     my @Queues;
-    my %QueueSum;
+
     for my $QueueID ( sort keys %AllQueues ) {
         my %Queue = $Self->{QueueObject}->QueueGet(
             ID => $QueueID,
@@ -3100,7 +3100,7 @@ sub _GetTos {
 }
 
 sub _GetNoteTypes {
-    my ( $Self, %Param ) = @_;
+    my ( $Self ) = @_;
 
     if (! exists( $Self->{Config}->{ArticleTypes} ) )
     {
@@ -3626,11 +3626,9 @@ sub _GetScreenElements {
     return \@ScreenElements;
 }
 
-#use YAML;
+
 sub _TicketPhoneNew {
     my ( $Self, %Param ) = @_;
-#    warn "_TicketPhoneNew called".  Dump(\%Param);
-
     $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketPhone');
     $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketPhone';
 
@@ -4074,6 +4072,12 @@ sub _TicketCommonActions {
                     UserID    => $Param{UserID},
                     NewUserID => $Param{UserID},
                 );
+		if (!$Success) {
+		    $Self->{LogObject}->Log(
+			Priority => 'error',
+			Message  => "Setting ticket owner failed",
+			);
+		}
             }
             else {
                 $Self->{TicketObject}->LockSet(
@@ -4086,6 +4090,12 @@ sub _TicketCommonActions {
                     UserID    => $Param{UserID},
                     NewUserID => $Param{UserID},
                 );
+		if (!$Success) {
+		    $Self->{LogObject}->Log(
+			Priority => 'error',
+			Message  => "Setting ticket owner failed",
+			);
+		}
             }
         }
         else {
@@ -4478,6 +4488,13 @@ sub _TicketCompose {
     }
     my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
 
+    if ( !%Ticket ) {
+	$Self->{LogObject}->Log(
+	    Priority => 'error',
+	    Message  => "Getting Ticket failed",
+	    );
+    }	
+
     # get lock state
     if ( $Self->{Config}->{RequiredLock} ) {
         my $Locked;
@@ -4832,6 +4849,12 @@ sub _TicketMove {
 
     # ticket attributes
     my %Ticket = $Self->{TicketObject}->TicketGet( TicketID => $Param{TicketID} );
+    if ( !%Ticket ) {
+	$Self->{LogObject}->Log(
+	    Priority => 'error',
+	    Message  => "Getting Ticket failed",
+	    );
+    }	
 
     # transform pending time, time stamp based on user time zone
     if ( defined $Param{PendingDate} ) {
@@ -5117,8 +5140,6 @@ sub _GetComposeDefaults {
     # check article type and replace To with From (in case)
     if ( $Data{SenderType} !~ /customer/ ) {
         my $To   = $Data{To};
-        my $From = $Data{From};
-
         # set OrigFrom for correct email quoteing (xxxx wrote)
         $Data{OrigFrom} = $Data{From};
 
@@ -5500,10 +5521,9 @@ sub _GetArticleFreeTextValues {
 	%Param2
 	);
 
-
     foreach my $Key ( keys %ArticleFreeText ) {
         my $Value = $Article{$Key} || '';
-        $Param->{$Key} = $Key;
+        $Param->{$Key} = $Value; ## the value of the key...
     }
 
     # $Param contains the data that was collected in the hash
@@ -5540,7 +5560,7 @@ sub _GetTicketFreeTextValues {
 
     foreach my $Key ( keys %FreeText ) {
 	my $Value = $Article{$Key} || '';
-	$Param->{$Key} = $Key; # the keys are filled out anyway.... even if they have no data.
+	$Param->{$Key} = $Value; # the keys are filled out anyway.... even if they have no data.
     }
 
     # $Param contains the data that was collected in the hash
@@ -5776,7 +5796,6 @@ sub _CheckRequiredFreeTextField {
 
 sub _GetScreenElementsTicketFreeTimeFields {
     my $Self  =shift || die "no self";
-    my %Param  =@_ ;
     
     my @ScreenElements;
 # ticket freetime fields
@@ -5823,11 +5842,14 @@ sub  _SetTicketFreeTime
     # set ticket free time
     for ( 1 .. 6 ) {#FreeFieldBad
         if ( $Param->{ 'TicketFreeTime' . $_ } ) {
-            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay )
-                = $Self->{TimeObject}->SystemTime2Date(
+	    my @Date   = $Self->{TimeObject}->SystemTime2Date(
                 SystemTime =>
 		$Self->{TimeObject}->SystemTime( $Param->{ 'TicketFreeTime' . $_ } ),
                 );
+	    shift @Date;  #remove seconds
+            my ( $Min, $Hour, $Day, $Month, $Year )=@Date;
+	    # second is not used
+
             $Param->{ 'TicketFreeTime' . $_ . 'Year' }   = $Year;
             $Param->{ 'TicketFreeTime' . $_ . 'Month' }  = $Month;
             $Param->{ 'TicketFreeTime' . $_ . 'Day' }    = $Day;
@@ -5885,7 +5907,7 @@ sub _GetScreenElementsFreeTextFields{
     my $max   = shift ; # 16 or 3
     my $TypeNameText = shift; #"ArticleFreeText"|;
     my $TypeNameKey  = shift; #"ArticleFreeKey"|;
-    my %Param  =@_ ;
+
     my @ScreenElements;
     
 #  freetext fields
@@ -5993,7 +6015,7 @@ sub _GetTicketDynamicFieldValues {
 	if ($Key =~ /^DynamicField_/)
 	{
 	    my $Value = $Ticket{$Key} || '';
-	    $Param->{$Key} = $Key; # the keys are filled out anyway.... even if they have no data.
+	    $Param->{$Key} = $Value; # the keys are filled out anyway.... even if they have no data.
 	}
     }
 }
@@ -6024,7 +6046,7 @@ sub _GetArticleDynamicFieldValues {
 	if ($Key =~ /^DynamicField_/)
 	{
 	    my $Value = $Article{$Key} || '';
-	    $Param->{$Key} = $Key; # the keys are filled out anyway.... even if they have no data.
+	    $Param->{$Key} = $Value; # the keys are filled out anyway.... even if they have no data.
 	}
     }
 

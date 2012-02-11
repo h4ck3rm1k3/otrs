@@ -5,14 +5,14 @@ my $count=100;
 while (<IN>)
 {
 #    warn $_;
-    if (/\$phone-\>(_\w+)/)	
+    if (/\$phone-\>(\w+)/)	
     {
 	my $testline=$_;
 	my $name= $1;
 	my $file = sprintf("%3.0d_%s.t",$count,$name);
 	$count++;
 #	warn $file;
-#	if (!-f $file)
+	if (!-f $file)
 	{
 	    open OUT, ">$file";
 
