@@ -2,7 +2,7 @@ use Core; # tests -*-perl-*-
 use strict;
 use warnings;
 sub test{
-    my $Self = Core->new(    iPhoneObject       => $phone);
+    my $Self = Core->new(  );
     my $User   = $Self->{ParamObject}->SetParam( Param => 'User', Value=>"cr" );
     my $Pw     = $Self->{ParamObject}->SetParam( Param => 'Password', Value =>"123" );
     my $Object = $Self->{ParamObject}->SetParam( Param => 'Object' , Value => "CustomObject");

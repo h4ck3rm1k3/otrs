@@ -87,6 +87,8 @@ for my $f (1 .. 6)
 	push @parts, qq["TicketFreeTime$f":"2011-01-01 12:00:00"];
 }
 
+	push @parts, qq["ServiceID":"1"];
+
 #    my $jsonin = q[{"Action":"Phone","StateID":"4","CustomerID":"otrs","PriorityID":"3","SLAID":"1","CustomerUserLogin":"fer","TimeUnits":"","Subject":"Test%20for%20Mike","ServiceID":"1","Body":"Body","OwnerID":"3","QueueID":"3","PendingDate":""}];
 my $jsonin = q[{"Action":"Phone","StateID":"4","CustomerID":"otrs","PriorityID":"3","SLAID":"1","CustomerUserLogin":"fer","TimeUnits":"","Subject":"Test","ServiceID":"","Body":"Body","OwnerID":"3","QueueID":"3",]   .  join (",", @parts)   .     q[,"PendingDate":""}];
 

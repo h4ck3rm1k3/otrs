@@ -163,7 +163,9 @@ sub NewParam
 	TimeStamp => "2001-01-01 10:10:01",
 	TicketFreeText1 => "freetext1",
 	ArticleID=>251,
-	StateID =>1
+	StateID =>1,
+	ServiceID =>1,
+	SLAID =>1,
 	);
     
     for my $f (1 .. 16)
@@ -191,7 +193,7 @@ sub NewParamJson
 {
     my $name =shift;  
     my %Param;
-       
+    
     for my $f (1 .. 16)
     {
 	$Param{"TicketFreeText$f"}= "SomeText$f";
@@ -213,6 +215,42 @@ sub NewParamJson
 	push @ret, "\"$k\":\"$Param{$k}\"";
     }
     return join ",",@ret;
+}
+
+sub ExtractConfig
+{
+    my $Self =shift;
+    for my $x (
+	'Ticket::Type',
+	'Ticket::Service',
+	'Ticket::Responsible',
+	'Ticket::Frontend::NeedAccountedTime',
+	'Ticket::Frontend::TimeUnits',
+	'Ticket::Frontend::TextAreaNote',
+	'Ticket::Frontend::Quote',
+	'Ticket::Frontend::ComposeExcludeCcRecipients',
+	'Ticket::Frontend::ComposeAddCustomerAddress',
+	'Ticket::Frontend::ComposeReplaceSenderAddress',
+	'Ticket::Watcher',
+	'Ticket::WatcherGroup',
+	'Ticket::ChangeOwnerToEveryone',
+	'Ticket::Frontend::CustomerSearchAutoComplete',
+	'Ticket::Frontend::NewQueueSelectionType',
+	'Ticket::Frontend::NewQueueSelectionString',
+	'Ticket::Frontend::NewQueueSelectionType')
+    {      
+	my $val = $Self->{ConfigObject}->Get($x);
+	if ( $Self->{ConfigObject}->Get($x) ) {
+	    
+	    warn "Get $x : $val " ;#. Dump($val);
+	    warn '$Self->{ConfigObject}->Set(Key=>\'' . $x . "\' \,Value=>'$val'". ');' . "\n";
+	}
+	else
+	{
+	    warn '$Self->{ConfigObject}->Set(Key=>\'' . $x . "\' \,Value=>'0'". ');' . "\n";
+	}
+    }
+    
 }
 
 sub RunConfig
@@ -291,6 +329,45 @@ sub RunConfig
     $Self->{ConfigObject}->Set(Key => 'ArticleFreeKey1',Value=>["a","b"]);
     $Self->{ConfigObject}->Set(Key => 'ArticleTypeDefault',Value=>"note-internal");
 
+
+    $Self->{ConfigObject}->Set(Key=>'Ticket::ChangeOwnerToEveryone' ,Value=>'1');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Frontend::ComposeAddCustomerAddress' ,Value=>'1');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Frontend::ComposeExcludeCcRecipients' ,Value=>'1');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Frontend::ComposeReplaceSenderAddress' ,Value=>'1');
+#$Self->{ConfigObject}->Set(Key=>'Ticket::Frontend::CustomerSearchAutoComplete' ,Value=>'HASH(0x9ad0d40)');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Frontend::NeedAccountedTime' ,Value=>'1');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Frontend::NewQueueSelectionString' ,Value=>'<Queue>');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Frontend::NewQueueSelectionType' ,Value=>'Queue');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Frontend::Quote' ,Value=>'>');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Frontend::TextAreaNote' ,Value=>'78');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Frontend::TimeUnits' ,Value=>' (work units)');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Responsible' ,Value=>'1');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Service' ,Value=>'1');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Type' ,Value=>'1');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::Watcher' ,Value=>'1');
+    $Self->{ConfigObject}->Set(Key=>'Ticket::WatcherGroup' ,Value=>'1');
+
+
+
+
+
+#Get Ticket::Frontend::TimeUnits :  (work units)  at scripts/test/iso/basetest.pm line 315.
+#Get Ticket::Frontend::TextAreaNote : 78  at scripts/test/iso/basetest.pm line 315.
+#Get Ticket::Frontend::Quote : >  at scripts/test/iso/basetest.pm line 315.
+#Get Ticket::Frontend::ComposeAddCustomerAddress : 1  at scripts/test/iso/basetest.pm line 315.
+
+#Get Ticket::Frontend::CustomerSearchAutoComplete : 
+#  Active: 1
+#  MaxResultsDisplayed: 20
+#  MinQueryLength: 2
+#  QueryDelay: 100
+
+#Get Ticket::Frontend::NewQueueSelectionType : Queue  at scripts/test/iso/basetest.pm line 315.
+#Get Ticket::Frontend::NewQueueSelectionString : <Queue>  at scripts/test/iso/basetest.pm line 315.
+#Get Ticket::Frontend::NewQueueSelectionType : Queue  at scripts/test/iso/basetest.pm line 315.
+
+    #$Self->{ConfigObject}->Set()
+
     my $stdconf={
 	'ArticleTypeDefault' => 'note-internal',
 	ArticleTypes =>{
@@ -298,23 +375,23 @@ sub RunConfig
             'note-external' =>1,
             'note-report'   =>1
 	},
-	'SenderType' => 'customer',
-	'HistoryType' => 'AddNote',
-	'HistoryComment' => 'This is a test',
-	Permission=>"note",
-	RequiredLock=>1,
-	Note=>1,
-	Title=>1,
-	TicketType=>1,
-	TimeUnits=>1,
-	Service=>1,
-	Owner => 1,
-	Responsible =>1,
-	Priority=>1,
-	PriorityDefault=>"3 normal",
-	State =>1,
-	Body=> "default body",
-	Subject => "Close"	   	    
+		'SenderType' => 'customer',
+		'HistoryType' => 'AddNote',
+		'HistoryComment' => 'This is a test',
+		Permission=>"note",
+		RequiredLock=>1,
+		Note=>1,
+		Title=>1,
+		TicketType=>1,
+		TimeUnits=>1,
+		Service=>1,
+		Owner => 1,
+		Responsible =>1,
+		Priority=>1,
+		PriorityDefault=>"3 normal",
+		State =>1,
+		Body=> "default body",
+		Subject => "Close"	   	    
     };
 
     $Self->{ConfigObject}->Set(Key=>'iPhone::Frontend::AgentTicketPhone', Value=>$stdconf);
@@ -325,10 +402,6 @@ sub RunConfig
 
 }
 
-sub CreateParams
-{
-
-}
 
 sub CreateCustomerUserObject
 {
@@ -418,7 +491,7 @@ sub CreateTestTicket
     my $phone=shift;
     my $param=shift;
     $phone->{Config} = $phone->{ConfigObject}->Get('iPhone::Frontend::AgentTicketCompose')|| die;
-   
+    
 # create a new ticket
     my $TicketID = $phone->{TicketObject}->TicketCreate(
 	Title        => 'My ticket created by Agent A',

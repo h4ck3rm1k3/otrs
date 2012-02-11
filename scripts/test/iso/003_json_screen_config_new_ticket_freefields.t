@@ -89,6 +89,7 @@ sub test{
     push @parts, qq["DynamicField-test":"This is a test"];
     push @parts, qq["DynamicField-test2":"0"];
     push @parts, qq["DynamicField-test1":"This is a test1"];
+    push @parts, qq["ServiceID":"1"];
     
     
 #    my $jsonin = q[{"Action":"Phone","StateID":"4","CustomerID":"otrs","PriorityID":"3","SLAID":"1","CustomerUserLogin":"fer","TimeUnits":"","Subject":"Test%20for%20Mike","ServiceID":"1","Body":"Body","OwnerID":"3","QueueID":"3","PendingDate":""}];

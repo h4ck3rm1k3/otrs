@@ -3626,8 +3626,10 @@ sub _GetScreenElements {
     return \@ScreenElements;
 }
 
+#use YAML;
 sub _TicketPhoneNew {
     my ( $Self, %Param ) = @_;
+#    warn "_TicketPhoneNew called".  Dump(\%Param);
 
     $Self->{Config} = $Self->{ConfigObject}->Get('iPhone::Frontend::AgentTicketPhone');
     $Self->{Config}{__name} = 'iPhone::Frontend::AgentTicketPhone';
@@ -3765,10 +3767,14 @@ sub _TicketPhoneNew {
         && !$Param{ServiceID}
         )
     {
+        warn "SLAID :". $Param{SLAID};
+        warn "ServiceID :" . $Param{ServiceID};
+
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Service invalid: no service selected',
+            Message  => 'Service invalid: no service selected, need ServiceID and SLAID',
         );
+
         return;
     }
 
@@ -4417,6 +4423,9 @@ sub _TicketCommonActions {
 
 	$Self->_GetArticleDefaultSelections(%Param);
 	$Self->_GetArticleFreeTextConfigOptions(%Param);
+
+	##
+
         my $result = $Self->_TicketCommonActions(
             %Param,
             Defaults => 1,
