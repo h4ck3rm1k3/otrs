@@ -33,6 +33,8 @@ my $TicketID = $phone->{TicketObject}->TicketCreate(
 );
 
 $param{TicketID} = $TicketID;
+$param{Value} = "Some TExt";
+$param{Key} = "TicketFreeText1";
 
 $phone->_ArticleFreeTextSet (%param);
 

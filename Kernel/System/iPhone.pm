@@ -5580,16 +5580,15 @@ sub _SetTicketFreeText {
         my $Key  = 'TicketFreeKey' . $Count;
         my $Text = 'TicketFreeText' . $Count;
 
-        #       next if !defined $Param{$Key}; # skip if
+        if ( !exists $Param{$Key} ) {
+            #$Self->{LogObject}->Log( Priority => 'error', Message => "missing value for $Key!" );
+            next;
+        }
 
         if ( !exists $Param{$Text} ) {
             $Self->{LogObject}->Log( Priority => 'error', Message => "missing value for $Text!" );
         }
 
-        if ( !exists $Param{$Key} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "missing value for $Key!" );
-            next;
-        }
 
         $Self->_TicketFreeTextSet(
             Ticket   => $Self->{TicketObject},
