@@ -50,11 +50,30 @@ $("#exec").live("click", function(){
 			
 			$('#outputjson').val(data);    
 			
+			
 		    }
 	    } // ajax
 	    ); // ajax)
     }// function
     );// live 
+
+
+$("#format").live("click", function(){ 
+	// now lets loop over the names in the fieldsd
+
+	var data= $('#outputjson').val();    
+	// format the data
+	var obj = jQuery.parseJSON(data);
+	var text = "<ul>";
+	for (e in obj.Data[0].Elements)
+	    {		
+		text = text + "<li>" + obj.Data[0].Elements[e].Name +  "</li>" ;
+	    }
+	text = text + "</ul>";
+	$("#formatout").html( text );
+
+    });
+
 
 </script>
 <title>json test environment</title>
@@ -65,6 +84,8 @@ $("#exec").live("click", function(){
 <div id="createexec">  Click here to prepare a create request</div>
 <div id="createquery">  Click here to prepare a query request</div>
 <div id="exec">  Click here to exec the request</div>
+<div id="format">  Click here to extract the names from the request</div>
+<div id="formatout">The formatted output goes here</div>
 
 <form>
 <textarea id="inputjson"  rows="20" cols="50"></textarea>

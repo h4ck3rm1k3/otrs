@@ -102,7 +102,7 @@ sub Dispatch {
     $Self->{TicketObject}       = Kernel::System::Ticket->new( %{$Self} );
     $Self->{LinkObject}         = Kernel::System::LinkObject->new( %{$Self} );
     $Self->{JSONObject}         = Kernel::System::JSON->new( %{$Self} );
-    $Self->{ParamObject}        = Kernel::System::Web::Request->new( %{$Self} )
+    $Self->{ParamObject}        = Kernel::System::Web::Request->new( %{$Self} );
     $Self->{DynamicFieldObject} = Kernel::System::DynamicField->new( %{$Self} );
     $Self->{DynamicFieldBackendObject} = Kernel::System::DynamicField::Backend->new( %{$Self} );
     $Self->{LanguageObject} =  Kernel::Language->new(%{$Self});
