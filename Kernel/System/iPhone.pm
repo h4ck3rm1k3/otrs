@@ -3311,6 +3311,7 @@ sub _TicketPhoneNew {
     # set all the FreeFields Migrated from DynamicFields
     $Self->_SetTicketFreeText(%Param);
     $Self->_SetTicketFreeTime(%Param);
+    $Self->_SetTicketDynamicFields(%Param);
 
     my $MimeType = 'text/plain';
 
@@ -3370,6 +3371,7 @@ sub _TicketPhoneNew {
     if ($ArticleID) {
 
         # set article free text
+	$Self->_SetArticleDynamicFields(%Param, ArticleID => $ArticleID);
         $Self->_SetArticleFreeText(
             %Param,
             ArticleID => $ArticleID
@@ -3747,7 +3749,10 @@ sub _TicketCommonActions {
         }
 	$Self->_SetTicketFreeText(%Param);
         $Self->_SetTicketFreeTime(%Param);
+        $Self->_SetTicketDynamicFields(%Param);
+
         $Self->_SetArticleFreeText( %Param, ArticleID => $ArticleID );
+        $Self->_SetArticleDynamicFields(%Param, ArticleID => $ArticleID);
         # set priority
         if ( $Self->{Config}->{Priority} && $Param{PriorityID} ) {
 
@@ -4006,6 +4011,7 @@ sub _TicketCompose {
     # set ticket free text
     $Self->_SetTicketFreeText(%Param);
     $Self->_SetTicketFreeTime(%Param);
+    $Self->_SetTicketDynamicFields(%Param);
 
 
     # set state
@@ -4017,7 +4023,7 @@ sub _TicketCompose {
             );
     }
 
-
+    $Self->_SetArticleDynamicFields(%Param, ArticleID => $ArticleID);
     $Self->_SetArticleFreeText(%Param, ArticleID=>$ArticleID);
 
     # should I set an unlock?
@@ -4279,6 +4285,7 @@ sub _TicketMove {
     # set ticket free text
     $Self->_SetTicketFreeText(%Param);
     $Self->_SetTicketFreeTime(%Param);
+    $Self->_SetTicketDynamicFields(%Param);
 
     # time accounting
     if ( $Param{TimeUnits} ) {
@@ -4788,7 +4795,7 @@ sub _GetTicketFreeTextValues {
     
 }
 
-# v1 function
+# sets the dynamic standard field
 sub _SetTicketFreeText {
     my $Self = shift || die "no self";
     my %Param = @_;
@@ -5833,16 +5840,12 @@ sub _GetScreenElementsArticleDynamicFields {
 #		warn "Check this3 $ConfigKey : $Key " . Dump($Self->{Config}{$ConfigKey}{$Key});
 	    }
 
-	    $CustomOptions{Name} ||="DynamicField-". $DynamicFieldGet->{Name};
-	    my $Elements = {
-		Name           => "DynamicField-". $DynamicFieldGet->{Name},
-		Title          => $DynamicFieldGet->{Label},
-		Datatype       => $DataType,
-		Viewtype       => $ViewType,
-		%CustomOptions
-		    
-	    };
-	    push @ScreenElements,$Elements;   
+	    $CustomOptions{Name} ||= ${ObjectType} . "DynamicField-". $DynamicFieldGet->{Name};
+	    $CustomOptions{Title} ||= $DynamicFieldGet->{Label};
+	    $CustomOptions{Datatype} ||= $DynamicFieldGet->{Datatype} || $DataType ;
+	    $CustomOptions{Viewtype} ||= $DynamicFieldGet->{Viewtype} || $ViewType ;
+
+	    push @ScreenElements,\%CustomOptions;   
         }
 	else
 	{
@@ -5855,6 +5858,71 @@ sub _GetScreenElementsArticleDynamicFields {
 
     # $Param contains the data that was collected in the hash
     return @ScreenElements;
+}
+
+
+sub _SetTicketDynamicFields {
+    my $Self = shift || die "no self";
+    my %Param = @_;
+
+    for my $Needed (qw(TicketID UserID )) {
+        if ( !defined $Param{$Needed} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Needed!" );
+            return;
+        }
+    }
+
+    for my $Key (keys %Param)
+    {
+	my $Name;
+	if ($Key =~ /^TicketDynamicField-(.+)/) {
+	    $Name = $1;
+	} else	{
+	    next;
+	}
+
+	my $Value = $Param{$Key};    
+
+        $Self->_TicketDynamicFieldSet(
+            Ticket   => $Self->{TicketObject},
+            TicketID => $Param{TicketID},
+            Key      => $Name,
+            Value    => $Value,
+            UserID   => $Param{UserID},
+        );
+    }
+}
+
+sub _SetArticleDynamicFields {
+    my $Self = shift || die "no self";
+    my %Param = @_;
+
+    for my $Needed (qw(ArticleID UserID )) {
+        if ( !defined $Param{$Needed} ) {
+            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $Needed!" );
+            return;
+        }
+    }
+
+    foreach my $Key (keys %Param)
+    {
+	my $Name;
+	if ($Key =~ /^ArticleDynamicField-(.+)/)
+	{
+	    $Name = $1;
+	} else	{
+	    next;
+	}
+	my $Value = $Param{$Key};    
+
+        $Self->_ArticleFreeTextSet(
+            Ticket    => $Self->{TicketObject},
+            ArticleID => $Param{ArticleID},
+            Key      => $Name,
+            Value    => $Value,
+            UserID    => $Param{UserID},
+        );
+    }   
 }
 
 1;
