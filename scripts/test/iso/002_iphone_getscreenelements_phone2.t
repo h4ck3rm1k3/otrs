@@ -8,7 +8,9 @@ my %param = basetest::NewParam("_CheckRequiredFreeTextField");
 #my $phone = require "basetest.t";
 
 $phone->{Config}->{"CustomerID"}=1;
-$phone->{Config}->{"ArticleFreeText"}->{"2"}=1;
+$phone->{Config}->{"ArticleFreeText"}->{"2"}={
+		Mandatory => 1 
+	};
 $phone->{Config}->{"TicketFreeText"}->{"1"}=2;
 $phone->{Config}->{"TicketFreeTime"}->{"2"}=1;
 

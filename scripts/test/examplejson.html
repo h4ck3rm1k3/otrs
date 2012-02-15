@@ -1,0 +1,55 @@
+<html>
+<head>
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+
+	var data = {
+	    "Result":"successful",
+	    "Data":[
+	{"Actions":
+	 {"Parameters":{"Action":"Phone"},
+	  "Method":"ScreenActions","Object":"CustomObject"},
+	 "Elements":[
+	{"Default":"","Datatype":"Text","DynamicOptions":
+	 {"Parameters":
+	  [{"Search":"CustomerUserLogin"}],
+	  "Method":"CustomerSearch","Object":"CustomObject"},
+	 "Title":"From customer","AutoFillElements":
+	 [{"Parameters":[{"CustomerUserID":"CustomerUserLogin"}],
+	   "ElementName":"CustomerID","Method":"CustomerIDGet","Object":"CustomObject"}
+	     ],
+	 "Viewtype":"AutoCompletion","Mandatory":1,
+	 "Name":"CustomerUserLogin"
+	},
+	{
+	    "Options":{"":"-","4":"Misc","1":"Postmaster","3":"Junk","2":"Raw","5":"Test"},"Default":"","Datatype":"Text","Viewtype":"Picker","Mandatory":1,"Name":"QueueID","Title":"To queue"},
+	{"Default":"","Datatype":"Text","DynamicOptions":{"Parameters":[{"QueueID":"QueueID","AllUsers":1}],"Method":"UsersGet","Object":"CustomObject"},"Viewtype":"Picker","Mandatory":0,"Name":"OwnerID","Title":"Owner"},
+	{"Default":"","Datatype":"Text","Title":"Subject","Max":250,"Viewtype":"Input","Min":1,"Mandatory":1,"Name":"Subject"},
+	{"Default":"","Datatype":"Text","Title":"Text","Max":20000,"Viewtype":"TextArea","Min":1,"Mandatory":1,"Name":"Body"},
+	{"Default":"","Datatype":"Text","Title":"CustomerID","Max":150,"Viewtype":"Input","Min":1,"Mandatory":0,"Name":"CustomerID"},
+	{"Default":"4","Datatype":"Text","DynamicOptions":{"Parameters":[{"QueueID":"QueueID"}],"Method":"NextStatesGet","Object":"CustomObject"},"Title":"Next Ticket State","DefaultOption":"open","Viewtype":"Picker","Mandatory":1,"Name":"StateID"},
+	{"Default":"","Datatype":"DateTime","Viewtype":"Picker","Mandatory":0,"Name":"PendingDate","Title":"Pending Date (for pending* states)"},
+	{"Default":"3","Datatype":"Text","DynamicOptions":{"Parameters":"","Method":"PrioritiesGet","Object":"CustomObject"},"Title":"Priority","DefaultOption":"3 normal","Viewtype":"Picker","Mandatory":1,"Name":"PriorityID"},
+	{"Default":"","Datatype":"Numeric","Title":"Time units  (work units)","Max":10,"Viewtype":"Input","Min":1,"Mandatory":0,"Name":"TimeUnits"}
+		],"Title":"New Phone Ticket"}]};
+	
+// now lets loop over the names in the fieldsd
+
+	var text = "<ul>";
+	for (e in data.Data[0].Elements)
+	    {		
+		text = text + "<li>" + data.Data[0].Elements[e].Name +  "</li>" ;
+	    }
+	text = text + "</ul>";
+	$("#msgid").html( text );
+	//	alert(text);
+    });
+</script>
+<title>json test environment</title>
+</head>
+<body>
+Hello world :
+<div id="msgid"></div>
+</body>
+</html>

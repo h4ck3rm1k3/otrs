@@ -2398,7 +2398,7 @@ sub ArticleGet {
 
         # mark ticket as seen if all article are shown
         if ( $ArticleAllSeen  ) {
-            $Self->{TicketObject}->TicketFlagSet( #V3TODO
+            $Self->{TicketObject}->TicketFlagSet( 
                 TicketID => $Article{TicketID},
                 Key      => 'Seen',
                 Value    => 1,
@@ -3043,7 +3043,6 @@ sub _GetNoteTypes {
 sub _GetScreenElements {
     my ( $Self, %Param ) = @_;
 
-
     # needs 
     if ( !exists $Self->{LanguageObject} ) {
 	$Self->{LogObject}->Log( Priority => 'error', Message => "missing needed LanguageObject" );
@@ -3052,498 +3051,84 @@ sub _GetScreenElements {
 
     my @ScreenElements;
 
-    if ( $Self->{Config}->{Title} ) {
-
-	my $TitleDefault = '';
-	
-	if ($Param{TicketID}) # only if we pass a ticket iD
-	{
-	    my %TicketData = $Self->{TicketObject}->TicketGet(
-		TicketID => $Param{TicketID},
-		UserID   => $Param{UserID},
-		);
-	    
-	    if ( $TicketData{Title} ) {
-		$TitleDefault = $TicketData{Title} || '';
-	    }
-	}
-
-        my $TitleElements = {
-            Name      => 'Title',
-            Title     => $Self->{LanguageObject}->Get('Title'),
-            Datatype  => 'Text',
-            ViewType  => 'Input',
-            Min       => 1,
-            Max       => 200,
-            Mandatory => 1,
-            Default   => $TitleDefault || '',
-        };
-        push @ScreenElements, $TitleElements;
-    }
-
-    # type
-    if ( $Self->{ConfigObject}->Get('Ticket::Type') && $Self->{Config}->{TicketType} ) {
-        my $TypeElements = {
-            Name     => 'TypeID',
-            Title    => $Self->{LanguageObject}->Get('Type'),
-            Datatype => 'Text',
-            Viewtype => 'Picker',
-            Options  => {
-                %{
-                    $Self->_GetTypes(
-                        %Param,
-                        UserID => $Param{UserID},
-                        )
-		},
-            },
-			Mandatory => 1,
-			Default   => '',
-        };
-        push @ScreenElements, $TypeElements;
-    }
+    push @ScreenElements, $Self->_GetScreenElementsTitle(%Param);
+    push @ScreenElements, $Self->_GetScreenElementsTypeID(%Param);
 
     # from, to
     if ( $Param{Screen} eq 'Phone' ) {
-        my $CustomerElements = {
-            Name           => 'CustomerUserLogin',
-            Title          => $Self->{LanguageObject}->Get('From customer'),
-            Datatype       => 'Text',
-            Viewtype       => 'AutoCompletion',
-            DynamicOptions => {
-                Object     => 'CustomObject',
-                Method     => 'CustomerSearch',
-                Parameters => [
-                    {
-                        Search => 'CustomerUserLogin',
-                    },
-		    ],
-            },
-            AutoFillElements => [
-                {
-                    ElementName => 'CustomerID',
-                    Object      => 'CustomObject',
-                    Method      => 'CustomerIDGet',
-                    Parameters  => [
-                        {
-                            CustomerUserID => 'CustomerUserLogin',
-                        },
-			],
-                },
-		],
-            Mandatory => 1,
-            Default   => '',
-        };
-        push @ScreenElements, $CustomerElements;
+	push @ScreenElements, $Self->_GetScreenElementsCustomerUserLogin(%Param);
     }
 
     if ( $Param{Screen} eq 'Phone' || $Param{Screen} eq 'Move' ) {
-        my $Title;
-        if ( $Param{Screen} eq 'Phone' ) {
-            $Title = 'To queue';
-        }
-        else {
-            $Title = 'New Queue'
-        }
-        my $QueueElements = {
-            Name     => 'QueueID',
-            Title    => $Self->{LanguageObject}->Get($Title),
-            Datatype => 'Text',
-            Viewtype => 'Picker',
-            Options  => {
-                %{
-                    $Self->_GetTos(
-                        %Param,
-                        UserID => $Param{UserID},
-                        )
-		},
-            },
-			Mandatory => 1,
-			Default   => '',
-        };
-        push @ScreenElements, $QueueElements;
+        push @ScreenElements, $Self->_GetScreenElementsQueue(%Param);
     }
 
     # service
     if ( $Self->{ConfigObject}->Get('Ticket::Service') && $Self->{Config}->{Service} ) {
-        my $ServiceElements = {
-            Name           => 'ServiceID',
-            Title          => $Self->{LanguageObject}->Get('Service'),
-            Datatype       => 'Text',
-            Viewtype       => 'Picker',
-            DynamicOptions => {
-                Object     => 'CustomObject',
-                Method     => 'ServicesGet',
-                Parameters => [
-                    {
-                        CustomerUserID => 'CustomerUserLogin',
-                        QueueID        => 'QueueID',
-                        TicketID       => 'TicketID',
-                    },
-		    ],
-            },
-            Mandatory => 0,
-            Default   => '',
-        };
-        push @ScreenElements, $ServiceElements;
+        push @ScreenElements, $Self->_GetScreenElementsService(%Param);
     }
 
     # sla
     if ( $Self->{ConfigObject}->Get('Ticket::Service') && $Self->{Config}->{Service} ) {
-        my $SLAElements = {
-            Name           => 'SLAID',
-            Title          => $Self->{LanguageObject}->Get('SLA'),
-            Datatype       => 'Text',
-            Viewtype       => 'Picker',
-            DynamicOptions => {
-                Object     => 'CustomObject',
-                Method     => 'SLAsGet',
-                Parameters => [
-                    {
-                        CustomerUserID => 'CustomerUserLogin',
-                        QueueID        => 'QueueID',
-                        ServiceID      => 'ServiceID',
-                        TicketID       => 'TicketID',
-                    },
-		    ],
-            },
-            Mandatory => 0,
-            Default   => '',
-        };
-        push @ScreenElements, $SLAElements;
+        push @ScreenElements, $Self->_GetScreenElementsSLA(%Param);
     }
 
     # owner
     if ( $Self->{Config}->{Owner} ) {
-        my $Title;
-        if ( $Param{Screen} eq 'Move' ) {
-            $Title = 'New Owner';
-        }
-        else {
-            $Title = 'Owner';
-        }
-
-        my $OwnerElements = {
-            Name           => 'OwnerID',
-            Title          => $Self->{LanguageObject}->Get($Title),
-            Datatype       => 'Text',
-            Viewtype       => 'Picker',
-            DynamicOptions => {
-                Object     => 'CustomObject',
-                Method     => 'UsersGet',
-                Parameters => [
-                    {
-                        QueueID  => 'QueueID',
-                        AllUsers => 1,
-                    },
-		    ],
-            },
-            Mandatory => 0,
-            Default   => '',
-        };
-        push @ScreenElements, $OwnerElements;
+        push @ScreenElements, $Self->_GetScreenElementsOwner(%Param);
     }
 
     # responsible
     if ( $Self->{ConfigObject}->Get('Ticket::Responsible') && $Self->{Config}->{Responsible} ) {
-        my $ResponsibleElements = {
-            Name           => 'ResponsibleID',
-            Title          => $Self->{LanguageObject}->Get('Responsible'),
-            Datatype       => 'Text',
-            Viewtype       => 'Picker',
-            DynamicOptions => {
-                Object     => 'CustomObject',
-                Method     => 'UsersGet',
-                Parameters => [
-                    {
-                        QueueID  => 'QueueID',
-                        AllUsers => 1,
-                    },
-		    ],
-            },
-            Mandatory => 0,
-            Default   => '',
-        };
-        push @ScreenElements, $ResponsibleElements;
+        push @ScreenElements, $Self->_GetScreenElementsResponsible(%Param);
     }
 
     if ( $Param{Screen} eq 'Compose' ) {
-        my %ComposeDefaults = $Self->_GetComposeDefaults(
-            %Param,
-            UserID   => $Param{UserID},
-            TicketID => $Param{TicketID},
-	    );
-
-        if ( !%ComposeDefaults ) {
-            return;
-        }
-
-        my $ComposeFromElements = {
-            Name      => 'From',
-            Title     => $Self->{LanguageObject}->Get('From'),
-            Datatype  => 'Text',
-            Viewtype  => 'Input',
-            Min       => 1,
-            Max       => 50,
-            Mandatory => 1,
-            Readonly  => 1,
-            Default   => $ComposeDefaults{From} || '',
-        };
-        push @ScreenElements, $ComposeFromElements;
-
-        my $ComposeToElements = {
-            Name      => 'To',
-            Title     => $Self->{LanguageObject}->Get('To'),
-            Datatype  => 'Text',
-            Viewtype  => 'EMail',
-            Min       => 1,
-            Max       => 50,
-            Mandatory => 0,
-            Default   => $ComposeDefaults{To} || '',
-        };
-        push @ScreenElements, $ComposeToElements;
-
-        my $ComposeCcElements = {
-            Name      => 'Cc',
-            Title     => $Self->{LanguageObject}->Get('Cc'),
-            Datatype  => 'Text',
-            Viewtype  => 'EMail',
-            Min       => 1,
-            Max       => 50,
-            Mandatory => 0,
-            Default   => $ComposeDefaults{Cc} || '',
-        };
-        push @ScreenElements, $ComposeCcElements;
-
-        my $ComposeBccElements = {
-            Name      => 'Bcc',
-            Title     => $Self->{LanguageObject}->Get('Bcc'),
-            Datatype  => 'Text',
-            Viewtype  => 'EMail',
-            Min       => 1,
-            Max       => 50,
-            Mandatory => 0,
-            Default   => $ComposeDefaults{Bcc} || '',
-        };
-        push @ScreenElements, $ComposeBccElements;
-
-        my $SubjectElements = {
-            Name      => 'Subject',
-            Title     => $Self->{LanguageObject}->Get('Subject'),
-            Datatype  => 'Text',
-            Viewtype  => 'Input',
-            Min       => 1,
-            Max       => 250,
-            Mandatory => 1,
-            Default   => $ComposeDefaults{Subject} || '',
-        };
-        push @ScreenElements, $SubjectElements;
-
-        my $BodyElements = {
-            Name      => 'Body',
-            Title     => $Self->{LanguageObject}->Get('Text'),
-            Datatype  => 'Text',
-            Viewtype  => 'TextArea',
-            Min       => 1,
-            Max       => 20_000,
-            Mandatory => 1,
-            Default   => $ComposeDefaults{Body} || '',
-        };
-        push @ScreenElements, $BodyElements;
+	push @ScreenElements, $Self->_GetScreenElementsCompose(%Param);
     }
-
-    # subject
-    if ( $Param{Screen} ne 'Compose' ) {
-        my $DefaultSubject = '';
-        if ( $Self->{Config}->{Subject} ) {
-            $DefaultSubject = $Self->{LanguageObject}->Get( $Self->{Config}->{Subject} )
-        }
-
-        my $SubjectElements = {
-            Name      => 'Subject',
-            Title     => $Self->{LanguageObject}->Get('Subject'),
-            Datatype  => 'Text',
-            Viewtype  => 'Input',
-            Min       => 1,
-            Max       => 250,
-            Mandatory => 1,
-            Default   => $DefaultSubject || '',
-        };
-        push @ScreenElements, $SubjectElements;
-    }
-
-    # body
-    if ( $Param{Screen} ne 'Compose' ) {
-        my $BodyElements = {
-            Name      => 'Body',
-            Title     => $Self->{LanguageObject}->Get('Text'),
-            Datatype  => 'Text',
-            Viewtype  => 'TextArea',
-            Min       => 1,
-            Max       => 20_000,
-            Mandatory => 1,
-            Default   => '',
-        };
-        push @ScreenElements, $BodyElements;
+    else
+    {
+	push @ScreenElements, $Self->_GetScreenElementsSubject(%Param);
+	push @ScreenElements, $Self->_GetScreenElementsBody(%Param);
     }
 
     # customer id
     if ( $Self->{Config}->{CustomerID} ) {
-        my $CustomerElements = {
-            Name      => 'CustomerID',
-            Title     => $Self->{LanguageObject}->Get('CustomerID'),
-            Datatype  => 'Text',
-            Viewtype  => 'Input',
-            Min       => 1,
-            Max       => 150,
-            Mandatory => 0,
-            Default   => '',
-        };
-        push @ScreenElements, $CustomerElements;
+        push @ScreenElements, $Self->_GetScreenElementsCustomerID(%Param);
     }
 
     #note
     if ( $Self->{Config}->{Note} ) {
-
-        my $DefaultArticleType;
-        if ( $Self->{Config}->{ArticleTypeDefault} ) {
-            $DefaultArticleType = $Self->{Config}->{ArticleTypeDefault};
-        }
-
-        my $DefaultArticleTypeID;
-        if ($DefaultArticleType) {
-            $DefaultArticleTypeID = $Self->{TicketObject}->ArticleTypeLookup(
-                ArticleType => $DefaultArticleType,
-		);
-        }
-        my $NoteElements = {
-            Name     => 'ArticleTypeID',
-            Title    => $Self->{LanguageObject}->Get('Note type'),
-            Datatype => 'Text',
-            Viewtype => 'Picker',
-            Options  => {
-                %{ $Self->_GetNoteTypes( %Param, ) }
-            },
-            Mandatory     => 1,
-            Default       => $DefaultArticleTypeID || '',
-            DefaultOption => $DefaultArticleType || '',
-        };
-        push @ScreenElements, $NoteElements;
+        push @ScreenElements, $Self->_GetScreenElementsNote(%Param);
     }
 
     # state
     if ( $Self->{Config}->{State} ) {
-
-        my $DefaultState;
-        if ( $Self->{Config}->{StateDefault} ) {
-            $DefaultState = $Self->{Config}->{StateDefault}
-        }
-
-        my $DefaultStateID;
-        if ($DefaultState) {
-
-            # can't use StateLookup for 2.4 framework compatibility
-            my %State = $Self->{StateObject}->StateGet(
-                Name => $DefaultState,
-		);
-
-            if (%State) {
-                $DefaultStateID = $State{ID};
-            }
-        }
-
-        my $StateElements = {
-            Name           => 'StateID',
-            Title          => $Self->{LanguageObject}->Get('Next Ticket State'),
-            Datatype       => 'Text',
-            Viewtype       => 'Picker',
-            DynamicOptions => {
-                Object     => 'CustomObject',
-                Method     => 'NextStatesGet',
-                Parameters => [
-                    {
-                        QueueID => 'QueueID',
-                    },
-		    ],
-            },
-            Mandatory     => 1,
-            Default       => $DefaultStateID || '',
-            DefaultOption => $DefaultState || '',
-        };
-        push @ScreenElements, $StateElements;
+        push @ScreenElements, $Self->_GetScreenElementsState(%Param);
     }
 
     # pending date
     if ( $Param{Screen} eq 'Phone' || $Param{Screen} eq 'Compose' ) {
-        my $PendingDateElements = {
-            Name      => 'PendingDate',
-            Title     => $Self->{LanguageObject}->Get('Pending Date (for pending* states)'),
-            Datatype  => 'DateTime',
-            Viewtype  => 'Picker',
-            Mandatory => 0,
-            Default   => '',
-        };
-        push @ScreenElements, $PendingDateElements;
+        push @ScreenElements, $Self->_GetScreenElementsPendingDate(%Param);
     }
 
     # priority
     if ( $Param{Screen} eq 'Phone' ) {
-
-        my $DefaultPriority;
-        if ( $Self->{Config}->{PriorityDefault} ) {
-            $DefaultPriority = $Self->{Config}->{PriorityDefault};
-        }
-
-        my $DefaultPriorityID;
-        if ($DefaultPriority) {
-            $DefaultPriorityID = $Self->{PriorityObject}->PriorityLookup(
-                Priority => $DefaultPriority,
-		);
-        }
-
-        my $PriorityElements = {
-            Name           => 'PriorityID',
-            Title          => $Self->{LanguageObject}->Get('Priority'),
-            Datatype       => 'Text',
-            Viewtype       => 'Picker',
-            DynamicOptions => {
-                Object     => 'CustomObject',
-                Method     => 'PrioritiesGet',
-                Parameters => '',
-            },
-            Mandatory     => 1,
-            Default       => $DefaultPriorityID || '',
-            DefaultOption => $DefaultPriority || '',
-        };
-        push @ScreenElements, $PriorityElements;
+        push @ScreenElements, $Self->_GetScreenElementsPriorityDefault(%Param);
     }
-
-    
+   
     push (@ScreenElements,$Self->_GetScreenElementsFreeTextFields(16,"TicketFreeText","TicketFreeKey",%Param));
     $Self->_GetScreenElementsTicketFreeTimeFields(%Param);   
     push (@ScreenElements,$Self->_GetScreenElementsFreeTextFields(3,"ArticleFreeText","ArticleFreeKey",%Param));
 
     # time units
     if ( $Self->{Config}->{TimeUnits} ) {
-        my $Mandatory;
-        if ( $Self->{ConfigObject}->Get('Ticket::Frontend::NeedAccountedTime') ) {
-            $Mandatory = 1;
-        }
-        else {
-            $Mandatory = 0;
-        }
-        my $TimeUnitsMeasure  = $Self->{ConfigObject}->Get('Ticket::Frontend::TimeUnits');
-        my $TimeUnitsElements = {
-            Name      => 'TimeUnits',
-            Title     => $Self->{LanguageObject}->Get("Time units $TimeUnitsMeasure"),
-            Datatype  => 'Numeric',
-            Viewtype  => 'Input',
-            Min       => 1,
-            Max       => 10,
-            Mandatory => $Mandatory,
-            Default   => '',
-        };
-        push @ScreenElements, $TimeUnitsElements;
+	push @ScreenElements,$Self->_GetScreenElementsTimeUnits(%Param);
     }
+
+    # 
+    push @ScreenElements, $Self->_GetScreenElementsArticleDynamicFields(%Param);
+
     return \@ScreenElements;
 }
 
@@ -5473,10 +5058,17 @@ sub _GetScreenElementsFreeTextFields{ # called by GetScreenElements
     my $TypeNameKey  = shift; #"ArticleFreeKey"|;
 
     my @ScreenElements;
-    
+   
+    if (! exists($Self->{Config}->{$TypeNameText}))
+    {
+	my $name= $Self->{Config}->{__name};
+	$Self->{LogObject}->Log( Message => "No configuration in $name for $TypeNameText!" );
+	return ;
+    }
+
 #  freetext fields
     for my $Index ( 1 .. $max ) {#FreeFieldBad
-        if ( $Self->{Config}->{$TypeNameText}->{$Index} ) {
+        if ( $Self->{Config}->{$TypeNameText}->{$Index} ) { #not execute
 	    my $FreeTextElement;	    
             my $Name = $TypeNameText . $Index;
             my $Title= $Self->{ConfigObject}->Get( $TypeNameKey . $Index . '::DefaultSelection' );
@@ -5524,7 +5116,7 @@ sub _GetScreenElementsFreeTextFields{ # called by GetScreenElements
                 };
             }
             else {
-                $FreeTextElement = {
+                $FreeTextElement = { # todo not executed
                     Name        => $Name,
                     Title       => $Title,
                     FreeTextKey => @TypeNameKeys,
@@ -5538,6 +5130,13 @@ sub _GetScreenElementsFreeTextFields{ # called by GetScreenElements
             }
             push @ScreenElements, $FreeTextElement;
         }
+	else 
+	{
+	    my $name= $Self->{Config}->{__name};
+	    $Self->{LogObject}->Log(  Message => "configuration disabled in $name for $TypeNameText with index $Index!" );
+
+	}
+
     }
     return @ScreenElements;
 }
@@ -5562,7 +5161,7 @@ sub _GetTicketDynamicFieldValues {
     foreach my $Key ( keys %Ticket ) {
 	if ($Key =~ /^DynamicField_/)
 	{
-	    if ( $Self->{Config}->{DynamicFields}->{$Key} ) {
+	    if ( $Self->{Config}->{DynamicFields}->{$Key} ) { #TODO
 		my $Value = $Ticket{$Key} || '';
 		
 		$Param->{$Key} = $Value; # the keys are filled out anyway.... even if they have no data.
@@ -5585,7 +5184,7 @@ sub _GetTicketDynamicFieldValues {
     }
 }
 
-sub _GetArticleDynamicFieldValues { #TODO not used yet
+sub _GetArticleDynamicFieldValues { 
     my $Self  = shift || die "no self";
     my $Param = shift || die "no param hashref";
 
@@ -5653,7 +5252,7 @@ sub _TicketCommonActionsDefaults
 
     # load the article free text fields
     $Self->_GetArticleDynamicFieldValues(\%Param);
-     
+    
     
     my $result = $Self->_TicketCommonActions(
 	%Param,
@@ -5662,7 +5261,603 @@ sub _TicketCommonActionsDefaults
     return $result;    
 }
 
+
+sub _GetScreenElementsTitle
+{
+    my ( $Self, %Param ) = @_;
+    if ( $Self->{Config}->{Title} ) {
+	my $TitleDefault = '';
+	
+	if ($Param{TicketID}) # only if we pass a ticket iD
+	{
+	    my %TicketData = $Self->{TicketObject}->TicketGet(
+		TicketID => $Param{TicketID},
+		UserID   => $Param{UserID},
+		);
+	    
+	    if ( $TicketData{Title} ) {
+		$TitleDefault = $TicketData{Title} || '';
+	    }
+	}
+
+        my $TitleElements = {
+            Name      => 'Title',
+            Title     => $Self->{LanguageObject}->Get('Title'),
+            Datatype  => 'Text',
+            ViewType  => 'Input',
+            Min       => 1,
+            Max       => 200,
+            Mandatory => 1,
+            Default   => $TitleDefault || '',
+        };
+        return $TitleElements;
+    }
+    return ();
+}
+
+sub _GetScreenElementsTypeID
+{
+    my ( $Self, %Param ) = @_;
+    # type
+    if ( $Self->{ConfigObject}->Get('Ticket::Type') && $Self->{Config}->{TicketType} ) {
+        my $TypeElements = {
+            Name     => 'TypeID',
+            Title    => $Self->{LanguageObject}->Get('Type'),
+            Datatype => 'Text',
+            Viewtype => 'Picker',
+            Options  => {
+                %{
+                    $Self->_GetTypes(
+                        %Param,
+                        UserID => $Param{UserID},
+                        )
+		},
+            },
+			Mandatory => 1,
+			Default   => '',
+        };
+        return $TypeElements;
+    }
+    return ();
+}
+
+sub _GetScreenElementsCustomerUserLogin
+{
+    my ( $Self, %Param ) = @_;
+    my $CustomerElements = {
+	Name           => 'CustomerUserLogin',
+	Title          => $Self->{LanguageObject}->Get('From customer'),
+	Datatype       => 'Text',
+	Viewtype       => 'AutoCompletion',
+	DynamicOptions => {
+	    Object     => 'CustomObject',
+	    Method     => 'CustomerSearch',
+	    Parameters => [
+		{
+		    Search => 'CustomerUserLogin',
+		},
+		],
+	},
+	AutoFillElements => [
+	    {
+		ElementName => 'CustomerID',
+		Object      => 'CustomObject',
+		Method      => 'CustomerIDGet',
+		Parameters  => [
+		    {
+			CustomerUserID => 'CustomerUserLogin',
+		    },
+		    ],
+	    },
+	    ],
+	Mandatory => 1,
+	Default   => '',
+    };
+    return $CustomerElements;
+}
+
+sub _GetScreenElementsQueue
+{
+    my ( $Self, %Param ) = @_;
+    my $Title;
+    if ( $Param{Screen} eq 'Phone' ) {
+	$Title = 'To queue';
+    }
+    else {
+	$Title = 'New Queue'
+    }
+    my $QueueElements = {
+	Name     => 'QueueID',
+	Title    => $Self->{LanguageObject}->Get($Title),
+	Datatype => 'Text',
+	Viewtype => 'Picker',
+	Options  => {
+	    %{
+		$Self->_GetTos(
+		    %Param,
+		    UserID => $Param{UserID},
+		    )
+	    },
+	},
+		    Mandatory => 1,
+		    Default   => '',
+    };    
+    return $QueueElements;
+}
+
+sub _GetScreenElementsService
+{
+    my ( $Self, %Param ) = @_;
+    my $ServiceElements = {
+	Name           => 'ServiceID',
+	Title          => $Self->{LanguageObject}->Get('Service'),
+	Datatype       => 'Text',
+	Viewtype       => 'Picker',
+	DynamicOptions => {
+	    Object     => 'CustomObject',
+	    Method     => 'ServicesGet',
+	    Parameters => [
+		{
+		    CustomerUserID => 'CustomerUserLogin',
+		    QueueID        => 'QueueID',
+		    TicketID       => 'TicketID',
+		},
+		],
+	},
+	Mandatory => 0,
+	Default   => '',
+    };
+    return $ServiceElements;
+}
+
+sub _GetScreenElementsSLA
+{
+    my ( $Self, %Param ) = @_;
+    
+    my $SLAElements = {
+	Name           => 'SLAID',
+	Title          => $Self->{LanguageObject}->Get('SLA'),
+	Datatype       => 'Text',
+	Viewtype       => 'Picker',
+	DynamicOptions => {
+	    Object     => 'CustomObject',
+	    Method     => 'SLAsGet',
+	    Parameters => [
+		{
+		    CustomerUserID => 'CustomerUserLogin',
+		    QueueID        => 'QueueID',
+		    ServiceID      => 'ServiceID',
+                        TicketID       => 'TicketID',
+		},
+		],
+	},
+	Mandatory => 0,
+	Default   => '',
+    };
+    return $SLAElements;
+}
+
+
+sub _GetScreenElementsOwner
+{
+    my ( $Self, %Param ) = @_;
+    my $Title;
+    if ( $Param{Screen} eq 'Move' ) {
+	$Title = 'New Owner';
+    }
+    else {
+	$Title = 'Owner';
+    }
+    
+    my $OwnerElements = {
+	Name           => 'OwnerID',
+	Title          => $Self->{LanguageObject}->Get($Title),
+	Datatype       => 'Text',
+	Viewtype       => 'Picker',
+	DynamicOptions => {
+	    Object     => 'CustomObject',
+	    Method     => 'UsersGet',
+	    Parameters => [
+		{
+		    QueueID  => 'QueueID',
+                        AllUsers => 1,
+		},
+		],
+	},
+	Mandatory => 0,
+	Default   => '',
+    };
+    return $OwnerElements;
+}
+
+sub _GetScreenElementsResponsible
+{
+    my ( $Self, %Param ) = @_;
+    my $ResponsibleElements = {
+	Name           => 'ResponsibleID',
+	Title          => $Self->{LanguageObject}->Get('Responsible'),
+	Datatype       => 'Text',
+	Viewtype       => 'Picker',
+	DynamicOptions => {
+	    Object     => 'CustomObject',
+	    Method     => 'UsersGet',
+	    Parameters => [
+		{
+		    QueueID  => 'QueueID',
+		    AllUsers => 1,
+		},
+		],
+	},
+	Mandatory => 0,
+	Default   => '',
+    };
+    return $ResponsibleElements;
+}
+
+
+sub _GetScreenElementsCompose
+{
+    my ( $Self, %Param ) = @_;
+    my @ScreenElements;
+    my %ComposeDefaults = $Self->_GetComposeDefaults(
+	%Param,
+	UserID   => $Param{UserID},
+	TicketID => $Param{TicketID},
+	);
+    
+    if ( !%ComposeDefaults ) {
+	$Self->{LogObject}->Log(
+	    Priority => 'error',
+	    Message  => "No Compose Defaults found",
+	    );	
+	return;
+    }
+    
+    my $ComposeFromElements = {
+	Name      => 'From',
+	Title     => $Self->{LanguageObject}->Get('From'),
+	Datatype  => 'Text',
+	Viewtype  => 'Input',
+	Min       => 1,
+	Max       => 50,
+	Mandatory => 1,
+	Readonly  => 1,
+	Default   => $ComposeDefaults{From} || '',
+    };
+    push @ScreenElements, $ComposeFromElements;
+    
+    my $ComposeToElements = {
+	Name      => 'To',
+	Title     => $Self->{LanguageObject}->Get('To'),
+	Datatype  => 'Text',
+	Viewtype  => 'EMail',
+	Min       => 1,
+	Max       => 50,
+	Mandatory => 0,
+	Default   => $ComposeDefaults{To} || '',
+    };
+    push @ScreenElements, $ComposeToElements;
+    
+    my $ComposeCcElements = {
+	Name      => 'Cc',
+	Title     => $Self->{LanguageObject}->Get('Cc'),
+	Datatype  => 'Text',
+	Viewtype  => 'EMail',
+	Min       => 1,
+	Max       => 50,
+	Mandatory => 0,
+	Default   => $ComposeDefaults{Cc} || '',
+    };
+    push @ScreenElements, $ComposeCcElements;
+    
+    my $ComposeBccElements = {
+	Name      => 'Bcc',
+	Title     => $Self->{LanguageObject}->Get('Bcc'),
+	Datatype  => 'Text',
+	Viewtype  => 'EMail',
+	Min       => 1,
+	Max       => 50,
+	Mandatory => 0,
+	Default   => $ComposeDefaults{Bcc} || '',
+    };
+    push @ScreenElements, $ComposeBccElements;
+    
+    my $SubjectElements = {
+	Name      => 'Subject',
+	Title     => $Self->{LanguageObject}->Get('Subject'),
+	Datatype  => 'Text',
+	Viewtype  => 'Input',
+	Min       => 1,
+	Max       => 250,
+	Mandatory => 1,
+	Default   => $ComposeDefaults{Subject} || '',
+    };
+    push @ScreenElements, $SubjectElements;
+    
+    my $BodyElements = {
+	Name      => 'Body',
+	Title     => $Self->{LanguageObject}->Get('Text'),
+	Datatype  => 'Text',
+	Viewtype  => 'TextArea',
+	Min       => 1,
+	Max       => 20_000,
+	Mandatory => 1,
+	Default   => $ComposeDefaults{Body} || '',
+    };
+    push @ScreenElements, $BodyElements;
+    return @ScreenElements;
+}
+
+sub _GetScreenElementsSubject
+{
+    my ( $Self, %Param ) = @_;
+    my $DefaultSubject = '';
+    if ( $Self->{Config}->{Subject} ) {
+	$DefaultSubject = $Self->{LanguageObject}->Get( $Self->{Config}->{Subject} )
+    }
+    
+    my $SubjectElements = {
+	Name      => 'Subject',
+	Title     => $Self->{LanguageObject}->Get('Subject'),
+	Datatype  => 'Text',
+	Viewtype  => 'Input',
+	Min       => 1,
+	Max       => 250,
+	Mandatory => 1,
+	Default   => $DefaultSubject || '',
+    };
+    return $SubjectElements;
+}
+
+sub _GetScreenElementsBody
+{
+    my ( $Self, %Param ) = @_;
+    my $BodyElements = {
+            Name      => 'Body',
+            Title     => $Self->{LanguageObject}->Get('Text'),
+            Datatype  => 'Text',
+            Viewtype  => 'TextArea',
+            Min       => 1,
+            Max       => 20_000,
+            Mandatory => 1,
+            Default   => '',
+        };
+    return $BodyElements;
+}
+
+sub _GetScreenElementsCustomerID
+{
+    my ( $Self, %Param ) = @_;
+    my  $CustomerElements = {
+	Name      => 'CustomerID',
+	Title     => $Self->{LanguageObject}->Get('CustomerID'),
+	Datatype  => 'Text',
+	Viewtype  => 'Input',
+	Min       => 1,
+	Max       => 150,
+	Mandatory => 0,
+	Default   => '',
+    };
+    return  $CustomerElements;
+}
+
+sub _GetScreenElementsNote
+{
+    my ( $Self, %Param ) = @_;
+    my $DefaultArticleType;
+    if ( $Self->{Config}->{ArticleTypeDefault} ) {
+	$DefaultArticleType = $Self->{Config}->{ArticleTypeDefault};
+    }
+    
+    my $DefaultArticleTypeID;
+    if ($DefaultArticleType) {
+	$DefaultArticleTypeID = $Self->{TicketObject}->ArticleTypeLookup(
+	    ArticleType => $DefaultArticleType,
+	    );
+    }
+    my $NoteElements = {
+	Name     => 'ArticleTypeID',
+	Title    => $Self->{LanguageObject}->Get('Note type'),
+	Datatype => 'Text',
+	Viewtype => 'Picker',
+	Options  => {
+	    %{ $Self->_GetNoteTypes( %Param, ) }
+	},
+	Mandatory     => 1,
+	Default       => $DefaultArticleTypeID || '',
+	DefaultOption => $DefaultArticleType || '',
+    };    
+    return $NoteElements;
+}
+
+sub _GetScreenElementsState
+{
+    my ( $Self, %Param ) = @_;
+    my $DefaultState;
+    if ( $Self->{Config}->{StateDefault} ) {
+	$DefaultState = $Self->{Config}->{StateDefault}
+    }
+    
+    my $DefaultStateID;
+    if ($DefaultState) {
+	
+	# can't use StateLookup for 2.4 framework compatibility
+	my %State = $Self->{StateObject}->StateGet(
+	    Name => $DefaultState,
+	    );
+	
+	if (%State) {
+	    $DefaultStateID = $State{ID};
+	}
+    }
+    
+    my $StateElements = {
+	Name           => 'StateID',
+	Title          => $Self->{LanguageObject}->Get('Next Ticket State'),
+	Datatype       => 'Text',
+	Viewtype       => 'Picker',
+	DynamicOptions => {
+	    Object     => 'CustomObject',
+	    Method     => 'NextStatesGet',
+	    Parameters => [
+		{
+		    QueueID => 'QueueID',
+		},
+		],
+	},
+	Mandatory     => 1,
+	Default       => $DefaultStateID || '',
+	DefaultOption => $DefaultState || '',
+    };
+
+    return $StateElements;
+}
+
+sub _GetScreenElementsPendingDate
+{
+    my ( $Self, %Param ) = @_;
+    my $PendingDateElements = {
+	Name      => 'PendingDate',
+	Title     => $Self->{LanguageObject}->Get('Pending Date (for pending* states)'),
+	Datatype  => 'DateTime',
+	Viewtype  => 'Picker',
+	Mandatory => 0,
+	Default   => '',
+    };
+    return $PendingDateElements;
+}
+
+sub _GetScreenElementsPriorityDefault
+{
+    my ( $Self, %Param ) = @_;
+    my $DefaultPriority;
+    if ( $Self->{Config}->{PriorityDefault} ) {
+	$DefaultPriority = $Self->{Config}->{PriorityDefault};
+    }
+    
+    my $DefaultPriorityID;
+    if ($DefaultPriority) {
+	$DefaultPriorityID = $Self->{PriorityObject}->PriorityLookup(
+	    Priority => $DefaultPriority,
+	    );
+    }    
+    my $PriorityElements = {
+	Name           => 'PriorityID',
+	Title          => $Self->{LanguageObject}->Get('Priority'),
+	Datatype       => 'Text',
+	Viewtype       => 'Picker',
+	DynamicOptions => {
+	    Object     => 'CustomObject',
+	    Method     => 'PrioritiesGet',
+	    Parameters => '',
+	},
+	Mandatory     => 1,
+	Default       => $DefaultPriorityID || '',
+	DefaultOption => $DefaultPriority || '',
+    };
+    return $PriorityElements;
+}
+
+sub _GetScreenElementsTimeUnits
+{
+    my ( $Self, %Param ) = @_;
+    my $Mandatory;
+    if ( $Self->{ConfigObject}->Get('Ticket::Frontend::NeedAccountedTime') ) {
+	$Mandatory = 1;
+    }
+    else {
+	$Mandatory = 0;
+    }
+    my $TimeUnitsMeasure  = $Self->{ConfigObject}->Get('Ticket::Frontend::TimeUnits');
+    my $TimeUnitsElements = {
+	Name      => 'TimeUnits',
+	Title     => $Self->{LanguageObject}->Get("Time units $TimeUnitsMeasure"),
+	Datatype  => 'Numeric',
+	Viewtype  => 'Input',
+	Min       => 1,
+	Max       => 10,
+	Mandatory => $Mandatory,
+	Default   => '',
+    };
+    return $TimeUnitsElements;
+}
+
+use YAML;
+
+sub _GetScreenElementsArticleDynamicFields { 
+    my ( $Self, %Param ) = @_;
+    my @ScreenElements;
+    my $ObjectType = $Param{ObjectType};
+
+    my $DynamicFieldList =
+        $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldList(
+        Valid      => 0,
+        ResultType => 'HASH',
+        ObjectType => $ObjectType
+        );
+
+    # set dynamic fields for Ticket object type
+    for my $DynamicFieldID ( sort keys %{$DynamicFieldList} ) {
+        next  if !$DynamicFieldID;
+        next  if !$DynamicFieldList->{$DynamicFieldID};
+        my $Key = $DynamicFieldList->{$DynamicFieldID};
+
+	next  if $Key =~ /^${ObjectType}FreeText/;
+	next  if $Key =~ /^${ObjectType}FreeKey/;
+	next  if $Key =~ /^${ObjectType}FreeTime/;
+
+	my $ConfigKey = ${ObjectType} . "DynamicFields";
+	if ($Self->{Config}->{$ConfigKey}->{$Key})
+	{
+            # get dynamic field config
+            my $DynamicFieldGet
+                = $Self->{TicketObject}->{DynamicFieldObject}->DynamicFieldGet(
+                ID => $DynamicFieldID,
+                );    
+
+	    my %CustomOptions;
+	    my $DataType = 'Text';  # DataType Text,Numeric,DateTime
+	    my $ViewType = 'Input'; #Viewtype   => "Picker","AutoCompletion","Input","TextArea",
+	    my $type = ref $Self->{Config}{$ConfigKey}{$Key};
+	    if( $type eq "HASH")
+	    {
+		
+		%CustomOptions = %{
+		    $Self->{Config}->{$ConfigKey}->{$Key}
+		    }; # the reset of the user option
+		warn "Check this $ConfigKey : and $Key : " . Dump(%CustomOptions);
+	    }
+	    else
+	    {
+		warn "Check this3 $ConfigKey : $Key " . Dump($Self->{Config}{$ConfigKey}{$Key});
+	    }
+
+	    $CustomOptions{Name} ||="DynamicField-". $DynamicFieldGet->{Name};
+	    my $Elements = {
+		Name           => "DynamicField-". $DynamicFieldGet->{Name},
+		Title          => $DynamicFieldGet->{Label},
+		Datatype       => $DataType,
+		Viewtype       => $ViewType,
+		%CustomOptions
+		    
+	    };
+	    push @ScreenElements,$Elements;   
+        }
+	else
+	{
+	    $Self->{LogObject}->Log(
+		Priority => 'error',
+		Message  => " Field $Key not defined for view $Self->{Config}{__name} please check your config $Self->{Config}{__name} :: ${ConfigKey} :: ${Key} ",
+		);	    
+	}
+    }; # for
+
+    # $Param contains the data that was collected in the hash
+    return @ScreenElements;
+}
+
 1;
+
 
 =back
 
