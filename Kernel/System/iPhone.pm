@@ -3127,7 +3127,8 @@ sub _GetScreenElements {
     }
 
     # 
-    push @ScreenElements, $Self->_GetScreenElementsArticleDynamicFields(%Param);
+    push @ScreenElements, $Self->_GetScreenElementsArticleDynamicFields(%Param, ObjectType=> "Article" );
+    push @ScreenElements, $Self->_GetScreenElementsArticleDynamicFields(%Param,ObjectType=> "Ticket"  );
 
     return \@ScreenElements;
 }
@@ -3271,8 +3272,8 @@ sub _TicketPhoneNew {
         && !$Param{ServiceID}
         )
     {
-        warn "SLAID :". $Param{SLAID};
-        warn "ServiceID :" . $Param{ServiceID};
+#        warn "SLAID :". $Param{SLAID};
+#        warn "ServiceID :" . $Param{ServiceID};
 
         $Self->{LogObject}->Log(
             Priority => 'error',
@@ -5170,7 +5171,7 @@ sub _GetTicketDynamicFieldValues {
 	    {
 		if ($Key !~ /^DynamicField_TicketFree/)
 		{
-		    warn "Name is $Self->{Config}{__name}";
+#		    warn "Name is $Self->{Config}{__name}";
 		    my $name = $Self->{Config}{__name} || "Unknown";
 		    my $full= ${name}. "::DynamicFields::" . ${Key};
 		    $Self->{LogObject}->Log(
@@ -5782,7 +5783,7 @@ sub _GetScreenElementsTimeUnits
     return $TimeUnitsElements;
 }
 
-use YAML;
+#use YAML;
 
 sub _GetScreenElementsArticleDynamicFields { 
     my ( $Self, %Param ) = @_;
@@ -5825,11 +5826,11 @@ sub _GetScreenElementsArticleDynamicFields {
 		%CustomOptions = %{
 		    $Self->{Config}->{$ConfigKey}->{$Key}
 		    }; # the reset of the user option
-		warn "Check this $ConfigKey : and $Key : " . Dump(%CustomOptions);
+#		warn "Check this $ConfigKey : and $Key : " . Dump(%CustomOptions);
 	    }
 	    else
 	    {
-		warn "Check this3 $ConfigKey : $Key " . Dump($Self->{Config}{$ConfigKey}{$Key});
+#		warn "Check this3 $ConfigKey : $Key " . Dump($Self->{Config}{$ConfigKey}{$Key});
 	    }
 
 	    $CustomOptions{Name} ||="DynamicField-". $DynamicFieldGet->{Name};
