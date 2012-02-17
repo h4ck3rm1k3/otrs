@@ -2,7 +2,7 @@
 # Kernel/System/Ticket.pm - all ticket functions
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: Ticket.pm,v 1.541 2012/02/13 11:33:37 mg Exp $
+# $Id: Ticket.pm,v 1.540 2012/01/16 14:22:00 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -36,11 +36,11 @@ use Kernel::System::LinkObject;
 use Kernel::System::EventHandler;
 use Kernel::System::DynamicField;
 use Kernel::System::DynamicField::Backend;
-
+use Carp qw(confess);
 use Kernel::System::VariableCheck qw(:all);
 
 use vars qw(@ISA $VERSION);
-$VERSION = qw($Revision: 1.541 $) [1];
+$VERSION = qw($Revision: 1.540 $) [1];
 
 =head1 NAME
 
@@ -119,12 +119,14 @@ sub new {
     @ISA = ( 'Kernel::System::Ticket::Article', 'Kernel::System::TicketSearch' );
 
     # get needed objects
-    for my $Needed (qw(ConfigObject LogObject TimeObject DBObject MainObject EncodeObject)) {
+    for my $Needed (qw(ConfigObject LogObject TimeObject DBObject MainObject EncodeObject )) {
+	#do we need DynamicFieldBackendObject?
+
         if ( $Param{$Needed} ) {
             $Self->{$Needed} = $Param{$Needed};
         }
         else {
-            die "Got no $Needed!";
+            confess "Got no $Needed!";
         }
     }
 
@@ -1110,12 +1112,17 @@ sub TicketGet {
         for my $DynamicFieldConfig ( @{$DynamicFieldList} ) {
 
             # validate each dynamic field
-            next DYNAMICFIELD if !$DynamicFieldConfig;
-            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+            next DYNAMICFILED if !$DynamicFieldConfig;
+            next DYNAMICFILED if !IsHashRefWithData($DynamicFieldConfig);
             next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
             next DYNAMICFIELD if !IsHashRefWithData( $DynamicFieldConfig->{Config} );
 
+
+            confess "Object is NULL: Self->{DynamicFieldBackendObject}" unless $Self->{DynamicFieldBackendObject};
             # get the current value for each dynamic field
+	    confess "$DynamicFieldConfig is :$DynamicFieldConfig" unless $DynamicFieldConfig;
+
+	    confess "Ticket : $Ticket{TicketID}" unless $Ticket{TicketID};
             my $Value = $Self->{DynamicFieldBackendObject}->ValueGet(
                 DynamicFieldConfig => $DynamicFieldConfig,
                 ObjectID           => $Ticket{TicketID},
@@ -7276,6 +7283,11 @@ sub StateSet {
     return $Self->TicketStateSet(@_);
 }
 
+sub EventHandlerTransaction
+{
+
+}
+
 1;
 
 =back
@@ -7290,6 +7302,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.541 $ $Date: 2012/02/13 11:33:37 $
+$Revision: 1.540 $ $Date: 2012/01/16 14:22:00 $
 
 =cut

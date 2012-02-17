@@ -2,7 +2,7 @@
 # Kernel/System/GenericAgent.pm - generic agent system module
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: GenericAgent.pm,v 1.81 2012/02/14 08:40:37 mg Exp $
+# $Id: GenericAgent.pm,v 1.80 2012/01/11 17:28:26 jh Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::DynamicField::Backend;
 use Kernel::System::VariableCheck qw(:all);
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.81 $) [1];
+$VERSION = qw($Revision: 1.80 $) [1];
 
 =head1 NAME
 
@@ -1186,20 +1186,13 @@ sub _JobRunTicket {
     # cmd
     if ( $Param{Config}->{New}->{CMD} ) {
         if ( $Self->{NoticeSTDOUT} ) {
-            print "  - Execute '$Param{Config}->{New}->{CMD}' for Ticket $Ticket.\n";
+            print "  - Execut '$Param{Config}->{New}->{CMD}' for Ticket $Ticket.\n";
         }
         $Self->{LogObject}->Log(
             Priority => 'notice',
-            Message  => "Execute '$Param{Config}->{New}->{CMD}' for Ticket $Ticket.",
+            Message  => "Execut '$Param{Config}->{New}->{CMD}' for Ticket $Ticket.",
         );
         system("$Param{Config}->{New}->{CMD} $Param{TicketNumber} $Param{TicketID} ");
-
-        if ( $? ne 0 ) {
-            $Self->{LogObject}->Log(
-                Priority => 'notice',
-                Message  => "Command returned a nonzero return code: rc=$?, err=$!",
-            );
-        }
     }
 
     # delete ticket
@@ -1285,6 +1278,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.81 $ $Date: 2012/02/14 08:40:37 $
+$Revision: 1.80 $ $Date: 2012/01/11 17:28:26 $
 
 =cut

@@ -1,8 +1,8 @@
 # --
 # Kernel/Output/HTML/CustomerHeaderMetaTicketSearch.pm
-# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
 # --
-# $Id: CustomerHeaderMetaTicketSearch.pm,v 1.4 2012/02/14 16:46:20 mg Exp $
+# $Id: CustomerHeaderMetaTicketSearch.pm,v 1.2 2011/08/23 12:15:18 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.4 $) [1];
+$VERSION = qw($Revision: 1.2 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -41,13 +41,11 @@ sub Run {
             . $Self->{LayoutObject}->{SessionID};
     }
     my $Title = $Self->{ConfigObject}->Get('ProductName');
-    $Title .= ' - ' . $Self->{LayoutObject}->{LanguageObject}->Get('Customer');
-    $Title .= ' (' . $Self->{ConfigObject}->Get('Ticket::Hook') . ')';
+    $Title .= '(' . $Self->{ConfigObject}->Get('Ticket::Hook') . ')';
     $Self->{LayoutObject}->Block(
         Name => 'MetaLink',
         Data => {
             Rel   => 'search',
-            Type  => 'application/opensearchdescription+xml',
             Title => $Title,
             Href  => '$Env{"Baselink"}Action=' . $Param{Config}->{Action}
                 . ';Subaction=OpenSearchDescription' . $Session,

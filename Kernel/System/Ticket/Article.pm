@@ -2,7 +2,7 @@
 # Kernel/System/Ticket/Article.pm - global article module for OTRS kernel
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: Article.pm,v 1.308 2012/02/13 11:33:37 mg Exp $
+# $Id: Article.pm,v 1.307 2012/01/17 16:04:38 mab Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -19,11 +19,10 @@ use Kernel::System::PostMaster::LoopProtection;
 use Kernel::System::TemplateGenerator;
 use Kernel::System::Notification;
 use Kernel::System::EmailParser;
-
 use Kernel::System::VariableCheck qw(:all);
-
+use Carp qw(cluck);
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.308 $) [1];
+$VERSION = qw($Revision: 1.307 $) [1];
 
 =head1 NAME
 
@@ -921,6 +920,8 @@ sub ArticleTypeLookup {
             Priority => 'error',
             Message  => 'Need ArticleType or ArticleTypeID!',
         );
+	use YAML;
+	cluck Dump(\%Param);
         return;
     }
 
@@ -1682,8 +1683,8 @@ sub ArticleGet {
             for my $DynamicFieldConfig ( @{$DynamicFieldArticleList} ) {
 
                 # validate each dynamic field
-                next DYNAMICFIELD if !$DynamicFieldConfig;
-                next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+                next DYNAMICFILED if !$DynamicFieldConfig;
+                next DYNAMICFILED if !IsHashRefWithData($DynamicFieldConfig);
                 next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
                 next DYNAMICFIELD if !IsHashRefWithData( $DynamicFieldConfig->{Config} );
 
@@ -1722,8 +1723,8 @@ sub ArticleGet {
             for my $DynamicFieldConfig ( @{$DynamicFieldTicketList} ) {
 
                 # validate each dynamic field
-                next DYNAMICFIELD if !$DynamicFieldConfig;
-                next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+                next DYNAMICFILED if !$DynamicFieldConfig;
+                next DYNAMICFILED if !IsHashRefWithData($DynamicFieldConfig);
                 next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
                 next DYNAMICFIELD if !IsHashRefWithData( $DynamicFieldConfig->{Config} );
 
@@ -1863,9 +1864,18 @@ sub ArticleGet {
         );
 
         # get article type
-        $Part->{ArticleType} = $Self->ArticleTypeLookup(
-            ArticleTypeID => $Part->{ArticleTypeID},
-        );
+	if( exists($Part->{ArticleTypeID}) && $Part->{ArticleTypeID} )	{
+
+	    $Part->{ArticleType} = $Self->ArticleTypeLookup(
+		ArticleTypeID => $Part->{ArticleTypeID},
+		);
+	}
+	else
+	{
+	    $Self->{LogObject}->Log( Priority => 'error', Message => "Need ArticleTypeID in Part!" );
+	    use YAML;
+	    warn Dump($Part);
+	}
 
         # get priority name
         $Part->{Priority} = $Ticket{Priority};
@@ -3507,6 +3517,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.308 $ $Date: 2012/02/13 11:33:37 $
+$Revision: 1.307 $ $Date: 2012/01/17 16:04:38 $
 
 =cut

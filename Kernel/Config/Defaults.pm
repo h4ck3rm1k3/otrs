@@ -267,7 +267,7 @@ sub LoadDefaults {
 
     # CheckEmailValidAddress
     # (regexp of valid email addresses)
-    $Self->{CheckEmailValidAddress} = '^(root@localhost|admin@localhost)$';
+    $Self->{CheckEmailValidAddress} = '^(root@localhost|admin@localhost|otrs@localhost)$';
 
     # CheckEmailInvalidAddress
     # (regexp of invalid email addresses)

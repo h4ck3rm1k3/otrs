@@ -2,7 +2,7 @@
 // Core.UI.Popup.js - provides functionality to open popup windows
 // Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 // --
-// $Id: Core.UI.Popup.js,v 1.18 2012/02/13 14:09:28 mg Exp $
+// $Id: Core.UI.Popup.js,v 1.17 2012/02/02 15:51:39 mg Exp $
 // --
 // This software comes with ABSOLUTELY NO WARRANTY. For details, see
 // the enclosed file COPYING for license information (AGPL). If you
@@ -32,12 +32,8 @@ Core.UI.Popup = (function (TargetNS) {
 
     PopupProfiles = {
         'Default': {
-            WindowURLParams: "dependent=yes,location=no,menubar=no,resizable=yes,scrollbars=yes,status=no,toolbar=no",
-            Left:            100,
-            Top:             100,
-            Width:           1000,
-            Height:          700
-        }
+            'WindowURLParams': "dependent=yes,height=700,left=100,top=100,location=no,menubar=no,resizable=yes,scrollbars=yes,status=no,toolbar=no,width=1000"
+        },
     };
 
     /**
@@ -242,13 +238,7 @@ Core.UI.Popup = (function (TargetNS) {
      * @return nothing
      */
     TargetNS.OpenPopup = function (URL, Type, Profile) {
-        var PopupObject,
-            PopupProfile,
-            NewWindow,
-            WindowName,
-            ConfirmClosePopup = true,
-            PopupFeatures;
-
+        var PopupObject, PopupProfile, NewWindow, WindowName, ConfirmClosePopup = true;
         CheckOpenPopups();
         if (URL) {
             PopupObject = GetPopupObjectByType(Type);
@@ -271,15 +261,7 @@ Core.UI.Popup = (function (TargetNS) {
                  *  to save the Type parameter.
                  */
                 WindowName = 'OTRSPopup_' + Type + '_' + Date.parse(new Date());
-                PopupFeatures = PopupProfiles[PopupProfile].WindowURLParams;
-                // Get the position of the current screen on browsers which support it (non-IE) and
-                //  use it to open the popup on the same screen
-                PopupFeatures += ',left=' + ((window.screen.left || 0) + PopupProfiles[PopupProfile].Left);
-                PopupFeatures += ',top=' + ((window.screen.top || 0) + PopupProfiles[PopupProfile].Top);
-                PopupFeatures += ',width=' + PopupProfiles[PopupProfile].Width;
-                PopupFeatures += ',height=' + PopupProfiles[PopupProfile].Height;
-
-                NewWindow = window.open(URL, WindowName, PopupFeatures);
+                NewWindow = window.open(URL, WindowName, PopupProfiles[PopupProfile].WindowURLParams);
 
                 // check for popup blockers.
                 // currently, popup windows cannot easily be detected in chrome, because it will

@@ -2,7 +2,7 @@
 # CHANGES - change log of OTRS
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: CHANGES,v 1.2184 2012/02/16 23:54:41 cr Exp $
+# $Id: CHANGES,v 1.2173 2012/02/10 09:05:44 mb Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -10,22 +10,6 @@
 # --
 
 3.1.2 2012-03-??
- - 2012-02-16 Fixed bug#8226 - Problem with Customized DynamicFields in TicketOverviewSmall.
- - 2012-02-16 Fixed bug#8233 - DB error migrating stats on Oracle.
- - 2012-02-14 Fixed bug#8224 - Admin Responses screen does not allow to filter responses.
- - 2012-02-14 Fixed bug#7652 - OpenSearch providers are served with wrong mime type.
-    Follow-up fix.
- - 2012-02-14 Fixed bug#8140 - Shortcut for creating new e-mail ticket doesn't work.
-    The hotkey for "new email ticket" was changed from e to m to avoid a collision.
- - 2012-02-14 Fixed bug#8144 - Typo and improved logging in GenericAgent.pm.
- - 2012-02-14 Fixed bug#8183 - Canceling AgentTicketCompose on an unlocked ticket generates
-    ChallengeToken error.
- - 2012-02-13 Fixed bug#8219 - TicketCreate and TicketUpdate GI ticket operations requires a valid
-    CustomerUser.
- - 2012-02-13 Fixed bug#8201 - Popup in browser always open on leftmost display when using
-    dual monitor setup.
- - 2012-02-13 Fixed bug#8202 - Kernel::System::JSON->Decode() dies when providing malformed JSON.
- - 2012-02-13 Fixed bug#8211 - Typos in Labels: DYNAMICFILED.
  - 2012-02-09 Fixed bug#7109 - Statistics error when PDF support is not active.
 
 3.1.1 2012-02-14

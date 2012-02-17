@@ -2,7 +2,7 @@
 # TicketCreate.t - GenericInterface TicketCreate tests for TicketConnector backend
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: TicketCreate.t,v 1.10 2012/02/13 22:27:38 cr Exp $
+# $Id: TicketCreate.t,v 1.7 2012/01/25 03:00:52 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -23,7 +23,7 @@ use Kernel::GenericInterface::Requester;
 use Kernel::System::GenericInterface::Webservice;
 use Kernel::System::UnitTest::Helper;
 use Kernel::GenericInterface::Operation::Ticket::TicketCreate;
-use Kernel::GenericInterface::Operation::Session::SessionCreate;
+use Kernel::GenericInterface::Operation::Session::SessionIDGet;
 use Kernel::System::VariableCheck qw(IsArrayRefWithData IsHashRefWithData IsStringWithData);
 
 use Kernel::System::SysConfig;
@@ -78,26 +78,6 @@ $SysConfigObject->ConfigItemUpdate(
 );
 $ConfigObject->Set(
     Key   => 'Ticket::Frontend::NeedAccountedTime',
-    Value => 1,
-);
-
-# disable dns lookups
-$SysConfigObject->ConfigItemUpdate(
-    Valid => 1,
-    Key   => 'CheckMXRecord',
-    Value => '0',
-);
-$ConfigObject->Set(
-    Key   => 'CheckMXRecord',
-    Value => 0,
-);
-$SysConfigObject->ConfigItemUpdate(
-    Valid => 1,
-    Key   => 'CheckEmailAddresses',
-    Value => '1',
-);
-$ConfigObject->Set(
-    Key   => 'CheckEmailAddresses',
     Value => 1,
 );
 
@@ -414,8 +394,8 @@ my $WebserviceConfig = {
             TicketCreate => {
                 Type => 'Ticket::TicketCreate',
             },
-            SessionCreate => {
-                Type => 'Session::SessionCreate',
+            SessionIDGet => {
+                Type => 'Session::SessionIDGet',
             },
         },
     },
@@ -432,7 +412,7 @@ my $WebserviceConfig = {
             TicketCreate => {
                 Type => 'Test::TestSimple',
             },
-            SessionCreate => {
+            SessionIDGet => {
                 Type => 'Test::TestSimple',
             },
         },
@@ -466,7 +446,7 @@ my $UserLogin              = 'root@localhost';
 my $Password               = 'root';
 my $RequesterSessionResult = $RequesterSessionObject->Run(
     WebserviceID => $WebserviceID,
-    Invoker      => 'SessionCreate',
+    Invoker      => 'SessionIDGet',
     Data         => {
         UserLogin => $UserLogin,
         Password  => $Password,
@@ -3068,57 +3048,6 @@ my @Tests        = (
         },
         Operation => 'TicketCreate',
     },
-    {
-        Name             => 'Ticket with external customer user',
-        SuccessRequest   => 1,
-        SuccessCreate    => 1,
-        ExternalCustomer => 1,
-        RequestData      => {
-            Ticket => {
-                Title        => 'Ticket Title',
-                CustomerUser => 'someone@somehots.com',
-                Queue        => $QueueData{Name},
-                Type         => $TypeData{Name},
-                State        => $StateData{Name},
-                Priority     => $PriorityData{Name},
-                Owner        => $TestOwnerLogin,
-                Responsible  => $TestResponsibleLogin,
-                PendingTime  => {
-                    Year   => 2012,
-                    Month  => 12,
-                    Day    => 16,
-                    Hour   => 20,
-                    Minute => 48,
-                },
-            },
-            Article => {
-                Subject                     => 'Article subject äöüßÄÖÜ€ис',
-                Body                        => 'Article body !"Â§$%&/()=?Ã*ÃÃL:L@,.-',
-                AutoResponseType            => 'auto reply',
-                ArticleType                 => 'email-external',
-                SenderType                  => 'agent',
-                From                        => 'enjoy@otrs.com',
-                ContentType                 => 'text/plain; charset=UTF8',
-                HistoryType                 => 'NewTicket',
-                HistoryComment              => '% % ',
-                TimeUnit                    => 25,
-                ForceNotificationToUserID   => [1],
-                ExcludeNotificationToUserID => [1],
-                ExcludeMuteNotificationToUserID => [1],
-            },
-            DynamicField => {
-                Name  => $DynamicFieldData->{Name},
-                Value => '2012-01-17 12:40:00',
-            },
-            Attachment => {
-                Content     => 'VGhpcyBpcyBhIHRlc3QgdGV4dC4=',
-                ContentType => 'text/plain; charset=UTF8',
-                Filename    => 'Test.txt',
-            },
-        },
-        Operation => 'TicketCreate',
-    },
-
 );
 
 # debugger object
@@ -3279,24 +3208,13 @@ for my $Test (@Tests) {
 
         );
 
-        # external customers only set it's value in article (if no From is defined), ticket
-        # is created with an empty customer
-        if ( $Test->{ExternalCustomer} ) {
-            $Self->Is(
-                $LocalTicketData{CustomerUserID},
-                undef,
-                "$Test->{Name} - local Ticket->CustomerUser is empty.",
-            );
-        }
-        else {
-            $Self->Is(
-                $LocalTicketData{CustomerUserID},
-                $Test->{RequestData}->{Ticket}->{CustomerUser},
-                "$Test->{Name} - local Ticket->CustomerUser match test definition.",
-            );
-        }
+        $Self->Is(
+            $LocalTicketData{CustomerUserID},
+            $Test->{RequestData}->{Ticket}->{CustomerUser},
+            "$Test->{Name} - local Ticket->CustomerUser match test definition.",
+        );
 
-        for my $Attribute (qw(Queue Type Service SLA State Priority Owner Responsible)) {
+        for my $Attribute (qw(Queue Type Serrvice SLA State Priority Owner Responsible)) {
             if ( $Test->{RequestData}->{Ticket}->{ $Attribute . 'ID' } ) {
                 $Self->Is(
                     $LocalTicketData{ $Attribute . 'ID' },
