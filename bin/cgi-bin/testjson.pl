@@ -4,7 +4,9 @@ my $q = CGI->new;
 print $q->header();
 print q!<html>
 <head>
+
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.js"></script>
+<script type="text/javascript" src="/js/introspector.js"></script>
 <script type="text/javascript">
     $(document).ready(function(){
 	    $("#msgid").html("This is Hello World by JQuery");
@@ -81,6 +83,7 @@ $("#format").live("click", function(){
 <body>
 <div id="msgid"></div>
 <div id="testurl"></div>
+<div id="introspector">Click here to query request types</div>
 <div id="createexec">  Click here to prepare a create request</div>
 <div id="createquery">  Click here to prepare a query request</div>
 <div id="exec">  Click here to exec the request</div>

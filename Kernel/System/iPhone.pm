@@ -4850,7 +4850,7 @@ sub _TicketDynamicFieldSet {
     if ( !exists $Param{Value} )
     {
         $Self->{LogObject}
-            ->Log( Priority => 'error', Message => "No Text Passed for $Param{Key} !" );
+            ->Log( Priority => 'error', Message => "No Text Passed for $Param{Value} !" );
     }
     my $NewValue = $Param{Value} || "";
 
@@ -4912,7 +4912,7 @@ sub _ArticleFreeTextSet {
     {
         $Self->{LogObject}->Log( Priority => 'error', Message => "No Text Passed for Value !" );
     }
-    my $NewValue = $Param{Text} || "";
+    my $NewValue = $Param{Value} || "";
 
     # check needed stuff
     for my $Needed (qw(ArticleID UserID )) {
