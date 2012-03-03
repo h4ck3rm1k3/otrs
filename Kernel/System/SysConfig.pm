@@ -19,6 +19,7 @@ use Storable qw();
 use Kernel::System::XML;
 use Kernel::Config;
 use Kernel::Language;
+use Kernel::System::SysConfig::Search;
 
 use vars qw(@ISA $VERSION);
 $VERSION = qw($Revision: 1.32 $) [1];
@@ -1146,125 +1147,16 @@ with settings which contain the search term.
 
 =cut
 
-sub ConfigItemSearch {
-    my ( $Self, %Param ) = @_;
 
-    my @List;
-    my %Used;
-
-    # check needed stuff
-    for (qw(Search)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
-            return;
-        }
-    }
-    $Param{Search} =~ s/\*//;
-    my %Groups = $Self->ConfigGroupList();
-    for my $Group ( sort keys(%Groups) ) {
-        my %SubGroups = $Self->ConfigSubGroupList( Name => $Group );
-        for my $SubGroup ( sort keys %SubGroups ) {
-            my @Items = $Self->ConfigSubGroupConfigItemList(
-                Group    => $Group,
-                SubGroup => $SubGroup,
-            );
-            for my $Item (@Items) {
-                my $Config = $Self->_ModGet( ConfigName => $Item );
-                if ( $Config && !$Used{ $Group . '::' . $SubGroup } ) {
-                    if ( ref $Config eq 'ARRAY' ) {
-                        for ( @{$Config} ) {
-                            if ( !$Used{ $Group . '::' . $SubGroup } ) {
-                                if ( $_ && $_ =~ /\Q$Param{Search}\E/i ) {
-                                    push(
-                                        @List,
-                                        {
-                                            SubGroup      => $SubGroup,
-                                            SubGroupCount => $SubGroups{$SubGroup},
-                                            Group         => $Group,
-                                        },
-                                    );
-                                    $Used{ $Group . '::' . $SubGroup } = 1;
-                                }
-                            }
-                        }
-                    }
-                    elsif ( ref $Config eq 'HASH' ) {
-                        for my $Key ( keys %{$Config} ) {
-                            if ( !$Used{ $Group . '::' . $SubGroup } ) {
-                                if ( $Config->{$Key} && $Config->{$Key} =~ /\Q$Param{Search}\E/i ) {
-                                    push(
-                                        @List,
-                                        {
-                                            SubGroup      => $SubGroup,
-                                            SubGroupCount => $SubGroups{$SubGroup},
-                                            Group         => $Group,
-                                        },
-                                    );
-                                    $Used{ $Group . '::' . $SubGroup } = 1;
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        if ( $Config =~ /\Q$Param{Search}\E/i ) {
-                            push(
-                                @List,
-                                {
-                                    SubGroup      => $SubGroup,
-                                    SubGroupCount => $SubGroups{$SubGroup},
-                                    Group         => $Group,
-                                },
-                            );
-                            $Used{ $Group . '::' . $SubGroup } = 1;
-                        }
-                    }
-                }
-                if ( $Item =~ /\Q$Param{Search}\E/i ) {
-                    if ( !$Used{ $Group . '::' . $SubGroup } ) {
-                        push(
-                            @List,
-                            {
-                                SubGroup      => $SubGroup,
-                                SubGroupCount => $SubGroups{$SubGroup},
-                                Group         => $Group,
-                            },
-                        );
-                        $Used{ $Group . '::' . $SubGroup } = 1;
-                    }
-                }
-                else {
-                    my %ItemHash = $Self->ConfigItemGet( Name => $Item );
-                    for my $Index ( 1 .. $#{ $ItemHash{Description} } ) {
-                        if ( !$Used{ $Group . '::' . $SubGroup } ) {
-                            my $Description = $ItemHash{Description}[$Index]{Content};
-
-                        # compare with the English description and also with the translated sentence
-                            if (
-                                ( $Description =~ /\Q$Param{Search}\E/i )
-                                || (
-                                    $Self->{LanguageObject}->Get($Description)
-                                    =~ /\Q$Param{Search}\E/i
-                                )
-                                )
-                            {
-                                push(
-                                    @List,
-                                    {
-                                        SubGroup      => $SubGroup,
-                                        SubGroupCount => $SubGroups{$SubGroup},
-                                        Group         => $Group,
-                                    },
-                                );
-                                $Used{ $Group . '::' . $SubGroup } = 1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return @List;
+sub _SearchArray {
+    my ($Self,$Val,$Search)=@_;    
+    return $Val =~ /\Q${Search}\E/i;
 }
+sub _SearchConfigKey {
+    my ($Self,$Config,$Key,$Search)=@_;    
+    return $Self->_SearchArray($Config->{$Key},$Search);
+}
+
 
 =item ConfigItemTranslatableStrings()
 
@@ -2263,6 +2155,13 @@ sub _LoadBackend {
     $Self->{Cache}->{LoadSysConfigBackend}->{ $Param{Module} } = $BackendObject;
 
     return $BackendObject;
+}
+
+sub ConfigItemSearch
+{
+    my $Self=shift;
+    #$Self,$SubGroups,$Group,$SubGroup, $Config,$Param
+    $Self->Kernel::System::SysConfig::Search::ConfigItemSearch(@_);
 }
 
 1;
