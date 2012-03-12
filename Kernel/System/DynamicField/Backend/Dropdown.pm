@@ -2,7 +2,7 @@
 # Kernel/System/DynamicField/Backend/Dropdown.pm - Delegate for DynamicField Dropdown backend
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: Dropdown.pm,v 1.54 2012/01/03 22:49:44 cr Exp $
+# $Id: Dropdown.pm,v 1.58 2012/03/01 17:03:36 cr Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -19,7 +19,7 @@ use Kernel::System::DynamicFieldValue;
 use Kernel::System::DynamicField::Backend::BackendCommon;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.54 $) [1];
+$VERSION = qw($Revision: 1.58 $) [1];
 
 =head1 NAME
 
@@ -106,6 +106,18 @@ sub ValueSet {
     return $Success;
 }
 
+sub ValueDelete {
+    my ( $Self, %Param ) = @_;
+
+    my $Success = $Self->{DynamicFieldValueObject}->ValueDelete(
+        FieldID  => $Param{DynamicFieldConfig}->{ID},
+        ObjectID => $Param{ObjectID},
+        UserID   => $Param{UserID},
+    );
+
+    return $Success;
+}
+
 sub ValueValidate {
     my ( $Self, %Param ) = @_;
 
@@ -137,9 +149,12 @@ sub SearchSQLGet {
     }
 
     if ( $Param{Operator} eq 'Like' ) {
-        my $SQL = " LOWER($Param{TableAlias}.value_text) LIKE LOWER('";
-        $SQL .= $Self->{DBObject}->Quote( $Param{SearchTerm}, 'Like' );
-        $SQL .= "') " . $Self->{DBObject}->GetDatabaseFunction('LikeEscapeString') . ' ';
+
+        my $SQL = $Self->{DBObject}->QueryCondition(
+            Key   => "$Param{TableAlias}.value_text",
+            Value => $Param{SearchTerm},
+        );
+
         return $SQL;
     }
 
@@ -212,8 +227,8 @@ sub EditFieldRender {
     }
 
     my $HTMLString = $Param{LayoutObject}->BuildSelection(
-        Data         => $SelectionData,
-        Name         => $FieldName,
+        Data => $SelectionData || {},
+        Name => $FieldName,
         SelectedID   => $Value,
         Translation  => $FieldConfig->{TranslatableValues} || 0,
         PossibleNone => $FieldPossibleNone,
@@ -581,7 +596,8 @@ sub SearchFieldParameterBuild {
             for my $Item ( @{$Value} ) {
 
                 # set the display value
-                my $DisplayItem = $Param{DynamicFieldConfig}->{Config}->{PossibleValues}->{$Item};
+                my $DisplayItem = $Param{DynamicFieldConfig}->{Config}->{PossibleValues}->{$Item}
+                    || $Item;
                 if ( $Param{DynamicFieldConfig}->{Config}->{TranslatableValues} ) {
 
                     # translate the value

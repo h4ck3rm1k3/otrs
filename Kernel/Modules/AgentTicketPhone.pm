@@ -2,7 +2,7 @@
 # Kernel/Modules/AgentTicketPhone.pm - to handle phone calls
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: AgentTicketPhone.pm,v 1.230 2012/01/30 19:54:45 cr Exp $
+# $Id: AgentTicketPhone.pm,v 1.234 2012/03/05 09:47:28 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -27,7 +27,7 @@ use Mail::Address;
 use Kernel::System::Service;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.230 $) [1];
+$VERSION = qw($Revision: 1.234 $) [1];
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -173,8 +173,8 @@ sub Run {
         next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
 
         # extract the dynamic field value form the web request
-        $DynamicFieldValues{ $DynamicFieldConfig->{Name} } =
-            $Self->{BackendObject}->EditFieldValueGet(
+        $DynamicFieldValues{ $DynamicFieldConfig->{Name} }
+            = $Self->{BackendObject}->EditFieldValueGet(
             DynamicFieldConfig => $DynamicFieldConfig,
             ParamObject        => $Self->{ParamObject},
             LayoutObject       => $Self->{LayoutObject},
@@ -184,12 +184,12 @@ sub Run {
     # convert dynamic field values into a structure for ACLs
     my %DynamicFieldACLParameters;
     DYNAMICFIELD:
-    for my $DynamcField ( keys %DynamicFieldValues ) {
-        next DYNAMICFIELD if !$DynamcField;
-        next DYNAMICFIELD if !$DynamicFieldValues{$DynamcField};
+    for my $DynamicField ( keys %DynamicFieldValues ) {
+        next DYNAMICFIELD if !$DynamicField;
+        next DYNAMICFIELD if !$DynamicFieldValues{$DynamicField};
 
-        $DynamicFieldACLParameters{ 'DynamicField_' . $DynamcField }
-            = $DynamicFieldValues{$DynamcField};
+        $DynamicFieldACLParameters{ 'DynamicField_' . $DynamicField }
+            = $DynamicFieldValues{$DynamicField};
     }
     $GetParam{DynamicField} = \%DynamicFieldACLParameters;
 
@@ -248,6 +248,14 @@ sub Run {
                 ArticleID     => $GetParam{ArticleID},
                 DynamicFields => 0,
             );
+
+            # Check if article is from the same TicketID as we checked permissions for.
+            if ( $Article{TicketID} ne $Self->{TicketID} ) {
+                return $Self->{LayoutObject}->ErrorScreen(
+                    Message => "Article does not belong to ticket $Self->{TicketID}!",
+                );
+            }
+
             $Article{Subject} = $Self->{TicketObject}->TicketSubjectClean(
                 TicketNumber => $Article{TicketNumber},
                 Subject => $Article{Subject} || '',
@@ -378,6 +386,56 @@ sub Run {
         # create html strings for all dynamic fields
         my %DynamicFieldHTML;
 
+        my %SplitTicketParam;
+
+        # in case of split a TicketID and ArticleID are always given, send the TicketID to calculate
+        # ACLs based on parent information
+        if ( $Self->{TicketID} && $Article{ArticleID} ) {
+            $SplitTicketParam{TicketID} = $Self->{TicketID};
+        }
+
+        # fix to bug# 8068 Field & DynamicField preselection on TicketSplit
+        # when splitting a ticket the selected attributes must remain in the new ticket screen
+        # this information will be available in the SplitTicketParam hash
+        if ( $SplitTicketParam{TicketID} ) {
+
+            # get information from original ticket (SplitTicket)
+            my %SplitTicketData = $Self->{TicketObject}->TicketGet(
+                TicketID      => $SplitTicketParam{TicketID},
+                DynamicFields => 1,
+                UserID        => $Self->{UserID},
+            );
+
+            # set simple IDs to pass them to the mask
+            for my $SplitedParam (qw(TypeID ServiceID SLAID PriorityID)) {
+                $SplitTicketParam{$SplitedParam} = $SplitTicketData{$SplitedParam};
+            }
+
+            # set StateID as NextStateID
+            $SplitTicketParam{NextStateID} = $SplitTicketData{StateID};
+
+            # set Onwer an Responsible
+            $SplitTicketParam{UserSelected}            = $SplitTicketData{OwnerID};
+            $SplitTicketParam{ResponsibleUserSelected} = $SplitTicketData{ResponsibleID};
+
+            # set additional information needed for Owner and Responsible
+            if ( $SplitTicketData{QueueID} ) {
+                $SplitTicketParam{QueueID} = $SplitTicketData{QueueID};
+            }
+            $SplitTicketParam{AllUsers} = 1;
+
+            # set the selected queue in format ID||Name
+            $SplitTicketParam{ToSelected}
+                = $SplitTicketData{QueueID} . '||' . $SplitTicketData{Queue};
+
+            for my $Key ( keys %SplitTicketData ) {
+                if ( $Key =~ /DynamicField\_(.*)/ ) {
+                    $SplitTicketParam{DynamicField}{$1} = $SplitTicketData{$Key};
+                    delete $SplitTicketParam{$Key};
+                }
+            }
+        }
+
         # cycle trough the activated Dynamic Fields for this screen
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
@@ -392,6 +450,7 @@ sub Run {
                 my $ACL = $Self->{TicketObject}->TicketAcl(
                     %GetParam,
                     %ACLCompatGetParam,
+                    %SplitTicketParam,
                     Action        => $Self->{Action},
                     ReturnType    => 'Ticket',
                     ReturnSubType => 'DynamicField_' . $DynamicFieldConfig->{Name},
@@ -472,49 +531,6 @@ sub Run {
             $Body = $Self->{LayoutObject}->Ascii2RichText(
                 String => $Body,
             );
-        }
-
-        my %SplitTicketParam;
-
-        # in case of split a TicketID and ArticleID are always given, send the TicketID to calculate
-        # ACLs based on parent information
-        if ( $Self->{TicketID} && $Article{ArticleID} ) {
-            $SplitTicketParam{TicketID} = $Self->{TicketID};
-        }
-
-        # fix to bug# 8068 Field & DynamicField preselection on TicketSplit
-        # when splitting a ticket the selected attributes must remain in the new ticket screen
-        # this information will be available in the SplitTicketParam hash
-        if ( $SplitTicketParam{TicketID} ) {
-
-            # get information from original ticket (SplitTicket)
-            my %SplitTicketData = $Self->{TicketObject}->TicketGet(
-                TicketID      => $SplitTicketParam{TicketID},
-                DynamicFields => 0,
-                UserID        => $Self->{UserID},
-            );
-
-            # set simple IDs to pass them to the mask
-            for my $SplitedParam (qw(TypeID ServiceID SLAID PriorityID)) {
-                $SplitTicketParam{$SplitedParam} = $SplitTicketData{$SplitedParam};
-            }
-
-            # set StateID as NextStateID
-            $SplitTicketParam{NextStateID} = $SplitTicketData{StateID};
-
-            # set Onwer an Responsible
-            $SplitTicketParam{UserSelected}            = $SplitTicketData{OwnerID};
-            $SplitTicketParam{ResponsibleUserSelected} = $SplitTicketData{ResponsibleID};
-
-            # set additional information needed for Owner and Responsible
-            if ( $SplitTicketData{QueueID} ) {
-                $SplitTicketParam{QueueID} = $SplitTicketData{QueueID};
-            }
-            $SplitTicketParam{AllUsers} = 1;
-
-            # set the selected queue in format ID||Name
-            $SplitTicketParam{ToSelected}
-                = $SplitTicketData{QueueID} . '||' . $SplitTicketData{Queue};
         }
 
         # html output
@@ -735,7 +751,7 @@ sub Run {
             my $ValidationResult;
 
             # do not validate on attachment upload
-            if ( !$IsUpload ) {
+            if ( !$IsUpload && !$ExpandCustomerName ) {
 
                 $ValidationResult = $Self->{BackendObject}->EditFieldValueValidate(
                     DynamicFieldConfig   => $DynamicFieldConfig,
@@ -1321,7 +1337,7 @@ sub Run {
             Services       => $Services,
         );
 
-        # update Dynamc Fields Possible Values via AJAX
+        # update Dynamic Fields Possible Values via AJAX
         my @DynamicFieldAJAX;
 
         # cycle trough the activated Dynamic Fields for this screen
@@ -1642,7 +1658,7 @@ sub _GetServices {
             $ServiceLoockup{ $ServiceData->{ServiceID} } = $ServiceData;
         }
 
-        # to store all ready printed ServiceIDs
+        # to store already printed ServiceIDs
         my %AddedServices;
 
         for my $ServiceKey ( sort { $OrigService{$a} cmp $OrigService{$b} } keys %OrigService ) {

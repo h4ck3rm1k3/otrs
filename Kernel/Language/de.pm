@@ -3,7 +3,7 @@
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # Copyright (C) 2010 Thomas Kaltenbrunner <tkaltenbrunner at opc.de>
 # --
-# $Id: de.pm,v 1.314 2012/02/02 16:31:00 mg Exp $
+# $Id: de.pm,v 1.319 2012/03/02 01:02:43 ep Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -15,13 +15,13 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.314 $) [1];
+$VERSION = qw($Revision: 1.319 $) [1];
 
 sub Data {
     my $Self = shift;
 
     # $$START$$
-    # Last translation file sync: 2012-02-02 17:08:18
+    # Last translation file sync: 2012-03-01 14:19:51
 
     # possible charsets
     $Self->{Charset} = ['utf-8', ];
@@ -682,7 +682,7 @@ sub Data {
         'Watch' => 'Beobachten',
         'Unwatch' => 'Nicht beobachten',
         'Lock it to work on it' => 'Zur Bearbeitung sperren',
-        'Unlock to give it back to the queue' => 'Zur Rückgabe and die Queue entsperren',
+        'Unlock to give it back to the queue' => 'Zur Rückgabe an die Queue entsperren',
         'Show the ticket history' => 'Ticket-Historie anzeigen',
         'Print this ticket' => 'Dieses Ticket drucken',
         'Print this article' => 'Diesen Artikel drucken',
@@ -848,7 +848,7 @@ sub Data {
         'To get the first 20 character of the subject.' => 'Die ersten 20 Zeichen des Betreffs',
         'To get the first 5 lines of the email.' => 'Die ersten fünf Zeilen der Nachricht',
         'To get the realname of the sender (if given).' => 'Der Name des Benutzers (wenn angegeben)',
-        'To get the article attribute' => 'Das Artikel-Attriute',
+        'To get the article attribute' => 'Die Artikel-Attribute',
         ' e. g.' => 'z. B.',
         'Options of the current customer user data' => 'Attribute des aktuellen Kunden',
         'Ticket owner options' => 'Attribute des Ticketbesitzers',
@@ -1542,9 +1542,9 @@ sub Data {
         # Template: AdminResponse
         'Manage Responses' => 'Antworten verwalten',
         'Add response' => 'Antwort hinzufügen',
-        'A response is default text to write faster answer (with default text) to customers.' =>
-            'Eine Antwort ist ein vordefinierter Text, um Kunden schneller antworten zu können.',
-        'Don\'t forget to add a new response a queue!' => 'Eine neue Antwort muss einer Queue zugewiesen werden!',
+        'A response is a default text which helps your agents to write faster answers to customers.' =>
+            'Eine Antwort ist ein vordefinierter Text, mit dem Ihre Agenten den Kunden schneller antworten zu können.',
+        'Don\'t forget to add new responses to queues.' => 'Neue Antworten müssen einer Queue zugewiesen werden!',
         'Delete this entry' => 'Diesen Eintrag löschen',
         'Add Response' => 'Antwort hinzufügen',
         'Edit Response' => 'Antwort bearbeiten',
@@ -1821,7 +1821,7 @@ sub Data {
         # Template: AgentDashboardTicketGeneric
         'My locked tickets' => 'Meine gesperrten Tickets',
         'My watched tickets' => 'Meine beobachteten Tickets',
-        'My responsibilites' => 'Meine Verantwortlichkeiten',
+        'My responsibilities' => 'Meine Verantwortlichkeiten',
         'Tickets in My Queues' => 'Tickets in meinen Queues',
 
         # Template: AgentDashboardTicketStats
@@ -2645,6 +2645,7 @@ sub Data {
             '',
         'Default ticket ID used by the system in the customer interface.' =>
             '',
+        'Default value for NameX' => '',
         'Define a filter for html output to add links behind a defined string. The element Image allows two input kinds. At once the name of an image (e.g. faq.png). In this case the OTRS image path will be used. The second possiblity is to insert the link to the image.' =>
             '',
         'Define the start day of the week for the date picker.' => '',
@@ -3303,8 +3304,6 @@ sub Data {
             '',
         'Event module registration. For more performance you can define a trigger event (e. g. Event => TicketCreate). This is only possible if all Ticket dynamic fields need the same event.' =>
             '',
-        'Example for dynamic dield' => '',
-        'Example for dynamic field' => '',
         'Example for free text' => '',
         'Execute SQL statements.' => 'Einen SQL-Befehl ausführen',
         'Executes follow up checks on In-Reply-To or References headers for mails that don\'t have a ticket number in the subject.' =>
@@ -3457,7 +3456,7 @@ sub Data {
         'If enabled, the OTRS version tag will be removed from the HTTP headers.' =>
             '',
         'If enabled, the different overviews (Dashboard, LockedView, QueueView) will automatically refresh after the specified time.' =>
-            '',
+            'Wenn diese Option aktiviert ist, werden die verschiedenen Übersichts-Seiten (Dashboard, LockedView, QueueView) automatisch nach der angegebenen Zeit aktualisiert.',
         'If enabled, the first level of the main menu opens on mouse hover (instead of click only).' =>
             '',
         'If set, this address is used as envelope sender header in outgoing notifications. If no address is specified, the envelope sender header is empty.' =>
@@ -3576,6 +3575,7 @@ sub Data {
         'My Tickets' => 'Meine Tickets',
         'Name of custom queue. The custom queue is a queue selection of your preferred queues and can be selected in the preferences settings.' =>
             '',
+        'NameX' => '',
         'New email ticket' => 'Neues E-Mail-Ticket',
         'New phone ticket' => 'Neues Telefon-Ticket',
         'Next possible ticket states after adding a phone note in the ticket phone inbound screen of the agent interface.' =>
@@ -3594,9 +3594,9 @@ sub Data {
         'Overloads (redefines) existing functions in Kernel::System::Ticket. Used to easily add customizations.' =>
             '',
         'Overview Escalated Tickets' => 'Übersicht eskalierte Tickets',
-        'Overview Refresh Time' => '',
+        'Overview Refresh Time' => 'Aktualisierungszeiten der Übersichten',
         'Overview of all open Tickets.' => 'Übersicht über alle offenen Tickets.',
-        'PGP Key Management' => '',
+        'PGP Key Management' => 'PGP Schlüssel Verwaltung',
         'PGP Key Upload' => 'PGP Schlüssel hochladen',
         'Parameters for the CreateNextMask object in the preference view of the agent interface.' =>
             '',
@@ -3657,7 +3657,7 @@ sub Data {
         'Protection against CSRF (Cross Site Request Forgery) exploits (for more info see http://en.wikipedia.org/wiki/Cross-site_request_forgery).' =>
             '',
         'Queue view' => 'Ansicht nach Queues',
-        'Refresh Overviews after' => '',
+        'Refresh Overviews after' => 'Übersichten aktualisieren nach',
         'Refresh interval' => 'Aktualisierungsintervall',
         'Replaces the original sender with current customer\'s email address on compose answer in the ticket compose screen of the agent interface.' =>
             '',
@@ -4197,6 +4197,8 @@ sub Data {
         'A message should have a customer!' => 'Eine Nachtricht sollte einen Kunden haben!',
         'A message should have a subject!' => 'Eine Nachricht sollte einen Betreff haben!',
         'A required field is:' => 'Bitte füllen Sie das Pflichtfeld aus:',
+        'A response is default text to write faster answer (with default text) to customers.' =>
+            'Eine Antwort ist ein vordefinierter Text, um Kunden schneller antworten zu können.',
         'A ticket should be associated with a queue!' => 'Ein Ticket sollte mit einer Queue assoziert sein.',
         'A ticket should have a type!' => 'Ein Ticket sollte einen Typ haben!',
         'About OTRS' => 'Über OTRS',
@@ -4351,6 +4353,7 @@ sub Data {
         'Do you really want to delete this Object?' => 'Soll das Objekt wirklich gelöscht werden?',
         'Do you really want to reinstall this package (all manual changes get lost)?' =>
             'Soll das Paket wirklich erneut installiert werden (manuelle Änderungen gehen verloren)?',
+        'Don\'t forget to add a new response a queue!' => 'Eine neue Antwort muss einer Queue zugewiesen werden!',
         'Don\'t forget to add a new user to groups and/or roles!' => 'Ein neuer Benutzer muss einer Gruppe und/oder Rollen zugewiesen werden!',
         'Don\'t forget to add a new user to groups!' => 'Ein neuer Benutzer muss einer Gruppe zugewiesen werden!',
         'Don\'t work with UserID 1 (System account)! Create new users!' =>

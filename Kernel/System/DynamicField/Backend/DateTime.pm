@@ -2,7 +2,7 @@
 # Kernel/System/DynamicField/Backend/DateTime.pm - Delegate for DynamicField DateTime backend
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: DateTime.pm,v 1.58 2012/02/02 14:08:10 mb Exp $
+# $Id: DateTime.pm,v 1.60 2012/03/01 11:34:05 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -20,7 +20,7 @@ use Kernel::System::Time;
 use Kernel::System::DynamicField::Backend::BackendCommon;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.58 $) [1];
+$VERSION = qw($Revision: 1.60 $) [1];
 
 =head1 NAME
 
@@ -99,6 +99,18 @@ sub ValueSet {
     return $Success;
 }
 
+sub ValueDelete {
+    my ( $Self, %Param ) = @_;
+
+    my $Success = $Self->{DynamicFieldValueObject}->ValueDelete(
+        FieldID  => $Param{DynamicFieldConfig}->{ID},
+        ObjectID => $Param{ObjectID},
+        UserID   => $Param{UserID},
+    );
+
+    return $Success;
+}
+
 sub ValueValidate {
     my ( $Self, %Param ) = @_;
 
@@ -165,6 +177,11 @@ sub EditFieldRender {
             m{ \A ( \d{4} ) - ( \d{2} ) - ( \d{2} ) \s ( \d{2} ) : ( \d{2} ) : ( \d{2} ) \z }xms;
 
         %SplitedFieldValues = (
+
+            # if a value is sent this value must be active, then the Used part needs to be set to 1
+            # otherwise user can easily forget to mark the checkbox and this could lead into data
+            # lost Bug#8258
+            $FieldName . 'Used'   => 1,
             $FieldName . 'Year'   => $Year,
             $FieldName . 'Month'  => $Month,
             $FieldName . 'Day'    => $Day,
@@ -328,12 +345,13 @@ sub EditFieldValueGet {
             );
         }
 
-        # add a leading zero for date parts that could be les than ten to generate a correct
+        # add a leading zero for date parts that could be less than ten to generate a correct
         # time stamp
         for my $Type (qw(Month Day Hour Minute Second)) {
             if (
                 $DynamicFieldValues{ $Prefix . $Type }
                 && $DynamicFieldValues{ $Prefix . $Type } < 10
+                && $DynamicFieldValues{ $Prefix . $Type } !~ m{\A 0 \d \z}smx
                 )
             {
                 $DynamicFieldValues{ $Prefix . $Type }

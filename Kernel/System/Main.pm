@@ -1,8 +1,8 @@
 # --
 # Kernel/System/Main.pm - main core components
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: Main.pm,v 1.61 2011/11/28 16:44:14 mh Exp $
+# $Id: Main.pm,v 1.63 2012/03/01 18:04:44 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -18,11 +18,11 @@ use Digest::MD5 qw(md5_hex);
 use Data::Dumper;
 use File::stat;
 use Unicode::Normalize;
-use Carp qw(confess);
+
 use Kernel::System::Encode;
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.61 $) [1];
+$VERSION = qw($Revision: 1.63 $) [1];
 
 =head1 NAME
 
@@ -97,10 +97,9 @@ sub Require {
     my ( $Self, $Module ) = @_;
 
     if ( !$Module ) {
-	confess "No module passed";
         $Self->{LogObject}->Log(
             Priority => 'error',
-            Message  => 'Need module!' ,
+            Message  => 'Need module!',
         );
         return;
     }
@@ -980,6 +979,6 @@ did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
 
 =head1 VERSION
 
-$Revision: 1.61 $ $Date: 2011/11/28 16:44:14 $
+$Revision: 1.63 $ $Date: 2012/03/01 18:04:44 $
 
 =cut

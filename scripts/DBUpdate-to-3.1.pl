@@ -3,7 +3,7 @@
 # DBUpdate-to-3.1.pl - update script to migrate OTRS 3.0.x to 3.1.x
 # Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: DBUpdate-to-3.1.pl,v 1.72 2012/02/16 20:22:57 cr Exp $
+# $Id: DBUpdate-to-3.1.pl,v 1.75 2012/03/06 09:09:26 mg Exp $
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -31,7 +31,7 @@ use lib dirname($RealBin);
 use lib dirname($RealBin) . '/Kernel/cpan-lib';
 
 use vars qw($VERSION);
-$VERSION = qw($Revision: 1.72 $) [1];
+$VERSION = qw($Revision: 1.75 $) [1];
 
 use Getopt::Std qw();
 use Kernel::Config;
@@ -68,7 +68,7 @@ EOF
     my $CommonObject = _CommonObjectsBase();
 
     # define the number of steps
-    my $Steps = 22;
+    my $Steps = 23;
 
     print "Step 1 of $Steps: Refresh configuration cache... ";
     RebuildConfig($CommonObject);
@@ -253,6 +253,10 @@ EOF
     $CacheObject->CleanUp();
     print "done.\n\n";
 
+    print "Step 23 of $Steps: Refresh configuration cache another time... ";
+    RebuildConfig($CommonObject);
+    print "done.\n\n";
+
     print "Migration completed!\n";
 
     exit 0;
@@ -291,7 +295,25 @@ sub RebuildConfig {
         die "ERROR: Can't write default config files!";
     }
 
+    # Rebuild ZZZAAuto.pm with current values
+    if ( !$SysConfigObject->WriteDefault() ) {
+        die "ERROR: Can't write default config files!";
+    }
+
+    # Also rebuild ZZZAuto.pm to avoid possible encoding errors with
+    #   the old Main::Dump() in ascii mode.
+    $SysConfigObject->CreateConfig();
+
+    # Force a reload of ZZZAuto.pm and ZZZAAuto.pm to get the new value
+    for my $Module ( keys %INC ) {
+        if ( $Module =~ m/ZZZAA?uto\.pm$/ ) {
+            delete $INC{$Module};
+        }
+    }
+
     # reload config object
+    print
+        "\nIf you see warnings about 'Subroutine Load redefined', that's fine, no need to worry!\n";
     $CommonObject->{ConfigObject} = Kernel::Config->new( %{$CommonObject} );
 
     return 1;

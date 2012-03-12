@@ -1,8 +1,8 @@
 # --
 # Main.t - Main tests
-# Copyright (C) 2001-2011 OTRS AG, http://otrs.org/
+# Copyright (C) 2001-2012 OTRS AG, http://otrs.org/
 # --
-# $Id: Main.t,v 1.25 2011/08/12 09:06:15 mg Exp $
+# $Id: Main.t,v 1.30 2012/03/01 17:11:54 mg Exp $
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -454,6 +454,62 @@ for my $Directory ( $DirectoryWithFiles, $DirectoryWithoutFiles ) {
             "DirectoryRead() - delete '$Directory'",
         );
     }
+}
+
+#
+# Dump()
+#
+@Tests = (
+    {
+        Name   => 'Unicode dump 1',
+        Source => 'é',
+        Result => "\$VAR1 = 'é';\n",
+    },
+    {
+        Name   => 'Unicode dump 2',
+        Source => 'äöüßÄÖÜ€ис é í  ó',
+        Result => "\$VAR1 = 'äöüßÄÖÜ€ис é í  ó';\n",
+    },
+    {
+        Name => 'Unicode dump 3',
+        Source =>
+            "\x{e4}\x{f6}\x{fc}\x{df}\x{c4}\x{d6}\x{dc}\x{20ac}\x{438}\x{441} \x{e9} \x{ed}  \x{f3}",
+        Result => "\$VAR1 = 'äöüßÄÖÜ€ис é í  ó';\n",
+    },
+    {
+        Name   => 'Unicode dump 4',
+        Source => "Mus\x{e9}e royal de l\x{2019}Arm\x{e9}e et d\x{2019}histoire militaire",
+        Result => "\$VAR1 = 'Musée royal de l’Armée et d’histoire militaire';\n",
+    },
+    {
+        Name   => 'Unicode dump 5',
+        Source => "Antonín Dvořák",
+        Result => "\$VAR1 = 'Antonín Dvořák';\n",
+    },
+
+    # Strange things happen here. \x{e9} is not valid UTF8, but instead Latin1.
+    # The first test works, the second doesn't...
+    #    {
+    #        Name => 'Invalid UTF8',
+    #        Source =>
+    #            "ä \x{e9}",
+    #        Result => "\$VAR1 = 'ä é';\n",
+    #    },
+    #    {
+    #        Name   => 'Invalid UTF8',
+    #        Source => "\x{e9}",
+    #        Result => "\$VAR1 = 'é';",
+    #    },
+);
+
+for my $Test (@Tests) {
+    my $Result = $Self->{MainObject}->Dump( $Test->{Source} );
+
+    $Self->Is(
+        $Result,
+        $Test->{Result},
+        "$Test->{Name} - Dump() result"
+    );
 }
 
 1;
