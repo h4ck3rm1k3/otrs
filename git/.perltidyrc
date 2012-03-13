@@ -1,0 +1,29 @@
+# Perl Best Practices (plus errata) .perltidyrc file
+-l=100 
+-i=4 
+-ci=4 
+-vt=0 
+-vtc=0 
+-cti=0 
+-pt=1 
+-bt=1 
+-sbt=1 
+-bbt=1 
+-nsfs 
+-nolq 
+-bbao 
+-nola 
+#-ndln
+-wbb="% + - * / x != == >= <= =~ < > | & **= += *= &= <<= &&= -= /= |= >>= ||= .= %= ^= x="
+# Break before all operators
+# extras/overrides/deviations from PBP
+--warning-output                        # Show warnings
+--maximum-consecutive-blank-lines=2     # default is 1
+--nohanging-side-comments               # troublesome for commented out code
+#-isbc   # block comments may only be indented if they have some space characters before the #
+--indent-block-comments
+# my stuff
+--line-up-parentheses 
+--cuddled-else 
+#--check-syntax
+#-pscf -I/home/mdupont/otrs_test/

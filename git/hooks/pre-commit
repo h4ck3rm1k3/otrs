@@ -1,0 +1,19 @@
+#!/bin/bash
+#if which "tg" > /dev/null; then "$(tg --hooks-path)"/pre-commit "$@" || exit $?; fi
+#echo "in hook"
+#for file in `git status --porcelain | cut "-d " -f3`
+#do
+    #|grep -e'(.pm|.pl|.t)
+#    echo "look at $file"
+#    perl /home/mdupont/projects/otrs/CVSCO/CVSROOT/filter-extended.pl test $file
+#    if [[ $? != 0 ]]; then
+#        die "filter error in file: $file"
+#    fi
+#done
+
+#http://stackoverflow.com/questions/2412450/git-pre-commit-hook-changed-added-files
+for file in `git diff --cached --name-only --diff-filter=ACM`
+do
+    perl /home/mdupont/projects/otrs/CVSCO/CVSROOT/filter-extended.pl test $file
+    exit  $? 
+done
